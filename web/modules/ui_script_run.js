@@ -21,9 +21,8 @@ import { openTuningEditor } from './ui_tts_tuning.js';
  * How it sounds is a mode (Anomalous_TTS interface 16): "Auto" lets the presets and the
  * character's generation settings decide line by line; a preset sends the node's `preset`
  * input, so every line uses it. The modes are shown against Auto (ui_tts_preset_switch.js,
- * compact: the scale and the numbers folded) and can be heard on a line of the script picked
- * beside the listen button (ui_tts_mode_preview.js); a preset's numbers changed here are saved
- * into that preset.
+ * compact: the scale and the numbers folded) and can be heard on the line you are on in the
+ * director (ui_tts_mode_preview.js); a preset's numbers changed here are saved into that preset.
  * Links lead to the presets in GPT-SoVITS Settings and to the character's generation settings.
  *
  * The director owns the lines; this section owns the job, the options and the
@@ -75,8 +74,8 @@ async function loadNodeSpec() {
 }
 
 /**
- * `getScript()` -> `{ group, lines, pkg }` for the chosen character (the director's lines, pkg
- * from buildScriptPackage with takes); `getGroups()` -> every voice group (for the presets' "used by");
+ * `getScript()` -> `{ group, lines, listen, pkg }` for the chosen character (the director's lines,
+ * the index of the one to listen with, pkg from buildScriptPackage with takes); `getGroups()` -> every voice group (for the presets' "used by");
  * `onPlay()` when the result starts playing;
  * `resetTakes()` when a new take of the whole script starts; `onBusyChange()` when a job
  * starts or ends (the director re-renders its line cards, whose retake buttons depend on it);
@@ -92,7 +91,6 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         settings: new Map(),  // character -> its settings as saved in this session
         saved: new Map(),     // character -> options saved in this session
         presetNote: '',
-        listenLine: 0,        // which line of the script the modes are heard on
         job: null,
         status: null,         // { state: 'queued' | 'running' | 'done' | 'cancelled', value?, max?, seconds? }
         result: null,         // { audio, url, warnings, character }
@@ -240,28 +238,19 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             state.presetNote = '';
             render();
         };
-        // The same line for every mode, picked from the script (the first by default); without lines one in the character's language.
-        const lines = (getScript()?.lines || []).filter(line => String(line?.text || '').trim());
-        if (state.listenLine >= lines.length) state.listenLine = 0;
-        const chosen = lines[state.listenLine];
+        // The same line for every mode: the one you are on in the director; an empty one, a line in the character's language.
+        const script = getScript();
+        const index = script?.listen ?? 0;
+        const chosen = script?.lines?.[index];
+        const words = String(chosen?.text || '').trim();
         const refLang = group.raw?.reference?.language || group.language;
-        const text = chosen
-            ? `${chosen.emotion && chosen.emotion !== 'main' ? `{${chosen.emotion}}` : ''}${chosen.text.trim()}`
+        const text = words
+            ? `${chosen.emotion && chosen.emotion !== 'main' ? `{${chosen.emotion}}` : ''}${words}`
             : SAMPLE_LINES[refLang] || SAMPLE_LINES.zh;
-        const lineSelect = el('select', 'anomalous-sd-run-select anomalous-sd-run-listen-line');
-        lineSelect.title = t('scriptRunListenLine');
-        lines.forEach((line, index) => {
-            const words = line.text.trim();
-            const option = el('option', '', `#${index + 1} ${words.length > 18 ? `${words.slice(0, 18)}…` : words}`);
-            option.value = String(index);
-            lineSelect.append(option);
-        });
-        lineSelect.value = String(state.listenLine);
-        lineSelect.hidden = !lines.length;
-        lineSelect.onchange = () => {
-            state.listenLine = Number(lineSelect.value);
-            render();
-        };
+        const lineLabel = el('span', 'anomalous-sd-run-listen-line', words
+            ? t('scriptRunListenLine', { n: index + 1, text: words })
+            : t('scriptRunListenSample', { text }));
+        lineLabel.title = t('scriptRunListenLineHint');
         const take = id => ({ character: group.character, text, language: opts.language, speed: opts.speed, mode: id, preset: id, numbers: values(id) });
         const lang = auto.key === 'all' ? t('ttsTuningAll') : t(`scriptRunLang_${auto.key}`);
         const modes = renderPresetSwitch({
@@ -277,7 +266,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             editable: id => id !== AUTO && state.local,
             onPick: pick,
             onEdit: editPreset,
-            listen: preview.row({ takeFor: take, selected: opts.preset, modes: choices, onPick: pick, disabled: busy, lead: [lineSelect] }),
+            listen: preview.row({ takeFor: take, selected: opts.preset, modes: choices, onPick: pick, disabled: busy, lead: [lineLabel] }),
             disabled: busy,
             compact: true,
         });

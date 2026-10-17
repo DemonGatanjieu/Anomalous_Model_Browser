@@ -33,6 +33,7 @@ const state = {
     editing: true,
     splitMode: 'sentence',
     focusIndex: null,   // card whose text box should receive focus after the next render
+    listenIndex: 0,     // the line the modes are heard on (ui_script_run.js)
 };
 
 let panel = null;
@@ -120,7 +121,7 @@ function selectedGroup() {
 /** The script with retakes, for a run in the director. */
 function runScript() {
     const group = selectedGroup();
-    return { group, lines: state.lines, pkg: buildScriptPackage(state.lines, group, { takes: true }) };
+    return { group, lines: state.lines, listen: state.listenIndex, pkg: buildScriptPackage(state.lines, group, { takes: true }) };
 }
 
 function emotionLabel(emotion) {
@@ -297,6 +298,7 @@ function renderLines() {
         state.focusIndex = state.lines.length - 1;
         renderAll();
     });
+    if (state.listenIndex >= state.lines.length) state.listenIndex = 0;
     refs.linesContainer.replaceChildren(...state.lines.map((line, index) => renderLineCard(line, index, emotions, slices, showChips)), addLine);
     if (state.focusIndex !== null) {
         refs.linesContainer.querySelectorAll('.anomalous-sd-line-text')[state.focusIndex]?.focus();
@@ -305,12 +307,16 @@ function renderLines() {
 }
 
 function renderLineCard(line, index, emotions, slices, showChips) {
-    const card = el('div', 'anomalous-sd-line-card');
+    const card = el('div', `anomalous-sd-line-card${index === state.listenIndex ? ' is-listen' : ''}`);
+    // The line you are on is the one the modes are heard on (the run section's listen button).
+    card.addEventListener('focusin', () => chooseListenLine(index));
+    card.addEventListener('click', () => chooseListenLine(index));
 
     // Editing buttons (.is-edit) show on hover; another take of this line stays visible.
     const head = el('div', 'anomalous-sd-line-head');
     head.append(
         el('span', 'anomalous-sd-line-no', `#${index + 1}`),
+        el('span', 'anomalous-sd-line-listen', t('scriptDirectorListenBadge')),
         // Split at the text caret (the textarea keeps its caret after losing focus to this button).
         button('anomalous-sd-icon-btn is-edit', '✂', async () => {
             const parts = splitSegmentAt(line.text, text.selectionStart);
@@ -395,6 +401,13 @@ function renderLineCard(line, index, emotions, slices, showChips) {
 
     card.append(head, text, chips);
     return card;
+}
+
+function chooseListenLine(index) {
+    if (state.listenIndex === index) return;
+    state.listenIndex = index;
+    refs.linesContainer.querySelectorAll('.anomalous-sd-line-card').forEach((card, at) => card.classList.toggle('is-listen', at === index));
+    runSection?.render();
 }
 
 function renderPackage() {
