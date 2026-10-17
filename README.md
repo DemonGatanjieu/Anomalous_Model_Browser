@@ -40,7 +40,7 @@
 
 <p align="center"><img src="docs/images/en-scan.webp" width="520" alt="Scan results: each file matched on Civitai"></p>
 
-**2. Someone else's workflow opens with red nodes.** Model Check says which models are missing. The ones you already have under another name or in another folder go back in with one press; the rest can be downloaded from Civitai or Hugging Face, and each download is checked against the model's fingerprint.
+**2. Someone else's workflow opens with red nodes.** Model Check says which models are missing. When the workflow carries model fingerprints (the plugin writes them into the workflows and images of everyone who has it, unless they turn it off), the ones you already have under another name or in another folder go back in with one press, and the rest can be downloaded from Civitai or Hugging Face, each download checked against its fingerprint. A workflow without fingerprints can only be matched by file name: a file of the same name elsewhere on your computer is offered for you to confirm.
 
 <p align="center"><img src="docs/images/en-model-check.webp" width="760" alt="Model Check puts back three missing models with one press"></p>
 
@@ -97,7 +97,7 @@ Every page has an icon on the rail at the left of the window.
 Tools on the rail:
 
 * **Scan** reads your model folders and fetches covers, trigger words and base models from Civitai (by file hash, no extra Python packages).
-* **Model Check** (formerly Model Doctor) checks each workflow you open: when models are missing, a bar over the canvas says so and puts back, with one press, the ones you have under another name or folder (recognised by hash and file size); its page lists the rest with what you can do.
+* **Model Check** (formerly Model Doctor) checks each workflow you open: when models are missing, a bar over the canvas says so and puts back, with one press, the ones you have under another name or folder, recognised by the fingerprints (hash and file size) the plugin records in workflows and images (**Settings → Record model fingerprints in workflows**, on by default); without them, a file of the same name is offered for you to confirm. Its page lists the rest with what you can do.
 * **Current node** (formerly Node Assistant) shows the model of the node you select, lets you swap it from the covers or insert a LoRA, and lists every set of values saved for that kind of node with exactly what applying it would change; saved values can be deleted there.
 * **Each tool on its page**: share and import on Workflows (⇅: a short share code of the canvas workflow, in Chinese characters or letters; paste a code, or drop a workflow file, an image or a backup .zip), Model Sources (where each model can be downloaded) on Models and in Model Check, translation on the prompt boxes in Current node.
 * **Settings** (at the bottom): language, font size, thumbnails, video covers, which model folders to show, and feedback. Home and Settings have **Report a problem**, which opens a GitHub issue with your versions and GPU already filled in.
@@ -147,7 +147,7 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 
 <p align="center"><img src="docs/images/scan.webp" width="520" alt="扫描结果：每个文件都在 C 站认出来了"></p>
 
-**2. 打开别人的工作流，一片红框。** 模型检查会告诉你缺哪些模型。你电脑里其实有、只是改了名或换了文件夹的，点一下就换上；真没有的可以从 C 站或 Hugging Face 下载，下载完按模型指纹核对过才用。
+**2. 打开别人的工作流，一片红框。** 模型检查会告诉你缺哪些模型。如果工作流里带着模型指纹（装了本插件的人出图、保存工作流时会自动记下，除非他在设置里关掉），你电脑里其实有、只是改了名或换了文件夹的，点一下就换上；真没有的可以从 C 站或 Hugging Face 下载，下载完按指纹核对过才用。没有指纹的工作流只能按文件名找：别处有同名文件，会列出来让你确认。
 
 <p align="center"><img src="docs/images/model-check.webp" width="760" alt="模型检查一键换上 3 个缺失的模型"></p>
 
@@ -207,7 +207,7 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 图标栏上的工具：
 
 * **扫描**：读取模型文件夹，按文件哈希从 C 站获取封面、触发词和底模。不需要额外安装 Python 包。
-* **模型检查**（原“模型医生”）：打开工作流时自动检查，缺模型就在画布上方提示；本地改过名、换过文件夹的同一个文件（按哈希和文件大小认）一键换上，其余的在检查页里自己挑或去 Civitai 找。
+* **模型检查**（原“模型医生”）：打开工作流时自动检查，缺模型就在画布上方提示；本地改过名、换过文件夹的同一个文件一键换上，靠的是插件记在工作流和图片里的模型指纹（哈希和文件大小；**设置 → 在工作流里记下模型指纹**，默认打开）；没有指纹时，同名文件会列出来让你确认。其余的在检查页里自己挑或去 Civitai 找。
 * **当前节点**（原“节点助手”）：选中画布上的节点，查看它用的模型。可以看图换模型、插入 LoRA；存过的同类节点参数列在一起，每条写明会改哪几项，一键套用；存下的参数也在这里删除。
 * **工具回到各自的页面**：分享与导入在“工作流”页（⇅：把画布上的工作流变成一段短短的分享码，有汉字码和字母码；也能粘贴分享码，或拖入工作流文件、图片、备份压缩包），模型来源（每个模型去哪下载）在“模型”页和模型检查里，翻译在“当前节点”的提示词框上。
 * **设置**（最下面）：语言、字号、缩略图、视频封面、显示哪些模型文件夹，以及提交反馈。主页和设置里的 **报告问题** 会打开一个已经填好版本和显卡信息的 GitHub 页面。
