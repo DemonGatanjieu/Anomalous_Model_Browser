@@ -13,7 +13,7 @@ import { PARAM_RANGES, SAMPLING, compareFeel, liveliness } from './tts_presets_a
  */
 
 const brief = value => String(Math.round(value * 100) / 100);
-let numbersOpen = false; // the fold stays as the user left it, across redraws and both places
+let numbersOpen = null; // as the user left the fold, across redraws and both places; null = open unless compact
 
 function numberInput(key, value, onChange) {
     const [min, max, step] = PARAM_RANGES[key];
@@ -78,7 +78,7 @@ function feelScale(base, now, baseName) {
  * `values(id)` gives a mode's four numbers; `describe(id)` a line about it or ''; `builtin(id)`
  * its built-in numbers or null; `editable(id)`; `onPick(id)`; `onEdit(id, key, value)`;
  * `extra`: elements after the choices (a "+ New" button); `listen`: the caller's listen row;
- * `compact`: the scale goes into the fold with the numbers (the Script Director's narrow side).
+ * `compact`: the scale goes into the fold with the numbers, folded unless opened before (a narrow side).
  */
 export function renderPresetSwitch({
     choices, selected, base, baseName, baseText, values, describe = () => '', builtin = () => null,
@@ -106,7 +106,7 @@ export function renderPresetSwitch({
     if (about) sentence.append(document.createTextNode(` ${about}`));
 
     const numbers = el('details', 'anomalous-tts-switch-numbers');
-    numbers.open = numbersOpen;
+    numbers.open = numbersOpen ?? !compact;
     numbers.addEventListener('toggle', () => { numbersOpen = numbers.open; });
     numbers.append(el('summary', '', t(compact ? 'ttsFeelMore' : 'ttsFeelNumbers', { base: baseName })));
     if (compact) numbers.append(feelScale(before, now, baseName));

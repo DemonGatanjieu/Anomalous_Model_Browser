@@ -18,6 +18,7 @@ export function createSettingsHub(owner, {
     savedBgOpacity,
     updateLangClass,
     dockBtn,
+    maxBtn,
     updateNoticeBtn,
     icons,
 }) {
@@ -92,6 +93,10 @@ export function createSettingsHub(owner, {
             dockBtn.setAttribute('aria-label', t('dockTitle'));
             dockBtn.setAttribute('data-tooltip', t('dockTitle'));
             dockBtn.setAttribute('data-tooltip-pos', 'bottom');
+        }
+        if (maxBtn) {
+            maxBtn.setAttribute('aria-label', t('maximizeTitle'));
+            maxBtn.setAttribute('data-tooltip', t('maximizeTitle'));
         }
         if (updateNoticeBtn) {
             updateNoticeBtn.setAttribute('data-tooltip', t('updateGuideNoticeTooltip'));

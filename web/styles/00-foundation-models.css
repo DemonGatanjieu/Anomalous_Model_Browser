@@ -528,6 +528,24 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     transition: all 0.3s ease;
 }
 
+/* Full window (ui_shell_frame.js): the whole ComfyUI page, neither dragged nor resized. */
+#anomalous-container.anomalous-maximized {
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    transform: none !important;
+}
+
+#anomalous-container.anomalous-maximized .anomalous-resize-handle {
+    display: none;
+}
+
+#anomalous-container.anomalous-maximized #anomalous-header {
+    cursor: default;
+}
+
 #anomalous-header {
     height: 48px;
     background: var(--comfy-menu-bg, var(--amb-bg-card-hover));

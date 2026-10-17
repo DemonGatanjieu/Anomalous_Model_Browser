@@ -35,6 +35,7 @@ const LANGUAGES = ['auto', 'zh', 'ja', 'en'];
 const MIN_FORMAT = 11; // Anomalous_TTS interface with [take:N] and `defaults`
 const NUMBERS = ['speed'];
 const AUTO = ''; // the mode that lets the presets decide
+const ROOMY_FROM = 440; // px of the side from which the modes' details are shown open
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -87,6 +88,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         spec: null,           // node input ranges/defaults; null until loaded
         presets: null,        // loadPresets(); null without interface 16
         local: false,         // this computer (presets can be changed)
+        roomy: false,         // the side is wide enough to show the modes' scale and numbers open
         options: new Map(),   // character -> { language, speed, preset } being edited
         settings: new Map(),  // character -> its settings as saved in this session
         saved: new Map(),     // character -> options saved in this session
@@ -138,6 +140,13 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
     speedRow.append(el('span', 'anomalous-sd-run-label', t('scriptRunSpeed')), speed, speedValue);
 
     const modeBox = el('div', 'anomalous-sd-run-mode');
+    // A wide side (a big screen, the full window) shows the scale and the numbers without a click.
+    new ResizeObserver(([entry]) => {
+        const roomy = entry.contentRect.width >= ROOMY_FROM;
+        if (roomy === state.roomy) return;
+        state.roomy = roomy;
+        render();
+    }).observe(settings);
     const saveDefaults = button('anomalous-sd-link-btn', t('scriptRunSaveDefaults'), () => storeDefaults(), t('scriptRunSaveDefaultsHint'));
     settings.append(el('div', 'anomalous-sd-run-heading', t('scriptRunHow')), languageRow, speedRow, modeBox, saveDefaults);
 
@@ -268,7 +277,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             onEdit: editPreset,
             listen: preview.row({ takeFor: take, selected: opts.preset, modes: choices, onPick: pick, disabled: busy, lead: [lineLabel] }),
             disabled: busy,
-            compact: true,
+            compact: !state.roomy,
         });
         const note = el('div', 'anomalous-sd-run-note', state.presetNote);
         note.hidden = !state.presetNote;

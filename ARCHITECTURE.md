@@ -370,7 +370,9 @@ covered by the `styles.css` manifest.
   dragged onto one (writing the character and script widgets together, one Ctrl+Z
   step) or copied. The page feeds it the voice groups after each fetch.
   It puts the cards on one side and generating on the other: beside
-  them once the page is wide, below them when it is narrow (docked browser).
+  them once the page is wide, below them when it is narrow (docked browser); on a
+  wide page `ui_split_bar.js` is the divider between them (dragged, remembered).
+  A card is one row (number, text, buttons); "Into your own workflow" is folded.
   `ui_script_run.js` is the director's "Generate" section (the bar with the result and
   a way to the audio gallery; language, speed and the mode: Auto, or one preset for
   every line through the node's `preset` input, in the same switch measured
@@ -412,7 +414,7 @@ covered by the `styles.css` manifest.
   it is open (remembered per page; closed and overlaying below 760 px), the header's
   page title, and the page reopened next time. `ui_home.js` owns the home page (task
   cards, first steps). `ui_shell_frame.js` owns dragging, resizing and keeping the
-  floating window on screen; `ui_scan_watch.js` polls scan status for the rail's scan
+  floating window on screen, and the full-window button (double-click on the header too); `ui_scan_watch.js` polls scan status for the rail's scan
   button, the progress panel and the model reload afterwards.
   The activity log (docs/decisions AD-018): `api/activity_log.py` keeps the entries
   (newest first, bounded, in the ComfyUI user folder), records this plugin's and

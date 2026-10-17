@@ -78,12 +78,56 @@
     flex-direction: row;
 }
 
+/* About half the width by default; the divider changes it (ui_script_director.js). */
 .anomalous-script-director-panel.is-wide .anomalous-sd-side {
-    width: 344px;
+    width: var(--sd-side-width, 46%);
+    min-width: 320px;
+    max-width: calc(100% - 340px);
     max-height: none;
     padding: 12px 14px;
     border-top: none;
-    border-left: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-splitter {
+    display: none;
+}
+
+.anomalous-script-director-panel.is-wide .anomalous-sd-splitter {
+    display: block;
+    flex: 0 0 7px;
+    position: relative;
+    cursor: col-resize;
+    touch-action: none;
+}
+
+.anomalous-script-director-panel.is-wide .anomalous-sd-splitter::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 1px;
+    background: var(--amb-border);
+}
+
+.anomalous-script-director-panel.is-wide .anomalous-sd-splitter:hover::after {
+    left: 2px;
+    width: 3px;
+    background: color-mix(in srgb, var(--amb-link) 60%, transparent);
+}
+
+/* Who reads, and the voices they have, on one row. */
+.anomalous-sd-who {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 12px;
+    padding: 0 16px 10px 0;
+    border-bottom: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-who > .anomalous-sd-character-bar {
+    flex: 1 1 320px;
 }
 
 .anomalous-sd-header {
@@ -124,11 +168,10 @@
 }
 
 .anomalous-sd-character-hint {
-    padding: 0 16px 10px;
+    padding: 12px 0 4px 16px;
     font-size: 11px;
     line-height: 1.5;
     color: var(--amb-text-dim);
-    border-bottom: 1px solid var(--amb-border);
 }
 
 .anomalous-sd-character-hint.is-warning {
@@ -284,10 +327,34 @@
     display: inline;
 }
 
-.anomalous-sd-line-head {
-    display: flex;
+/* One row per line: number, text, then its buttons; the emotion chips under it when there is a choice. */
+.anomalous-sd-line-card {
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 4px;
+    gap: 4px 6px;
+    padding: 6px 8px;
+}
+
+.anomalous-sd-line-head {
+    display: contents;
+}
+
+/* The text takes what is left, so the buttons never wrap to a row of their own. */
+.anomalous-sd-line-card > .anomalous-sd-line-text {
+    order: 1;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+}
+
+.anomalous-sd-line-head > :not(.anomalous-sd-line-no) {
+    order: 2;
+}
+
+.anomalous-sd-line-card > .anomalous-sd-emotion-row {
+    order: 3;
+    flex-basis: 100%;
 }
 
 /* Split, merge and delete show on the card you are on; another take of a line stays in view. */
@@ -316,7 +383,8 @@
 }
 
 .anomalous-sd-line-no {
-    flex: 1;
+    flex: 0 0 auto;
+    min-width: 22px;
     font-size: 11px;
     font-family: monospace;
     color: var(--amb-text-dim);
@@ -450,6 +518,7 @@
 .anomalous-sd-workflow-title {
     color: var(--amb-text-dim);
     font-size: 11.5px;
+    cursor: pointer;
 }
 
 /* Bundle */

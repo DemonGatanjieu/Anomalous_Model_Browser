@@ -6,6 +6,7 @@ import { targetForNode } from './audio_node_targets.js';
 import { TTS_ENGINE } from './audio_engines.js';
 import { bindMaterialDrag } from './material_drag.js';
 import { createRunSection } from './ui_script_run.js';
+import { bindSplitBar } from './ui_split_bar.js';
 import { recordCanvasStep } from './canvas_history.js';
 
 /**
@@ -19,6 +20,8 @@ import { recordCanvasStep } from './canvas_history.js';
 
 // From this width on, the cards get the full height and the generate side sits beside them.
 const WIDE_FROM = 760;
+const SIDE_WIDTH_KEY = 'anomalous_sd_side_width';
+const WORKFLOW_OPEN_KEY = 'anomalous_sd_workflow_open';
 
 const ICONS = {
     SPEAKER: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>`,
@@ -169,6 +172,9 @@ function createPanel() {
     };
     const characterHint = el('div', 'anomalous-sd-character-hint');
     characterBar.append(el('span', 'anomalous-sd-step', t('scriptDirectorCharacter')), characterSelect);
+    // Who reads and what voices they have, on one row.
+    const who = el('div', 'anomalous-sd-who');
+    who.append(characterBar, characterHint);
 
     const inputArea = el('div', 'anomalous-sd-input-area');
     const textarea = el('textarea', 'anomalous-sd-textarea');
@@ -215,10 +221,14 @@ function createPanel() {
     const copyBtn = button('anomalous-sd-btn', t('scriptDirectorCopy'), copyScript);
     const pushBtn = button('anomalous-sd-btn', t('scriptDirectorInject'), pushToNode);
     actions.append(dragHandle, pushBtn, copyBtn);
-    // Into your own workflow: second to generating here, so it sits below it, quieter.
-    const workflow = el('div', 'anomalous-sd-workflow');
-    const workflowTitle = el('div', 'anomalous-sd-workflow-title');
+    // Into your own workflow: second to generating here, so it sits below it, folded (remembered).
+    const workflow = el('details', 'anomalous-sd-workflow');
+    const workflowTitle = el('summary', 'anomalous-sd-workflow-title');
     workflow.append(workflowTitle, actions);
+    try { workflow.open = localStorage.getItem(WORKFLOW_OPEN_KEY) === '1'; } catch (_) { /* folded */ }
+    workflow.addEventListener('toggle', () => {
+        try { localStorage.setItem(WORKFLOW_OPEN_KEY, workflow.open ? '1' : '0'); } catch (_) { /* convenience only */ }
+    });
     runSection = createRunSection({
         getScript: runScript,
         getGroups: () => state.groups,
@@ -240,11 +250,14 @@ function createPanel() {
     const side = el('div', 'anomalous-sd-side');
     side.append(footer, runSection.settings, workflow);
     const body = el('div', 'anomalous-sd-body');
-    body.append(main, side);
+    const splitter = el('div', 'anomalous-sd-splitter');
+    splitter.title = t('scriptDirectorSplitter');
+    body.append(main, splitter, side);
+    bindSplitBar(splitter, { owner: panel, body, prop: '--sd-side-width', key: SIDE_WIDTH_KEY });
     // The panel lives for the page session, so the observer does too.
     new ResizeObserver(([entry]) => panel.classList.toggle('is-wide', entry.contentRect.width >= WIDE_FROM)).observe(panel);
 
-    panel.append(header, characterBar, characterHint, inputArea, body);
+    panel.append(header, who, inputArea, body);
     refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, body, linesCount, onlyMain, linesContainer, summary, workflowTitle, dragHandle, copyBtn, pushBtn };
 }
 
@@ -252,6 +265,7 @@ function renderAll() {
     if (!panel) return;
     const node = TTS_ENGINE.label;
     refs.subtitle.textContent = t('scriptDirectorSubtitle');
+    refs.subtitle.hidden = state.lines.length > 0 && !state.editing; // the how-to, until there are lines
     refs.workflowTitle.textContent = t('scriptDirectorWorkflowTitle');
     refs.dragHandle.title = t('scriptDirectorDragHint', { node });
     refs.pushBtn.title = t('scriptDirectorPushHint', { node });
