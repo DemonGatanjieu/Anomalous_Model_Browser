@@ -363,16 +363,17 @@ covered by the `styles.css` manifest.
   (`buildScriptPackage`, with `[take:N]` for retakes), combo value
   matching, and `buildTtsPrompt` (a GPT-SoVITS script as a ComfyUI API prompt
   saving to `output/audio/<character>/`).
-  `ui_script_director.js` owns the script director, the Voice-over view's body: who reads
-  by default, lines given to other characters (`castScriptCharacter`, called when the list
-  on the left is clicked there; `ui_script_cast.js` holds the colours, the speaker chip and
-  picking lines with Ctrl / Shift), an emotion chip row per line card for its character
-  (with the chosen emotion's reference clip; none when the characters have only their main
-  voice), editing buttons shown on hover, and a bundle (`[name]` where the speaker changes)
-  that is generated in the view, or, under "Into your own workflow" (`ui_script_workflow.js`),
-  pushed to the selected/only target node, dragged onto one (writing the character and
-  script widgets together, one Ctrl+Z step) or copied. The page feeds it the voice groups
-  after each fetch.
+  `ui_script_director.js` owns the script director, the Voice-over view's body: the lines,
+  each read by its character (the one picked in the list on the left at first;
+  `castScriptCharacter`, called when that list is clicked there, gives it the picked lines;
+  the node's own character is the first line's), and a bundle (`[name]` where the speaker
+  changes) that is generated in the view, or, under "Into your own workflow"
+  (`ui_script_workflow.js`), pushed to the selected/only target node, dragged onto one
+  (writing the character and script widgets together, one Ctrl+Z step) or copied. The page
+  feeds it the voice groups after each fetch. `ui_script_cards.js` draws the line cards: a
+  click picks (`ui_script_cast.js`: Ctrl / Shift, the characters' colours), a double-click or
+  ✎ edits the text in place, the name opens a menu of characters, emotion chips per the
+  line's character, buttons on hover.
   It puts the cards on one side and generating on the other: beside
   them once the page is wide, below them when it is narrow (docked browser); on a
   wide page `ui_split_bar.js` is the divider between them (dragged, remembered).

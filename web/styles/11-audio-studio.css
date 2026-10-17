@@ -791,13 +791,6 @@
     display: none;
 }
 
-#anomalous-container[data-page="script"] .anomalous-audio-nav-character .anomalous-audio-nav-item.active {
-    border-left-color: transparent;
-    background: transparent;
-    color: var(--amb-text-soft);
-    font-weight: inherit;
-}
-
 .anomalous-audio-nav-item {
     display: flex;
     align-items: center;

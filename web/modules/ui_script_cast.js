@@ -1,8 +1,8 @@
 /**
  * Voice-over with several characters (the cast): each character's colour, its place in the voice
- * list, the same on the list (ui_audio_sidebar.js) and on the line cards; the speaker chip of a
- * line card; and picking lines, a click, Ctrl / ⌘ to add or take one away, Shift for a run, to
- * give to a character from the list (ui_script_director.js castScriptCharacter).
+ * list, the same on the list (ui_audio_sidebar.js) and on the line cards (ui_script_cards.js); and
+ * picking lines, a click, Ctrl / ⌘ to add or take one away, Shift for a run, to give to a
+ * character from the list (ui_script_director.js castScriptCharacter) or from a card's name.
  */
 
 const COLORS = ['#5b9cf6', '#ef7ea5', '#3fbf91', '#e3a33b', '#a487f5', '#4fc2d4', '#ee8656', '#94c252'];
@@ -27,13 +27,4 @@ export function pickLines(picked, index, { ctrlKey = false, metaKey = false, shi
         return next;
     }
     return new Set([index]);
-}
-
-/** Who reads a line, on its card. */
-export function speakerChip(group, color) {
-    const chip = document.createElement('span');
-    chip.className = 'anomalous-sd-speaker';
-    chip.textContent = group?.character || '?';
-    chip.style.setProperty('--speaker', color);
-    return chip;
 }

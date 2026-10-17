@@ -291,9 +291,9 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         const links = el('div', 'anomalous-sd-run-links');
         links.append(
             button('anomalous-sd-link-btn', t('scriptRunOpenPresets'), () => openTtsSetup({ groups: getGroups?.() || [], showPresets: true, onChanged: reloadPresets })),
-            button('anomalous-sd-link-btn', t('scriptRunOpenTuning'), () => openTuningEditor(group, {
+            button('anomalous-sd-link-btn', t('scriptRunOpenTuning', { name: speaker.character }), () => openTuningEditor(speaker, {
                 onSaved: (saved) => {
-                    if (saved?.raw?.settings) state.settings.set(group.character, saved.raw.settings);
+                    if (saved?.raw?.settings) state.settings.set(speaker.character, saved.raw.settings);
                     render();
                 },
             })),
@@ -401,7 +401,8 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             speed.disabled = busy;
             speedValue.textContent = String(opts.speed);
             renderMode(group, busy);
-            saveDefaults.hidden = sameOptions(opts, storedOptions(group));
+            // Language and speed belong to one character: with several reading, there is no one to keep them for.
+            saveDefaults.hidden = sameOptions(opts, storedOptions(group)) || (pkg.speakers?.length || 0) > 1;
         } else {
             saveDefaults.hidden = true;
         }
