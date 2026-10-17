@@ -157,11 +157,11 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 
 <p align="center"><img src="docs/images/gallery.webp" width="760" alt="图库搜索后把图拖到画布"></p>
 
-**4. 每次都要重新配一遍模型、LoRA 和提示词。** 存成一个搭配。把卡片拖到画布空白处，就放出一组连好线的节点，画布上原有的东西不动。
+**4. 每次都要重新配一遍模型、LoRA 和提示词。** 在画布上选中这几个节点，右键 **存为搭配**，它们就成了画布旁的一张卡片。下次点 **放到画布**（或者直接拖卡片），点哪里，那组连好线的节点就出现在哪里，画布上原有的东西不动。搭配里的模型和提示词以后还能换。
 
-<p align="center"><img src="docs/images/combo.webp" width="760" alt="搭配卡片拖到画布变成连好线的节点"></p>
+<p align="center"><img src="docs/images/combo.webp" width="760" alt="选中的节点存为搭配，再放回画布变成连好线的节点"></p>
 
-**5. 提示词太长，改起来麻烦。** 选中提示词节点，提示词工坊把它拆成词块：点一下调权重，拖动换位置，输入就加（中文会自动译成英文）。
+**5. 提示词太长，改起来麻烦。** 选中提示词节点，提示词工坊把它拆成词块：点一下调权重，拖动换位置，输入就加（中文会自动译成英文，比如输入“蓝宝石”加进去的是 sapphire）。
 
 <p align="center"><img src="docs/images/prompt-studio.webp" width="760" alt="提示词工坊按词块编辑提示词节点"></p>
 
