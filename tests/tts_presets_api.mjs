@@ -44,4 +44,36 @@ assert.equal(next.keep, 1);
 const cleared = api.mergeTuning({ defaults: { preset: 'lively' } }, api.tuningRows({}));
 assert.equal(cleared.defaults, undefined);
 
+// Presets made here: written whole with their name, the built-in ones only where changed.
+const mine = { ...structuredClone(builtin), custom_a1: { top_k: 12, top_p: 1, temperature: 0.9, repetition_penalty: 1.35 } };
+assert.deepEqual(api.presetsFile(view, { defaultName: 'custom_a1', numbers: mine, labels: { custom_a1: '念旁白' }, rules: { 'ja>zh': 'custom_a1' }, cross: 'stable' }),
+    { format: 1, default: 'custom_a1', presets: { custom_a1: { label: '念旁白', top_k: 12, top_p: 1, temperature: 0.9, repetition_penalty: 1.35 } }, languages: { 'ja>zh': 'custom_a1' } });
+assert.equal(api.presetLabel({ custom_a1: '念旁白' }, 'custom_a1', key => key), '念旁白');
+assert.equal(api.presetLabel({}, 'lively', key => key), 'ttsPreset_lively');
+const id = api.newPresetId(['custom_a1'], 1000);
+assert.match(id, /^custom_[a-z0-9]{1,12}$/);
+assert.notEqual(api.newPresetId([id], 1000), id);
+
+// The table marks a number only when the presets do not all share it.
+assert.equal(api.presetsDiffer(builtin, 'top_k'), true);
+assert.equal(api.presetsDiffer(builtin, 'top_p'), false);
+
+// Deleting a preset: where it was used, and those places back on the general setting.
+const state = { defaultName: 'custom_a1', numbers: structuredClone(mine), labels: { custom_a1: '念旁白' }, rules: { 'ja>zh': 'custom_a1', 'ja>en': 'lively' }, cross: 'custom_a1' };
+const users = [{ raw: { name: '阿罗娜', settings: { defaults: { by_language: { zh: { preset: 'custom_a1' } } } } } }, { raw: { name: '爱丽丝', settings: {} } }];
+assert.deepEqual(api.presetUses(state, 'custom_a1', users), { general: ['default', 'ja>zh', 'cross'], characters: ['阿罗娜'] });
+api.removePreset(state, 'custom_a1');
+assert.deepEqual([state.defaultName, state.rules, state.cross, Object.keys(state.numbers), state.labels],
+    ['standard', { 'ja>en': 'lively' }, 'stable', ['stable', 'standard', 'lively'], {}]);
+
+// A dialog row's numbers in effect next to the general ones (layers 1 to 4).
+const general = { ...view, default: 'standard', languages: { 'ja>en': 'standard' }, cross: 'stable' };
+const tuning = api.tuningRows({ defaults: { preset: 'lively', speed: 1.2, by_language: { zh: { top_k: 5 } } } });
+const own = api.lineTuning(general, tuning, 'ja', 'ja');
+assert.deepEqual([own.values.top_k, own.values.speed, own.general.top_k, own.general.speed], [30, 1.2, 15, 1]);
+const chinese = api.lineTuning(general, tuning, 'ja', 'zh'); // the rule for other languages over the character's preset, then its own number
+assert.deepEqual([chinese.values.top_k, chinese.values.temperature, chinese.values.speed, chinese.general.top_k], [5, 0.8, 1.2, 10]);
+const gone = api.lineTuning(general, api.tuningRows({ defaults: { preset: 'custom_zz' } }), 'ja', 'all'); // deleted since: skipped
+assert.deepEqual(gone.values, gone.general);
+
 console.log('tts_presets_api: all checks passed');

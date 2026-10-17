@@ -79,7 +79,7 @@
 /* Generation presets (ui_tts_presets.js) and a character's generation settings (ui_tts_tuning.js) */
 .anomalous-tts-preset-tiles {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 8px;
 }
 
@@ -138,7 +138,113 @@
     gap: 8px;
 }
 
-.anomalous-tts-preset-numbers summary,
+/* Every preset's numbers side by side, marked like the compare window (27-param-compare.css). */
+.anomalous-tts-preset-numbers-head,
+.anomalous-tts-preset-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+
+.anomalous-tts-preset-same {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+}
+
+.anomalous-tts-preset-scroll {
+    overflow-x: auto;
+}
+
+.anomalous-tts-preset-table {
+    display: grid;
+    align-items: start;
+    gap: 6px 8px;
+    min-width: min-content;
+}
+
+.anomalous-tts-preset-table > .anomalous-tts-setup-meta {
+    align-self: center;
+    white-space: nowrap;
+}
+
+.anomalous-tts-preset-head {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.anomalous-tts-preset-head strong {
+    overflow: hidden;
+    color: var(--amb-text-main);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-preset-kind,
+.anomalous-tts-preset-was {
+    color: var(--amb-text-muted);
+    font-size: 11px;
+}
+
+.anomalous-tts-preset-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.anomalous-tts-preset-cell.is-diff .anomalous-tts-number {
+    background: color-mix(in srgb, var(--amb-link) 24%, transparent);
+}
+
+.anomalous-tts-preset-cell.is-edited .anomalous-tts-number {
+    background: color-mix(in srgb, var(--amb-warn) 20%, transparent);
+}
+
+.anomalous-tts-preset-cell.is-edited .anomalous-tts-preset-was {
+    color: var(--amb-warn-text);
+}
+
+.anomalous-tts-preset-cell.is-same .anomalous-tts-number,
+.anomalous-tts-preset-table > .anomalous-tts-setup-meta.is-same {
+    color: var(--amb-text-muted);
+}
+
+.anomalous-tts-preset-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+}
+
+.anomalous-tts-link.is-danger {
+    color: var(--amb-danger);
+}
+
+/* A dialog row's numbers in effect; blue = not what the general presets give. */
+.anomalous-tts-tuning-effect {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    grid-column: 1 / -1;
+    font-size: 12px;
+}
+
+.anomalous-tts-tuning-value {
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--amb-text-muted);
+}
+
+.anomalous-tts-tuning-value.is-diff {
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    color: var(--amb-text-main);
+}
+
 .anomalous-tts-tuning-numbers summary {
     cursor: pointer;
     color: var(--amb-link);
@@ -887,7 +993,7 @@
 .anomalous-tts-card[data-tone="ready"] .anomalous-tts-card-pill { background: rgba(52, 211, 153, 0.14); color: var(--amb-ok); }
 .anomalous-tts-card[data-tone="needed"] .anomalous-tts-card-pill { background: rgba(251, 191, 36, 0.14); color: var(--amb-warn); }
 .anomalous-tts-card[data-tone="error"] .anomalous-tts-card-pill { background: rgba(248, 113, 113, 0.14); color: var(--amb-danger); }
-.anomalous-tts-card[data-tone="busy"] .anomalous-tts-card-pill { background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-link); }
+.anomalous-tts-card[data-tone="busy"] .anomalous-tts-card-pill { background: color-mix(in srgb, var(--amb-link) 24%, transparent); color: var(--amb-link); }
 
 .anomalous-tts-card-meta {
     flex-shrink: 0;
@@ -934,7 +1040,7 @@
     padding: 6px 14px;
     border: 1px solid color-mix(in srgb, var(--amb-link) 40%, transparent);
     border-radius: 8px;
-    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 24%, transparent);
     color: var(--amb-text-main);
     font: inherit;
     font-size: 12px;

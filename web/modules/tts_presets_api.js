@@ -1,15 +1,18 @@
 /**
  * Anomalous_TTS generation presets (its interface 16, docs/INTERFACE.md §5.4): the presets
- * file (default preset, rules per pair of languages, the three presets' numbers) and a
- * character's own settings (`defaults.preset`, `defaults.by_language`). Calls and pure
- * helpers only; ui_tts_presets.js and ui_tts_tuning.js draw them.
+ * file (default preset, rules per pair of languages, the built-in presets' numbers, presets
+ * made here as custom_<id>) and a character's own settings (`defaults.preset`,
+ * `defaults.by_language`). Calls and pure helpers only; ui_tts_presets.js and
+ * ui_tts_tuning.js draw them.
  */
 
 export const PRESETS_FORMAT = 16; // the node interface with presets
-export const PRESET_NAMES = ['stable', 'standard', 'lively'];
+export const BUILTIN = ['stable', 'standard', 'lively'];
 export const SAMPLING = ['top_k', 'top_p', 'temperature', 'repetition_penalty'];
 export const LANGS = ['ja', 'zh', 'en'];
 export const CROSS = 'cross';
+export const MAX_CUSTOM = 20; // the node's limits for presets made here
+export const LABEL_LENGTH = 24;
 
 async function readJson(resp) {
     if (!resp.ok) {
@@ -19,7 +22,7 @@ async function readJson(resp) {
     return resp.json();
 }
 
-/** `{default, presets, builtin, languages, cross, file}`. */
+/** `{default, presets, labels, builtin, languages, cross, file}`; `presets` lists the built-in ones first. */
 export async function loadPresets() {
     return readJson(await fetch('/anomalous_tts/presets'));
 }
@@ -28,6 +31,25 @@ export async function savePresets(data) {
     return readJson(await fetch('/anomalous_tts/presets', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ presets: data }),
     }));
+}
+
+export const isBuiltin = name => BUILTIN.includes(name);
+
+/** A preset's shown name: a built-in one translated, one made here as it was named. */
+export function presetLabel(labels, name, t) {
+    return isBuiltin(name) ? t(`ttsPreset_${name}`) : (labels?.[name] || name);
+}
+
+/** A key for a new preset. Never one used before, so a character still naming a deleted preset does not pick up the new one. */
+export function newPresetId(names, now = Date.now()) {
+    let id = `custom_${now.toString(36)}`;
+    for (let n = 1; names.includes(id); n += 1) id = `custom_${(now + n).toString(36)}`;
+    return id;
+}
+
+/** Whether `key` is not the same in every preset (the numbers table marks those). */
+export function presetsDiffer(numbers, key) {
+    return new Set(Object.values(numbers).map(values => values[key])).size > 1;
 }
 
 /** Rows for the language table: every "reference>spoken" pair the characters can meet, sorted. */
@@ -40,18 +62,16 @@ export function languagePairs(groups, rules = {}) {
 }
 
 /**
- * The presets file from the dialog's state: only what differs from the built-in values
- * (a preset's changed numbers, the language rules that differ from the "other pairs" one).
+ * The presets file from the settings group's state: of a built-in preset only the numbers that
+ * differ from the built-in ones, a preset made here whole with its name, and the language rules
+ * that differ from the "other pairs" one.
  */
-export function presetsFile(view, { defaultName, numbers = {}, rules = {}, cross }) {
+export function presetsFile(view, { defaultName, numbers = {}, labels = {}, rules = {}, cross }) {
     const presets = {};
-    for (const name of PRESET_NAMES) {
-        const changed = {};
-        for (const key of SAMPLING) {
-            const value = numbers[name]?.[key] ?? view.presets[name][key];
-            if (value !== view.builtin[name][key]) changed[key] = value;
-        }
-        if (Object.keys(changed).length) presets[name] = changed;
+    for (const [name, values] of Object.entries(numbers)) {
+        const block = isBuiltin(name) ? {} : { label: labels[name] };
+        for (const key of SAMPLING) if (!isBuiltin(name) || values[key] !== view.builtin[name][key]) block[key] = values[key];
+        if (Object.keys(block).length) presets[name] = block;
     }
     const languages = {};
     for (const [pair, name] of Object.entries(rules)) if (name && name !== cross) languages[pair] = name;
@@ -62,10 +82,54 @@ export function presetsFile(view, { defaultName, numbers = {}, rules = {}, cross
     return out;
 }
 
+/** Where the general settings and the characters use preset `name`: `{general: [...], characters: [...]}`. */
+export function presetUses(state, name, groups) {
+    const general = [];
+    if (state.defaultName === name) general.push('default');
+    for (const [pair, value] of Object.entries(state.rules)) if (value === name) general.push(pair);
+    if (state.cross === name) general.push(CROSS);
+    const characters = [];
+    for (const group of groups || []) {
+        const defaults = group.raw?.settings?.defaults;
+        if (!defaults || typeof defaults !== 'object') continue;
+        const blocks = [defaults, ...Object.values(defaults.by_language || {})];
+        if (blocks.some(block => block?.preset === name)) characters.push(group.raw?.name || group.character);
+    }
+    return { general, characters };
+}
+
+/** Take preset `name` out of the state; what used it goes back to the general setting (characters naming it do so by themselves). */
+export function removePreset(state, name) {
+    delete state.numbers[name];
+    delete state.labels[name];
+    for (const [pair, value] of Object.entries(state.rules)) if (value === name) delete state.rules[pair];
+    if (state.cross === name) state.cross = 'stable';
+    if (state.defaultName === name) state.defaultName = 'standard';
+}
+
 /** The preset a line falls back to without the character's own settings (layers 1 and 3 of §5.4). */
 export function generalPreset(view, refLang, lang) {
     if (!refLang || refLang === lang) return view.default;
     return view.languages[`${refLang}>${lang}`] || view.cross;
+}
+
+/**
+ * What a character's lines are sampled with for one dialog row (`all` = in its own language),
+ * next to what the general presets alone give: layers 1 to 4 of §5.4. A preset deleted since is skipped.
+ */
+export function lineTuning(view, rows, refLang, key) {
+    const lang = key === 'all' ? refLang : key;
+    const preset = name => view.presets[name] || {};
+    const general = { ...preset(generalPreset(view, refLang, lang)), speed: 1 };
+    const values = { ...preset(view.default), speed: 1 };
+    const apply = row => {
+        Object.assign(values, preset(row.preset), row.numbers);
+        if (typeof row.speed === 'number') values.speed = row.speed;
+    };
+    apply(rows.all);
+    if (refLang && lang !== refLang) Object.assign(values, preset(generalPreset(view, refLang, lang)));
+    if (key !== 'all') apply(rows[key]);
+    return { values, general };
 }
 
 /**
@@ -75,7 +139,7 @@ export function generalPreset(view, refLang, lang) {
 export function tuningRows(settings) {
     const defaults = settings?.defaults && typeof settings.defaults === 'object' ? settings.defaults : {};
     const row = block => ({
-        preset: PRESET_NAMES.includes(block?.preset) ? block.preset : '',
+        preset: typeof block?.preset === 'string' ? block.preset : '',
         numbers: Object.fromEntries(SAMPLING.filter(key => typeof block?.[key] === 'number').map(key => [key, block[key]])),
         speed: typeof block?.speed === 'number' ? block.speed : null,
     });

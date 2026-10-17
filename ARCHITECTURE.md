@@ -233,11 +233,14 @@ covered by the `styles.css` manifest.
 - Generation presets (Anomalous_TTS interface 16): `tts_presets_api.js` holds the
   calls (`/anomalous_tts/presets`) and pure helpers (the language pairs the
   characters can meet, the presets file written back with only what differs from
-  the built-in values, a character's `defaults` / `defaults.by_language` as rows
-  and back, keeping every other field). `ui_tts_presets.js` is the group in the
-  GPT-SoVITS settings dialog (default preset, rules per pair, the numbers),
-  saving each change at once; `ui_tts_tuning.js` is the per-character dialog
-  behind the card's Generation settings button, shown only with interface 16.
+  the built-in values plus the presets made here (`custom_<id>` with a label),
+  where a preset is used and taking it out, a dialog row's numbers in effect
+  next to the general ones, a character's `defaults` / `defaults.by_language` as
+  rows and back, keeping every other field). `ui_tts_presets.js` is the group in
+  the GPT-SoVITS settings dialog (default preset, rules per pair, every preset's
+  numbers side by side marked like the compare window, new / rename / delete /
+  reset), saving each change at once; `ui_tts_tuning.js` is the per-character
+  dialog behind the card's Generation settings button, shown only with interface 16.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single

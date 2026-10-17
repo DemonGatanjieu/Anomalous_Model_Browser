@@ -3,12 +3,13 @@ import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { button, el } from './usage_view.js';
 import { fetchGptSovitsCharacter, saveGptSovitsSettings } from './audio_engines.js';
-import { LANGS, PRESET_NAMES, SAMPLING, generalPreset, loadPresets, mergeTuning, tuningRows } from './tts_presets_api.js';
+import { LANGS, SAMPLING, generalPreset, lineTuning, loadPresets, mergeTuning, presetLabel, tuningRows } from './tts_presets_api.js';
 
 /**
  * A character's generation settings (Anomalous_TTS interface 16): a preset and speed for
  * the character as a whole and for each language it speaks, numbers when a preset is not
- * enough. Empty = the general presets (GPT-SoVITS Settings). Saving keeps every other
+ * enough. Empty = the general presets (GPT-SoVITS Settings). Each row shows the numbers its
+ * lines get, marked where they differ from the general presets. Saving keeps every other
  * settings field, `defaults.language` included.
  */
 
@@ -68,25 +69,55 @@ export function openTuningEditor(group, { onSaved } = {}) {
     // The character's own language first: it is the row most people change.
     const order = ['all', ...[...LANGS].sort((a, b) => (b === refLang) - (a === refLang))];
 
+    /** A row as typed so far; numbers out of range are left out until they are fixed. */
+    const typedRow = ({ select, speed, fields }) => {
+        const numbers = {};
+        for (const param of SAMPLING) {
+            const value = readNumber(param, fields[param]);
+            if (typeof value === 'number' && !Number.isNaN(value)) numbers[param] = value;
+        }
+        const speedValue = readNumber('speed', speed);
+        return { preset: select.value, numbers, speed: Number.isNaN(speedValue) ? null : speedValue };
+    };
+
+    // Each row's numbers in effect, marked where they differ from the general presets alone.
+    const showEffect = () => {
+        const rows = Object.fromEntries(Object.entries(inputs).map(([key, row]) => [key, typedRow(row)]));
+        for (const [key, { effect }] of Object.entries(inputs)) {
+            const { values, general } = lineTuning(view, rows, refLang, key);
+            const items = [...SAMPLING, 'speed'].map(param => {
+                const item = el('span', `anomalous-tts-tuning-value${values[param] !== general[param] ? ' is-diff' : ''}`,
+                    `${param === 'speed' ? t('ttsTuningSpeed') : t(`scriptRunParamName_${param}`)} ${values[param]}`);
+                if (values[param] !== general[param]) item.title = t('ttsTuningGeneralValue', { value: general[param] });
+                return item;
+            });
+            const same = items.every(item => !item.classList.contains('is-diff'));
+            effect.replaceChildren(el('span', 'anomalous-tts-setup-meta', t(same ? 'ttsTuningSameAsGeneral' : 'ttsTuningActual')), ...items);
+        }
+    };
+
     const draw = () => {
         const rows = tuningRows(settings);
+        const names = Object.keys(view.presets);
+        const label = name => presetLabel(view.labels, name, t);
         inputs = {};
         rowsBox.replaceChildren();
         for (const key of order) {
             const row = rows[key];
-            const general = key === 'all' ? view.default : (key === refLang && rows.all.preset) || generalPreset(view, refLang, key);
+            const general = key === 'all' ? view.default : (key === refLang && view.presets[rows.all.preset] && rows.all.preset) || generalPreset(view, refLang, key);
             const line = el('div', 'anomalous-tts-tuning-row');
-            const label = key === 'all' ? t('ttsTuningAll') : t('ttsTuningLang', { lang: t(`scriptRunLang_${key}`) });
+            const rowLabel = key === 'all' ? t('ttsTuningAll') : t('ttsTuningLang', { lang: t(`scriptRunLang_${key}`) });
             const select = el('select', 'anomalous-sd-run-select');
-            const follow = el('option', '', t('ttsTuningFollow', { preset: t(`ttsPreset_${general}`) }));
+            const follow = el('option', '', t('ttsTuningFollow', { preset: label(general) }));
             follow.value = '';
             select.append(follow);
-            for (const preset of PRESET_NAMES) {
-                const option = el('option', '', t(`ttsPreset_${preset}`));
+            for (const preset of names) {
+                const option = el('option', '', label(preset));
                 option.value = preset;
                 select.append(option);
             }
-            select.value = row.preset;
+            // A preset deleted since reads as "general", as the node treats it.
+            select.value = names.includes(row.preset) ? row.preset : '';
             const speed = numberInput('speed', row.speed, '1.0');
             const numbers = el('details', 'anomalous-tts-tuning-numbers');
             numbers.append(el('summary', '', t('ttsTuningNumbers')));
@@ -97,15 +128,21 @@ export function openTuningEditor(group, { onSaved } = {}) {
                 fields[param] = numberInput(param, row.numbers[param], shown()[param]);
                 grid.append(el('span', 'anomalous-tts-setup-meta', t(`scriptRunParamName_${param}`)), fields[param]);
             }
-            select.onchange = () => { for (const param of SAMPLING) fields[param].placeholder = String(shown()[param]); };
+            select.onchange = () => {
+                for (const param of SAMPLING) fields[param].placeholder = String(shown()[param]);
+                showEffect();
+            };
             numbers.open = Object.keys(row.numbers).length > 0;
             numbers.append(grid, el('div', 'anomalous-tts-hint', t('ttsTuningNumbersHint')));
             const speedBox = el('label', 'anomalous-tts-tuning-speed');
             speedBox.append(el('span', 'anomalous-tts-setup-meta', t('ttsTuningSpeed')), speed);
-            line.append(el('span', 'anomalous-tts-tuning-label', label), select, speedBox, numbers);
+            const effect = el('div', 'anomalous-tts-tuning-effect');
+            line.append(el('span', 'anomalous-tts-tuning-label', rowLabel), select, speedBox, effect, numbers);
+            line.addEventListener('input', showEffect);
             rowsBox.append(line);
-            inputs[key] = { select, speed, fields };
+            inputs[key] = { select, speed, fields, effect };
         }
+        showEffect();
     };
 
     const footer = el('div', 'anomalous-voice-modal-footer');
