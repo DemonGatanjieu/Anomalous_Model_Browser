@@ -1,5 +1,12 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.59.1 Beta (GPT-SoVITS v3 / v4 voices) — unreleased
+
+### 🎙️ Character voices: v3 and v4 models (角色语音支持 v3 / v4 模型)
+- **Anomalous_TTS now runs GPT-SoVITS v3 and v4 models** (update it in ComfyUI Manager), and this version of the plugin goes with it: v3 / v4 files are imported instead of refused, and a file whose version cannot be read is refused with a clearer reason. With an Anomalous_TTS too old for v3 / v4, the import says to update it.
+- **Each character card shows its GPT-SoVITS model version** (v2, v2ProPlus, v4…) after the name (角色卡片显示模型版本).
+- **v3 and v4 need their own official base model and vocoder** (v4 about 0.8 GB, v3 about 1.2 GB). **GPT-SoVITS Settings** lists them, with their own labels, only when one of your characters uses that version, and the import card says what is still missing for the model you dropped in. They download on first use too; a GPT-SoVITS package already on the computer is used as it is.
+
 ## v1.59.0 Beta (Model Downloads, Backup, Share Codes, Node Combos, MCP, Light Theme) — 2026-10-17
 
 ### ⬇️ Download missing models from Model Check (模型检查一键下载缺失模型)

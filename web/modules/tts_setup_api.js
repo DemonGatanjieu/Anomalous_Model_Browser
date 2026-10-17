@@ -182,7 +182,10 @@ export function importProblem({ target = null, character = '', rows, conflict = 
     const clash = rows.find(row => row.existing === 'different');
     if (clash) return ['ttsImportExistingDifferent', { file: clash.name }];
     const unsupported = rows.find(row => row.kind === 'sovits' && row.supported === false);
-    if (unsupported) return ['ttsImportUnsupportedBlock', { file: unsupported.name, version: unsupported.version || '?' }];
+    if (unsupported) {
+        return unsupported.version ? ['ttsImportUnsupportedBlock', { file: unsupported.name, version: unsupported.version }]
+            : ['ttsImportUnknownBlock', { file: unsupported.name }];
+    }
     const seen = new Set();
     for (const row of rows) {
         if (row.kind !== 'audio' || !row.emotion) continue;
@@ -214,27 +217,48 @@ export function textFromFile(content, clipName) {
     return table.get(name) ?? table.get(`${stem.split('.')[0]}${ext}`) ?? null;
 }
 
+// `needed_for` of the pretrained items only v3 / v4 / v5 models use (their base model and vocoder).
+const MODEL_VERSIONS = new Set(['v3', 'v4', 'v5dev', 'v5turbo']);
+
+/**
+ * Pretrained items worth listing: the shared ones, and a model version's only when `needs`
+ * (ids from the characters' or the dropped files' SoVITS models) asks for it, or while it
+ * downloads or failed. A library without v5 characters never sees the v5 files.
+ */
+export function shownPretrained(status, needs = []) {
+    const wanted = new Set(needs);
+    return (status?.pretrained || []).filter(item => !MODEL_VERSIONS.has(item.needed_for) || wanted.has(item.id)
+        || ['queued', 'downloading', 'error'].includes(item.state));
+}
+
 /**
  * Pretrained files worth a reminder dot: missing ones that the characters in the
  * studio will actually load (the shared ones, English for mixed-in words, v2Pro's
  * speaker model, plus their languages; a character with no known language counts
- * as every language). No characters, no reminder: an empty studio is only about
- * importing. `due` is false once every such file was dismissed with "don't remind
- * me"; a newly needed one (say, the first Chinese character) brings the dot back.
+ * as every language; a v3 / v4 / v5 model's own files when `needs` lists them). No
+ * characters, no reminder: an empty studio is only about importing. `due` is false
+ * once every such file was dismissed with "don't remind me"; a newly needed one
+ * (say, the first Chinese character) brings the dot back.
  */
-export function pretrainedReminder(status, languages, dismissed = []) {
+export function pretrainedReminder(status, languages, dismissed = [], needs = []) {
     const langs = new Set(languages || []);
     if (!langs.size) return { items: [], size: 0, due: false };
-    const needed = (item) => ['all', 'en', 'v2pro'].includes(item.needed_for) || langs.has(item.needed_for) || langs.has('');
+    const wanted = new Set(needs);
+    const needed = (item) => (MODEL_VERSIONS.has(item.needed_for) ? wanted.has(item.id)
+        : ['all', 'en', 'v2pro'].includes(item.needed_for) || langs.has(item.needed_for) || langs.has(''));
     const items = (status?.pretrained || []).filter(item => (item.state === 'missing' || item.state === 'error') && needed(item));
     const seen = new Set(dismissed);
     return { items, size: items.reduce((sum, item) => sum + (item.size || 0), 0), due: items.some(item => !seen.has(item.id)) };
 }
 
-/** Required pretrained files still missing for a character in `language` ('' = not chosen yet). */
-export function missingForLanguage(status, language) {
+/**
+ * Required pretrained files still missing for a character in `language` ('' = not chosen yet)
+ * whose SoVITS model needs the pretrained ids `needs` (a v4 model: its base model and vocoder).
+ */
+export function missingForLanguage(status, language, needs = []) {
+    const wanted = new Set(needs);
     return (status?.pretrained || []).filter(item => item.required && item.state !== 'ok'
-        && (item.needed_for === 'all' || (language && item.needed_for === language)));
+        && (item.needed_for === 'all' || (language && item.needed_for === language) || wanted.has(item.id)));
 }
 
 /**
@@ -253,10 +277,10 @@ export function rowState({ error = '', uploaded = false, queued = true, progress
     return { tone: 'ready', key: 'ttsImportRowReady', params: {} };
 }
 
-/** Summary for the setup card: what still needs doing. */
-export function setupSummary(status) {
+/** Summary for the setup card: what still needs doing (`needs`: see shownPretrained). */
+export function setupSummary(status, needs = []) {
     const characters = (status?.libraries || []).reduce((sum, lib) => sum + (lib.characters || 0), 0);
-    const missing = (status?.pretrained || []).filter(item => item.state !== 'ok');
+    const missing = shownPretrained(status, needs).filter(item => item.state !== 'ok');
     const packages = Object.values(status?.dependencies || {}).reduce((sum, dep) => sum + (dep.missing?.length || 0), 0);
     const downloading = missing.some(item => item.state === 'queued' || item.state === 'downloading');
     const requiredMissing = missing.filter(item => item.required).length;

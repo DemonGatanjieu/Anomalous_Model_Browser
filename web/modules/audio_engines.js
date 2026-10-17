@@ -59,6 +59,8 @@ export function gptSovitsGroups(payload) {
             group: voiceGroupKey(name),
             character: name,
             language: item.language || '',
+            model_version: item.version || '', // GPT-SoVITS v2 / v4 / v5dev… (interface 15)
+            needs: Array.isArray(item.needs) ? item.needs : [], // pretrained ids its model needs
             aliases: Array.isArray(item.aliases) ? item.aliases : [],
             error: item.error || item.settings_error || '',
             has_main: Boolean(item.reference?.audio) && !item.error,

@@ -348,8 +348,11 @@ export function renderDraftCard(draft, view, ctx, { solo = false } = {}) {
         extras.append(language);
     }
     body.append(extras);
-    const missing = missingForLanguage(ctx.status, draft.language || draft.detectedLanguage || '');
-    if (missing.length && !draft.target) {
+    // A new character's language decides the language files; any draft's SoVITS model its own files (v4: base + vocoder).
+    const needs = draft.rows.flatMap(row => (row.kind === 'sovits' && row.info?.needs) || []);
+    const missing = missingForLanguage(ctx.status, draft.target ? '' : draft.language || draft.detectedLanguage || '', needs)
+        .filter(item => !draft.target || needs.includes(item.id));
+    if (missing.length) {
         body.append(el('div', 'anomalous-tts-card-note', t('ttsImportPretrainedNote', {
             files: missing.map(item => item.label).join('、'),
             size: formatSize(missing.reduce((sum, item) => sum + (item.size || 0), 0)),

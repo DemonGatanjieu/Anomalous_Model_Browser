@@ -220,6 +220,13 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}
         name.append(' ', version);
     }
     name.title = group.character;
+    if (group.model_version) {
+        const model = document.createElement('span');
+        model.className = 'anomalous-character-voice-model';
+        model.textContent = group.model_version;
+        model.title = t('ttsModelVersion', { version: group.model_version });
+        name.append(model);
+    }
 
     const sub = document.createElement('span');
     sub.className = 'anomalous-character-voice-hint';
