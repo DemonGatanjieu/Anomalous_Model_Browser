@@ -646,7 +646,8 @@ covered by the `styles.css` manifest.
   box as tags (select, weight, edit, remove, reorder, drop, type, translate to English) or text.
   `prompt_tags.js` splits and joins a prompt's tags keeping their separators, and
   `prompt_gloss.js` looks up and keeps the tags' meanings in the picked language. `ui_prompt_source_deck.js`
-  owns the card list (three built-in cards and the saved prompts), search, new-card form,
+  owns the card list (three built-in cards and the saved prompts, drawn as notebook pages: the role
+  on the spine, the first tags, a ribbon on the one open as the reference), search, new-card form,
   library sync and renaming / deleting a saved prompt; `prompt_material_source.js` reads
   saved prompts as cards and saves one; `ui_prompt_reference.js` is the reference column a
   clicked card opens in, between the cards and the boxes (its tags taken one by one or all, ticks

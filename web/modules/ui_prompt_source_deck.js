@@ -5,11 +5,14 @@
  * (ui_prompt_card_popover.js) into the prompt box of its role, dragged onto a box, or
  * dragged out onto the canvas (prompt_card_drag.js); a saved one is renamed or deleted from its
  * preview. The saved list is checked again every 30 seconds and when the window comes back.
+ * A card is drawn as a notebook page: its role on the bound spine, its title, its first tags;
+ * the one open as the reference wears a ribbon (`setOpen`).
  */
 
 import { translate as t } from './locales.js';
 import { bindPromptCardDrag } from './prompt_card_drag.js';
 import { PROMPT_PRESETS, promptTitle } from './prompt_composition.js';
+import { promptTagsOf, tagWeight } from './prompt_tags.js';
 import { loadPromptSourceCards, savePromptCard } from './prompt_material_source.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { jsonResponse } from './ui_dom.js';
@@ -33,11 +36,15 @@ function button(className, label, title, onClick) {
     return node;
 }
 
-/** Fills `parent`; `onPick(card)` takes a clicked card, `onAdd(card)` one added whole from its preview. Returns { sync() }. */
+const SHOWN_TAGS = 8; // first tags on a card; two ruled lines show what fits, the head counts them all
+
+/** Fills `parent`; `onPick(card)` takes a clicked card, `onAdd(card)` one added whole from its preview.
+ * Returns { sync(), setOpen(id) } (the card open as the reference, or null). */
 export function createPromptSourceDeck(parent, drawer, scope, { onPick, onAdd }) {
     const presets = PROMPT_PRESETS.map(card => ({ ...card, title: t(card.titleKey) }));
     let saved = [];
     let keyword = '';
+    let openId = null;
     const popover = createCardPopover({
         drawer,
         scope,
@@ -153,8 +160,18 @@ export function createPromptSourceDeck(parent, drawer, scope, { onPick, onAdd })
     }
 
     function cardElement(card) {
-        const item = el('div', `anomalous-ps-card is-${card.role}`);
-        item.append(el('span', 'anomalous-ps-card-title', card.title), el('span', 'anomalous-ps-card-text', card.content));
+        const role = card.role === 'negative' ? 'negative' : 'positive';
+        const item = el('div', `anomalous-ps-card is-${role}`);
+        item.classList.toggle('is-open', card.id === openId);
+        item.dataset.cardId = card.id;
+        const tags = promptTagsOf(card.content).map(tag => tagWeight(tag).core.trim()).filter(Boolean);
+        const head = el('div', 'anomalous-ps-card-head');
+        head.append(el('span', 'anomalous-ps-card-title', card.title),
+            el('span', 'anomalous-ps-card-count', t('promptDeckTagCount', { count: tags.length })),
+            el('span', 'anomalous-ps-card-role', t(role === 'negative' ? 'promptDeckRoleNegative' : 'promptDeckRolePositive')));
+        const words = el('div', 'anomalous-ps-card-words');
+        words.append(...tags.slice(0, SHOWN_TAGS).map(tag => el('span', 'anomalous-ps-card-word', tag)));
+        item.append(head, words);
         item.onmouseenter = event => popover.hover(card, item, event);
         item.onmouseleave = event => popover.leave(event);
         // Onto a prompt box in the studio (the card itself), or out onto the canvas (prompt_card_drag.js).
@@ -173,7 +190,9 @@ export function createPromptSourceDeck(parent, drawer, scope, { onPick, onAdd })
 
     function group(title, cards, empty) {
         if (!cards.length && !empty) return;
-        list.append(el('div', 'anomalous-ps-cards-head', title));
+        const head = el('div', 'anomalous-ps-cards-head');
+        head.append(el('span', 'anomalous-ps-cards-tab', title), el('span', 'anomalous-ps-cards-count', String(cards.length)));
+        list.append(head);
         if (cards.length) list.append(...cards.map(cardElement));
         else list.append(el('div', 'anomalous-ps-cards-empty', empty));
     }
@@ -224,7 +243,12 @@ export function createPromptSourceDeck(parent, drawer, scope, { onPick, onAdd })
         if (!document.hidden) void sync();
     });
 
+    function setOpen(id) {
+        openId = id;
+        for (const item of list.querySelectorAll('.anomalous-ps-card')) item.classList.toggle('is-open', item.dataset.cardId === id);
+    }
+
     renderList();
     void sync();
-    return { sync };
+    return { sync, setOpen };
 }

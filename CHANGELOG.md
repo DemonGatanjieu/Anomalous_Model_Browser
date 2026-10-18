@@ -2,6 +2,9 @@
 
 ## v1.61.0 — unreleased
 
+### 📒 Prompt cards look like notebook pages (提示词卡片换成笔记本样式)
+- In Prompt Studio each card is a page with a bound spine in its colour (green positive, red negative), its title, a Positive / Negative label and its first words as small tags instead of a cut-off line of text. The card open as the reference wears a ribbon; Common and My prompts are index tabs with how many cards they hold. Dark and light themes alike.
+
 ### 🗂️ Tidier model folders (模型文件夹更清爽)
 - **Settings → Models → Files that come with models**: what a scan found (`.info`), your names and notes (`.anomalous.json`) and Civitai's picture kept aside can go **in a hidden `.amb` folder** inside each model folder instead of beside every model, leaving only the model and its cover there. Covers stay beside the model, where ComfyUI and other plugins look. Choosing a place says how many files will move, then moves them (only moves; switch back any time); a file that cannot move still works where it is.
 - **No more duplicate cover copies**: scans used to keep a copy of Civitai's picture identical to the cover for every model. Now the cover is noted as Civitai's and a copy is kept only when you put your own cover in its place (so you can still bring Civitai's back). **Check and tidy** in the same place sends the existing duplicates to the Recycle Bin.

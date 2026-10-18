@@ -144,5 +144,5 @@ export function createPromptWorkbench(owner, drawer, scope, { mode = 'docked', o
     });
     const target = createPromptTarget(grid, { owner, drawer, scope, prefs, onSave: save });
     // Between the cards and the boxes, whichever side the drawer is docked on.
-    const reference = createPromptReference(grid, { drawer, scope, prefs, target });
+    const reference = createPromptReference(grid, { drawer, scope, prefs, target, onShow: card => deck.setOpen(card?.id ?? null) });
 }

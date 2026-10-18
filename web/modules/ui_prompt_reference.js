@@ -42,9 +42,10 @@ function hintOnce() {
 
 /**
  * Fills `grid` (between the cards and the boxes). `target` is the prompt side ({ addCard(card,
- * text), valueFor(card) }); `prefs` the studio's { glossLang }. Returns { open(card), close(), render() }.
+ * text), valueFor(card) }); `prefs` the studio's { glossLang }; `onShow(card)` hears which card is
+ * open (null once closed). Returns { open(card), close(), render() }.
  */
-export function createPromptReference(grid, { drawer, scope, prefs, target }) {
+export function createPromptReference(grid, { drawer, scope, prefs, target, onShow }) {
     const panel = el('section', 'anomalous-ps-ref');
     panel.hidden = true;
     const head = el('header', 'anomalous-ps-target-head');
@@ -148,6 +149,7 @@ export function createPromptReference(grid, { drawer, scope, prefs, target }) {
         grid.classList.add('has-ref');
         widen(true);
         render();
+        onShow(card);
     }
 
     function close() {
@@ -155,6 +157,7 @@ export function createPromptReference(grid, { drawer, scope, prefs, target }) {
         panel.hidden = true;
         grid.classList.remove('has-ref');
         widen(false);
+        onShow(null);
     }
 
     return { open, close, render };

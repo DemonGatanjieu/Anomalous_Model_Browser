@@ -303,15 +303,34 @@
     overflow-y: auto;
 }
 
+/* A section of the deck: an index tab with how many cards it holds. */
 .anomalous-ps-cards-head {
-    margin-top: 6px;
-    color: var(--amb-text-dim);
+    display: flex;
+    flex-shrink: 0;
+    align-items: flex-end;
+    gap: 6px;
+    margin-top: 10px;
+    border-bottom: 1px solid var(--amb-border);
     font-size: 11px;
-    font-weight: 600;
 }
 
 .anomalous-ps-cards-head:first-child {
     margin-top: 0;
+}
+
+.anomalous-ps-cards-tab {
+    padding: 2px 9px 1px;
+    border: 1px solid var(--amb-border);
+    border-bottom: 0;
+    border-radius: 7px 7px 0 0;
+    background: color-mix(in srgb, var(--amb-accent) 14%, var(--amb-bg-card));
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+.anomalous-ps-cards-count {
+    padding-bottom: 2px;
+    color: var(--amb-text-dim);
 }
 
 .anomalous-ps-cards-empty,
@@ -322,45 +341,126 @@
     line-height: 1.5;
 }
 
-/* The inset stripe is the card's role; hover changes only the border. */
+/* A card is a notebook page: a bound spine in the role's colour with holes punched through it,
+   faint ruled lines under its first tags; the card open as the reference wears a ribbon. */
 .anomalous-ps-card {
+    --anomalous-ps-card-role: var(--amb-ok);
+    position: relative;
     display: flex;
+    flex-shrink: 0;
     flex-direction: column;
-    gap: 2px;
-    padding: 7px 9px 7px 11px;
+    gap: 5px;
+    padding: 7px 10px 8px 21px;
     border: 1px solid var(--amb-border);
-    border-radius: 8px;
-    background: var(--amb-bg-card);
-    box-shadow: inset 3px 0 0 #4ade80;
+    border-radius: 4px 9px 9px 4px;
+    background:
+        repeating-linear-gradient(to bottom, transparent 0 17px, color-mix(in srgb, var(--amb-border) 60%, transparent) 17px 18px)
+            0 25px / 100% calc(100% - 25px) no-repeat,
+        var(--amb-bg-card);
     cursor: pointer;
     user-select: none;
+    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .anomalous-ps-card.is-negative {
-    box-shadow: inset 3px 0 0 var(--amb-danger);
+    --anomalous-ps-card-role: var(--amb-danger);
+}
+
+.anomalous-ps-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px auto -1px -1px;
+    width: 12px;
+    border-radius: 4px 0 0 4px;
+    background:
+        radial-gradient(circle at 6px 7px, var(--amb-bg-panel) 0 2.2px, transparent 2.8px) 0 0 / 12px 14px repeat-y,
+        color-mix(in srgb, var(--anomalous-ps-card-role) 72%, var(--amb-bg-card));
 }
 
 .anomalous-ps-card:hover,
 .anomalous-ps-card.is-preview-active {
     border-color: var(--amb-border-hover);
-    background: var(--amb-bg-card-hover);
+    box-shadow: 0 4px 12px rgba(var(--amb-shadow-rgb), 0.22);
+    transform: translateY(-1px);
 }
 
-.anomalous-ps-card-title,
-.anomalous-ps-card-text {
+.anomalous-ps-card.is-open {
+    border-color: color-mix(in srgb, var(--anomalous-ps-card-role) 65%, var(--amb-border));
+}
+
+/* The ribbon of the page open as the reference. */
+.anomalous-ps-card.is-open::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    right: 10px;
+    width: 9px;
+    height: 17px;
+    background: var(--amb-accent);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+}
+
+.anomalous-ps-card-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.anomalous-ps-card-title {
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
+    color: var(--amb-text-main);
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.anomalous-ps-card-title {
-    color: var(--amb-text-main);
-    font-weight: 500;
+.anomalous-ps-card.is-open .anomalous-ps-card-head {
+    padding-right: 14px;
 }
 
-.anomalous-ps-card-text {
+.anomalous-ps-card-role {
+    flex-shrink: 0;
+    padding: 0 5px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--anomalous-ps-card-role) 15%, transparent);
+    color: color-mix(in srgb, var(--anomalous-ps-card-role) 85%, var(--amb-text-main));
+    font-size: 10px;
+    line-height: 16px;
+}
+
+.anomalous-ps-card.is-open .anomalous-ps-card-role {
+    display: none;
+}
+
+.anomalous-ps-card-count {
+    flex-shrink: 0;
     color: var(--amb-text-dim);
-    font-size: 11px;
+    font-size: 10px;
+}
+
+/* The first tags, on two ruled lines. */
+.anomalous-ps-card-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 3px;
+    max-height: 36px;
+    overflow: hidden;
+}
+
+.anomalous-ps-card-word {
+    max-width: 100%;
+    padding: 0 5px;
+    overflow: hidden;
+    border-radius: 4px;
+    font-size: 10.5px;
+    line-height: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--amb-text-main) 7%, transparent);
+    color: var(--amb-text-soft);
 }
 
 .anomalous-ps-sync {
