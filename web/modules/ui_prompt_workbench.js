@@ -3,8 +3,9 @@
  * a top bar with the view switch (tags or the whole text), the language tags' meanings are shown
  * in (or none), and on the page "Beside the canvas", in the drawer its dock side, "Back to the
  * window" and Close; the cards on the drawer's outer side (ui_prompt_source_deck.js) and
- * the prompt boxes beside the canvas (ui_prompt_target.js). A clicked card goes into the box of
- * its role; Save on a box keeps its text as a card under My prompts. The view and the meaning
+ * the prompt boxes beside the canvas (ui_prompt_target.js). A clicked card opens between them as
+ * a reference (ui_prompt_reference.js) to take its tags one by one; Save on a box keeps its text
+ * as a card under My prompts. The view and the meaning
  * language are remembered in this browser.
  */
 
@@ -13,6 +14,7 @@ import { GLOSS_LANGUAGES } from './prompt_gloss.js';
 import { promptTitle } from './prompt_composition.js';
 import { savePromptCard } from './prompt_material_source.js';
 import { anomalousPrompt } from './ui_dialog.js';
+import { createPromptReference } from './ui_prompt_reference.js';
 import { createPromptSourceDeck } from './ui_prompt_source_deck.js';
 import { createPromptTarget } from './ui_prompt_target.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
@@ -91,6 +93,7 @@ export function createPromptWorkbench(owner, drawer, scope, { mode = 'docked', o
         savePrefs(prefs);
         drawSwitches();
         target.render();
+        reference.render();
     };
     controls.append(glossPicker);
 
@@ -135,6 +138,11 @@ export function createPromptWorkbench(owner, drawer, scope, { mode = 'docked', o
         }
     }
 
-    const deck = createPromptSourceDeck(grid, drawer, scope, card => target.addCard(card));
+    const deck = createPromptSourceDeck(grid, drawer, scope, {
+        onPick: card => reference.open(card),
+        onAdd: card => void target.addCard(card),
+    });
     const target = createPromptTarget(grid, { owner, drawer, scope, prefs, onSave: save });
+    // Between the cards and the boxes, whichever side the drawer is docked on.
+    const reference = createPromptReference(grid, { drawer, scope, prefs, target });
 }

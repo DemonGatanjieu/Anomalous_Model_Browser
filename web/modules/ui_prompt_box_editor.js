@@ -45,7 +45,7 @@ const asTag = text => (/^[A-Z][a-z]/.test(text) ? text[0].toLowerCase() + text.s
  * (false when it did not). `prefs` is the studio's { view: 'tags' | 'text', glossLang }. `refuse(card)`
  * says why a card may not go in ('' when it may); `onSave(value)` keeps the text as a card.
  * `drawer` is the studio drawer, for the handle that drags the text onto the canvas.
- * Returns { element, role, render(), refresh(), addText(text) }.
+ * Returns { element, role, value(), render(), refresh(), addText(text) }.
  */
 export function createPromptBoxEditor({ role, name, getValue, write, prefs, refuse, onSave, drawer, scope }) {
     const id = nextEditorId++;
@@ -406,6 +406,7 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
     return {
         element,
         role,
+        value: getValue,
         render,
         /** Redraws when the text changed elsewhere (not while it is being edited here). */
         refresh() {

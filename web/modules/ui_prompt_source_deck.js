@@ -1,7 +1,8 @@
 /**
  * Prompt Studio's cards: three common ones and the prompts you saved (prompt_material_source.js),
- * with search and a small form for a new card. A card is clicked (or added from its preview,
- * ui_prompt_card_popover.js) to go into the prompt box of its role, dragged onto a box, or
+ * with search and a small form for a new card. A card is clicked to open it as a reference
+ * (ui_prompt_reference.js, tags taken one by one), added whole from its preview
+ * (ui_prompt_card_popover.js) into the prompt box of its role, dragged onto a box, or
  * dragged out onto the canvas (prompt_card_drag.js); a saved one is renamed or deleted from its
  * preview. The saved list is checked again every 30 seconds and when the window comes back.
  */
@@ -32,15 +33,15 @@ function button(className, label, title, onClick) {
     return node;
 }
 
-/** Fills `parent`; `onPick(card)` takes a clicked card. Returns { sync() }. */
-export function createPromptSourceDeck(parent, drawer, scope, onPick) {
+/** Fills `parent`; `onPick(card)` takes a clicked card, `onAdd(card)` one added whole from its preview. Returns { sync() }. */
+export function createPromptSourceDeck(parent, drawer, scope, { onPick, onAdd }) {
     const presets = PROMPT_PRESETS.map(card => ({ ...card, title: t(card.titleKey) }));
     let saved = [];
     let keyword = '';
     const popover = createCardPopover({
         drawer,
         scope,
-        onAdd: card => onPick(card),
+        onAdd,
         onRename: card => void rename(card),
         onDelete: card => void remove(card),
     });

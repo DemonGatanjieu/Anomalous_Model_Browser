@@ -48,7 +48,7 @@ function refusal(card, boxRole) {
 
 /**
  * Fills `parent`. `owner` keeps the draft; `prefs` is the studio's { view, glossLang };
- * `onSave(text, role)` keeps a box's text as a card. Returns { addCard(card), render() }.
+ * `onSave(text, role)` keeps a box's text as a card. Returns { addCard(card, text), valueFor(card), render() }.
  */
 export function createPromptTarget(parent, { owner, drawer, scope, prefs, onSave }) {
     const draft = owner.promptStudioDraft ||= { positive: '', negative: '' };
@@ -162,17 +162,24 @@ export function createPromptTarget(parent, { owner, drawer, scope, prefs, onSave
     const timer = setInterval(tick, POLL_MS);
     scope.onDispose(() => clearInterval(timer));
 
+    /** The box a card goes into: the one of its role, or one that takes either; null when none does. */
+    const editorFor = card => {
+        const role = card.role === 'negative' ? 'negative' : 'positive';
+        return editors.find(item => item.role === role) || editors.find(item => !refusal(card, item.role)) || null;
+    };
+
     return {
-        /** A card clicked: into the box of its role (or one that takes either), at the end. */
-        addCard(card) {
-            const role = card.role === 'negative' ? 'negative' : 'positive';
-            const editor = editors.find(item => item.role === role) || editors.find(item => !refusal(card, item.role));
+        /** `text` (the whole card when left out) into the box the card goes into, at the end; false when it did not go in. */
+        async addCard(card, text = card.content) {
+            const editor = editorFor(card);
             if (!editor) {
-                showWorkbenchToast(t('promptStudioNoBoxFor', { card: t(ROLE_NAMES[role]) }));
-                return;
+                showWorkbenchToast(t('promptStudioNoBoxFor', { card: t(ROLE_NAMES[card.role === 'negative' ? 'negative' : 'positive']) }));
+                return false;
             }
-            void editor.addText(card.content);
+            return editor.addText(text);
         },
+        /** The text of the box the card goes into, null when there is none. */
+        valueFor: card => editorFor(card)?.value() ?? null,
         render: () => editors.forEach(editor => editor.render()),
     };
 }
