@@ -591,7 +591,7 @@ covered by the `styles.css` manifest.
   library sync and renaming / deleting a saved prompt; `prompt_material_source.js` reads
   saved prompts as cards and saves one; `ui_prompt_reference.js` is the reference column a
   clicked card opens in, between the cards and the boxes (its tags taken one by one or all, ticks
-  on those the box has; it widens the drawer while open); `ui_prompt_card_popover.js` owns the card preview (hover
+  on those the box has; it widens the drawer while open, and takes the cards' place where three columns do not fit); `ui_prompt_card_popover.js` owns the card preview (hover
   corridor, pin, Copy / Add / Rename / Delete); `prompt_card_drag.js` lets a card or a box be
   dragged out of the drawer onto a canvas prompt box or empty canvas (through `material_drag.js`
   and `prompt_drop.js`), passing through inside the drawer so the boxes still take it.
