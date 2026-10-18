@@ -133,8 +133,11 @@
 - **Quick to open with many models, or models on a network drive** (a NAS, a cloud server's model disk): the page reads the headers of models not scanned yet 16 at a time and remembers them until the file changes, so it opens again at once; while it counts, it says **Counting your models…** instead of staying blank. On a cloud server with 1041 unscanned models it had taken 79 seconds each time.
 
 ### ⚙️ Settings in tabs (设置分组)
-- The settings page is split into tabs: **Look, Models, Workflows, Prompts, Backup, Help**. "Change where downloads go" opens Models directly.
+- The settings page is split into tabs: **Look, Models, Workflows, Node packs, Prompts, Backup, Help**. "Change where downloads go" opens Models directly.
 - **Where downloads (and now imports) go is a choice**: by base model (the new default), in Downloads then by base model, all in a Downloads folder, straight in the type's folder, or your own folder typed by hand; an example path shows the result. Without a saved setting, downloads now go by base model instead of into a Downloads folder.
+
+### 🔖 Take single tags from a saved prompt (从存过的提示词里挑词)
+- **In Prompt Studio a clicked card opens as a reference** between the cards and the prompt you are editing, as its tags (with their meanings when a language is picked). Click one tag and only that tag goes into the prompt; tags the prompt has already are ticked. **Add all** puts the whole card in, as a click on a card used to; the preview's Add and dragging a card work as before. The ✕ closes the reference; beside the canvas the drawer widens by the column while it is open.
 
 ### Fixes
 - **Edit emotions: every clip in the list, and the line follows the clip (编辑情绪：下拉列出全部音频，换音频台词跟着换)**: a box that already held a file listed only the files whose names contain it (the browser filters by the box's text), so a character's other clips seemed missing. Pressing the box now lists all of them, with the current file shown greyed; leaving without a pick keeps it. Picking another clip no longer keeps the old clip's line beside it: the line the node already reads for that clip is filled in, otherwise the line the node finds for the clip (its .txt / .lab or the annotation list) is filled in, with Anomalous_TTS from interface 14 on (older versions leave the box blank and the node reads the line when it speaks); going back to the first clip brings its line back. A blank line box shows, greyed, the line the node uses for its clip.
