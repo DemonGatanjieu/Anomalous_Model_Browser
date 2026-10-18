@@ -806,7 +806,33 @@
     display: none;
 }
 
-/* A narrow drawer stacks the cards over the prompt boxes. */
+/* No room for three columns: the reference takes the cards' place, its "‹ Cards" goes back. */
+.anomalous-ps-ref-back {
+    display: none;
+}
+
+@container anomalous-ps (max-width: 980px) {
+    .anomalous-ps-grid.has-ref .anomalous-ps-deck {
+        display: none;
+    }
+
+    .anomalous-ps-grid.has-ref,
+    .anomalous-prompt-page .anomalous-ps-grid.has-ref,
+    .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid.has-ref {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .anomalous-ps-ref-back {
+        display: inline-flex;
+        flex-shrink: 0;
+    }
+
+    .anomalous-ps-ref .anomalous-ps-target-x {
+        display: none;
+    }
+}
+
+/* A narrow drawer stacks the cards (or the reference) over the prompt boxes. */
 @container anomalous-ps (max-width: 540px) {
     .anomalous-ps-grid,
     .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid {
@@ -817,7 +843,7 @@
     .anomalous-ps-grid.has-ref,
     .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid.has-ref {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(100px, 26%) minmax(100px, 30%) minmax(0, 1fr);
+        grid-template-rows: minmax(120px, 40%) minmax(0, 1fr);
     }
 
     .anomalous-ps-deck,

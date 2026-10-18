@@ -4,6 +4,7 @@
 
 ### 📒 Prompt cards look like notebook pages (提示词卡片换成笔记本样式)
 - In Prompt Studio each card is a page with a bound spine in its colour (green positive, red negative), its title, a Positive / Negative label and its first words as small tags instead of a cut-off line of text. The card open as the reference wears a ribbon; Common and My prompts are index tabs with how many cards they hold. Dark and light themes alike.
+- **The reference no longer squeezes a narrow window**: where three columns do not fit (a side-panel browser window, a narrow drawer), the reference takes the card list's place and **‹ Cards** brings the list back, so the reference and the prompt you edit each get half the width.
 
 ### 🗂️ Tidier model folders (模型文件夹更清爽)
 - **Settings → Models → Files that come with models**: what a scan found (`.info`), your names and notes (`.anomalous.json`) and Civitai's picture kept aside can go **in a hidden `.amb` folder** inside each model folder instead of beside every model, leaving only the model and its cover there. Covers stay beside the model, where ComfyUI and other plugins look. Choosing a place says how many files will move, then moves them (only moves; switch back any time); a file that cannot move still works where it is.

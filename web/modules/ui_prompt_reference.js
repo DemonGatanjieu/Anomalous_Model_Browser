@@ -3,7 +3,8 @@
  * boxes, as its tags (with their meanings when a language is picked), so single tags can be
  * taken from it: a click puts that tag into the box the card goes into (ui_prompt_target.js),
  * "Add all" the whole card. Tags the box has already are ticked. Read only: the card itself is
- * never changed here. In the drawer it widens the drawer by the column while it is open.
+ * never changed here. In the drawer it widens the drawer by the column while it is open; where
+ * three columns do not fit it takes the cards' place, and "‹ Cards" goes back (the stylesheet).
  */
 
 import { translate as t } from './locales.js';
@@ -57,7 +58,8 @@ export function createPromptReference(grid, { drawer, scope, prefs, target, onSh
     const addAll = button('anomalous-ps-mini', t('promptStudioRefAddAll'), t('promptStudioRefAddAllHint'), () => {
         if (card) void target.addCard(card).then(render);
     });
-    head.append(label, addAll);
+    const back = button('anomalous-ps-mini anomalous-ps-ref-back', t('promptStudioRefBack'), t('promptStudioRefClose'), () => close());
+    head.append(back, label, addAll);
     const role = el('span', 'anomalous-ps-role');
     const note = el('p', 'anomalous-ps-target-note', t('promptStudioRefNote'));
     const tagsEl = el('div', 'anomalous-ps-tags');
