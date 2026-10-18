@@ -433,9 +433,19 @@ fall back to the original (a video without a readable frame has no poster).
 Sidecar handling is non-negotiable because it can destroy user metadata or
 media.
 
-- `.civitai_bak.*` is a persistent restore source created from a real Civitai
-  download. Setting a custom cover changes only `.preview.*`.
-- Cover reset first restores `.civitai_bak.*` to `.preview.*`. Otherwise it may
+- Where the side files are is `model_sidecars.py`'s to say: every path to `.info`,
+  `.anomalous.json` and `.civitai_bak.*` goes through it (`find` to read, `target` to write,
+  `existing` / `follow` to move or delete), since they may be beside the model or in the
+  folder's `.amb` (Settings → Models, `SIDECAR_LAYOUT`). A file is written where it is
+  already, so a folder moved half way never has two copies. Covers and other tools' files
+  (`.civitai.info`, `.yaml`, `.txt`) are always beside the model. The folder tree leaves `.amb` out.
+- A cover is Civitai's when its SHA-256 is the one the scan noted in the `.info`
+  (`anomalous_cover_sha256`) or it is a copy of a `.civitai_bak.*`. A scan saves Civitai's
+  picture straight as the cover (fetched under a working name first) and notes it; it keeps a
+  `.civitai_bak.*` only while the user's own cover shows. Setting a custom cover first moves
+  Civitai's picture aside as `.civitai_bak.*` (the restore source), then changes `.preview.*`.
+- Cover reset first restores `.civitai_bak.*` to `.preview.*` (then notes it and drops the
+  copy aside); a cover that is Civitai's already stays. Otherwise it may
   remove `.preview.*` only when a bare original cover can take over. If the
   preview is the only image, preserve it and return a visible warning. Reset
   never silently downloads from the network.
@@ -450,8 +460,9 @@ media.
   sidecar suffixes. Cleanup must not delete a same-stem model with another
   extension. If such a sibling remains, ambiguous stem-keyed sidecars remain.
 - Rename/delete/reset uses centralized immutable suffix tuples and a constant
-  number of exact-path checks. Do not walk, glob, index, hash, or call the
-  network for these operations.
+  number of exact-path checks (both places for the plugin's own files). Do not walk,
+  glob, index or call the network for these operations; only covers (small) are hashed,
+  to tell Civitai's picture from the user's.
 
 Keep product wording precise: deletion cleans sidecars; rename migrates them.
 

@@ -12,8 +12,10 @@ import folder_paths
 import struct
 try:
     from ..model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info, unmatched_reason
+    from ..model_sidecars import find
 except ImportError:
     from model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info, unmatched_reason
+    from model_sidecars import find
 from .model_heads import inspect as inspect_file  # the header, read once per file version
 
 # Fields the model editor sets: <model>.anomalous.json key -> metadata key.
@@ -90,7 +92,7 @@ def _info_base(file_path, base_path):
     """Where the model's info files are read: beside the model as named; for a link with none
     beside it, beside the file it links to, where another tool (A1111's Civitai Helper) may
     have left them. Only read there: covers, edits and scans stay beside the link."""
-    if os.path.islink(file_path) and not any(os.path.exists(base_path + suffix) for suffix in (".info", ".civitai.info")):
+    if os.path.islink(file_path) and not (find(base_path, ".info") or os.path.exists(base_path + ".civitai.info")):
         return os.path.splitext(os.path.realpath(file_path))[0]
     return base_path
 
@@ -122,7 +124,7 @@ def _read_metadata(file_path):
         "not_drawing": False,  # not scanned yet, and its header looks like no drawing model
     }
     
-    info_files = [f"{info_base}.info", f"{info_base}.civitai.info"]
+    info_files = [path for path in (find(info_base, ".info"), f"{info_base}.civitai.info") if path]
     for info_file in info_files:
         if os.path.exists(info_file):
             try:
@@ -191,7 +193,8 @@ def _read_metadata(file_path):
         # A header that reads but names no drawing model kind (a voice model, say).
         metadata["not_drawing"] = found["format"] == "safetensors" and not found["kind"]
     # The user's own layer comes last and wins, also when a field was cleared on purpose ("").
-    user = read_json(base_path + USER_INFO_SUFFIX) or {}
+    user_file = find(base_path, USER_INFO_SUFFIX)
+    user = (read_json(user_file) if user_file else None) or {}
     if user.get("scan") in ("skip", "scan"):
         metadata["scan_choice"] = user["scan"]
     for key, field in USER_FIELDS.items():
@@ -213,9 +216,9 @@ def _metadata_signature(file_path):
     base_path = os.path.splitext(file_path)[0]
     return (
         _file_signature(file_path),
-        _file_signature(f"{base_path}.info"),
+        _file_signature(find(base_path, ".info") or f"{base_path}.info"),
         _file_signature(f"{base_path}.civitai.info"),
-        _file_signature(base_path + USER_INFO_SUFFIX),
+        _file_signature(find(base_path, USER_INFO_SUFFIX) or base_path + USER_INFO_SUFFIX),
     )
 
 

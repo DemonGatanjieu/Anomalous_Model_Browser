@@ -1,7 +1,6 @@
 """Model preview lookup and bounded custom-cover operations."""
 
 import asyncio
-import filecmp
 import os
 import shutil
 import urllib.parse
@@ -9,7 +8,11 @@ import urllib.parse
 from aiohttp import web
 import folder_paths
 
-from .model_constants import CIVITAI_BACKUP_SUFFIXES, MEDIA_EXTENSIONS, PREVIEW_SUFFIXES
+from .model_constants import MEDIA_EXTENSIONS, PREVIEW_SUFFIXES
+try:
+    from ..model_sidecars import backups, is_civitai_cover, keep_aside
+except ImportError:
+    from model_sidecars import backups, is_civitai_cover, keep_aside
 from .trash import move_to_trash
 from .utils import model_file_within, require_filename, resolve_folder_subdir, resolve_within
 
@@ -31,6 +34,14 @@ async def _handle_custom_cover(target_dir, filename, save_func, source_ext='.png
         
     dest_path = os.path.join(target_dir, f"{base_name}{preview_ext}")
     
+    # Civitai's picture, when it is the cover, is kept aside first, to bring back from the editor.
+    base = os.path.join(target_dir, base_name)
+    covers = [path for path in (os.path.join(target_dir, f"{base_name}{ext}") for ext in PREVIEW_SUFFIXES) if os.path.isfile(path)]
+    if not backups(base):
+        civitai = next((path for path in covers if is_civitai_cover(path, base, [])), None)
+        if civitai:
+            keep_aside(base, civitai)
+
     # Only one cover is active: the others go to the Recycle Bin (a failure keeps them).
     older = [os.path.join(target_dir, f"{base_name}{ext}") for ext in PREVIEW_SUFFIXES]
     try:
@@ -150,15 +161,13 @@ def _media_url(folder_type, path_idx, base_dir, media_path):
 
 
 def _model_covers(folder_type, path_idx, base_dir, file_path):
-    """Civitai's own image a scan kept (<model>.civitai_bak.*) as a URL, or "", and whether the
-    cover shown is another picture (the user's): a cover is Civitai's when it is a copy of it."""
+    """Civitai's own image kept aside (<model>.civitai_bak.*, beside or in .amb) as a URL, or "",
+    and whether the cover shown is another picture (the user's), not Civitai's (model_sidecars)."""
     base = os.path.splitext(file_path)[0]
-    saved = next((base + suffix for suffix in CIVITAI_BACKUP_SUFFIXES if os.path.isfile(base + suffix)), "")
+    kept = backups(base)
+    saved = kept[0] if kept else ""
     shown = next((base + suffix for suffix in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS if os.path.isfile(base + suffix)), "")
-    try:
-        custom = bool(shown) and not (saved and filecmp.cmp(shown, saved, shallow=False))
-    except OSError:
-        custom = bool(shown)
+    custom = bool(shown) and not is_civitai_cover(shown, base, kept)
     return {"civitai": _media_url(folder_type, path_idx, base_dir, saved) if saved else "", "custom": custom}
 
 

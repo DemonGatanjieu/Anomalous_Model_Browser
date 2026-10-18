@@ -44,8 +44,10 @@ from . import version_manager
 
 try:
     from ..model_identity import USER_INFO_SUFFIX, read_json, scan_info_path
+    from .. import model_sidecars as sidecars
 except ImportError:
     from model_identity import USER_INFO_SUFFIX, read_json, scan_info_path
+    import model_sidecars as sidecars
 
 FORMAT = 1
 APP = "Anomalous Model Browser"
@@ -90,13 +92,6 @@ def _sha256_file(path):
     return digest.hexdigest()
 
 
-def _same_bytes(a, b):
-    try:
-        return os.path.getsize(a) == os.path.getsize(b) and _sha256_file(a) == _sha256_file(b)
-    except OSError:
-        return False
-
-
 def _store_files(directory):
     """(path, '/'-relative path) of every file kept in a store."""
     if not os.path.isdir(directory):
@@ -135,14 +130,6 @@ def _models():
                 if is_model_file(name):
                     path = os.path.join(walk_root, name)
                     yield folder_type, root, path, os.path.relpath(path, root).replace(os.sep, "/")
-
-
-def cover_owners(base):
-    """(Civitai's, the user's) covers of a model: Civitai's are copies of <model>.civitai_bak.*."""
-    backups = [base + suffix for suffix in CIVITAI_BACKUP_SUFFIXES if os.path.isfile(base + suffix)]
-    covers = [base + suffix for suffix in ACTIVE_COVER_SUFFIXES if os.path.isfile(base + suffix)]
-    civitai = [cover for cover in covers if any(_same_bytes(cover, backup) for backup in backups)]
-    return civitai, [cover for cover in covers if cover not in civitai]
 
 
 def _model_facts(path):
@@ -203,12 +190,12 @@ def build_backup(include_models=True, include_comfy=True, include_library=True, 
                     if not include_models:
                         continue
                     base = os.path.splitext(model_path)[0]
-                    user_file = base + USER_INFO_SUFFIX
-                    user_data = read_json(user_file) if os.path.isfile(user_file) else None
-                    civitai, covers = cover_owners(base)
+                    user_file = sidecars.find(base, USER_INFO_SUFFIX)
+                    user_data = read_json(user_file) if user_file else None
+                    civitai, covers = sidecars.cover_owners(base)
                     scan_info = scan_info_path(base) if include_scan else None
-                    backups = [base + suffix for suffix in CIVITAI_BACKUP_SUFFIXES if os.path.isfile(base + suffix)]
-                    civitai_cover = civitai[0] if include_civitai_covers and civitai and backups else None
+                    backups = sidecars.backups(base)
+                    civitai_cover = civitai[0] if include_civitai_covers and civitai else None
                     if not user_data and not covers and not scan_info and not civitai_cover:
                         continue
                     entry = {"id": len(manifest["models"]), "type": folder_type, "rel": rel,
@@ -220,12 +207,14 @@ def build_backup(include_models=True, include_comfy=True, include_library=True, 
                         entry["cover"] = covers[0][len(base):]
                         archive.write(covers[0], f"{folder}cover{entry['cover']}")
                     if scan_info:
-                        entry["info"] = scan_info[len(base):]
+                        entry["info"] = sidecars.suffix_of(scan_info, base)
                         archive.write(scan_info, f"{folder}scan{entry['info']}")
                     if civitai_cover:
-                        # One copy: it is both the cover and Civitai's saved image (<model>.civitai_bak.*).
-                        entry["civitai_cover"], entry["civitai_bak"] = civitai_cover[len(base):], backups[0][len(base):]
-                        archive.write(backups[0], f"{folder}civitai{entry['civitai_bak']}")
+                        # One copy: it is both the cover and Civitai's picture (kept aside or not).
+                        picture = backups[0] if backups else civitai_cover
+                        entry["civitai_cover"] = civitai_cover[len(base):]
+                        entry["civitai_bak"] = sidecars.suffix_of(backups[0], base) if backups else ".civitai_bak" + os.path.splitext(civitai_cover)[1]
+                        archive.write(picture, f"{folder}civitai{entry['civitai_bak']}")
                     manifest["models"].append(entry)
             archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=1))
         os.replace(temporary, path)
@@ -418,20 +407,22 @@ def _restore_scan(archive, entry, base, folder, replace, result):
         if not local or (replace and _sha256_file(local) != _member_sha256(archive, info)):
             if local:
                 move_to_trash(local)
-            _write_member(archive, info, base + suffix)
+            _write_member(archive, info, sidecars.target(base, suffix))
             result["model_infos"] += 1
     cover, saved = str(entry.get("civitai_cover") or ""), str(entry.get("civitai_bak") or "")
     if cover and saved:
         if cover not in ACTIVE_COVER_SUFFIXES or saved not in CIVITAI_BACKUP_SUFFIXES:
             raise BackupError(f"unknown cover name: {cover}")
         info = archive.getinfo(folder + "civitai" + saved)
-        civitai, mine = cover_owners(base)
-        has_saved = any(os.path.isfile(base + suffix) for suffix in CIVITAI_BACKUP_SUFFIXES)
-        if not has_saved:
-            _write_member(archive, info, base + saved)
+        civitai, mine = sidecars.cover_owners(base)
         if not civitai and not mine and not entry.get("cover"):
+            # Civitai's picture becomes the cover, noted as Civitai's (no second copy aside).
             _write_member(archive, info, base + cover)
+            if not sidecars.note_cover_hash(base, base + cover) and not sidecars.backups(base):
+                _write_member(archive, info, sidecars.target(base, saved))
             result["model_civitai_covers"] += 1
+        elif mine and not sidecars.backups(base):
+            _write_member(archive, info, sidecars.target(base, saved))  # aside, while the user's cover shows
 
 
 def _restore_model(archive, entry, model_path, replace, result):
@@ -440,7 +431,7 @@ def _restore_model(archive, entry, model_path, replace, result):
     _restore_scan(archive, entry, base, folder, replace, result)
     if entry.get("user"):
         backup = json.loads(archive.read(folder + "user.json"))
-        user_file = base + USER_INFO_SUFFIX
+        user_file = sidecars.target(base, USER_INFO_SUFFIX)
         local = read_json(user_file) if os.path.isfile(user_file) else None
         merged = dict(local or {"format": 1})
         for key in USER_FIELDS:
@@ -457,13 +448,15 @@ def _restore_model(archive, entry, model_path, replace, result):
         if suffix not in ACTIVE_COVER_SUFFIXES:
             raise BackupError(f"unknown cover name: {suffix}")
         info = archive.getinfo(folder + "cover" + suffix)
-        civitai, mine = cover_owners(base)
+        civitai, mine = sidecars.cover_owners(base)
         member_hash = _member_sha256(archive, info)
         if any(_sha256_file(cover) == member_hash for cover in mine):
             return
         if mine and not replace:
             result["covers_kept"] += 1
             return
+        if civitai and not sidecars.backups(base):
+            sidecars.keep_aside(base, civitai.pop(0))  # Civitai's picture stays, to bring back
         for cover in mine + civitai:  # Civitai's own copy stays as <model>.civitai_bak.*
             move_to_trash(cover)
         _write_member(archive, info, base + suffix)

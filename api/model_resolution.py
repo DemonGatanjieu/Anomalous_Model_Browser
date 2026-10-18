@@ -10,8 +10,10 @@ import folder_paths
 
 try:
     from ..model_identity import computed_file_identity, file_sha256, infer_base_model_from_header, normalise_sha256
+    from ..model_sidecars import find, target
 except ImportError:
     from model_identity import computed_file_identity, file_sha256, infer_base_model_from_header, normalise_sha256
+    from model_sidecars import find, target
 try:
     from ..model_policies import requires_hash_for_model_recovery
 except ImportError:
@@ -105,10 +107,9 @@ def _size_candidate_payload(candidate, require_hash=False):
 def _compute_and_save_fallback_info(file_path, file_hash):
     try:
         base_path = os.path.splitext(file_path)[0]
-        info_path = base_path + ".info"
         civitai_info_path = base_path + ".civitai.info"
-        if os.path.exists(info_path) or os.path.exists(civitai_info_path):
-            info_path = info_path if os.path.exists(info_path) else civitai_info_path
+        info_path = find(base_path, ".info") or (civitai_info_path if os.path.exists(civitai_info_path) else None)
+        if info_path:
             with open(info_path, encoding='utf-8') as source:
                 info_data = json.load(source)
         else:
@@ -129,7 +130,7 @@ def _compute_and_save_fallback_info(file_path, file_hash):
                 "files": [{"hashes": {"SHA256": file_hash.lower()}}]
             }
         info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
-        atomic_write_json(info_path, info_data)
+        atomic_write_json(info_path or target(base_path, ".info"), info_data)
     except Exception:
         pass
 

@@ -17,10 +17,12 @@ from .path_utils import atomic_write_json
 
 try:
     from ..model_identity import USER_INFO_SUFFIX, read_json
+    from ..model_sidecars import target
     from ..civitai_client import USER_AGENT
     from ..net_proxy import urlopen
 except ImportError:  # loaded outside the package (tests)
     from model_identity import USER_INFO_SUFFIX, read_json
+    from model_sidecars import target
     from civitai_client import USER_AGENT
     from net_proxy import urlopen
 
@@ -110,7 +112,7 @@ def notes_text(repo, card):
 
 def save_notes(base_path, repo, card):
     """The card's words as the model's notes and the repository as its link, where both are empty."""
-    path = base_path + USER_INFO_SUFFIX
+    path = target(base_path, USER_INFO_SUFFIX)
     if os.path.exists(path) and read_json(path) is None:
         return False  # unreadable: leave it to the user
     user = read_json(path) or {"format": 1}

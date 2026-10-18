@@ -13,8 +13,10 @@ from .utils import model_file_within
 
 try:
     from ..model_identity import USER_INFO_SUFFIX, read_json
+    from ..model_sidecars import target as sidecar_target
 except ImportError:  # loaded outside the package (tests)
     from model_identity import USER_INFO_SUFFIX, read_json
+    from model_sidecars import target as sidecar_target
 
 MAX_CHOICE_FILES = 2000
 
@@ -42,7 +44,7 @@ def _set_scan_choice(targets, choice):
         except ValueError:
             failed.append(name)
             continue
-        user_file = os.path.splitext(path)[0] + USER_INFO_SUFFIX
+        user_file = sidecar_target(os.path.splitext(path)[0], USER_INFO_SUFFIX)
         user = read_json(user_file)
         if not name.endswith(".safetensors") or not os.path.isfile(path) or (user is None and os.path.exists(user_file)):
             failed.append(name)

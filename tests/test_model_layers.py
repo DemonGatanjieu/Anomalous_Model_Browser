@@ -154,8 +154,11 @@ class LayerTests(unittest.TestCase):
         Path(self.base + ".preview.png").write_bytes(b"old civitai image")
         with mock.patch.object(scraper, "move_to_trash") as trash:
             self.scan("--force-overwrite")
-        trash.assert_not_called()  # same file name: overwritten in place, nothing to move
+        # The cover is Civitai's: the copy kept aside goes, the new picture replaces it in place.
+        trash.assert_called_once_with(self.base + ".civitai_bak.png")
         self.assertEqual(Path(self.base + ".preview.png").read_bytes(), b"new civitai image")
+        info = json.loads(Path(self.base + ".info").read_text(encoding="utf-8"))
+        self.assertEqual(len(info["anomalous_cover_sha256"]), 64)  # known as Civitai's from now on
 
 
 if __name__ == "__main__":

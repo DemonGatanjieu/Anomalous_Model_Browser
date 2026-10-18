@@ -188,6 +188,14 @@ covered by the `styles.css` manifest.
 - `api/media_routes.py`, `api/gallery_routes.py`, `api/translation_routes.py`, and
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
+- `model_sidecars.py` says where a model's side files are, shared with the scanner: beside it,
+  or the plugin's own ones (`.info`, `.anomalous.json`, `.civitai_bak.*`) in the folder's hidden
+  `.amb` (`SIDECAR_LAYOUT` in api/config.json); reading looks in both places. Covers stay beside
+  the model. It also tells Civitai's cover from the user's (the SHA-256 a scan notes in the
+  `.info`, or a copy kept aside, kept only while the user's own cover shows).
+  `api/sidecar_layout.py` is Settings → Models → "Files that come with models"
+  (`/anomalous/sidecars/plan|apply`, apply this computer only): saves the place, moves the files
+  there and drops Civitai pictures kept twice to the Recycle Bin.
 - `model_identity.py` owns file SHA-256 evidence and the base model a safetensors header
   tells, shared with the standalone scanner (which runs as its own process, so the API
   never imports `scraper.py`). `model_kind.py` reads a .safetensors / .gguf header (never
@@ -439,7 +447,8 @@ covered by the `styles.css` manifest.
   layout) and their application, the gear and language redraws; `ui_settings_page.js`
   is the settings page the gear opens (a tool page with Back), in tabs: Look (look and
   language, model cards and memory with the card image cache, opening mode and window),
-  Models (folders, where downloads and imports go), Workflows (fingerprints), Node packs
+  Models (folders, where downloads and imports go, where the side files go through
+  `sidecar_layout.js`), Workflows (fingerprints), Node packs
   (those not used lately, `ui_pack_usage.js`), Prompts
   (translation), Backup (`ui_backup.js`), Help; `ui_feedback_dialog.js` is the feedback window (Home and the
   settings page open it): one text box, then `feedback.js` opens a GitHub issue with it in

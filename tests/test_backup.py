@@ -121,9 +121,11 @@ class BackupTests(unittest.TestCase):
         base = self.b.model("plain.safetensors", sha="cd" * 32)
         _summary, result = self.put_back(path)
         self.assertEqual((result["model_infos"], result["model_civitai_covers"]), (1, 1))
-        self.assertEqual(Path(base + ".info").read_text(encoding="utf-8"), '{"id": 7, "name": "Plain"}')
+        restored = json.loads(Path(base + ".info").read_text(encoding="utf-8"))
+        self.assertEqual((restored["id"], restored["name"]), (7, "Plain"))
         self.assertEqual(Path(base + ".preview.png").read_bytes(), b"civitai image")
-        self.assertEqual(Path(base + ".civitai_bak.png").read_bytes(), b"civitai image")  # still Civitai's, not the user's
+        self.assertIn("anomalous_cover_sha256", restored)  # still Civitai's, not the user's: noted, not kept twice
+        self.assertFalse(os.path.exists(base + ".civitai_bak.png"))
         self.b.write(base + ".info", '{"id": 7, "name": "Newer scan"}')
         _summary, kept = self.put_back(path)
         self.assertEqual(kept["model_infos"], 0)

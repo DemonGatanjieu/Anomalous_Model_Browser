@@ -3,7 +3,8 @@
  * away): Look (how the browser looks, model cards and what they cost in memory with the card
  * image cache, how the browser opens), Models (model folders — a view of its own,
  * ui_folder_manager.js, `owner.settingsView === 'folders'` —, the network: the proxy the plugin's
- * own requests use and a Civitai connection test, and where downloads and imported models go), Workflows,
+ * own requests use and a Civitai connection test, where downloads and imported models go, and where
+ * the files only this plugin uses sit beside each model, sidecar_layout.js), Workflows,
  * Node packs (those not used lately, ui_pack_usage.js), Prompts (translation with a DeepL key), Backup (ui_backup.js) and
  * Help. A tool page like the scan page, with a way back to the page you came from. Display
  * preferences go through `owner.displayPrefs` (ui_settings_hub.js); language, theme and opening
@@ -27,6 +28,8 @@ import { followsSelection, setFollowsSelection } from './shell_open_rules.js';
 import { FOLDER_PRESETS, expandFolder } from './download_places.js';
 import { createGalleryFormatSettings } from './ui_gallery_filter.js';
 import { failureWords } from './net_failure.js';
+import { applySidecars, planSidecars } from './sidecar_layout.js';
+import { anomalousConfirm } from './ui_dialog.js';
 import { renderPackUsage } from './ui_pack_usage.js';
 
 const t = (key, params) => translate(key, params);
@@ -305,6 +308,54 @@ function networkGroup() {
     return group('settingsNetwork', proxyRow, testRow);
 }
 
+/** Where the files only this plugin uses sit beside each model, and putting them there (sidecar_layout.js). */
+function sidecarGroup() {
+    const box = group('settingsSidecars');
+    const status = el('small', 'anomalous-scan-setting-help');
+    let current = 'beside';
+    let busy = false;
+    const run = async (layout) => {
+        if (busy) return;
+        busy = true;
+        status.textContent = t('settingsSidecarsCounting');
+        try {
+            const plan = await planSidecars(layout);
+            const words = { moves: plan.moves, duplicates: plan.duplicates };
+            if ((plan.moves || plan.duplicates) && !await anomalousConfirm(t(layout === 'hidden' ? 'settingsSidecarsConfirmHidden' : 'settingsSidecarsConfirmBeside', words))) {
+                status.textContent = '';
+                return;
+            }
+            status.textContent = t('settingsSidecarsMoving');
+            const done = await applySidecars(layout);
+            current = done.layout;
+            status.textContent = done.failed.length
+                ? t('settingsSidecarsPartly', { moved: done.moved, deduped: done.deduped, failed: done.failed.length + done.more })
+                : t('settingsSidecarsDone', { moved: done.moved, deduped: done.deduped });
+            if (done.failed.length) console.warn('[AMB] Settings: side files that did not move.', done.failed);
+            draw();
+        } catch (error) {
+            console.warn('[AMB] Settings: side files.', error);
+            status.textContent = t('settingsSidecarsFailed');
+        } finally {
+            busy = false;
+        }
+    };
+    const draw = () => {
+        const where = row('settingsSidecarsWhere', 'settingsSidecarsWhereHelp', segment(
+            [['beside', 'settingsSidecarsBeside'], ['hidden', 'settingsSidecarsHidden']], current,
+            layout => { if (layout !== current) run(layout); }));
+        const tidy = row('settingsSidecarsTidy', 'settingsSidecarsTidyHelp',
+            button('anomalous-scan-secondary anomalous-scan-small-btn', t('settingsSidecarsTidyButton'), () => run(current)));
+        box.replaceChildren(box.firstChild, where, tidy, status);
+    };
+    draw();
+    fetch('/anomalous/config').then(res => res.json()).then(config => {
+        current = config.sidecar_layout === 'hidden' ? 'hidden' : 'beside';
+        draw();
+    }).catch(error => console.warn('[AMB] Settings: side file place unavailable.', error));
+    return box;
+}
+
 /** Where downloads and imported models go (model_download.js); filled once the settings are read. */
 function downloadGroup(owner, redraw) {
     const box = group('settingsDownloads');
@@ -440,7 +491,7 @@ function helpGroup(owner) {
 // Tab -> its title and its cards, in order.
 const TABS = [
     ['look', 'settingsTabLook', (owner, redraw) => [appearanceGroup(owner, redraw), cardsGroup(owner, redraw), galleryGroup(owner), openingGroup(owner, redraw)]],
-    ['models', 'settingsTabModels', (owner, redraw) => [foldersGroup(owner), networkGroup(), downloadGroup(owner, redraw)]],
+    ['models', 'settingsTabModels', (owner, redraw) => [foldersGroup(owner), networkGroup(), downloadGroup(owner, redraw), sidecarGroup()]],
     ['workflows', 'settingsTabWorkflows', (owner) => [workflowGroup(owner)]],
     ['packs', 'settingsTabPacks', (owner, redraw) => [renderPackUsage(owner, redraw)]],
     ['prompts', 'settingsTabPrompts', () => [translationGroup()]],

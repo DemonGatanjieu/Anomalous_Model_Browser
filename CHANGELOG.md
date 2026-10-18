@@ -2,6 +2,10 @@
 
 ## v1.61.0 — unreleased
 
+### 🗂️ Tidier model folders (模型文件夹更清爽)
+- **Settings → Models → Files that come with models**: what a scan found (`.info`), your names and notes (`.anomalous.json`) and Civitai's picture kept aside can go **in a hidden `.amb` folder** inside each model folder instead of beside every model, leaving only the model and its cover there. Covers stay beside the model, where ComfyUI and other plugins look. Choosing a place says how many files will move, then moves them (only moves; switch back any time); a file that cannot move still works where it is.
+- **No more duplicate cover copies**: scans used to keep a copy of Civitai's picture identical to the cover for every model. Now the cover is noted as Civitai's and a copy is kept only when you put your own cover in its place (so you can still bring Civitai's back). **Check and tidy** in the same place sends the existing duplicates to the Recycle Bin.
+
 ### 🎭 Several characters in one script (多角色配音)
 - **Every line has its character**: on Voice-over, click a character in the list on the left, then paste: the lines are its. To give lines to another, pick them (a click; Ctrl / ⌘ adds one, Shift a run; Esc lets go) and click that character on the left, or click the name on a line for a menu of characters. Each line shows who reads it in that character's colour, and its emotions are that character's. The *Who speaks* bar at the top is gone: the list does its job.
 - **Picking and editing no longer get in each other's way**: a click on a line picks it; a double-click (or ✎) edits its text in place, Enter keeps it and Esc puts it back.

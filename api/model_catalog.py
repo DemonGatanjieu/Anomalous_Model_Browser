@@ -8,6 +8,10 @@ from aiohttp import web
 import folder_paths
 
 from .metadata import get_metadata
+try:
+    from ..model_sidecars import HIDDEN_DIR
+except ImportError:
+    from model_sidecars import HIDDEN_DIR
 from .model_constants import MEDIA_EXTENSIONS, PREVIEW_SUFFIXES, is_model_file
 from .model_media import _cache_token, _preview_url_for_model
 from .folder_types import (
@@ -15,6 +19,20 @@ from .folder_types import (
     get_active_physical_basenames, get_folder_view_mode,
 )
 from .path_utils import model_reference_within, resolve_folder_subdir
+
+def _folder_tree(base_dir):
+    """{'/'-relative folder: {path, name, has_models, model_count}} under a model root; the
+    .amb folders hold side files only (model_sidecars)."""
+    tree = {}
+    for root, dirs, files in os.walk(base_dir):
+        dirs[:] = [name for name in dirs if name != HIDDEN_DIR]
+        count = sum(1 for f in files if is_model_file(f))
+        rel = os.path.relpath(root, base_dir)
+        rel = '/' if rel == '.' else '/' + rel.replace('\\', '/')
+        tree[rel] = {"path": rel, "name": os.path.basename(root) if rel != '/' else '[Root]',
+                     "has_models": count > 0, "model_count": count}
+    return tree
+
 
 def _collect_folder_models(target_dir, folder_type, path_idx, rel_subfolder, page, limit):
     """Collect one folder in a worker thread with a single directory listing."""
@@ -120,20 +138,7 @@ def _collect_folders():
             
             for item in matched:
                 base_dir = item["base_dir"]
-                tree = {}
-                for root, dirs, files in os.walk(base_dir):
-                    has_models = any(is_model_file(f) for f in files)
-                    rel = os.path.relpath(root, base_dir)
-                    if rel == '.':
-                        rel = '/'
-                    else:
-                        rel = '/' + rel.replace('\\', '/')
-                    tree[rel] = {
-                        "path": rel,
-                        "name": os.path.basename(root) if rel != '/' else '[Root]',
-                        "has_models": has_models,
-                        "model_count": sum(1 for f in files if is_model_file(f))
-                    }
+                tree = _folder_tree(base_dir)
                 
                 label = item["bn"]
                 if len(matched) > 1:
@@ -163,20 +168,7 @@ def _collect_folders():
                     continue
                 seen_dirs.add(real_path)
                 
-                tree = {}
-                for root, dirs, files in os.walk(base_dir):
-                    has_models = any(is_model_file(f) for f in files)
-                    rel = os.path.relpath(root, base_dir)
-                    if rel == '.':
-                        rel = '/'
-                    else:
-                        rel = '/' + rel.replace('\\', '/')
-                    tree[rel] = {
-                        "path": rel,
-                        "name": os.path.basename(root) if rel != '/' else '[Root]',
-                        "has_models": has_models,
-                        "model_count": sum(1 for f in files if is_model_file(f))
-                    }
+                tree = _folder_tree(base_dir)
                     
                 try:
                     folder_basename = os.path.basename(os.path.normpath(base_dir))

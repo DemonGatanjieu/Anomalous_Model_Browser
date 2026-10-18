@@ -22,8 +22,10 @@ from .trash import move_to_trash, trash_failure
 from .utils import atomic_write_json
 try:
     from ..model_identity import USER_INFO_SUFFIX, read_json
+    from ..model_sidecars import drop_empty_hidden_dir, existing, follow, is_civitai_cover, note_cover_hash, target
 except ImportError:
     from model_identity import USER_INFO_SUFFIX, read_json
+    from model_sidecars import drop_empty_hidden_dir, existing, follow, is_civitai_cover, note_cover_hash, target
 from .utils import model_file_within, require_filename, resolve_folder_subdir
 
 def _first_existing_sidecar(base_path, suffixes):
@@ -35,8 +37,9 @@ def _first_existing_sidecar(base_path, suffixes):
 
 
 def _reset_model_cover(base_path):
-    """Restore a recoverable cover without destroying the only existing image."""
-    backup_path, backup_suffix = _first_existing_sidecar(base_path, CIVITAI_BACKUP_SUFFIXES)
+    """Restore a recoverable cover without destroying the only existing image. Civitai's picture
+    kept aside becomes the cover again and is then noted as Civitai's instead of kept twice."""
+    backup_path, backup_suffix = next(iter(existing(base_path, CIVITAI_BACKUP_SUFFIXES)), (None, None))
     original_path, _ = _first_existing_sidecar(base_path, MEDIA_EXTENSIONS)
     preview_paths = [
         f"{base_path}{suffix}"
@@ -54,6 +57,8 @@ def _reset_model_cover(base_path):
             shutil.copy2(backup_path, temp_path)
             os.replace(temp_path, restored_path)
             move_to_trash(*[path for path in preview_paths if path != restored_path])
+            if note_cover_hash(base_path, restored_path):
+                move_to_trash(backup_path)  # the cover is Civitai's picture now: no second copy
         except Exception as exc:
             try:
                 if os.path.isfile(temp_path):
@@ -62,6 +67,9 @@ def _reset_model_cover(base_path):
                 pass
             return False, 'restore_failed', str(exc)
         return True, 'civitai_backup', None
+
+    if any(is_civitai_cover(path, base_path, []) for path in preview_paths):
+        return True, 'civitai_backup', None  # Civitai's picture is the cover already
 
     if original_path:
         try:
@@ -112,13 +120,14 @@ async def api_delete_model(request):
             for model_ext in MODEL_EXTENSIONS if base_name + model_ext != filename
         )
         sidecars = [] if shared_stem_in_use else [
-            os.path.join(target_dir, base_name + suffix) for suffix in SIDECAR_SUFFIXES
+            path for path, _ in existing(os.path.join(target_dir, base_name), SIDECAR_SUFFIXES)
         ]
         # The model and its covers and info go to the Recycle Bin together, or nothing moves.
         try:
             moved = move_to_trash(model_path, *sidecars)
         except Exception as e:
             return web.json_response({"status": "error", "message": trash_failure(e)})
+        drop_empty_hidden_dir(target_dir)
         deleted_files = [os.path.basename(path) for path in moved]
         request[ACTIVITY_DETAIL] = {"files": deleted_files}
 
@@ -201,7 +210,7 @@ async def api_update_metadata(request):
         model_ext = os.path.splitext(file_path)[1]
         # The user's edits have a file of their own (<model>.anomalous.json): a scan never
         # writes it, and other tools that rewrite .civitai.info cannot lose them.
-        user_file = base_name + USER_INFO_SUFFIX
+        user_file = target(base_name, USER_INFO_SUFFIX)
         if os.path.exists(user_file) and read_json(user_file) is None:
             return web.json_response({"status": "error", "message": f"{os.path.basename(user_file)} is unreadable; nothing was changed."})
         user_data = read_json(user_file) or {"format": 1}
@@ -234,10 +243,8 @@ async def api_update_metadata(request):
             if new_file_path != file_path and not os.path.exists(new_file_path):
                 os.rename(file_path, new_file_path)
                 
-                for suffix in SIDECAR_SUFFIXES:
-                    old_sidecar = f"{base_name}{suffix}"
-                    if os.path.isfile(old_sidecar):
-                        os.rename(old_sidecar, os.path.join(target_dir, f"{safe_name}{suffix}"))
+                for old_sidecar, suffix in existing(base_name, SIDECAR_SUFFIXES):
+                    os.rename(old_sidecar, follow(old_sidecar, os.path.join(target_dir, safe_name), suffix))
 
                 new_filename = f"{safe_name}{model_ext}"
             elif os.path.exists(new_file_path) and new_file_path != file_path:

@@ -27,9 +27,11 @@ import folder_paths
 try:
     from ..model_identity import file_sha256
     from ..model_kind import inspect_file
+    from ..model_sidecars import drop_empty_hidden_dir, existing, follow
 except ImportError:  # loaded outside the package (tests)
     from model_identity import file_sha256
     from model_kind import inspect_file
+    from model_sidecars import drop_empty_hidden_dir, existing, follow
 from .activity_log import add_entry
 from .local_guard import may_change
 from .metadata import get_metadata
@@ -195,14 +197,13 @@ def check(deep=False):
 
 
 def _sidecars(path):
-    """The model's covers, info and notes: files named by its stem, unless another model in
-    its folder has that stem too (then they are shared, and stay)."""
+    """The model's covers, info and notes: files named by its stem, beside it or in the folder's
+    .amb, unless another model in its folder has that stem too (then they are shared, and stay)."""
     folder, name = os.path.split(path)
     stem = os.path.splitext(name)[0]
     if any(os.path.isfile(os.path.join(folder, stem + ext)) for ext in MODEL_EXTENSIONS if stem + ext != name):
         return []
-    return [(os.path.join(folder, stem + suffix), suffix) for suffix in SIDECAR_SUFFIXES
-            if os.path.isfile(os.path.join(folder, stem + suffix))]
+    return existing(os.path.join(folder, stem), SIDECAR_SUFFIXES)
 
 
 def move(data):
@@ -226,7 +227,7 @@ def move(data):
     moved, left = [os.path.basename(dest)], []
     dest_stem = os.path.splitext(dest)[0]
     for path, suffix in sidecars:
-        target = dest_stem + suffix
+        target = follow(path, dest_stem, suffix)
         try:
             if os.path.exists(target):
                 raise FileExistsError(target)
@@ -235,6 +236,7 @@ def move(data):
         except OSError as error:
             left.append(os.path.basename(path))
             print(f"[Anomalous Browser] Tidy: {os.path.basename(path)} stayed where it was: {error}")
+    drop_empty_hidden_dir(os.path.dirname(source))
     forget_file_lists()
     to_rel = os.path.relpath(dest, root_path).replace(os.sep, "/")
     add_entry("file", "model_move", to_rel, {"move": {

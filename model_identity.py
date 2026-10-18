@@ -6,6 +6,7 @@ A model's information comes in three layers, the user's first:
 - <model>.info            what a scan found: Civitai's record, or (id -1) what the file
                           itself tells; <model>.civitai.info is the same from other tools;
 - the model file itself.
+The first two are beside the model or in its folder's .amb (model_sidecars.py).
 """
 
 import hashlib
@@ -16,11 +17,10 @@ import struct
 
 try:
     from .model_kind import MAX_HEADER, inspect_file
+    from .model_sidecars import USER_INFO_SUFFIX, find
 except ImportError:  # the standalone scanner imports this file on its own
     from model_kind import MAX_HEADER, inspect_file
-
-
-USER_INFO_SUFFIX = ".anomalous.json"
+    from model_sidecars import USER_INFO_SUFFIX, find
 
 
 def read_json(path):
@@ -40,7 +40,8 @@ def scan_choice(base):
     """What the user chose about scanning a model, kept in <model>.anomalous.json ("scan"):
     "skip" (a scan of its folder leaves it out; picking it by hand still scans it), "scan"
     (asked once, scanned like any other) or "" (not chosen). ``base``: the path without extension."""
-    choice = (read_json(base + USER_INFO_SUFFIX) or {}).get("scan")
+    user = find(base, USER_INFO_SUFFIX)
+    choice = (read_json(user) or {}).get("scan") if user else None
     return choice if choice in SCAN_CHOICES else ""
 
 
@@ -48,8 +49,9 @@ def scan_info_path(base):
     """The sidecar holding a scan result: <model>.info, else another tool's <model>.civitai.info.
     A .civitai.info with only edits made in older versions (no Civitai ids) does not count,
     so editing a model's name never makes it look scanned. ``base``: the path without extension."""
-    if os.path.exists(base + ".info"):
-        return base + ".info"
+    info = find(base, ".info")
+    if info:
+        return info
     data = read_json(base + ".civitai.info")
     if data is not None and ("id" in data or "modelId" in data):
         return base + ".civitai.info"

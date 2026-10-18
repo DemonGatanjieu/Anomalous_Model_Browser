@@ -21,6 +21,7 @@ from model_policies import is_physical_rename_protected
 from recycle_bin import move_to_trash
 from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, safetensors_damage, scan_choice, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
 from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, download_media, fetch_civitai_info, fetch_model_description
+import model_sidecars as sidecars
 
 
 # Fixed tuples avoid rebuilding long extension lists for every scanned model.
@@ -29,7 +30,6 @@ MEDIA_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", "
 PREVIEW_SUFFIXES = tuple(f".preview{ext}" for ext in MEDIA_EXTENSIONS)
 CIVITAI_BACKUP_SUFFIXES = tuple(f".civitai_bak{ext}" for ext in MEDIA_EXTENSIONS)
 COVER_SUFFIXES = MEDIA_EXTENSIONS + PREVIEW_SUFFIXES
-ACTIVE_COVER_SUFFIXES = PREVIEW_SUFFIXES + MEDIA_EXTENSIONS
 SIDECAR_SUFFIXES = (
     ".info", ".civitai.info", USER_INFO_SUFFIX, ".json", ".txt", ".yaml",
     *MEDIA_EXTENSIONS,
@@ -38,21 +38,13 @@ SIDECAR_SUFFIXES = (
 )
 
 
-def same_file(a, b):
-    """Byte-for-byte equal (covers are small; size is checked first)."""
-    try:
-        return os.path.getsize(a) == os.path.getsize(b) and calculate_sha256(a) == calculate_sha256(b)
-    except OSError:
-        return False
-
-
-def cover_owners(base):
-    """(Civitai's, the user's) active covers. A cover is Civitai's only when it is a copy of the
-    Civitai image saved last time (<model>.civitai_bak.*); any other cover is the user's."""
-    backups = [base + ext for ext in CIVITAI_BACKUP_SUFFIXES if os.path.exists(base + ext)]
-    covers = [base + ext for ext in ACTIVE_COVER_SUFFIXES if os.path.exists(base + ext)]
-    civitai = [c for c in covers if any(same_file(c, b) for b in backups)]
-    return civitai, [c for c in covers if c not in civitai]
+def drop_partial(base):
+    """A download that did not finish (<base>.<ext>) goes."""
+    for ext in MEDIA_EXTENSIONS:
+        try:
+            os.remove(base + ext)
+        except OSError:
+            pass
 
 
 def write_scan_progress(progress_file, phase, total=0, current=0, filename=""):
@@ -239,8 +231,11 @@ def scan_one(args, state, rename_log, root, filename, previous):
         info_data.pop("anomalous_custom_name", None)
     elif args.virtual_rename:
         info_data["anomalous_custom_name"] = f"{model_name}_{version_name}"
+    noted = sidecars.civitai_cover_hash(old_base)
+    if noted and sidecars.COVER_HASH_KEY not in info_data:
+        info_data[sidecars.COVER_HASH_KEY] = noted  # fresh data keeps knowing the cover until a new one comes
     if not args.dry_run:
-        with open(old_base + ".info", 'w', encoding='utf-8') as f:
+        with open(sidecars.target(old_base, ".info"), 'w', encoding='utf-8') as f:
             json.dump(info_data, f, ensure_ascii=True, indent=4)
         print(f"[+] 写入纯净版 Civitai 描述 -> .info")
     else:
@@ -249,12 +244,32 @@ def scan_one(args, state, rename_log, root, filename, previous):
     media_url = None
     if not args.skip_media:
         media_url = next((img.get("url") for img in civitai_data.get("images") or [] if img.get("url")), None)
-    civitai_covers, user_covers = cover_owners(old_base)
+    civitai_covers, user_covers = sidecars.cover_owners(old_base)
     # Download when the data is fresh, or when the model has no cover at all.
     if media_url and not state["civitai_down"] and not state["covers_down"] and (fresh or not (civitai_covers or user_covers)):
         if not args.dry_run:
             print(f"[*] 正在下载预览媒体...")
-            saved_path = download_media(media_url, old_base + ".civitai_bak")
+            # Fetched under a working name, so a broken download never replaces a cover.
+            working = old_base + ".amb_download"
+            fetched = download_media(media_url, working)
+            if not fetched:
+                drop_partial(working)
+            saved_path = None
+            if fetched and user_covers:
+                # Civitai's picture is kept aside (in .amb when the setting says), to bring back later.
+                kept_before = sidecars.backups(old_base)
+                aside = sidecars.target(old_base, ".civitai_bak" + os.path.splitext(fetched)[1])
+                os.replace(fetched, aside)
+                saved_path = aside
+                try:
+                    older = [path for path in kept_before if path != aside]
+                    if older:
+                        move_to_trash(*older)
+                except Exception as e:
+                    print(f"[-] 旧的 Civitai 封面备份没有移走: {e}")
+            elif fetched:
+                ext = os.path.splitext(fetched)[1]
+                saved_path = old_base + (ext if ext.startswith('.preview.') else f".preview{ext}")
             state["cover_failures"] = 0 if saved_path else state["cover_failures"] + 1
             if state["cover_failures"] >= COVERS_DOWN_AFTER:
                 state["covers_down"] = True
@@ -266,16 +281,16 @@ def scan_one(args, state, rename_log, root, filename, previous):
                     # The user's cover always stays; Civitai's image is kept as the backup.
                     print(f"[*] 保留你自己的封面，Civitai 封面存为备份")
                 else:
-                    ext = os.path.splitext(saved_path)[1]
-                    preview_path = old_base + (ext if ext.startswith('.preview.') else f".preview{ext}")
-                    # Earlier copies of Civitai's image under another name give way to the new one.
-                    older = [c for c in civitai_covers if c != preview_path]
+                    # Earlier Civitai pictures, as covers or kept aside, give way to the new one:
+                    # the cover is Civitai's, so nothing needs keeping aside.
+                    older = [c for c in civitai_covers if c != saved_path] + sidecars.backups(old_base)
                     try:
                         if older:
                             move_to_trash(*older)
                     except Exception as e:
                         print(f"[-] 旧的 Civitai 封面没有移走: {e}")
-                    shutil.copy2(saved_path, preview_path)
+                    os.replace(fetched, saved_path)
+                    sidecars.note_cover_hash(old_base, saved_path)
         else:
             print(f"[Dry-Run] 拟下载预览媒体...")
 
@@ -299,7 +314,7 @@ def scan_one(args, state, rename_log, root, filename, previous):
             if not args.dry_run:
                 try:
                     print(f"[*] Hash 一致，把已确认的重复副本移到回收站: {filename}")
-                    move_to_trash(file_path, *[old_base + ext for ext in SIDECAR_SUFFIXES])
+                    move_to_trash(file_path, *[path for path, _ in sidecars.existing(old_base, SIDECAR_SUFFIXES)])
                     entry["duplicate_of"] = new_file_path
                 except Exception as e:
                     print(f"[-] 重复副本没有移走，两份都保留 (可能文件被占用或这个盘没有回收站): {e}")
@@ -309,9 +324,8 @@ def scan_one(args, state, rename_log, root, filename, previous):
         elif not args.dry_run:
             os.rename(file_path, new_file_path)
             rename_log[file_path] = new_file_path
-            for ext in SIDECAR_SUFFIXES:
-                if os.path.exists(old_base + ext):
-                    os.replace(old_base + ext, new_base + ext)
+            for path, ext in sidecars.existing(old_base, SIDECAR_SUFFIXES):
+                os.replace(path, sidecars.follow(path, new_base, ext))
             print(f"[+] 物理重命名完成: {filename}  ==>  {new_filename}")
             entry["renamed_to"] = new_file_path
         else:
@@ -381,13 +395,10 @@ def main():
             old_base = os.path.splitext(old_path)[0]
             new_base = os.path.splitext(new_path)[0]
             
-            for ext in SIDECAR_SUFFIXES:
-                new_ext_path = new_base + ext
-                old_ext_path = old_base + ext
-                if os.path.exists(new_ext_path):
-                    print(f"[*] 恢复配套文件: {os.path.basename(new_ext_path)} -> {os.path.basename(old_ext_path)}")
-                    if not args.dry_run:
-                        os.replace(new_ext_path, old_ext_path)
+            for new_ext_path, ext in sidecars.existing(new_base, SIDECAR_SUFFIXES):
+                print(f"[*] 恢复配套文件: {os.path.basename(new_ext_path)} -> {os.path.basename(old_base + ext)}")
+                if not args.dry_run:
+                    os.replace(new_ext_path, sidecars.follow(new_ext_path, old_base, ext))
 
         print("[+] 回滚完成！")
         sys.exit(0)
