@@ -14,6 +14,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
+import isolated_layout  # noqa: E402,F401 - side files beside the model, whatever this computer chose
 from api import backup  # noqa: E402
 
 PARTS = ("recipes", "combos", "materials", "parameters", "comfy_workflows")

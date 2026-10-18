@@ -10,6 +10,7 @@ PLUGIN_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PLUGIN_DIR.parents[1]))
 sys.path.insert(0, str(PLUGIN_DIR))
 
+import isolated_layout  # noqa: F401 - side files beside the model, whatever this computer chose
 import scraper
 from api import metadata, scan_choice, scan_summary, scanner
 from model_identity import computed_file_identity

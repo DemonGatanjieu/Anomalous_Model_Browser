@@ -11,6 +11,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
+import isolated_layout  # noqa: F401 - side files beside the model, whatever this computer chose
 import scraper
 from aiohttp.test_utils import make_mocked_request
 

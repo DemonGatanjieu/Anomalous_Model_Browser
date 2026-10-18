@@ -18,6 +18,7 @@ from aiohttp.test_utils import make_mocked_request
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
+import isolated_layout  # noqa: E402,F401 - side files beside the model, whatever this computer chose
 from api import download_sources, hf_card, model_download  # noqa: E402
 
 DATA = b"model bytes " * 1000
