@@ -5,19 +5,19 @@ import { loadGptSovitsStatus } from './audio_engines.js';
 import { renderTtsVersion } from './ui_tts_version.js';
 import { renderTtsPresets } from './ui_tts_presets.js';
 import { formatSize, pretrainedReminder, setupSummary, shownPretrained, startPretrainedDownload } from './tts_setup_api.js';
-import { foldSection } from './ui_tts_fold.js';
+import { remember, remembered, tabStrip } from './ui_tab_strip.js';
 
 /**
- * GPT-SoVITS settings, opened from the audio sidebar's footer. On top one line says whether
- * everything is ready (or what is missing, with a way to get it), then the tones every
- * character uses (ui_tts_presets.js); the rest is folded, and opens by itself when something
- * there needs you: the base files (pretrained files to download, or the GPT-SoVITS packages they
- * come from, and missing Python packages), where the characters are and the node's settings
- * file, and the Anomalous_TTS version. All from the node's `/anomalous_tts/status`. Where
- * folders are is shown, not changed: the node takes them only from its settings file. Missing
- * pretrained files are fetched on first use anyway, so the sidebar entry only gets a small dot
- * (dismissable) when the characters here need them; missing Python packages get a red one.
- * While a download runs the dialog polls the status and redraws; it stops once it is closed.
+ * GPT-SoVITS settings, opened from the audio sidebar's footer. A chip beside the title says
+ * whether everything is ready; tabs show one part at a time: the tones every character uses and
+ * the ones for speaking another language (ui_tts_presets.js), the base files (pretrained files to
+ * download, or the GPT-SoVITS packages they come from, and missing Python packages; a dot when
+ * they need you), where the characters are and the node's settings file, and the Anomalous_TTS
+ * version. All from the node's `/anomalous_tts/status`. Where folders are is shown, not changed:
+ * the node takes them only from its settings file. Missing pretrained files are fetched on first
+ * use anyway, so the sidebar entry only gets a small dot (dismissable) when the characters here
+ * need them; missing Python packages get a red one. While a download runs the dialog polls the
+ * status and redraws; it stops once it is closed.
  */
 
 const DISMISSED_KEY = 'anomalous_tts_pretrained_dismissed';
@@ -206,54 +206,53 @@ export function setupAttention(status, languages = [], needs = []) {
 }
 
 /**
- * The line on top: missing Python packages (red), base files to download (the reminder),
- * a download running, or everything ready. `redraw()` after "don't remind me".
+ * The chip beside the title: missing Python packages (red), base files to download (yellow),
+ * a download running, or everything ready.
  */
-function renderStatusLine(status, options, redraw) {
-    const { onChanged, onDismissed, languages = [], needs = [] } = options;
+function statusChip(status, languages, needs) {
     const summary = setupSummary(status, needs);
+    const reminder = pretrainedReminder(status, languages, storedDismissed(), needs);
+    const [kind, text] = summary.packages ? ['is-blocked', t('ttsStatusPackages', { count: summary.packages })]
+        : summary.downloading ? ['is-busy', t('ttsStatusDownloading')]
+            : reminder.due ? ['is-missing', t('ttsStatusMissing', { count: reminder.items.length })]
+                : ['', t('ttsStatusReady')];
+    return el('span', `anomalous-tts-status ${kind}`.trim(), text);
+}
+
+/** Why the base files tab needs you, or '' (its dot). */
+function filesAttention(status, languages, needs) {
+    if (setupSummary(status, needs).packages) return t('ttsSetupDotPackages');
+    return pretrainedReminder(status, languages, storedDismissed(), needs).due ? t('ttsSetupDotPretrained') : '';
+}
+
+/** The base files tab: the reminder with download-all, missing packages, each file. `redraw()` after "don't remind me". */
+function renderFiles(status, options, redraw) {
+    const { onChanged, onDismissed, languages = [], needs = [] } = options;
     const local = status.local !== false;
     const reminder = pretrainedReminder(status, languages, storedDismissed(), needs);
-    const box = el('section', 'anomalous-tts-setup');
-    if (!local) box.append(el('div', 'anomalous-tts-setup-notice', t('ttsSetupRemote')));
-    if (summary.packages) {
-        box.append(el('div', 'anomalous-tts-status is-blocked', t('ttsStatusPackages', { count: summary.packages })));
-    } else if (reminder.due) {
-        box.append(renderReminder(reminder, local, onChanged, () => {
+    const parts = [];
+    if (reminder.due) {
+        parts.push(renderReminder(reminder, local, onChanged, () => {
             storeDismissed(reminder.items.map(item => item.id));
             redraw();
             onDismissed?.();
         }));
-    } else {
-        box.append(el('div', `anomalous-tts-status${summary.downloading ? ' is-busy' : ''}`,
-            t(summary.downloading ? 'ttsStatusDownloading' : 'ttsStatusReady', { count: summary.characters })));
     }
-    return box;
-}
-
-/** The folded parts that come from the status: the base files, and where the characters and the settings file are. */
-function renderStatusFolds(status, options) {
-    const { onChanged, needs = [] } = options;
-    const local = status.local !== false;
-    const items = shownPretrained(status, needs);
-    const ready = items.filter(item => item.state === 'ok').length;
     const packages = renderPackages(status);
-    const files = foldSection('files', t('ttsFoldFiles'), t('ttsFoldFilesMeta', { ready, count: items.length }),
-        [...(packages ? [packages] : []), renderPretrained(status, local, onChanged, needs)],
-        Boolean(packages) || items.some(item => item.required && item.state !== 'ok'));
-    const settingsFile = renderSettingsFile(status);
-    const places = foldSection('places', t('ttsFoldPlaces'), t('ttsSetupCharacters', { count: setupSummary(status, needs).characters }),
-        [renderStorage(status), ...(settingsFile ? [settingsFile] : [])]);
-    return [files, places];
+    if (packages) parts.push(packages);
+    parts.push(renderPretrained(status, local, onChanged, needs));
+    return parts;
 }
 
+const TABS = ['tones', 'languages', 'files', 'places', 'version'];
+const TAB_KEY = 'anomalous_tts_setup_tab';
 let activeScope = null;
 
 /**
  * The settings dialog. `onChanged()` redraws the studio and sidebar after a change;
- * the dialog then reloads the status and redraws itself.
+ * the dialog then reloads the status and redraws itself. It opens on the base files when they
+ * need the user, on the tones with `showPresets` (Voice-over's link), else where it was left.
  */
-/** `showPresets`: scrolled to the generation presets (the Script Director's link). */
 export async function openTtsSetup({ onChanged, languages = [], needs = [], groups = [], showPresets = false }) {
     activeScope?.dispose();
     const scope = createViewScope();
@@ -286,8 +285,10 @@ export async function openTtsSetup({ onChanged, languages = [], needs = [], grou
     const header = el('div', 'anomalous-voice-modal-header');
     const heading = el('div', 'anomalous-voice-modal-heading');
     const subtitle = el('div', 'anomalous-voice-modal-subtitle');
+    let chip = el('span');
     heading.append(el('div', 'anomalous-voice-modal-title', t('ttsSetupTitle')), subtitle);
-    header.append(heading, button('anomalous-voice-modal-close', '×', close, t('close')));
+    header.append(heading, chip, button('anomalous-voice-modal-close', '×', close, t('close')));
+    const tabsSlot = el('div', 'anomalous-tts-setup-tabs');
     const body = el('div', 'anomalous-tts-setup-modal-body');
 
     const options = {
@@ -301,13 +302,33 @@ export async function openTtsSetup({ onChanged, languages = [], needs = [], grou
         },
     };
     // Kept across redraws (the download poll redraws the rest): the tones being edited, a check for updates.
-    const presets = el('section', 'anomalous-tts-setup');
-    presets.append(renderTtsPresets(status, groups, status.local !== false, { reveal: showPresets }));
-    const version = foldSection('version', t('ttsVersionTitle'), '', [renderTtsVersion(status.local !== false)]);
+    const local = status.local !== false;
+    const presets = renderTtsPresets(status, groups, local);
+    const version = renderTtsVersion(local);
+    let tab = filesAttention(status, languages, needs) ? 'files' : showPresets ? 'tones' : remembered(TAB_KEY, TABS, 'tones');
+
+    const content = () => {
+        if (tab === 'tones') return [presets.tones];
+        if (tab === 'languages') return [presets.languages];
+        if (tab === 'files') return renderFiles(status, options, draw);
+        if (tab === 'places') return [renderStorage(status), renderSettingsFile(status)].filter(Boolean);
+        return [version];
+    };
     const draw = () => {
         const summary = setupSummary(status, needs);
         subtitle.textContent = summaryText(status, summary);
-        body.replaceChildren(renderStatusLine(status, options, draw), presets, ...renderStatusFolds(status, options), version);
+        chip.replaceWith(chip = statusChip(status, languages, needs));
+        tabsSlot.replaceChildren(tabStrip(TABS.map(id => ({
+            id, label: t(`ttsSetupTab_${id}`), dot: id === 'files' ? filesAttention(status, languages, needs) : '',
+        })), tab, (id) => {
+            tab = id;
+            remember(TAB_KEY, id);
+            draw();
+        }));
+        const section = el('section', 'anomalous-tts-setup');
+        if (!local) section.append(el('div', 'anomalous-tts-setup-notice', t('ttsSetupRemote')));
+        section.append(...content());
+        body.replaceChildren(section);
         // While a download runs: fresh status once a second, until the dialog closes.
         clearTimeout(pollTimer);
         if (summary.downloading) pollTimer = setTimeout(refresh, POLL_MS);
@@ -319,7 +340,7 @@ export async function openTtsSetup({ onChanged, languages = [], needs = [], grou
         if (!scope.signal.aborted && status) draw();
     };
     draw();
-    modal.append(header, body);
+    modal.append(header, tabsSlot, body);
     overlay.append(modal);
     document.body.append(overlay);
 }

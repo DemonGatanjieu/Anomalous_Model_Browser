@@ -3,18 +3,16 @@ import { button, el } from './usage_view.js';
 import { PARAM_RANGES, SAMPLING, compareFeel, liveliness } from './tts_presets_api.js';
 
 /**
- * The tones (generation presets) as a row of choices and what the picked one means, always
- * against one fixed tone (the default one in the settings, a character's own on Voice-over): the
- * caller's listen row, then folded under "More", a sentence ("livelier than your default"), a
- * steady-to-lively scale with both marked and the four numbers as the Current node card's bars
- * (base → this one), each with its plain name and the node's own name (`top_k` …) and editable
- * in place, and the caller's `more` elements. Shared by GPT-SoVITS Settings (ui_tts_presets.js)
- * and Voice-over's side panel (ui_script_tune.js); the callers keep the state and draw it again
- * after each change.
+ * The tones (generation presets) as a row of choices with the caller's listen row; with `detail`
+ * also what the picked one means against one fixed tone (the default one in the settings, a
+ * character's usual on Voice-over): a sentence ("livelier than your default"), a steady-to-lively
+ * scale with both marked and the four numbers as the Current node card's bars (base → this one),
+ * each with its plain name and the node's own name (`top_k` …) and editable in place. Shared by
+ * GPT-SoVITS Settings (ui_tts_presets.js) and Voice-over's side panel (ui_script_tune.js); the
+ * callers keep the state and draw it again after each change.
  */
 
 const brief = value => String(Math.round(value * 100) / 100);
-let moreOpen = false; // as the user left the fold, across redraws and both places
 
 function numberInput(key, value, onChange) {
     const [min, max, step] = PARAM_RANGES[key];
@@ -79,11 +77,11 @@ function feelScale(base, now, baseName) {
  * `values(id)` gives a tone's four numbers; `describe(id)` a line about it or ''; `builtin(id)`
  * its built-in numbers or null; `editable(id)`; `onPick(id)`; `onEdit(id, key, value)`;
  * `extra`: elements after the choices (a "+ New" button); `listen`: the caller's listen row;
- * `more`: the caller's elements at the end of the fold (links, notes).
+ * `detail`: the comparison and the numbers too.
  */
 export function renderPresetSwitch({
     choices, selected, base, baseName, baseText, values, describe = () => '', builtin = () => null,
-    editable = () => false, onPick, onEdit, extra = [], listen = null, more = [], disabled = false,
+    editable = () => false, onPick, onEdit, extra = [], listen = null, detail = false, disabled = false,
 }) {
     const box = el('div', 'anomalous-tts-switch');
     const row = el('div', 'anomalous-tts-switch-choices');
@@ -98,6 +96,9 @@ export function renderPresetSwitch({
         row.append(chip);
     }
     row.append(...extra);
+    box.append(row);
+    if (listen) box.append(listen);
+    if (!detail) return box;
 
     const now = values(selected);
     const before = values(base) || now;
@@ -107,10 +108,6 @@ export function renderPresetSwitch({
     const about = describe(selected);
     if (about) sentence.append(document.createTextNode(` ${about}`));
 
-    const numbers = el('details', 'anomalous-tts-switch-numbers');
-    numbers.open = moreOpen;
-    numbers.addEventListener('toggle', () => { moreOpen = numbers.open; });
-    numbers.append(el('summary', '', t('ttsFeelMore')), sentence, feelScale(before, now, baseName));
     const rows = el('div', 'anomalous-tts-switch-rows');
     const own = builtin(selected);
     for (const key of SAMPLING) {
@@ -119,11 +116,7 @@ export function renderPresetSwitch({
             onEdit: editable(selected) && !disabled ? value => onEdit(selected, key, value) : null,
         }));
     }
-    numbers.append(rows, ...more);
-
-    box.append(row);
-    if (listen) box.append(listen);
-    box.append(numbers);
+    box.append(sentence, feelScale(before, now, baseName), rows);
     return box;
 }
 

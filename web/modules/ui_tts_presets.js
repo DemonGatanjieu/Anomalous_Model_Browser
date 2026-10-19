@@ -7,36 +7,39 @@ import {
 } from './tts_presets_api.js';
 import { keepParamFocus, renderPresetSwitch } from './ui_tts_preset_switch.js';
 import { createModePreview } from './ui_tts_mode_preview.js';
-import { foldSection } from './ui_tts_fold.js';
+import { remember, remembered } from './ui_tab_strip.js';
 
 /**
- * The tones (the node's generation presets) in GPT-SoVITS Settings, "which tone to use". The
- * tones are a row of choices: the one picked says in a few words what it is, can be heard read
- * by a character next to the others (ui_tts_mode_preview.js), and under "More" is shown against
- * the default one with its numbers, changed in place (ui_tts_preset_switch.js); beside it "Make
- * default", "Reset" for a changed built-in one, "Rename" and "Delete" for one made here, and
- * "+ New" copies the one picked. Folded below, which tone a pair of languages uses (a Japanese
- * character speaking Chinese). Every change is saved at once to the node's presets file; a
- * character's own settings are in ui_tts_tuning.js.
+ * The tones (the node's generation presets) in GPT-SoVITS Settings, two tabs' worth. "Which tone
+ * to use": a row of choices; the one picked says in a few words what it is, can be heard read by
+ * a character next to the others (ui_tts_mode_preview.js), and with "Numbers" switched on is shown
+ * against the default one with its numbers, changed in place (ui_tts_preset_switch.js); beside it
+ * "Make default", "Reset" for a changed built-in one, "Rename" and "Delete" for one made here, and
+ * "+ New" copies the one picked. "Speaking another language": which tone a pair of languages uses
+ * (a Japanese character speaking Chinese). Every change is saved at once to the node's presets
+ * file; a character's own settings are in ui_tts_tuning.js.
  */
 
+const DETAIL_KEY = 'anomalous_tts_tones_detail';
+
 /**
- * The settings group; `status` is the node's status (its `format` tells whether it has presets);
- * `reveal` scrolls to it once its presets are in (the Script Director's link).
+ * `{ tones, languages }`, the two parts; `status` is the node's status (its `format` tells whether
+ * it has presets).
  */
-export function renderTtsPresets(status, groups, local, { reveal = false } = {}) {
+export function renderTtsPresets(status, groups, local) {
     const group = el('div', 'anomalous-tts-setup-group anomalous-tts-presets');
-    const title = el('div', 'anomalous-tts-section', t('ttsPresetsPick'));
-    title.title = t('ttsPresetsHint');
-    group.append(title);
+    const languages = el('div', 'anomalous-tts-setup-group');
     if (Number(status?.format) < PRESETS_FORMAT) {
         group.append(el('div', 'anomalous-tts-hint', t('ttsPresetsNeedsNode')));
-        return group;
+        languages.append(el('div', 'anomalous-tts-hint', t('ttsPresetsNeedsNode')));
+        return { tones: group, languages };
     }
+    let detail = remembered(DETAIL_KEY, ['simple', 'numbers'], 'simple') === 'numbers';
+    const head = el('div', 'anomalous-tts-presets-head');
     const body = el('div', 'anomalous-tts-presets-body', '…');
     const note = el('div', 'anomalous-tts-hint');
     note.hidden = true;
-    group.append(body, note);
+    group.append(head, body, note);
     let view = null;
     let state = null;
     let selected = null;
@@ -196,6 +199,7 @@ export function renderTtsPresets(status, groups, local, { reveal = false } = {})
             onEdit: (name, key, value) => change(() => { state.numbers[name][key] = value; }),
             extra: [newChip],
             listen: listening,
+            detail,
         });
 
         const rules = el('div', 'anomalous-tts-preset-rules');
@@ -208,13 +212,25 @@ export function renderTtsPresets(status, groups, local, { reveal = false } = {})
         }
         row(t('ttsPresetsCross'), presetSelect(state.cross, value => change(() => { state.cross = value; })));
 
-        const pairs = languagePairs(groups, view.languages);
-        const firstPair = pairs[0]?.split('>');
-        const rulesMeta = firstPair ? t('ttsFoldLanguagesMeta', {
-            pair: t('ttsPresetsPair', { ref: t(`scriptRunLang_${firstPair[0]}`), lang: t(`scriptRunLang_${firstPair[1]}`) }),
-            name: label(state.rules[pairs[0]] || state.cross),
-        }) : '';
-        body.replaceChildren(modes, foldSection('languages', t('ttsFoldLanguages'), rulesMeta, [rules]));
+        // "Simple / Numbers" beside the title: the comparison and the numbers only when asked for.
+        const title = el('div', 'anomalous-tts-section', t('ttsPresetsPick'));
+        title.title = t('ttsPresetsHint');
+        const toggle = el('div', 'anomalous-sd-run-segment');
+        toggle.setAttribute('role', 'radiogroup');
+        for (const [id, key] of [['simple', 'ttsTonesSimple'], ['numbers', 'ttsTonesNumbers']]) {
+            const chip = button('anomalous-sd-run-choice', t(key), () => {
+                if ((id === 'numbers') === detail) return;
+                detail = id === 'numbers';
+                remember(DETAIL_KEY, id);
+                draw();
+            });
+            chip.setAttribute('role', 'radio');
+            chip.setAttribute('aria-checked', String((id === 'numbers') === detail));
+            toggle.append(chip);
+        }
+        head.replaceChildren(title, toggle);
+        body.replaceChildren(modes);
+        languages.replaceChildren(rules);
     };
 
     loadPresets().then(data => {
@@ -222,9 +238,8 @@ export function renderTtsPresets(status, groups, local, { reveal = false } = {})
         state = stateFromView(data);
         selected = state.defaultName;
         draw();
-        if (reveal) group.scrollIntoView({ block: 'start' });
     }).catch(e => {
         body.textContent = t('ttsPresetsSaveFailed', { error: e.message });
     });
-    return group;
+    return { tones: group, languages };
 }

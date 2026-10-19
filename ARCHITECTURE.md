@@ -249,18 +249,18 @@ covered by the `styles.css` manifest.
   next to the general ones, a character's `defaults` / `defaults.by_language` as
   rows and back, keeping every other field, where a mode sits between steady and
   lively, a line to listen with in each language). `ui_tts_preset_switch.js`
-  draws the tones (the presets) as choices with the caller's listen row, and folded
-  under "More", the picked one against one fixed tone (the default one, or a
-  character's usual): a sentence, a steady-to-lively scale and the four numbers as
-  the Current node card's bars, each with its plain name and the node's own name
-  (`top_k` …), editable in place. `ui_tts_mode_preview.js` makes
+  draws the tones (the presets) as choices with the caller's listen row, and when
+  asked for (Settings' Numbers switch, Voice-over's Numbers tab), the picked one
+  against one fixed tone (the default one, or a character's usual): a sentence, a
+  steady-to-lively scale and the four numbers as the Current node card's bars, each
+  with its plain name and the node's own name (`top_k` …), editable in place. `ui_tts_mode_preview.js` makes
   and keeps the takes for listening (one line, one seed, only the mode changing,
   through Preview Audio). `ui_tts_presets.js` is the group in the GPT-SoVITS
   settings dialog (that switch with a character and a line to listen with, make
-  default / reset / new / rename / delete, the rules per pair folded), saving each change at once; `ui_tts_tuning.js` is the
+  default / reset / new / rename / delete; the rules per pair as a second part), saving each change at once; `ui_tts_tuning.js` is the
   per-character dialog behind the card's Own settings button, shown only
-  with interface 16. `ui_tts_fold.js` is the dialog's folded part: a title and a line
-  about it, open by itself while it needs the user, else as the user left it.
+  with interface 16. `ui_tab_strip.js` is the row of tabs over one part at a time, shared by
+  that dialog and Voice-over's side panel (the tab left open is remembered).
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single
@@ -310,11 +310,12 @@ covered by the `styles.css` manifest.
   `ui_tts_setup.js` is the GPT-SoVITS settings dialog, opened from the sidebar
   footer (`setupAttention` gives that entry its dot). Missing pretrained files only get a dismissable dot
   when the studio's characters need them (dismissed ids in `localStorage`; a newly
-  needed file brings it back); missing packages get a red one. Inside: one status
-  line (ready, files to download, packages missing), the tones, then folded: the
-  base files (pretrained files and package sources, packages), where things are
-  (the storage place and other places with characters, shown, not changed, and the
-  settings file where folders are changed) and the version.
+  needed file brings it back); missing packages get a red one. Inside: a status chip
+  by the title (ready, files to download, packages missing), then tabs: the tones, the
+  tones for speaking another language, the base files (pretrained files and package
+  sources, packages; a dot when they need the user, and the dialog opens there), where
+  things are (the storage place and other places with characters, shown, not changed,
+  and the settings file where folders are changed) and the version.
   It polls the status only while a download runs and it is open.
   `ui_tts_import.js` is the import window. It first asks
   what the user has (`mode`: `single` = one card led by its checklist, `batch` = a
@@ -388,7 +389,8 @@ covered by the `styles.css` manifest.
   click picks (`ui_script_cast.js`: Ctrl / Shift, the characters' colours), a double-click or
   ✎ edits the text in place, the name opens a menu of characters, emotion chips per the
   line's character, a tag when the line is set for itself, buttons on hover.
-  The left side only picks; the side panel follows it (`ui_script_tune.js`): nothing picked,
+  The left side only picks; the side panel follows it (`ui_script_tune.js`; a character or
+  lines get the tabs How it reads, Numbers, Settings): nothing picked,
   the whole script (each character and how it reads); a character clicked in the list
   (`castScriptCharacter`), its language, speed and mode in this script; picked lines, who
   reads them and how, each value following the character until set there (↺ follows again).

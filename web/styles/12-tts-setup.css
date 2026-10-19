@@ -276,16 +276,6 @@
     font-weight: 600;
 }
 
-.anomalous-tts-switch-numbers > summary {
-    color: var(--amb-link);
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.anomalous-tts-switch-numbers[open] > summary {
-    margin-bottom: 6px;
-}
-
 /* Listening (ui_tts_mode_preview.js): who reads which line, then the takes heard. */
 .anomalous-tts-listen-setup,
 .anomalous-tts-takes {

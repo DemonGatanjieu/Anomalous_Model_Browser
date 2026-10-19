@@ -312,6 +312,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             canTag: canTag(),
             presetNote: state.presetNote,
             preview,
+            redraw: render,
             options: currentOptions,
             lineValues: valuesOfLine,
             setCharacter: (group, field, value) => {
