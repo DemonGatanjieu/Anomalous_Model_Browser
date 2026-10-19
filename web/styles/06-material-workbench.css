@@ -319,44 +319,6 @@
     border: 1px solid var(--amb-border);
 }
 
-/* Model Categorized Groups */
-
-.anomalous-tag-base {
-    background: rgba(var(--amb-ink-rgb), 0.08);
-    color: var(--amb-text-soft);
-    border: 1px solid var(--amb-border-strong);
-}
-
-.theme-abyssal-scarlet .anomalous-tag-base {
-    background: rgba(220, 20, 60, 0.18);
-    color: #ff3366;
-    border: 1px solid rgba(220, 20, 60, 0.45);
-}
-
-.anomalous-tag-lora {
-    background: rgba(192, 132, 252, 0.12);
-    color: #c084fc;
-    border: 1px solid rgba(192, 132, 252, 0.25);
-}
-
-.anomalous-tag-vae {
-    background: rgba(251, 146, 60, 0.12);
-    color: #fb923c;
-    border: 1px solid rgba(251, 146, 60, 0.25);
-}
-
-.anomalous-tag-clip {
-    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
-    color: var(--amb-link);
-    border: 1px solid color-mix(in srgb, var(--amb-link) 25%, transparent);
-}
-
-.anomalous-tag-other {
-    background: rgba(148, 163, 184, 0.12);
-    color: var(--amb-text-muted);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-}
-
 /* ==========================================================================
    Image Detail Studio Workbench (Studio Windowed Modal & Bento Design)
    ========================================================================== */
@@ -1504,12 +1466,10 @@
 }
 /* Progressive disclosure shared by material capture surfaces. */
 .anomalous-recipe-prompt-role-select[hidden] { display: none !important; }
-.anomalous-notebook-fold, .anomalous-secondary-actions { padding: 8px; }
-.anomalous-notebook-fold > summary, .anomalous-secondary-actions > summary { cursor: pointer; color: var(--input-text, var(--amb-text-soft)); padding: 4px; }
+.anomalous-notebook-fold { padding: 8px; }
+.anomalous-notebook-fold > summary { cursor: pointer; color: var(--input-text, var(--amb-text-soft)); padding: 4px; }
 .anomalous-notebook-fold > p { color: var(--amb-text-muted); font-size: 13px; }
 .anomalous-notebook-fold > button { margin: 6px 8px 0 0; }
-/* duplicate workbench-generation-save selector cleaned up */
-.anomalous-notebook-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .anomalous-nb-editor .anomalous-nb-textarea { font: inherit; line-height: 1.6; padding: 12px; box-sizing: border-box; }
 /* Material application and prompt composition: structural styling, no animation or blur. */
 .anomalous-material-application-result {
@@ -1549,15 +1509,6 @@
     pointer-events: none !important;
     transform: scale(0.985);
     transition: opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1), transform 0.16s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 2. Drag Cursor & Hover Feedback */
-.anomalous-paper-note[draggable="true"]  {
-    cursor: grab;
-}
-
-.anomalous-paper-note[draggable="true"]:active  {
-    cursor: grabbing;
 }
 
 /* 3. Drag Follower Floating Badge */

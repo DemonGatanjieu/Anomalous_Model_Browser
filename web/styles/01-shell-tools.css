@@ -72,18 +72,6 @@ button:active::after,
     background: var(--bg-color, var(--amb-bg-page));
 }
 
-.anomalous-lang-btn {
-    width: 100% !important;
-    border: 2px solid var(--amb-border-strong) !important;
-    padding: 12px !important;
-    font-weight: bold;
-    border-radius: 4px !important;
-    background: var(--amb-bg-panel) !important;
-    cursor: pointer;
-    color: var(--amb-text-main);
-    margin-bottom: 15px;
-}
-
 /* The models page's folder column (ui_folder_list.js): the type's heading with 📂 Open, then its
    folders; a folder's 📂 shows on hover, empty folders are dimmed, the listed one is marked. */
 .anomalous-folder-head {

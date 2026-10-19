@@ -89,8 +89,7 @@ html.theme-abyssal-scarlet,
 }
 
 /* 3. Empty State Thematic Illustration (Submerged Scarlet Mansion) */
-.theme-abyssal-scarlet .anomalous-empty-state-container,
-.theme-abyssal-scarlet .anomalous-recipe-empty  {
+.theme-abyssal-scarlet .anomalous-recipe-empty {
     background-image: url('assets/abyssal_scarlet_mansion.webp') !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
@@ -112,23 +111,6 @@ html.theme-abyssal-scarlet,
 }
 
 .theme-abyssal-scarlet .anomalous-btn-primary:hover {
-    background-color: rgba(65, 12, 24, 0.98) !important;
-    border-color: #dc143c !important;
-    color: #f1eaed !important;
-    box-shadow: none !important;
-    transform: translateY(-1px);
-}
-
-.theme-abyssal-scarlet .anomalous-btn-extract-node {
-    background-color: rgba(45, 10, 18, 0.95) !important;
-    background-image: none !important;
-    border: 1px solid rgba(220, 20, 60, 0.6) !important;
-    border-radius: 4px 12px 4px 12px !important;
-    color: #e0d8db !important;
-    box-shadow: none !important;
-}
-
-.theme-abyssal-scarlet .anomalous-btn-extract-node:hover {
     background-color: rgba(65, 12, 24, 0.98) !important;
     border-color: #dc143c !important;
     color: #f1eaed !important;
@@ -249,8 +231,7 @@ html.theme-abyssal-scarlet,
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
 
-.theme-abyssal-scarlet .anomalous-card-badge.badge-rose,
-.theme-abyssal-scarlet .anomalous-model-tag {
+.theme-abyssal-scarlet .anomalous-card-badge.badge-rose {
     color: #e0a0ac !important;
     background: rgba(36, 10, 18, 0.92) !important;
     border: 1px solid #dc143c !important;
@@ -287,11 +268,7 @@ html.theme-abyssal-scarlet,
     }
 }
 
-.theme-abyssal-scarlet .anomalous-trigger-error,
-.theme-abyssal-scarlet .anomalous-error-panel,
-.theme-abyssal-scarlet .anomalous-error-banner,
-.theme-abyssal-scarlet .anomalous-toast-error,
-.theme-abyssal-scarlet .anomalous-dialog-error {
+.theme-abyssal-scarlet .anomalous-trigger-error {
     animation: abyssal-corruption 2.8s infinite ease-in-out !important;
     border: 1px solid rgba(220, 20, 60, 0.65) !important;
 }
@@ -358,19 +335,6 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 
 .theme-abyssal-scarlet #anomalous-scan-btn.anomalous-radar-spinning svg {
     filter: none !important;
-}
-
-/* 10. Task 8: Pure Vector Iconography & Micro-interactions Overhaul */
-.anomalous-btn-icon {
-    display: inline-block;
-    vertical-align: -2px;
-    margin-right: 6px;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
-}
-
-button:hover .anomalous-btn-icon {
-    transform: scale(1.08);
-    filter: none;
 }
 
 /* Abyssal Scarlet Mode overrides for Task 8 icon buttons (Sharp Borders & Inner Shadow) */
@@ -719,8 +683,7 @@ button:hover .anomalous-btn-icon {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
 }
 
-#anomalous-header button svg,
-#anomalous-header button .anomalous-btn-icon {
+#anomalous-header button svg {
     width: 13px !important;
     height: 13px !important;
     flex-shrink: 0 !important;
@@ -752,8 +715,7 @@ button:hover .anomalous-btn-icon {
 }
 
 /* 2. Normal Mode Gallery Container & Panels (Clean Neutral Dark Canvas) */
-#anomalous-gallery-panel,
-.anomalous-gallery-container {
+#anomalous-gallery-panel {
     background-color: transparent !important;
     position: relative;
 }
@@ -762,12 +724,10 @@ button:hover .anomalous-btn-icon {
     background-color: transparent !important;
 }
 
-.anomalous-gallery-container::before,
 #anomalous-gallery-panel::before {
     display: none !important;
 }
 
-.anomalous-gallery-container > *,
 #anomalous-gallery-panel > * {
     position: relative;
     z-index: 1;
@@ -802,12 +762,10 @@ button:hover .anomalous-btn-icon {
 }
 
 .theme-abyssal-scarlet #anomalous-gallery-panel,
-.theme-abyssal-scarlet .anomalous-gallery-grid,
-.theme-abyssal-scarlet .anomalous-gallery-container {
+.theme-abyssal-scarlet .anomalous-gallery-grid {
     background-color: #0c0812 !important;
 }
 
-.theme-abyssal-scarlet .anomalous-gallery-container::before,
 .theme-abyssal-scarlet #anomalous-gallery-panel::before {
     display: block !important;
     content: '' !important;

@@ -494,21 +494,6 @@ dialog.anomalous-gallery-viewer[open] {
     color: var(--amb-text-main);
 }
 
-.anomalous-nb-header-main {
-    display: flex;
-    align-items: center;
-}
-
-.anomalous-nb-header-main {
-    min-width: 0;
-    gap: 18px;
-}
-
-.anomalous-nb-header-main h2 {
-    margin: 0;
-    white-space: nowrap;
-}
-
 /* Workflow Recipes: Studio Topbar and Modern Layout System */
 .anomalous-recipe-body {
     display: flex;
@@ -530,13 +515,6 @@ dialog.anomalous-gallery-viewer[open] {
     color: var(--amb-link);
     cursor: pointer;
     user-select: none;
-}
-
-.anomalous-recipe-node {
-    padding: 8px;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 7px;
-    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.18));
 }
 
 .anomalous-recipe-copy-param {
@@ -567,16 +545,6 @@ dialog.anomalous-gallery-viewer[open] {
     display: block;
     margin-top: 4px;
     color: var(--amb-text-muted);
-}
-
-@container (max-width: 680px) {
-    .anomalous-nb-header-main {
-        gap: 8px;
-    }
-
-    .anomalous-nb-header-main h2 {
-        font-size: 1.05rem;
-    }
 }
 
 .anomalous-recipe-empty {
@@ -1349,48 +1317,6 @@ dialog.anomalous-gallery-viewer[open] {
     }
 }
 
-/* Icon Button (for actions & tools) */
-.anomalous-btn-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: 1px solid var(--amb-border, var(--amb-border));
-    border-radius: var(--amb-radius-control, 6px);
-    background: rgba(var(--amb-ink-rgb), 0.04);
-    color: var(--amb-text-muted, #A7AAB5);
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-    box-sizing: border-box;
-}
-
-.anomalous-btn-icon:hover {
-    background: rgba(var(--amb-ink-rgb), 0.10);
-    border-color: var(--amb-border-hover, var(--amb-border-strong));
-    color: var(--amb-text-main, #E7E8ED);
-}
-
-.anomalous-btn-icon.anomalous-btn-edit:hover {
-    color: var(--amb-ok);
-    border-color: rgba(52, 211, 153, 0.35);
-    background: rgba(52, 211, 153, 0.1);
-}
-
-.anomalous-btn-icon.anomalous-btn-delete:hover {
-    color: var(--amb-danger);
-    border-color: rgba(248, 113, 113, 0.35);
-    background: rgba(248, 113, 113, 0.1);
-}
-
-.anomalous-btn-icon.anomalous-btn-export:hover {
-    color: var(--amb-link);
-    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
-    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
-}
-
 /* Ghost Button (secondary text button) */
 .anomalous-btn-ghost {
     position: relative;
@@ -1668,17 +1594,6 @@ dialog.anomalous-gallery-viewer[open] {
     margin: 0 0 4px;
     font-size: 1.15em;
     font-weight: 600;
-}
-
-.anomalous-share-options {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    color: var(--amb-text-soft);
-}
-
-.anomalous-share-options label {
-    cursor: pointer;
 }
 
 .anomalous-share-note {
