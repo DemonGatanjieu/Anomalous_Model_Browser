@@ -20,6 +20,10 @@
     grid-template-columns: 240px minmax(0, 1fr);
 }
 
+.anomalous-prompt-page .anomalous-ps-grid.has-ref {
+    grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr);
+}
+
 .anomalous-ps {
     container: anomalous-ps / inline-size;
     display: flex;
@@ -163,6 +167,51 @@
 
 .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid {
     grid-template-columns: minmax(0, 1fr) 200px;
+}
+
+/* A card opened as a reference (ui_prompt_reference.js) sits between the cards and the boxes. */
+.anomalous-ps-grid.has-ref {
+    grid-template-columns: 200px minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid.has-ref {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 200px;
+}
+
+.anomalous-ps-ref {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    padding: 10px 12px 16px;
+    overflow-y: auto;
+    border-right: 1px solid var(--amb-border);
+    background: var(--amb-bg-panel);
+}
+
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-ref {
+    order: 1;
+    border-right: 0;
+    border-left: 1px solid var(--amb-border);
+}
+
+.anomalous-ps-ref .anomalous-ps-role {
+    align-self: flex-start;
+}
+
+.anomalous-ps-tag.is-ref {
+    font-family: inherit;
+    text-align: left;
+    cursor: copy;
+}
+
+.anomalous-ps-tag.is-ref.is-there {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.anomalous-ps-ref-tick {
+    color: var(--amb-ok-text);
 }
 
 .anomalous-ps-deck {
@@ -648,6 +697,7 @@
 
 /* These blocks set their own display, which would outrank the hidden attribute. */
 .anomalous-ps-new[hidden],
+.anomalous-ps-ref[hidden],
 .anomalous-ps-target-note[hidden],
 .anomalous-ps-foreign[hidden],
 .anomalous-ps-tags[hidden],
@@ -656,7 +706,33 @@
     display: none;
 }
 
-/* A narrow drawer stacks the cards over the prompt boxes. */
+/* No room for three columns: the reference takes the cards' place, its "‹ Cards" goes back. */
+.anomalous-ps-ref-back {
+    display: none;
+}
+
+@container anomalous-ps (max-width: 980px) {
+    .anomalous-ps-grid.has-ref .anomalous-ps-deck {
+        display: none;
+    }
+
+    .anomalous-ps-grid.has-ref,
+    .anomalous-prompt-page .anomalous-ps-grid.has-ref,
+    .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid.has-ref {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .anomalous-ps-ref-back {
+        display: inline-flex;
+        flex-shrink: 0;
+    }
+
+    .anomalous-ps-ref .anomalous-ps-target-x {
+        display: none;
+    }
+}
+
+/* A narrow drawer stacks the cards (or the reference) over the prompt boxes. */
 @container anomalous-ps (max-width: 540px) {
     .anomalous-ps-grid,
     .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid {
@@ -664,8 +740,16 @@
         grid-template-rows: minmax(120px, 34%) minmax(0, 1fr);
     }
 
+    .anomalous-ps-grid.has-ref,
+    .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid.has-ref {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(120px, 40%) minmax(0, 1fr);
+    }
+
     .anomalous-ps-deck,
-    .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-deck {
+    .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-deck,
+    .anomalous-ps-ref,
+    .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-ref {
         order: 0;
         border: 0;
         border-bottom: 1px solid var(--amb-border);

@@ -67,7 +67,8 @@ export function withWeight(tag, weight) {
     return rounded === 1 ? core : `(${core}:${rounded})`;
 }
 
-const tagKey = tag => tagWeight(tag).core.trim().toLowerCase();
+/** What makes two tags the same: their words, whatever the weight or case. */
+export const tagKey = tag => tagWeight(tag).core.trim().toLowerCase();
 
 // New tags before item `at` (the end when past it); the text's ending stays at the end.
 function spliceTags(parsed, at, texts) {

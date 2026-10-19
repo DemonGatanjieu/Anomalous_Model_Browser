@@ -343,7 +343,10 @@ while the page is visible (scheduled after the previous request), on focus/visib
 and after a save; a newer request cancels the older one and a failed one keeps the
 current cards. List summaries are not prompt bodies: a prompt's text is read through
 `material_prompt_data.js` once per filename and timestamp, since a saved prompt's text
-never changes. A card's role decides its box: a positive card never goes into a
+never changes. A clicked card opens as a reference (`ui_prompt_reference.js`, read only,
+one at a time) between the cards and the boxes: a click on one of its tags adds that tag,
+"Add all" the whole card (as the preview's Add does); the ticks follow the box's text on the
+same 400 ms poll. A card's role decides its box: a positive card never goes into a
 negative box or the reverse; boxes of unknown or both roles take either. A saved
 card's preview renames it (`update_material`, tags kept) or deletes it
 (`delete_material`, to the Recycle Bin). A card, or a box's handle with the box's text
