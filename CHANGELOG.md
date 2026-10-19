@@ -31,7 +31,7 @@
 - A **Download by name** from ComfyUI-Manager's model list now also says where the list's file is (the site and repository), to help you decide.
 - A list entry that does not say its type is no longer offered for a node whose type is known.
 - Without ComfyUI Manager, Model Check says it would add one more place to download from when a model's source is not found.
-- The rules of Model Check (what counts as the same model, the confidence levels, foundation components, download sources and where ComfyUI-Manager fits) are now written in one place: `docs/model-check-rules.md`.
+- The rules of Model Check (what counts as the same model, the confidence levels, foundation components, download sources and where ComfyUI-Manager fits) are now written in one place: `docs/guides/model-check-rules.md`.
 
 ### ⭐ Combos kept from a picture are easy to tell apart (图片存的搭配一眼认得出)
 - **The card shows the picture you kept it from**, with the main model's cover as a small round badge in its corner, instead of the model's cover alone (several combos of one model used to look the same).
