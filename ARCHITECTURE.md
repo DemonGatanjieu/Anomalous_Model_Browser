@@ -453,7 +453,7 @@ covered by the `styles.css` manifest.
   (`/anomalous/find_model`, `openModelDetail`), save its values or the picked nodes as a combo, each
   only where it applies; for the empty canvas, AMB's pages. `canvas_menu_settings.js` keeps which
   entries are on, their order and whether they sit in one "AMB" submenu or right in the menu
-  (localStorage, no DOM); `ui_canvas_menu_settings.js` is its Settings -> Canvas group.
+  (localStorage, no DOM); `ui_canvas_menu_settings.js` is its Settings -> Canvas group (two placement cards drawing a small menu each, a preview line per list).
   `ui_quick_search.js` is the canvas's quick search (Alt+B, the command
   `Anomalous.ModelBrowser.QuickSearch`, or the empty canvas's menu): a bar that finds combos,
   models and saved prompts as you type and puts the chosen one where the pointer was (a combo

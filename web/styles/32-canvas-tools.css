@@ -149,6 +149,114 @@
 }
 
 /* Settings -> Canvas -> Right-click menu (ui_canvas_menu_settings.js). */
+.anomalous-menu-entries-title.is-first { margin-top: 2px; }
+
+.anomalous-menu-places {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.anomalous-menu-place {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.02);
+    color: var(--amb-text-main);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-menu-place:hover { border-color: var(--amb-border-hover); }
+
+.anomalous-menu-place.is-picked {
+    border: 2px solid var(--amb-link);
+    padding: 11px;
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
+    cursor: default;
+}
+
+.anomalous-menu-place-head { display: flex; align-items: center; gap: 8px; }
+
+.anomalous-menu-place-mark {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--amb-border-strong);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.is-picked .anomalous-menu-place-mark { border-color: var(--amb-link); background: var(--amb-link); color: var(--amb-bg-panel); }
+
+.anomalous-menu-place-title { font-size: 13px; font-weight: 700; }
+
+.anomalous-menu-place-help { color: var(--amb-text-muted); font-size: 11px; line-height: 1.45; }
+
+/* The small menus drawn in the cards. */
+.anomalous-menu-sketch { display: flex; align-items: flex-start; gap: 4px; }
+
+.anomalous-menu-sketch-menu {
+    display: flex;
+    flex-direction: column;
+    width: 118px;
+    padding: 3px 0;
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+    background: var(--amb-bg-panel);
+}
+
+/* The submenu opens beside the AMB line (the fourth line). */
+.anomalous-menu-sketch-menu.is-sub { margin-top: 63px; border-color: color-mix(in srgb, var(--amb-link) 50%, transparent); }
+
+.anomalous-menu-sketch-line {
+    padding: 2px 8px;
+    overflow: hidden;
+    color: var(--amb-text-main);
+    font-size: 10.5px;
+    line-height: 17px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-menu-sketch-line.is-comfy { color: var(--amb-text-muted); }
+
+.anomalous-menu-sketch-line.is-amb { background: color-mix(in srgb, var(--amb-link) 18%, transparent); color: var(--amb-link); font-weight: 700; }
+
+.anomalous-menu-sketch-line.is-ours { color: var(--amb-link); }
+
+.anomalous-menu-sketch-rule { margin: 2px 0; border-top: 1px solid var(--amb-border); }
+
+/* What the menu will offer. */
+.anomalous-menu-preview {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 6px;
+    font-size: 11px;
+}
+
+.anomalous-menu-preview-label { color: var(--amb-text-muted); }
+
+.anomalous-menu-preview-chip {
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    color: var(--amb-link);
+}
+
+.anomalous-menu-preview-none,
+.anomalous-menu-preview-note { color: var(--amb-text-muted); }
+
 .anomalous-menu-entries-title {
     margin: 14px 0 4px;
     color: var(--amb-text-muted);
