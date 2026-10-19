@@ -14,6 +14,8 @@ import { jsonResponse } from './ui_dom.js';
 import { detachedGraph } from './detached_graph.js';
 
 const MAIN_TYPES = ['checkpoints', 'unet', 'diffusion_models'];
+// Tags nearly every picture has: a combo's name skips them so two combos read apart.
+const COMMON_TAG = /^(?:\d+\s*(?:girls?|boys?|others?)|solo|solo focus|looking at viewer|simple background|white background|smile|blush|open mouth|upper body|full body|cowboy shot)$/i;
 // The combo editor lists models without a base model under this value (notebook_canvas.js).
 const UNLABELED_BASE_MODEL = '__unlabeled__';
 
@@ -33,12 +35,27 @@ export async function loadKeptImages(signal) {
     return new Map(images.map(item => [keptKey(item), item]));
 }
 
+const fileStem = name => String(name || '').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
+
 /** What the image's workflow uses (extractRecipeMetadata) and a name: its prompt's first tags, else the file's. */
 async function readImage(sourceImage) {
     const info = await jsonResponse(await post('/anomalous/inspect_image_material', { source_image: sourceImage }), 'read image workflow');
     const metadata = extractRecipeMetadata(detachedGraph(info.workflow));
-    const name = promptTitle(metadata.promptPositive[0]) || String(sourceImage?.filename || '').replace(/\.[^.]+$/, '');
+    const name = promptTitle(metadata.promptPositive[0]) || fileStem(sourceImage?.filename);
     return { name, metadata };
+}
+
+/** A model's name as its card shows it: the name the user gave it, else the file's. */
+const modelLabel = model => String(model?.metadata?.custom_name || '').trim() || fileStem(model?.filename);
+
+/**
+ * A combo's name that tells combos apart: its first LoRA (else its main model), then the
+ * prompt's first two telling tags — "Ahri · fox ears, kimono"; the file's name when neither.
+ */
+export function comboTitle({ prompt = '', mainModel = null, loras = [], fallback = '' } = {}) {
+    const model = modelLabel(loras[0] || mainModel).slice(0, 40);
+    const subject = promptTitle(prompt, { count: 2, skip: COMMON_TAG });
+    return [model, subject].filter(Boolean).join(' · ') || fallback;
 }
 
 /** { path → this computer's model } for the paths found among `types`. */
@@ -85,13 +102,15 @@ export async function keepImageAsCombo(sourceImage, { name = '' } = {}) {
         localModels(loraPaths, ['loras']),
     ]);
     const mainModel = mains[main] || null;
-    const comboName = freeComboName(name || image.name, combos);
+    const localLoras = loraPaths.filter(path => loras[path]).map(path => loras[path]);
+    const prompt = image.metadata.promptPositive.join('\n');
+    const comboName = freeComboName(name || comboTitle({ prompt, mainModel, loras: localLoras, fallback: image.name }), combos);
     const data = {
         name: comboName,
         baseModel: mainModel ? String(mainModel.metadata?.baseModel || '').trim() || UNLABELED_BASE_MODEL : '',
         mainModel,
-        loras: loraPaths.filter(path => loras[path]).map(path => loras[path]),
-        promptEn: image.metadata.promptPositive.join('\n'),
+        loras: localLoras,
+        promptEn: prompt,
         promptZh: '',
         source_image: sourceImage,
     };
@@ -100,6 +119,16 @@ export async function keepImageAsCombo(sourceImage, { name = '' } = {}) {
     if ((await jsonResponse(response, 'save combo')).status !== 'success') throw new Error('combo save failed');
     const missing = [...(main && !mainModel ? [main] : []), ...loraPaths.filter(path => !loras[path])];
     return { filename, name: comboName, existed: false, missing };
+}
+
+/** Gives the combo kept in `filename` the name `name` (its file keeps its name). Returns the name. */
+export async function renameCombo(filename, name) {
+    const wanted = String(name || '').trim().slice(0, 100);
+    const note = (await listCombos()).find(item => item.filename === filename);
+    if (!wanted || !note) throw new Error('combo rename failed');
+    const response = await post('/anomalous/save_notebook', { filename, data: { ...note.data, name: wanted } });
+    if ((await jsonResponse(response, 'rename combo')).status !== 'success') throw new Error('combo rename failed');
+    return wanted;
 }
 
 /**

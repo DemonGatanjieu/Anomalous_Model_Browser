@@ -9,6 +9,7 @@ import { isUnetModel, UNLABELED_BASE_MODEL } from './notebook_canvas.js';
 import { STRUCTURED } from './combo_slots.js';
 import { renderStructuredCombo } from './ui_combo_structure.js';
 import { createLoraNodeChoice } from './ui_lora_node_choice.js';
+import { createComboTitle } from './ui_combo_title.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -19,21 +20,7 @@ export function createNotebookToolbar(ctx, notebook) {
     const tb = document.createElement('div');
     tb.className = 'anomalous-nb-toolbar';
 
-    const titleBox = document.createElement('div');
-    titleBox.style.display = 'flex';
-    titleBox.style.alignItems = 'center';
-    titleBox.style.gap = '8px';
-
-    const titleIcon = document.createElement('span');
-    titleIcon.textContent = '📝';
-    titleIcon.style.fontSize = '1.2rem';
-
-    const titleArea = document.createElement('h3');
-    titleArea.textContent = notebook.name;
-    titleArea.style.margin = '0';
-    titleArea.style.fontSize = '1.15rem';
-    titleArea.style.fontWeight = '700';
-    titleBox.append(titleIcon, titleArea);
+    const titleBox = createComboTitle(ctx, notebook);
 
     const rightBtns = document.createElement('div');
     rightBtns.className = 'anomalous-notebook-actions';

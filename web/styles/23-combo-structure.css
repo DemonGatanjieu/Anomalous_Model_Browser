@@ -473,6 +473,95 @@
     border-top: 1px solid var(--amb-border);
 }
 
+/* A combo kept from an output image: that image, its main model's cover as a badge. */
+.anomalous-combo-cover.is-kept-image { position: relative; }
+
+.anomalous-combo-cover img.anomalous-combo-cover-model {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--amb-bg-panel);
+    border-radius: 50%;
+    object-position: center 20%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* The toast after keeping an image as a combo: thumbnail, message + name box, Open. */
+.anomalous-mixer-toast.anomalous-kept-toast {
+    max-width: min(440px, calc(100vw - 48px));
+    padding: 8px 10px;
+}
+
+.anomalous-kept-toast-thumb {
+    flex: none;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--amb-radius-control);
+    object-fit: cover;
+}
+
+.anomalous-kept-toast-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.anomalous-kept-toast-line { color: var(--amb-text-muted); font-size: 0.92em; }
+
+.anomalous-kept-toast-name {
+    width: 100%;
+    min-width: 180px;
+    padding: 4px 8px;
+    font-size: 0.95em;
+}
+
+/* The combo editor's title: the image it was kept from, the name a click renames. */
+.anomalous-combo-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.anomalous-combo-title-icon { font-size: 1.2rem; }
+
+.anomalous-combo-title-image {
+    flex: none;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: var(--amb-radius-control);
+    background: none;
+    cursor: zoom-in;
+}
+
+.anomalous-combo-title-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-combo-title-name {
+    margin: 0;
+    overflow: hidden;
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: text;
+    border-bottom: 1px dashed transparent;
+}
+
+.anomalous-combo-title-name:hover,
+.anomalous-combo-title-name:focus-visible { border-bottom-color: var(--amb-border-hover); }
+
 @media (max-width: 560px) {
     .anomalous-structure-slot { grid-template-columns: auto 1fr; }
     .anomalous-structure-slot-where { grid-column: 2; }

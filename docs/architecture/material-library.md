@@ -119,7 +119,9 @@ as one of three things, each recording the image as its source: the whole workfl
 Workflow Recipe (`recipe_save.js`, `source_image`), its main model, LoRAs and positive
 prompt as a combo (`image_keep.js`; models are looked up among this computer's files with
 `/anomalous/resolve_paths_to_previews`, missing ones are left out; the notebook file keeps
-`source_image`), or its positive and negative prompts as a `prompt_plan` material
+`source_image`, which the Combos card and the editor's title show; the name is the first
+LoRA's (else the main model's) · the prompt's first two tags that are neither quality words
+nor ones nearly every picture has, and the toast lets the user rename it at once), or its positive and negative prompts as a `prompt_plan` material
 (`/anomalous/save_prompt_plan` stores `source.image`; the same plan saved again answers 409
 with the existing one). The image's workflow is laid on a detached graph and read with
 `extractRecipeMetadata`, so prompts follow the wiring as in a recipe. `GET

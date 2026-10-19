@@ -506,9 +506,11 @@ covered by the `styles.css` manifest.
   `ui_keep_menu.js` is the star's keep menu (also the workbench's Keep): the whole workflow, the combo or the prompts,
   each saying where it goes, opening what was kept already or removing it (to the Recycle Bin through the recipe,
   notebook or material delete route); `image_keep.js` does the keeping (an image as a combo,
-  its prompts as a saved prompt, reading what was kept) without DOM.
+  named by `comboTitle` — first LoRA or main model · two telling tags — and renamed by `renameCombo`;
+  its prompts as a saved prompt, reading what was kept) without DOM. A new combo's toast is
+  `ui_kept_toast.js` (the image's thumbnail, the name in a box to rename it on the spot, Open).
 - `ui_combos.js` renders the Combos page's list (搭配: a main model, LoRAs and a prompt, formerly Prompt Notes): search,
-  ? (what a combo is), New, and a card per combo with its model's cover and Put on canvas; a card opens the combo's editor, and dragged onto the
+  ? (what a combo is), New, and a card per combo with its model's cover (one kept from an output image shows that image, the model's cover as a badge) and Put on canvas; a card opens the combo's editor, and dragged onto the
   canvas (`material_drag.js`) becomes a new group of nodes where it is dropped. Combos keep the notes' files.
   A combo can instead hold a node structure (`data.kind === 'nodes'`): `combo_structure.js`
   captures the canvas's picked nodes (subgraphs aside) with the links between them and puts
@@ -579,7 +581,7 @@ covered by the `styles.css` manifest.
 - `ui_recipes.js` / `ui_recipe_detail.js` and `ui_notebooks.js`
   own their respective workspace surfaces and persistence flows. `ui_recipes.js` hands the
   Workflows page (its catalog) the recipe services (save, edit, fetch) and opens a recipe by name. `ui_notebooks.js` owns the Combos workspace (filling the page; its list or one combo's editor,
-  with Back to the list) and combo persistence; `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
+  with Back to the list) and combo persistence; `ui_combo_title.js` is the editor toolbar's title (a click renames; a combo kept from an image shows its thumbnail, which opens the viewer); `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
   sub-functions adhering to the 50-line rule: sticky top action toolbar with floating More popover dropdown and timed two-step delete safety guard,
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
   prompt composer with dynamic field-sizing and compact inline find & replace toolbar, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and

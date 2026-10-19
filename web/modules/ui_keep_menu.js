@@ -10,6 +10,7 @@ import { translate as t } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { jsonResponse } from './ui_dom.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { showKeptComboToast } from './ui_kept_toast.js';
 import { keepImageAsRecipe } from './recipe_save.js';
 import { keepImageAsCombo, keepImagePrompts, keptKey, loadKeptImages } from './image_keep.js';
 
@@ -55,13 +56,24 @@ async function keep(owner, spec, sourceImage, kept, { name, onKept, beforeOpen }
         }
         kept[spec.kind] = { filename: result.filename, name: result.name };
         onKept?.(kept);
-        showWorkbenchToast(keptMessage(spec, result), {
-            label: t('keepOpen'),
-            run: () => {
-                beforeOpen?.();
-                spec.open(owner, kept[spec.kind]);
-            },
-        });
+        const openKept = () => {
+            beforeOpen?.();
+            spec.open(owner, kept[spec.kind]);
+        };
+        // A new combo's name is a guess (image_keep.js comboTitle): it can be renamed right here.
+        if (spec.kind === 'combo' && !result.existed) {
+            const missing = result.missing?.length ? t('keepComboMissing', { count: result.missing.length }) : '';
+            showKeptComboToast(sourceImage, kept.combo, {
+                message: [t('keptAs_comboShort'), missing].filter(Boolean).join(' '),
+                onRenamed: (name) => {
+                    kept.combo = { ...kept.combo, name };
+                    onKept?.(kept);
+                },
+                onOpen: openKept,
+            });
+            return;
+        }
+        showWorkbenchToast(keptMessage(spec, result), { label: t('keepOpen'), run: openKept });
     } catch (error) {
         console.error(`[AMB] Could not keep the image as ${spec.kind}:`, error);
         await anomalousAlert(t(error?.message === NO_WORKFLOW ? 'keepNoWorkflow' : 'keepFailed'));

@@ -2,6 +2,11 @@
 
 ## v1.61.0 — unreleased
 
+### ⭐ Combos kept from a picture are easy to tell apart (图片存的搭配一眼认得出)
+- **The card shows the picture you kept it from**, with the main model's cover as a small round badge in its corner, instead of the model's cover alone (several combos of one model used to look the same).
+- **A name that says which one it is**: the first LoRA (or the main model) and the prompt's first two telling tags, like *Ahri · fox ears, kimono*, skipping words nearly every picture has (*1girl*, *solo*, *looking at viewer*…).
+- **Rename it right away**: the message after keeping shows the picture and the name in a box; type a new one and press Enter. In a combo's editor a click on its name renames it too, and the picture beside the name opens it large.
+
 ### 📒 Prompt cards look like notebook pages (提示词卡片换成笔记本样式)
 - In Prompt Studio each card is a page with a bound spine in its colour (green positive, red negative), its title, a Positive / Negative label and its first words as small tags instead of a cut-off line of text. The card open as the reference wears a ribbon; Common and My prompts are index tabs with how many cards they hold. Dark and light themes alike.
 

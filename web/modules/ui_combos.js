@@ -2,6 +2,7 @@
  * The Combos page (搭配): each saved combo of a main model, LoRAs and a prompt (the files
  * GET /anomalous/notebooks keeps, formerly Prompt Notes), or of the model and text nodes saved
  * from the canvas with their links (ui_combo_structure.js), as a card with its model's cover
+ * (a combo kept from an output image shows that image, its model's cover in a corner badge)
  * and Put on canvas (notebook_canvas.js: a new group of nodes that follows the pointer). A card
  * opens the combo in its editor (ui_notebook_editor.js), and dragged onto the canvas becomes a
  * new group of nodes where it is dropped. New names one and opens it.
@@ -13,6 +14,7 @@ import { freeComboName, listCombos } from './image_keep.js';
 import { bindMaterialDrag } from './material_drag.js';
 import { STRUCTURED } from './combo_slots.js';
 import { chooseNewCombo, structuredComboMeta } from './ui_combo_structure.js';
+import { outputThumbnail } from './ui_kept_toast.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -31,17 +33,31 @@ function button(className, label, onClick) {
 const modelName = model => String(model?.metadata?.custom_name || model?.filename || '').replace(/\.[^.]+$/, '');
 const withQuery = (url, query) => `${url}${url.includes('?') ? '&' : '?'}${query}`;
 
-/** The main model's cover, as the model cards show it (a video's still first frame). */
-function cover(model) {
-    const box = el('div', 'anomalous-combo-cover');
-    const url = model?.preview_url;
-    if (!url) return box;
-    const img = el('img');
+function picture(src, className = '') {
+    const img = el('img', className);
     img.loading = 'lazy';
     img.alt = '';
-    img.src = withQuery(url, /\.(mp4|webm)(?:&|$)/i.test(url) ? 'variant=poster' : 'variant=card');
+    img.src = src;
     img.onerror = () => img.remove();
-    box.append(img);
+    return img;
+}
+
+/**
+ * The main model's cover, as the model cards show it (a video's still first frame); with
+ * `image` (the output it was kept from) that image, and the model's cover as a small badge.
+ */
+function cover(model, image = null) {
+    const box = el('div', 'anomalous-combo-cover');
+    const url = model?.preview_url;
+    const modelCover = url ? withQuery(url, /\.(mp4|webm)(?:&|$)/i.test(url) ? 'variant=poster' : 'variant=card') : '';
+    if (image?.filename) {
+        box.classList.add('is-kept-image');
+        box.title = t('comboFromImage');
+        box.append(picture(outputThumbnail(image)));
+        if (modelCover) box.append(picture(modelCover, 'anomalous-combo-cover-model'));
+        return box;
+    }
+    if (modelCover) box.append(picture(modelCover));
     return box;
 }
 
@@ -75,7 +91,7 @@ function comboCard(owner, note) {
     });
     use.title = t('comboUseHint');
     body.append(use);
-    card.append(cover(structured ? { preview_url: structured.cover } : data.mainModel), body);
+    card.append(structured ? cover({ preview_url: structured.cover }) : cover(data.mainModel, data.source_image), body);
     bindMaterialDrag(card, owner, {
         payload: () => ({ type: 'combo', filename: note.filename, dragHint: t('comboDragHint'), dragTargetHint: t('comboDragCanvas') }),
         accepts: () => false,
