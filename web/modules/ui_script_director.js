@@ -4,17 +4,20 @@ import { TTS_ENGINE, voiceGroupKey } from './audio_engines.js';
 import { pickLines } from './ui_script_cast.js';
 import { emotionLabel, renderLineCard } from './ui_script_cards.js';
 import { createRunSection } from './ui_script_run.js';
+import { ownTuneText } from './ui_script_tune.js';
 import { bindSplitBar } from './ui_split_bar.js';
 import { bindPackageDrag, copyScript, pushToNode } from './ui_script_workflow.js';
 
 /**
  * The script director, the body of the Voices page's Voice-over view (ui_script_page.js):
  * paste a script, and every line is read by a character (at first the one picked in the list
- * on the left, the cast): picked lines go to another from the list, or from the name on a card
- * (ui_script_cards.js, ui_script_cast.js); choose an emotion per line, then generate it right
- * here (ui_script_run.js), or put the tagged script into the workflow (ui_script_workflow.js).
- * The node's own character is the first line's. The panel and its lines live for the page
- * session; the page mounts it again each time it is shown.
+ * on the left, the cast). The left side only picks: lines (ui_script_cards.js, ui_script_cast.js)
+ * or a character in the cast; the side panel follows it (ui_script_tune.js): the whole script,
+ * one character in it, or the picked lines, where who reads them and how (language, speed, mode,
+ * each line following its character until set for itself) are changed. Choose an emotion per
+ * line, then generate it right here (ui_script_run.js), or put the tagged script into the
+ * workflow (ui_script_workflow.js). The node's own character is the first line's. The panel and
+ * its lines live for the page session; the page mounts it again each time it is shown.
  */
 
 // From this width on, the cards get the full height and the generate side sits beside them.
@@ -31,12 +34,13 @@ const ICONS = {
 const state = {
     groups: [],
     groupKey: null,     // the character picked in the cast: new and pasted lines go to it
-    lines: [],          // { text, emotion, take, speaker } — take > 1: retaken; speaker: its character's group key
+    focus: null,        // { character: key }: the side panel shows it (while no line is picked)
+    lines: [],          // { text, emotion, take, speaker, tune? } — take > 1: retaken; speaker: its character's group key; tune: script_tune.js
     editing: true,
     splitMode: 'sentence',
     editLine: null,     // the card whose text is being edited in place
     listenIndex: 0,     // the line the modes are heard on (ui_script_run.js)
-    picked: new Set(),  // lines picked to give to a character (castScriptCharacter)
+    picked: new Set(),  // lines picked: the side panel changes them
     anchor: null,       // where a Shift run of picked lines starts
 };
 
@@ -63,8 +67,12 @@ export function scriptCharacter() {
 
 /** Lines to voice again (a generated file's `{ emotion, text, speaker? }` segments): one card per line. */
 export function loadScriptLines(segments) {
+    // A segment's own settings were written for its first line only.
     const lines = segments.flatMap(segment => String(segment.text || '').split(/\n+/)
-        .map(text => ({ text: text.trim(), emotion: segment.emotion || 'main', take: 1, speaker: segment.speaker ? voiceGroupKey(segment.speaker) : state.groupKey })))
+        .map((text, at) => ({
+            text: text.trim(), emotion: segment.emotion || 'main', take: 1, speaker: segment.speaker ? voiceGroupKey(segment.speaker) : state.groupKey,
+            ...(segment.tune && at === 0 ? { tune: { ...segment.tune } } : {}),
+        })))
         .filter(line => line.text);
     if (!lines.length) return;
     stopScriptDirectorPreview();
@@ -101,15 +109,23 @@ export function updateScriptDirectorVoices(groups, preferredGroup = null, { choo
 }
 
 /**
- * A character clicked in the list on Voice-over: the picked lines go to it, and it reads the
- * lines pasted or added from now on.
+ * A character clicked in the list on Voice-over: the side panel shows how it reads in this
+ * script (the picked lines are let go), and it reads the lines pasted or added from now on.
  */
 export function castScriptCharacter(key) {
     if (!state.groups.some(group => group.group === key)) return;
     stopScriptDirectorPreview();
-    giveLines([...state.picked], key);
+    state.picked = new Set();
+    state.focus = { character: key };
     state.groupKey = key;
     hooks.onCharacterChange?.();
+    if (panel) renderAll();
+}
+
+/** Back to the whole script in the side panel: nothing picked, no character shown. */
+function focusScript() {
+    state.picked = new Set();
+    state.focus = null;
     if (panel) renderAll();
 }
 
@@ -157,17 +173,30 @@ function nodeGroup() {
     return speakerOf(state.lines.find(line => line.text.trim()) || null);
 }
 
-/** The script with retakes, for a run in the director. */
+/** How each line is read, as tags (the run section knows the characters' values). */
+const tagsOf = (line, speaker) => runSection?.tagsOf(line, speaker) || '';
+
+/** The script with retakes, for a run in the director, and what the side panel shows. */
 function runScript() {
     const group = nodeGroup();
     return {
         group, lines: state.lines, listen: state.listenIndex, speakerOf,
-        pkg: buildScriptPackage(state.lines, group, { takes: true, groups: state.groups }),
+        pkg: buildScriptPackage(state.lines, group, { takes: true, groups: state.groups, tagsOf }),
+        groups: state.groups,
+        picked: [...state.picked].sort((a, b) => a - b),
+        focus: state.focus,
+        assign: (indexes, key) => {
+            giveLines(indexes, key);
+            stopScriptDirectorPreview();
+            renderAll();
+        },
+        focusCharacter: castScriptCharacter,
+        focusScript,
     };
 }
 
 function currentPackage() {
-    return buildScriptPackage(state.lines, nodeGroup(), { groups: state.groups });
+    return buildScriptPackage(state.lines, nodeGroup(), { groups: state.groups, tagsOf });
 }
 
 // ---------- DOM ----------
@@ -259,6 +288,7 @@ function createPanel() {
         },
         resetTakes: () => state.lines.forEach(line => { line.take = 1; }),
         onBusyChange: () => renderAll(),
+        onLinesChange: () => renderLines(),
         openGallery: () => hooks.openGallery?.(),
     });
     scroll.append(linesContainer);
@@ -279,12 +309,12 @@ function createPanel() {
     new ResizeObserver(([entry]) => panel.classList.toggle('is-wide', entry.contentRect.width >= WIDE_FROM)).observe(panel);
 
     panel.append(header, inputArea, body);
-    // Esc lets go of the picked lines first; the browser's own Esc leaves it to this then (ui_browser_navigation.js).
+    // Esc lets go of the picked lines first; the browser's own Esc leaves it to this then (ui_browser_navigation.js),
+    // and with a character shown it presses the panel's back link.
     window.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape' || !state.picked.size || !panel.getClientRects().length) return;
-        state.picked = new Set();
-        refs.linesContainer.querySelectorAll('.anomalous-sd-line-card.is-picked').forEach(card => card.classList.remove('is-picked'));
-        renderCastHint();
+        if (e.target?.closest?.('input, textarea, select')) return;
+        focusScript();
     });
     refs = { subtitle, pasteFor, inputArea, textarea, cancelEdit, body, linesCount, castHint, linesContainer, summary, workflowTitle, dragHandle, copyBtn, pushBtn };
 }
@@ -337,6 +367,7 @@ function renderLines() {
         count: state.lines.length,
         canListen: Boolean(runSection?.canListen()),
         canRetake: Boolean(runSection?.canRetake(nodeGroup())),
+        tuneText: line => ownTuneText(runSection?.presetsView(), line),
         onPick: pickLine,
         onEdit: (index, quiet = false) => {
             state.editLine = index;
@@ -350,7 +381,7 @@ function renderLines() {
         onSplit: (index, first, second) => {
             const line = state.lines[index];
             line.text = first;
-            state.lines.splice(index + 1, 0, { text: second, emotion: line.emotion, take: 1, speaker: line.speaker });
+            state.lines.splice(index + 1, 0, { text: second, emotion: line.emotion, take: 1, speaker: line.speaker, ...(line.tune ? { tune: { ...line.tune } } : {}) });
             changeLines(index + 1);
         },
         onMerge: (index) => {
@@ -396,18 +427,19 @@ function changeLines(edit) {
     renderAll();
 }
 
-/** A click on a card: picks it (Ctrl / ⌘ adds, Shift a run) and makes it the line to listen with. */
+/** A click on a card: picks it (Ctrl / ⌘ adds, Shift a run), the side panel shows the picked lines. */
 function pickLine(index, event) {
     state.picked = pickLines(state.picked, index, event, state.anchor);
     if (!event.shiftKey) state.anchor = index;
     refs.linesContainer.querySelectorAll('.anomalous-sd-line-card').forEach((card, at) => card.classList.toggle('is-picked', state.picked.has(at)));
     renderCastHint();
     chooseListenLine(index);
+    runSection?.render();
 }
 
-/** How to work the cards: picking and editing, and with several characters how to change who reads. */
+/** How to work the cards: picking (the side panel changes them) and editing. */
 function renderCastHint() {
-    refs.castHint.textContent = state.picked.size && state.groups.length > 1
+    refs.castHint.textContent = state.picked.size
         ? t('scriptCastPicked', { count: state.picked.size })
         : t(state.groups.length > 1 ? 'scriptCastHint' : 'scriptDirectorCardsHint');
 }

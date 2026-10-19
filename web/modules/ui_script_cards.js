@@ -8,6 +8,7 @@ import { speakerColor } from './ui_script_cast.js';
  * director keeps what is picked), a double-click or ✎ edits its text in place (Enter or a click
  * elsewhere keeps it, Esc puts it back), the name on a card opens a menu of characters to read
  * it (all the picked cards when it is one of them), and its emotion chips are its character's.
+ * A line set to read in its own way shows a tag with what it set (ui_script_tune.js).
  * The director owns the lines; a card only calls back (`ctx`, see renderLineCard).
  */
 
@@ -107,7 +108,7 @@ function lineText(line, index, ctx) {
 
 /**
  * One card. `ctx`: `groups`, `speakerOf(line)`, `picked` (Set), `listenIndex`, `editing` (index
- * or null), `showSpeakers`, `showChips`, `count`, `canListen`, `canRetake`, and the calls back:
+ * or null), `showSpeakers`, `showChips`, `count`, `canListen`, `canRetake`, `tuneText(line)`, and the calls back:
  * `onPick(index, event)`, `onEdit(index | null)`, `onText(index, text)`, `onSplit(index, a, b)`,
  * `onMerge(index)`, `onDelete(index)`, `onSpeaker(index, key)`, `onEmotion()`, `onListen(index)`,
  * `onRetake(index)`, `onPreview(line, slices, button)`, `isPreviewing(button)`.
@@ -138,6 +139,12 @@ export function renderLineCard(line, index, ctx) {
         }, t('scriptDirectorSpeakerMenu'));
         chip.style.setProperty('--speaker', speakerColor(speaker?.group, ctx.groups));
         head.append(chip);
+    }
+    const tune = ctx.tuneText?.(line);
+    if (tune) {
+        const tag = el('span', 'anomalous-sd-line-tune', tune);
+        tag.title = t('scriptCardTuneHint');
+        head.append(tag);
     }
     if (box) {
         // Done editing: this card goes back to plain text in place, so a click on another card still lands.

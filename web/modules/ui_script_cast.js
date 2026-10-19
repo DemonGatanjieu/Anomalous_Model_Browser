@@ -1,8 +1,8 @@
 /**
  * Voice-over with several characters (the cast): each character's colour, its place in the voice
  * list, the same on the list (ui_audio_sidebar.js) and on the line cards (ui_script_cards.js); and
- * picking lines, a click, Ctrl / ⌘ to add or take one away, Shift for a run, to give to a
- * character from the list (ui_script_director.js castScriptCharacter) or from a card's name.
+ * picking lines, a click, Ctrl / ⌘ to add or take one away, Shift for a run, for the side panel
+ * to change (ui_script_tune.js: who reads them and how) or for a card's name menu.
  */
 
 const COLORS = ['#5b9cf6', '#ef7ea5', '#3fbf91', '#e3a33b', '#a487f5', '#4fc2d4', '#ee8656', '#94c252'];

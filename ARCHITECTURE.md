@@ -375,27 +375,34 @@ covered by the `styles.css` manifest.
   matching, and `buildTtsPrompt` (a GPT-SoVITS script as a ComfyUI API prompt
   saving to `output/audio/<character>/`).
   `ui_script_director.js` owns the script director, the Voice-over view's body: the lines,
-  each read by its character (the one picked in the list on the left at first;
-  `castScriptCharacter`, called when that list is clicked there, gives it the picked lines;
-  the node's own character is the first line's), and a bundle (`[name]` where the speaker
-  changes) that is generated in the view, or, under "Into your own workflow"
+  each read by its character (the one picked in the list on the left at first; the node's
+  own character is the first line's), and a bundle (`[name]` where the speaker changes, a
+  line's own `[lang:…][speed:…][preset:…]`) that is generated in the view, or, under "Into your own workflow"
   (`ui_script_workflow.js`), pushed to the selected/only target node, dragged onto one
   (writing the character and script widgets together, one Ctrl+Z step) or copied. The page
   feeds it the voice groups after each fetch. `ui_script_cards.js` draws the line cards: a
   click picks (`ui_script_cast.js`: Ctrl / Shift, the characters' colours), a double-click or
   ✎ edits the text in place, the name opens a menu of characters, emotion chips per the
-  line's character, buttons on hover.
+  line's character, a tag when the line is set for itself, buttons on hover.
+  The left side only picks; the side panel follows it (`ui_script_tune.js`): nothing picked,
+  the whole script (each character and how it reads); a character clicked in the list
+  (`castScriptCharacter`), its language, speed and mode in this script; picked lines, who
+  reads them and how, each value following the character until set there (↺ follows again).
+  `script_tune.js` holds the rules without DOM: a line's values over its character's, and
+  the tags Anomalous_TTS interface 17 reads for them (the language unless auto, the speed
+  when it is not the character's saved one, the mode unless Auto).
   It puts the cards on one side and generating on the other: beside
   them once the page is wide, below them when it is narrow (docked browser); on a
   wide page `ui_split_bar.js` is the divider between them (dragged, remembered).
   A card is one row (number, text, buttons); "Into your own workflow" is folded.
   `ui_script_run.js` is the director's "Generate" section (the bar with the result and
-  a way to the audio gallery; language, speed and the mode: Auto, or one preset for
-  every line through the node's `preset` input, in the same switch measured
-  against Auto (compact: scale and numbers folded) and heard from the ▶ on a
-  line card (the takes heard stay on the side to compare), a preset's numbers
-  changed there saved into the preset; links to the presets and to the
-  character's generation settings): it runs
+  a way to the audio gallery; each character's values in this script, starting from its
+  saved defaults and Auto, which it draws through `ui_script_tune.js`; the modes in the
+  same switch measured against Auto (compact: scale and numbers folded) and heard on a
+  line from the panel or the ▶ on its card (the takes heard stay on the side to compare),
+  a preset's numbers changed there saved into the preset; links to the presets and to the
+  character's generation settings; a node older than interface 17 reads the whole script
+  as the first line's character reads, through its inputs): it runs
   the script without the canvas, plays the result, retakes the whole script
   (new seed) or one line (`[take:N]`, the node caches the rest), and saves a
   character's language and speed to its `defaults` (keeping the rest of them)

@@ -143,7 +143,7 @@ export class AnomalousBrowser {
             this.pendingScript = null;
             renderScriptPage(this.scriptPanel, this, pending);
         } else if (filter?.type === 'group' && this.currentShellPage() === 'script') {
-            // On Voice-over the list is the cast: the character reads the picked lines, or by default.
+            // On Voice-over the list is the cast: the side panel shows the character in this script.
             castScriptCharacter(filter.value);
             return;
         } else {

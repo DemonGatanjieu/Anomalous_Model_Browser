@@ -3,8 +3,11 @@
  *
  * The node takes a character and a script in which `{happy}` switches to that
  * emotion's reference, `{main}` back to the main one, and `[take:N]` asks for
- * another take of one line. `buildTtsPrompt` runs a script without a canvas.
+ * another take of one line; `[lang:…]` `[speed:…]` `[preset:…]` set how one line is
+ * read (script_tune.js). `buildTtsPrompt` runs a script without a canvas.
  */
+
+import { readTuneTag } from './script_tune.js';
 
 export const MAIN_TAG = '{main}';
 
@@ -88,15 +91,16 @@ export function joinSegments(first, second) {
 
 /**
  * Once any line is tagged, untagged lines get {main} instead of inheriting the previous voice.
- * A line with `take` > 1 (GPT-SoVITS only) gets `[take:N]` right before its text; a line's
- * `speaker` (`[name]`, where another character takes over) goes first.
+ * A line's `tune` (its own `[lang:…][speed:…][preset:…]`) and, with `take` > 1 (GPT-SoVITS only),
+ * `[take:N]` go right before its text; a line's `speaker` (`[name]`, where another character
+ * takes over) goes first.
  */
 export function composeScript(lines) {
     const anyTagged = lines.some(line => line.voice?.tag);
     return lines
         .map(line => {
             const tag = line.voice?.tag || (anyTagged ? MAIN_TAG : '');
-            const text = line.take > 1 ? `[take:${line.take}]${line.text}` : line.text;
+            const text = `${line.tune || ''}${line.take > 1 ? `[take:${line.take}]` : ''}${line.text}`;
             return `${line.speaker || ''}${tag ? `${tag} ${text}` : text}`;
         })
         .join('\n')
@@ -115,11 +119,12 @@ const speaks = group => Boolean(group?.node_value) && group.has_main !== false &
  * `character` widget gets the group's `node_value`. A line's `speaker` (a voice group key from
  * `groups`) is read by that character instead: `[name]` goes in where the speaker changes
  * (Anomalous_TTS's script syntax). Every emotion must be usable for its line's character.
- * `takes` (runs in the director) writes each line's `take` as `[take:N]`.
+ * `takes` (runs in the director) writes each line's `take` as `[take:N]`; `tagsOf(line, speaker)`
+ * gives the tags for how a line is read (the director's run section).
  * Returns `{ sample, speech, lineCount, speakers }` (the characters heard, the node's first)
  * or `{ error: localeKey }`.
  */
-export function buildScriptPackage(lines, group, { takes = false, groups = [] } = {}) {
+export function buildScriptPackage(lines, group, { takes = false, groups = [], tagsOf = null } = {}) {
     if (!group) return { error: 'scriptDirectorPickCharacter' };
     if (!speaks(group)) return { error: 'scriptDirectorMainMissing' };
     const byKey = new Map(groups.map(item => [item.group, item]));
@@ -137,6 +142,7 @@ export function buildScriptPackage(lines, group, { takes = false, groups = [] } 
             text,
             voice: emotion === 'main' ? null : { tag: `{${emotion}}` },
             take: takes ? line.take || 1 : 1,
+            tune: tagsOf?.(line, speaker) || '',
             speaker: speaker === current ? '' : `[${speaker.node_value}]`,
         });
         current = speaker;
@@ -179,15 +185,19 @@ const PAUSE_TAG = /^\s*(?:pause|wait|stop|停顿|暂停)\s*[:：]/i;
  * Read a tagged script back into segments, splitting at `{emotion}` and `[name]` tags
  * (`speaker`: the name, only on segments after one; the emotion goes back to main there).
  * Text before the first tag belongs to the main voice; `[take:N]` is left out, pauses stay.
+ * A line's own settings start a segment of their own and come back as its `tune` (they cover
+ * its first line only).
  */
 export function parseTaggedSpeech(speech) {
     const segments = [];
     let speaker = null;
     let emotion = 'main';
     let text = '';
+    let tune = null;
     const flush = () => {
         const words = text.trim();
-        if (words) segments.push({ emotion, text: words, ...(speaker ? { speaker } : {}) });
+        if (words) segments.push({ emotion, text: words, ...(speaker ? { speaker } : {}), ...(tune ? { tune } : {}) });
+        if (words) tune = null;
         text = '';
     };
     for (const part of String(speech || '').split(/(\{[^{}]+\}|\[[^[\]]+\])/)) {
@@ -198,6 +208,10 @@ export function parseTaggedSpeech(speech) {
             emotion = tag[1].trim();
         } else if (bracket && TAKE_TAG.test(bracket[1])) {
             continue; // another take only meant something for that run
+        } else if (bracket && readTuneTag(bracket[1])) {
+            flush();
+            const { field, value } = readTuneTag(bracket[1]);
+            if (value !== undefined) tune = { ...(tune || {}), [field]: value };
         } else if (bracket && !PAUSE_TAG.test(bracket[1])) {
             flush();
             speaker = bracket[1].trim();

@@ -10,7 +10,7 @@ import { speakerColor } from './ui_script_cast.js';
  * Audio sidebar: All Voices, the GPT-SoVITS characters (grouped by language; each
  * group folds, each character unfolds into its clips) and a settings entry at the
  * bottom. On Voice-over it is the cast (CSS: narrow, characters with their colours only):
- * a click gives the picked lines to a character, or makes it the one who reads by default
+ * a click shows the character in the side panel and makes it the one who reads new lines
  * (ui_script_director.js castScriptCharacter), and never leaves the page. Owns the active audio
  * filter. Characters drag onto canvas nodes like the studio cards; files dropped on a
  * character open the import form for it.
@@ -117,7 +117,7 @@ function createNavItem(owner, { label, iconSvg, count, filter, tab }) {
     if (count !== undefined && count !== null) item.appendChild(el('span', 'anomalous-audio-nav-count', String(count)));
 
     item.onclick = () => {
-        // On Voice-over a character click casts it (browser.js); the Characters page's filter stays.
+        // On Voice-over a character click shows it in the side panel (browser.js); the Characters page's filter stays.
         if (!(owner.currentShellPage?.() === 'script' && filter.type === 'group')) {
             activeFilter = filter;
             syncAudioSidebarSelection(owner);
