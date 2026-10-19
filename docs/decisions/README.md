@@ -163,3 +163,32 @@ show its picture feed inside the plugin. Instead the plugin takes a file from wh
 came from: dropped on the models page, it is told apart by its header (never by running
 it), checked against Civitai when that answers, and moved into the folder its type and
 base model call for, with every guess shown and changeable before anything moves.
+
+## AD-020 — Downloads extend Model Check's evidence rules; ComfyUI-Manager is a catalog
+
+A missing model is downloaded only from a source that names one file, asked in turn:
+Civitai by the workflow's hash, a link the workflow carries, then ComfyUI-Manager's model
+list by file name. The list carries no hashes: it answers where a file of that name can be
+fetched, never whether a local file is that model, so it is never evidence for local
+recovery (AD-005). With the workflow's hash every source must show the same SHA-256 (read
+from the host, Hugging Face's headers) before the file counts; a different one is refused.
+Without a hash nothing can be checked before or after the download, so a name is at most
+"maybe": one list entry of that name and of the node's type is offered as "Download by
+name", marked as such, never in Download all nor the MCP's downloads. Foundation components
+(AD-006) follow one rule: a name alone only ever proposes, and their same-name candidate
+needs a second, independent piece of evidence: the same size for a local file, the
+curated list's entry of the right type for a download; the user still presses. Where no
+source answers, the plugin opens a search (Hugging Face) for the user rather than pick a
+file of a common name itself. The full rules in plain words are in
+`docs/guides/model-check-rules.md`.
+
+## AD-021 — A combo remembers; it never changes a value
+
+A combo puts back exactly what was saved: models, LoRA strengths, CLIP skip, prompts and
+every other value of its nodes, never node defaults in their place and never values the
+plugin chose. A different value is a different combo, made by setting it on the canvas
+and saving again. A picture kept as a combo therefore keeps the nodes that made its
+sampler's model and prompts as a node structure, values untouched (a workflow without a
+sampler falls back to the older main model, LoRAs and positive prompt). Placing a combo
+only adds a new group; nodes already on the canvas are never changed (their values are
+changed in Current node). This is one of the feature principles in AGENTS.md.

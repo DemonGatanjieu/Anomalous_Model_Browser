@@ -89,3 +89,4 @@ ComfyUI Manager 是一本“官方常用模型的下载目录”：它只回答�
 - 后端按指纹 / 大小找文件：`api/model_resolution.py`（`/anomalous/resolve_hash_batch`）。
 - 下载来源：`api/download_sources.py`（`find_source` 的顺序和核对）、`api/manager_catalog.py`（Manager 清单）、`api/model_download.py`。
 - 英文的实现细节：`docs/architecture/model-resolution.md`、`docs/architecture/backend.md` 的 “Model downloads”。
+- 为什么这么定：`docs/decisions/README.md` 的 AD-005（认模型不看名字）、AD-006（基础组件只认指纹）、AD-020（下载与 ComfyUI Manager）。
