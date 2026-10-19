@@ -3,6 +3,7 @@ import { buildScriptPackage, joinSegments, splitScriptLines, usableEmotions } fr
 import { TTS_ENGINE, voiceGroupKey } from './audio_engines.js';
 import { pickLines } from './ui_script_cast.js';
 import { emotionLabel, renderLineCard } from './ui_script_cards.js';
+import { createDrafts } from './ui_script_drafts.js';
 import { createRunSection } from './ui_script_run.js';
 import { ownTuneText } from './ui_script_tune.js';
 import { bindSplitBar } from './ui_split_bar.js';
@@ -17,8 +18,9 @@ import { bindPackageDrag, copyScript, pushToNode } from './ui_script_workflow.js
  * each line following its character until set for itself) are changed. Choose an emotion per
  * line, then generate it right here (ui_script_run.js), or put the tagged script into the
  * workflow (ui_script_workflow.js). The node's own character is the first line's. The panel and
- * its lines live for the page session; the page mounts it again each time it is shown. The script
- * is kept as a draft in this browser (localStorage) and comes back after a reload.
+ * its lines live for the page session; the page mounts it again each time it is shown. Every
+ * script is a draft in the drafts box (ui_script_drafts.js, kept in ComfyUI's user folder): the
+ * bar on top names it and leads to New, the box and Close; a reload opens it again.
  */
 
 // From this width on, the cards get the full height and the generate side sits beside them.
@@ -51,6 +53,7 @@ let hooks = {};
 let previewAudio = null;
 let previewButton = null;
 let runSection = null;
+let drafts = null;
 // bindMaterialDrag hides the browser modal while dragging; the owner is only known once the studio sets hooks.
 const dragOwner = { get modal() { return hooks.owner?.modal; } };
 
@@ -77,8 +80,14 @@ export function loadScriptLines(segments) {
         .filter(line => line.text);
     if (!lines.length) return;
     stopScriptDirectorPreview();
+    // A script of its own: the open draft stays as it was.
+    if (drafts) {
+        drafts.detach();
+        drafts.showing = false;
+    }
     state.lines = lines;
     state.picked = new Set();
+    state.focus = null;
     state.editing = false;
     if (panel) renderAll();
 }
@@ -292,13 +301,20 @@ function createPanel() {
         onBusyChange: () => renderAll(),
         onLinesChange: () => {
             renderLines();
-            saveDraft();
+            drafts?.changed();
         },
         openGallery: () => hooks.openGallery?.(),
     });
     scroll.append(linesContainer);
     footer.append(summary, runSection.bar);
-    if (!state.lines.length) loadDraft();
+    drafts = createDrafts({
+        capture: captureDraft,
+        apply: applyDraft,
+        nameOf: characterName,
+        busy: () => runSection.busy(),
+        redraw: () => renderAll(),
+    });
+    header.prepend(drafts.bar);
 
     // Cards on one side, everything about generating on the other: below the cards
     // on a narrow page (docked browser), beside them once the page is wide.
@@ -314,7 +330,7 @@ function createPanel() {
     // The panel lives for the page session, so the observer does too.
     new ResizeObserver(([entry]) => panel.classList.toggle('is-wide', entry.contentRect.width >= WIDE_FROM)).observe(panel);
 
-    panel.append(header, inputArea, body);
+    panel.append(header, drafts.view, inputArea, body);
     // Esc lets go of the picked lines first; the browser's own Esc leaves it to this then (ui_browser_navigation.js),
     // and with a character shown it presses the panel's back link.
     window.addEventListener('keydown', (e) => {
@@ -323,13 +339,15 @@ function createPanel() {
         focusScript();
     });
     refs = { subtitle, pasteFor, inputArea, textarea, cancelEdit, body, linesCount, castHint, linesContainer, summary, workflowTitle, dragHandle, copyBtn, pushBtn };
+    drafts.start();
 }
 
 function renderAll() {
     if (!panel) return;
     const node = TTS_ENGINE.label;
     refs.subtitle.textContent = t('scriptDirectorSubtitle');
-    refs.subtitle.hidden = state.lines.length > 0 && !state.editing; // the how-to, until there are lines
+    const inBox = drafts.showing; // the drafts box in place of the script
+    refs.subtitle.hidden = inBox || (state.lines.length > 0 && !state.editing); // the how-to, until there are lines
     refs.workflowTitle.textContent = t('scriptDirectorWorkflowTitle');
     refs.dragHandle.title = t('scriptDirectorDragHint', { node });
     refs.pushBtn.title = t('scriptDirectorPushHint', { node });
@@ -339,9 +357,10 @@ function renderAll() {
     refs.pasteFor.textContent = !state.groups.length ? t('scriptDirectorNoCharacters')
         : picked ? t('scriptDirectorPasteFor', { name: picked.character }) : '';
     const hasLines = state.lines.length > 0;
-    refs.inputArea.hidden = hasLines && !state.editing;
+    refs.inputArea.hidden = inBox || (hasLines && !state.editing);
     refs.cancelEdit.hidden = !hasLines;
-    refs.body.hidden = !hasLines || state.editing;
+    refs.body.hidden = inBox || !hasLines || state.editing;
+    drafts.render();
     refs.linesCount.textContent = t('scriptDirectorLinesCount', { count: state.lines.length });
     if (hasLines && !state.editing) renderLines();
     renderPackage();
@@ -470,7 +489,7 @@ function renderPackage() {
     } else {
         refs.summary.textContent = t(pkg.error);
     }
-    saveDraft();
+    drafts.changed();
     refs.copyBtn.disabled = !ok;
     refs.pushBtn.disabled = !ok;
     refs.dragHandle.draggable = ok;
@@ -478,49 +497,30 @@ function renderPackage() {
     runSection.render();
 }
 
-// ---------- the draft ----------
+// ---------- the drafts box ----------
 
-const DRAFT_KEY = 'anomalous_sd_draft';
-const DRAFT_FIELDS = { language: 'string', speed: 'number', preset: 'string' };
-let draftTimer = null;
-
-/** Only the line settings a draft may hold, with the right types. */
-function cleanTune(tune) {
-    const out = {};
-    for (const [field, type] of Object.entries(DRAFT_FIELDS)) if (typeof tune?.[field] === type) out[field] = tune[field];
-    return Object.keys(out).length ? out : null;
+/** The script as the drafts box keeps it (ui_script_drafts.js). */
+function captureDraft() {
+    const lines = state.lines.map(line => ({ text: line.text, emotion: line.emotion, speaker: line.speaker, ...(line.tune ? { tune: line.tune } : {}) }));
+    return { format: 1, lines, groupKey: state.groupKey, ...runSection.draft() };
 }
 
-/** The script as it is, kept in this browser half a second after the last change (back after a reload). */
-function saveDraft() {
-    clearTimeout(draftTimer);
-    draftTimer = setTimeout(() => {
-        const lines = state.lines.map(line => ({ text: line.text, emotion: line.emotion, speaker: line.speaker, ...(line.tune ? { tune: line.tune } : {}) }));
-        try {
-            if (lines.length) localStorage.setItem(DRAFT_KEY, JSON.stringify({ format: 1, lines, groupKey: state.groupKey, ...runSection?.draft() }));
-            else localStorage.removeItem(DRAFT_KEY);
-        } catch (_) { /* a convenience: the script still works without it */ }
-    }, 500);
-}
-
-/** The draft kept last time, once the panel is first made; lines without text or with a bad shape are left out. */
-function loadDraft() {
-    let draft = null;
-    try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (_) { return; }
-    if (draft?.format !== 1 || !Array.isArray(draft.lines)) return;
-    state.lines = draft.lines.filter(line => typeof line?.text === 'string' && line.text.trim()).map(line => ({
-        text: line.text,
-        emotion: typeof line.emotion === 'string' ? line.emotion : 'main',
-        take: 1,
-        speaker: typeof line.speaker === 'string' ? line.speaker : null,
-        ...(cleanTune(line.tune) ? { tune: cleanTune(line.tune) } : {}),
-    }));
-    if (typeof draft.groupKey === 'string') state.groupKey = draft.groupKey;
-    const cast = {};
-    for (const [character, own] of Object.entries(draft.cast || {})) if (cleanTune(own)) cast[character] = cleanTune(own);
-    runSection.restoreDraft({ script: cleanTune(draft.script) || {}, cast });
+/** A draft opened from the box (null: a blank script); nothing stays picked or generated. */
+function applyDraft(script) {
+    stopScriptDirectorPreview();
+    state.lines = (script?.lines || []).map(line => ({ ...line, take: 1, ...(line.tune ? { tune: { ...line.tune } } : {}) }));
+    // A character missing now leaves the pick as it is (the voices may not be read yet).
+    if (script?.groupKey && (!state.groups.length || state.groups.some(group => group.group === script.groupKey))) state.groupKey = script.groupKey;
+    state.picked = new Set();
+    state.focus = null;
+    state.editLine = null;
+    state.listenIndex = 0;
     state.editing = !state.lines.length;
+    runSection.restoreDraft({ script: script?.script, cast: script?.cast });
+    if (refs) refs.textarea.value = '';
 }
+
+const characterName = key => state.groups.find(group => group.group === key)?.character || String(key).replace(/^gpt_sovits:/, '');
 
 // ---------- actions ----------
 

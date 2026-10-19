@@ -398,8 +398,15 @@ covered by the `styles.css` manifest.
   DOM: the layers (line over character over whole script over the character's usual
   values), each holding only the fields set on it, and the tags Anomalous_TTS interface 17
   reads (only where a line differs from what the node gives by itself; the whole script's
-  values go into the node's inputs). The director keeps the script as a draft in
-  `localStorage` (lines, who reads, every layer) and loads it when the panel is made.
+  values go into the node's inputs). Every script is a draft in the drafts box
+  (`ui_script_drafts.js`): one file in ComfyUI's user folder
+  (`user/<user>/anomalous_model_browser/voice_over_drafts.json`, through ComfyUI's
+  `/userdata` API), saved half a second after a change, read again and joined before each
+  write so two tabs do not undo each other; a bar over the script names the open draft
+  and leads to New, the box (cards: open, rename, copy, delete) and Close; deleted drafts
+  stay in Recently deleted for 30 days. `script_drafts.js` holds its rules without DOM or
+  storage (the shapes, the merge, titles, when a draft changed). A reload opens the draft
+  that was open; the one draft the earlier version kept in `localStorage` moves in once.
   It puts the cards on one side and generating on the other: beside
   them once the page is wide, below them when it is narrow (docked browser); on a
   wide page `ui_split_bar.js` is the divider between them (dragged, remembered).

@@ -484,10 +484,17 @@ export function createRunSection({ getScript, getNodeGroup, getGroups, onPlay, r
         presetsView: () => state.presets,
         /** The whole script's and the characters' values changed here, for the director's draft. */
         draft: () => ({ script: { ...state.script }, cast: Object.fromEntries([...state.cast].filter(([, own]) => Object.keys(own).length)) }),
+        /** Another script opened (ui_script_drafts.js): its values, and nothing generated yet. */
         restoreDraft({ script = {}, cast = {} } = {}) {
             state.script = { ...script };
             state.cast = new Map(Object.entries(cast).map(([character, own]) => [character, { ...own }]));
+            player.pause();
+            preview.stop();
+            state.result = null;
+            state.status = null;
         },
+        /** A line is being generated (another script waits until it is done). */
+        busy: () => Boolean(state.job),
         stopPlayback() {
             player.pause();
             preview.stop();
