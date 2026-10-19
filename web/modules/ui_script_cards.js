@@ -12,6 +12,7 @@ import { speakerColor } from './ui_script_cast.js';
  * The director owns the lines; a card only calls back (`ctx`, see renderLineCard).
  */
 
+const SEARCH_FROM = 9; // characters from which the menu has a search box
 const SPEAKER_ICON = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>';
 let openMenu = null;
 
@@ -40,12 +41,16 @@ function closeSpeakerMenu() {
     openMenu = null;
 }
 
-/** The characters to read a line, under its name chip; `choose(key)`. */
-function openSpeakerMenu(anchor, groups, current, choose) {
+/**
+ * The characters to read a line, under `anchor` (a card's name chip, the side panel's "Other
+ * characters"); `choose(key)`. `shown`: the characters listed (all of `groups` by default; the
+ * colours stay by place in `groups`). Many of them get a search box.
+ */
+export function openSpeakerMenu(anchor, groups, current, choose, shown = groups) {
     closeSpeakerMenu();
     const menu = el('div', 'anomalous-sd-speaker-menu');
     menu.setAttribute('role', 'menu'); // the browser's Esc leaves an open menu alone
-    for (const group of groups) {
+    const items = shown.map((group) => {
         const item = button(`anomalous-sd-speaker-item${group.group === current ? ' is-current' : ''}`, '', () => {
             closeSpeakerMenu();
             choose(group.group);
@@ -54,12 +59,31 @@ function openSpeakerMenu(anchor, groups, current, choose) {
         const dot = el('span', 'anomalous-sd-speaker-dot');
         dot.style.background = speakerColor(group.group, groups);
         item.append(dot, el('span', '', group.character));
-        menu.append(item);
+        return [group, item];
+    });
+    if (shown.length >= SEARCH_FROM) {
+        const search = el('input', 'anomalous-sd-speaker-search');
+        search.type = 'search';
+        search.placeholder = t('scriptDirectorSpeakerSearch');
+        search.oninput = () => {
+            const term = search.value.trim().toLowerCase();
+            for (const [group, item] of items) item.hidden = Boolean(term) && !group.character.toLowerCase().includes(term);
+        };
+        search.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            items.find(([, item]) => !item.hidden)?.[1].click();
+        });
+        menu.append(search);
+        requestAnimationFrame(() => search.focus());
     }
+    menu.append(...items.map(([, item]) => item));
     const rect = anchor.getBoundingClientRect();
-    menu.style.left = `${Math.round(rect.left)}px`;
+    menu.style.left = `${Math.round(Math.min(rect.left, window.innerWidth - 200))}px`;
     menu.style.top = `${Math.round(rect.bottom + 4)}px`;
     document.body.append(menu);
+    // Below the anchor when it fits, else above it.
+    const height = menu.getBoundingClientRect().height;
+    if (rect.bottom + 4 + height > window.innerHeight && rect.top - 4 - height > 0) menu.style.top = `${Math.round(rect.top - 4 - height)}px`;
     const away = (e) => { if (!menu.contains(e.target) && e.target !== anchor) closeSpeakerMenu(); };
     const escape = (e) => {
         if (e.key !== 'Escape') return;

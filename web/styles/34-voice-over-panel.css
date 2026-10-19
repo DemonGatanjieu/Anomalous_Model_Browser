@@ -75,9 +75,41 @@
     font-size: 11.5px;
 }
 
-/* Who reads the picked lines: each name in its character's colour. */
+/* Who reads the picked lines: each name with its character's colour dot. */
+.anomalous-sd-run-choice.anomalous-sd-tune-who {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-sd-run-choice.anomalous-sd-tune-who .anomalous-sd-speaker-dot {
+    width: 7px;
+    height: 7px;
+}
+
 .anomalous-sd-run-choice.anomalous-sd-tune-who[aria-checked="true"] {
     background: color-mix(in srgb, var(--speaker) 30%, transparent);
+}
+
+.anomalous-sd-tune-more {
+    color: var(--amb-text-soft);
+}
+
+/* The character menu floats over the panel: its see-through background is blurred, so the text below does not show through. */
+.anomalous-sd-speaker-menu {
+    backdrop-filter: blur(12px);
+}
+
+/* The search box at the top of a long character menu (ui_script_cards.js). */
+.anomalous-sd-speaker-search {
+    margin: 2px 2px 4px;
+    padding: 5px 8px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.3));
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
 }
 
 .anomalous-sd-tune-follow {

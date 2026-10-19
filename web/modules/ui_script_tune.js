@@ -3,6 +3,7 @@ import { button, el } from './usage_view.js';
 import { isBuiltin, presetLabel } from './tts_presets_api.js';
 import { AUTO_MODE, hasOwnTune, lineNumbers, ownTune, sharedValue } from './script_tune.js';
 import { speakerColor } from './ui_script_cast.js';
+import { openSpeakerMenu } from './ui_script_cards.js';
 import { renderPresetSwitch } from './ui_tts_preset_switch.js';
 
 /**
@@ -16,6 +17,7 @@ import { renderPresetSwitch } from './ui_tts_preset_switch.js';
 
 export const LANGUAGES = ['auto', 'zh', 'ja', 'en'];
 const FOLLOW = '__follow'; // a line's mode choice: its character's
+const ALL_WHO_UP_TO = 6;   // more characters than this: "Who reads" lists the script's own, the rest in a menu
 
 /** "1.2×" */
 export const speedText = speed => `${Math.round(Number(speed) * 100) / 100}×`;
@@ -71,6 +73,12 @@ function segment(choices, checked, onPick, disabled) {
         chip.setAttribute('aria-checked', String(checked(choice.id)));
         chip.disabled = disabled;
         if (choice.title) chip.title = choice.title;
+        if (choice.color) {
+            const dot = el('span', 'anomalous-sd-speaker-dot');
+            dot.style.background = choice.color;
+            chip.prepend(dot);
+            chip.style.setProperty('--speaker', choice.color);
+        }
         box.append(chip);
     }
     return box;
@@ -204,6 +212,29 @@ function renderCharacterView(ctx, group) {
     return parts;
 }
 
+/**
+ * Who reads the picked lines: every character when there are a few; with many, the ones reading
+ * in this script (and the picked lines' own), the others in a menu with a search box.
+ */
+function whoReads(ctx, indexes, speakers) {
+    const { script } = ctx;
+    const reading = new Set([...script.lines.filter(line => line.text.trim()).map(line => script.speakerOf(line)), ...speakers]);
+    const many = script.groups.length > ALL_WHO_UP_TO;
+    const listed = many ? script.groups.filter(group => reading.has(group)) : script.groups;
+    const others = many ? script.groups.filter(group => !reading.has(group)) : [];
+    const assign = key => script.assign(indexes, key);
+    const box = segment(listed.map(group => ({
+        id: group.group, label: group.character, className: 'anomalous-sd-tune-who', color: speakerColor(group.group, script.groups),
+    })), key => speakers.length === 1 && speakers[0].group === key, assign, ctx.busy);
+    if (others.length) {
+        const more = button('anomalous-sd-run-choice anomalous-sd-tune-more', t('scriptTuneOtherCharacters', { count: others.length }),
+            () => openSpeakerMenu(more, script.groups, null, assign, others));
+        more.disabled = ctx.busy;
+        box.append(more);
+    }
+    return box;
+}
+
 /** Picked lines: who reads them, then each value following its character until set here. */
 function renderLinesView(ctx, indexes) {
     const { script } = ctx;
@@ -222,12 +253,7 @@ function renderLinesView(ctx, indexes) {
         return field === 'speed' ? speedText(value) : field === 'language' ? t(`scriptRunLang_${value}`) : modeName(ctx.view, value);
     };
 
-    if (script.groups.length > 1) {
-        const who = segment(script.groups.map(group => ({ id: group.group, label: group.character, className: 'anomalous-sd-tune-who' })),
-            key => speakers.length === 1 && single.group === key, key => script.assign(indexes, key), ctx.busy);
-        who.querySelectorAll('.anomalous-sd-tune-who').forEach((chip, at) => chip.style.setProperty('--speaker', speakerColor(script.groups[at].group, script.groups)));
-        parts.push(row(t('scriptTuneWho'), who));
-    }
+    if (script.groups.length > 1) parts.push(row(t('scriptTuneWho'), whoReads(ctx, indexes, speakers)));
 
     const language = sharedValue(lines, 'language', valuesOf);
     const languageChoices = [{ id: FOLLOW, label: t('scriptTuneFollowValue', { value: followText('language') }), title: t('scriptTuneFollowHint') },
