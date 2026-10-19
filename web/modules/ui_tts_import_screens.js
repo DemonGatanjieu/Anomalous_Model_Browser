@@ -1,10 +1,10 @@
 import { t } from './interface_settings.js';
 
 /**
- * The fixed screens of the GPT-SoVITS import window (ui_tts_import.js): the first
- * question (what do you have?), the drop area of batch mode, the "add more" menu,
- * and the spotlight tour steps that explain them. Only markup and callbacks; the
- * window owns all state.
+ * The fixed screens of the GPT-SoVITS import window (ui_tts_import.js): its frame
+ * (header, steps, footer), the toolbar over the cards, the first question (what do you have?), the drop area of
+ * batch mode, the "add more" menu, and the spotlight tour steps that explain them.
+ * Only markup and callbacks; the window owns all state.
  */
 
 const UPLOAD_SVG = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
@@ -51,11 +51,68 @@ function el(tag, className, text) {
     return node;
 }
 
-function button(className, label, onClick) {
+function button(className, label, onClick, title) {
     const btn = el('button', className, label);
     btn.type = 'button';
+    if (title) { btn.title = title; btn.setAttribute('aria-label', title); }
     btn.onclick = onClick;
     return btn;
+}
+
+/**
+ * The toolbar over the cards: what is found, the drop hint, Choose again, Next batch,
+ * the "add more" menu and New character. `on`: `{ files(), folder(), add(), next(), back() }`.
+ */
+export function renderImportToolbar(on) {
+    const { root: menuWrap, menu } = renderAddMenu({ files: on.files, folder: on.folder });
+    const parts = {
+        menuWrap,
+        menu,
+        found: el('span', 'anomalous-tts-toolbar-title'),
+        dropHint: el('span', 'anomalous-tts-toolbar-hint', t('ttsSoloDropHint')),
+        backBtn: button('anomalous-tts-link', t('ttsChooseAgain'), on.back),
+        nextBtn: button('anomalous-tts-pick', '', on.next),
+        newBtn: button('anomalous-tts-ghost', t('ttsBatchNewDraft'), on.add),
+        toolbar: el('div', 'anomalous-tts-toolbar'),
+    };
+    parts.toolbar.append(parts.found, parts.dropHint, parts.backBtn, parts.nextBtn, menuWrap, parts.newBtn);
+    return parts;
+}
+
+/**
+ * The window's frame: the header (title, ? replays the tour, × closes), the three
+ * steps and the footer (summary, where it saves, Cancel, the import button).
+ * `on`: `{ help(), close(), submit() }`. `frame.setStep(at)` marks the current step.
+ */
+export function renderImportFrame(title, on) {
+    const header = el('div', 'anomalous-voice-modal-header');
+    const heading = el('div', 'anomalous-voice-modal-heading');
+    heading.append(el('div', 'anomalous-voice-modal-title', title));
+    const closeBtn = button('anomalous-voice-modal-close', '×', on.close, t('close'));
+    const headerButtons = el('div', 'anomalous-tts-header-buttons');
+    headerButtons.append(button('anomalous-tts-help', '?', on.help, t('ttsTourReplay')), closeBtn);
+    header.append(heading, headerButtons);
+
+    const steps = el('ol', 'anomalous-tts-steps');
+    const stepItems = ['ttsStepChoose', 'ttsStepFiles', 'ttsStepImport'].map((key, i) => {
+        const item = el('li', 'anomalous-tts-step');
+        item.append(el('span', 'anomalous-tts-step-no', String(i + 1)), el('span', 'anomalous-tts-step-label', t(key)));
+        steps.append(item);
+        return item;
+    });
+    const setStep = (at) => stepItems.forEach((item, i) => {
+        item.classList.toggle('is-current', i === at);
+        item.classList.toggle('is-done', i < at);
+    });
+
+    const saveTo = el('span', 'anomalous-tts-footer-path');
+    const summary = el('span', 'anomalous-tts-footer-summary');
+    const submit = button('anomalous-voice-modal-submit', '', on.submit);
+    const footerInfo = el('div', 'anomalous-tts-footer-info');
+    footerInfo.append(summary, saveTo);
+    const footer = el('div', 'anomalous-voice-modal-footer anomalous-tts-footer');
+    footer.append(footerInfo, button('anomalous-voice-modal-cancel', t('dialogCancel'), on.close), submit);
+    return { header, steps, footer, setStep, summary, saveTo, submit, closeBtn };
 }
 
 /**

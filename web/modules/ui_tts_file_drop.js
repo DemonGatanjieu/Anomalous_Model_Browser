@@ -10,6 +10,28 @@ import { DROP_FILE_LIMIT, isPackage, skipFolder } from './tts_import_groups.js';
 
 const readAll = reader => new Promise((ok, fail) => reader.readEntries(ok, fail));
 
+const hasFiles = event => [...(event.dataTransfer?.types || [])].includes('Files');
+
+/**
+ * Files from the OS dropped anywhere on `box` (the import window): `is-dragover` while
+ * they hover, `onFiles(items)` with what readDroppedFiles walked, unless `signal` ended.
+ */
+export function bindWindowDrop(box, { signal, onFiles }) {
+    box.addEventListener('dragover', (event) => {
+        if (!hasFiles(event)) return;
+        event.preventDefault();
+        box.classList.add('is-dragover');
+    });
+    box.addEventListener('dragleave', (event) => { if (!box.contains(event.relatedTarget)) box.classList.remove('is-dragover'); });
+    box.addEventListener('drop', (event) => {
+        if (!hasFiles(event)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        box.classList.remove('is-dragover');
+        readDroppedFiles(event.dataTransfer).then((items) => { if (!signal.aborted) onFiles(items); });
+    });
+}
+
 /**
  * The entries of a drop, walked: `{ file, dir }` for each file an import can use,
  * `{ skipped: folder }` for a folder left out (tts_import_groups.js skipFolder: never

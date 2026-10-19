@@ -27,10 +27,10 @@ import { renderImageInspectorContent } from './ui_image_inspector.js';
 import { openParamCompare } from './ui_param_compare.js';
 import {
     fileBaseName,
-    parsePngMetadataFromUrl,
     extractWorkflowDetails,
     materialNodeHeading,
 } from './material_inspector.js';
+import { parsePngMetadataFromUrl } from './png_metadata.js';
 
 const t = (key, params) => translate(key, params);
 

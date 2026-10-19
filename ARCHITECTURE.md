@@ -347,10 +347,10 @@ covered by the `styles.css` manifest.
   "show all", left-out files folded, line files, language) and the unassigned card
   (one folded line per folder when large), and builds each row's elements once, so
   they survive redraws and moves; `ui_tts_import_screens.js` holds the fixed
-  screens (the first question, the batch drop area, the "add more" menu) and the
-  tour steps. `ui_tts_file_drop.js` reads OS drops (walking dropped folders, only
-  files an import can use, up to 5000) for the studio, the sidebar and the
-  workbench.
+  screens (the window's frame, the toolbar over the cards, the first question, the
+  batch drop area, the "add more" menu) and the tour steps. `ui_tts_file_drop.js`
+  reads OS drops (walking dropped folders, only files an import can use, up to 5000)
+  for the studio, the sidebar and the workbench, and binds the import window's own drop.
 - `audio_node_targets.js` is the single table of canvas nodes the audio studio
   writes into (the character widget and the script widget of
   `AnomalousTTS_CharacterSpeech`).
@@ -696,7 +696,8 @@ covered by the `styles.css` manifest.
   types a loader widget holds, which are never physically renamed, and which
   need a workflow-carried hash before Model Check recovers them.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns the image
-  workbench's metadata and node-parameter rendering.
+  workbench's metadata and node-parameter rendering; `png_metadata.js` reads the workflow a
+  PNG's text chunks carry, in the browser (the gallery detail's fallback).
 - `ui_first_run.js` is Home's first-run setup while nothing is scanned (check that Civitai answers
   through `api/network_check.py`, the optional key, a scan of every model, the tour); a card, never
   a popup, hidden per browser.

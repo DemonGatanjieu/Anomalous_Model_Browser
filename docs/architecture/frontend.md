@@ -139,7 +139,7 @@ The main surfaces are:
 
 `ui_dom.js` owns generic `text` and `jsonResponse` helpers.
 `material_inspector.js` holds the image workbench's metadata helpers and
-node-parameter rendering. See `material-library.md` for the material files' API and
+node-parameter rendering; `png_metadata.js` reads a PNG's workflow in the browser. See `material-library.md` for the material files' API and
 persistence contract.
 
 ## Entry modes and host integration
