@@ -91,7 +91,7 @@ function comboCard(owner, note) {
     });
     use.title = t('comboUseHint');
     body.append(use);
-    card.append(structured ? cover({ preview_url: structured.cover }) : cover(data.mainModel, data.source_image), body);
+    card.append(cover(structured ? { preview_url: structured.cover } : data.mainModel, data.source_image), body);
     bindMaterialDrag(card, owner, {
         payload: () => ({ type: 'combo', filename: note.filename, dragHint: t('comboDragHint'), dragTargetHint: t('comboDragCanvas') }),
         accepts: () => false,

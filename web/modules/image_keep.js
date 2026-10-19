@@ -1,8 +1,10 @@
 /**
  * Keeping an output image (the gallery's star, the image workbench) as one of three things:
- * its whole workflow as a Workflow Recipe (recipe_save.js), its main model, LoRAs and
- * positive prompt as a combo (搭配, a file of GET /anomalous/notebooks), or its prompts as a
- * saved prompt (POST /anomalous/save_prompt_plan). The image's workflow is laid on a
+ * its whole workflow as a Workflow Recipe (recipe_save.js), the nodes that make its sampler's
+ * model and prompts as a combo (搭配, a file of GET /anomalous/notebooks; image_keep_nodes.js,
+ * every value as the image had it; a workflow without a sampler to read from gives its main
+ * model, LoRAs and positive prompt), or its prompts as a saved prompt
+ * (POST /anomalous/save_prompt_plan). The image's workflow is laid on a
  * canvas of its own and read like a recipe saved from it (recipe_parser.js); its models are
  * looked up among this computer's files. Each thing kept remembers its image, so
  * GET /anomalous/kept_images can say what an image was kept as. No DOM.
@@ -40,9 +42,10 @@ const fileStem = name => String(name || '').split(/[\\/]/).pop().replace(/\.[^.]
 /** What the image's workflow uses (extractRecipeMetadata) and a name: its prompt's first tags, else the file's. */
 async function readImage(sourceImage) {
     const info = await jsonResponse(await post('/anomalous/inspect_image_material', { source_image: sourceImage }), 'read image workflow');
-    const metadata = extractRecipeMetadata(detachedGraph(info.workflow));
+    const graph = detachedGraph(info.workflow);
+    const metadata = extractRecipeMetadata(graph);
     const name = promptTitle(metadata.promptPositive[0]) || fileStem(sourceImage?.filename);
-    return { name, metadata };
+    return { name, metadata, graph };
 }
 
 /** A model's name as its card shows it: the name the user gave it, else the file's. */
@@ -85,16 +88,41 @@ export function freeComboName(name, combos) {
     }
 }
 
+/** Saves combo `data` under a free name from `wanted`. Returns { filename, name }. */
+async function saveCombo(data, wanted, combos) {
+    const comboName = freeComboName(wanted, combos);
+    const filename = `${comboName}.json`;
+    const response = await post('/anomalous/save_notebook', { filename, name: comboName, data: { ...data, name: comboName } });
+    if ((await jsonResponse(response, 'save combo')).status !== 'success') throw new Error('combo save failed');
+    return { filename, name: comboName };
+}
+
 /**
- * Keeps the image's main model, LoRAs and positive prompt as a combo; an image kept before
- * gives that combo back (`existed`). Models this computer does not have are left out and
- * named in `missing`. Returns { filename, name, existed, missing }.
+ * Keeps the image as a combo of the nodes that make its sampler's model and prompts, every
+ * value as it was; an image kept before gives that combo back (`existed`). Models this
+ * computer does not have are named in `missing` (kept by the workflow's name, `missingKept`). A workflow
+ * without a sampler to read from gives a combo of its main model, LoRAs and positive prompt.
+ * Returns { filename, name, existed, missing }.
  */
 export async function keepImageAsCombo(sourceImage, { name = '' } = {}) {
     const combos = await listCombos();
     const kept = combos.find(note => sameImage(note.data?.source_image, sourceImage));
     if (kept) return { filename: kept.filename, name: kept.name, existed: true, missing: [] };
     const image = await readImage(sourceImage);
+    const prompt = image.metadata.promptPositive.join('\n');
+    // Loaded only here: it reaches the canvas modules (no DOM in this file, and tests import it).
+    const { keepGraphNodes } = await import('./image_keep_nodes.js');
+    const nodes = await keepGraphNodes(image.graph, localModels);
+    if (nodes) {
+        const title = comboTitle({ prompt, mainModel: nodes.mainModel, loras: nodes.loras, fallback: image.name });
+        const saved = await saveCombo({ ...nodes.data, source_image: sourceImage }, name || title, combos);
+        return { ...saved, existed: false, missing: nodes.missing, missingKept: true };
+    }
+    return keepSimpleCombo(sourceImage, image, prompt, name, combos);
+}
+
+/** The older kind of combo: the image's main model, LoRAs and positive prompt. */
+async function keepSimpleCombo(sourceImage, image, prompt, name, combos) {
     const main = image.metadata.baseModel || '';
     const loraPaths = [...new Set((image.metadata.loras || []).map(lora => lora.name).filter(Boolean))];
     const [mains, loras] = await Promise.all([
@@ -103,22 +131,16 @@ export async function keepImageAsCombo(sourceImage, { name = '' } = {}) {
     ]);
     const mainModel = mains[main] || null;
     const localLoras = loraPaths.filter(path => loras[path]).map(path => loras[path]);
-    const prompt = image.metadata.promptPositive.join('\n');
-    const comboName = freeComboName(name || comboTitle({ prompt, mainModel, loras: localLoras, fallback: image.name }), combos);
-    const data = {
-        name: comboName,
+    const saved = await saveCombo({
         baseModel: mainModel ? String(mainModel.metadata?.baseModel || '').trim() || UNLABELED_BASE_MODEL : '',
         mainModel,
         loras: localLoras,
         promptEn: prompt,
         promptZh: '',
         source_image: sourceImage,
-    };
-    const filename = `${comboName}.json`;
-    const response = await post('/anomalous/save_notebook', { filename, name: comboName, data });
-    if ((await jsonResponse(response, 'save combo')).status !== 'success') throw new Error('combo save failed');
+    }, name || comboTitle({ prompt, mainModel, loras: localLoras, fallback: image.name }), combos);
     const missing = [...(main && !mainModel ? [main] : []), ...loraPaths.filter(path => !loras[path])];
-    return { filename, name: comboName, existed: false, missing };
+    return { ...saved, existed: false, missing };
 }
 
 /** Gives the combo kept in `filename` the name `name` (its file keeps its name). Returns the name. */

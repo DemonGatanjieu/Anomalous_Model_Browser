@@ -37,7 +37,8 @@ function comboSearchItem(note) {
     const data = note.data || {};
     if (data.kind === STRUCTURED) {
         const meta = structuredComboMeta(data);
-        return comboItem(note, { detail: meta.meta, thumb: meta.cover, text: meta.prompt });
+        const thumb = data.source_image?.filename ? outputThumbnail(data.source_image) : meta.cover;
+        return comboItem(note, { detail: meta.meta, thumb, text: meta.prompt });
     }
     const loras = (data.loras || []).length;
     const detail = [modelName(data.mainModel), loras ? t('comboLoraCount', { count: loras }) : ''].filter(Boolean).join(' · ');

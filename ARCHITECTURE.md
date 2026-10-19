@@ -527,6 +527,11 @@ covered by the `styles.css` manifest.
   named by `comboTitle` — first LoRA or main model · two telling tags — and renamed by `renameCombo`;
   its prompts as a saved prompt, reading what was kept) without DOM. A new combo's toast is
   `ui_kept_toast.js` (the image's thumbnail, the name in a box to rename it on the spot, Open).
+  An image becomes a node-structure combo: `sampler_inputs.js` (no DOM) picks the nodes upstream
+  of its samplers' model / positive / negative / conditioning inputs (not through images,
+  latents or masks), and `image_keep_nodes.js` saves them with `captureStructure`, every value
+  as the image had it, models renamed to where they are on this computer; a workflow with no
+  sampler gives the older main model + LoRAs + prompt combo.
 - `ui_combos.js` renders the Combos page's list (搭配: a main model, LoRAs and a prompt, formerly Prompt Notes): search,
   ? (what a combo is), New, and a card per combo with its model's cover (one kept from an output image shows that image, the model's cover as a badge) and Put on canvas; a card opens the combo's editor, and dragged onto the
   canvas (`material_drag.js`) becomes a new group of nodes where it is dropped. Combos keep the notes' files.

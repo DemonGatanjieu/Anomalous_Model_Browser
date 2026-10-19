@@ -41,10 +41,13 @@ function place(menu, anchor) {
     menu.style.top = `${below + height > window.innerHeight - 8 ? Math.max(8, box.top - height - 6) : below}px`;
 }
 
+/** The models a new combo names that this computer lacks: kept by the picture's name (nodes), or left out. */
+const missingWords = result => t(result.missingKept ? 'keepComboMissingNamed' : 'keepComboMissing', { count: result.missing.length });
+
 function keptMessage(spec, result) {
     if (result.existed) return t('keepExisted', { name: result.name });
     const message = t(`keptAs_${spec.kind}`, { name: result.name });
-    return result.missing?.length ? `${message} ${t('keepComboMissing', { count: result.missing.length })}` : message;
+    return result.missing?.length ? `${message} ${missingWords(result)}` : message;
 }
 
 async function keep(owner, spec, sourceImage, kept, { name, onKept, beforeOpen }) {
@@ -62,7 +65,7 @@ async function keep(owner, spec, sourceImage, kept, { name, onKept, beforeOpen }
         };
         // A new combo's name is a guess (image_keep.js comboTitle): it can be renamed right here.
         if (spec.kind === 'combo' && !result.existed) {
-            const missing = result.missing?.length ? t('keepComboMissing', { count: result.missing.length }) : '';
+            const missing = result.missing?.length ? missingWords(result) : '';
             showKeptComboToast(sourceImage, kept.combo, {
                 message: [t('keptAs_comboShort'), missing].filter(Boolean).join(' '),
                 onRenamed: (name) => {

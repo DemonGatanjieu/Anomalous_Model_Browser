@@ -116,8 +116,11 @@ override, which travels into the saved record but never writes back to a Recipe.
 
 The gallery's star and the image workbench's Keep (`ui_keep_menu.js`) keep an output PNG
 as one of three things, each recording the image as its source: the whole workflow as a
-Workflow Recipe (`recipe_save.js`, `source_image`), its main model, LoRAs and positive
-prompt as a combo (`image_keep.js`; models are looked up among this computer's files with
+Workflow Recipe (`recipe_save.js`, `source_image`), the nodes that make its sampler's model
+and prompts as a node-structure combo (`image_keep_nodes.js`, `sampler_inputs.js`: loaders,
+LoRA chains, CLIP skip, model patches and both prompt nodes, every value as it was; a combo
+never changes a value) — or, for a workflow with no sampler, its main model, LoRAs and
+positive prompt as a combo (`image_keep.js`; models are looked up among this computer's files with
 `/anomalous/resolve_paths_to_previews`, missing ones are left out; the notebook file keeps
 `source_image`, which the Combos card and the editor's title show; the name is the first
 LoRA's (else the main model's) · the prompt's first two tags that are neither quality words

@@ -22,6 +22,11 @@
 ### ★ See only the kept pictures (图库只看收藏)
 - **★ Kept** beside the gallery's search lists only the pictures you kept as a workflow, combo or prompt (the ★ on their cards). Works with the search and with Pictures / Videos. Pointing at a card's ★ says what it was kept as.
 
+### 📌 A picture kept as a combo keeps its nodes as they were (图片存搭配，节点原样记住)
+- **Keep → Its combo** now keeps the nodes that made the picture's model and prompts: the model and CLIP loaders, the whole LoRA chain (Power Lora Loader and other packs' nodes too), CLIP skip and model patches, the positive **and** negative prompt nodes, with every value as the picture had it. The sampler, size and decoding are left out, so Put on canvas gives a group you wire to your own sampler, like a combo saved from the canvas.
+- It used to keep only the main model, the LoRAs' names and the positive prompt: LoRA strengths came back as 1.0, and the negative prompt and CLIP skip were lost. **A combo only remembers; it never changes a value** (now one of the plugin's rules). Combos kept before stay as they are.
+- Models are named by where they are on this computer; one this computer lacks is kept by the picture's name and said after keeping. A workflow without a sampler to read from still gives the simple kind.
+
 ### ⭐ Combos kept from a picture are easy to tell apart (图片存的搭配一眼认得出)
 - **The card shows the picture you kept it from**, with the main model's cover as a small round badge in its corner, instead of the model's cover alone (several combos of one model used to look the same).
 - **A name that says which one it is**: the first LoRA (or the main model) and the prompt's first two telling tags, like *Ahri · fox ears, kimono*, skipping words nearly every picture has (*1girl*, *solo*, *looking at viewer*…).
