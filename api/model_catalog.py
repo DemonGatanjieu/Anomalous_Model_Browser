@@ -444,7 +444,9 @@ def _resolve_paths_to_model_info_sync(paths, folder_types=None, exact_only=False
                 except ValueError:
                     continue
                 if os.path.isfile(candidate) and is_model_file(candidate):
-                    exact_results[original] = _model_info_for_path(folder_type, path_idx, base_dir, candidate)
+                    # The candidate lies under the real folder: a folder that is a link (a junction
+                    # to another drive, a short 8.3 name) would give a subfolder of "../.." or fail.
+                    exact_results[original] = _model_info_for_path(folder_type, path_idx, real_base_dir, candidate)
 
     unresolved = [(original, normalized) for original, normalized, _ in requested if original not in exact_results]
     if exact_only or not unresolved:

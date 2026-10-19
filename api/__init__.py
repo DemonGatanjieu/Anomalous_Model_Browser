@@ -1,6 +1,6 @@
 from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
-    model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
+    model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, quick_index, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
     local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, tts_version, backup,
     network_check, model_heads, model_usage, usage_ledger, sidecar_layout,
 )
@@ -108,6 +108,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/delete_gallery_image', gallery_routes.api_delete_gallery_image)
     app.router.add_get('/anomalous/output_thumbnail', gallery_routes.api_output_thumbnail)
     app.router.add_get('/anomalous/kept_images', kept_images.api_kept_images)
+    app.router.add_get('/anomalous/quick_index', quick_index.api_quick_index)
     app.router.add_get('/anomalous/resolve_hash', model_resolution.api_resolve_hash)
     app.router.add_post('/anomalous/resolve_hash_batch', model_resolution.api_resolve_hash_batch)
     app.router.add_get('/anomalous/all_hashes', model_resolution.api_get_all_hashes)

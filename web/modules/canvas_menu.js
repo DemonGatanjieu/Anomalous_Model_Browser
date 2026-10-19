@@ -4,7 +4,7 @@
  * (canvas_menu_settings.js). A node's menu offers what Current node does for it — open it in
  * AMB, change its model by picture, insert a LoRA before / after, its saved values, the
  * model's pictures and details, save its values or the picked nodes as a combo — each only
- * where it applies; the empty canvas's menu opens AMB's pages. `browser()` gives the browser,
+ * where it applies; the empty canvas's menu opens the quick search and AMB's pages. `browser()` gives the browser,
  * made on first use.
  */
 
@@ -18,6 +18,7 @@ import { anomalousPrompt } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openSettingsPage } from './ui_settings_page.js';
 import { RAIL_PAGES } from './ui_shell_rail.js';
+import { openQuickSearch } from './ui_quick_search.js';
 
 const item = (content, run) => ({ content, callback: () => void run() });
 
@@ -86,7 +87,7 @@ const NODE_ITEMS = {
 
 // Entry id -> (browser, placement) => the empty canvas's items.
 const CANVAS_ITEMS = {
-    quickSearch: () => [],
+    quickSearch: browser => [item(t('canvasMenuQuickSearch'), () => openQuickSearch(browser))],
     // The pages themselves inside AMB's submenu; right in the menu, a submenu of them.
     openPage: (browser, placement) => {
         const pages = RAIL_PAGES.map(({ page, labelKey }) => item(t(labelKey), () => browser()?.show({ page })));

@@ -12,6 +12,7 @@ import { renderSourceBadge } from './model_source.js';
 import { renderModelSourcesView } from './ui_model_sources.js';
 import { renderModelTidyView } from './ui_model_tidy.js';
 import { recordCanvasStep } from './canvas_history.js';
+import { MODEL_LOADERS } from './quick_search_data.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -267,16 +268,7 @@ export async function loadModels() {
 
 
 export function applyModelToCanvas(type, subfolder, model) {
-        const nodeTypeMap = {
-            'checkpoints': 'CheckpointLoaderSimple',
-            'loras': 'LoraLoader',
-            'unet': 'UNETLoader',
-            'diffusion_models': 'UNETLoader',
-            'vae': 'VAELoader',
-            'clip': 'CLIPLoader',
-            'controlnet': 'ControlNetLoader'
-        };
-        const nodeType = nodeTypeMap[type];
+        const nodeType = MODEL_LOADERS[type];
         if (!nodeType) {
             alert(window.anomalous_browser_lang === 'zh' ? '当前类型暂不支持自动发布到画布' : 'Unsupported auto apply for this type');
             return;

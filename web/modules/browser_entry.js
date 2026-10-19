@@ -2,6 +2,7 @@ import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
 import { watchMcpActions } from './mcp_bridge.js';
 import { canvasMenuItems, nodeMenuItems } from './canvas_menu.js';
+import { openQuickSearch } from './ui_quick_search.js';
 import {
     clampFloatingTriggerPosition,
     clearSavedTriggerPosition,
@@ -23,6 +24,8 @@ export const SHORTCUT_SETTING_ID = 'Anomalous.ModelBrowser.Shortcut';
 export const FLOATING_TRIGGER_SIZE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerSize';
 export const FLOATING_TRIGGER_STYLE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerStyle';
 export const OPEN_BROWSER_COMMAND_ID = 'Anomalous.ModelBrowser.Open';
+// The canvas's quick search bar (ui_quick_search.js); Alt+B unless rebound in ComfyUI's keybindings.
+export const QUICK_SEARCH_COMMAND_ID = 'Anomalous.ModelBrowser.QuickSearch';
 export const RESET_TRIGGER_POSITION_COMMAND_ID = 'Anomalous.ModelBrowser.ResetFloatingTriggerPosition';
 
 export function createBrowserEntry({ translate, getCurrentLanguage }) {
@@ -424,14 +427,16 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         }],
         commands: [
             { id: OPEN_BROWSER_COMMAND_ID, label: t('mainOpenTitle'), function: toggle },
-            { id: RESET_TRIGGER_POSITION_COMMAND_ID, label: t('mainResetFloatingTriggerPosition'), function: resetPosition }
+            { id: RESET_TRIGGER_POSITION_COMMAND_ID, label: t('mainResetFloatingTriggerPosition'), function: resetPosition },
+            { id: QUICK_SEARCH_COMMAND_ID, label: t('quickSearchTitle'), function: () => openQuickSearch(ensureBrowser) },
         ],
         keybindings: [
             { combo: DEFAULT_BROWSER_SHORTCUT, commandId: OPEN_BROWSER_COMMAND_ID },
+            { combo: { key: 'b', alt: true }, commandId: QUICK_SEARCH_COMMAND_ID },
         ],
         menuCommands: [{
             path: ['Extensions', 'Anomalous Model Browser'],
-            commands: [OPEN_BROWSER_COMMAND_ID, RESET_TRIGGER_POSITION_COMMAND_ID]
+            commands: [OPEN_BROWSER_COMMAND_ID, QUICK_SEARCH_COMMAND_ID, RESET_TRIGGER_POSITION_COMMAND_ID]
         }],
         setup,
         // The canvas's right-click menus: AMB's entries as Settings -> Canvas sets them (canvas_menu.js).

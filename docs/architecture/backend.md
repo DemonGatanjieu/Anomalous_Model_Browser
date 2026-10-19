@@ -61,6 +61,8 @@ a request other than GET must be local unless its path is in `OPEN_POSTS` (reads
 `resolve_paths_to_previews`, `resolve_hash_batch`, `inspect_image_material`); a GET is open
 unless its path is in `LOCAL_GETS` (`backup/file`, `version/releases`, `import/folders`,
 `civitai_check`: the first-run setup's one request to Civitai, `api/network_check.py`).
+`GET /anomalous/quick_index` (`api/quick_index.py`) is an open read like `/anomalous/models`:
+every model file in a few words for the canvas's quick search.
 `/anomalous/mcp` answers other devices itself. Local means: a loopback peer, no proxy headers
 (`Forwarded`, `X-Forwarded-For`, `X-Real-IP`, `X-Forwarded-Host`) and a loopback `Host`, so a
 page that reached the server under another name (DNS rebinding) is refused too. A refusal is

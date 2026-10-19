@@ -15,5 +15,6 @@ app.registerExtension({
     keybindings: browserEntry.keybindings,
     menuCommands: browserEntry.menuCommands,
     getNodeMenuItems: browserEntry.getNodeMenuItems,
+    getCanvasMenuItems: browserEntry.getCanvasMenuItems,
     setup: browserEntry.setup
 });

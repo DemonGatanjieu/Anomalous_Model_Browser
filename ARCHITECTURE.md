@@ -103,6 +103,9 @@ covered by the `styles.css` manifest.
   model located so the browser can open it (`/anomalous/scan_model`).
   `api/kept_images.py` says what each output image was kept as, for the gallery's star: the
   Workflow Recipe, combo or saved prompt that names it as its source image.
+  `api/quick_index.py` (`GET /anomalous/quick_index`) lists every model file in a few words
+  (type, place, shown name, base model, a few trigger words, cover URL) for the canvas's
+  quick search, read once when the bar opens.
   `api/scan_summary.py` counts models matched on Civitai, unmatched and not yet scanned
   for the scan page and lists the last two, by the same sidecar rules the scraper uses
   (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`); it also
@@ -451,6 +454,13 @@ covered by the `styles.css` manifest.
   only where it applies; for the empty canvas, AMB's pages. `canvas_menu_settings.js` keeps which
   entries are on, their order and whether they sit in one "AMB" submenu or right in the menu
   (localStorage, no DOM); `ui_canvas_menu_settings.js` is its Settings -> Canvas group.
+  `ui_quick_search.js` is the canvas's quick search (Alt+B, the command
+  `Anomalous.ModelBrowser.QuickSearch`, or the empty canvas's menu): a bar that finds combos,
+  models and saved prompts as you type and puts the chosen one where the pointer was (a combo
+  through `sendNotebookToCanvas`, a model through `applyModelToCanvas`, both following the
+  pointer; a prompt as a new prompt node, `prompt_card_drag.js` `addPromptNode`); it takes every
+  key while open. `quick_search_data.js` reads its lists (kept a minute) and matches without
+  DOM; `MODEL_LOADERS` there is also the loader node `applyModelToCanvas` uses for each type.
   `ui_settings_hub.js` owns the display preferences (view mode, scale, atmosphere, window
   layout) and their application, the gear and language redraws; `ui_settings_page.js`
   is the settings page the gear opens (a tool page with Back), in tabs: Look (look and

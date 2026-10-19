@@ -46,7 +46,8 @@ function fillBox(node, box, envelope) {
     });
 }
 
-function addPromptNode(graph, position, card) {
+/** A new prompt node of `card`'s role and text at `position` on `graph` (also the quick search's). */
+export function addPromptNode(graph, position, card) {
     const node = globalThis.LiteGraph?.createNode('CLIPTextEncode');
     if (!node) return;
     const role = card.role === 'negative' ? 'negative' : 'positive';
