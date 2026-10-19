@@ -86,18 +86,23 @@ def _gallery_listing(output_dir, refresh, query, media="image", hidden=frozenset
     return filter_images(os.path.realpath(output_dir), images, query) if query else images
 
 
-def _gallery_page_source(output_dir, refresh, query, media, hidden):
-    """The listing, and whether the output folder has any video (the gallery offers its
-    Pictures / Videos switch only then)."""
+def _gallery_page_source(output_dir, refresh, query, media, hidden, kept_only=False):
+    """The listing (only the images kept as a recipe, combo or prompt when `kept_only`), and
+    whether the output folder has any video (the gallery offers its Pictures / Videos switch
+    only then)."""
     images = _gallery_listing(output_dir, refresh, query, media, hidden)
+    if kept_only:
+        from .kept_images import kept_keys  # here: kept_images reaches back to this module through the stores
+        kept = kept_keys()
+        images = [item for item in images if (item.get("subfolder") or "", item["filename"]) in kept]
     has_videos = any(item["media_type"] == "video" for item in _gallery_images(output_dir))
     return images, has_videos
 
 
 async def api_get_gallery_images(request):
-    """GET /anomalous/gallery_images?page&limit&refresh&term=..&term=.. (or q)&media=all|image|video&hide=mkv,gif
+    """GET /anomalous/gallery_images?page&limit&refresh&term=..&term=.. (or q)&media=all|image|video&hide=mkv,gif&kept=1
     - Outputs (pictures only unless `media` says otherwise), optionally searched by embedded
-    generation info, without the `hide` formats."""
+    generation info, without the `hide` formats; with `kept=1` only those kept as something."""
     try:
         page = max(1, int(request.query.get('page', 1)))
         limit = min(200, max(1, int(request.query.get('limit', 50))))
@@ -110,7 +115,7 @@ async def api_get_gallery_images(request):
         hidden = frozenset(part.strip().lower().lstrip('.') for part in request.query.get('hide', '').split(','))
         images, has_videos = await asyncio.to_thread(
             _gallery_page_source, folder_paths.get_output_directory(), request.query.get('refresh') == '1',
-            query, media, hidden - {''})
+            query, media, hidden - {''}, request.query.get('kept') == '1')
         total = len(images)
         start = (page - 1) * limit
         return web.json_response({"images": images[start:start + limit], "total": total,

@@ -9,7 +9,7 @@ import { triggerDirectModelScan } from './scan_runner.js';
 import { openScanPage, renderScanPage, leaveScanPage } from './ui_scan_page.js';
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './ui_gallery.js';
 import { showNotebooks, openCombo, openComboByFilename, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook } from './ui_notebooks.js';
-import { renderNotebookEditor, fillNotebookGalleries } from './ui_notebook_editor.js';
+import { renderNotebookEditor } from './ui_notebook_editor.js';
 import { sendNotebookToCanvas } from './notebook_canvas.js';
 import { showRecipes, refreshRecipes } from './ui_recipe_catalog.js';
 import { renderRecipeList, handleSaveRecipe, openRecipeByFilename } from './ui_recipes.js';
@@ -228,7 +228,6 @@ AnomalousBrowser.prototype.refreshNotebooks = refreshNotebooks;
 AnomalousBrowser.prototype.saveCurrentNotebook = saveCurrentNotebook;
 AnomalousBrowser.prototype.deleteCurrentNotebook = deleteCurrentNotebook;
 AnomalousBrowser.prototype.renderNotebookEditor = renderNotebookEditor;
-AnomalousBrowser.prototype.fillNotebookGalleries = fillNotebookGalleries;
 AnomalousBrowser.prototype.sendNotebookToCanvas = sendNotebookToCanvas;
 
 AnomalousBrowser.prototype.showRecipes = showRecipes;

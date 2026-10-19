@@ -35,6 +35,11 @@ def _kept_images():
     return [{"subfolder": subfolder, "filename": filename, **entry} for (subfolder, filename), entry in kept.items()]
 
 
+def kept_keys():
+    """{(subfolder, filename)} of every output image kept as anything (the gallery's ★ view)."""
+    return {(item["subfolder"], item["filename"]) for item in _kept_images()}
+
+
 async def api_kept_images(request):
     try:
         images = await asyncio.to_thread(_kept_images)

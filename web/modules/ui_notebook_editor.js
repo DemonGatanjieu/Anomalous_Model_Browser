@@ -1,250 +1,19 @@
 /**
  * ui_notebook_editor.js
- * Combo (搭配) editor with unfolded cards, sticky toolbar, and compatible-model galleries.
+ * A combo's (搭配) editor: its head (ui_combo_hero.js: picture, name with Rename, chips, Put on
+ * canvas), its models (ui_combo_models.js: the chosen ones, Change / Add open a grid of the
+ * compatible ones) and its prompt with the bilingual tag view. Every change saves itself.
+ * A node-structure combo gets the same head over its own editor (ui_combo_structure.js).
  */
 
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
-import { isUnetModel, UNLABELED_BASE_MODEL } from './notebook_canvas.js';
 import { STRUCTURED } from './combo_slots.js';
 import { renderStructuredCombo } from './ui_combo_structure.js';
-import { createLoraNodeChoice } from './ui_lora_node_choice.js';
-import { createComboTitle } from './ui_combo_title.js';
+import { createComboHero } from './ui_combo_hero.js';
+import { createComboModels } from './ui_combo_models.js';
 
 const t = (key, params) => translate(key, params);
-
-/**
- * Sticky top action toolbar for the active notebook with floating dropdown menu.
- */
-export function createNotebookToolbar(ctx, notebook) {
-    const tb = document.createElement('div');
-    tb.className = 'anomalous-nb-toolbar';
-
-    const titleBox = createComboTitle(ctx, notebook);
-
-    const rightBtns = document.createElement('div');
-    rightBtns.className = 'anomalous-notebook-actions';
-
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.textContent = `💾 ${t('saveNotebook')}`;
-    saveBtn.className = 'anomalous-btn-primary';
-    saveBtn.onclick = async () => {
-        const orig = saveBtn.innerHTML;
-        saveBtn.innerHTML = '⏳...';
-        const saved = await ctx.saveCurrentNotebook();
-        if (!saved) { saveBtn.innerHTML = orig; return; }
-        saveBtn.innerHTML = '✅';
-        saveBtn.style.background = '#2e8b57';
-        setTimeout(() => {
-            saveBtn.innerHTML = orig;
-            saveBtn.style.background = '';
-        }, 1500);
-    };
-
-    // Put on the canvas: the combo as a new group of nodes.
-    const useBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-btn-success', textContent: t('comboUse'), title: t('comboUseHint') });
-    useBtn.onclick = () => ctx.sendNotebookToCanvas();
-
-    // Floating More Dropdown Menu
-    const moreWrapper = document.createElement('div');
-    moreWrapper.className = 'anomalous-nb-dropdown-wrapper';
-
-    const moreBtn = document.createElement('button');
-    moreBtn.type = 'button';
-    moreBtn.className = 'anomalous-nb-more-btn';
-    moreBtn.innerHTML = `<span>··· ${t('notebookMore')}</span> <span style="font-size:0.7rem;margin-left:2px;">▾</span>`;
-
-    const dropdownMenu = document.createElement('div');
-    dropdownMenu.className = 'anomalous-nb-dropdown-menu';
-
-    let delTimer = null;
-    const delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.className = 'anomalous-nb-dropdown-item anomalous-nb-dropdown-item-danger';
-    const normalDelHtml = `<span>🗑️</span> <span>${t('deleteNotebook')}</span>`;
-    delBtn.innerHTML = normalDelHtml;
-
-    const resetDel = () => {
-        clearTimeout(delTimer);
-        delBtn.classList.remove('confirming');
-        delBtn.innerHTML = normalDelHtml;
-    };
-
-    delBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (!delBtn.classList.contains('confirming')) {
-            delBtn.classList.add('confirming');
-            const delSureText = (t('delSure') || (window.anomalous_browser_lang === 'zh' ? '确认删除？' : 'Confirm Delete?')).replace(/^⚠️\s*/, '');
-            delBtn.innerHTML = `<span>⚠️</span> <span>${delSureText}</span>`;
-            delTimer = setTimeout(resetDel, 4000);
-        } else {
-            resetDel();
-            dropdownMenu.classList.remove('show');
-            moreBtn.classList.remove('active');
-            ctx.deleteCurrentNotebook();
-        }
-    };
-
-    dropdownMenu.append(delBtn);
-
-    moreBtn.onclick = (e) => {
-        e.stopPropagation();
-        const isOpen = dropdownMenu.classList.toggle('show');
-        moreBtn.classList.toggle('active', isOpen);
-        if (!isOpen) resetDel();
-    };
-
-    const onDocClick = (e) => {
-        if (!moreWrapper.contains(e.target)) {
-            dropdownMenu.classList.remove('show');
-            moreBtn.classList.remove('active');
-            resetDel();
-        }
-    };
-    document.addEventListener('click', onDocClick);
-
-    moreWrapper.append(moreBtn, dropdownMenu);
-    rightBtns.append(saveBtn, useBtn, moreWrapper);
-    tb.append(titleBox, rightBtns);
-    return tb;
-}
-
-/**
- * Flat companion models section (Base model + Checkpoints + LoRAs).
- */
-function createCompanionModelsCard(ctx, data) {
-    const card = document.createElement('div');
-    card.id = 'amb-nb-sec-models';
-    card.className = 'anomalous-nb-card anomalous-nb-models-card anomalous-nb-models-fold';
-    card.open = true;
-
-    const header = document.createElement('div');
-    header.className = 'anomalous-nb-card-header';
-
-    const titleLeft = document.createElement('div');
-    titleLeft.style.display = 'flex';
-    titleLeft.style.alignItems = 'center';
-    titleLeft.style.gap = '8px';
-
-    const titleText = document.createElement('span');
-    titleText.textContent = `📦 ${t('notebookCompanionModels') || (window.anomalous_browser_lang === 'zh' ? '配套模型' : 'Companion Models')}`;
-    titleText.style.fontWeight = '600';
-
-    const modelsBadge = document.createElement('span');
-    modelsBadge.className = 'anomalous-nb-models-badge';
-    titleLeft.append(titleText, modelsBadge);
-    header.appendChild(titleLeft);
-
-    const mainSelectedBadge = document.createElement('span');
-    mainSelectedBadge.className = 'anomalous-nb-selected-badge';
-    mainSelectedBadge.style.color = 'var(--amb-lt-violet, #c084fc)';
-
-    const loraSelectedBadge = document.createElement('span');
-    loraSelectedBadge.className = 'anomalous-nb-selected-badge';
-    loraSelectedBadge.style.color = 'var(--amb-warn)';
-
-    const updateSummary = () => {
-        const baseInfo = data.baseModel === UNLABELED_BASE_MODEL ? t('notebookUnlabeledBase') : (data.baseModel || 'SDXL');
-        const mainInfo = data.mainModel?.filename ? ` · ${data.mainModel.filename}` : '';
-        const loraCount = data.loras?.length ? ` · ${data.loras.length} LoRA` : '';
-        modelsBadge.textContent = `${baseInfo}${mainInfo}${loraCount}`;
-        mainSelectedBadge.textContent = data.mainModel?.filename ? `✓ ${data.mainModel.filename}` : (t('recipeDiffNone') || '未选择');
-        loraSelectedBadge.textContent = data.loras?.length ? `✓ ${data.loras.length} LoRA` : (t('recipeDiffNone') || '未选择');
-    };
-    ctx.updateNotebookModelsSummary = updateSummary;
-
-    // Base model selection
-    const baseRow = document.createElement('div');
-    baseRow.className = 'anomalous-nb-row anomalous-nb-base-row';
-    baseRow.style.display = 'flex';
-    baseRow.style.alignItems = 'center';
-    baseRow.style.gap = '10px';
-    baseRow.style.marginBottom = '12px';
-
-    const baseTitle = document.createElement('span');
-    baseTitle.style.fontWeight = '600';
-    baseTitle.style.fontSize = '0.88rem';
-    baseTitle.style.color = 'var(--amb-lt-soft, #cbd5e1)';
-    baseTitle.textContent = `${t('baseModel') || (window.anomalous_browser_lang === 'zh' ? '基础模型' : 'Base Model')}:`;
-    baseRow.appendChild(baseTitle);
-
-    const baseSelect = document.createElement('select');
-    baseSelect.className = 'anomalous-nb-select';
-    const buildSelect = (bases) => {
-        baseSelect.innerHTML = '';
-        bases.forEach(b => {
-            const opt = document.createElement('option');
-            opt.value = b;
-            opt.text = b === UNLABELED_BASE_MODEL ? t('notebookUnlabeledBase') : b;
-            if (data.baseModel === b) opt.selected = true;
-            baseSelect.appendChild(opt);
-        });
-        if (!data.baseModel && bases.length > 0) data.baseModel = bases[0];
-        updateSummary();
-    };
-
-    if (ctx.baseModelsCache) {
-        buildSelect(ctx.baseModelsCache);
-    } else {
-        const tempBases = ['SD 1.5', 'SD 2.1', 'SDXL', 'SD 3.0', 'SD 3.5', 'Flux.1', 'Pony', 'HunyuanVideo', 'LTX-Video', 'OmniGen'];
-        buildSelect(tempBases);
-        fetch('/anomalous/base_models').then(r => r.json()).then(d => {
-            const bases = [...(d.base_models || []), ...(d.unlabeled ? [UNLABELED_BASE_MODEL] : [])];
-            if (bases.length > 0) {
-                ctx.baseModelsCache = bases;
-                buildSelect(ctx.baseModelsCache);
-            }
-        }).catch(() => { });
-    }
-    if (!data.baseModel) data.baseModel = 'SDXL';
-    baseSelect.onchange = () => {
-        data.baseModel = baseSelect.value;
-        data.mainModel = null;
-        data.loras = [];
-        ctx.saveCurrentNotebook();
-        ctx.renderNotebookEditor();
-    };
-    baseRow.appendChild(baseSelect);
-
-    // Main Model Gallery
-    const mainBox = document.createElement('div');
-    mainBox.className = 'anomalous-nb-gallery-box';
-    const mainRow = document.createElement('div');
-    mainRow.className = 'anomalous-nb-row anomalous-nb-gallery-head';
-    const mainLabel = document.createElement('strong');
-    mainLabel.textContent = `🎨 ${t('mainModel') || (window.anomalous_browser_lang === 'zh' ? '主模型' : 'Main Model')}`;
-    mainRow.append(mainLabel, mainSelectedBadge);
-    const mainGallery = document.createElement('div');
-    mainGallery.className = 'anomalous-nb-gallery-wrap';
-    mainBox.append(mainRow, mainGallery);
-
-    // LoRA Gallery
-    const loraBox = document.createElement('div');
-    loraBox.className = 'anomalous-nb-gallery-box';
-    const loraRow = document.createElement('div');
-    loraRow.className = 'anomalous-nb-row anomalous-nb-gallery-head';
-    const loraLabel = document.createElement('strong');
-    loraLabel.textContent = `⚡ ${t('loras') || (window.anomalous_browser_lang === 'zh' ? 'LoRA 模型' : 'LoRA Models')}`;
-    loraRow.append(loraLabel, loraSelectedBadge);
-    const loraGallery = document.createElement('div');
-    loraGallery.className = 'anomalous-nb-gallery-wrap';
-    loraBox.append(loraRow, createLoraNodeChoice(data, () => ctx.saveCurrentNotebook()), loraGallery);
-
-    const unetHint = document.createElement('div');
-    unetHint.className = 'anomalous-nb-unet-hint';
-    unetHint.textContent = t('notebookUnetNeedsTextEncoder');
-    mainBox.appendChild(unetHint);
-    const showUnetHint = () => { unetHint.hidden = !isUnetModel(data.mainModel); };
-    ctx.updateNotebookUnetHint = showUnetHint;
-    showUnetHint();
-
-    card.append(header, baseRow, mainBox, loraBox);
-    updateSummary();
-
-    ctx.fillNotebookGalleries(data.baseModel, mainGallery, loraGallery, data);
-    return card;
-}
 
 /**
  * Prompt composer section with bilingual dual pane and compact inline tools.
@@ -338,7 +107,9 @@ function createPromptSection(ctx, data) {
                 tagL.innerHTML = ''; tagL.appendChild(inp); inp.focus();
                 const finish = () => {
                     tags[idx] = inp.value.trim();
-                    rawArea.value = tags.join(', ');
+                    rawArea.value = tags.filter(Boolean).join(', ');
+                    data.promptEn = rawArea.value; // a tag changed in the bilingual view is the prompt's too
+                    saveSoon();
                     updateVisualTags();
                 };
                 inp.onblur = finish;
@@ -471,108 +242,13 @@ export function renderNotebookEditor() {
         if (!this.currentNotebook) return;
 
         const data = this.currentNotebook.data || (this.currentNotebook.data = {});
-        if (data.kind === STRUCTURED) return renderStructuredCombo(this, this.nbEditor, this.currentNotebook, createNotebookToolbar(this, this.currentNotebook));
-        if (!data.loras) data.loras = [];
-
-        const tb = createNotebookToolbar(this, this.currentNotebook);
-        const modelsCard = createCompanionModelsCard(this, data);
-        const promptSec = createPromptSection(this, data);
-        this.nbEditor.replaceChildren(tb, modelsCard, promptSec);
+        const hero = createComboHero(this, this.currentNotebook);
+        if (data.kind === STRUCTURED) return renderStructuredCombo(this, this.nbEditor, this.currentNotebook, hero);
+        this.nbEditor.replaceChildren(hero, createComboModels(this, data), createPromptSection(this, data));
     } catch (err) {
         console.error('[AMB] Error rendering notebook editor:', err);
         if (this.nbEditor) {
             this.nbEditor.innerHTML = `<div style="padding:20px; color:#ef4444;">Render error: ${escapeHtml(err?.message || String(err))}</div>`;
         }
     }
-}
-
-/**
- * Fill compatible main models and Loras into horizontal galleries.
- */
-export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data) {
-    if (!baseModel) return;
-
-    const buildThumbHtml = (m) => {
-        if (m.preview_url) {
-            const isVid = m.preview_url.match(/\.mp4(?:&|$)/i) || m.preview_url.match(/\.webm(?:&|$)/i);
-            if (isVid) return `<video src="${m.preview_url}" muted loop playsinline></video>`;
-            return `<img src="${m.preview_url}" />`;
-        }
-        return '<div class="anomalous-nb-mini-empty">?</div>';
-    };
-
-    fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(baseModel)}&target_type=checkpoints,unet,diffusion_models`)
-        .then(r => r.json()).then(d => {
-            const buildMainDOM = (models) => {
-                mainGallery.innerHTML = '';
-                if (!models || !models.length) {
-                    mainGallery.innerHTML = `<span style="color:var(--amb-lt-muted,#666);">${window.anomalous_browser_lang === 'zh' ? '未找到兼容的主模型。' : 'No compatible main models found.'}</span>`;
-                } else {
-                    models.forEach(m => {
-                        const isSelected = (data.mainModel && data.mainModel.filename === m.filename);
-                        const card = document.createElement('div');
-                        card.className = 'anomalous-nb-minicheck ' + (isSelected ? 'selected' : '');
-                        card.innerHTML = `${buildThumbHtml(m)}<div class="anomalous-nb-minicheck-name" title="${escapeHtml(m.filename)}">${escapeHtml(m.filename)}</div>`;
-
-                        if (m.preview_url && (m.preview_url.match(/\.mp4(?:&|$)/i) || m.preview_url.match(/\.webm(?:&|$)/i))) {
-                            card.onmouseenter = () => { const v = card.querySelector('video'); if (v) v.play().catch(() => { }); };
-                            card.onmouseleave = () => { const v = card.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } };
-                        }
-
-                        card.onclick = () => {
-                            data.mainModel = (data.mainModel && data.mainModel.filename === m.filename) ? null : m;
-                            this.saveCurrentNotebook();
-                            this.updateNotebookModelsSummary?.();
-                            this.updateNotebookUnetHint?.();
-                            buildMainDOM(models);
-                        };
-                        mainGallery.appendChild(card);
-                    });
-                }
-            };
-            buildMainDOM(d.models || []);
-        }).catch(() => { });
-
-    fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(baseModel)}&target_type=loras`)
-        .then(r => r.json()).then(d => {
-            const buildLoraDOM = (models) => {
-                loraGallery.innerHTML = '';
-                if (!models || !models.length) {
-                    loraGallery.innerHTML = `<span style="color:var(--amb-lt-muted,#666);">${window.anomalous_browser_lang === 'zh' ? '未找到兼容的 LoRA。' : 'No compatible Loras found.'}</span>`;
-                } else {
-                    models.forEach(m => {
-                        const loraIndex = data.loras.findIndex(l => l.filename === m.filename);
-                        const isSelected = loraIndex !== -1;
-                        const card = document.createElement('div');
-                        card.className = 'anomalous-nb-minilora ' + (isSelected ? 'selected' : '');
-                        card.style.position = 'relative';
-
-                        let badgeHtml = '';
-                        if (isSelected) {
-                            badgeHtml = `<div style="position:absolute; top:-5px; right:-5px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#180808; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:10; box-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 6px rgba(245,158,11,0.4); border: 1px solid var(--amb-border-strong);">${loraIndex + 1}</div>`;
-                        }
-
-                        card.innerHTML = `${badgeHtml}${buildThumbHtml(m)}<div class="anomalous-nb-minilora-name" title="${escapeHtml(m.filename)}">${escapeHtml(m.filename)}</div>`;
-
-                        if (m.preview_url && (m.preview_url.match(/\.mp4(?:&|$)/i) || m.preview_url.match(/\.webm(?:&|$)/i))) {
-                            card.onmouseenter = () => { const v = card.querySelector('video'); if (v) v.play().catch(() => { }); };
-                            card.onmouseleave = () => { const v = card.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } };
-                        }
-
-                        card.onclick = () => {
-                            if (isSelected) {
-                                data.loras = data.loras.filter(l => l.filename !== m.filename);
-                            } else {
-                                data.loras.push(m);
-                            }
-                            this.saveCurrentNotebook();
-                            this.updateNotebookModelsSummary?.();
-                            buildLoraDOM(models);
-                        };
-                        loraGallery.appendChild(card);
-                    });
-                }
-            };
-            buildLoraDOM(d.models || []);
-        }).catch(() => { });
 }

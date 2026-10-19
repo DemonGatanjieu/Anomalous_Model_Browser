@@ -1,0 +1,353 @@
+/* ★ Kept: only the kept pictures. */
+.anomalous-gallery-kept-only {
+    padding: 6px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-gallery-kept-only:hover { color: var(--amb-text-main); }
+
+.anomalous-gallery-kept-only[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--amb-warn) 55%, transparent);
+    background: color-mix(in srgb, var(--amb-warn) 16%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+/* A combo's editor: the head (ui_combo_hero.js); narrow editors stack it. */
+.anomalous-nb-editor { container: anomalous-combo / inline-size; }
+
+.anomalous-combo-hero {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid var(--amb-border);
+    border-radius: 14px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--amb-link) 7%, var(--amb-bg-card)), var(--amb-bg-card));
+}
+
+.anomalous-combo-hero-picture {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 8px;
+    width: 128px;
+}
+
+.anomalous-combo-hero-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 128px;
+    aspect-ratio: 3 / 4;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+}
+
+.anomalous-combo-hero-frame.is-image { cursor: zoom-in; }
+
+.anomalous-combo-hero-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+    transition: transform 0.25s ease;
+}
+
+.anomalous-combo-hero-frame.is-image:hover img { transform: scale(1.04); }
+
+.anomalous-combo-hero-empty { font-size: 34px; opacity: 0.5; }
+
+.anomalous-combo-hero-view,
+.anomalous-combo-hero-rename {
+    padding: 5px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: var(--amb-radius-control);
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-combo-hero-view:hover,
+.anomalous-combo-hero-rename:hover {
+    border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+}
+
+.anomalous-combo-hero-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.anomalous-combo-hero-eyebrow {
+    color: var(--amb-text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.anomalous-combo-hero-name-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.anomalous-combo-hero-name {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--amb-text-main);
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.25;
+    cursor: text;
+}
+
+.anomalous-combo-hero-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.anomalous-combo-hero-chip {
+    max-width: 100%;
+    padding: 3px 10px;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-combo-hero-chip.is-base {
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    color: var(--amb-link);
+}
+
+.anomalous-combo-hero-chip.is-warn {
+    border-color: color-mix(in srgb, var(--amb-warn) 45%, transparent);
+    color: var(--amb-warn);
+}
+
+.anomalous-combo-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.anomalous-combo-hero-use { padding: 8px 18px; font-size: 13px; }
+
+/* A combo's models (ui_combo_models.js): what is chosen, a grid only when asked for. */
+.anomalous-combo-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.anomalous-combo-section-title {
+    margin: 0;
+    color: var(--amb-text-main);
+    font-size: 0.98rem;
+}
+
+.anomalous-combo-base {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+}
+
+.anomalous-combo-sub-title {
+    margin: 14px 0 6px;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.anomalous-combo-picks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-combo-pick {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: var(--amb-bg-card);
+}
+
+.anomalous-combo-pick.is-empty {
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-style: dashed;
+    color: var(--amb-text-muted);
+    font-size: 13px;
+}
+
+.anomalous-combo-pick-number {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--amb-warn) 22%, transparent);
+    color: var(--amb-warn);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+}
+
+.anomalous-combo-pick-cover {
+    flex: none;
+    width: 42px;
+    height: 56px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.07);
+}
+
+.anomalous-combo-pick-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+}
+
+.anomalous-combo-pick-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.anomalous-combo-pick-name,
+.anomalous-combo-pick-detail {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-combo-pick-name { color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
+
+.anomalous-combo-pick-detail { color: var(--amb-text-muted); font-size: 11px; }
+
+.anomalous-combo-pick-action,
+.anomalous-combo-add {
+    flex: none;
+    padding: 5px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: var(--amb-radius-control);
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-combo-add {
+    align-self: flex-start;
+    border-style: dashed;
+    color: var(--amb-link);
+}
+
+.anomalous-combo-pick-action:hover,
+.anomalous-combo-add:hover { background: color-mix(in srgb, var(--amb-link) 12%, transparent); }
+
+.anomalous-combo-pick-remove {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--amb-text-muted);
+    cursor: pointer;
+}
+
+.anomalous-combo-pick-remove:hover { background: color-mix(in srgb, var(--amb-danger-text, #ef4444) 15%, transparent); color: var(--amb-danger-text, #ef4444); }
+
+.anomalous-combo-picker {
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+.anomalous-combo-picker[hidden] { display: none; }
+
+.anomalous-combo-picker .anomalous-nb-minicheck {
+    position: relative;
+    padding: 0;
+    font: inherit;
+    text-align: left;
+}
+
+.anomalous-combo-picker-cover {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+}
+
+.anomalous-combo-picker-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-combo-picker-number {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 1;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--amb-warn);
+    color: #180808;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 22px;
+    text-align: center;
+}
+
+.anomalous-combo-picker-empty { color: var(--amb-text-muted); font-size: 12px; }
+
+@container anomalous-combo (max-width: 520px) {
+    .anomalous-combo-hero { flex-direction: column; }
+    .anomalous-combo-hero-picture { flex-direction: row; align-items: flex-end; width: auto; }
+    .anomalous-combo-hero-frame { width: 96px; }
+}

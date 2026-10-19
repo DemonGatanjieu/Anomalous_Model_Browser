@@ -1,15 +1,18 @@
 /**
  * The output gallery's filters (state in gallery_filter.js): All / Pictures / Videos beside its
- * search, shown once the output folder has a video (or while Pictures or Videos is chosen), and
- * Settings → Gallery's formats, each clicked to hide it or show it again.
+ * search, shown once the output folder has a video (or while Pictures or Videos is chosen), ★ Kept
+ * (only the images kept as a workflow, combo or prompt), and Settings → Gallery's formats, each
+ * clicked to hide it or show it again.
  */
 
 import { translate as t } from './locales.js';
 import {
     GALLERY_IMAGE_FORMATS,
     GALLERY_VIDEO_FORMATS,
+    galleryKeptOnly,
     galleryMedia,
     hiddenGalleryFormats,
+    setGalleryKeptOnly,
     setGalleryFormatHidden,
     setGalleryMedia,
 } from './gallery_filter.js';
@@ -51,6 +54,21 @@ export function createGalleryMediaSwitch(onChange) {
         mark();
     };
     return box;
+}
+
+/** ★ Kept: on, the gallery lists only the images kept as something; `onChange()` after a click. */
+export function createGalleryKeptSwitch(onChange) {
+    const toggle = el('button', 'anomalous-gallery-kept-only', t('galleryKeptOnly'));
+    toggle.type = 'button';
+    toggle.title = t('galleryKeptOnlyHint');
+    const mark = () => toggle.setAttribute('aria-pressed', String(galleryKeptOnly()));
+    toggle.onclick = () => {
+        setGalleryKeptOnly(!galleryKeptOnly());
+        mark();
+        onChange();
+    };
+    mark();
+    return toggle;
 }
 
 /** Settings → Gallery: one line of pictures, one of videos; `onChange()` after a click. */

@@ -153,7 +153,8 @@ function keepButton(owner, image) {
         const done = Boolean(kept?.recipe || kept?.combo || kept?.prompt);
         star.textContent = done ? '★' : '☆';
         star.classList.toggle('is-kept', done);
-        star.title = t(done ? 'galleryKept' : 'galleryKeep');
+        const kinds = ['recipe', 'combo', 'prompt'].filter(kind => kept?.[kind]).map(kind => t(`keepNoun_${kind}`));
+        star.title = done ? t('galleryKeptAs', { list: kinds.join(t('listJoin')) }) : t('galleryKeep');
     };
     mark(null);
     owner.galleryKept?.then(map => mark(map.get(keptKey(image)))).catch(() => {});

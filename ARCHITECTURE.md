@@ -599,7 +599,7 @@ covered by the `styles.css` manifest.
 - `ui_recipes.js` / `ui_recipe_detail.js` and `ui_notebooks.js`
   own their respective workspace surfaces and persistence flows. `ui_recipes.js` hands the
   Workflows page (its catalog) the recipe services (save, edit, fetch) and opens a recipe by name. `ui_notebooks.js` owns the Combos workspace (filling the page; its list or one combo's editor,
-  with Back to the list) and combo persistence; `ui_combo_title.js` is the editor toolbar's title (a click renames; a combo kept from an image shows its thumbnail, which opens the viewer); `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
+  with Back to the list) and combo persistence; `ui_combo_hero.js` is the head of a combo's editor (its picture: the image it was kept from with See the picture, else its model's cover; the name with Rename; chips of what it holds; Put on canvas and More; no Save, every change saves itself), also over node-structure combos; `ui_combo_models.js` is the editor's models (the base model, the chosen main model and LoRAs as rows, Change / Add opening a grid of compatible models read only then); `ui_notebook_editor.js` puts them together with the prompt and owns unfolded card editing (modularized into single-responsibility
   sub-functions adhering to the 50-line rule: sticky top action toolbar with floating More popover dropdown and timed two-step delete safety guard,
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
   prompt composer with dynamic field-sizing and compact inline find & replace toolbar, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and

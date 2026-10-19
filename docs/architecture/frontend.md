@@ -81,7 +81,9 @@ The main surfaces are:
   full-screen Image Detail Studio Workbench, for pictures only.
   `ui_gallery_card.js` builds each output's card; its star and the workbench's Keep open
   `ui_keep_menu.js`, which keeps the image as a Workflow Recipe, a combo or its prompts
-  (`image_keep.js`; `GET /anomalous/kept_images` says what each image was kept as).
+  (`image_keep.js`; `GET /anomalous/kept_images` says what each image was kept as). The
+  gallery's ★ Kept switch (`ui_gallery_filter.js`, `gallery_filter.js`) lists only the kept
+  images (`gallery_images?kept=1`, `kept_images.kept_keys`).
   `ui_gallery_detail.js` owns its singleton lifecycle and cache, `ui_image_stage.js`
   owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
 - Workspace: Combos (搭配, formerly Prompt Notes) and Workflow Recipes. The combo list, workspace/persistence, editing, and canvas use are separated

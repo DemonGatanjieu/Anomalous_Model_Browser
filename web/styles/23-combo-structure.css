@@ -519,49 +519,6 @@
     font-size: 0.95em;
 }
 
-/* The combo editor's title: the image it was kept from, the name a click renames. */
-.anomalous-combo-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-}
-
-.anomalous-combo-title-icon { font-size: 1.2rem; }
-
-.anomalous-combo-title-image {
-    flex: none;
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    overflow: hidden;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: var(--amb-radius-control);
-    background: none;
-    cursor: zoom-in;
-}
-
-.anomalous-combo-title-image img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.anomalous-combo-title-name {
-    margin: 0;
-    overflow: hidden;
-    font-size: 1.15rem;
-    font-weight: 700;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    cursor: text;
-    border-bottom: 1px dashed transparent;
-}
-
-.anomalous-combo-title-name:hover,
-.anomalous-combo-title-name:focus-visible { border-bottom-color: var(--amb-border-hover); }
-
 @media (max-width: 560px) {
     .anomalous-structure-slot { grid-template-columns: auto 1fr; }
     .anomalous-structure-slot-where { grid-column: 2; }

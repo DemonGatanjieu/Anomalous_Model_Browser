@@ -237,20 +237,6 @@
     color: var(--amb-text-main);
 }
 
-.anomalous-nb-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: -20px; /* the editor's padding: stick to its very top, not 20px down with content showing above */
-    z-index: 20;
-    background: var(--amb-bg-page, var(--amb-bg-panel));
-    padding: 12px 20px;
-    margin: -20px -20px 16px -20px;
-    border-bottom: 1px solid var(--amb-border);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
 .anomalous-btn-primary {
     position: relative;
     background: var(--amb-btn-primary-bg, #D7D9E0);
@@ -629,21 +615,6 @@
     align-items: stretch;
 }
 
-.anomalous-nb-gallery-box {
-    background: var(--amb-bg-card);
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 15px;
-}
-
-.anomalous-nb-gallery-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
 /* Which LoRA node the combo is put down with (ui_lora_node_choice.js). */
 .anomalous-nb-lora-node {
     display: flex;
@@ -691,46 +662,12 @@
     display: none;
 }
 
-/* Notebook Model Fold & Sections Enhancement */
-.anomalous-nb-models-fold {
-    background: rgba(var(--amb-ink-rgb), 0.02);
-    border: 1px solid var(--amb-border);
-    border-radius: 10px;
-    padding: 0;
-    margin-bottom: 16px;
-    overflow: hidden;
-    transition: border-color 0.2s ease;
-}
-
-.anomalous-nb-models-fold[open] {
-    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
-    background: rgba(var(--amb-ink-rgb), 0.03);
-}
-
-.anomalous-nb-models-badge {
-    font-size: 0.76rem;
-    font-weight: 500;
-    color: var(--amb-text-muted);
-    background: rgba(var(--amb-ink-rgb), 0.06);
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--amb-border);
-}
-
 .anomalous-nb-prompt-section {
     background: rgba(var(--amb-ink-rgb), 0.02);
     border: 1px solid var(--amb-border);
     border-radius: 10px;
     padding: 16px;
     margin-bottom: 16px;
-}
-
-.anomalous-nb-selected-badge {
-    font-size: 0.78rem;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: rgba(var(--amb-ink-rgb), 0.06);
-    border: 1px solid var(--amb-border);
 }
 
 .anomalous-nb-visual-tag {

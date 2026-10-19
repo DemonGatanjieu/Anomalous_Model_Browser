@@ -11,8 +11,8 @@ import { createGalleryCard } from './ui_gallery_card.js';
 import { loadKeptImages } from './image_keep.js';
 import { createSearchChips } from './ui_search_chips.js';
 import { newestCompareButton } from './ui_param_compare.js';
-import { createGalleryMediaSwitch } from './ui_gallery_filter.js';
-import { appendGalleryFilter } from './gallery_filter.js';
+import { createGalleryKeptSwitch, createGalleryMediaSwitch } from './ui_gallery_filter.js';
+import { appendGalleryFilter, galleryKeptOnly } from './gallery_filter.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -50,7 +50,8 @@ export function createGallerySearchBar(owner) {
     owner.gallerySearchCount = search.countElement;
 
     owner.galleryMediaSwitch = createGalleryMediaSwitch(() => owner.loadGalleryImages(1, true, { refresh: false }));
-    header.append(search.element, owner.galleryMediaSwitch, newestCompareButton('anomalous-gallery-newest'));
+    const keptSwitch = createGalleryKeptSwitch(() => owner.loadGalleryImages(1, true, { refresh: false }));
+    header.append(search.element, owner.galleryMediaSwitch, keptSwitch, newestCompareButton('anomalous-gallery-newest'));
     return header;
 }
 
@@ -128,7 +129,8 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
                 }
             } else {
                 this.galleryHasMore = false;
-                this.gallerySentinel.textContent = reset ? t(query ? 'gallerySearchEmpty' : 'galleryEmpty') : t('galleryNoMore');
+                const empty = query ? 'gallerySearchEmpty' : galleryKeptOnly() ? 'galleryKeptEmpty' : 'galleryEmpty';
+                this.gallerySentinel.textContent = reset ? t(empty) : t('galleryNoMore');
             }
         } catch (e) {
             console.error('Failed to load gallery images', e);

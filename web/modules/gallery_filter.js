@@ -1,6 +1,6 @@
 /**
  * What the output gallery lists: everything, pictures or videos (the switch beside its search),
- * minus the formats hidden in Settings. Both are this browser's own (localStorage). A format is
+ * minus the formats hidden in Settings, or only the kept images (★ Kept). Both are this browser's own (localStorage). A format is
  * stored when hidden, so one added later shows. The server's side is GET
  * /anomalous/gallery_images?media=..&hide=.. (api/gallery_routes.py).
  */
@@ -11,6 +11,7 @@ export const GALLERY_MEDIA = ['all', 'image', 'video'];
 
 const HIDDEN_KEY = 'anomalous_gallery_hidden_formats';
 const MEDIA_KEY = 'anomalous_gallery_media';
+const KEPT_KEY = 'anomalous_gallery_kept_only';
 
 function read(key) {
     try {
@@ -59,9 +60,19 @@ export function setGalleryMedia(media) {
     write(MEDIA_KEY, media);
 }
 
+/** Whether the gallery shows only the images kept as a recipe, combo or prompt (★). */
+export function galleryKeptOnly() {
+    return read(KEPT_KEY) === 'true';
+}
+
+export function setGalleryKeptOnly(on) {
+    write(KEPT_KEY, on ? 'true' : 'false');
+}
+
 /** Adds the gallery's filter to a listing request. */
 export function appendGalleryFilter(params) {
     params.set('media', galleryMedia());
+    if (galleryKeptOnly()) params.set('kept', '1');
     const hidden = [...hiddenGalleryFormats()];
     if (hidden.length) params.set('hide', hidden.join(','));
 }

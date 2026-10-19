@@ -14,10 +14,18 @@
 - In the model picker, Esc now closes the picker wherever the focus is, and only the picker: it used to close the browser behind it when the search box had lost the focus.
 - Fixed: when a model folder is a link (a junction to another drive, say), a combo kept from a picture and other lookups of saved model paths got a wrong place for the model, or failed.
 
+### 🧩 A combo's page, redone (搭配详情重做)
+- **A head that says what it is**: the picture (the one you kept it from, with a **See the picture** button; else the main model's cover), the name in large type with a **✎ Rename** button beside it, and chips for its base model, main model and LoRAs. **Put on canvas** and More (delete) sit under them.
+- **Only what is chosen**: the main model and the LoRAs are short rows with their covers; **Change** and **+ Add a LoRA** open the grid of compatible models only when you want it, instead of every model of that base filling the page. ✕ takes a LoRA out; the numbers say their order.
+- **No Save button**: every change (models, name, prompt) saves itself, as it already did. Fixed: a tag changed in the bilingual view was not saved into the prompt.
+
+### ★ See only the kept pictures (图库只看收藏)
+- **★ Kept** beside the gallery's search lists only the pictures you kept as a workflow, combo or prompt (the ★ on their cards). Works with the search and with Pictures / Videos. Pointing at a card's ★ says what it was kept as.
+
 ### ⭐ Combos kept from a picture are easy to tell apart (图片存的搭配一眼认得出)
 - **The card shows the picture you kept it from**, with the main model's cover as a small round badge in its corner, instead of the model's cover alone (several combos of one model used to look the same).
 - **A name that says which one it is**: the first LoRA (or the main model) and the prompt's first two telling tags, like *Ahri · fox ears, kimono*, skipping words nearly every picture has (*1girl*, *solo*, *looking at viewer*…).
-- **Rename it right away**: the message after keeping shows the picture and the name in a box; type a new one and press Enter. In a combo's editor a click on its name renames it too, and the picture beside the name opens it large.
+- **Rename it right away**: the message after keeping shows the picture and the name in a box; type a new one and press Enter. A combo's page has a Rename button too.
 
 ### 📒 Prompt cards look like notebook pages (提示词卡片换成笔记本样式)
 - In Prompt Studio each card is a page with a bound spine in its colour (green positive, red negative), its title, a Positive / Negative label and its first words as small tags instead of a cut-off line of text. The card open as the reference wears a ribbon; Common and My prompts are index tabs with how many cards they hold. Dark and light themes alike.
