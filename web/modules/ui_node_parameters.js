@@ -392,7 +392,7 @@ function keepView(view) {
 
 /** Appends the parameters section for `node` to `container` and loads its entries. */
 export function renderNodeParameters(node, container, owner) {
-    const section = el('section', 'anomalous-node-section');
+    const section = el('section', 'anomalous-node-section anomalous-node-params');
     const head = el('div', 'anomalous-node-section-head');
     const views = el('div', 'anomalous-node-param-views');
     views.setAttribute('role', 'radiogroup');

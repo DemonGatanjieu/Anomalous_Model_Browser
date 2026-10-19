@@ -2,6 +2,12 @@
 
 ## v1.61.0 — unreleased
 
+### 🖱️ AMB in the canvas's right-click menu (画布右键菜单)
+- **Right-click a node → AMB** offers what Current node does for it, without opening the browser first: **Open in AMB** (a prompt node opens Prompts on it, any other node Current node), **Change model by picture**, **Insert a LoRA before / after**, **Apply saved values**, **Pictures made with this model**, **Model details**, **Save this node's values** and **Save as combo**. Each entry shows only where it applies: a checkpoint loader has no "before", a prompt node no model entries.
+- **Right-click the empty canvas → AMB** opens any of AMB's pages.
+- **Make it yours: Settings → Canvas → Right-click menu**. Switch each entry on or off, move it up or down, and choose whether AMB's entries sit in one **AMB** submenu (the default, ComfyUI's menu stays tidy) or right in the menu. *Adjust this menu…* at the end of the submenu leads there. **Save as combo** moved into the AMB submenu with the rest.
+- In the model picker, Esc now closes the picker wherever the focus is, and only the picker: it used to close the browser behind it when the search box had lost the focus.
+
 ### ⭐ Combos kept from a picture are easy to tell apart (图片存的搭配一眼认得出)
 - **The card shows the picture you kept it from**, with the main model's cover as a small round badge in its corner, instead of the model's cover alone (several combos of one model used to look the same).
 - **A name that says which one it is**: the first LoRA (or the main model) and the prompt's first two telling tags, like *Ahri · fox ears, kimono*, skipping words nearly every picture has (*1girl*, *solo*, *looking at viewer*…).

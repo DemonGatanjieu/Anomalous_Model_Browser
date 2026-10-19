@@ -1,0 +1,54 @@
+/* Settings -> Canvas -> Right-click menu (ui_canvas_menu_settings.js). */
+.anomalous-menu-entries-title {
+    margin: 14px 0 4px;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.anomalous-menu-entries {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-control);
+}
+
+.anomalous-menu-entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+}
+
+.anomalous-menu-entry + .anomalous-menu-entry { border-top: 1px solid var(--amb-border); }
+
+.anomalous-menu-entry-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.anomalous-menu-entry-name { color: var(--amb-text-main); font-size: 13px; }
+
+.anomalous-menu-entry-help { color: var(--amb-text-muted); font-size: 11px; }
+
+.anomalous-menu-entry.is-off .anomalous-menu-entry-name { color: var(--amb-text-muted); }
+
+.anomalous-menu-entry-move {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-control);
+    background: none;
+    color: var(--amb-text-soft);
+    cursor: pointer;
+}
+
+.anomalous-menu-entry-move:hover:not(:disabled) { border-color: var(--amb-border-hover); color: var(--amb-text-main); }
+
+.anomalous-menu-entry-move:disabled { opacity: 0.35; cursor: default; }
+
+.anomalous-menu-entries + .anomalous-scan-setting { margin-top: 12px; }

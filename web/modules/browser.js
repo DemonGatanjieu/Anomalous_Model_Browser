@@ -62,23 +62,25 @@ export class AnomalousBrowser {
     /**
      * Opens the browser. `followSelection`: opened by the user (button, shortcut, menu), so a
      * node selected on the canvas picks the page: a text node opens the Prompts page on it, any
-     * other node Current node (Settings -> Opening and window can turn this off).
+     * other node Current node (Settings -> Opening and window can turn this off). `node`: that
+     * page for this node whatever the setting; `page`: this rail page (or 'assistant').
      */
-    show({ followSelection = false } = {}) {
+    show({ followSelection = false, node = null, page: wanted = null } = {}) {
         followComfyLanguage();
         if (this._idleReleaseTimer) {
             clearTimeout(this._idleReleaseTimer);
             this._idleReleaseTimer = null;
         }
-        const page = followSelection && followsSelection() ? pageForNode(selectedCanvasNode(), NODE_KINDS) : null;
+        const followed = followSelection && followsSelection() ? selectedCanvasNode() : null;
+        const page = wanted || pageForNode(node || followed, NODE_KINDS);
         this.setTriggerVisible(false);
         this.modal.classList.add('visible');
-        if (page === 'prompts') {
-            this.goTo('prompts');
-            return;
-        }
         if (page === 'assistant') {
             this.openCurrentNode();
+            return;
+        }
+        if (page) {
+            this.goTo(page);
             return;
         }
         if (!this.currentShellPage()) {
@@ -97,6 +99,28 @@ export class AnomalousBrowser {
         if (this.currentShellPage() === 'gallery') void this.refreshGalleryImages();
         if (this.currentShellPage() === 'prompts') this.goTo('prompts'); // its studio stopped when the browser closed
         if (this.currentShellPage() === 'scan') void renderScanPage(this, this.scanPanel);
+    }
+
+    /**
+     * The canvas menu's "Open in AMB": selects `node` and opens its page; `section:
+     * 'parameters'` opens Current node at the node's saved values.
+     */
+    showForNode(node, { section = '' } = {}) {
+        app.canvas?.selectNode?.(node, false);
+        const parameters = section === 'parameters';
+        this.show({ node, page: parameters ? 'assistant' : null });
+        if (parameters) this.assistantPanel?.querySelector('.anomalous-node-params')?.scrollIntoView({ block: 'start' });
+    }
+
+    /** The details of `model` (GET /anomalous/find_model's: with its type, path_idx and subfolder). */
+    openModelDetail(model) {
+        this.currentType = model.type || this.currentType;
+        this.currentPathIdx = model.path_idx ?? 0;
+        this.currentSubfolder = model.subfolder || '/';
+        this.show({ page: 'models' });
+        this.historyStack = [];
+        this.showDetail(model);
+        if (this.foldersData) this.renderSidebar();
     }
 
     /** The image / audio switch: the first page of that side. */

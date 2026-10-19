@@ -106,7 +106,7 @@ The main surfaces are:
   name in their order, fills the slots by name, then links by port name and type; a slot or
   link that cannot be restored is reported after placing, never guessed. Values other than
   the slots cannot be edited: a combo puts down exactly what was saved. The canvas's node menu
-  (`getNodeMenuItems`, browser_entry.js) offers "Save as combo" for the picked nodes, or the
+  (`getNodeMenuItems`, browser_entry.js → `canvas_menu.js`) offers "Save as combo" for the picked nodes, or the
   right-clicked node when it is not among them, when any of them is not a subgraph.
   Nodes are kept in flow order (`chainOrder`, combo_slots.js) so slot numbers read along the
   chain; the editor groups slots into models, LoRAs and prompts in that order, renumbers names

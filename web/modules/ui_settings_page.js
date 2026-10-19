@@ -31,6 +31,7 @@ import { failureWords } from './net_failure.js';
 import { applySidecars, planSidecars } from './sidecar_layout.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { renderPackUsage } from './ui_pack_usage.js';
+import { canvasMenuRows } from './ui_canvas_menu_settings.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -493,6 +494,7 @@ const TABS = [
     ['look', 'settingsTabLook', (owner, redraw) => [appearanceGroup(owner, redraw), cardsGroup(owner, redraw), galleryGroup(owner), openingGroup(owner, redraw)]],
     ['models', 'settingsTabModels', (owner, redraw) => [foldersGroup(owner), networkGroup(), downloadGroup(owner, redraw), sidecarGroup()]],
     ['workflows', 'settingsTabWorkflows', (owner) => [workflowGroup(owner)]],
+    ['canvas', 'settingsTabCanvas', (owner, redraw) => [group('canvasMenuGroup', ...canvasMenuRows({ row, segment, redraw }))]],
     ['packs', 'settingsTabPacks', (owner, redraw) => [renderPackUsage(owner, redraw)]],
     ['prompts', 'settingsTabPrompts', () => [translationGroup()]],
     ['backup', 'settingsTabBackup', (owner) => [backupGroup(owner)]],

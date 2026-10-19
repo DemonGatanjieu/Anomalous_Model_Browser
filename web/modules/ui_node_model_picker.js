@@ -35,12 +35,17 @@ async function loraTrainsTextEncoder(name) {
     }
 }
 
-export function findModelComboWidget(node) {
-    return (node?.widgets || []).find(widget => {
+/** The node's drop-downs that list model files. */
+export function modelComboWidgets(node) {
+    return (node?.widgets || []).filter(widget => {
         if (widget?.type !== 'combo') return false;
         const values = getNativeWidgetValues(node, widget);
         return values.some(value => /\.(safetensors|ckpt|pt|bin|pth|sft|gguf)$/i.test(value));
-    }) || null;
+    });
+}
+
+export function findModelComboWidget(node) {
+    return modelComboWidgets(node)[0] || null;
 }
 
 export function setWidgetValue(node, widget, value) {
@@ -86,14 +91,23 @@ export function _openGalleryReplacer(node, w, options = {}) {
         let applying = false;
 
         const modal = document.createElement('div');
+        modal.className = 'anomalous-picker-overlay'; // the browser's Esc leaves it to the picker (ui_browser_navigation.js)
         modal.style.cssText = 'position:fixed;inset:0;background:var(--amb-lt-page,radial-gradient(circle at 15% 0%,rgba(53,73,118,0.34),transparent 35%),rgba(7,8,12,0.965));z-index:999999;display:flex;flex-direction:column;padding:22px 24px;box-sizing:border-box;color:var(--amb-lt-text,#fff);font-family:Inter,Arial,sans-serif;';
         const stopMedia = container => container?.querySelectorAll?.('video,audio').forEach(media => {
             media.pause();
             media.removeAttribute('src');
             media.load?.();
         });
+        // Esc closes the picker wherever the focus is, and only the picker (not the browser behind).
+        const onEscape = (event) => {
+            if (event.key !== 'Escape' || !modal.isConnected) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            closeModal();
+        };
         const closeModal = () => {
             renderGeneration += 1;
+            window.removeEventListener('keydown', onEscape, true);
             stopMedia(modal);
             modal.remove();
         };
@@ -493,7 +507,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             renderCards();
         };
         sortSelect.onchange = renderCards;
-        modal.onkeydown = event => { if (event.key === 'Escape') closeModal(); };
+        window.addEventListener('keydown', onEscape, true);
         renderFolders();
         updateSelection();
         renderCards();

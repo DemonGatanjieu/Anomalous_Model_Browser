@@ -48,7 +48,7 @@
 
 <p align="center"><img src="docs/images/en-gallery.webp" width="760" alt="Gallery search, then drag an image onto the canvas"></p>
 
-**4. The same model, LoRAs and prompt, again and again.** Pick those nodes on the canvas, right-click → **Save as combo**, and they are kept as a card beside the canvas. Next time press **Put on canvas** (or drag the card) and the wired group comes back where you click; nothing already on the canvas changes. Models and prompts in a combo can be changed later.
+**4. The same model, LoRAs and prompt, again and again.** Pick those nodes on the canvas, right-click → **AMB** → **Save as combo**, and they are kept as a card beside the canvas. Next time press **Put on canvas** (or drag the card) and the wired group comes back where you click; nothing already on the canvas changes. Models and prompts in a combo can be changed later.
 
 <p align="center"><img src="docs/images/en-combo.webp" width="760" alt="Picked nodes saved as a combo, then put back on the canvas as wired nodes"></p>
 
@@ -157,7 +157,7 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 
 <p align="center"><img src="docs/images/gallery.webp" width="760" alt="图库搜索后把图拖到画布"></p>
 
-**4. 每次都要重新配一遍模型、LoRA 和提示词。** 在画布上选中这几个节点，右键 **存为搭配**，它们就成了画布旁的一张卡片。下次点 **放到画布**（或者直接拖卡片），点哪里，那组连好线的节点就出现在哪里，画布上原有的东西不动。搭配里的模型和提示词以后还能换。
+**4. 每次都要重新配一遍模型、LoRA 和提示词。** 在画布上选中这几个节点，右键 → **AMB** → **存为搭配**，它们就成了画布旁的一张卡片。下次点 **放到画布**（或者直接拖卡片），点哪里，那组连好线的节点就出现在哪里，画布上原有的东西不动。搭配里的模型和提示词以后还能换。
 
 <p align="center"><img src="docs/images/combo.webp" width="760" alt="选中的节点存为搭配，再放回画布变成连好线的节点"></p>
 

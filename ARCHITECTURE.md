@@ -443,13 +443,21 @@ covered by the `styles.css` manifest.
   `canvas_undo.js` keeps what each canvas entry did, in full, while the page stays open,
   and undoes an entry from the log while nothing has changed it since (entries that
   removed nodes or rewired existing ones are never offered).
+- `canvas_menu.js` is AMB's part of the canvas's right-click menus (the extension's `getNodeMenuItems`
+  and `getCanvasMenuItems`, browser_entry.js): for a node, Open in AMB (`showForNode`: the page
+  opening with it selected shows; its saved values on Current node), change its model by picture
+  (`_openGalleryReplacer`), insert a LoRA before / after, the model's pictures and details
+  (`/anomalous/find_model`, `openModelDetail`), save its values or the picked nodes as a combo, each
+  only where it applies; for the empty canvas, AMB's pages. `canvas_menu_settings.js` keeps which
+  entries are on, their order and whether they sit in one "AMB" submenu or right in the menu
+  (localStorage, no DOM); `ui_canvas_menu_settings.js` is its Settings -> Canvas group.
   `ui_settings_hub.js` owns the display preferences (view mode, scale, atmosphere, window
   layout) and their application, the gear and language redraws; `ui_settings_page.js`
   is the settings page the gear opens (a tool page with Back), in tabs: Look (look and
   language, model cards and memory with the card image cache, opening mode and window),
   Models (folders, where downloads and imports go, where the side files go through
   `sidecar_layout.js`), Workflows (fingerprints), Node packs
-  (those not used lately, `ui_pack_usage.js`), Prompts
+  (those not used lately, `ui_pack_usage.js`), Canvas (the right-click menus, `ui_canvas_menu_settings.js`), Prompts
   (translation), Backup (`ui_backup.js`), Help; `ui_feedback_dialog.js` is the feedback window (Home and the
   settings page open it): one text box, then `feedback.js` opens a GitHub issue with it in
   the browser's language, the environment folded at the end when attached (versions and
