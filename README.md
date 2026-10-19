@@ -40,7 +40,7 @@
 
 <p align="center"><img src="docs/images/en-scan.webp" width="520" alt="Scan results: each file matched on Civitai"></p>
 
-**2. Someone else's workflow opens with red nodes.** Model Check says which models are missing. When the workflow carries model fingerprints (the plugin writes them into the workflows and images of everyone who has it, unless they turn it off), the ones you already have under another name or in another folder go back in with one press, and the rest can be downloaded from Civitai or Hugging Face, each download checked against its fingerprint. A workflow without fingerprints can only be matched by file name: a file of the same name elsewhere on your computer is offered for you to confirm.
+**2. Someone else's workflow opens with red nodes.** Model Check says which models are missing. When the workflow carries model fingerprints (the plugin writes them into the workflows and images of everyone who has it, unless they turn it off), the ones you already have under another name or in another folder go back in with one press, and the rest can be downloaded from Civitai, Hugging Face or ComfyUI-Manager's model list, each download checked against its fingerprint (a Manager entry that only shares the file name is marked so, for you to decide). A workflow without fingerprints can only be matched by file name: a file of the same name elsewhere on your computer is offered for you to confirm.
 
 <p align="center"><img src="docs/images/en-model-check.webp" width="760" alt="Model Check puts back three missing models with one press"></p>
 
@@ -149,7 +149,7 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 
 <p align="center"><img src="docs/images/scan.webp" width="520" alt="扫描结果：每个文件都在 C 站认出来了"></p>
 
-**2. 打开别人的工作流，一片红框。** 模型检查会告诉你缺哪些模型。如果工作流里带着模型指纹（装了本插件的人出图、保存工作流时会自动记下，除非他在设置里关掉），你电脑里其实有、只是改了名或换了文件夹的，点一下就换上；真没有的可以从 C 站或 Hugging Face 下载，下载完按指纹核对过才用。没有指纹的工作流只能按文件名找：别处有同名文件，会列出来让你确认。
+**2. 打开别人的工作流，一片红框。** 模型检查会告诉你缺哪些模型。如果工作流里带着模型指纹（装了本插件的人出图、保存工作流时会自动记下，除非他在设置里关掉），你电脑里其实有、只是改了名或换了文件夹的，点一下就换上；真没有的可以从 C 站、Hugging Face 或 ComfyUI-Manager 的模型清单下载，下载完按指纹核对过才用（Manager 清单里只是同名、没法核对的，会标出来让你决定）。没有指纹的工作流只能按文件名找：别处有同名文件，会列出来让你确认。
 
 <p align="center"><img src="docs/images/model-check.webp" width="760" alt="模型检查一键换上 3 个缺失的模型"></p>
 

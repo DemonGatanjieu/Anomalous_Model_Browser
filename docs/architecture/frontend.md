@@ -96,7 +96,8 @@ The main surfaces are:
   (`addNewLoraWidget`) before the slots are filled. Put on canvas lays a combo out as a new wired group of nodes (Esc while it
   follows the pointer removes it; the activity log holds back while `owner.placingCombo` is set) and
   never changes nodes already on the canvas (values of an existing node are changed in
-  Current node). A combo with a node structure (`combo_structure.js`, `ui_combo_structure.js`)
+  Current node). A combo never changes a value either: what was saved is what goes down
+  (AGENTS.md, 功能原则). A combo with a node structure (`combo_structure.js`, `ui_combo_structure.js`)
   keeps every picked node but subgraphs, and the links between them. Its slots are the model
   drop-downs (a drop-down of model files) and text boxes (a multiline text box by the node's
   definition); a node without slots goes back exactly as saved. A link from a node that was not

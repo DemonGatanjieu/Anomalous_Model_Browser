@@ -151,6 +151,12 @@ as one: ComfyUI's LoRA list as its choices, a fix changing only the row's LoRA).
 fingerprints a saved workflow carries (`hash_resolver.js`) and a picture's model search
 (`api/image_search.py`) read those rows too.
 
+A model that is not here can also be found in ComfyUI-Manager's model list (the installed
+Manager's `model-list.json`, `api/manager_catalog.py`): an entry of the same file name whose
+SHA-256 matches the workflow's fingerprint is a certain source and is downloaded like the
+others; an entry of the same name with no fingerprint to check is offered as "Download by
+name", marked as such, for the user to decide. The page says where each link comes from.
+
 Checking never changes the workflow (`model_check.js`). Every opened workflow is
 checked without reloading ComfyUI's model lists; when models are missing, a bar
 over the canvas says how many and how many hash matches can be put in. Only a
