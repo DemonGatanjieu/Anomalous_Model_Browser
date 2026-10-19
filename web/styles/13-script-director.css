@@ -692,25 +692,13 @@
     gap: 8px;
 }
 
-/* How it is read: one setting per row; the sampling numbers folded under fine-tuning. */
+/* How it is read: the side panel's layers (ui_script_tune.js; their rows in 34-voice-over-panel.css). */
 .anomalous-sd-run-settings {
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding-top: 10px;
     border-top: 1px solid var(--amb-border);
-}
-
-.anomalous-sd-run-heading {
-    color: var(--amb-text-dim);
-    font-size: 11.5px;
-}
-
-.anomalous-sd-run-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
 }
 
 .anomalous-sd-run-label {
@@ -781,27 +769,6 @@
     background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.3));
     color: var(--amb-text-main);
     font-size: 12px;
-}
-
-/* The mode: its label above the choices, the numbers, a note and the links (ui_script_run.js). */
-.anomalous-sd-run-mode {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.anomalous-sd-run-mode > .anomalous-sd-run-label {
-    width: auto;
-}
-
-/* The line the modes are heard on: its own row above the listen buttons. */
-.anomalous-sd-run-listen-line {
-    flex: 1 1 100%;
-    min-width: 0;
-    overflow: hidden;
-    color: var(--amb-text-soft);
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .anomalous-sd-run-links {

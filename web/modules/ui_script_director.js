@@ -17,7 +17,8 @@ import { bindPackageDrag, copyScript, pushToNode } from './ui_script_workflow.js
  * each line following its character until set for itself) are changed. Choose an emotion per
  * line, then generate it right here (ui_script_run.js), or put the tagged script into the
  * workflow (ui_script_workflow.js). The node's own character is the first line's. The panel and
- * its lines live for the page session; the page mounts it again each time it is shown.
+ * its lines live for the page session; the page mounts it again each time it is shown. The script
+ * is kept as a draft in this browser (localStorage) and comes back after a reload.
  */
 
 // From this width on, the cards get the full height and the generate side sits beside them.
@@ -281,6 +282,7 @@ function createPanel() {
     });
     runSection = createRunSection({
         getScript: runScript,
+        getNodeGroup: nodeGroup,
         getGroups: () => state.groups,
         onPlay: () => {
             stopLinePreview();
@@ -288,11 +290,15 @@ function createPanel() {
         },
         resetTakes: () => state.lines.forEach(line => { line.take = 1; }),
         onBusyChange: () => renderAll(),
-        onLinesChange: () => renderLines(),
+        onLinesChange: () => {
+            renderLines();
+            saveDraft();
+        },
         openGallery: () => hooks.openGallery?.(),
     });
     scroll.append(linesContainer);
     footer.append(summary, runSection.bar);
+    if (!state.lines.length) loadDraft();
 
     // Cards on one side, everything about generating on the other: below the cards
     // on a narrow page (docked browser), beside them once the page is wide.
@@ -464,6 +470,7 @@ function renderPackage() {
     } else {
         refs.summary.textContent = t(pkg.error);
     }
+    saveDraft();
     refs.copyBtn.disabled = !ok;
     refs.pushBtn.disabled = !ok;
     refs.dragHandle.draggable = ok;
@@ -471,18 +478,67 @@ function renderPackage() {
     runSection.render();
 }
 
+// ---------- the draft ----------
+
+const DRAFT_KEY = 'anomalous_sd_draft';
+const DRAFT_FIELDS = { language: 'string', speed: 'number', preset: 'string' };
+let draftTimer = null;
+
+/** Only the line settings a draft may hold, with the right types. */
+function cleanTune(tune) {
+    const out = {};
+    for (const [field, type] of Object.entries(DRAFT_FIELDS)) if (typeof tune?.[field] === type) out[field] = tune[field];
+    return Object.keys(out).length ? out : null;
+}
+
+/** The script as it is, kept in this browser half a second after the last change (back after a reload). */
+function saveDraft() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+        const lines = state.lines.map(line => ({ text: line.text, emotion: line.emotion, speaker: line.speaker, ...(line.tune ? { tune: line.tune } : {}) }));
+        try {
+            if (lines.length) localStorage.setItem(DRAFT_KEY, JSON.stringify({ format: 1, lines, groupKey: state.groupKey, ...runSection?.draft() }));
+            else localStorage.removeItem(DRAFT_KEY);
+        } catch (_) { /* a convenience: the script still works without it */ }
+    }, 500);
+}
+
+/** The draft kept last time, once the panel is first made; lines without text or with a bad shape are left out. */
+function loadDraft() {
+    let draft = null;
+    try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (_) { return; }
+    if (draft?.format !== 1 || !Array.isArray(draft.lines)) return;
+    state.lines = draft.lines.filter(line => typeof line?.text === 'string' && line.text.trim()).map(line => ({
+        text: line.text,
+        emotion: typeof line.emotion === 'string' ? line.emotion : 'main',
+        take: 1,
+        speaker: typeof line.speaker === 'string' ? line.speaker : null,
+        ...(cleanTune(line.tune) ? { tune: cleanTune(line.tune) } : {}),
+    }));
+    if (typeof draft.groupKey === 'string') state.groupKey = draft.groupKey;
+    const cast = {};
+    for (const [character, own] of Object.entries(draft.cast || {})) if (cleanTune(own)) cast[character] = cleanTune(own);
+    runSection.restoreDraft({ script: cleanTune(draft.script) || {}, cast });
+    state.editing = !state.lines.length;
+}
+
 // ---------- actions ----------
 
 function parseScript(text) {
     const parsed = splitScriptLines(text, state.splitMode);
     if (!parsed.length) return;
+    // A line kept word for word keeps who reads it and how.
     const previous = new Map(state.lines.map(line => [line.text.trim(), line]));
-    state.lines = parsed.map(lineText => ({
-        text: lineText,
-        emotion: previous.get(lineText)?.emotion || 'main',
-        take: previous.get(lineText)?.take || 1,
-        speaker: previous.get(lineText)?.speaker || state.groupKey,
-    }));
+    state.lines = parsed.map((lineText) => {
+        const before = previous.get(lineText);
+        return {
+            text: lineText,
+            emotion: before?.emotion || 'main',
+            take: before?.take || 1,
+            speaker: before?.speaker || state.groupKey,
+            ...(before?.tune ? { tune: { ...before.tune } } : {}),
+        };
+    });
     state.picked = new Set();
     state.editing = false;
     renderAll();

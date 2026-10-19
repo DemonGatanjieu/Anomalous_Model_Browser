@@ -2,7 +2,9 @@
 // (web/modules/script_tune.js), written into the script and read back (audio_script.js).
 import assert from 'node:assert/strict';
 import { buildScriptPackage, parseTaggedSpeech } from '../web/modules/audio_script.js';
-import { clearLineTune, hasOwnTune, lineValues, readTuneTag, setLineTune, sharedValue, tuneTags } from '../web/modules/script_tune.js';
+import {
+    characterLayer, clearLineTune, hasOwnTune, lineLayer, lineValues, readTuneTag, scriptLayer, setLineTune, sharedValue, tuneTags,
+} from '../web/modules/script_tune.js';
 
 const character = { language: 'auto', speed: 1, preset: '' };
 const stored = { language: 'auto', speed: 1, preset: '' };
@@ -22,10 +24,25 @@ setLineTune([line], 'language', 'ja');
 clearLineTune([line]);
 assert.equal(hasOwnTune(line), false);
 
-// Tags: the language unless auto, the speed unless it is the saved one, the mode unless Auto.
+// Tags: what differs from what the node gives by itself; back to auto is written as auto.
 assert.equal(tuneTags(character, stored), '');
 assert.equal(tuneTags({ language: 'ja', speed: 1.15000001, preset: 'stable' }, stored), '[lang:ja][speed:1.15][preset:stable]');
 assert.equal(tuneTags({ language: 'auto', speed: 1.1, preset: '' }, { speed: 1.1 }), '');
+assert.equal(tuneTags({ language: 'auto', speed: 1, preset: '' }, { language: 'zh', speed: 1, preset: 'lively' }), '[lang:auto][preset:auto]');
+
+// Setting a line to what its character reads it with lets it follow again.
+const same = { text: 'x' };
+setLineTune([same], 'speed', 1.3, () => 1.3);
+assert.equal(hasOwnTune(same), false);
+
+// Three layers, the most particular first, and where each value comes from.
+const base = { language: 'auto', speed: 1, preset: '' };
+assert.deepEqual(scriptLayer({ speed: 0.9 }, base), { values: { language: 'auto', speed: 0.9, preset: '' }, from: { language: 'default', speed: 'script', preset: 'default' } });
+const arisLayer = characterLayer({ preset: 'lively' }, { speed: 0.9, preset: 'stable' }, { language: 'ja', speed: 1.1, preset: '' }, base);
+assert.deepEqual(arisLayer.values, { language: 'ja', speed: 0.9, preset: 'lively' });
+assert.deepEqual(arisLayer.from, { language: 'usual', speed: 'script', preset: 'character' });
+const own = lineLayer({ text: 'a', tune: { speed: 1.2 } }, arisLayer);
+assert.deepEqual([own.values.speed, own.from.speed, own.from.language], [1.2, 'line', 'usual']);
 
 // One value over several lines: mixed, all set by the lines, or some.
 const lines = [{ text: 'a', tune: { speed: 1.2 } }, { text: 'b' }];
@@ -38,6 +55,8 @@ assert.deepEqual(readTuneTag('语言：中文'), { field: 'language', value: 'zh
 assert.deepEqual(readTuneTag('lang:fr'), { field: 'language', value: undefined });
 assert.deepEqual(readTuneTag('lang:JA'), { field: 'language', value: 'ja' });
 assert.deepEqual(readTuneTag('预设:custom_a1'), { field: 'preset', value: 'custom_a1' });
+assert.deepEqual(readTuneTag('preset:auto'), { field: 'preset', value: '' });
+assert.deepEqual(readTuneTag('lang:auto'), { field: 'language', value: 'auto' });
 assert.equal(readTuneTag('普拉娜'), null);
 
 // Written into a bundle (before [take:N], after the speaker and emotion) and read back for "voice it again".

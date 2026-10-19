@@ -1,27 +1,152 @@
 /* Voice-over's side panel, which follows what is picked on the left (ui_script_tune.js), the tabs
    it shares with GPT-SoVITS Settings (ui_tab_strip.js), and that dialog's head (ui_tts_setup.js). */
 
-.anomalous-sd-tune-head {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-}
-
-.anomalous-sd-tune-back {
-    padding: 0;
-    font-size: 11.5px;
-}
-
-.anomalous-sd-tune-title {
-    color: var(--amb-text-main);
-    font-size: 14px;
-    font-weight: 600;
-}
-
 .anomalous-sd-tune-meta {
     color: var(--amb-text-soft);
     font-size: 12px;
+}
+
+/* The path on top: Whole script › character › lines; the current layer stands out. */
+.anomalous-sd-tune-path {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.anomalous-sd-tune-path-step {
+    padding: 3px 9px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+}
+
+button.anomalous-sd-tune-path-step {
+    cursor: pointer;
+}
+
+button.anomalous-sd-tune-path-step:hover {
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-main);
+}
+
+.anomalous-sd-tune-path-step.is-current {
+    border-color: color-mix(in srgb, var(--speaker, var(--amb-link)) 50%, transparent);
+    background: color-mix(in srgb, var(--speaker, var(--amb-link)) 16%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+.anomalous-sd-tune-path-sep {
+    color: var(--amb-text-dim);
+}
+
+.anomalous-sd-tune-section {
+    margin-top: 6px;
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+/* One setting per row: its name, the control, then where its value comes from (and ↺). */
+.anomalous-sd-tune-row {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-tune-row > :nth-child(2):last-child {
+    grid-column: 2 / -1;
+}
+
+.anomalous-sd-tune-row-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.anomalous-sd-tune-speed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.anomalous-sd-tune-speed > .anomalous-sd-run-value {
+    width: 40px;
+}
+
+/* Where a value comes from: grey the whole script or the default, purple the character, yellow the line. */
+.anomalous-sd-tune-from {
+    padding: 2px 8px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.07);
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+button.anomalous-sd-tune-from {
+    cursor: pointer;
+}
+
+button.anomalous-sd-tune-from:hover {
+    color: var(--amb-text-main);
+}
+
+.anomalous-sd-tune-from.is-character,
+.anomalous-sd-tune-from.is-usual {
+    background: color-mix(in srgb, #a487f5 20%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-sd-tune-from.is-line {
+    background: color-mix(in srgb, var(--amb-warn) 20%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-sd-tune-from.is-mixed {
+    border: 1px dashed var(--amb-border-strong);
+    background: none;
+}
+
+/* Under the tone: listening and the Numbers switch. */
+.anomalous-sd-tune-under {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 10px;
+    padding: 0 0 6px 54px;
+}
+
+.anomalous-sd-tune-numbers {
+    border: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-tune-numbers.is-on {
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-text-main);
+}
+
+/* The foot: settings that last beyond this script. */
+.anomalous-sd-tune-lasting {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--amb-border);
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
 }
 
 /* The whole script: one row per character reading, a click opens it. */
@@ -113,27 +238,8 @@
     font-size: 12px;
 }
 
-.anomalous-sd-tune-follow {
-    color: var(--amb-text-dim);
-    font-size: 11px;
-}
-
 .anomalous-sd-tune-reset {
     flex-shrink: 0;
-}
-
-/* The language while it is detected: one line with "Change". */
-.anomalous-sd-tune-language {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--amb-text-soft);
-    font-size: 12px;
-}
-
-/* The tone's label above its choices. */
-.anomalous-sd-run-mode {
-    gap: 6px;
 }
 
 /* On a line card: what the line set for itself. */
@@ -234,42 +340,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-}
-
-/* Voice-over's Settings tab: each way out as a row with a line about it. */
-.anomalous-sd-tune-links {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.anomalous-sd-tune-link {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    padding: 8px 12px;
-    border: 1px solid var(--amb-border);
-    border-radius: 8px;
-    background: rgba(var(--amb-ink-rgb), 0.03);
-    color: var(--amb-text-main);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.anomalous-sd-tune-link:hover {
-    background: rgba(var(--amb-ink-rgb), 0.07);
-}
-
-.anomalous-sd-tune-link-name {
-    font-size: 12.5px;
-    font-weight: 600;
-}
-
-.anomalous-sd-tune-link-about {
-    color: var(--amb-text-soft);
-    font-size: 11.5px;
 }
 
 /* Under the tone choices: what the picked one is, then listening. */

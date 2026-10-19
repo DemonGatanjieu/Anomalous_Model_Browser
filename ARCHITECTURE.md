@@ -389,14 +389,17 @@ covered by the `styles.css` manifest.
   click picks (`ui_script_cast.js`: Ctrl / Shift, the characters' colours), a double-click or
   ✎ edits the text in place, the name opens a menu of characters, emotion chips per the
   line's character, a tag when the line is set for itself, buttons on hover.
-  The left side only picks; the side panel follows it (`ui_script_tune.js`; a character or
-  lines get the tabs How it reads, Numbers, Settings): nothing picked,
-  the whole script (each character and how it reads); a character clicked in the list
-  (`castScriptCharacter`), its language, speed and mode in this script; picked lines, who
-  reads them and how, each value following the character until set there (↺ follows again).
-  `script_tune.js` holds the rules without DOM: a line's values over its character's, and
-  the tags Anomalous_TTS interface 17 reads for them (the language unless auto, the speed
-  when it is not the character's saved one, the mode unless Auto).
+  The left side only picks; the side panel follows it (`ui_script_tune.js`) in three
+  layers for this script, under a path (Whole script › character › line): nothing picked,
+  the whole script (and each character in it); a character clicked in the list
+  (`castScriptCharacter`), that character in this script; picked lines, who reads them and
+  how. Each layer has the same rows (speed, tone, language) with where each value comes
+  from; lasting settings are links at the foot. `script_tune.js` holds the rules without
+  DOM: the layers (line over character over whole script over the character's usual
+  values), each holding only the fields set on it, and the tags Anomalous_TTS interface 17
+  reads (only where a line differs from what the node gives by itself; the whole script's
+  values go into the node's inputs). The director keeps the script as a draft in
+  `localStorage` (lines, who reads, every layer) and loads it when the panel is made.
   It puts the cards on one side and generating on the other: beside
   them once the page is wide, below them when it is narrow (docked browser); on a
   wide page `ui_split_bar.js` is the divider between them (dragged, remembered).

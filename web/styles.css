@@ -11,7 +11,7 @@
 @import url("./styles/10-model-sources.css?v=20261007-theme-2");
 @import url("./styles/11-audio-studio.css?v=20261018-cards");
 @import url("./styles/12-tts-setup.css?v=20261017-feel4");
-@import url("./styles/13-script-director.css?v=20261018-cards2");
+@import url("./styles/13-script-director.css?v=20261020-layers");
 @import url("./styles/14-version-manager.css?v=20261007-theme-2");
 @import url("./styles/15-shell-rail.css?v=20261017-cast");
 @import url("./styles/16-activity.css?v=20261007-theme-2");
@@ -32,4 +32,4 @@
 @import url("./styles/31-model-info.css?v=20261014-desc-2");
 @import url("./styles/32-canvas-tools.css?v=20261019-places");
 @import url("./styles/33-kept-combos.css?v=20261019-hero");
-@import url("./styles/34-voice-over-panel.css?v=20261020-tabs");
+@import url("./styles/34-voice-over-panel.css?v=20261020-layers");

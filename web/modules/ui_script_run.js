@@ -6,7 +6,9 @@ import { fetchGptSovitsCharacter, loadGptSovitsStatus, saveGptSovitsSettings } f
 import {
     PRESETS_FORMAT, SAMPLE_LINES, lineTuning, loadPresets, presetLabel, presetsFile, savePresets, stateFromView, tuningRows,
 } from './tts_presets_api.js';
-import { AUTO_MODE, LINE_TAGS_FORMAT, clearLineTune, lineValues, setLineTune, tuneTags } from './script_tune.js';
+import {
+    AUTO_MODE, LINE_TAGS_FORMAT, TUNE_FIELDS, characterLayer, clearLineTune, lineLayer, lineValues, scriptLayer, setLineTune, setOwn, tuneTags,
+} from './script_tune.js';
 import { keepParamFocus } from './ui_tts_preset_switch.js';
 import { createModePreview } from './ui_tts_mode_preview.js';
 import { openTtsSetup } from './ui_tts_setup.js';
@@ -19,13 +21,14 @@ import { LANGUAGES, renderTunePanel } from './ui_script_tune.js';
  * plays the result, and offers another take of the whole script (new seed) or of
  * one line (`[take:N]`, the other lines come from the node's cache).
  *
- * How each line is read: every character has its language, speed and mode in this script,
- * starting from its saved `defaults` (language and speed, which can be saved back) and Auto (the
- * presets and the character's generation settings decide line by line); a line follows its
- * character unless it was set for itself (script_tune.js). The side panel showing them follows
- * what is picked on the left (ui_script_tune.js). Anomalous_TTS interface 17 gets them as tags
- * on each line; an older node reads the whole script with the first line's character's values
- * through its inputs. The modes can be heard on a line (ui_tts_mode_preview.js); a preset's
+ * How each line is read: its language, speed and tone in three layers changed for this script
+ * (script_tune.js): the line, its character (kept here), the whole script (kept here); then the
+ * character's usual `defaults` (language and speed, which can be saved back) and the usual tone
+ * (the presets and the character's own settings decide line by line). The side panel showing
+ * them follows what is picked on the left (ui_script_tune.js). Anomalous_TTS interface 17 gets
+ * the whole script's values through the node's inputs and the rest as tags on the lines that
+ * need them; an older node reads the whole script with the first line's character's values
+ * through its inputs. The tones can be heard on a line (ui_tts_mode_preview.js); a preset's
  * numbers changed here are saved into that preset.
  *
  * The director owns the lines; this section owns the job, the characters' values and the
@@ -78,20 +81,22 @@ async function loadNodeSpec() {
  * `getScript()` -> `{ group, lines, listen, speakerOf, pkg, groups, picked, focus, assign, focusCharacter,
  * focusScript }` (the node's character = the first line's, the director's lines, the one to listen
  * with, who reads a line, pkg from buildScriptPackage with takes, the characters, the picked line
- * indexes, the character shown, and the director's calls); `getGroups()` -> every voice group (for
+ * indexes, the character shown, and the director's calls); `getNodeGroup()` -> the node's character
+ * alone (the tags need it, and getScript builds the tagged script); `getGroups()` -> every voice group (for
  * the presets' "used by"); `onPlay()` when the result starts playing; `resetTakes()` when a new take
  * of the whole script starts; `onBusyChange()` when a job starts or ends (the director re-renders its
  * line cards, whose retake buttons depend on it); `onLinesChange()` after a line's values changed (the
  * cards' tags); `openGallery()` for the result's "saved to the audio gallery".
  */
-export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onBusyChange, onLinesChange, openGallery }) {
+export function createRunSection({ getScript, getNodeGroup, getGroups, onPlay, resetTakes, onBusyChange, onLinesChange, openGallery }) {
     const state = {
         seed: newSeed(),
         spec: null,           // node input ranges/defaults; null until loaded
         presets: null,        // loadPresets(); null without interface 16
         format: 0,            // the node's interface
         local: false,         // this computer (presets can be changed)
-        options: new Map(),   // character -> { language, speed, preset } in this script
+        script: {},           // the whole script's values changed here (only the fields set)
+        cast: new Map(),      // character -> its values changed here for this script (only the fields set)
         settings: new Map(),  // character -> its settings as saved in this session
         saved: new Map(),     // character -> options saved in this session
         savedNow: null,       // the character just saved ("Saved" on its button for a moment)
@@ -144,21 +149,59 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         };
     }
 
-    function currentOptions(group) {
-        if (!group) return { language: 'auto', speed: state.spec?.speed?.default ?? 1, preset: AUTO_MODE };
-        if (!state.options.has(group.character)) state.options.set(group.character, { ...storedOptions(group) });
-        const opts = state.options.get(group.character);
-        if (opts.preset !== AUTO_MODE && !state.presets?.presets?.[opts.preset]) opts.preset = AUTO_MODE; // deleted meanwhile
-        return opts;
+    const base = () => ({ language: 'auto', speed: state.spec?.speed?.default ?? 1, preset: AUTO_MODE });
+
+    function castOf(group) {
+        if (!state.cast.has(group.character)) state.cast.set(group.character, {});
+        return state.cast.get(group.character);
     }
 
+    /** A character's values in this script with where each comes from; a preset deleted meanwhile reads as the usual tone. */
+    function layerOf(group) {
+        const layer = characterLayer(castOf(group), state.script, storedOptions(group), base());
+        if (layer.values.preset !== AUTO_MODE && !state.presets?.presets?.[layer.values.preset]) layer.values.preset = AUTO_MODE;
+        return layer;
+    }
+
+    const currentOptions = group => (group ? layerOf(group).values : scriptLayer(state.script, base()).values);
     const sameOptions = (a, b) => a.language === b.language && a.speed === b.speed;
     const valuesOfLine = line => lineValues(line, currentOptions(getScript().speakerOf(line)));
+
+    /**
+     * The node's whole-script speed: its input counts only when it differs from the node's default
+     * and from the first character's own speed (Anomalous_TTS reads it that way), else undefined.
+     */
+    function nodeSpeed() {
+        const speed = state.script.speed;
+        const first = getNodeGroup();
+        return speed === undefined || speed === base().speed || (first && speed === storedOptions(first).speed) ? undefined : speed;
+    }
+
+    /** What the node gives a line of `speaker` by itself: the whole script's values as inputs, else the character's own. */
+    const nodeValues = speaker => ({
+        language: state.script.language ?? 'auto',
+        speed: nodeSpeed() ?? storedOptions(speaker).speed,
+        preset: state.script.preset ?? AUTO_MODE,
+    });
 
     /** The tags `line` needs (script_tune.js), for the director's packages; none for an older node. */
     function tagsOf(line, speaker) {
         if (!canTag() || !speaker) return '';
-        return tuneTags(lineValues(line, currentOptions(speaker)), storedOptions(speaker));
+        return tuneTags(lineValues(line, currentOptions(speaker)), nodeValues(speaker));
+    }
+
+    /** The node's inputs for the script: the whole script's values (interface 17), else the first line's character's. */
+    function scriptInputs(group) {
+        if (!canTag()) {
+            const { language, speed, preset } = currentOptions(group);
+            return { language, speed, ...(state.presets && preset !== AUTO_MODE ? { preset } : {}) };
+        }
+        const speed = nodeSpeed();
+        return {
+            language: state.script.language ?? 'auto',
+            ...(speed !== undefined ? { speed } : {}),
+            ...(state.presets && state.script.preset ? { preset: state.script.preset } : {}),
+        };
     }
 
     /** The language Auto's numbers are shown for: the one chosen, else the character's own. */
@@ -174,17 +217,24 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         return lineTuning(state.presets, tuningRows(characterSettings(group)), refLang, autoKey(group, values)).values;
     }
 
-    /** One line read by its character (`speaker`) in mode `mode`, for the listen row and a card's ▶. */
+    /**
+     * One line read by its character (`speaker`) in tone `mode`, for the listen row and a card's ▶.
+     * With interface 17 the values go as the line's tags (exactly as they will be read), else as inputs.
+     */
     function takeFor(line, mode, speaker = null, values = null) {
         const who = speaker || getScript().speakerOf(line);
         const own = values || (line ? valuesOfLine(line) : currentOptions(who));
         const id = mode ?? own.preset;
         const words = String(line?.text || '').trim();
         const refLang = who.raw?.reference?.language || who.language;
-        const text = words
-            ? `${line.emotion && line.emotion !== 'main' ? `{${line.emotion}}` : ''}${words}`
-            : SAMPLE_LINES[refLang] || SAMPLE_LINES.zh;
-        return { character: who.character, text, language: own.language, speed: own.speed, mode: id, preset: id, numbers: modeNumbers(who, own, id) };
+        const emotion = line?.emotion && line.emotion !== 'main' ? `{${line.emotion}}` : '';
+        const numbers = modeNumbers(who, own, id);
+        if (canTag()) {
+            const tags = tuneTags({ ...own, preset: id }, { speed: storedOptions(who).speed });
+            return { character: who.character, text: `${emotion}${tags}${words || SAMPLE_LINES[refLang] || SAMPLE_LINES.zh}`, language: 'auto', mode: id, preset: '', numbers };
+        }
+        const text = words ? `${emotion}${words}` : SAMPLE_LINES[refLang] || SAMPLE_LINES.zh;
+        return { character: who.character, text, language: own.language, speed: own.speed, mode: id, preset: id, numbers };
     }
 
     async function reloadPresets() {
@@ -205,7 +255,6 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         } catch (_) {
             state.supported = false;
         }
-        state.options.clear(); // options built before the spec arrived lack the node's defaults
         render();
         onBusyChange?.(); // the director draws its cards again, now with their ▶
     }
@@ -227,13 +276,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         const script = getScript();
         if (!script?.group || script.pkg.error || state.job || !state.supported) return;
         const character = script.group.character;
-        let inputs = {};
-        if (!canTag()) {
-            // An older node: the whole script as the first line's character reads it.
-            const { language, speed, preset } = currentOptions(script.group);
-            inputs = { language, speed, ...(state.presets && preset !== AUTO_MODE ? { preset } : {}) };
-        }
-        const prompt = buildTtsPrompt({ character, speech: script.pkg.speech, seed: state.seed, ...inputs });
+        const prompt = buildTtsPrompt({ character, speech: script.pkg.speech, seed: state.seed, ...scriptInputs(script.group) });
         state.status = { state: 'queued' };
         const started = Date.now();
         state.job = startPromptJob(prompt, {
@@ -280,6 +323,8 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             await saveGptSovitsSettings(character, saved);
             state.settings.set(character, saved);
             state.saved.set(character, { ...opts, preset: AUTO_MODE });
+            // What was changed for it here is its usual now, unless it still has to go over the whole script's.
+            for (const field of ['language', 'speed']) if (state.script[field] === undefined) delete castOf(group)[field];
             state.savedNow = character;
             setTimeout(() => { state.savedNow = null; render(); }, 1600);
         } catch (error) {
@@ -315,14 +360,36 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             redraw: render,
             options: currentOptions,
             lineValues: valuesOfLine,
+            layers: {
+                script: () => scriptLayer(state.script, base()),
+                character: layerOf,
+                line: line => lineLayer(line, layerOf(script.speakerOf(line))),
+            },
+            changedFor: {
+                script: () => TUNE_FIELDS.some(field => state.script[field] !== undefined),
+                character: group => TUNE_FIELDS.some(field => castOf(group)[field] !== undefined),
+            },
+            setScript: (field, value) => {
+                setOwn(state.script, field, value, base()[field]);
+                state.presetNote = '';
+                changed();
+            },
             setCharacter: (group, field, value) => {
-                currentOptions(group)[field] = value;
+                setOwn(castOf(group), field, value, state.script[field] ?? storedOptions(group)[field]);
                 state.presetNote = '';
                 changed();
             },
             setLines: (indexes, field, value) => {
-                setLineTune(indexes.map(index => script.lines[index]), field, value);
+                setLineTune(indexes.map(index => script.lines[index]), field, value, line => currentOptions(script.speakerOf(line))[field]);
                 state.presetNote = '';
+                changed();
+            },
+            clearScript: () => {
+                state.script = {};
+                changed();
+            },
+            clearCharacter: (group) => {
+                state.cast.delete(group.character);
                 changed();
             },
             clearLines: (indexes) => {
@@ -415,6 +482,12 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         },
         /** The presets, for the tags on the cards (ui_script_tune.js ownTuneText). */
         presetsView: () => state.presets,
+        /** The whole script's and the characters' values changed here, for the director's draft. */
+        draft: () => ({ script: { ...state.script }, cast: Object.fromEntries([...state.cast].filter(([, own]) => Object.keys(own).length)) }),
+        restoreDraft({ script = {}, cast = {} } = {}) {
+            state.script = { ...script };
+            state.cast = new Map(Object.entries(cast).map(([character, own]) => [character, { ...own }]));
+        },
         stopPlayback() {
             player.pause();
             preview.stop();
