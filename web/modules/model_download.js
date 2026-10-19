@@ -70,6 +70,15 @@ export function hfMirrorOn(settings) {
 }
 
 /**
+ * Hugging Face's model search for a file's name (its mirror when that is on), for a foundation
+ * component no source was found for: the user looks for it there.
+ */
+export function hfSearchUrl(value, settings) {
+    const stem = fileName(value).replace(/\.[^.]+$/, '');
+    return `https://${hfMirrorOn(settings) ? 'hf-mirror.com' : 'huggingface.co'}/models?search=${encodeURIComponent(stem)}`;
+}
+
+/**
  * Where each entry can be downloaded from: { found: Map entry -> { found, source, size, sha256,
  * base_model, page, type, roots, reason… }, settings }. Sources are asked once per page load
  * (a network failure again next time); the model folders (free space, subfolders) every time.

@@ -31,6 +31,7 @@
 - A **Download by name** from ComfyUI-Manager's model list now also says where the list's file is (the site and repository), to help you decide.
 - A list entry that does not say its type is no longer offered for a node whose type is known.
 - Without ComfyUI Manager, Model Check says it would add one more place to download from when a model's source is not found.
+- A foundation component (VAE, text encoder, CLIP Vision…) no source was found for gets **Search Hugging Face** (its mirror when that is on): the search page for its file name, for you to pick from.
 - The rules of Model Check (what counts as the same model, the confidence levels, foundation components, download sources and where ComfyUI-Manager fits) are now written in one place: `docs/guides/model-check-rules.md`.
 
 ### ⭐ Combos kept from a picture are easy to tell apart (图片存的搭配一眼认得出)

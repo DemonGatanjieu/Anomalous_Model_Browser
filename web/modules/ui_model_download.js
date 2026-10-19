@@ -11,9 +11,10 @@
 import { translate as t } from './locales.js';
 import { destinationFor, unsafeFormat } from './download_places.js';
 import {
-    cancelDownload, defaultRoot, doneCount, downloadFor, lookupDownloads, rememberRoot, startDownload, syncDownloads,
+    cancelDownload, defaultRoot, doneCount, downloadFor, hfSearchUrl, lookupDownloads, rememberRoot, startDownload, syncDownloads,
     watchDownloads,
 } from './model_download.js';
+import { requiresHashForModelRecovery } from './model_policies.js';
 import { saveApiKey } from './ui_scan_settings.js';
 import { openSettingsPage } from './ui_settings_page.js';
 
@@ -269,6 +270,12 @@ export async function fillDownloads(owner, panel, slots, pageActions, rerender) 
                 }
             } else {
                 slot.replaceChildren();
+                // A foundation component (VAE, text encoder…) no source knows: look for its name on Hugging Face.
+                if (['not_found', 'no_source'].includes(info?.reason) && requiresHashForModelRecovery(entry.node, entry.widget)) {
+                    const search = button('anomalous-scan-row-btn', t('downloadSearchHf'), () => window.open(hfSearchUrl(entry.value, settings), '_blank', 'noopener'));
+                    search.title = t('downloadSearchHfHint');
+                    slot.append(search);
+                }
             }
         }
     };
