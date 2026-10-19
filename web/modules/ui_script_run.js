@@ -36,7 +36,6 @@ import { LANGUAGES, renderTunePanel } from './ui_script_tune.js';
 
 const MIN_FORMAT = 11; // Anomalous_TTS interface with [take:N] and `defaults`
 const NUMBERS = ['speed'];
-const ROOMY_FROM = 440; // px of the side from which the modes' details are shown open
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -92,7 +91,6 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         presets: null,        // loadPresets(); null without interface 16
         format: 0,            // the node's interface
         local: false,         // this computer (presets can be changed)
-        roomy: false,         // the side is wide enough to show the modes' scale and numbers open
         options: new Map(),   // character -> { language, speed, preset } in this script
         settings: new Map(),  // character -> its settings as saved in this session
         saved: new Map(),     // character -> options saved in this session
@@ -110,13 +108,6 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
 
     // How it is read: what is picked on the left (ui_script_tune.js).
     const settings = el('div', 'anomalous-sd-run-settings');
-    // A wide side (a big screen, the full window) shows the scale and the numbers without a click.
-    new ResizeObserver(([entry]) => {
-        const roomy = entry.contentRect.width >= ROOMY_FROM;
-        if (roomy === state.roomy) return;
-        state.roomy = roomy;
-        render();
-    }).observe(settings);
 
     const actions = el('div', 'anomalous-sd-run-actions');
     const generateBtn = button('anomalous-sd-btn accent', t('scriptRunGenerate'), () => generate());
@@ -318,7 +309,6 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             spec: state.spec,
             busy,
             local: state.local,
-            roomy: state.roomy,
             canTag: canTag(),
             presetNote: state.presetNote,
             preview,

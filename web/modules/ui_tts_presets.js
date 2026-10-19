@@ -7,15 +7,17 @@ import {
 } from './tts_presets_api.js';
 import { keepParamFocus, renderPresetSwitch } from './ui_tts_preset_switch.js';
 import { createModePreview } from './ui_tts_mode_preview.js';
+import { foldSection } from './ui_tts_fold.js';
 
 /**
- * "Generation presets" in GPT-SoVITS Settings. The presets are a row of choices: the one
- * picked is shown against the default preset (ui_tts_preset_switch.js), can be heard read by a
- * character next to the others (ui_tts_mode_preview.js) and its numbers changed in place; under
- * it "Make default", "Reset" for a changed built-in one, "Rename" and "Delete" for one made
- * here, and "+ New" copies the one picked. Then which preset a pair of languages uses (a
- * Japanese character speaking Chinese). Every change is saved at once to the node's presets
- * file; a character's own settings are in ui_tts_tuning.js.
+ * The tones (the node's generation presets) in GPT-SoVITS Settings, "which tone to use". The
+ * tones are a row of choices: the one picked says in a few words what it is, can be heard read
+ * by a character next to the others (ui_tts_mode_preview.js), and under "More" is shown against
+ * the default one with its numbers, changed in place (ui_tts_preset_switch.js); beside it "Make
+ * default", "Reset" for a changed built-in one, "Rename" and "Delete" for one made here, and
+ * "+ New" copies the one picked. Folded below, which tone a pair of languages uses (a Japanese
+ * character speaking Chinese). Every change is saved at once to the node's presets file; a
+ * character's own settings are in ui_tts_tuning.js.
  */
 
 /**
@@ -24,14 +26,17 @@ import { createModePreview } from './ui_tts_mode_preview.js';
  */
 export function renderTtsPresets(status, groups, local, { reveal = false } = {}) {
     const group = el('div', 'anomalous-tts-setup-group anomalous-tts-presets');
-    group.append(el('div', 'anomalous-tts-section', t('ttsPresetsTitle')));
+    const title = el('div', 'anomalous-tts-section', t('ttsPresetsPick'));
+    title.title = t('ttsPresetsHint');
+    group.append(title);
     if (Number(status?.format) < PRESETS_FORMAT) {
         group.append(el('div', 'anomalous-tts-hint', t('ttsPresetsNeedsNode')));
         return group;
     }
     const body = el('div', 'anomalous-tts-presets-body', '…');
-    const note = el('div', 'anomalous-tts-hint', t('ttsPresetsHint'));
-    group.append(note, body);
+    const note = el('div', 'anomalous-tts-hint');
+    note.hidden = true;
+    group.append(body, note);
     let view = null;
     let state = null;
     let selected = null;
@@ -47,10 +52,11 @@ export function renderTtsPresets(status, groups, local, { reveal = false } = {})
     const save = async () => {
         try {
             view = await savePresets(presetsFile(view, state));
-            note.textContent = `${t('ttsPresetsHint')} ${t('ttsPresetsSaved')}`;
+            note.textContent = t('ttsPresetsSaved');
         } catch (e) {
             note.textContent = t('ttsPresetsSaveFailed', { error: e.message });
         }
+        note.hidden = false;
     };
     const change = (apply) => {
         apply();
@@ -156,6 +162,26 @@ export function renderTtsPresets(status, groups, local, { reveal = false } = {})
             label: label(name),
             badge: name === state.defaultName ? t('ttsPresetDefaultBadge') : (isBuiltin(name) ? '' : t('ttsPresetCustom')),
         }));
+        // Under the choices: what the picked one is and what can be done with it, then listening.
+        const about = el('div', 'anomalous-tts-switch-about');
+        about.append(el('span', 'anomalous-tts-switch-what', t('ttsPresetWhat', {
+            name: label(selected), about: isBuiltin(selected) ? t(`ttsPresetDesc_${selected}`) : t('ttsPresetDescCustom'),
+        })));
+        if (local) {
+            if (selected === state.defaultName) about.append(el('span', 'anomalous-tts-setup-meta', t('ttsPresetIsDefault')));
+            else about.append(button('anomalous-tts-link', t('ttsPresetMakeDefault'), () => change(() => { state.defaultName = selected; })));
+            if (changed(selected)) {
+                about.append(button('anomalous-tts-link', t('ttsPresetResetOne'), () => change(() => { state.numbers[selected] = { ...view.builtin[selected] }; })));
+            }
+            if (!isBuiltin(selected)) {
+                about.append(button('anomalous-tts-link', t('ttsPresetRename'), () => renamePreset(selected)),
+                    button('anomalous-tts-link is-danger', t('ttsPresetDelete'), () => deletePreset(selected)));
+            }
+        }
+
+        const listening = el('div', 'anomalous-tts-switch-listen');
+        listening.append(about);
+        if (local && groups.length) listening.append(listenRow(choices));
         const modes = renderPresetSwitch({
             choices,
             selected,
@@ -169,24 +195,12 @@ export function renderTtsPresets(status, groups, local, { reveal = false } = {})
             onPick: pick,
             onEdit: (name, key, value) => change(() => { state.numbers[name][key] = value; }),
             extra: [newChip],
-            listen: local && groups.length ? listenRow(choices) : null,
+            listen: listening,
         });
-
-        const about = el('div', 'anomalous-tts-switch-about');
-        if (local) {
-            if (selected === state.defaultName) about.append(el('span', 'anomalous-tts-setup-meta', t('ttsPresetIsDefault')));
-            else about.append(button('anomalous-tts-link', t('ttsPresetMakeDefault'), () => change(() => { state.defaultName = selected; })));
-            if (changed(selected)) {
-                about.append(button('anomalous-tts-link', t('ttsPresetResetOne'), () => change(() => { state.numbers[selected] = { ...view.builtin[selected] }; })));
-            }
-            if (!isBuiltin(selected)) {
-                about.append(button('anomalous-tts-link', t('ttsPresetRename'), () => renamePreset(selected)),
-                    button('anomalous-tts-link is-danger', t('ttsPresetDelete'), () => deletePreset(selected)));
-            }
-        }
 
         const rules = el('div', 'anomalous-tts-preset-rules');
         const row = (text, select) => rules.append(el('span', 'anomalous-tts-setup-meta', text), select);
+        rules.append(el('div', 'anomalous-tts-hint anomalous-tts-preset-rules-hint', t('ttsPresetsLanguages')));
         for (const pair of languagePairs(groups, view.languages)) {
             const [ref, lang] = pair.split('>');
             row(t('ttsPresetsPair', { ref: t(`scriptRunLang_${ref}`), lang: t(`scriptRunLang_${lang}`) }),
@@ -194,8 +208,13 @@ export function renderTtsPresets(status, groups, local, { reveal = false } = {})
         }
         row(t('ttsPresetsCross'), presetSelect(state.cross, value => change(() => { state.cross = value; })));
 
-        body.replaceChildren(el('div', 'anomalous-tts-setup-meta', t('ttsPresetsModes')), modes, about,
-            el('div', 'anomalous-tts-setup-meta', t('ttsPresetsLanguages')), rules);
+        const pairs = languagePairs(groups, view.languages);
+        const firstPair = pairs[0]?.split('>');
+        const rulesMeta = firstPair ? t('ttsFoldLanguagesMeta', {
+            pair: t('ttsPresetsPair', { ref: t(`scriptRunLang_${firstPair[0]}`), lang: t(`scriptRunLang_${firstPair[1]}`) }),
+            name: label(state.rules[pairs[0]] || state.cross),
+        }) : '';
+        body.replaceChildren(modes, foldSection('languages', t('ttsFoldLanguages'), rulesMeta, [rules]));
     };
 
     loadPresets().then(data => {

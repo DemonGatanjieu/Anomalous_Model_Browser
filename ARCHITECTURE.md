@@ -249,16 +249,18 @@ covered by the `styles.css` manifest.
   next to the general ones, a character's `defaults` / `defaults.by_language` as
   rows and back, keeping every other field, where a mode sits between steady and
   lively, a line to listen with in each language). `ui_tts_preset_switch.js`
-  draws the modes as choices and the picked one against one fixed mode (the
-  default preset, or Auto): a steady-to-lively scale, a sentence, and folded, the
-  four numbers as the Current node card's bars, each with its plain name and the
-  node's own name (`top_k` …), editable in place. `ui_tts_mode_preview.js` makes
+  draws the tones (the presets) as choices with the caller's listen row, and folded
+  under "More", the picked one against one fixed tone (the default one, or a
+  character's usual): a sentence, a steady-to-lively scale and the four numbers as
+  the Current node card's bars, each with its plain name and the node's own name
+  (`top_k` …), editable in place. `ui_tts_mode_preview.js` makes
   and keeps the takes for listening (one line, one seed, only the mode changing,
   through Preview Audio). `ui_tts_presets.js` is the group in the GPT-SoVITS
   settings dialog (that switch with a character and a line to listen with, make
-  default / reset / new / rename / delete, rules per pair), saving each change at once; `ui_tts_tuning.js` is the
-  per-character dialog behind the card's Generation settings button, shown only
-  with interface 16.
+  default / reset / new / rename / delete, the rules per pair folded), saving each change at once; `ui_tts_tuning.js` is the
+  per-character dialog behind the card's Own settings button, shown only
+  with interface 16. `ui_tts_fold.js` is the dialog's folded part: a title and a line
+  about it, open by itself while it needs the user, else as the user left it.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single
@@ -308,9 +310,11 @@ covered by the `styles.css` manifest.
   `ui_tts_setup.js` is the GPT-SoVITS settings dialog, opened from the sidebar
   footer (`setupAttention` gives that entry its dot). Missing pretrained files only get a dismissable dot
   when the studio's characters need them (dismissed ids in `localStorage`; a newly
-  needed file brings it back); missing packages get a red one. Inside: the storage
-  place and other places with characters (shown, not changed), pretrained files
-  and package sources, packages, and the settings file where folders are changed.
+  needed file brings it back); missing packages get a red one. Inside: one status
+  line (ready, files to download, packages missing), the tones, then folded: the
+  base files (pretrained files and package sources, packages), where things are
+  (the storage place and other places with characters, shown, not changed, and the
+  settings file where folders are changed) and the version.
   It polls the status only while a download runs and it is open.
   `ui_tts_import.js` is the import window. It first asks
   what the user has (`mode`: `single` = one card led by its checklist, `batch` = a

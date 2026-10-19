@@ -55,7 +55,7 @@ export function renderTtsVersion(local) {
     const actions = el('span', 'anomalous-tts-version-actions');
     row.append(value, note, actions);
     const hint = el('div', 'anomalous-tts-hint', t('ttsVersionHint'));
-    group.append(el('div', 'anomalous-tts-section', t('ttsVersionTitle')), row, hint);
+    group.append(row, hint); // its title is the fold's (ui_tts_setup.js)
 
     let busy = false;
     const run = async (label, work) => {

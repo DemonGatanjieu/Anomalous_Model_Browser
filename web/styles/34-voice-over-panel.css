@@ -1,4 +1,5 @@
-/* Voice-over's side panel, which follows what is picked on the left (ui_script_tune.js). */
+/* Voice-over's side panel, which follows what is picked on the left (ui_script_tune.js), and the
+   folded parts of GPT-SoVITS Settings (ui_tts_fold.js, ui_tts_setup.js). */
 
 .anomalous-sd-tune-head {
     display: flex;
@@ -121,6 +122,20 @@
     flex-shrink: 0;
 }
 
+/* The language while it is detected: one line with "Change". */
+.anomalous-sd-tune-language {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+}
+
+/* The tone's label above its choices. */
+.anomalous-sd-run-mode {
+    gap: 6px;
+}
+
 /* On a line card: what the line set for itself. */
 .anomalous-sd-line-tune {
     flex-shrink: 0;
@@ -133,4 +148,90 @@
     font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* GPT-SoVITS Settings: the status line on top. */
+.anomalous-tts-status {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--amb-ok) 12%, transparent);
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+}
+
+.anomalous-tts-status.is-busy {
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+}
+
+.anomalous-tts-status.is-blocked {
+    background: color-mix(in srgb, var(--amb-danger) 14%, transparent);
+}
+
+/* A folded part: the title and a line about it; yellow while it needs you. */
+.anomalous-tts-fold {
+    border-top: 1px solid var(--amb-border);
+    padding-top: 10px;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+}
+
+.anomalous-tts-fold > .anomalous-tts-fold-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.anomalous-tts-fold > .anomalous-tts-fold-head::-webkit-details-marker {
+    display: none;
+}
+
+.anomalous-tts-fold > .anomalous-tts-fold-head::before {
+    content: '▸';
+    color: var(--amb-text-dim);
+    font-size: 11px;
+}
+
+.anomalous-tts-fold[open] > .anomalous-tts-fold-head::before {
+    content: '▾';
+}
+
+.anomalous-tts-fold-title {
+    color: var(--amb-text-main);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomalous-tts-fold-meta {
+    color: var(--amb-text-dim);
+    font-size: 12px;
+}
+
+.anomalous-tts-fold.needs-you .anomalous-tts-fold-meta {
+    color: var(--amb-warn);
+}
+
+.anomalous-tts-fold[open] > .anomalous-tts-fold-head {
+    margin-bottom: 10px;
+}
+
+.anomalous-tts-fold > :not(summary) + :not(summary) {
+    margin-top: 12px;
+}
+
+/* Under the tone choices: what the picked one is, then listening. */
+.anomalous-tts-switch-listen {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* What the picked tone is, in a few words, before its actions. */
+.anomalous-tts-switch-what {
+    color: var(--amb-text-soft);
+}
+
+.anomalous-tts-preset-rules-hint {
+    grid-column: 1 / -1;
 }

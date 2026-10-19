@@ -5,16 +5,19 @@ import { loadGptSovitsStatus } from './audio_engines.js';
 import { renderTtsVersion } from './ui_tts_version.js';
 import { renderTtsPresets } from './ui_tts_presets.js';
 import { formatSize, pretrainedReminder, setupSummary, shownPretrained, startPretrainedDownload } from './tts_setup_api.js';
+import { foldSection } from './ui_tts_fold.js';
 
 /**
- * GPT-SoVITS settings, opened from the audio sidebar's footer: the storage place, other
- * places with characters, pretrained files (download them, or GPT-SoVITS packages they
- * come from) and missing Python packages, from the node's `/anomalous_tts/status`.
- * Where folders are is shown, not changed: the node takes them only from its settings
- * file, which the card names. Missing pretrained files are fetched on first use anyway,
- * so the sidebar entry only gets a small dot (dismissable) when the characters here
- * need them; missing Python packages get a red one. While a download runs the card
- * polls the status and redraws itself; it stops as soon as it is no longer in the page.
+ * GPT-SoVITS settings, opened from the audio sidebar's footer. On top one line says whether
+ * everything is ready (or what is missing, with a way to get it), then the tones every
+ * character uses (ui_tts_presets.js); the rest is folded, and opens by itself when something
+ * there needs you: the base files (pretrained files to download, or the GPT-SoVITS packages they
+ * come from, and missing Python packages), where the characters are and the node's settings
+ * file, and the Anomalous_TTS version. All from the node's `/anomalous_tts/status`. Where
+ * folders are is shown, not changed: the node takes them only from its settings file. Missing
+ * pretrained files are fetched on first use anyway, so the sidebar entry only gets a small dot
+ * (dismissable) when the characters here need them; missing Python packages get a red one.
+ * While a download runs the dialog polls the status and redraws; it stops once it is closed.
  */
 
 const DISMISSED_KEY = 'anomalous_tts_pretrained_dismissed';
@@ -84,7 +87,7 @@ function copyButton(text, labelKey) {
 
 function renderStorage(status) {
     const group = el('div', 'anomalous-tts-setup-group');
-    group.append(el('div', 'anomalous-tts-section', t('ttsSetupStorage')));
+    group.append(el('div', 'anomalous-tts-setup-meta', t('ttsSetupStorage')));
     const home = status.libraries.find(lib => lib.storage);
     const row = el('div', 'anomalous-tts-setup-row');
     row.append(pathText(status.storage), el('span', 'anomalous-tts-setup-meta', t('ttsSetupCharacters', { count: home?.characters || 0 })));
@@ -93,7 +96,7 @@ function renderStorage(status) {
     // Other places with characters: folders in the settings file, yaml folders.
     const others = status.libraries.filter(lib => !lib.storage && (lib.source !== 'default' || lib.characters > 0));
     if (!others.length) return group;
-    group.append(el('div', 'anomalous-tts-section', t('ttsSetupOtherPlaces')));
+    group.append(el('div', 'anomalous-tts-setup-meta', t('ttsSetupOtherPlaces')));
     for (const lib of others) {
         const line = el('div', 'anomalous-tts-setup-row');
         line.append(pathText(lib.path), el('span', 'anomalous-tts-kind', t(`ttsLibrarySource_${lib.source}`)),
@@ -119,7 +122,6 @@ function pretrainedState(item) {
 
 function renderPretrained(status, local, onChanged, needs) {
     const group = el('div', 'anomalous-tts-setup-group');
-    group.append(el('div', 'anomalous-tts-section', t('ttsSetupPretrained')));
     const items = shownPretrained(status, needs);
     const missing = items.filter(item => item.state === 'missing' || item.state === 'error');
     for (const item of items) {
@@ -157,7 +159,7 @@ function renderPackages(status) {
     const missing = Object.entries(status.dependencies || {}).filter(([, dep]) => !dep.ok);
     if (!missing.length) return null;
     const group = el('div', 'anomalous-tts-setup-group');
-    group.append(el('div', 'anomalous-tts-section', t('ttsSetupPackages')));
+    group.append(el('div', 'anomalous-tts-setup-meta', t('ttsSetupPackages')));
     for (const [lang, dep] of missing) {
         const row = el('div', 'anomalous-tts-setup-row is-package');
         const code = el('code', 'anomalous-tts-setup-command', dep.command);
@@ -173,7 +175,7 @@ function renderPackages(status) {
 function renderSettingsFile(status) {
     if (!status.settings_file) return null; // a node before interface v13
     const group = el('div', 'anomalous-tts-setup-group');
-    group.append(el('div', 'anomalous-tts-section', t('ttsSettingsFile')));
+    group.append(el('div', 'anomalous-tts-setup-meta', t('ttsSettingsFile')));
     const row = el('div', 'anomalous-tts-setup-row');
     row.append(pathText(status.settings_file), copyButton(status.settings_file, 'ttsCopyPath'));
     group.append(row, el('div', 'anomalous-tts-hint', t('ttsSettingsFileHint')));
@@ -204,33 +206,45 @@ export function setupAttention(status, languages = [], needs = []) {
 }
 
 /**
- * The card for one status payload. `onChanged()` redraws the studio (a download
- * changes what is ready); `onDismissed()` runs after "don't remind me";
- * `languages` are the languages of the characters in the studio (for the reminder), `needs`
- * the pretrained ids their SoVITS models need (v3 / v4 / v5 files are listed only then).
+ * The line on top: missing Python packages (red), base files to download (the reminder),
+ * a download running, or everything ready. `redraw()` after "don't remind me".
  */
-export function renderTtsSetup(status, options) {
+function renderStatusLine(status, options, redraw) {
     const { onChanged, onDismissed, languages = [], needs = [] } = options;
     const summary = setupSummary(status, needs);
     const local = status.local !== false;
     const reminder = pretrainedReminder(status, languages, storedDismissed(), needs);
-    const card = el('section', `anomalous-tts-setup${summary.packages ? ' is-blocked' : ''}`);
-
-    if (!local) card.append(el('div', 'anomalous-tts-setup-notice', t('ttsSetupRemote')));
-    if (reminder.due) {
-        card.append(renderReminder(reminder, local, onChanged, () => {
+    const box = el('section', 'anomalous-tts-setup');
+    if (!local) box.append(el('div', 'anomalous-tts-setup-notice', t('ttsSetupRemote')));
+    if (summary.packages) {
+        box.append(el('div', 'anomalous-tts-status is-blocked', t('ttsStatusPackages', { count: summary.packages })));
+    } else if (reminder.due) {
+        box.append(renderReminder(reminder, local, onChanged, () => {
             storeDismissed(reminder.items.map(item => item.id));
-            card.replaceWith(renderTtsSetup(status, options));
+            redraw();
             onDismissed?.();
         }));
+    } else {
+        box.append(el('div', `anomalous-tts-status${summary.downloading ? ' is-busy' : ''}`,
+            t(summary.downloading ? 'ttsStatusDownloading' : 'ttsStatusReady', { count: summary.characters })));
     }
+    return box;
+}
+
+/** The folded parts that come from the status: the base files, and where the characters and the settings file are. */
+function renderStatusFolds(status, options) {
+    const { onChanged, needs = [] } = options;
+    const local = status.local !== false;
+    const items = shownPretrained(status, needs);
+    const ready = items.filter(item => item.state === 'ok').length;
     const packages = renderPackages(status);
-    if (packages) card.append(packages);
-    card.append(renderStorage(status), renderPretrained(status, local, onChanged, needs));
+    const files = foldSection('files', t('ttsFoldFiles'), t('ttsFoldFilesMeta', { ready, count: items.length }),
+        [...(packages ? [packages] : []), renderPretrained(status, local, onChanged, needs)],
+        Boolean(packages) || items.some(item => item.required && item.state !== 'ok'));
     const settingsFile = renderSettingsFile(status);
-    if (settingsFile) card.append(settingsFile);
-    if (summary.downloading) pollWhileBusy(card, options);
-    return card;
+    const places = foldSection('places', t('ttsFoldPlaces'), t('ttsSetupCharacters', { count: setupSummary(status, needs).characters }),
+        [renderStorage(status), ...(settingsFile ? [settingsFile] : [])]);
+    return [files, places];
 }
 
 let activeScope = null;
@@ -286,28 +300,26 @@ export async function openTtsSetup({ onChanged, languages = [], needs = [], grou
             if (!scope.signal.aborted && status) draw();
         },
     };
-    // Kept across redraws: the download poll replaces only the card, and a check for updates stays shown.
-    const version = el('section', 'anomalous-tts-setup');
-    version.append(renderTtsPresets(status, groups, status.local !== false, { reveal: showPresets }), renderTtsVersion(status.local !== false));
+    // Kept across redraws (the download poll redraws the rest): the tones being edited, a check for updates.
+    const presets = el('section', 'anomalous-tts-setup');
+    presets.append(renderTtsPresets(status, groups, status.local !== false, { reveal: showPresets }));
+    const version = foldSection('version', t('ttsVersionTitle'), '', [renderTtsVersion(status.local !== false)]);
     const draw = () => {
-        subtitle.textContent = summaryText(status, setupSummary(status, needs));
-        body.replaceChildren(renderTtsSetup(status, options), version);
+        const summary = setupSummary(status, needs);
+        subtitle.textContent = summaryText(status, summary);
+        body.replaceChildren(renderStatusLine(status, options, draw), presets, ...renderStatusFolds(status, options), version);
+        // While a download runs: fresh status once a second, until the dialog closes.
+        clearTimeout(pollTimer);
+        if (summary.downloading) pollTimer = setTimeout(refresh, POLL_MS);
+    };
+    let pollTimer = null;
+    scope.onDispose(() => clearTimeout(pollTimer));
+    const refresh = async () => {
+        try { status = await loadGptSovitsStatus({ force: true }); } catch (_) { /* keep the last one */ }
+        if (!scope.signal.aborted && status) draw();
     };
     draw();
     modal.append(header, body);
     overlay.append(modal);
     document.body.append(overlay);
-}
-
-/** Redraw the card with fresh status while a download runs. */
-function pollWhileBusy(card, options) {
-    setTimeout(async () => {
-        if (!card.isConnected) return;
-        try {
-            const status = await loadGptSovitsStatus({ force: true });
-            if (card.isConnected && status) card.replaceWith(renderTtsSetup(status, options));
-        } catch (_) {
-            if (card.isConnected) pollWhileBusy(card, options);
-        }
-    }, POLL_MS);
 }

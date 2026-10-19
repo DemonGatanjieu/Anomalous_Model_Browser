@@ -11,8 +11,10 @@ import { renderPresetSwitch } from './ui_tts_preset_switch.js';
  * script (each character and how it reads); a character in the cast, how it reads in this script
  * (every line of it follows); picked lines, who reads them and how, each value following the
  * character until it is set here (then the card shows a tag and ↺ lets it follow again).
- * ui_script_run.js keeps the state and draws this again after each change (`ctx`, see
- * renderTunePanel); the lines are the director's.
+ * Only what is changed often is open: who reads, speed, the tone with its listen button; the
+ * language is one line while it is detected, and the tone's sentence, numbers and links are
+ * under "More". ui_script_run.js keeps the state and draws this again after each change (`ctx`,
+ * see renderTunePanel); the lines are the director's.
  */
 
 export const LANGUAGES = ['auto', 'zh', 'ja', 'en'];
@@ -47,8 +49,9 @@ export function ownTuneText(view, line) {
     return parts.join(' · ');
 }
 
-function heading(title, meta, back) {
+function heading(title, meta, back, hint = '') {
     const head = el('div', 'anomalous-sd-tune-head');
+    if (hint) head.title = hint;
     if (back) head.append(button('anomalous-sd-link-btn anomalous-sd-tune-back', t('scriptTuneBack'), back));
     head.append(el('div', 'anomalous-sd-tune-title', title));
     if (meta) head.append(el('div', 'anomalous-sd-tune-meta', meta));
@@ -102,19 +105,35 @@ function speedSlider(ctx, value, onChange, after = []) {
 }
 
 /**
- * The mode switch with its listen row; `line`: the line heard (null: a sample), read by `speaker` with
- * `values` (null: the line's own); `choices` and `base` as renderPresetSwitch.
+ * The language: one line ("Language: detected · Change") while it is the detected one and nothing
+ * set it, the choices once "Change" is pressed or another one is in use. `choices` and `checked`
+ * as segment; `shown`: the language in use, in words.
  */
-function modeBox(ctx, { speaker, line, values = null, selected, choices, base, baseName, baseText, describe, numbers, onPick }) {
+function languageRow(ctx, { choices, checked, onPick, open, shown }) {
+    const full = () => row(t('scriptRunLanguage'), segment(choices, checked, onPick, ctx.busy));
+    if (open) return full();
+    const line = el('div', 'anomalous-sd-tune-language');
+    const change = button('anomalous-sd-link-btn', t('scriptTuneLanguageChange'), () => line.replaceWith(full()));
+    change.disabled = ctx.busy;
+    line.append(el('span', '', t('scriptTuneLanguageIs', { value: shown })), change);
+    return line;
+}
+
+/**
+ * The tone: its choices, ▶ for the line heard (null: a sample) read by `speaker` with `values`
+ * (null: the line's own), and under "More" the comparison, numbers and `more`; `choices` and
+ * `base` as renderPresetSwitch.
+ */
+function modeBox(ctx, { speaker, line, values = null, selected, choices, base, baseName, baseText, describe, numbers, onPick, more = [] }) {
     const box = el('div', 'anomalous-sd-run-mode');
-    if (!ctx.view) return box;
+    if (!ctx.view) {
+        box.append(...more);
+        return box;
+    }
     const view = ctx.view;
-    const words = String(line?.text || '').trim();
     const take = id => ctx.takeFor(line, id === FOLLOW ? ctx.options(speaker).preset : id, speaker, values);
-    const index = ctx.script.lines.indexOf(line);
-    const lead = el('span', 'anomalous-sd-run-listen-line', !words ? t('scriptRunListenSample', { text: take(selected).text })
-        : t('scriptRunListenLineAs', { n: index + 1, text: words, who: speaker.character }));
-    lead.title = t('scriptRunListenLineHint');
+    const note = el('div', 'anomalous-sd-run-note', ctx.presetNote);
+    note.hidden = !ctx.presetNote;
     const switcher = renderPresetSwitch({
         choices,
         selected,
@@ -127,13 +146,11 @@ function modeBox(ctx, { speaker, line, values = null, selected, choices, base, b
         editable: id => id !== AUTO_MODE && id !== FOLLOW && ctx.local,
         onPick,
         onEdit: ctx.editPreset,
-        listen: ctx.preview.row({ takeFor: take, selected, modes: choices, onPick, disabled: ctx.busy, lead: [lead] }),
+        listen: ctx.preview.row({ takeFor: take, selected, modes: choices, onPick, disabled: ctx.busy, label: 'scriptTuneListen' }),
+        more: [note, ...more],
         disabled: ctx.busy,
-        compact: !ctx.roomy,
     });
-    const note = el('div', 'anomalous-sd-run-note', ctx.presetNote);
-    note.hidden = !ctx.presetNote;
-    box.append(el('span', 'anomalous-sd-run-label', t('scriptRunMode')), switcher, note);
+    box.append(el('span', 'anomalous-sd-run-label', t('scriptRunMode')), switcher);
     return box;
 }
 
@@ -180,11 +197,16 @@ function renderCharacterView(ctx, group) {
     const values = ctx.options(group);
     const indexes = script.lines.map((line, index) => [line, index]).filter(([line]) => line.text.trim() && script.speakerOf(line) === group).map(([, index]) => index);
     const meta = indexes.length ? t('scriptTuneCharacterMeta', { lines: lineNumbers(indexes), count: indexes.length }) : t('scriptTuneCharacterNone');
-    const parts = [heading(t('scriptTuneCharacter', { name: group.character }), meta, script.focusScript)];
+    const parts = [heading(t('scriptTuneCharacter', { name: group.character }), meta, script.focusScript, t('scriptTuneCharacterHint'))];
     const set = (field, value) => ctx.setCharacter(group, field, value);
-    parts.push(row(t('scriptRunLanguage'), segment(LANGUAGES.map(code => ({ id: code, label: t(`scriptRunLang_${code}`) })),
-        code => values.language === code, code => set('language', code), ctx.busy)));
     parts.push(speedSlider(ctx, values.speed, value => set('speed', value)));
+    parts.push(languageRow(ctx, {
+        choices: LANGUAGES.map(code => ({ id: code, label: t(`scriptRunLang_${code}`) })),
+        checked: code => values.language === code,
+        onPick: code => set('language', code),
+        open: values.language !== 'auto',
+        shown: t(`scriptRunLang_${values.language}`),
+    }));
     // The line heard: the one listened to on the left when it is this character's, else its first.
     const listened = script.lines[script.listen];
     const line = listened && script.speakerOf(listened) === group ? listened : (script.lines[indexes[0]] || null);
@@ -201,14 +223,13 @@ function renderCharacterView(ctx, group) {
         describe: id => (id === AUTO_MODE ? t('scriptRunModeAutoShort', { lang }) : t('scriptRunModeWhole', { about: presetAbout(id) })),
         numbers: id => ctx.modeNumbers(group, values, id),
         onPick: id => set('preset', id),
+        more: [links(ctx, group)],
     }));
-    parts.push(el('div', 'anomalous-sd-run-note', t('scriptTuneCharacterHint')));
     const own = indexes.filter(index => hasOwnTune(script.lines[index]));
     const foot = el('div', 'anomalous-sd-run-links');
     if (ctx.canSave(group)) foot.append(ctx.saveButton(group));
     if (own.length) foot.append(button('anomalous-sd-link-btn', t('scriptTuneResetLines', { count: own.length }), () => ctx.clearLines(own)));
     if (foot.childNodes.length) parts.push(foot);
-    parts.push(links(ctx, group));
     return parts;
 }
 
@@ -255,18 +276,21 @@ function renderLinesView(ctx, indexes) {
 
     if (script.groups.length > 1) parts.push(row(t('scriptTuneWho'), whoReads(ctx, indexes, speakers)));
 
-    const language = sharedValue(lines, 'language', valuesOf);
-    const languageChoices = [{ id: FOLLOW, label: t('scriptTuneFollowValue', { value: followText('language') }), title: t('scriptTuneFollowHint') },
-        ...LANGUAGES.map(code => ({ id: code, label: t(`scriptRunLang_${code}`) }))];
-    parts.push(row(t('scriptRunLanguage'), segment(languageChoices,
-        id => (id === FOLLOW ? !language.some : language.own && !language.mixed && language.value === id),
-        id => set('language', id === FOLLOW ? undefined : id), ctx.busy)));
-
     const speed = sharedValue(lines, 'speed', valuesOf);
     const speedAfter = speed.some
         ? [button('anomalous-sd-icon-btn anomalous-sd-tune-reset', '↺', () => set('speed', undefined), t('scriptTuneReset'))]
         : [el('span', 'anomalous-sd-tune-follow', t('scriptTuneFollowing'))];
     parts.push(speedSlider(ctx, speed.mixed ? null : speed.value, value => set('speed', value), speedAfter));
+
+    const language = sharedValue(lines, 'language', valuesOf);
+    const follow = { id: FOLLOW, label: t('scriptTuneFollow'), title: t('scriptTuneFollowHint', { value: followText('language') }) };
+    parts.push(languageRow(ctx, {
+        choices: [follow, ...LANGUAGES.map(code => ({ id: code, label: t(`scriptRunLang_${code}`) }))],
+        checked: id => (id === FOLLOW ? !language.some : language.own && !language.mixed && language.value === id),
+        onPick: id => set('language', id === FOLLOW ? undefined : id),
+        open: language.some || language.mixed || language.value !== 'auto',
+        shown: t('scriptTuneFollowValue', { value: followText('language') }),
+    }));
 
     if (ctx.view) {
         const mode = sharedValue(lines, 'preset', valuesOf);
@@ -278,7 +302,9 @@ function renderLinesView(ctx, indexes) {
             speaker: script.speakerOf(heard) || speaker,
             line: heard,
             selected: selected ?? FOLLOW,
-            choices: [{ id: FOLLOW, label: t('scriptTuneFollowValue', { value: followText('preset') }) }, ...presetChoices(ctx.view)],
+            // "Usual" would read like "As the character" here: a line picks a tone or follows.
+            choices: [{ id: FOLLOW, label: t('scriptTuneFollow'), title: t('scriptTuneFollowHint', { value: followText('preset') }) },
+                ...presetChoices(ctx.view).filter(choice => choice.id !== AUTO_MODE || selected === AUTO_MODE)],
             base: FOLLOW,
             baseName: t('scriptTuneFollowBase', { name: followName }),
             baseText: t('scriptTuneModeFollow', { name: followName }),
@@ -290,21 +316,23 @@ function renderLinesView(ctx, indexes) {
                 return ctx.modeNumbers(owner, values, id === FOLLOW ? ctx.options(owner).preset : id);
             },
             onPick: id => set('preset', id === FOLLOW ? undefined : id),
+            more: [links(ctx, single)],
         }));
+    } else {
+        parts.push(links(ctx, single));
     }
     if (lines.some(hasOwnTune)) {
         const foot = el('div', 'anomalous-sd-run-links');
         foot.append(button('anomalous-sd-link-btn', t('scriptTuneResetAll'), () => ctx.clearLines(indexes)));
         parts.push(foot);
     }
-    parts.push(links(ctx, single));
     return parts;
 }
 
 /**
  * Draws the panel into `box`. `ctx`: `script` (the director's: lines, groups, speakerOf, listen,
  * picked indexes, focus `{ character }` or null, assign / focusCharacter / focusScript), `view` (the
- * presets or null), `spec`, `busy`, `local`, `roomy`, `canTag` (the node reads a line's own values),
+ * presets or null), `spec`, `busy`, `local`, `canTag` (the node reads a line's own values),
  * `presetNote`, `preview`, and the run section's calls: `options(group)` (its values in this script),
  * `lineValues(line)`, `setCharacter(group, field, value)`, `setLines(indexes, field, value)`,
  * `clearLines(indexes)`, `modeNumbers(group, values, id)`, `autoLanguage(group, values)`,
