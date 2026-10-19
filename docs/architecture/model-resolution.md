@@ -1,7 +1,9 @@
 # Model Identity and Scanning
 
 Read this document for Model Check, workflow provenance, missing-model recovery,
-hash caches, Civitai metadata resolution, or model scanning.
+hash caches, Civitai metadata resolution, or model scanning. The rules as a whole, in plain
+words (what counts as the same model, the confidence levels, foundation components, download
+sources), are in `docs/model-check-rules.md`; keep both in step.
 
 ## Identity boundary
 
