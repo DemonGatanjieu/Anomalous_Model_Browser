@@ -108,6 +108,8 @@ function dialogItem(entry, info, settings) {
     if (unsafeFormat(entry.value) || unsafeFormat(info.file_name)) box.append(el('div', 'anomalous-download-note is-warn', t('downloadUnsafeFormat')));
     if (info.by_name) {
         box.append(el('div', 'anomalous-download-note is-warn', t('downloadByName', { name: info.list_name || '' })));
+        // For deciding: where the list's file is (its size and base model are in the head).
+        if (info.list_site) box.append(el('div', 'anomalous-download-note', t('downloadListSite', { site: info.list_site })));
     } else if (info.via === 'manager_list') {
         box.append(el('div', 'anomalous-download-note', t('downloadViaManager', { name: info.list_name || '' })));
     }
@@ -240,8 +242,12 @@ export async function fillDownloads(owner, panel, slots, pageActions, rerender) 
         return;
     }
     if (!panel.isConnected || [...slots.values()].some(slot => !slot.isConnected)) return; // redrawn meanwhile
-    const { found, settings } = looked;
+    const { found, settings, managerList } = looked;
     const ready = [];
+    // Without ComfyUI-Manager its model list is one source less: say so where something was not found.
+    if (!managerList && [...slots.keys()].some(entry => !found.get(entry)?.found)) {
+        pageActions.append(el('span', 'anomalous-download-text', t('downloadNoManager')));
+    }
     const draw = () => {
         for (const [entry, slot] of slots) {
             const info = found.get(entry);

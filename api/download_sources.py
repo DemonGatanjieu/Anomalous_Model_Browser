@@ -311,14 +311,16 @@ def _from_manager_list(sites, name, folder_type, file_hash, hf_host):
         for entry in entries[:6]:
             found = _by_link(sites, entry["url"], name, "", hf_host)
             if found and found.get("found") and same_file(file_hash, found.get("sha256")):
-                return {**found, "via": "manager_list", "list_name": entry["name"], "by_name": False}
+                return {**found, "via": "manager_list", "list_name": entry["name"], "by_name": False,
+                        "list_base": entry["base"], "list_site": manager_catalog.site_of(entry["url"])}
         return None
     if len(entries) != 1:
         return None  # several files of that name: which one is unknowable
     found = _by_link(sites, entries[0]["url"], name, "", hf_host)
     if found and found.get("found"):
         return {**found, "via": "manager_list", "list_name": entries[0]["name"], "by_name": True,
-                "base_model": found.get("base_model") or entries[0]["base"]}
+                "base_model": found.get("base_model") or entries[0]["base"],
+                "list_base": entries[0]["base"], "list_site": manager_catalog.site_of(entries[0]["url"])}
     return found
 
 

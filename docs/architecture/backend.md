@@ -319,7 +319,9 @@ workflow carries — a Civitai link naming a model version (the file of that nam
 its primary file), a Hugging Face or hf-mirror file link (size and SHA-256 from the
 site's headers), a GitHub release asset or raw file — else ComfyUI-Manager's model list
 (`api/manager_catalog.py`, the installed Manager's `model-list.json`, entries of the same
-file name fitting the node's folder type). With the workflow's hash only a list entry
+file name fitting the node's folder type; an entry of no stated type fits only a node of unknown
+type; `list_site` says where its file is). The lookup also says whether the list is here
+(`manager_list`). With the workflow's hash only a list entry
 whose file has that SHA-256 counts (several of one name are each asked); without one,
 a single entry of that name is offered marked `by_name`, never in "Download all" or
 the MCP's download_missing_models. A link whose file has another SHA-256 than the

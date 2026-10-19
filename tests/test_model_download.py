@@ -323,6 +323,7 @@ class ManagerListTests(unittest.TestCase):
             {"name": "UNet", "type": "diffusion_model", "save_path": "diffusion_models/x", "filename": "diffusion_pytorch_model.safetensors", "url": hf.format("c/unet", "diffusion_pytorch_model.safetensors")},
             {"name": "Upscaler", "type": "upscale", "save_path": "default", "filename": "4x-UltraSharp.pth", "url": hf.format("k/u", "4x-UltraSharp.pth")},
             {"name": "Elsewhere", "type": "VAE", "save_path": "default", "filename": "x.pth", "url": "http://example.com/x.pth"},
+            {"name": "Mystery", "type": "", "save_path": "default", "filename": "mystery.safetensors", "url": hf.format("m/x", "mystery.safetensors")},
         ]
         Path(path).write_text(json.dumps({"models": models}), encoding="utf-8")
         self.patch = mock.patch.object(download_sources.manager_catalog, "list_path", return_value=path)
@@ -347,6 +348,16 @@ class ManagerListTests(unittest.TestCase):
         self.assertEqual([c["name"] for c in candidates("Sub/4x-ultrasharp.pth", "upscale_models")], ["Upscaler"])
         self.assertEqual(candidates("x.pth"), [])  # not https
         self.assertEqual(candidates("ae.safetensors", "loras"), [])
+        # An entry whose type the list does not say fits only a node of unknown type.
+        self.assertEqual(candidates("mystery.safetensors", "vae"), [])
+        self.assertEqual([c["name"] for c in candidates("mystery.safetensors")], ["Mystery"])
+
+    def test_where_a_list_file_is(self):
+        site_of = download_sources.manager_catalog.site_of
+        self.assertEqual(site_of("https://huggingface.co/bfl/one/resolve/main/ae.safetensors"), "huggingface.co/bfl/one")
+        self.assertEqual(site_of("https://github.com/a/b/releases/download/v1/x.pth"), "github.com/a/b")
+        self.assertEqual(site_of("https://example.com/x.pth"), "example.com")
+        self.assertEqual(site_of(""), "")
 
     def test_with_a_fingerprint_only_the_matching_file(self):
         with mock.patch.object(download_sources, "_head", side_effect=self.head):
@@ -359,6 +370,7 @@ class ManagerListTests(unittest.TestCase):
             found = download_sources.find_source(name="ae.safetensors", folder_type="vae")
             self.assertTrue(found["found"] and found["by_name"])
             self.assertEqual(found["base_model"], "FLUX.1")
+            self.assertEqual(found["list_site"], "huggingface.co/bfl/one")
             # Two different files of that name: not offered.
             self.assertFalse(download_sources.find_source(name="diffusion_pytorch_model.safetensors", folder_type="controlnet")["found"])
 

@@ -27,6 +27,12 @@
 - It used to keep only the main model, the LoRAs' names and the positive prompt: LoRA strengths came back as 1.0, and the negative prompt and CLIP skip were lost. **A combo only remembers; it never changes a value** (now one of the plugin's rules). Combos kept before stay as they are.
 - Models are named by where they are on this computer; one this computer lacks is kept by the picture's name and said after keeping. A workflow without a sampler to read from still gives the simple kind.
 
+### 🩺 Model Check and ComfyUI-Manager's list (模型检查与 Manager 清单)
+- A **Download by name** from ComfyUI-Manager's model list now also says where the list's file is (the site and repository), to help you decide.
+- A list entry that does not say its type is no longer offered for a node whose type is known.
+- Without ComfyUI Manager, Model Check says it would add one more place to download from when a model's source is not found.
+- The rules of Model Check (what counts as the same model, the confidence levels, foundation components, download sources and where ComfyUI-Manager fits) are now written in one place: `docs/model-check-rules.md`.
+
 ### ⭐ Combos kept from a picture are easy to tell apart (图片存的搭配一眼认得出)
 - **The card shows the picture you kept it from**, with the main model's cover as a small round badge in its corner, instead of the model's cover alone (several combos of one model used to look the same).
 - **A name that says which one it is**: the first LoRA (or the main model) and the prompt's first two telling tags, like *Ahri · fox ears, kimono*, skipping words nearly every picture has (*1girl*, *solo*, *looking at viewer*…).

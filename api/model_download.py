@@ -29,7 +29,7 @@ import uuid
 from aiohttp import web
 import folder_paths
 
-from . import hf_card
+from . import hf_card, manager_catalog
 from .activity_log import add_entry, log_path
 from .download_sources import (
     SHA256, USER_AGENT, allowed_download_url, find_source, host_of, is_civitai, same_file, _load_api_key,
@@ -193,7 +193,9 @@ async def api_lookup(request):
         if folder_type and folder_type not in types:
             types[folder_type] = await asyncio.to_thread(roots_of, folder_type)
         results.append(result)
-    return web.json_response({"results": results, "roots": types, "settings": read_settings()})
+    # Whether ComfyUI-Manager's model list is here: without it, Model Check says it is one more source.
+    manager_list = bool(await asyncio.to_thread(manager_catalog.list_path))
+    return web.json_response({"results": results, "roots": types, "settings": read_settings(), "manager_list": manager_list})
 
 
 # --- downloads --------------------------------------------------------------------------

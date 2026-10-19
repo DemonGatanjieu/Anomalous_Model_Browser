@@ -53,6 +53,15 @@ def list_path():
     return ""
 
 
+def site_of(url):
+    """Where a list entry's file is: the host and, on Hugging Face or GitHub, the repository."""
+    parts = str(url or "").split("/")
+    if len(parts) < 3:
+        return ""
+    host = parts[2].lower()
+    return "/".join([host, *parts[3:5]]) if host in ("huggingface.co", "hf-mirror.com", "github.com") and len(parts) >= 5 else host
+
+
 def _folder(entry):
     path = str(entry.get("save_path") or "").replace("\\", "/").strip("/")
     first = path.split("/")[0].lower() if path and path != "default" else ""
@@ -86,11 +95,12 @@ def _index():
 
 
 def candidates(file_name, folder_type=""):
-    """The list's entries for a file of this name (any case) that fit `folder_type`, one per URL."""
+    """The list's entries for a file of this name (any case) that fit `folder_type`, one per URL.
+    When the node's folder type is known, an entry whose type the list does not say does not fit."""
     wanted = SAME_FOLDER.get(folder_type, folder_type)
     seen, found = set(), []
     for entry in _index().get(os.path.basename(str(file_name)).lower(), []):
-        if wanted and entry["folder"] and SAME_FOLDER.get(entry["folder"], entry["folder"]) != wanted:
+        if wanted and SAME_FOLDER.get(entry["folder"], entry["folder"]) != wanted:
             continue
         if entry["url"] not in seen:
             seen.add(entry["url"])

@@ -93,7 +93,7 @@ export async function lookupDownloads(entries) {
         info = { ...info, type: result.type, roots: data.roots?.[result.type] || [], link: item.url };
         found.set(entries[Number(item.key)], info);
     }
-    return { found, settings };
+    return { found, settings, managerList: data.manager_list !== false };
 }
 
 function notify() {
