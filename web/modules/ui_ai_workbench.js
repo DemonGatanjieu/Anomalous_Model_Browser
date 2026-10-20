@@ -5,8 +5,9 @@
  * reads folded into one row, each step with what it made and where that leads (the picture
  * in the viewer, the model's page, the combo, the canvas change found or undone). A task the
  * AI is still working on grows by itself ("anomalous.ai_task" events) and says so at the foot.
- * A panel the AI drew (show_panel) sits in the timeline as a card (ui_ai_panel.js); its
- * questions are answered there, and when it comes while the user is elsewhere a toast says so.
+ * A panel the AI drew (show_panel) is shown on the stage, the column on the right (ui_ai_side.js),
+ * with a line in the timeline that brings it there; its questions are answered there, and when it
+ * comes while the user is elsewhere a toast says so. The task list can be folded away.
  * Under the timeline the user can write to the AI on that task; the message waits until the AI
  * asks (get_answers), and says whether it has. The list groups the tasks by day, each with
  * an icon for where it stands.
@@ -18,22 +19,22 @@ import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { translate as t } from './locales.js';
 import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
-import { changeNodeId } from './activity_diff.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt, copyText } from './ui_dialog.js';
-import { openListedModel } from './ui_scan_lists.js';
-import { listCombos } from './image_keep.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
-import { panelToast, renderPanel } from './ui_ai_panel.js';
+import { hidePanelToast, panelToast } from './ui_ai_panel.js';
+import { choosePanel, openQuestions, panelLine, panelSteps, pickPanel, renderStage, tabBar } from './ui_ai_side.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
+import { locateNode, openModel, resultLinks, shared, strip } from './ui_ai_results.js';
 import {
-    audioResult, duration, groupSteps, isVideo, lookTools, outputUrl, stepDetail, taskCounts, taskResults, taskState, toolKey,
+    duration, groupSteps, lookTools, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
 
 const NARROW_PX = 720;
+const STAGE_FROM = 760; // the room the timeline and the stage need side by side
+const COLLAPSED_KEY = 'anomalous_ai_tasks_collapsed';
 const STATE_ICONS = { live: '●', asks: '?', error: '!', done: '✓' };
 const RECENT_COUNT = 3;
-const STRIP_MAX = 24;
 
 const state = {
     owner: null,
@@ -43,11 +44,12 @@ const state = {
     selected: null,   // task id shown
     pinned: false,    // the user picked it: a new task of the AI does not take its place
     view: null,       // the shown task's parts kept between redraws (renderTask)
+    stage: { taskId: null, panelId: null, follow: true, tab: 'timeline', newest: undefined }, // ui_ai_side.js
+    tasksCollapsed: (() => { try { return localStorage.getItem(COLLAPSED_KEY) === '1'; } catch (_) { return false; } })(),
     task: null,       // its full record
-    entries: new Map(),// activity entries of its canvas steps, for undo and locate
+    entries: shared.entries, // activity entries of its canvas steps, for undo and locate (ui_ai_results.js)
     narrowView: 'list',
     refreshTimer: null,
-    player: null,
 };
 
 function el(tag, className, text) {
@@ -109,7 +111,8 @@ function taskRow(summary) {
 
 function renderList(box) {
     const head = el('div', 'anomalous-ai-tasks-head');
-    head.append(el('span', 'anomalous-ai-tasks-title', t('aiTasks')), el('span', 'anomalous-ai-tasks-count', t('aiTaskCount', { count: state.tasks.length })));
+    head.append(el('span', 'anomalous-ai-tasks-title', t('aiTasks')), el('span', 'anomalous-ai-tasks-count', t('aiTaskCount', { count: state.tasks.length })),
+        button('anomalous-ai-fold', '‹', () => foldTasks(true), t('aiTasksCollapse')));
     const list = el('div', 'anomalous-ai-tasks-list');
     // Newest first, under a heading for each day (today, yesterday, a date).
     let day = null;
@@ -122,119 +125,6 @@ function renderList(box) {
         list.append(taskRow(summary));
     }
     box.replaceChildren(head, list);
-}
-
-// ---------------------------------------------------------------- results
-
-function picture(result, className = 'anomalous-ai-thumb') {
-    const url = outputUrl(result);
-    const thumb = button(className, '', () => state.owner?.showGalleryViewer?.(url, isVideo(result)), t('aiOpenPicture'));
-    if (isVideo(result)) {
-        const video = el('video');
-        video.src = url;
-        video.muted = true;
-        video.preload = 'metadata';
-        thumb.append(video);
-    } else {
-        const image = el('img');
-        image.loading = 'lazy';
-        image.src = url;
-        image.alt = result.filename;
-        thumb.append(image);
-    }
-    return thumb;
-}
-
-function playButton(result) {
-    const play = button('anomalous-ai-play', '▶', () => {
-        const url = outputUrl(audioResult(result));
-        if (state.player?.dataset?.url === url && !state.player.paused) {
-            state.player.pause();
-            return;
-        }
-        state.player?.pause();
-        state.player = new Audio(url);
-        state.player.dataset.url = url;
-        state.player.play().catch(() => {});
-    }, t('audioPlay'));
-    return play;
-}
-
-async function openModel(result) {
-    const owner = state.owner;
-    if (!owner || !result.rel) return;
-    await openListedModel(owner, { type: result.folder, path_idx: result.path_idx, rel: result.rel, filename: result.name || result.rel }, () => owner.goTo('ai'));
-}
-
-async function openComboNamed(name) {
-    const owner = state.owner;
-    const note = (await listCombos().catch(() => [])).find(item => item.data?.name === name || item.name === name);
-    if (note) await owner.openCombo(note);
-    else await owner.showNotebooks();
-}
-
-function locate(entry, note) {
-    const change = (entry?.detail?.changes || []).find(item => item.kind !== 'removed' && changeNodeId(item) !== null);
-    locateNode(change ? changeNodeId(change) : null, note);
-}
-
-/** Closes the browser on canvas node `id`, selected and centred (a note says when it is gone). */
-function locateNode(id, note) {
-    const graph = app.canvas?.graph || app.graph;
-    const node = id === null ? null : graph?.getNodeById?.(Number(id)) ?? graph?.getNodeById?.(id);
-    if (!node) {
-        if (note) note.textContent = t('activityLocateMissing');
-        else void anomalousAlert(t('activityLocateMissing'));
-        return;
-    }
-    state.owner?.close?.();
-    app.canvas.selectNode?.(node);
-    app.canvas.centerOnNode?.(node);
-    app.canvas.setDirty?.(true, true);
-}
-
-/** The links under a step: what it made and where that leads. */
-function resultLinks(step) {
-    const box = el('div', 'anomalous-ai-results');
-    const pictures = (step.results || []).filter(result => result.type === 'image');
-    if (pictures.length) {
-        const strip = el('div', 'anomalous-ai-step-pictures');
-        strip.append(...pictures.map(result => picture(result)));
-        box.append(strip);
-    }
-    const links = el('div', 'anomalous-ai-links');
-    const note = el('span', 'anomalous-ai-link-note');
-    for (const result of step.results || []) {
-        if (result.type === 'model') {
-            const chip = button('anomalous-ai-chip is-model', result.name || result.model_id, () => openModel(result), t('aiOpenModel'));
-            chip.disabled = !result.rel;
-            links.append(chip);
-        } else if (result.type === 'combo') {
-            links.append(button('anomalous-ai-chip is-combo', result.name, () => openComboNamed(result.name), t('aiOpenCombo')));
-        } else if (result.type === 'audio') {
-            const chip = el('span', 'anomalous-ai-chip is-audio');
-            chip.append(playButton(result), el('span', '', result.file.split('/').pop()));
-            links.append(chip);
-        } else if (result.type === 'canvas') {
-            const entry = state.entries.get(result.activity);
-            if (entry) {
-                links.append(button('anomalous-ai-link', t('activityLocate'), () => locate(entry, note)));
-                if (canUndo(app, entry)) {
-                    const undo = button('anomalous-ai-link', t('activityUndo'), () => {
-                        let done = t('activityUndone');
-                        try { undoEntry(app, entry); } catch (_) { done = t('activityUndoGone'); }
-                        undo.replaceWith(el('span', 'anomalous-ai-link-done', done));
-                    });
-                    links.append(undo);
-                }
-            }
-        } else if (result.type === 'scan') {
-            links.append(button('anomalous-ai-link', t('aiOpenScan'), () => state.owner?.openScanPage?.()));
-        }
-    }
-    if (pictures.length) links.append(button('anomalous-ai-link', t('aiOpenGallery'), () => state.owner?.goTo('gallery')));
-    if (links.childNodes.length) box.append(links, note);
-    return box.childNodes.length ? box : null;
 }
 
 // ---------------------------------------------------------------- one task
@@ -260,14 +150,7 @@ function stepRow(step, number) {
         body.append(el('div', 'anomalous-ai-note-text', step.text));
     }
     if (step.kind === 'panel' && state.task) {
-        body.append(renderPanel(step, {
-            taskId: state.task.id,
-            owner: state.owner,
-            openPicture: (url, video) => state.owner?.showGalleryViewer?.(url, video),
-            openModel,
-            locateNode: id => locateNode(id, null),
-            changed: () => void refresh(),
-        }));
+        body.append(panelLine(step, state.stage.panelId === step.panel.id, () => showOnStage(step.panel.id)));
     }
     if (step.error) body.append(el('div', 'anomalous-ai-step-error', step.error));
     if (step.state === 'running') body.append(el('div', 'anomalous-ai-step-running', t('aiRunRunning')));
@@ -301,35 +184,6 @@ function looksRow(steps, number) {
     body.append(head, details);
     row.append(body, el('div', 'anomalous-ai-step-when', timeLabel(steps[0].at)));
     return row;
-}
-
-function strip(task) {
-    const made = taskResults(task);
-    if (!made.image.length && !made.model.length && !made.combo.length && !made.audio.length) return null;
-    const box = el('div', 'anomalous-ai-made');
-    box.append(el('div', 'anomalous-ai-made-title', t('aiMade')));
-    if (made.image.length) {
-        const row = el('div', 'anomalous-ai-made-pictures');
-        row.append(...made.image.slice(-STRIP_MAX).reverse().map(result => picture(result, 'anomalous-ai-made-picture')));
-        box.append(row);
-    }
-    const chips = el('div', 'anomalous-ai-links');
-    const seen = new Set();
-    for (const result of [...made.model, ...made.combo]) {
-        const key = `${result.type}:${result.model_id || result.name}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        chips.append(result.type === 'model'
-            ? button('anomalous-ai-chip is-model', result.name || result.model_id, () => openModel(result), t('aiOpenModel'))
-            : button('anomalous-ai-chip is-combo', result.name, () => openComboNamed(result.name), t('aiOpenCombo')));
-    }
-    for (const result of made.audio) {
-        const chip = el('span', 'anomalous-ai-chip is-audio');
-        chip.append(playButton(result), el('span', '', result.file.split('/').pop()));
-        chips.append(chip);
-    }
-    if (chips.childNodes.length) box.append(chips);
-    return box;
 }
 
 async function undoAll(task) {
@@ -367,11 +221,20 @@ function renderTask() {
                 await refresh();
             }),
         };
-        box.replaceChildren(view.header, view.made, view.timeline, view.message);
+        view.tabs = el('div', 'anomalous-ai-tabs');
+        box.replaceChildren(view.tabs, view.header, view.made, view.timeline, view.message);
     }
+    // Which panel the stage shows; one that asks something brings the stage forward when the window is narrow.
+    const chosen = choosePanel(task, state.stage);
+    if (chosen.arrived && chosen.step && state.stage.follow && openQuestions(chosen.step)) state.stage.tab = 'stage';
+    const asking = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
+    const tabs = tabBar(state.stage, asking, pickTab);
+    view.tabs.replaceWith(tabs);
+    view.tabs = tabs;
     const header = view.header;
     const titleLine = el('div', 'anomalous-ai-task-title-line');
     titleLine.append(button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => { state.narrowView = 'list'; layout(); }),
+        button('anomalous-ai-unfold', '›', () => foldTasks(false), t('aiTasksExpand')),
         el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled')),
         el('span', `anomalous-ai-state is-${status}`, t(`aiState_${status}`)));
     const tools = el('div', 'anomalous-ai-task-tools');
@@ -408,7 +271,7 @@ function renderTask() {
     const items = groupSteps(task.steps);
     const rows = items.map((item, at) => (item.type === 'looks'
         ? { key: JSON.stringify(['looks', at, item.steps]), make: () => looksRow(item.steps, at + 1) }
-        : { key: JSON.stringify(['step', at, item.step, undoable(item.step)]), make: () => stepRow(item.step, at + 1) }));
+        : { key: JSON.stringify(['step', at, item.step, undoable(item.step), item.step.panel?.id === state.stage.panelId]), make: () => stepRow(item.step, at + 1) }));
     if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     if (status === 'live') {
         // What comes next: the following number, waiting.
@@ -425,6 +288,48 @@ function renderTask() {
     syncRows(view.timeline, rows);
     updateMessageBox(view.message, Boolean(task.ended), status);
     box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
+    drawStage(task);
+}
+
+/** The stage beside the timeline, while the task has panels. */
+function drawStage(task) {
+    const stage = state.page?.querySelector('.anomalous-ai-stage');
+    if (!stage) return;
+    const has = panelSteps(task).length > 0;
+    state.page.classList.toggle('has-stage', has);
+    if (!has) {
+        stage.replaceChildren();
+        layout();
+        return;
+    }
+    renderStage(stage, task, state.stage, {
+        taskId: task.id,
+        owner: state.owner,
+        openPicture: (url, video) => state.owner?.showGalleryViewer?.(url, video),
+        openModel,
+        locateNode: id => locateNode(id, null),
+        changed: () => void refresh(),
+        pick: showOnStage,
+        tab: pickTab,
+    });
+    layout();
+}
+
+function showOnStage(panelId) {
+    if (!state.task) return;
+    pickPanel(state.task, state.stage, panelId);
+    renderTask();
+}
+
+function pickTab(id) {
+    state.stage.tab = id;
+    renderTask();
+}
+
+function foldTasks(folded) {
+    state.tasksCollapsed = folded;
+    try { localStorage.setItem(COLLAPSED_KEY, folded ? '1' : '0'); } catch (_) { /* this viewer's convenience */ }
+    layout();
 }
 
 /** Which canvas changes of a step can be undone now (part of when its row is drawn again). */
@@ -471,9 +376,17 @@ async function select(id) {
 function layout() {
     const page = state.page;
     if (!page) return;
-    const narrow = page.clientWidth > 0 && page.clientWidth < NARROW_PX;
+    const width = page.clientWidth;
+    const narrow = width > 0 && width < NARROW_PX;
+    const folded = state.tasksCollapsed && !narrow;
     page.classList.toggle('is-narrow', narrow);
     page.classList.toggle('shows-task', narrow && state.narrowView === 'task' && Boolean(state.selected));
+    page.classList.toggle('tasks-collapsed', folded);
+    // Three columns when there is room; else the timeline and the stage take turns behind tabs.
+    const room = width - (narrow || folded ? 0 : 260);
+    const tabbed = page.classList.contains('has-stage') && (narrow || room < STAGE_FROM);
+    page.classList.toggle('is-tabbed', tabbed);
+    page.classList.toggle('shows-stage', tabbed && state.stage.tab === 'stage');
 }
 
 function emptyPage() {
@@ -502,7 +415,7 @@ async function refresh() {
     }
     if (state.page.classList.contains('is-empty') || !state.page.querySelector('.anomalous-ai-tasks')) {
         state.page.classList.remove('is-empty');
-        state.page.replaceChildren(el('aside', 'anomalous-ai-tasks'), el('section', 'anomalous-ai-task'));
+        state.page.replaceChildren(el('aside', 'anomalous-ai-tasks'), el('section', 'anomalous-ai-task'), el('section', 'anomalous-ai-stage'));
     }
     // The newest task while the AI works on it, unless the user picked another one.
     const follow = !state.pinned && tasks[0].live && tasks[0].id !== state.selected;
@@ -522,6 +435,7 @@ async function refresh() {
 /** The whole page into `panel`. */
 export function renderAiWorkbench(owner, panel) {
     state.owner = owner;
+    shared.owner = owner;
     state.panel = panel;
     if (!state.page || state.page.parentNode !== panel) {
         state.page = el('div', 'anomalous-ai');
@@ -529,12 +443,14 @@ export function renderAiWorkbench(owner, panel) {
         if (typeof ResizeObserver === 'function') new ResizeObserver(layout).observe(state.page);
     }
     owner.railNews?.('ai', false);
+    hidePanelToast();
     void refresh();
 }
 
 /** Once: the server's "anomalous.ai_task" event refreshes the page, the home list and the rail's dot. */
 export function watchAiTasks(owner) {
     state.owner = owner;
+    shared.owner = owner;
     api.addEventListener('anomalous.ai_task', (event) => {
         const detail = event?.detail || {};
         const onPage = () => owner.modal?.classList.contains('visible') && owner.currentShellPage?.() === 'ai' && visible();

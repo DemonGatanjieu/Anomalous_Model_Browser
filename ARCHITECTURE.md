@@ -151,7 +151,12 @@ covered by the `styles.css` manifest.
   and the rail's dot (`owner.railNews`). A task's parts stay in the page between redraws: a
   step is drawn again only when it changed (`syncRows`), so a scrolled diagram or strip and
   half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box under
-  a task (made once per task), `ui_ai_recent.js` the home page's list. `ai_task_view.js` holds
+  a task (made once per task), `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
+  step made and where it leads (and the strip of a task's results). `ui_ai_side.js` is the
+  stage, the column on the right where the AI's panels are shown (the timeline keeps a line per
+  panel that brings it there): it follows the newest panel until the user goes back to another,
+  pages through them, and in a window too narrow for three columns turns the timeline and the
+  stage into two tabs (a panel that asks brings the stage forward). The task list can be folded. `ai_task_view.js` holds
   its rules without DOM (folding reads, tool words, counts, result addresses).
   Panels the AI draws (`show_panel`, `update_panel`): `api/ai_panels.py` checks every block
   against a fixed set (heading, text, images from the output folder, models by id with their

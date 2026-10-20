@@ -263,6 +263,12 @@ export function renderPanel(step, ctx) {
 
 let toast = null;
 
+/** Takes the toast away (the user opened the workbench). */
+export function hidePanelToast() {
+    toast?.remove();
+    toast = null;
+}
+
 /** A small card while the browser is elsewhere: the AI shows a panel (and maybe asks). */
 export function panelToast(owner, title, asks) {
     toast?.remove();
