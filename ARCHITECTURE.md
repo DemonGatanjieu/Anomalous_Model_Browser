@@ -296,12 +296,18 @@ covered by the `styles.css` manifest.
   requests; `invalidateEngineCache()` drops them after a save or an added voice,
   and `invalidateEngineCache({ rescan: true })` (Refresh button) also makes the node
   re-read its folders (`?refresh=1`).
-  `ui_audio_tts_editor.js` edits a character's emotion references through that API:
-  it opens at once, loads the character's audio list and their lines
-  (`/anomalous_tts/reference_lines`, interface 14; optional) in the background (save
-  waits for the list), and keeps settings fields it does not know.
-  `ui_tts_clip_search.js` is its clip search: by file name or line, the first 30
-  matches with listen, use as main voice and add as emotion.
+  `ui_audio_tts_editor.js` is the reference audio editor (a character card's "Reference audio
+  and emotions"): a large window with the voices on top (main voice, each emotion, new
+  emotion) and every clip of the character below, one row each (listen, file and length, its
+  line editable in place, where else it is used, Main / Aux for the voice picked), with filters,
+  a search and the first 60 rows then more. It opens at once and loads the character's clips,
+  their lines and lengths (`/anomalous_tts/reference_lines`) in the background (save waits for
+  them), and keeps settings fields it does not know. `tts_voice_refs.js` holds its rules without
+  DOM: the voices read from the settings and the node's view (an emotion found from a file
+  name is written only once changed), one main reference and any number of auxiliary ones per
+  voice, the lines fixed here (`lines`; a voice's own `text` moves there), what keeps it from
+  saving, the settings written back, and the order of the list. Auxiliary references and
+  fixed lines need Anomalous_TTS interface 18 (auxiliary ones a v1 / v2 / v2Pro model).
   `tts_setup_api.js` holds the other calls (pretrained downloads, chunked
   upload, inspect, commit, discard) and the pure import-form rules (`importKind`,
   `pickWeights`, `nameConflict`, `textFromFile`, `buildImportBody`, `importProblem`,

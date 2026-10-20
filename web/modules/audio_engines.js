@@ -95,9 +95,16 @@ async function getJson(url, signal) {
  * Each clip's line as the node finds it (a `Map` path -> line; clips without one are left
  * out), or null when the node is older than interface 14 and cannot tell.
  */
-export async function fetchReferenceLines(name, signal) {
+/**
+ * Each clip's line as the node finds it and its length in seconds (`seconds`: interface 18,
+ * empty before): `{ lines: Map, seconds: Map }`, or null when the node cannot tell.
+ */
+export async function fetchReferenceClips(name, signal) {
     const { ok, data } = await getJson(`/anomalous_tts/reference_lines?character=${encodeURIComponent(name)}`, signal);
-    return ok && data?.lines && typeof data.lines === 'object' ? new Map(Object.entries(data.lines)) : null;
+    if (!ok || !data?.lines || typeof data.lines !== 'object') return null;
+    const seconds = data.seconds && typeof data.seconds === 'object'
+        ? Object.entries(data.seconds).filter(([, value]) => Number.isFinite(value)) : [];
+    return { lines: new Map(Object.entries(data.lines)), seconds: new Map(seconds) };
 }
 
 /** Installed = ComfyUI knows the node class (`/object_info/<class>` is `{}` otherwise). */
@@ -189,9 +196,14 @@ export function isTtsInstalled() {
  * summary list leaves out because a folder can hold thousands of clips.
  */
 export async function fetchGptSovitsCharacter(name, signal) {
+    return (await fetchGptSovitsDetail(name, signal)).character;
+}
+
+/** One character's detail and the node's interface version: `{ character, format }`. */
+export async function fetchGptSovitsDetail(name, signal) {
     const { ok, status, data } = await getJson(`/anomalous_tts/characters?name=${encodeURIComponent(name)}`, signal);
     if (!ok || !data?.character) throw new Error(status === 404 ? `404 ${name}` : `HTTP ${status}`);
-    return data.character;
+    return { character: data.character, format: Number(data.format) || 0 };
 }
 
 // ---------- GPT-SoVITS settings (Anomalous writes, the node reads) ----------
@@ -215,28 +227,3 @@ export async function saveGptSovitsSettings(name, settings) {
     return data.character ? gptSovitsGroups({ characters: [data.character] })[0] : null;
 }
 
-/**
- * Build the new settings for an emotion editor result without dropping fields
- * Anomalous does not know. `main` = { audio, text } | null; `emotions` = [{ name, audio, text }].
- */
-export function mergeGptSovitsSettings(previous, { main, emotions }) {
-    const next = { ...(previous || {}), format: 1 };
-    if (main?.audio) {
-        const kept = previous?.reference && typeof previous.reference === 'object' ? previous.reference : {};
-        next.reference = { ...kept, audio: main.audio };
-        if (main.text) next.reference.text = main.text; else delete next.reference.text;
-    } else {
-        delete next.reference;
-    }
-    const oldEmotions = previous?.emotions && typeof previous.emotions === 'object' ? previous.emotions : {};
-    const out = {};
-    for (const row of emotions || []) {
-        const name = String(row?.name || '').trim();
-        if (!name || name === 'main' || !row.audio) continue;
-        const kept = oldEmotions[name] && typeof oldEmotions[name] === 'object' ? oldEmotions[name] : {};
-        out[name] = { ...kept, audio: row.audio };
-        if (row.text) out[name].text = row.text; else delete out[name].text;
-    }
-    if (Object.keys(out).length) next.emotions = out; else delete next.emotions;
-    return next;
-}

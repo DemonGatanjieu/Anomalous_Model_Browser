@@ -59,15 +59,4 @@ const detail = await engines.fetchGptSovitsCharacter('阿罗娜/日配');
 assert.deepEqual(detail.audio, ['ref/a.wav', 'ref/a.开心.wav']);
 assert.equal(calls.at(-1), `/anomalous_tts/characters?name=${encodeURIComponent('阿罗娜/日配')}`);
 
-// Saving keeps fields Anomalous does not know.
-const merged = engines.mergeGptSovitsSettings({ format: 1, keep: 1, reference: { audio: 'old.wav', language: 'ja' } }, {
-    main: { audio: 'ref/a.wav', text: '' },
-    emotions: [{ name: '开心', audio: 'ref/a.开心.wav', text: 'x' }, { name: 'main', audio: 'y.wav' }],
-});
-assert.deepEqual(merged, {
-    format: 1, keep: 1,
-    reference: { audio: 'ref/a.wav', language: 'ja' },
-    emotions: { 开心: { audio: 'ref/a.开心.wav', text: 'x' } },
-});
-
 console.log('audio_engines: ok');

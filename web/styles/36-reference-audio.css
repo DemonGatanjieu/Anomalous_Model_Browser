@@ -1,0 +1,324 @@
+/* The reference audio editor (ui_audio_tts_editor.js): the voices on top, every clip below. */
+.anomalous-voice-modal.anomalous-tts-refs {
+    width: min(1180px, 94vw);
+    max-width: 94vw;
+    height: 88vh;
+    max-height: 88vh;
+    overflow: hidden;
+    gap: 12px;
+}
+
+.anomalous-tts-refs-top {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* The voices: the main voice, each emotion, then "+ New emotion". */
+.anomalous-tts-refs-voices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.anomalous-tts-refs-voice {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.anomalous-tts-refs-voice:hover {
+    border-color: var(--amb-border-strong);
+}
+
+.anomalous-tts-refs-voice.is-current {
+    border-color: color-mix(in srgb, var(--amb-link) 65%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+}
+
+.anomalous-tts-refs-voice.is-missing {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--amb-warn) 60%, transparent);
+}
+
+.anomalous-tts-refs-voice.is-new {
+    border-style: dashed;
+    background: none;
+    color: var(--amb-text-soft);
+}
+
+.anomalous-tts-refs-voice-name {
+    font-weight: 600;
+}
+
+.anomalous-tts-refs-voice-count {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+.anomalous-tts-refs-voice-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 14px;
+    min-height: 18px;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+}
+
+/* Filters and search over the list. */
+.anomalous-tts-refs-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-tts-refs-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-right: auto;
+}
+
+.anomalous-tts-refs-filter {
+    padding: 3px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-tts-refs-filter.is-on {
+    border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-tts-refs-search {
+    width: 260px;
+    max-width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
+    color: var(--amb-text-main);
+    font-size: 12px;
+}
+
+/* Every clip: listen, file, its line and uses, then main / auxiliary for the voice picked. */
+.anomalous-tts-refs-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+}
+
+.anomalous-tts-refs-row {
+    display: grid;
+    grid-template-columns: 30px minmax(140px, 0.9fr) minmax(0, 2.2fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-tts-refs-row:first-child {
+    border-top: none;
+}
+
+.anomalous-tts-refs-row.is-main {
+    background: color-mix(in srgb, var(--amb-link) 9%, transparent);
+}
+
+.anomalous-tts-refs-row.is-aux {
+    background: color-mix(in srgb, var(--amb-ok) 8%, transparent);
+}
+
+.anomalous-tts-refs-file {
+    min-width: 0;
+}
+
+.anomalous-tts-refs-file-name {
+    overflow: hidden;
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-refs-file-folder {
+    overflow: hidden;
+    color: var(--amb-text-dim);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-refs-seconds {
+    margin-left: 6px;
+    color: var(--amb-text-dim);
+    font-size: 11px;
+}
+
+.anomalous-tts-refs-seconds.is-off {
+    color: var(--amb-warn-text);
+}
+
+.anomalous-tts-refs-middle {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+/* A line reads like text until it is pointed at or edited. */
+.anomalous-tts-refs-line {
+    width: 100%;
+    min-width: 0;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    box-sizing: border-box;
+}
+
+.anomalous-tts-refs-line::placeholder {
+    color: var(--amb-warn-text);
+}
+
+.anomalous-tts-refs-line:hover:not(:disabled) {
+    border-color: var(--amb-border);
+}
+
+.anomalous-tts-refs-line:focus {
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
+    outline: none;
+}
+
+.anomalous-tts-refs-line.is-fixed {
+    border-color: color-mix(in srgb, var(--amb-warn) 35%, transparent);
+}
+
+.anomalous-tts-refs-uses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-left: 8px;
+}
+
+.anomalous-tts-refs-use {
+    padding: 0 7px;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.07);
+    color: var(--amb-text-soft);
+    font-size: 11px;
+}
+
+.anomalous-tts-refs-use.is-main {
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+}
+
+.anomalous-tts-refs-use.is-aux {
+    background: color-mix(in srgb, var(--amb-ok) 18%, transparent);
+}
+
+.anomalous-tts-refs-roles {
+    display: flex;
+    gap: 6px;
+}
+
+.anomalous-tts-refs-role {
+    padding: 4px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-tts-refs-role:hover:not(:disabled) {
+    border-color: var(--amb-border-strong);
+    color: var(--amb-text-main);
+}
+
+.anomalous-tts-refs-role.is-on {
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 20%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-tts-refs-role.is-aux.is-on {
+    border-color: color-mix(in srgb, var(--amb-ok) 60%, transparent);
+    background: color-mix(in srgb, var(--amb-ok) 18%, transparent);
+}
+
+.anomalous-tts-refs-role:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.anomalous-tts-refs-more,
+.anomalous-tts-refs-empty {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-top: 1px solid var(--amb-border);
+    background: none;
+    color: var(--amb-link);
+    font: inherit;
+    font-size: 12.5px;
+    text-align: center;
+}
+
+.anomalous-tts-refs-more {
+    cursor: pointer;
+}
+
+.anomalous-tts-refs-empty {
+    border-top: none;
+    color: var(--amb-text-dim);
+}
+
+.anomalous-tts-refs .anomalous-voice-modal-footer {
+    align-items: center;
+}
+
+.anomalous-tts-refs-note {
+    flex: 1;
+    min-width: 0;
+    margin-right: auto;
+}
+
+@media (max-width: 640px) {
+    .anomalous-tts-refs-row {
+        grid-template-columns: 30px minmax(0, 1fr);
+    }
+
+    .anomalous-tts-refs-middle,
+    .anomalous-tts-refs-roles {
+        grid-column: 2;
+    }
+}

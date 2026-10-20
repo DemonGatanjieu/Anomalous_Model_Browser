@@ -61,6 +61,13 @@
 
 ## v1.60.1 — unreleased
 
+### 🎚️ Reference audio: every clip in a list, main and auxiliary references (参考音频：全部列出，主参考和副参考)
+- **Reference audio and emotions** (the character card's button, formerly *Edit emotions*) is now a large window. On top, the **voices**: the main voice, each emotion with how many references it has (*1 main, 2 aux*), and **+ New emotion**. Below, **every clip** of the character, one row each: ▶ to hear it, its file and length, its line, and where else it is used (*Main voice · aux*). For the voice picked, a row is its **Main** reference or one of its **Aux** references, or nothing; unused clips just stay in the list. Filters (*All*, *This voice*, *In use*, *No line*) and a search by line or file name; the first 60 rows, then more.
+- **Auxiliary references (副参考音频)**: a voice keeps one main reference (its tone and way of speaking, 3–10 s, with a line) and can take any number of auxiliary ones, whose timbre is averaged in when it speaks, as GPT-SoVITS does with several references; they need no line. Only v1 / v2 / v2Pro models use them (the controls say so for v3 / v4).
+- **A clip's line can be fixed right in its row** (改参考台词): the fixed line is kept in the character's settings and used before its .txt / .list files, which stay as they are. A line that is missing shows *No line found: click to type it*.
+- Clips too long or too short to be a main reference are marked (they can still be auxiliary). The main voice can go back to the node's own pick; an emotion can be renamed or deleted (one found from a file name is changed by renaming the file). Closing with unsaved changes asks first.
+- Auxiliary references, fixed lines and lengths need Anomalous_TTS interface 18 (1.1.0); with an older version the window works as before for main references and says what needs the update.
+
 ### 🔍 Scanning (扫描)
 - **The scan page opens at once, also with many models**: it shows the last counts right away, says it is updating them, and shows the fresh ones when they come. What each model file's header says is now kept on disk (`user/anomalous/model_heads.json`, by file, read again only when the file changes), so a big library or a network drive is not read again after every restart either; requests that come while the page counts share that one count.
 - **See the models found on Civitai**: the scan page's "Found on Civitai" count opens a list of them, with each model's Civitai name and base model, a box to find one by name, and a way to open each.
