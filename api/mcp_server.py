@@ -8,22 +8,26 @@ POST /anomalous/mcp speaks the Model Context Protocol's Streamable HTTP transpor
 Only this computer may connect: the peer must be loopback, no proxy header may be present,
 and Host and Origin (when sent) must name a loopback host, which stops DNS rebinding.
 Answers are always one JSON object; there are no server-initiated messages. The tools are
-in mcp_tools.py (reading) and mcp_actions.py (acting); POST /anomalous/mcp/bridge is where
-the open ComfyUI page claims and answers canvas actions (mcp_bridge.py).
+in mcp_tools.py (reading), mcp_actions.py (acting) and mcp_task_tools.py (the AI workbench's
+begin_task and report); every call is kept as a step of a task (ai_tasks.py) for the AI
+workbench page. POST /anomalous/mcp/bridge is where the open ComfyUI page claims and answers
+canvas actions (mcp_bridge.py).
 """
 
 import asyncio
 import base64
+import time
 import urllib.parse
 
 from aiohttp import web
 
-from . import mcp_bridge
+from . import ai_tasks, mcp_bridge
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
+from .mcp_task_tools import TASK_TOOLS
 from .mcp_tools import TOOLS as READ_TOOLS, call_tool
 
-TOOLS = {**READ_TOOLS, **ACTIONS}
+TOOLS = {**READ_TOOLS, **ACTIONS, **TASK_TOOLS}
 
 MODERN_VERSIONS = ("2026-07-28",)
 LEGACY_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26")
@@ -37,7 +41,9 @@ INSTRUCTIONS = (
     "are single Ctrl+Z steps and are logged as the AI's; nothing deletes files. Ids returned by "
     "one tool (model_id, image, node ids) are what the others take. For what no tool does, tell "
     "the user where in Anomalous to do it (the rail on the left: Models, Gallery, Workflows, "
-    "Combos, Prompts, Voices)."
+    "Combos, Prompts, Voices). The user watches your work in Anomalous's AI workbench: call begin_task "
+    "with a short title when you start what they asked for, and report to explain a choice, hand in "
+    "pictures made another way, or end the task (done=true)."
 )
 LIST_TTL_MS = 300000
 # Requests run tools in threads; a few at a time is plenty for one person's AI app.
@@ -125,9 +131,14 @@ async def _call(params, request):
     arguments = params.get("arguments") or {}
     if name not in TOOLS or not isinstance(arguments, dict):
         return None
-    ctx = {"base_url": f"{request.scheme}://{request.host}"}  # loopback, checked in api_mcp
+    client = ai_tasks.client_of(request.headers, params)
+    ctx = {"base_url": f"{request.scheme}://{request.host}", "client": client}  # loopback, checked in api_mcp
+    started = time.time()
     async with _slots:
+        before = await asyncio.to_thread(ai_tasks.prompt_ids) if name == "run_workflow" else None
         result = await asyncio.to_thread(call_tool, TOOLS, name, arguments, ctx)
+    read_only = bool(TOOLS[name]["spec"].get("annotations", {}).get("readOnlyHint", True))
+    await asyncio.to_thread(ai_tasks.record, client, name, arguments, result, started, read_only, before)
     return result
 
 

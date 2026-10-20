@@ -105,8 +105,20 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | download_model | 按链接（C 站模型版本、Hugging Face / GitHub 文件）或 C 站指纹下载一个模型到指定类型的文件夹，不覆盖已有文件 |
 | download_status | 看下载进度和结果 |
 | list_voices / speak | 列出 Anomalous TTS 的角色；让某个角色读一段台词并保存（最多等两分钟） |
+| begin_task / report | 在 AI 工作台里起一个任务的标题；给你留言、交上它用别的方式做出来的图、结束任务（见第 5 节） |
 
-## 5. 注意
+## 5. AI 工作台：AI 做了什么，一目了然（1.62 起）
+
+左边栏的 **AI 工作台** 记下 AI 通过这个接口做的每一步，按**任务**分好：
+
+- AI 开始干活时会调用 `begin_task` 起个标题；没起的话，同一个 AI 软件连续做的事自动算一个任务，停了 20 分钟以上就算新的。
+- 每个任务是一条时间线：查了什么（自动折叠成一行，点开看每一次）、画布上改了什么、运行、下载、扫描、配音，还有 AI 自己的留言（`report` 工具，也可以把它用别的方式做出来的图交上来）。
+- **做出来的东西都留着，点一下就到**：运行出的图会一直等到跑完再收进任务里，最上面的“这次做出来的”可以直接点开看大图；用到的模型点一下打开模型页，搭配打开搭配，配音可以直接听；画布上的改动可以“在画布上找到”，也可以**撤销**（一步，或者整个任务的画布改动一起，从最后一步往前，遇到你自己后来又改过的地方就停下）。
+- AI 还在干活时，时间线会自己往下长；你在别的页面时，左边栏的 AI 工作台会亮一个小点。首页也有“AI 最近做了什么”。
+- 任务可以改名、从列表移除（只删记录，图和画布不受影响）。记录存在 ComfyUI 的 user 文件夹里，保留最近 300 个。
+- 只看得到经过这个接口的事。AI 绕开它做的，可以让它用 `report` 报告。
+
+## 6. 注意
 
 - **隐私**：如果 AI 软件用的是云端模型，查询结果（模型名、提示词、图片的生成参数）会发给那家 AI 服务商。附上封面或缩略图时，图片也会一起发过去。介意的话可以用本地模型，或者不让 AI 附图。
 - 附图时会用到插件自己的缩略图缓存，和浏览图库时一样，不动你的原图。
@@ -117,5 +129,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 ## English
 
 While ComfyUI runs, Anomalous serves an MCP endpoint at `http://127.0.0.1:8188/anomalous/mcp` (use your ComfyUI port). Add it as a Streamable HTTP server in your AI app (Claude Code: `claude mcp add --transport http anomalous <url>`; Cursor and VS Code: a `url` / `"type": "http"` entry; Claude Desktop: through `npx mcp-remote <url> --transport http-only`). Both the 2026-07-28 protocol and the earlier `initialize`-based versions are served.
+
+Since 1.62 the **AI workbench** page keeps every step an AI app takes through this endpoint, grouped into tasks (named with `begin_task`, else one app's calls without a 20-minute pause): what it looked up, changed, ran, downloaded, scanned or spoke, its notes (`report`, which also hands in pictures made another way), and what each step made, with links to the picture, the model, the combo, the canvas change (find or undo) and the audio. It updates live; the rail gets a dot while you are elsewhere.
 
 Reading tools: library overview, model search and details (optionally with the cover), scan status, output-image search and generation settings (optionally with a thumbnail), combos, workflow recipes, saved prompts, generated audio and the activity log. Acting tools: read the open workflow, write prompts, swap a node's model, add a LoRA, place a combo, check and fix missing models, run the workflow, open a model in Anomalous, start scans, list Anomalous TTS voices and have one speak. Canvas actions need ComfyUI open in a browser on this computer; each is one Ctrl+Z step and is logged as the AI's. Nothing deletes or renames files. Only this computer may connect; requests through a proxy, from other hosts or from web pages are refused. When your AI app uses a cloud model, what the tools return (and any attached picture) is sent to that provider.

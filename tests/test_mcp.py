@@ -13,9 +13,13 @@ from aiohttp.test_utils import make_mocked_request
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import lora_info, mcp_actions, mcp_bridge, mcp_server, mcp_tools  # noqa: E402
+from api import ai_tasks, lora_info, mcp_actions, mcp_bridge, mcp_server, mcp_tools  # noqa: E402
 
 MODERN = "2026-07-28"
+# Every call is kept as an AI workbench step: keep them in a temporary folder, never the user's.
+_AI_TASKS = tempfile.mkdtemp(prefix="amb_mcp_ai_tasks_")
+ai_tasks.tasks_dir = lambda: _AI_TASKS
+ai_tasks._tasks = None
 
 
 def meta(version=MODERN):

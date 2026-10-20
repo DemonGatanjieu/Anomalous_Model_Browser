@@ -169,6 +169,7 @@ export function createDOM() {
         this.galleryPanel = panel('anomalous-gallery-panel', '');
         this.homePanel = panel('anomalous-home-panel');
         this.activityPanel = panel('anomalous-activity-panel');
+        this.aiPanel = panel('anomalous-ai-panel'); // the AI workbench (ui_ai_workbench.js)
         this.promptPanel = panel('anomalous-prompt-panel'); // Prompt Studio as a page (ui_prompt_composer.js)
         this.scanPanel = panel('anomalous-scan-panel');
         this.settingsPanel = panel('anomalous-settings-panel');
@@ -223,7 +224,7 @@ export function createDOM() {
         };
         bindBrowserEscape(this);
 
-        content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.promptPanel, this.scanPanel, this.settingsPanel, this.doctorPanel,
+        content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.aiPanel, this.promptPanel, this.scanPanel, this.settingsPanel, this.doctorPanel,
             this.assistantPanel, this.audioStudioPanel, this.scriptPanel, this.audioGalleryPanel);
         container.append(rail.root, this.sidebarWrapper, content, this.nbPanel);
         // The list column steps aside while a workspace is open. Several modules open it by

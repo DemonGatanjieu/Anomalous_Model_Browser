@@ -4,7 +4,7 @@
  * page title in the header; the page reopened next time; the number keys 1-9 to the rail's
  * pages while the browser is open (shell_open_rules.js).
  *
- * Pages: home, activity, models, gallery, prompts (Prompt Studio, which can also move beside the
+ * Pages: home, activity, ai (the AI workbench), models, gallery, prompts (Prompt Studio, which can also move beside the
  * canvas), voices, script, audio-gallery (base pages); recipes, combos (workspaces over the base
  * page, closed with `closeWorkspace()`); doctor, assistant, scan, settings (tool pages, entered
  * through `owner.enterToolPage`).
@@ -14,12 +14,13 @@ import { translate as t } from './locales.js';
 import { getActiveDomain, setActiveDomain } from './ui_domain_switcher.js';
 import { renderHome } from './ui_home.js';
 import { renderActivityPage } from './ui_activity.js';
+import { renderAiWorkbench, watchAiTasks } from './ui_ai_workbench.js';
 import { showPromptPage } from './ui_prompt_composer.js';
 import { RAIL_PAGES } from './ui_shell_rail.js';
 import { railPageForKey } from './shell_open_rules.js';
 
 const LAST_PAGE_KEY = 'anomalous_last_page';
-const REMEMBERED = new Set(['home', 'activity', 'models', 'gallery', 'prompts', 'voices', 'script', 'audio-gallery']);
+const REMEMBERED = new Set(['home', 'activity', 'ai', 'models', 'gallery', 'prompts', 'voices', 'script', 'audio-gallery']);
 const AUDIO_PAGES = new Set(['voices', 'script', 'audio-gallery']);
 // The audio tab (browser.switchAudioTab) of each audio page.
 const AUDIO_TABS = { voices: 'presets', script: 'script', 'audio-gallery': 'gallery' };
@@ -34,7 +35,7 @@ const LIST_KEYS = {
     'audio-gallery': 'anomalous_audio_list_closed',
 };
 const TITLE_KEYS = {
-    home: 'shellHome', activity: 'activityTitle', models: 'shellTitleModels', gallery: 'gallery', prompts: 'shellPrompts', recipes: 'recipeTitle',
+    home: 'shellHome', activity: 'activityTitle', ai: 'shellAi', models: 'shellTitleModels', gallery: 'gallery', prompts: 'shellPrompts', recipes: 'recipeTitle',
     combos: 'shellCombos', voices: 'shellVoices', script: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
     doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle', settings: 'sidebarSettings',
 };
@@ -179,7 +180,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             owner.workspaceReturnState = Object.fromEntries([
                 ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
                 ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel], ['home', owner.homePanel],
-                ['activity', owner.activityPanel], ['scan', owner.scanPanel], ['settings', owner.settingsPanel],
+                ['activity', owner.activityPanel], ['ai', owner.aiPanel], ['scan', owner.scanPanel], ['settings', owner.settingsPanel],
                 ['audioStudio', owner.audioStudioPanel], ['script', owner.scriptPanel], ['audioGallery', owner.audioGalleryPanel],
             ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display || 'none']));
         } else if (!owner.workspaceReturnState) {
@@ -226,6 +227,9 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         } else if (page === 'activity') {
             owner.activityPanel.style.display = 'flex';
             renderActivityPage(owner, owner.activityPanel);
+        } else if (page === 'ai') {
+            owner.aiPanel.style.display = 'flex';
+            renderAiWorkbench(owner, owner.aiPanel);
         } else if (page === 'gallery') {
             showGallery();
         } else if (page === 'prompts') {
@@ -281,6 +285,9 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
     };
 
     owner.currentShellPage = () => current;
+    // A dot on a rail entry: something new there (the AI workbench while the AI works elsewhere).
+    owner.railNews = (page, on) => rail.items.get(page)?.classList.toggle('has-news', Boolean(on));
+    watchAiTasks(owner);
     // Pages reached another way (the audio list's own entries) still mark the rail and title.
     owner.markShellPage = enter;
 }

@@ -19,6 +19,7 @@ function restoreWorkspaceReturnPanel(owner) {
         ['audioGallery', owner.audioGalleryPanel],
         ['home', owner.homePanel],
         ['activity', owner.activityPanel],
+        ['ai', owner.aiPanel],
         ['prompt', owner.promptPanel],
         ['scan', owner.scanPanel],
         ['settings', owner.settingsPanel],
@@ -59,7 +60,7 @@ export function closeWorkspace() {
 }
 
 // The back buttons of the pages one level down: a model's details, one combo, one recipe.
-const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-wfd-back, .anomalous-sd-tune-back';
+const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-wfd-back, .anomalous-sd-tune-back, .anomalous-ai-back';
 
 /**
  * Esc on the browser: a page one level down (a model's details, one combo or one recipe) goes
@@ -119,6 +120,7 @@ export function hideAllPanels() {
     if (this.audioGalleryPanel) this.audioGalleryPanel.style.display = 'none';
     if (this.homePanel) this.homePanel.style.display = 'none';
     if (this.activityPanel) this.activityPanel.style.display = 'none';
+    if (this.aiPanel) this.aiPanel.style.display = 'none';
     if (this.promptPanel) this.promptPanel.style.display = 'none';
     leavePromptPage();
     if (this.scanPanel) this.scanPanel.style.display = 'none';

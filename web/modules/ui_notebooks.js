@@ -46,11 +46,11 @@ export async function showNotebooks({ editor = false } = {}) {
     if (this.nbPanel && this.nbPanel.style.display !== 'flex' && !this.workspaceReturnState) {
         this.workspaceReturnState = Object.fromEntries([
             ['grid', this.grid], ['detail', this.detailPanel], ['gallery', this.galleryPanel],
-            ['doctor', this.doctorPanel], ['assistant', this.assistantPanel], ['home', this.homePanel], ['activity', this.activityPanel],
+            ['doctor', this.doctorPanel], ['assistant', this.assistantPanel], ['home', this.homePanel], ['activity', this.activityPanel], ['ai', this.aiPanel],
             ['scan', this.scanPanel],
         ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display]));
     }
-    for (const panel of [this.grid, this.detailPanel, this.galleryPanel, this.doctorPanel, this.assistantPanel, this.homePanel, this.activityPanel, this.scanPanel, this.paramPanel]) {
+    for (const panel of [this.grid, this.detailPanel, this.galleryPanel, this.doctorPanel, this.assistantPanel, this.homePanel, this.activityPanel, this.aiPanel, this.scanPanel, this.paramPanel]) {
         if (panel) panel.style.display = 'none';
     }
     if (this.recipeContainer) this.recipeContainer.style.display = 'none';

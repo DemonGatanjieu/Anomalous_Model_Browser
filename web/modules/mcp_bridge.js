@@ -75,12 +75,15 @@ async function recorded(getOwner, toastKey, change) {
     const after = snapshotGraph(g);
     const changes = diffSnapshots(before, after);
     if (changes.length) {
-        postCanvasActivity({ changes: changes.slice(0, MAX_LOGGED), total: changes.length, workflow: workflowName(), via: 'mcp' })
-            .then((data) => {
-                keepUndo(data?.entry?.id, workflow, before, after);
-                getOwner()?.onActivityRecorded?.();
-            })
-            .catch(error => console.warn('[AMB] Activity log: the AI change was not recorded.', error));
+        // Waited for, so the AI workbench's step knows its log entry (and with it the undo).
+        try {
+            const data = await postCanvasActivity({ changes: changes.slice(0, MAX_LOGGED), total: changes.length, workflow: workflowName(), via: 'mcp' });
+            keepUndo(data?.entry?.id, workflow, before, after);
+            if (data?.entry?.id && value && typeof value === 'object') value._activity = data.entry.id;
+            getOwner()?.onActivityRecorded?.();
+        } catch (error) {
+            console.warn('[AMB] Activity log: the AI change was not recorded.', error);
+        }
     }
     showWorkbenchToast(t(toastKey, value?.toast || {}));
     delete value?.toast;

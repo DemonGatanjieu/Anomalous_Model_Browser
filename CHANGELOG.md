@@ -1,5 +1,15 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.62.0 — unreleased
+
+### ✨ AI workbench: see everything the AI did, open it, undo it (AI 工作台)
+- **A new page on the rail, *AI workbench***: every step an AI app (Claude Code, Cursor, Cherry Studio… connected through Anomalous's MCP) takes is kept, grouped into **tasks**. The AI names a task when it starts (a new `begin_task` tool); otherwise one app's calls that follow each other make one task.
+- **A task is a timeline**: what it looked up (folded into one line, a click shows each), what it changed on the canvas, the workflow runs, downloads, scans and spoken lines, and the AI's own notes (a new `report` tool, also for pictures it made another way). Each step says when, how long it took, and why it failed when it did.
+- **What it made stays, and leads there**: the pictures a run made are kept with the task (watched until the run ends) and shown on top as *What it made*; a click opens the picture, a model opens its page, a combo opens the combo, a spoken line plays, a canvas change is found on the canvas or **undone** (also all of a task's canvas changes at once, stopping at anything you changed since).
+- **Live**: a task the AI is still working on grows by itself and says *The AI is working…*; the page follows the newest task unless you picked another. While you are elsewhere, the rail's *AI workbench* gets a dot. Home gets *What the AI did lately*.
+- Tasks can be renamed or removed from the list (only the record goes: pictures and the canvas stay). The newest 300 are kept, in ComfyUI's user folder. Without any AI connected, the page shows the address to add in the AI app.
+- Only what goes through Anomalous's MCP is seen; the AI can report the rest. The rail now has ten entries: the number keys 1–9 open the first nine.
+
 ## v1.61.0 — unreleased
 
 ### 🔎 Quick search on the canvas: Alt+B (画布快速搜索)

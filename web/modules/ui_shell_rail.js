@@ -14,6 +14,7 @@ const icon = paths => `<svg width="19" height="19" viewBox="0 0 24 24" fill="non
 export const PAGE_ICONS = {
     home: icon('<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'),
     activity: icon('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    ai: icon('<path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.4l-.8-1.9-1.9-.8 1.9-.8z"/><path d="M5 16l.6 1.4L7 18l-1.4.6L5 20l-.6-1.4L3 18l1.4-.6z"/>'),
     models: icon('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'),
     gallery: icon('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'),
     recipes: icon('<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v6"/><path d="M9 6h6"/><path d="M7.8 7.8l8.4 8.4"/>'),
@@ -29,6 +30,7 @@ export const PAGE_ICONS = {
 export const RAIL_PAGES = Object.freeze([
     { page: 'home', id: 'anomalous-home-btn', labelKey: 'shellHome' },
     { page: 'activity', id: 'anomalous-activity-btn', labelKey: 'shellActivity' },
+    { page: 'ai', id: 'anomalous-ai-btn', labelKey: 'shellAi' }, // the AI workbench (ui_ai_workbench.js)
     { page: 'models', id: 'anomalous-models-btn', labelKey: 'models' },
     { page: 'gallery', id: 'anomalous-gallery-btn', labelKey: 'gallery' },
     { page: 'recipes', id: 'anomalous-notebook-btn', labelKey: 'recipeTitle' },
@@ -83,7 +85,8 @@ export function createShellRail(owner) {
             const text = t(entry.labelKey);
             button.querySelector('.anomalous-rail-label').textContent = text;
             button.setAttribute('aria-label', text);
-            button.dataset.tooltip = t('shellRailKey', { name: text, key: index + 1 });
+            // Only the first nine have a number key.
+            button.dataset.tooltip = index < 9 ? t('shellRailKey', { name: text, key: index + 1 }) : text;
             button.dataset.tooltipPos = 'right';
         });
         syncCompact();

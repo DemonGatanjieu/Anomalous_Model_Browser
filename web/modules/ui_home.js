@@ -11,6 +11,7 @@ import { TOOL_ICONS } from './tool_registry.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { showUpdateGuide } from './ui_update_guide.js';
 import { renderRecentActivity } from './ui_activity.js';
+import { renderRecentAiTasks } from './ui_ai_workbench.js';
 import { copyDiagnostics, openRepoPage } from './feedback.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { renderFirstRun, showFirstRun } from './ui_first_run.js';
@@ -91,4 +92,5 @@ export function renderHome(owner, panel) {
     panel.replaceChildren(page);
     void renderFirstRun(owner, page, grid);
     renderRecentActivity(owner, page);
+    renderRecentAiTasks(owner, page);
 }

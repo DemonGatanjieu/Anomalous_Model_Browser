@@ -132,8 +132,24 @@ covered by the `styles.css` manifest.
   canvas actions done by the open page, scans and Anomalous TTS speech through this
   server's own routes. `api/mcp_bridge.py` hands a canvas action to the page over
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
-  side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's).
+  side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's; the
+  outcome carries the log entry's id as `_activity`, for the AI workbench's undo).
   User guide: `docs/guides/mcp.md`.
+- The AI workbench (1.62). `api/ai_tasks.py` keeps every MCP call as a step of a task (one
+  file per task in the ComfyUI user folder, `anomalous/ai_tasks/`, the newest 300): a task is
+  named by the AI (`begin_task`) or is one app's calls without a long pause (20 minutes); a
+  step keeps the tool, a short summary, whether it worked and what it made (models, the combo,
+  the canvas change by its activity entry, the spoken audio, the scan; a run's pictures are
+  watched in ComfyUI's history until it ends). It tells the page through the
+  `anomalous.ai_task` event and serves `/anomalous/ai_tasks` (list, one task, rename or
+  remove). `mcp_server.py` records each call after it ran (the app's name from its client
+  info or User-Agent); `api/mcp_task_tools.py` holds the AI's own tools for it, `begin_task`
+  and `report` (a note, with pictures from the output folder it made another way).
+  `web/modules/ui_ai_workbench.js` is the page (rail entry `ai`): the tasks, one task's
+  results strip and timeline with links (picture viewer, model page, combo, canvas locate and
+  undo, scan page, ▶ for audio), updated live; also the home page's "What the AI did lately"
+  and the rail's dot (`owner.railNews`). `ai_task_view.js` holds its rules without DOM
+  (folding reads, tool words, counts, result addresses).
 - `api/backup.py` is Settings → Backup (`/anomalous/backup/*`): one .zip of the user's stores
   (recipes, combos, materials, parameters, optionally ComfyUI's saved workflows), the plugin
   settings without the Civitai key, and each model's user layer and own cover; putting it
