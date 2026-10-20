@@ -77,7 +77,6 @@
 - **Civitai's other address (civitai.red) when civitai.com does not answer**: some networks reach only the second, a cloud server in mainland China among them (tested on AutoDL: civitai.com timed out, civitai.red answered in about a second). Scans, import and Model Check's lookups and **Settings → Network → Test** ask civitai.red then, so models still get their names, trigger words and base models; the test says which address answered. The covers are on Civitai's picture server, which such networks often cannot reach either: after two covers in a row that would not download, a scan fetches no more covers instead of waiting on each.
 
 ### 🧩 Combos (搭配)
-- Fixed: after **Put on canvas**, the browser opened blank the next time (the title said Combos, nothing below). It now opens on the combo list or the combo you put down.
 - **A combo's models are cover cards**, as in the model library: the cover on top, the name below. In a combo saved from picked nodes, the slot (Main model, LoRA…) is written on the cover and a click on the card changes the model; in a default combo, the main models and LoRAs to pick from are cover cards side by side. They used to be rows as wide as the window, with **Change** far from the name (模型卡片不再横向拉满整个窗口).
 
 ### 🎙️ Character voices (角色语音)
@@ -201,6 +200,7 @@
 - **It does not squeeze a narrow window**: where three columns do not fit (a side-panel browser window, a narrow drawer), the reference takes the card list's place and **‹ Cards** brings the list back, so the reference and the prompt you edit each get half the width.
 
 ### Fixes
+- **The browser no longer opens blank after Put on canvas (搭配放到画布后再打开不再空白)**: putting a combo on the canvas hid the combo page before closing the browser, so the next time it opened the title said Combos and nothing was below. It now opens again on the combo list, or on the combo you put down.
 - **Edit emotions: every clip in the list, and the line follows the clip (编辑情绪：下拉列出全部音频，换音频台词跟着换)**: a box that already held a file listed only the files whose names contain it (the browser filters by the box's text), so a character's other clips seemed missing. Pressing the box now lists all of them, with the current file shown greyed; leaving without a pick keeps it. Picking another clip no longer keeps the old clip's line beside it: the line the node already reads for that clip is filled in, otherwise the line the node finds for the clip (its .txt / .lab or the annotation list) is filled in, with Anomalous_TTS from interface 14 on (older versions leave the box blank and the node reads the line when it speaks); going back to the first clip brings its line back. A blank line box shows, greyed, the line the node uses for its clip.
 - **Search a character's clips by line (按台词找参考音频)**: Edit emotions has a search box above the clips: type part of a line or a file name and the matches list with their lines, to hear (▶), **Use as main voice** or **Add as emotion** (a new emotion row with that clip and its line, ready for its name). Searching lines needs Anomalous_TTS interface 14; with an older version it searches file names.
 
