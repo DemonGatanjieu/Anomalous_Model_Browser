@@ -209,6 +209,25 @@ export async function fetchGptSovitsDetail(name, signal) {
 // ---------- GPT-SoVITS settings (Anomalous writes, the node reads) ----------
 
 /**
+ * Move a character's reference clips (and their own .txt / .lab) to the Recycle Bin through
+ * the node (interface 18); it also takes them out of the settings. Returns the node's answer
+ * (`removed`, `text_files`, `character`: the detail after).
+ */
+export async function removeGptSovitsClips(name, paths) {
+    const resp = await fetch('/anomalous_tts/audio/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ character: name, paths }),
+    });
+    if (!resp.ok) {
+        const message = await resp.text().catch(() => '');
+        throw new Error(message || `HTTP ${resp.status}`);
+    }
+    invalidateEngineCache();
+    return resp.json();
+}
+
+/**
  * Replace a character's anomalous_tts.json through the node's API. `settings` must be the
  * full object (unknown fields preserved by the caller). Returns the refreshed group.
  */

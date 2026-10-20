@@ -279,6 +279,29 @@
     cursor: not-allowed;
 }
 
+/* To the Recycle Bin: quiet until pointed at. */
+.anomalous-tts-refs-remove {
+    width: 30px;
+    padding: 4px 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    color: var(--amb-text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    opacity: 0.55;
+}
+
+.anomalous-tts-refs-row:hover .anomalous-tts-refs-remove {
+    opacity: 1;
+}
+
+.anomalous-tts-refs-remove:hover {
+    border-color: color-mix(in srgb, var(--amb-danger) 50%, transparent);
+    background: color-mix(in srgb, var(--amb-danger) 14%, transparent);
+    color: var(--amb-danger-text);
+}
+
 .anomalous-tts-refs-more,
 .anomalous-tts-refs-empty {
     display: block;

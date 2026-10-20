@@ -1,7 +1,7 @@
 import { t } from './interface_settings.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
-import { fetchGptSovitsDetail, fetchReferenceClips, saveGptSovitsSettings, ttsAudioUrl } from './audio_engines.js';
+import { fetchGptSovitsDetail, fetchReferenceClips, gptSovitsGroups, removeGptSovitsClips, saveGptSovitsSettings, ttsAudioUrl } from './audio_engines.js';
 import {
     AUX_FORMAT, AUX_VERSIONS, LINE_LIMIT, MAIN, clearMain, fitsMain, listClips, nameProblem, readVoices, roleOf,
     setMain, toggleAux, usesOf, voiceCount, voicesProblem, writeSettings,
@@ -15,8 +15,10 @@ import {
  * **auxiliary references** (their timbre is averaged in; any number, no line needed). A clip's
  * line can be fixed right in its row. The rules are in tts_voice_refs.js; the node owns the
  * file, this window only sends the new settings through its API, keeping every field it does
- * not edit. Auxiliary references and fixed lines need Anomalous_TTS interface 18 (and
- * auxiliary references a v1 / v2 / v2Pro model); otherwise those controls are off and say why.
+ * not edit. A clip can be moved to the Recycle Bin from its row (the node moves it with its own
+ * .txt / .lab and takes it out of the settings). Auxiliary references, fixed lines and removing
+ * need Anomalous_TTS interface 18 (and auxiliary references a v1 / v2 / v2Pro model); otherwise
+ * those controls are off or hidden and say why.
  *
  * The window opens at once and reads the character's clips, their lines and lengths in the
  * background (a folder can hold a thousand clips: the list shows the first ones, then more).
@@ -320,8 +322,50 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
         auxBtn.disabled = !current || !canAux() || role === 'main';
         if (!canAux()) auxBtn.title = auxReason();
         roles.append(mainBtn, auxBtn);
+        if (canFix()) {
+            roles.append(button('anomalous-tts-refs-remove', '🗑', () => removeClip(path), t('ttsRefsRemove')));
+        }
         row.append(playBtn, file, middle, roles);
         return row;
+    }
+
+    /** One clip to the Recycle Bin (after asking), then out of this window's voices too. */
+    async function removeClip(path) {
+        const uses = usesOf(state.voices, path).map(use => t(`ttsRefsUse_${use.role}`, { name: use.name === MAIN ? t('ttsRefsMainVoice') : use.name }));
+        const message = [
+            t('ttsRefsRemoveConfirm', { file: baseName(path) }),
+            uses.length ? t('ttsRefsRemoveUses', { uses: uses.join('、') }) : '',
+        ].filter(Boolean).join('\n');
+        if (!await anomalousConfirm(message, t('ttsRefsRemove'))) return;
+        if (state.playing?.path === path) stopPlaying();
+        let answer;
+        try {
+            answer = await removeGptSovitsClips(name, [path]);
+        } catch (e) {
+            if (!scope.signal.aborted) await anomalousAlert(t('ttsRefsRemoveFailed', { error: e.message }));
+            return;
+        }
+        if (scope.signal.aborted) return;
+        state.audio = state.audio.filter(item => item !== path);
+        state.found.delete(path);
+        state.seconds.delete(path);
+        state.fixes.delete(path);
+        state.cleared.delete(path);
+        // The node took it out of the saved settings; an emotion it was the main reference of went
+        // there, and goes here too unless it was changed in this window (then it waits for another).
+        state.voices = state.voices.filter(item => !(item.main === path && item.name !== MAIN && !item.touched));
+        for (const item of state.voices) {
+            item.aux = item.aux.filter(other => other !== path);
+            if (item.main === path) item.main = null;
+        }
+        if (!state.voices.some(item => item.key === state.voiceKey)) state.voiceKey = 'main';
+        const after = answer?.character;
+        if (after?.settings && typeof after.settings === 'object') state.settings = after.settings;
+        if (after) raw.reference = after.reference;
+        status.textContent = t('ttsRefsRemoved', { file: baseName(path), count: state.audio.length });
+        order = order.filter(item => item !== path);
+        renderAll(false);
+        onSaved?.(after ? gptSovitsGroups({ characters: [after] })[0] : null);
     }
 
     function renderRow(path) {

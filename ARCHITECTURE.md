@@ -302,7 +302,9 @@ covered by the `styles.css` manifest.
   line editable in place, where else it is used, Main / Aux for the voice picked), with filters,
   a search and the first 60 rows then more. It opens at once and loads the character's clips,
   their lines and lengths (`/anomalous_tts/reference_lines`) in the background (save waits for
-  them), and keeps settings fields it does not know. `tts_voice_refs.js` holds its rules without
+  them), and keeps settings fields it does not know; 🗑 on a row moves that clip to the
+  Recycle Bin through the node (`removeGptSovitsClips`, which also takes it out of the saved
+  settings) and out of the window's voices. `tts_voice_refs.js` holds its rules without
   DOM: the voices read from the settings and the node's view (an emotion found from a file
   name is written only once changed), one main reference and any number of auxiliary ones per
   voice, the lines fixed here (`lines`; a voice's own `text` moves there), what keeps it from
