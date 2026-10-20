@@ -221,9 +221,10 @@ function resultLinks(step) {
 
 // ---------------------------------------------------------------- one task
 
-function stepRow(step) {
+/** One step of the timeline; `number` is its place in the task (the dot shows it). */
+function stepRow(step, number) {
     const row = el('div', `anomalous-ai-step is-${step.kind}${step.ok ? '' : ' is-failed'}`);
-    row.append(el('span', 'anomalous-ai-step-dot'));
+    row.append(el('span', 'anomalous-ai-step-dot', number));
     const body = el('div', 'anomalous-ai-step-body');
     const line = el('div', 'anomalous-ai-step-line');
     line.append(el('span', 'anomalous-ai-kind', t(`aiKind_${step.kind}`)), el('span', 'anomalous-ai-step-title', t(toolKey(step.tool))));
@@ -257,9 +258,9 @@ function stepRow(step) {
     return row;
 }
 
-function looksRow(steps) {
+function looksRow(steps, number) {
     const row = el('div', 'anomalous-ai-step is-look is-folded');
-    row.append(el('span', 'anomalous-ai-step-dot'));
+    row.append(el('span', 'anomalous-ai-step-dot', number));
     const body = el('div', 'anomalous-ai-step-body');
     const tools = lookTools(steps).map(({ tool, count }) => (count > 1 ? `${t(toolKey(tool))} ×${count}` : t(toolKey(tool))));
     const head = button('anomalous-ai-looks', `${t('aiLooks', { count: steps.length })}：${tools.join('、')}`, () => {
@@ -360,13 +361,21 @@ function renderTask() {
     header.append(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')));
 
     const timeline = el('div', 'anomalous-ai-timeline');
-    for (const item of groupSteps(task.steps)) timeline.append(item.type === 'looks' ? looksRow(item.steps) : stepRow(item.step));
+    // Numbered in the order they happened, so the timeline reads 1, 2, 3 from the top.
+    const items = groupSteps(task.steps);
+    items.forEach((item, at) => timeline.append(item.type === 'looks' ? looksRow(item.steps, at + 1) : stepRow(item.step, at + 1)));
     if (!(task.steps || []).length) timeline.append(el('div', 'anomalous-ai-empty-task', t('aiNoSteps')));
     const parts = [header];
     const made = strip(task);
     if (made) parts.push(made);
     parts.push(timeline);
-    if (status === 'live') parts.push(el('div', 'anomalous-ai-working', (task.steps || []).some(step => step.state === 'running') ? t('aiRunRunning') : t('aiWorking')));
+    if (status === 'live') {
+        // What comes next: the following number, waiting.
+        const next = el('div', 'anomalous-ai-step is-next');
+        next.append(el('span', 'anomalous-ai-step-dot', items.length + 1),
+            el('div', 'anomalous-ai-working', (task.steps || []).some(step => step.state === 'running') ? t('aiRunRunning') : t('aiWorking')));
+        timeline.append(next);
+    }
     box.replaceChildren(...parts);
     box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
 }

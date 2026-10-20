@@ -295,9 +295,9 @@
 .anomalous-ai-timeline::before {
     content: '';
     position: absolute;
-    top: 8px;
-    bottom: 8px;
-    left: 6px;
+    top: 14px;
+    bottom: 14px;
+    left: 11px;
     width: 2px;
     border-radius: 1px;
     background: var(--amb-border);
@@ -307,7 +307,7 @@
     --kind: var(--ai-look);
     position: relative;
     display: grid;
-    grid-template-columns: 14px minmax(0, 1fr) auto;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
     gap: 12px;
     padding: 9px 0;
 }
@@ -322,20 +322,35 @@
 .anomalous-ai-step.is-act { --kind: var(--amb-text-soft); }
 .anomalous-ai-step.is-failed { --kind: var(--amb-danger); }
 
+/* The step's number in a dot of its kind's colour; the line through the dots is the order. */
 .anomalous-ai-step-dot {
     position: relative;
     z-index: 1;
-    width: 14px;
-    height: 14px;
-    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-top: -3px;
     box-sizing: border-box;
-    border: 3px solid var(--amb-bg-panel, #16161a);
     border-radius: 50%;
     background: var(--kind);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 0 0 0 3px var(--amb-bg-panel, #16161a);
 }
 
 .anomalous-ai-step.is-folded .anomalous-ai-step-dot {
-    transform: scale(0.72);
+    border: 1.5px solid var(--kind);
+    background: var(--amb-bg-panel, #16161a);
+    color: var(--amb-text-soft);
+}
+
+.anomalous-ai-step.is-next .anomalous-ai-step-dot {
+    border: 1.5px dashed var(--amb-ok);
+    background: var(--amb-bg-panel, #16161a);
+    color: var(--amb-ok-text);
 }
 
 .anomalous-ai-step-body {
@@ -407,7 +422,6 @@
 }
 
 .anomalous-ai-working {
-    margin: 10px 0 0 26px;
     animation: anomalous-ai-breathe 1.8s ease-in-out infinite;
 }
 
