@@ -10,6 +10,12 @@
 - Tasks can be renamed or removed from the list (only the record goes: pictures and the canvas stay). The newest 300 are kept, in ComfyUI's user folder. Without any AI connected, the page shows the address to add in the AI app.
 - Only what goes through Anomalous's MCP is seen; the AI can report the rest. The rail now has ten entries: the number keys 1–9 open the first nine.
 
+### 🧩 The AI draws panels, and asks you on them (AI 画面板，在面板上问你)
+- **A new `show_panel` tool**: the AI lays out a panel in its task, in Anomalous's own style, from fixed blocks: headings and text (also as a tip or a warning), **pictures** (a row, a grid, or two **side by side to compare**), **your models as cards with their covers** (a click opens them), tables, lists, settings, a progress bar.
+- **It can ask**: buttons (one pick or several) and a line to type into. Your answer is handed over and waits for the AI, which reads it with the new `get_answers` (it can wait up to a minute for you); each question says whether the AI has seen your answer yet. `update_panel` changes a panel (a progress bar going up) or closes its questions.
+- **Safe by design**: nothing the AI sends is run or read as markup. Every block is checked on the server (only these kinds, plain text of bounded length, pictures only from ComfyUI's output folder, models only from your folders) and written into the page as text.
+- When the AI shows a panel while the browser is elsewhere, a small card in the corner says so (*The AI asks you: …*, **Have a look**); a task with a question waiting says *Waiting for you* in the list.
+
 ## v1.61.0 — unreleased
 
 ### 🔎 Quick search on the canvas: Alt+B (画布快速搜索)

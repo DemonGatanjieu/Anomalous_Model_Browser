@@ -106,6 +106,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | download_status | 看下载进度和结果 |
 | list_voices / speak | 列出 Anomalous TTS 的角色；让某个角色读一段台词并保存（最多等两分钟） |
 | begin_task / report | 在 AI 工作台里起一个任务的标题；给你留言、交上它用别的方式做出来的图、结束任务（见第 5 节） |
+| show_panel / update_panel / get_answers | 在 AI 工作台里画一个面板（对比图片、模型卡片、表格、按钮和输入框）；改它或关掉它的问题；读你的回答（见第 5 节） |
 
 ## 5. AI 工作台：AI 做了什么，一目了然（1.62 起）
 
@@ -117,6 +118,10 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 - AI 还在干活时，时间线会自己往下长；你在别的页面时，左边栏的 AI 工作台会亮一个小点。首页也有“AI 最近做了什么”。
 - 任务可以改名、从列表移除（只删记录，图和画布不受影响）。记录存在 ComfyUI 的 user 文件夹里，保留最近 300 个。
 - 只看得到经过这个接口的事。AI 绕开它做的，可以让它用 `report` 报告。
+
+**AI 画的面板**（`show_panel`）：AI 可以用插件提供的“积木”拼一个面板放进任务里：标题和文字（也可以是提示、警告）、图片（一排、网格，或者两张并排对比）、你的模型（带封面的卡片，点了打开）、表格、列表、参数、进度条。它还能**问你**：几个按钮（单选或多选）、一行输入框。你的回答会交出去，等 AI 用 `get_answers` 来取（它可以等你最多一分钟）；每个问题下面都写着 AI 有没有看到。AMB 没法主动叫醒 AI，所以回答之后要等它下一次来问。
+
+面板里的东西都由插件检查过才画出来：只认这几种积木，只是纯文字，图片只能来自 ComfyUI 的 output 文件夹，模型只能是你自己的，AI 写的代码不会运行。AMB 没开着的时候 AI 画了面板，右下角会弹一个小卡片“AI 在问你”，点“去看看”就到。
 
 ## 6. 注意
 
@@ -130,6 +135,6 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 
 While ComfyUI runs, Anomalous serves an MCP endpoint at `http://127.0.0.1:8188/anomalous/mcp` (use your ComfyUI port). Add it as a Streamable HTTP server in your AI app (Claude Code: `claude mcp add --transport http anomalous <url>`; Cursor and VS Code: a `url` / `"type": "http"` entry; Claude Desktop: through `npx mcp-remote <url> --transport http-only`). Both the 2026-07-28 protocol and the earlier `initialize`-based versions are served.
 
-Since 1.62 the **AI workbench** page keeps every step an AI app takes through this endpoint, grouped into tasks (named with `begin_task`, else one app's calls without a 20-minute pause): what it looked up, changed, ran, downloaded, scanned or spoke, its notes (`report`, which also hands in pictures made another way), and what each step made, with links to the picture, the model, the combo, the canvas change (find or undo) and the audio. It updates live; the rail gets a dot while you are elsewhere.
+Since 1.62 the **AI workbench** page keeps every step an AI app takes through this endpoint, grouped into tasks (named with `begin_task`, else one app's calls without a 20-minute pause): what it looked up, changed, ran, downloaded, scanned or spoke, its notes (`report`, which also hands in pictures made another way), and what each step made, with links to the picture, the model, the combo, the canvas change (find or undo) and the audio. It updates live; the rail gets a dot while you are elsewhere. With `show_panel` the AI draws a panel there from fixed blocks (text, pictures to compare, your models as cards, tables, settings, progress, buttons and a text line); the user's answers wait for the AI's `get_answers` (which can wait up to 55 s). Blocks are checked on the server and drawn as text; nothing the AI sends runs.
 
 Reading tools: library overview, model search and details (optionally with the cover), scan status, output-image search and generation settings (optionally with a thumbnail), combos, workflow recipes, saved prompts, generated audio and the activity log. Acting tools: read the open workflow, write prompts, swap a node's model, add a LoRA, place a combo, check and fix missing models, run the workflow, open a model in Anomalous, start scans, list Anomalous TTS voices and have one speak. Canvas actions need ComfyUI open in a browser on this computer; each is one Ctrl+Z step and is logged as the AI's. Nothing deletes or renames files. Only this computer may connect; requests through a proxy, from other hosts or from web pages are refused. When your AI app uses a cloud model, what the tools return (and any attached picture) is sent to that provider.

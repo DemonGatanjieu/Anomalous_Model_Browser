@@ -150,6 +150,14 @@ covered by the `styles.css` manifest.
   undo, scan page, ▶ for audio), updated live; also the home page's "What the AI did lately"
   and the rail's dot (`owner.railNews`). `ai_task_view.js` holds its rules without DOM
   (folding reads, tool words, counts, result addresses).
+  Panels the AI draws (`show_panel`, `update_panel`): `api/ai_panels.py` checks every block
+  against a fixed set (heading, text, images from the output folder, models by id with their
+  covers, table, list, params, choices, input, progress, divider; plain strings of bounded
+  length, nothing run or read as markup) and keeps the panel as a step; the user's answers come
+  in through `POST /anomalous/ai_tasks/{id}/answer` and wait there until the AI reads them
+  (`get_answers`, which can wait up to 55 s for one; Anomalous cannot call the AI).
+  `web/modules/ui_ai_panel.js` draws a panel in the timeline (textContent only) and the toast
+  when the AI shows one while the user is elsewhere.
 - `api/backup.py` is Settings → Backup (`/anomalous/backup/*`): one .zip of the user's stores
   (recipes, combos, materials, parameters, optionally ComfyUI's saved workflows), the plugin
   settings without the Civitai key, and each model's user layer and own cover; putting it

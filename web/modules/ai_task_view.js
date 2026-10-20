@@ -5,7 +5,7 @@
  */
 
 /** The kinds of step, in the order a task's counts name them. */
-export const KINDS = ['canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'look'];
+export const KINDS = ['panel', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'look'];
 
 /**
  * The timeline: each step, but reads that follow each other fold into one row (`looks`), so
@@ -44,8 +44,12 @@ export function lookTools(steps) {
     return [...counts].map(([tool, count]) => ({ tool, count }));
 }
 
-/** 'live' while the AI works (or a run it started goes on), 'error' when a step failed, else 'done'. */
+/**
+ * 'asks' while a question of the AI's waits for the user, 'live' while the AI works (or a run
+ * it started goes on), 'error' when a step failed, else 'done'.
+ */
 export function taskState(summary) {
+    if (summary?.asks) return 'asks';
     if (summary?.live) return 'live';
     return summary?.errors ? 'error' : 'done';
 }
@@ -54,7 +58,7 @@ export function taskState(summary) {
 export function taskCounts(summary) {
     const kinds = summary?.kinds || {};
     const counts = [
-        ['aiCountCanvas', kinds.canvas], ['aiCountImages', summary?.images], ['aiCountSpeech', kinds.speech],
+        ['aiCountAsks', summary?.asks], ['aiCountCanvas', kinds.canvas], ['aiCountImages', summary?.images], ['aiCountSpeech', kinds.speech],
         ['aiCountDownload', kinds.download], ['aiCountScan', kinds.scan], ['aiCountErrors', summary?.errors],
     ];
     return counts.filter(([, count]) => count > 0).map(([key, count]) => ({ key, values: { count } }));

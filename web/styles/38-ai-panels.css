@@ -1,0 +1,488 @@
+/* Panels the AI draws in the workbench (ui_ai_panel.js), and the toast when it shows one. */
+
+.anomalous-ai-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 18px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background:
+        linear-gradient(var(--amb-bg-panel, #17171c), var(--amb-bg-panel, #17171c)) padding-box,
+        linear-gradient(135deg, color-mix(in srgb, #a487f5 70%, transparent), color-mix(in srgb, var(--amb-link) 50%, transparent) 45%, color-mix(in srgb, var(--amb-ok) 55%, transparent)) border-box;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.anomalous-ai-panel.is-closed {
+    opacity: 0.72;
+}
+
+.anomalous-ai-panel-title {
+    color: var(--amb-text-main);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.anomalous-ai-panel-heading {
+    margin: 4px 0 0;
+    color: var(--amb-text-main);
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.anomalous-ai-panel-text {
+    margin: 0;
+    color: var(--amb-text-main);
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+.anomalous-ai-panel-text.is-muted {
+    color: var(--amb-text-soft);
+    font-size: 12.5px;
+}
+
+.anomalous-ai-panel-text.is-tip,
+.anomalous-ai-panel-text.is-warning {
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+.anomalous-ai-panel-text.is-tip {
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+}
+
+.anomalous-ai-panel-text.is-warning {
+    background: color-mix(in srgb, var(--amb-warn) 14%, transparent);
+}
+
+/* Pictures: a row, a grid, or two side by side to compare. */
+.anomalous-ai-panel-images {
+    display: flex;
+    gap: 10px;
+}
+
+.anomalous-ai-panel-images.is-row {
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.anomalous-ai-panel-images.is-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.anomalous-ai-panel-images.is-compare {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.anomalous-ai-panel-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+
+.anomalous-ai-panel-images.is-row .anomalous-ai-panel-figure {
+    flex: none;
+    width: 160px;
+}
+
+.anomalous-ai-panel-figure figcaption {
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    text-align: center;
+}
+
+.anomalous-ai-panel-picture {
+    display: block;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    cursor: zoom-in;
+    aspect-ratio: 1;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.anomalous-ai-panel-images.is-compare .anomalous-ai-panel-picture {
+    aspect-ratio: auto;
+    max-height: 420px;
+}
+
+.anomalous-ai-panel-picture:hover {
+    border-color: var(--amb-border-strong);
+    transform: translateY(-1px);
+}
+
+.anomalous-ai-panel-picture img,
+.anomalous-ai-panel-picture video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-ai-panel-images.is-compare .anomalous-ai-panel-picture img,
+.anomalous-ai-panel-images.is-compare .anomalous-ai-panel-picture video {
+    max-height: 420px;
+    object-fit: contain;
+}
+
+/* The user's models, as cards with their covers. */
+.anomalous-ai-panel-models {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+}
+
+.anomalous-ai-panel-model {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-ai-panel-model:hover {
+    border-color: color-mix(in srgb, #a487f5 55%, transparent);
+}
+
+.anomalous-ai-panel-model-cover {
+    display: block;
+    height: 190px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(var(--amb-ink-rgb), 0.08), rgba(var(--amb-ink-rgb), 0.02));
+}
+
+.anomalous-ai-panel-model-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-ai-panel-model-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 10px 10px;
+}
+
+.anomalous-ai-panel-model-name {
+    overflow: hidden;
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-ai-panel-model-note {
+    color: var(--amb-text-soft);
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+
+/* Tables, lists, settings, progress. */
+.anomalous-ai-panel-table-wrap {
+    overflow-x: auto;
+}
+
+.anomalous-ai-panel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.anomalous-ai-panel-table th,
+.anomalous-ai-panel-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--amb-border);
+    color: var(--amb-text-main);
+    text-align: left;
+}
+
+.anomalous-ai-panel-table th {
+    color: var(--amb-text-soft);
+    font-weight: 600;
+}
+
+.anomalous-ai-panel-list {
+    margin: 0;
+    padding-left: 22px;
+    color: var(--amb-text-main);
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.anomalous-ai-panel-params {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 4px 16px;
+    margin: 0;
+    font-size: 12.5px;
+}
+
+.anomalous-ai-panel-params dt {
+    color: var(--amb-text-soft);
+}
+
+.anomalous-ai-panel-params dd {
+    margin: 0;
+    color: var(--amb-text-main);
+    word-break: break-word;
+}
+
+.anomalous-ai-panel-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--amb-text-soft);
+}
+
+.anomalous-ai-panel-progress-head {
+    display: flex;
+    justify-content: space-between;
+}
+
+.anomalous-ai-panel-progress-bar {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+}
+
+.anomalous-ai-panel-progress-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #a487f5, var(--amb-link), var(--amb-ok));
+    transition: width 0.4s ease;
+}
+
+.anomalous-ai-panel-divider {
+    width: 100%;
+    margin: 2px 0;
+    border: none;
+    border-top: 1px solid var(--amb-border);
+}
+
+/* Questions: buttons or a line of text. */
+.anomalous-ai-panel-ask {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anomalous-ai-panel-question {
+    color: var(--amb-text-main);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomalous-ai-panel-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.anomalous-ai-panel-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 120px;
+    padding: 9px 14px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    color: var(--amb-text-main);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.anomalous-ai-panel-option:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+    transform: translateY(-1px);
+}
+
+.anomalous-ai-panel-option.is-picked {
+    border-color: color-mix(in srgb, var(--amb-ok) 70%, transparent);
+    background: color-mix(in srgb, var(--amb-ok) 16%, transparent);
+}
+
+.anomalous-ai-panel-option:disabled {
+    cursor: default;
+}
+
+.anomalous-ai-panel-option:disabled:not(.is-picked) {
+    opacity: 0.45;
+}
+
+.anomalous-ai-panel-option-label {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomalous-ai-panel-option-detail {
+    color: var(--amb-text-soft);
+    font-size: 11.5px;
+}
+
+.anomalous-ai-panel-input {
+    display: flex;
+    gap: 8px;
+}
+
+.anomalous-ai-panel-input input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+}
+
+.anomalous-ai-panel-input input:focus {
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    outline: none;
+}
+
+.anomalous-ai-panel-send {
+    align-self: flex-start;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--amb-btn-primary-bg, var(--amb-link));
+    color: var(--amb-btn-primary-text, #fff);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-ai-panel-send:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.anomalous-ai-panel-typed {
+    padding: 8px 12px;
+    border-left: 3px solid var(--amb-ok);
+    border-radius: 0 8px 8px 0;
+    background: color-mix(in srgb, var(--amb-ok) 10%, transparent);
+    color: var(--amb-text-main);
+    font-size: 13px;
+    white-space: pre-wrap;
+}
+
+.anomalous-ai-panel-answer-note,
+.anomalous-ai-panel-foot {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+.anomalous-ai-panel-error {
+    color: var(--amb-danger-text);
+    font-size: 12px;
+}
+
+.anomalous-ai-panel-error:empty {
+    display: none;
+}
+
+.anomalous-ai-step.is-panel {
+    --kind: #a487f5;
+}
+
+.anomalous-ai-task-row.is-asks .anomalous-ai-task-row-counts,
+.anomalous-ai-state.is-asks {
+    color: var(--amb-warn-text);
+}
+
+.anomalous-ai-state.is-asks {
+    background: color-mix(in srgb, var(--amb-warn) 18%, transparent);
+}
+
+/* The toast while the browser is elsewhere. */
+.anomalous-ai-toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: min(420px, calc(100vw - 40px));
+    padding: 12px 14px 12px 16px;
+    border: 1px solid color-mix(in srgb, #a487f5 55%, transparent);
+    border-radius: 12px;
+    background: var(--amb-bg-panel, #17171c);
+    color: var(--amb-text-main);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+    animation: anomalous-ai-toast-in 0.25s ease-out;
+}
+
+@keyframes anomalous-ai-toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+}
+
+.anomalous-ai-toast-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    font-size: 12.5px;
+}
+
+.anomalous-ai-toast-lead {
+    color: var(--amb-text-soft);
+    font-size: 11.5px;
+}
+
+.anomalous-ai-toast-title {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-ai-toast-open {
+    flex: none;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--amb-btn-primary-bg, var(--amb-link));
+    color: var(--amb-btn-primary-text, #fff);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-ai-toast-close {
+    flex: none;
+    padding: 0 4px;
+    border: none;
+    background: none;
+    color: var(--amb-text-dim);
+    font-size: 16px;
+    cursor: pointer;
+}

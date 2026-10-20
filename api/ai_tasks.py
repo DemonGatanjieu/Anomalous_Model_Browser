@@ -45,9 +45,10 @@ KINDS = {
     "set_prompt": "canvas", "set_model": "canvas", "add_lora": "canvas", "place_combo": "canvas",
     "fix_workflow_models": "canvas", "run_workflow": "run", "download_missing_models": "download",
     "download_model": "download", "scan_models": "scan", "speak": "speech", "open_in_anomalous": "show",
-    "report": "note",
+    "report": "note", "show_panel": "panel",
 }
-QUIET = {"begin_task"}  # starts a task; not a step of its own
+QUIET = {"begin_task", "update_panel", "get_answers"}  # not steps of their own
+OWN_STEPS = {"report", "show_panel"}  # make their step themselves (with its text or panel)
 
 _lock = threading.RLock()
 _tasks = None  # id -> task
@@ -107,11 +108,11 @@ def _drop_oldest():
             pass
 
 
-def _notify(task_id):
+def _notify(task_id, extra=None):
     try:
         from server import PromptServer
 
-        PromptServer.instance.send_sync("anomalous.ai_task", {"id": task_id})
+        PromptServer.instance.send_sync("anomalous.ai_task", {"id": task_id, **(extra or {})})
     except Exception:  # noqa: BLE001 - tests and early start have no server; the page polls on open
         pass
 
@@ -240,7 +241,7 @@ def _count_of(data):
 
 def record(client, tool, arguments, result, started, read_only=False, run_before=None):
     """One tool call as a step of the app's current task. Never raises."""
-    if tool in QUIET or tool == "report":
+    if tool in QUIET or tool in OWN_STEPS:
         return None
     try:
         data = result.get("structuredContent") if isinstance(result, dict) else None
@@ -411,13 +412,15 @@ def task_summary(task, now=None):
     for step in steps:
         kinds[step["kind"]] = kinds.get(step["kind"], 0) + 1
     images = [item for step in steps for item in step.get("results") or [] if item.get("type") == "image"]
+    asks = sum(1 for step in steps if step.get("kind") == "panel" and not step["panel"].get("closed")
+               for block in step["panel"]["blocks"] if block.get("id") and block["id"] not in step.get("answers", {}))
     return {
         "id": task["id"], "title": task.get("title") or "", "client": task.get("client") or "AI",
         "started": task.get("started"), "updated": task.get("updated"), "ended": task.get("ended"),
         "live": (not task.get("ended") and now - task.get("updated", 0) < 90)
                 or any(step.get("state") == "running" for step in steps),
         "steps": len(steps), "kinds": kinds, "errors": sum(1 for step in steps if not step.get("ok")),
-        "images": len(images), "cover": images[-1] if images else None,
+        "images": len(images), "cover": images[-1] if images else None, "asks": asks,
     }
 
 
@@ -489,7 +492,26 @@ async def api_change(request):
     return web.json_response({"error": "Expected {title} or {remove: true}"}, status=400)
 
 
+async def api_answer(request):
+    """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text} - the user's answer on a panel."""
+    from . import ai_panels
+
+    try:
+        body = await request.json()
+    except (ValueError, UnicodeDecodeError):
+        body = None
+    if not isinstance(body, dict):
+        return web.json_response({"error": "Expected {step, block, choice | text}"}, status=400)
+    try:
+        answers = ai_panels.answer(request.match_info["task_id"], str(body.get("step")), str(body.get("block")),
+                                   body.get("choice"), body.get("text"))
+    except ai_panels.PanelError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    return web.json_response({"answers": answers})
+
+
 def register_routes(app):
     app.router.add_get("/anomalous/ai_tasks", api_list)
     app.router.add_get("/anomalous/ai_tasks/{task_id}", api_get)
     app.router.add_post("/anomalous/ai_tasks/{task_id}", api_change)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)

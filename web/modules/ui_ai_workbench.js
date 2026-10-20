@@ -5,6 +5,8 @@
  * reads folded into one row, each step with what it made and where that leads (the picture
  * in the viewer, the model's page, the combo, the canvas change found or undone). A task the
  * AI is still working on grows by itself ("anomalous.ai_task" events) and says so at the foot.
+ * A panel the AI drew (show_panel) sits in the timeline as a card (ui_ai_panel.js); its
+ * questions are answered there, and when it comes while the user is elsewhere a toast says so.
  * In a narrow window the list and the task take turns. The rules are in ai_task_view.js.
  * Also the home page's "What the AI did lately" and the rail entry's dot for news.
  */
@@ -18,6 +20,7 @@ import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousConfirm, anomalousPrompt, copyText } from './ui_dialog.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { listCombos } from './image_keep.js';
+import { panelToast, renderPanel } from './ui_ai_panel.js';
 import {
     audioResult, duration, groupSteps, isVideo, lookTools, outputUrl, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
@@ -219,7 +222,7 @@ function stepRow(step) {
     const body = el('div', 'anomalous-ai-step-body');
     const line = el('div', 'anomalous-ai-step-line');
     line.append(el('span', 'anomalous-ai-kind', t(`aiKind_${step.kind}`)), el('span', 'anomalous-ai-step-title', t(toolKey(step.tool))));
-    const detail = stepDetail(step);
+    const detail = step.kind === 'panel' ? '' : stepDetail(step);
     if (detail) {
         const text = el('span', 'anomalous-ai-step-detail', detail);
         text.title = detail;
@@ -227,6 +230,14 @@ function stepRow(step) {
     }
     body.append(line);
     if (step.text) body.append(el('div', 'anomalous-ai-note-text', step.text));
+    if (step.kind === 'panel' && state.task) {
+        body.append(renderPanel(step, {
+            taskId: state.task.id,
+            openPicture: (url, video) => state.owner?.showGalleryViewer?.(url, video),
+            openModel,
+            changed: () => void refresh(),
+        }));
+    }
     if (step.error) body.append(el('div', 'anomalous-ai-step-error', step.error));
     if (step.state === 'running') body.append(el('div', 'anomalous-ai-step-running', t('aiRunRunning')));
     const links = resultLinks(step);
@@ -442,11 +453,13 @@ export function renderAiWorkbench(owner, panel) {
 /** Once: the server's "anomalous.ai_task" event refreshes the page, the home list and the rail's dot. */
 export function watchAiTasks(owner) {
     state.owner = owner;
-    api.addEventListener('anomalous.ai_task', () => {
+    api.addEventListener('anomalous.ai_task', (event) => {
+        const detail = event?.detail || {};
+        const onPage = () => owner.modal?.classList.contains('visible') && owner.currentShellPage?.() === 'ai' && visible();
+        if (detail.panel && !onPage()) panelToast(owner, String(detail.panel), Boolean(detail.asks));
         clearTimeout(state.refreshTimer);
         state.refreshTimer = setTimeout(() => {
-            const onPage = owner.modal?.classList.contains('visible') && owner.currentShellPage?.() === 'ai' && visible();
-            if (onPage) void refresh();
+            if (onPage()) void refresh();
             else owner.railNews?.('ai', true);
             if (owner.currentShellPage?.() === 'home') owner.onActivityRecorded?.();
         }, 300);

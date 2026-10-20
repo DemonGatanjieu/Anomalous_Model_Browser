@@ -1,7 +1,9 @@
 """MCP tools that shape the AI workbench's record (ai_tasks.py): begin_task names a piece of
-work, report leaves a note for the user (with pictures made outside Anomalous's tools)."""
+work, report leaves a note for the user (with pictures made outside Anomalous's tools),
+show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
+reads what the user picked or typed on it."""
 
-from . import ai_tasks
+from . import ai_panels, ai_tasks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 
@@ -27,6 +29,46 @@ def report(ctx, text="", images=None, done=False):
     return answer
 
 
+def show_panel(ctx, title, blocks):
+    try:
+        panel = ai_panels.show(ctx.get("client") or "AI", title, blocks)
+    except ai_panels.PanelError as error:
+        raise ToolError(str(error))
+    asks = [block["id"] for block in panel["blocks"] if block["type"] in ai_panels.INTERACTIVE]
+    answer = {"panel": panel["id"], "shown": True}
+    if asks:
+        answer["questions"] = asks
+        answer["note"] = ("The user answers in Anomalous when they get to it; call get_answers with this panel id "
+                          "(wait_seconds up to 55 waits for it) before going on with what depends on it.")
+    return answer
+
+
+def update_panel(ctx, panel, title=None, blocks=None, closed=None):
+    try:
+        ai_panels.update(panel, title, blocks, closed)
+    except ai_panels.PanelError as error:
+        raise ToolError(str(error))
+    return {"updated": True}
+
+
+def get_answers(ctx, panel=None, wait_seconds=0):
+    try:
+        return ai_panels.get_answers(ctx.get("client") or "AI", panel, wait_seconds)
+    except ai_panels.PanelError as error:
+        raise ToolError(str(error))
+
+
+BLOCKS_HELP = (
+    "blocks, top to bottom, each {type, ...}: heading {text}; text {text, tone: normal|muted|tip|warning}; "
+    "images {items: [{image: 'subfolder/name.png' from search_images, caption}], layout: row|grid|compare}; "
+    "models {items: [{model_id from search_models, note}]} (cards with their covers, a click opens them); "
+    "table {columns: [...], rows: [[...]]}; list {items: [...], ordered}; params {items: [{label, value}]}; "
+    "choices {id, question, options: [{id, label, detail}] (2-8), multiple} (buttons the user presses); "
+    "input {id, question, placeholder} (a line the user types); progress {label, value, max}; divider {}. "
+    "Plain text only (no markup, no links); up to 30 blocks, 12 pictures or models a block."
+)
+
+
 def _task_tool(name, title, description, run, properties, required=()):
     return name, {"run": run, "context": True, "spec": {
         "name": name, "title": title, "description": description,
@@ -50,4 +92,23 @@ TASK_TOOLS = dict([
                report, {"text": {"type": "string"},
                         "images": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_LIMIT},
                         "done": {"type": "boolean", "default": False}}),
+    _task_tool("show_panel", "Show the user a panel",
+               "Draws a panel in the AI workbench, in Anomalous's own style, from blocks: to compare pictures side by "
+               "side, present models with their covers, lay out settings, a table, and to ask (buttons or a line of "
+               "text). Use it when a choice is the user's, or to show results better than words do. " + BLOCKS_HELP,
+               show_panel, {"title": {"type": "string"},
+                            "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS}},
+               ["title", "blocks"]),
+    _task_tool("update_panel", "Change a panel",
+               "Changes a panel shown before: its title, its blocks (answers given to questions kept by id stay), or "
+               "closed=true when its questions no longer matter (the user can no longer answer them).",
+               update_panel, {"panel": {"type": "string"}, "title": {"type": "string"},
+                              "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
+                              "closed": {"type": "boolean"}}, ["panel"]),
+    _task_tool("get_answers", "Read the user's answers",
+               "What the user picked or typed on your panels since you last asked (each answer once): for one panel, "
+               "or all of yours. wait_seconds (up to 55) waits for an answer when none is there yet; still_waiting "
+               "lists the questions not answered.",
+               get_answers, {"panel": {"type": "string"},
+                             "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": 0}}),
 ])
