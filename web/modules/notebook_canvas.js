@@ -123,7 +123,8 @@ function placeStructure(owner, data, position) {
         recordCanvasStep(app);
         if (built.problems.length) void anomalousAlert(`${t('comboPlaceProblems')}\n${problemLines(built.problems)}`);
     };
-    owner.nbPanel.style.display = 'none';
+    // Only the browser closes: the combo stays open in it, so it opens again where it was
+    // (hiding the combo page here left the browser blank the next time it opened).
     if (!position) {
         followPointer(owner, built.made, placed);
         owner.close();
@@ -191,7 +192,6 @@ export function sendNotebookToCanvas(position = null) {
         const notes = [kind !== wanted && t('comboLoraNodeFallback', { node: t(wanted.labelKey), pack: wanted.pack }), !clip && t('noteNeedsClip')];
         if (notes.some(Boolean)) void anomalousAlert(notes.filter(Boolean).join('\n\n'));
     };
-    this.nbPanel.style.display = 'none';
     if (!position) {
         followPointer(this, groupNodes, placed); // first, so closing does not log the group yet
         this.close();
