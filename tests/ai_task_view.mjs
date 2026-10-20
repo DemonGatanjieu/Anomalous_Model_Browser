@@ -24,6 +24,7 @@ assert.equal(stepDetail({ tool: 'report', summary: 'something else' }), 'somethi
 // A task's state and counts.
 assert.equal(taskState({ live: true, errors: 1 }), 'live');
 assert.equal(taskState({ live: true, asks: 1 }), 'asks', 'a question waiting for the user comes first');
+assert.equal(taskState({ waiting: true }), 'waiting', 'a task the user started, before an AI takes it');
 assert.deepEqual(taskCounts({ asks: 2 }), [{ key: 'aiCountAsks', values: { count: 2 } }]);
 assert.equal(taskState({ errors: 2 }), 'error');
 assert.equal(taskState({}), 'done');

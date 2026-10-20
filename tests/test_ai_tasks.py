@@ -13,7 +13,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_tasks, mcp_task_tools  # noqa: E402
+from api import ai_tasks, ai_tasks_routes, mcp_task_tools  # noqa: E402
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_tasks_")
 OUTPUT = tempfile.mkdtemp(prefix="amb_ai_output_")
@@ -24,6 +24,7 @@ def isolate():
     ai_tasks.tasks_dir = lambda: TMP
     ai_tasks._tasks = None
     ai_tasks._current.clear()
+    ai_tasks._waiting[0] = None
     for name in os.listdir(TMP):
         os.remove(os.path.join(TMP, name))
 
@@ -134,6 +135,28 @@ class TaskTests(unittest.TestCase):
         self.assertEqual([task["title"] for task in ai_tasks.list_tasks()], ["t4", "t3", "t2"])
         self.assertEqual(len(os.listdir(TMP)), 3)
 
+    def test_a_task_the_user_starts_waits_for_the_next_app(self):
+        ai_tasks.record("Claude", "describe_canvas", {}, ok({}), 100.0, True)
+        old = ai_tasks.list_tasks()[0]["id"]
+        first = ai_tasks.start_task("", now=200.0)
+        started = ai_tasks.start_task("  画一张海边的女孩 ", now=210.0)
+        self.assertIsNone(ai_tasks.get_task(first["id"]), "an untaken empty one is replaced")
+        self.assertTrue(ai_tasks.task_summary(started)["waiting"])
+        self.assertFalse(ai_tasks.task_summary(started)["live"])
+        with mock.patch.object(ai_tasks.time, "time", return_value=220.0):
+            ai_tasks.record("Claude", "search_models", {"query": "x"}, ok({"models": []}), 220.0, True)
+        task = ai_tasks.get_task(started["id"])
+        self.assertEqual((task["client"], task["waiting"], task["title"], len(task["steps"])), ("Claude", False, "画一张海边的女孩", 1))
+        self.assertTrue(ai_tasks.get_task(old)["ended"], "the app's last task ends")
+        with mock.patch.object(ai_tasks.time, "time", return_value=230.0):
+            ai_tasks.record("Claude", "describe_canvas", {}, ok({}), 230.0, True)
+        self.assertEqual(len(ai_tasks.get_task(started["id"])["steps"]), 2, "the app goes on in it")
+        # begin_task takes a waiting task too, naming it when the user did not.
+        unnamed = ai_tasks.start_task("", now=300.0)
+        with mock.patch.object(ai_tasks.time, "time", return_value=310.0):
+            got = mcp_task_tools.begin_task({"client": "Cursor"}, "整理 LoRA")
+        self.assertEqual((got["task"], ai_tasks.get_task(unnamed["id"])["title"]), (unnamed["id"], "整理 LoRA"))
+
     def test_client_names(self):
         self.assertEqual(ai_tasks.client_of({}, {"_meta": {"io.modelcontextprotocol/clientInfo": {"name": "claude-code"}}}), "Claude Code")
         self.assertEqual(ai_tasks.client_of({"User-Agent": "Cursor/1.2 (win)"}, {}), "Cursor")
@@ -152,12 +175,14 @@ class TaskTests(unittest.TestCase):
             response = asyncio.run(handler(request))
             return response.status, json.loads(response.text)
 
-        self.assertEqual(call(ai_tasks.api_list)[1]["tasks"][0]["id"], task_id)
-        self.assertEqual(call(ai_tasks.api_get, task=task_id)[1]["task"]["id"], task_id)
-        self.assertEqual(call(ai_tasks.api_get, task="nope")[0], 404)
-        self.assertEqual(call(ai_tasks.api_change, body={"title": "新名字"}, task=task_id)[1]["task"]["title"], "新名字")
-        self.assertEqual(call(ai_tasks.api_change, body=[], task=task_id)[0], 400)
-        self.assertTrue(call(ai_tasks.api_change, body={"remove": True}, task=task_id)[1]["removed"])
+        self.assertEqual(call(ai_tasks_routes.api_list)[1]["tasks"][0]["id"], task_id)
+        self.assertEqual(call(ai_tasks_routes.api_get, task=task_id)[1]["task"]["id"], task_id)
+        self.assertEqual(call(ai_tasks_routes.api_get, task="nope")[0], 404)
+        self.assertEqual(call(ai_tasks_routes.api_change, body={"title": "新名字"}, task=task_id)[1]["task"]["title"], "新名字")
+        self.assertEqual(call(ai_tasks_routes.api_change, body=[], task=task_id)[0], 400)
+        self.assertTrue(call(ai_tasks_routes.api_change, body={"remove": True}, task=task_id)[1]["removed"])
+        started = call(ai_tasks_routes.api_start, body={"title": "新的"})[1]["task"]
+        self.assertEqual((started["title"], started["waiting"]), ("新的", True))
 
 
 def time_after(task, seconds):

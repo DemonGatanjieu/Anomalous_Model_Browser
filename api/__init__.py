@@ -2,7 +2,7 @@ from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, quick_index, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
     local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, tts_version, backup,
-    network_check, model_heads, model_usage, usage_ledger, sidecar_layout, ai_tasks,
+    network_check, model_heads, model_usage, usage_ledger, sidecar_layout, ai_tasks_routes,
 )
 from .scanner import *
 from .config import *
@@ -139,7 +139,7 @@ def setup_routes(app):
     tts_version.register_routes(app)
     activity_log.register_routes(app)
     mcp_server.register_routes(app)
-    ai_tasks.register_routes(app)
+    ai_tasks_routes.register_routes(app)
     model_download.register_routes(app)
     network_check.register_routes(app)
     model_usage.register_routes(app)

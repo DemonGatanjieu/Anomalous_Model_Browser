@@ -8,10 +8,15 @@ models it used, the combo it placed, the canvas change it made (by its activity 
 for undo), the pictures a run made (watched in ComfyUI's history until the run ends), the
 audio it spoke. The AI can also leave a note (report), with pictures it made another way.
 
+The user can start a task first (New task, POST /anomalous/ai_tasks): it waits for an AI, and
+the next app that calls takes it over, so the work it does next starts there instead of joining
+the app's last task.
+
 Tasks are files in the ComfyUI user folder (anomalous/ai_tasks/<id>.json), the newest
 MAX_TASKS kept. Recording never fails a tool call: the record is a convenience. The page
 learns of a change through the "anomalous.ai_task" event. Reading is open like the other
-pages; renaming and removing are writes (local_guard.py keeps them to this computer).
+pages; renaming and removing are writes (local_guard.py keeps them to this computer). The
+routes are in ai_tasks_routes.py.
 """
 
 import json
@@ -22,7 +27,6 @@ import threading
 import time
 import uuid
 
-from aiohttp import web
 import folder_paths
 
 from .path_utils import atomic_write_json
@@ -32,6 +36,7 @@ MAX_TASKS = 300
 MAX_STEPS = 400
 MAX_TASK_BYTES = 2 * 1024 * 1024
 IDLE_SECONDS = 20 * 60  # a longer pause between calls of one app starts a new task
+WAITING_SECONDS = 12 * 60 * 60  # a task the user started waits this long for an AI to take it
 MAX_TEXT = 300
 MAX_NOTE = 2000
 MAX_TITLE = 80
@@ -53,6 +58,7 @@ OWN_STEPS = {"report", "show_panel"}  # make their step themselves (with its tex
 _lock = threading.RLock()
 _tasks = None  # id -> task
 _current = {}  # client name -> id of the task its calls go to
+_waiting = [None]  # id of the task the user started that no AI has taken yet
 
 log = logging.getLogger(__name__)
 
@@ -86,6 +92,10 @@ def _load():
                 continue
             if isinstance(task, dict) and task.get("format") == FORMAT and isinstance(task.get("id"), str):
                 _tasks[task["id"]] = task
+        # A task the user started before ComfyUI restarted still waits for the next AI.
+        waiting = [task for task in _tasks.values() if task.get("waiting") and not task.get("ended")]
+        if waiting and _waiting[0] is None:
+            _waiting[0] = max(waiting, key=lambda task: task.get("started", 0))["id"]
     return _tasks
 
 
@@ -158,10 +168,49 @@ def _new_task(client, title="", now=None):
     return task
 
 
-def current_task(client, now=None):
-    """The task this app's calls go to now: its open one, unless it paused too long."""
+def _take_waiting(client, now):
+    """The task the user started, now this app's (its own open task ends), or None."""
+    task = _load().get(_waiting[0])
+    _waiting[0] = None
+    if not task or task.get("ended") or now - task.get("started", 0) > WAITING_SECONDS:
+        return None
+    previous = _load().get(_current.get(client))
+    if previous and previous is not task and not previous.get("ended"):
+        previous["ended"] = previous.get("updated")
+        _save(previous)
+    task["client"] = client
+    task["waiting"] = False
+    _current[client] = task["id"]
+    return task
+
+
+def start_task(title="", now=None):
+    """A task the user starts; it waits for the next AI app that calls. Returns the task."""
     now = time.time() if now is None else now
     with _lock:
+        before = _load().get(_waiting[0])
+        if before and not before.get("steps"):  # started before and never taken: this one replaces it
+            remove_task(before["id"])
+        task = {"format": FORMAT, "id": f"{int(now)}_{uuid.uuid4().hex[:8]}", "title": _short(str(title or "").strip(), MAX_TITLE),
+                "title_from": "user", "client": "", "started": now, "updated": now, "ended": None, "steps": [], "waiting": True}
+        if not task["title"]:
+            task["title_from"] = "auto"
+        _load()[task["id"]] = task
+        _waiting[0] = task["id"]
+        _drop_oldest()
+        _save(task)
+    _notify(task["id"])
+    return task
+
+
+def current_task(client, now=None):
+    """The task this app's calls go to now: one the user started for the next AI, else its open
+    one, unless it paused too long."""
+    now = time.time() if now is None else now
+    with _lock:
+        waiting = _take_waiting(client, now)
+        if waiting:
+            return waiting
         task = _load().get(_current.get(client))
         if task and not task.get("ended") and now - task.get("updated", 0) < IDLE_SECONDS:
             return task
@@ -172,6 +221,20 @@ def current_task(client, now=None):
 
 
 def begin_task(client, title, now=None):
+    with _lock:
+        waiting = _take_waiting(client, time.time() if now is None else now)
+        if waiting:
+            # The user named it already, or the AI names it now.
+            if not waiting.get("title"):
+                waiting["title"] = _short(title, MAX_TITLE)
+                waiting["title_from"] = "ai"
+            _save(waiting)
+            task = waiting
+        else:
+            task = None
+    if task:
+        _notify(task["id"])
+        return task
     with _lock:
         previous = _load().get(_current.get(client))
         if previous and not previous.get("ended"):
@@ -415,9 +478,10 @@ def task_summary(task, now=None):
     asks = sum(1 for step in steps if step.get("kind") == "panel" and not step["panel"].get("closed")
                for block in step["panel"]["blocks"] if block.get("id") and block["id"] not in step.get("answers", {}))
     return {
-        "id": task["id"], "title": task.get("title") or "", "client": task.get("client") or "AI",
+        "id": task["id"], "title": task.get("title") or "", "client": task.get("client") or ("" if task.get("waiting") else "AI"),
         "started": task.get("started"), "updated": task.get("updated"), "ended": task.get("ended"),
-        "live": (not task.get("ended") and now - task.get("updated", 0) < 90)
+        "waiting": bool(task.get("waiting")) and not task.get("ended"),
+        "live": (not task.get("ended") and not task.get("waiting") and now - task.get("updated", 0) < 90)
                 or any(step.get("state") == "running" for step in steps),
         "steps": len(steps), "kinds": kinds, "errors": sum(1 for step in steps if not step.get("ok")),
         "images": len(images), "cover": images[-1] if images else None, "asks": asks,
@@ -455,81 +519,10 @@ def remove_task(task_id):
         for client, current in list(_current.items()):
             if current == task_id:
                 _current.pop(client, None)
+        if _waiting[0] == task_id:
+            _waiting[0] = None
         try:
             os.remove(_path(task_id))
         except OSError:
             pass
         return True
-
-
-async def api_list(request):
-    try:
-        limit = max(1, min(300, int(request.query.get("limit", 100))))
-    except ValueError:
-        limit = 100
-    return web.json_response({"tasks": list_tasks(limit)})
-
-
-async def api_get(request):
-    task = get_task(request.match_info["task_id"])
-    return web.json_response({"task": task}) if task else web.json_response({"error": "not_found"}, status=404)
-
-
-async def api_change(request):
-    """POST /anomalous/ai_tasks/{id}: {"title": "…"} renames it, {"remove": true} takes it off the list."""
-    task_id = request.match_info["task_id"]
-    try:
-        body = await request.json()
-    except (ValueError, UnicodeDecodeError):
-        body = None
-    if not isinstance(body, dict):
-        return web.json_response({"error": "Expected {title} or {remove: true}"}, status=400)
-    if body.get("remove") is True:
-        return web.json_response({"removed": remove_task(task_id)})
-    if "title" in body:
-        task = rename_task(task_id, body["title"])
-        return web.json_response({"task": task_summary(task)}) if task else web.json_response({"error": "not_found"}, status=404)
-    return web.json_response({"error": "Expected {title} or {remove: true}"}, status=400)
-
-
-async def api_answer(request):
-    """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text} - the user's answer on a panel."""
-    from . import ai_panels
-
-    try:
-        body = await request.json()
-    except (ValueError, UnicodeDecodeError):
-        body = None
-    if not isinstance(body, dict):
-        return web.json_response({"error": "Expected {step, block, choice | text}"}, status=400)
-    try:
-        answers = ai_panels.answer(request.match_info["task_id"], str(body.get("step")), str(body.get("block")),
-                                   body.get("choice"), body.get("text"))
-    except ai_panels.PanelError as error:
-        return web.json_response({"error": str(error)}, status=400)
-    return web.json_response({"answers": answers})
-
-
-async def api_message(request):
-    """POST /anomalous/ai_tasks/{id}/message: {text} - the user writes to the AI on that task."""
-    from . import ai_panels
-
-    try:
-        body = await request.json()
-    except (ValueError, UnicodeDecodeError):
-        body = None
-    if not isinstance(body, dict):
-        return web.json_response({"error": "Expected {text}"}, status=400)
-    try:
-        step = ai_panels.leave_message(request.match_info["task_id"], body.get("text"))
-    except ai_panels.PanelError as error:
-        return web.json_response({"error": str(error)}, status=400)
-    return web.json_response({"step": step})
-
-
-def register_routes(app):
-    app.router.add_get("/anomalous/ai_tasks", api_list)
-    app.router.add_get("/anomalous/ai_tasks/{task_id}", api_get)
-    app.router.add_post("/anomalous/ai_tasks/{task_id}", api_change)
-    app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)
-    app.router.add_post("/anomalous/ai_tasks/{task_id}/message", api_message)

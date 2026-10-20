@@ -24,6 +24,7 @@ def isolate():
     ai_tasks.tasks_dir = lambda: TMP
     ai_tasks._tasks = None
     ai_tasks._current.clear()
+    ai_tasks._waiting[0] = None
     for name in os.listdir(TMP):
         os.remove(os.path.join(TMP, name))
 

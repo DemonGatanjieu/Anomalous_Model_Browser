@@ -45,10 +45,12 @@ export function lookTools(steps) {
 }
 
 /**
- * 'asks' while a question of the AI's waits for the user, 'live' while the AI works (or a run
+ * 'waiting' for a task the user started that no AI took yet, 'asks' while a question of the
+ * AI's waits for the user, 'live' while the AI works (or a run
  * it started goes on), 'error' when a step failed, else 'done'.
  */
 export function taskState(summary) {
+    if (summary?.waiting) return 'waiting';
     if (summary?.asks) return 'asks';
     if (summary?.live) return 'live';
     return summary?.errors ? 'error' : 'done';

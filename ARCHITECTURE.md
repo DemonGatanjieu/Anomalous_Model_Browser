@@ -141,8 +141,10 @@ covered by the `styles.css` manifest.
   step keeps the tool, a short summary, whether it worked and what it made (models, the combo,
   the canvas change by its activity entry, the spoken audio, the scan; a run's pictures are
   watched in ComfyUI's history until it ends). It tells the page through the
-  `anomalous.ai_task` event and serves `/anomalous/ai_tasks` (list, one task, rename or
-  remove). `mcp_server.py` records each call after it ran (the app's name from its client
+  `anomalous.ai_task` event; `api/ai_tasks_routes.py` serves `/anomalous/ai_tasks` (list, one
+  task, start, rename or remove, a panel's answer, a message). The user can start a task first
+  (New task): it waits, and the next app that calls takes it over, so its work starts there
+  instead of joining its last task (one waiting at a time, found again after a restart). `mcp_server.py` records each call after it ran (the app's name from its client
   info or User-Agent); `api/mcp_task_tools.py` holds the AI's own tools for it, `begin_task`
   and `report` (a note, with pictures from the output folder it made another way).
   `web/modules/ui_ai_workbench.js` is the page (rail entry `ai`): the tasks, one task's
@@ -154,9 +156,14 @@ covered by the `styles.css` manifest.
   a task (made once per task), `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
   step made and where it leads (and the strip of a task's results). `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a line per
-  panel that brings it there): it follows the newest panel until the user goes back to another,
-  pages through them, and in a window too narrow for three columns turns the timeline and the
-  stage into two tabs (a panel that asks brings the stage forward). The task list can be folded. `ai_task_view.js` holds
+  panel that brings it there): like the timeline it reads from the top down, the task's panels in
+  the order they came with their step numbers, the newest at the bottom (a new one scrolls there
+  while the user is at the bottom, else a "New panel" button says so); in a window too narrow
+  for three columns the timeline and the stage are two tabs (a panel that asks brings the stage
+  forward). The task list can be folded. `ui_ai_connect.js` says how to connect an AI app (the
+  address, a sentence to send the AI so it sets itself up and starts on a waiting task, each
+  common app's way), in a window from the list's "Connect an AI", on the empty page and in a
+  task waiting for an AI. `ai_task_view.js` holds
   its rules without DOM (folding reads, tool words, counts, result addresses).
   Panels the AI draws (`show_panel`, `update_panel`): `api/ai_panels.py` checks every block
   against a fixed set (heading, text, images from the output folder, models by id with their

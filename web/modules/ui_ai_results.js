@@ -152,8 +152,10 @@ export function strip(task) {
     box.append(el('div', 'anomalous-ai-made-title', t('aiMade')));
     if (made.image.length) {
         const row = el('div', 'anomalous-ai-made-pictures');
-        row.append(...made.image.slice(-STRIP_MAX).reverse().map(result => picture(result, 'anomalous-ai-made-picture')));
+        // Oldest first, like the timeline; it opens scrolled to the newest at the right.
+        row.append(...made.image.slice(-STRIP_MAX).map(result => picture(result, 'anomalous-ai-made-picture')));
         box.append(row);
+        requestAnimationFrame(() => { row.scrollLeft = row.scrollWidth; });
     }
     const chips = el('div', 'anomalous-ai-links');
     const seen = new Set();
