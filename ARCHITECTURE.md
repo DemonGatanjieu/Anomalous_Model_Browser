@@ -155,7 +155,9 @@ covered by the `styles.css` manifest.
   covers, table, list, params, choices, input, progress, divider; plain strings of bounded
   length, nothing run or read as markup) and keeps the panel as a step; the user's answers come
   in through `POST /anomalous/ai_tasks/{id}/answer` and wait there until the AI reads them
-  (`get_answers`, which can wait up to 55 s for one; Anomalous cannot call the AI).
+  (`get_answers`, which can wait up to 55 s for one; Anomalous cannot call the AI). The user
+  can also write to the AI on a task (`POST /anomalous/ai_tasks/{id}/message`, a `user` step);
+  `get_answers` brings those messages too, and with no panel named waits for one.
   `web/modules/ui_ai_panel.js` draws a panel in the timeline (textContent only) and the toast
   when the AI shows one while the user is elsewhere. The stage blocks are data the page lays
   out, never drawings of the AI's own (no SVG is taken): marks on pictures (circles or boxes at

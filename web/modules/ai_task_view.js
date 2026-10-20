@@ -5,7 +5,7 @@
  */
 
 /** The kinds of step, in the order a task's counts name them. */
-export const KINDS = ['panel', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'look'];
+export const KINDS = ['panel', 'user', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'look'];
 
 /**
  * The timeline: each step, but reads that follow each other fold into one row (`looks`), so

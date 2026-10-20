@@ -85,6 +85,43 @@
     gap: 6px;
 }
 
+.anomalous-ai-tasks-day {
+    padding: 10px 10px 3px;
+    color: var(--amb-text-dim);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Where a task stands: working, waiting for you, a step failed, done. */
+.anomalous-ai-state-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-dim);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.anomalous-ai-state-icon.is-live {
+    background: color-mix(in srgb, var(--amb-ok) 20%, transparent);
+    color: var(--amb-ok-text);
+}
+
+.anomalous-ai-state-icon.is-asks {
+    background: color-mix(in srgb, var(--amb-warn) 24%, transparent);
+    color: var(--amb-warn-text);
+}
+
+.anomalous-ai-state-icon.is-error {
+    background: color-mix(in srgb, var(--amb-danger) 20%, transparent);
+    color: var(--amb-danger-text);
+}
+
 .anomalous-ai-task-row-title {
     flex: 1;
     overflow: hidden;
@@ -321,6 +358,63 @@
 .anomalous-ai-step.is-note { --kind: var(--ai-note); }
 .anomalous-ai-step.is-act { --kind: var(--amb-text-soft); }
 .anomalous-ai-step.is-failed { --kind: var(--amb-danger); }
+.anomalous-ai-step.is-user { --kind: var(--amb-link); }
+
+/* What the user wrote to the AI, and under the timeline where they write. */
+.anomalous-ai-user-text {
+    align-self: flex-start;
+    max-width: 90%;
+    padding: 8px 12px;
+    border-radius: 12px 12px 12px 4px;
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    color: var(--amb-text-main);
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.anomalous-ai-user-state,
+.anomalous-ai-message-hint {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+.anomalous-ai-message {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+.anomalous-ai-message.is-quiet {
+    opacity: 0.8;
+}
+
+.anomalous-ai-message-line {
+    display: flex;
+    gap: 8px;
+}
+
+.anomalous-ai-message-input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+}
+
+.anomalous-ai-message-input:focus {
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    outline: none;
+}
 
 /* The step's number in a dot of its kind's colour; the line through the dots is the order. */
 .anomalous-ai-step-dot {

@@ -13,8 +13,10 @@ numbers of bounded size, pictures only from the output folder and models only fr
 folders. The page draws them (ui_ai_panel.js).
 
 The user's answers come back through POST /anomalous/ai_tasks/{task}/answer and wait in the
-step until the AI asks for them (get_answers, which may wait a while for one). Anomalous
-cannot call the AI itself; the page says so where it asks.
+step until the AI asks for them (get_answers, which may wait a while for one). The user can
+also write to the AI in a task (POST /anomalous/ai_tasks/{task}/message): the message is a
+step of its own and reaches the AI the same way. Anomalous cannot call the AI itself; the page
+says so where it asks.
 """
 
 import os
@@ -341,13 +343,42 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None):
     return answers
 
 
+MAX_MESSAGE = 2000
+
+
+def leave_message(task_id, text, now=None):
+    """A message from the user to the AI working on task `task_id`. Returns the step."""
+    text = _text(text, MAX_MESSAGE, "text", True)
+    now = time.time() if now is None else now
+    step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "user_message", "kind": "user", "ok": True,
+            "summary": "user_message", "text": text, "delivered": False, "results": []}
+    with _answered:
+        task = ai_tasks._load().get(task_id)
+        if not task:
+            raise PanelError("No such task")
+        task["steps"].append(step)
+        del task["steps"][:-ai_tasks.MAX_STEPS]
+        task["updated"] = max(task.get("updated", 0), now)
+        ai_tasks._save(task)
+        _answered.notify_all()
+    ai_tasks._notify(task_id)
+    return step
+
+
 def _collect(client, panel_id):
-    """Answers not given to the AI yet (its own tasks, or panel `panel_id`), marked as given. Under the lock."""
-    out, waiting, changed = [], [], set()
+    """Answers and messages not given to the AI yet (its own tasks, or panel `panel_id` and the
+    messages of that panel's task), marked as given. Under the lock."""
+    out, waiting, messages, changed = [], [], [], set()
+    panel_task = _find(panel_id)[0] if panel_id is not None else None
     for task in ai_tasks._load().values():
         if panel_id is None and task.get("client") != client:
             continue
         for step in task.get("steps") or []:
+            if step.get("kind") == "user" and not step.get("delivered") and (panel_id is None or task is panel_task):
+                step["delivered"] = True
+                changed.add(task["id"])
+                messages.append({"task": task["id"], "text": step["text"], "at": step["at"]})
+                continue
             panel = step.get("panel")
             if step.get("kind") != "panel" or (panel_id is not None and panel["id"] != panel_id):
                 continue
@@ -368,19 +399,23 @@ def _collect(client, panel_id):
                 out.append(item)
     for task_id in changed:
         ai_tasks._save(ai_tasks._load()[task_id])
-    return out, waiting
+    return out, waiting, messages
 
 
 def get_answers(client, panel_id=None, wait_seconds=0):
-    """The user's new answers; with `wait_seconds`, waits up to that long (MAX_WAIT) for one."""
+    """The user's new answers and messages; with `wait_seconds`, waits up to that long (MAX_WAIT)
+    for one: for a panel's question still open, or (no panel named) for anything the user sends."""
     deadline = time.monotonic() + max(0, min(float(wait_seconds or 0), MAX_WAIT))
     panel_id = str(panel_id) if panel_id else None
     with _answered:
         if panel_id is not None and _find(panel_id)[1] is None:
             raise PanelError(f"No panel {panel_id!r}; show_panel returns its id.")
         while True:
-            answers, waiting = _collect(client, panel_id)
+            answers, waiting, messages = _collect(client, panel_id)
             left = deadline - time.monotonic()
-            if answers or not waiting or left <= 0:
-                return {"answers": answers, "still_waiting": waiting}
+            if answers or messages or left <= 0 or (panel_id is not None and not waiting):
+                answer = {"answers": answers, "still_waiting": waiting}
+                if messages:
+                    answer["messages"] = messages
+                return answer
             _answered.wait(left)

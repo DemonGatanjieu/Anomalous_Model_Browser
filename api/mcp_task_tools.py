@@ -112,10 +112,12 @@ TASK_TOOLS = dict([
                update_panel, {"panel": {"type": "string"}, "title": {"type": "string"},
                               "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
                               "closed": {"type": "boolean"}}, ["panel"]),
-    _task_tool("get_answers", "Read the user's answers",
-               "What the user picked or typed on your panels since you last asked (each answer once): for one panel, "
-               "or all of yours. wait_seconds (up to 55) waits for an answer when none is there yet; still_waiting "
-               "lists the questions not answered.",
+    _task_tool("get_answers", "Read the user's answers and messages",
+               "What the user picked or typed on your panels, and what they wrote to you in the AI workbench "
+               "(messages: a change of mind, 'stop', 'make it brighter'), since you last asked; each once. For one "
+               "panel (and its task's messages), or all of yours. wait_seconds (up to 55) waits when nothing is there "
+               "yet: for that panel's open questions, or with no panel for anything the user sends. still_waiting "
+               "lists the questions not answered. Check it between steps of longer work.",
                get_answers, {"panel": {"type": "string"},
                              "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": 0}}),
 ])

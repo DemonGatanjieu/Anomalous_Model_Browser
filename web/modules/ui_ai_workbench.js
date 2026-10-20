@@ -7,6 +7,9 @@
  * AI is still working on grows by itself ("anomalous.ai_task" events) and says so at the foot.
  * A panel the AI drew (show_panel) sits in the timeline as a card (ui_ai_panel.js); its
  * questions are answered there, and when it comes while the user is elsewhere a toast says so.
+ * Under the timeline the user can write to the AI on that task; the message waits until the AI
+ * asks (get_answers), and says whether it has. The list groups the tasks by day, each with
+ * an icon for where it stands.
  * In a narrow window the list and the task take turns. The rules are in ai_task_view.js.
  * Also the home page's "What the AI did lately" and the rail entry's dot for news.
  */
@@ -26,6 +29,7 @@ import {
 } from './ai_task_view.js';
 
 const NARROW_PX = 720;
+const STATE_ICONS = { live: '●', asks: '?', error: '!', done: '✓' };
 const RECENT_COUNT = 3;
 const STRIP_MAX = 24;
 
@@ -67,8 +71,8 @@ async function getJson(url) {
     return response.json();
 }
 
-async function postTask(id, body) {
-    const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(id)}`, {
+async function postTask(id, body, action = '') {
+    const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(id)}${action ? `/${action}` : ''}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
     const data = await response.json().catch(() => ({}));
@@ -89,9 +93,11 @@ function taskRow(summary) {
         void select(summary.id);
     });
     const top = el('div', 'anomalous-ai-task-row-top');
-    top.append(el('span', 'anomalous-ai-task-row-title', summary.title || t('aiUntitled')));
+    const icon = el('span', `anomalous-ai-state-icon is-${status}`, STATE_ICONS[status]);
+    icon.title = t(`aiState_${status}`);
+    top.append(icon, el('span', 'anomalous-ai-task-row-title', summary.title || t('aiUntitled')));
     if (status === 'live') top.append(el('span', 'anomalous-ai-live-dot'));
-    const meta = [summary.client, `${dayLabel(summary.updated)} ${timeLabel(summary.updated)}`, t('aiStepCount', { count: summary.steps })];
+    const meta = [summary.client, timeLabel(summary.updated), t('aiStepCount', { count: summary.steps })];
     row.append(top, el('div', 'anomalous-ai-task-row-meta', meta.join(' · ')));
     const counts = taskCounts(summary);
     if (counts.length) row.append(el('div', 'anomalous-ai-task-row-counts', counts.map(say).join(' · ')));
@@ -102,7 +108,16 @@ function renderList(box) {
     const head = el('div', 'anomalous-ai-tasks-head');
     head.append(el('span', 'anomalous-ai-tasks-title', t('aiTasks')), el('span', 'anomalous-ai-tasks-count', t('aiTaskCount', { count: state.tasks.length })));
     const list = el('div', 'anomalous-ai-tasks-list');
-    list.append(...state.tasks.map(taskRow));
+    // Newest first, under a heading for each day (today, yesterday, a date).
+    let day = null;
+    for (const summary of state.tasks) {
+        const label = dayLabel(summary.updated);
+        if (label !== day) {
+            day = label;
+            list.append(el('div', 'anomalous-ai-tasks-day', label));
+        }
+        list.append(taskRow(summary));
+    }
     box.replaceChildren(head, list);
 }
 
@@ -235,7 +250,12 @@ function stepRow(step, number) {
         line.append(text);
     }
     body.append(line);
-    if (step.text) body.append(el('div', 'anomalous-ai-note-text', step.text));
+    if (step.kind === 'user') {
+        body.append(el('div', 'anomalous-ai-user-text', step.text),
+            el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
+    } else if (step.text) {
+        body.append(el('div', 'anomalous-ai-note-text', step.text));
+    }
     if (step.kind === 'panel' && state.task) {
         body.append(renderPanel(step, {
             taskId: state.task.id,
@@ -368,7 +388,7 @@ function renderTask() {
     const parts = [header];
     const made = strip(task);
     if (made) parts.push(made);
-    parts.push(timeline);
+    parts.push(timeline, messageBox(task, status));
     if (status === 'live') {
         // What comes next: the following number, waiting.
         const next = el('div', 'anomalous-ai-step is-next');
@@ -378,6 +398,39 @@ function renderTask() {
     }
     box.replaceChildren(...parts);
     box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
+}
+
+/** Where the user writes to the AI on this task; it reaches the AI when the AI next asks. */
+function messageBox(task, status) {
+    const box = el('div', 'anomalous-ai-message');
+    const line = el('div', 'anomalous-ai-message-line');
+    const field = el('input', 'anomalous-ai-message-input');
+    field.type = 'text';
+    field.maxLength = 2000;
+    field.placeholder = t('aiMessagePlaceholder');
+    const note = el('div', 'anomalous-ai-message-hint', t(task.ended ? 'aiMessageEnded' : 'aiMessageHint'));
+    const send = button('anomalous-ai-panel-send', t('aiMessageSend'), async () => {
+        const text = field.value.trim();
+        if (!text) return;
+        send.disabled = true;
+        try {
+            await postTask(task.id, { text }, 'message');
+            field.value = '';
+            await refresh();
+        } catch (error) {
+            note.textContent = error.message;
+        } finally {
+            send.disabled = false;
+        }
+    });
+    field.addEventListener('keydown', (event) => {
+        event.stopPropagation(); // typing here is not the browser's shortcuts
+        if (event.key === 'Enter' && !event.isComposing) send.click();
+    });
+    line.append(field, send);
+    box.classList.toggle('is-quiet', status !== 'live' && status !== 'asks');
+    box.append(line, note);
+    return box;
 }
 
 async function loadEntries(task) {

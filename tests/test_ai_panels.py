@@ -180,6 +180,28 @@ class AnswerTests(unittest.TestCase):
                          "nothing left to wait for: no wait")
         self.assertLess(time.monotonic() - started, 1)
 
+    def test_messages_from_the_user(self):
+        ai_tasks.record("Claude", "describe_canvas", {}, {"content": [], "structuredContent": {}, "isError": False}, 1.0, True)
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        with self.assertRaises(ai_panels.PanelError):
+            ai_panels.leave_message(task_id, "   ")
+        with self.assertRaises(ai_panels.PanelError):
+            ai_panels.leave_message("nope", "hi")
+        threading.Timer(0.3, lambda: ai_panels.leave_message(task_id, " 背景再亮一点 ")).start()
+        started = time.monotonic()
+        got = mcp_task_tools.get_answers({"client": "Claude"}, None, 5)
+        self.assertLess(time.monotonic() - started, 3, "a message wakes an AI waiting with no panel")
+        self.assertEqual([m["text"] for m in got["messages"]], ["背景再亮一点"])
+        self.assertEqual(ai_panels.get_answers("Claude"), {"answers": [], "still_waiting": []}, "each message once")
+        step = ai_tasks.get_task(task_id)["steps"][-1]
+        self.assertEqual((step["kind"], step["delivered"]), ("user", True))
+        ai_panels.leave_message(task_id, "先别跑了")
+        self.assertEqual(ai_panels.get_answers("Cursor"), {"answers": [], "still_waiting": []}, "another app does not get it")
+        # Asking about one panel brings that panel's task's messages too.
+        shown = ai_panels.show("Claude", "问", [CHOICES])
+        got = ai_panels.get_answers("Claude", shown["id"])
+        self.assertEqual([m["text"] for m in got["messages"]], ["先别跑了"])
+
     def test_update_and_close(self):
         shown = ai_panels.show("A", "进度", [{"type": "progress", "value": 1, "max": 4}, CHOICES])
         ai_panels.update(shown["id"], blocks=[{"type": "progress", "value": 3, "max": 4}, CHOICES])

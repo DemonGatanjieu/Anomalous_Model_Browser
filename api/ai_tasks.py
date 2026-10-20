@@ -510,8 +510,26 @@ async def api_answer(request):
     return web.json_response({"answers": answers})
 
 
+async def api_message(request):
+    """POST /anomalous/ai_tasks/{id}/message: {text} - the user writes to the AI on that task."""
+    from . import ai_panels
+
+    try:
+        body = await request.json()
+    except (ValueError, UnicodeDecodeError):
+        body = None
+    if not isinstance(body, dict):
+        return web.json_response({"error": "Expected {text}"}, status=400)
+    try:
+        step = ai_panels.leave_message(request.match_info["task_id"], body.get("text"))
+    except ai_panels.PanelError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    return web.json_response({"step": step})
+
+
 def register_routes(app):
     app.router.add_get("/anomalous/ai_tasks", api_list)
     app.router.add_get("/anomalous/ai_tasks/{task_id}", api_get)
     app.router.add_post("/anomalous/ai_tasks/{task_id}", api_change)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/message", api_message)

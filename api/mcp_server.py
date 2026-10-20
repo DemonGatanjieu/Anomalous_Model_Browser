@@ -43,7 +43,8 @@ INSTRUCTIONS = (
     "the user where in Anomalous to do it (the rail on the left: Models, Gallery, Workflows, "
     "Combos, Prompts, Voices). The user watches your work in Anomalous's AI workbench: call begin_task "
     "with a short title when you start what they asked for, and report to explain a choice, hand in "
-    "pictures made another way, or end the task (done=true)."
+    "pictures made another way, or end the task (done=true). The user can write to you there too: call "
+    "get_answers between steps of longer work to read it."
 )
 LIST_TTL_MS = 300000
 # Requests run tools in threads; a few at a time is plenty for one person's AI app.
