@@ -180,9 +180,12 @@ function layerRows(ctx, { value, set, own, who, go, speaker, line, values = null
             ctx.redraw();
         });
         numbers.setAttribute('aria-pressed', String(detail));
+        // Without a line of its own in the script (a character with none yet), ▶ reads a sample
+        // sentence, and says so: it is not a line of the script.
+        const lead = line ? [] : [el('span', 'anomalous-sd-tune-sample', t('scriptTuneListenSampleNote', { name: speaker?.character || '' }))];
         under.append(ctx.preview.row({
             takeFor: take, selected: tone.mixed ? AUTO_MODE : tone.value, modes: toneChoices(ctx.view),
-            onPick: id => set('preset', id), disabled: ctx.busy, label: 'scriptTuneListen',
+            onPick: id => set('preset', id), disabled: ctx.busy, label: line ? 'scriptTuneListen' : 'scriptTuneListenSample', lead,
         }), numbers);
         rows.push(under);
         if (detail && ctx.presetNote) rows.push(el('div', 'anomalous-sd-run-note', ctx.presetNote));
@@ -226,7 +229,8 @@ function renderScriptView(ctx) {
             own: field => layer.from[field] === 'script',
             who: '',
             go: {},
-            speaker: first,
+            // The line heard is read by its own character, with the whole script's values.
+            speaker: script.lines[script.listen] ? script.speakerOf(script.lines[script.listen]) || first : first,
             line: script.lines[script.listen] || null,
             values: layer.values,
         }),
