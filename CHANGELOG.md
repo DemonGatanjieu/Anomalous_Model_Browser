@@ -9,6 +9,8 @@
 - **Live**: a task the AI is still working on grows by itself and says *The AI is working…*; the page follows the newest task unless you picked another. While you are elsewhere, the rail's *AI workbench* gets a dot. Home gets *What the AI did lately*.
 - **Write to the AI from the workbench** (给 AI 留言): a box under a task's timeline. The message becomes a step of the task (*You*) and reaches the AI the next time it asks (`get_answers`, which now also brings the user's messages, and with no panel named waits for one); it says whether the AI has seen it. Anomalous cannot wake the AI: when it has stopped, the box says to ask in the AI app.
 - The task list is grouped by day (today, yesterday, a date), each task with an icon for where it stands: working ●, waiting for you ?, a step failed !, done ✓.
+- While the AI works, only the steps that changed are drawn again: a diagram or a strip of pictures scrolled sideways no longer jumps back, and text half-typed into a panel or the message box stays.
+- Diagrams read in order: a box that only feeds one further on (a prompt into the sampler) stands right before it instead of at the far left with an arrow across everything, and boxes in a column are sorted by what feeds them, so arrows cross less.
 - Tasks can be renamed or removed from the list (only the record goes: pictures and the canvas stay). The newest 300 are kept, in ComfyUI's user folder. Without any AI connected, the page shows the address to add in the AI app.
 - Only what goes through Anomalous's MCP is seen; the AI can report the rest. The rail now has ten entries: the number keys 1–9 open the first nine.
 

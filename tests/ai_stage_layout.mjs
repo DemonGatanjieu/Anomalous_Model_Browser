@@ -5,10 +5,21 @@ import { arrowEnds, diagramBoxes, diagramLayout, markBox } from '../web/modules/
 const nodes = ['model', 'lora', 'prompt', 'sampler', 'save'].map(id => ({ id }));
 const edges = [{ from: 'model', to: 'lora' }, { from: 'lora', to: 'sampler' }, { from: 'prompt', to: 'sampler' }, { from: 'sampler', to: 'save' }];
 const { place, layers, slots } = diagramLayout(nodes, edges);
-assert.deepEqual(Object.fromEntries([...place].map(([id, at]) => [id, at.layer])), { model: 0, lora: 1, prompt: 0, sampler: 2, save: 3 });
+assert.deepEqual(Object.fromEntries([...place].map(([id, at]) => [id, at.layer])), { model: 0, lora: 1, prompt: 1, sampler: 2, save: 3 },
+    'a prompt that only feeds the sampler stands right before it');
 assert.equal(layers, 4);
 assert.equal(slots, 2);
-assert.deepEqual(place.get('prompt'), { layer: 0, slot: 1 }, 'kept in the order listed');
+assert.deepEqual(place.get('prompt'), { layer: 1, slot: 1 }, 'after the box fed from the left');
+
+// The user's chain: model → LoRA → LoRA → sampler → save, the prompt into the sampler.
+const chain = diagramLayout(['ckpt', 'lora1', 'lora2', 'pos', 'ks', 'save'].map(id => ({ id })), [
+    { from: 'ckpt', to: 'lora1' }, { from: 'lora1', to: 'lora2' }, { from: 'lora2', to: 'ks' }, { from: 'pos', to: 'ks' }, { from: 'ks', to: 'save' }]);
+assert.deepEqual(Object.fromEntries([...chain.place].map(([id, at]) => [id, at.layer])), { ckpt: 0, lora1: 1, lora2: 2, pos: 2, ks: 3, save: 4 });
+
+// Within a layer, by where their feeders are: crossing arrows untangle.
+const cross = diagramLayout(['a', 'b', 'x', 'y'].map(id => ({ id })), [{ from: 'a', to: 'y' }, { from: 'b', to: 'x' }]);
+assert.equal(cross.place.get('y').slot, 0);
+assert.equal(cross.place.get('x').slot, 1);
 
 // A loop does not grow forever; a missing end is ignored.
 const loop = diagramLayout([{ id: 'a' }, { id: 'b' }], [{ from: 'a', to: 'b' }, { from: 'b', to: 'a' }, { from: 'a', to: 'zz' }]);
@@ -17,8 +28,8 @@ assert.ok(loop.layers <= 2);
 // Boxes: layers in columns to the right, a shorter layer centred.
 const size = { w: 100, h: 40, gapX: 50, gapY: 10 };
 const right = diagramBoxes(nodes, edges, 'right', size);
-assert.deepEqual(right.boxes.get('model'), { x: 0, y: 0, w: 100, h: 40 });
-assert.deepEqual(right.boxes.get('lora'), { x: 150, y: 25, w: 100, h: 40 });
+assert.deepEqual(right.boxes.get('model'), { x: 0, y: 25, w: 100, h: 40 }, 'a layer of one is centred');
+assert.deepEqual(right.boxes.get('lora'), { x: 150, y: 0, w: 100, h: 40 });
 assert.equal(right.width, 3 * 150 + 100);
 assert.equal(right.height, 90);
 const down = diagramBoxes(nodes, edges, 'down', size);

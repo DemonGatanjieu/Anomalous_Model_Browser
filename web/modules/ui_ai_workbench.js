@@ -23,7 +23,9 @@ import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt, copyText } from './ui_dialog.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { listCombos } from './image_keep.js';
+import { messageBox, updateMessageBox } from './ui_ai_message.js';
 import { panelToast, renderPanel } from './ui_ai_panel.js';
+import { drawRecentAiTasks } from './ui_ai_recent.js';
 import {
     audioResult, duration, groupSteps, isVideo, lookTools, outputUrl, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
@@ -40,6 +42,7 @@ const state = {
     tasks: [],
     selected: null,   // task id shown
     pinned: false,    // the user picked it: a new task of the AI does not take its place
+    view: null,       // the shown task's parts kept between redraws (renderTask)
     task: null,       // its full record
     entries: new Map(),// activity entries of its canvas steps, for undo and locate
     narrowView: 'list',
@@ -352,7 +355,21 @@ function renderTask() {
     const keepTop = box.scrollTop;
     const summary = state.tasks.find(item => item.id === task.id) || {};
     const status = taskState(summary);
-    const header = el('div', 'anomalous-ai-task-head');
+    // The task's parts stay in the page between redraws (the AI's steps come in all the time):
+    // only what changed is drawn again, so a scrolled strip or diagram and half-typed text stay.
+    let view = state.view;
+    if (!view || view.taskId !== task.id || !box.contains(view.timeline)) {
+        view = state.view = {
+            taskId: task.id, header: el('div', 'anomalous-ai-task-head'), made: el('div', 'anomalous-ai-made-holder'),
+            timeline: el('div', 'anomalous-ai-timeline'), madeKey: null,
+            message: messageBox(async (text) => {
+                await postTask(task.id, { text }, 'message');
+                await refresh();
+            }),
+        };
+        box.replaceChildren(view.header, view.made, view.timeline, view.message);
+    }
+    const header = view.header;
     const titleLine = el('div', 'anomalous-ai-task-title-line');
     titleLine.append(button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => { state.narrowView = 'list'; layout(); }),
         el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled')),
@@ -378,59 +395,55 @@ function renderTask() {
     titleLine.append(tools);
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)];
-    header.append(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')));
+    header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')));
 
-    const timeline = el('div', 'anomalous-ai-timeline');
+    const madeKey = JSON.stringify(taskResults(task));
+    if (madeKey !== view.madeKey) {
+        view.madeKey = madeKey;
+        const made = strip(task);
+        view.made.replaceChildren(...(made ? [made] : []));
+    }
+
     // Numbered in the order they happened, so the timeline reads 1, 2, 3 from the top.
     const items = groupSteps(task.steps);
-    items.forEach((item, at) => timeline.append(item.type === 'looks' ? looksRow(item.steps, at + 1) : stepRow(item.step, at + 1)));
-    if (!(task.steps || []).length) timeline.append(el('div', 'anomalous-ai-empty-task', t('aiNoSteps')));
-    const parts = [header];
-    const made = strip(task);
-    if (made) parts.push(made);
-    parts.push(timeline, messageBox(task, status));
+    const rows = items.map((item, at) => (item.type === 'looks'
+        ? { key: JSON.stringify(['looks', at, item.steps]), make: () => looksRow(item.steps, at + 1) }
+        : { key: JSON.stringify(['step', at, item.step, undoable(item.step)]), make: () => stepRow(item.step, at + 1) }));
+    if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     if (status === 'live') {
         // What comes next: the following number, waiting.
-        const next = el('div', 'anomalous-ai-step is-next');
-        next.append(el('span', 'anomalous-ai-step-dot', items.length + 1),
-            el('div', 'anomalous-ai-working', (task.steps || []).some(step => step.state === 'running') ? t('aiRunRunning') : t('aiWorking')));
-        timeline.append(next);
+        const running = (task.steps || []).some(step => step.state === 'running');
+        rows.push({
+            key: `next:${items.length}:${running}`,
+            make: () => {
+                const next = el('div', 'anomalous-ai-step is-next');
+                next.append(el('span', 'anomalous-ai-step-dot', items.length + 1), el('div', 'anomalous-ai-working', t(running ? 'aiRunRunning' : 'aiWorking')));
+                return next;
+            },
+        });
     }
-    box.replaceChildren(...parts);
+    syncRows(view.timeline, rows);
+    updateMessageBox(view.message, Boolean(task.ended), status);
     box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
 }
 
-/** Where the user writes to the AI on this task; it reaches the AI when the AI next asks. */
-function messageBox(task, status) {
-    const box = el('div', 'anomalous-ai-message');
-    const line = el('div', 'anomalous-ai-message-line');
-    const field = el('input', 'anomalous-ai-message-input');
-    field.type = 'text';
-    field.maxLength = 2000;
-    field.placeholder = t('aiMessagePlaceholder');
-    const note = el('div', 'anomalous-ai-message-hint', t(task.ended ? 'aiMessageEnded' : 'aiMessageHint'));
-    const send = button('anomalous-ai-panel-send', t('aiMessageSend'), async () => {
-        const text = field.value.trim();
-        if (!text) return;
-        send.disabled = true;
-        try {
-            await postTask(task.id, { text }, 'message');
-            field.value = '';
-            await refresh();
-        } catch (error) {
-            note.textContent = error.message;
-        } finally {
-            send.disabled = false;
-        }
+/** Which canvas changes of a step can be undone now (part of when its row is drawn again). */
+function undoable(step) {
+    return (step.results || []).filter(result => result.type === 'canvas')
+        .map(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)));
+}
+
+/** Rows into `parent` in this order, keeping those whose key is the same (they are not touched). */
+function syncRows(parent, rows) {
+    rows.forEach((row, at) => {
+        const there = parent.children[at];
+        if (there?.dataset.rowKey === row.key) return;
+        const made = row.make();
+        made.dataset.rowKey = row.key;
+        if (there) there.replaceWith(made);
+        else parent.append(made);
     });
-    field.addEventListener('keydown', (event) => {
-        event.stopPropagation(); // typing here is not the browser's shortcuts
-        if (event.key === 'Enter' && !event.isComposing) send.click();
-    });
-    line.append(field, send);
-    box.classList.toggle('is-quiet', status !== 'live' && status !== 'asks');
-    box.append(line, note);
-    return box;
+    while (parent.children.length > rows.length) parent.lastElementChild.remove();
 }
 
 async function loadEntries(task) {
@@ -535,36 +548,14 @@ export function watchAiTasks(owner) {
     });
 }
 
-/** The home page's short list: the last few tasks, with what they made. Nothing when there are none. */
+/** The home page's short list (ui_ai_recent.js); a row opens its task here. */
 export function renderRecentAiTasks(owner, container) {
-    fetchTasks(RECENT_COUNT).then((tasks) => {
-        if (!tasks.length || !container.isConnected) return;
-        const section = el('section', 'anomalous-home-recent anomalous-ai-recent');
-        const head = el('div', 'anomalous-home-recent-head');
-        head.append(el('span', 'anomalous-home-recent-title', t('aiRecent')), button('anomalous-home-link', t('activityViewAll'), () => owner.goTo('ai')));
-        const list = el('div', 'anomalous-ai-recent-list');
-        for (const summary of tasks) {
-            const row = button(`anomalous-ai-recent-row is-${taskState(summary)}`, '', () => {
-                state.selected = summary.id;
-                state.pinned = summary.id !== tasks[0].id;
-                owner.goTo('ai');
-            });
-            if (summary.cover) {
-                const image = el('img', 'anomalous-ai-recent-cover');
-                image.loading = 'lazy';
-                image.src = outputUrl(summary.cover);
-                image.alt = '';
-                row.append(image);
-            }
-            const text = el('span', 'anomalous-ai-recent-text');
-            text.append(el('span', 'anomalous-ai-recent-title', summary.title || t('aiUntitled')),
-                el('span', 'anomalous-ai-recent-meta', [summary.client, timeLabel(summary.updated), ...taskCounts(summary).map(say)].join(' · ')));
-            row.append(text);
-            list.append(row);
-        }
-        section.append(head, list);
-        const recent = container.querySelector('.anomalous-home-recent');
-        if (recent) recent.before(section);
-        else container.append(section);
-    }).catch(() => { /* the home page works without it */ });
+    drawRecentAiTasks(owner, container, {
+        fetchTasks: () => fetchTasks(RECENT_COUNT),
+        open: (summary, newest) => {
+            state.selected = summary.id;
+            state.pinned = summary.id !== newest;
+            owner.goTo('ai');
+        },
+    });
 }

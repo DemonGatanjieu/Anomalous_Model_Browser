@@ -148,8 +148,11 @@ covered by the `styles.css` manifest.
   `web/modules/ui_ai_workbench.js` is the page (rail entry `ai`): the tasks, one task's
   results strip and timeline with links (picture viewer, model page, combo, canvas locate and
   undo, scan page, ▶ for audio), updated live; also the home page's "What the AI did lately"
-  and the rail's dot (`owner.railNews`). `ai_task_view.js` holds its rules without DOM
-  (folding reads, tool words, counts, result addresses).
+  and the rail's dot (`owner.railNews`). A task's parts stay in the page between redraws: a
+  step is drawn again only when it changed (`syncRows`), so a scrolled diagram or strip and
+  half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box under
+  a task (made once per task), `ui_ai_recent.js` the home page's list. `ai_task_view.js` holds
+  its rules without DOM (folding reads, tool words, counts, result addresses).
   Panels the AI draws (`show_panel`, `update_panel`): `api/ai_panels.py` checks every block
   against a fixed set (heading, text, images from the output folder, models by id with their
   covers, table, list, params, choices, input, progress, divider; plain strings of bounded

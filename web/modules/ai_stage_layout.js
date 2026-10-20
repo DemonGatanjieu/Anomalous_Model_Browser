@@ -6,8 +6,11 @@
 
 /**
  * `{ place: Map(id → { layer, slot }), layers, slots }` for a diagram: a box's layer is the
- * longest chain of arrows leading to it (boxes in a loop stop growing after one pass each);
- * within a layer, boxes keep the order the AI listed them in.
+ * longest chain of arrows leading to it (boxes in a loop stop growing after one pass each), and
+ * a box nothing leads to sits right before the first box it feeds (a prompt feeding the sampler
+ * stands next to it, not at the far left with a long arrow across everything). Within a layer,
+ * boxes are sorted by where the boxes feeding them are, so arrows cross less; ties keep the
+ * order the AI listed them in.
  */
 export function diagramLayout(nodes, edges) {
     const ids = (nodes || []).map(node => node.id);
@@ -23,15 +26,31 @@ export function diagramLayout(nodes, edges) {
         }
         if (!moved) break;
     }
-    const slots = new Map();
-    const place = new Map();
-    for (const id of ids) {
-        const at = layer.get(id);
-        const slot = slots.get(at) || 0;
-        slots.set(at, slot + 1);
-        place.set(id, { layer: at, slot });
+    const feeds = new Map(ids.map(id => [id, []]));
+    const fedBy = new Map(ids.map(id => [id, []]));
+    for (const { from, to } of links) {
+        feeds.get(from).push(to);
+        fedBy.get(to).push(from);
     }
-    return { place, layers: Math.max(0, ...layer.values()) + 1, slots: Math.max(1, ...slots.values()) };
+    for (const id of ids) {
+        if (fedBy.get(id).length || !feeds.get(id).length) continue;
+        layer.set(id, Math.max(layer.get(id), Math.min(...feeds.get(id).map(to => layer.get(to))) - 1));
+    }
+    const top = Math.max(0, ...layer.values());
+    const place = new Map();
+    let widest = 1;
+    for (let at = 0; at <= top; at += 1) {
+        const here = ids.filter(id => layer.get(id) === at);
+        const weight = (id) => {
+            const before = fedBy.get(id).filter(from => place.has(from)).map(from => place.get(from).slot);
+            return before.length ? before.reduce((sum, slot) => sum + slot, 0) / before.length : Infinity;
+        };
+        const order = here.map((id, listed) => ({ id, listed, weight: weight(id) }))
+            .sort((a, b) => (a.weight === b.weight ? a.listed - b.listed : (a.weight === Infinity ? 1 : b.weight === Infinity ? -1 : a.weight - b.weight)));
+        order.forEach(({ id }, slot) => place.set(id, { layer: at, slot }));
+        widest = Math.max(widest, here.length);
+    }
+    return { place, layers: top + 1, slots: widest };
 }
 
 /**
