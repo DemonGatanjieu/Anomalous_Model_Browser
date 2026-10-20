@@ -60,7 +60,14 @@ def get_answers(ctx, panel=None, wait_seconds=0):
 
 BLOCKS_HELP = (
     "blocks, top to bottom, each {type, ...}: heading {text}; text {text, tone: normal|muted|tip|warning}; "
-    "images {items: [{image: 'subfolder/name.png' from search_images, caption}], layout: row|grid|compare}; "
+    "images {items: [{image: 'subfolder/name.png' from search_images, caption, marks: [{x, y, r | w, h, label, "
+    "color: red|green|blue|yellow|purple}]}], layout: row|grid|compare} (marks: circles or boxes with a label, x/y/w/h/r "
+    "as fractions 0-1 of the picture, x/y the centre; a click on the label zooms there); "
+    "slider {before: {image}, after: {image}, before_label, after_label} (one picture over the other, a line to drag); "
+    "picks {id, question, items: [{id, image, label, reason, recommended}] (2-12), multiple} (pictures to choose from, "
+    "each with 'take this one'; the user can also put a picture's workflow back on the canvas); "
+    "diagram {nodes: [{id, label, detail, node_id, color}], edges: [{from, to, label}], direction: right|down} (boxes and "
+    "arrows Anomalous lays out; node_id from describe_canvas makes a box find that node); "
     "models {items: [{model_id from search_models, note}]} (cards with their covers, a click opens them); "
     "table {columns: [...], rows: [[...]]}; list {items: [...], ordered}; params {items: [{label, value}]}; "
     "choices {id, question, options: [{id, label, detail}] (2-8), multiple} (buttons the user presses); "

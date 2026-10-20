@@ -16,6 +16,13 @@
 - **Safe by design**: nothing the AI sends is run or read as markup. Every block is checked on the server (only these kinds, plain text of bounded length, pictures only from ComfyUI's output folder, models only from your folders) and written into the page as text.
 - When the AI shows a panel while the browser is elsewhere, a small card in the corner says so (*The AI asks you: …*, **Have a look**); a task with a question waiting says *Waiting for you* in the list.
 
+### 🎞️ The AI's stage: marks on pictures, before / after, picks, diagrams (AI 展台)
+- **Marks on a picture**: the AI circles or boxes places on a picture it made (*① the fingers are fixed*, *② softer light*); each mark has its number, the labels are listed under the picture, and a click on one **zooms the picture there** (again: back).
+- **Before / after slider**: two pictures over each other, a line to drag across to compare the details.
+- **Picks**: pictures side by side, each with the AI's reason and **Take this one** (the choice goes to the AI); the AI can mark the one it recommends. Each can also be **put on the canvas** (its saved workflow opens in a new tab, as dropping the picture on ComfyUI does) or dragged onto the canvas.
+- **Diagrams**: boxes and arrows, laid out by Anomalous (in columns or rows), with a label on an arrow; a box naming a canvas node (◎) finds it on the canvas.
+- The AI only sends data (places as fractions of the picture, what connects to what); every shape and line is drawn by Anomalous, so it looks the same whichever AI is connected, and no drawing code of the AI's is taken.
+
 ## v1.61.0 — unreleased
 
 ### 🔎 Quick search on the canvas: Alt+B (画布快速搜索)

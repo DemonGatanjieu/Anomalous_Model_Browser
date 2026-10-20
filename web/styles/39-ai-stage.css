@@ -1,0 +1,387 @@
+/* The AI's stage blocks (ui_ai_stage.js): marks on pictures, the slider, picks, the diagram. */
+
+.anomalous-ai {
+    --ai-mark-red: #ef5d5d;
+    --ai-mark-green: #34c58c;
+    --ai-mark-blue: #5b9dff;
+    --ai-mark-yellow: #f2c14e;
+    --ai-mark-purple: #a487f5;
+}
+
+/* ---------- marks ---------- */
+.anomalous-ai-panel-picture.has-marks,
+.anomalous-ai-pick-picture.has-marks {
+    position: relative;
+}
+
+.anomalous-ai-panel-picture img,
+.anomalous-ai-pick-picture img {
+    transition: transform 0.35s ease;
+}
+
+.anomalous-ai-marks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.is-zoomed > .anomalous-ai-marks .anomalous-ai-mark {
+    opacity: 0;
+}
+
+.anomalous-ai-mark {
+    --mark: var(--ai-mark-red);
+    position: absolute;
+    box-sizing: border-box;
+    border: 2px solid var(--mark);
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 12px color-mix(in srgb, var(--mark) 45%, transparent);
+    transition: opacity 0.2s ease;
+}
+
+.anomalous-ai-mark.is-round {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    transform: translateY(-50%);
+}
+
+.anomalous-ai-mark.is-green, .anomalous-ai-mark-label.is-green { --mark: var(--ai-mark-green); }
+.anomalous-ai-mark.is-blue, .anomalous-ai-mark-label.is-blue { --mark: var(--ai-mark-blue); }
+.anomalous-ai-mark.is-yellow, .anomalous-ai-mark-label.is-yellow { --mark: var(--ai-mark-yellow); }
+.anomalous-ai-mark.is-purple, .anomalous-ai-mark-label.is-purple { --mark: var(--ai-mark-purple); }
+
+/* The number on a shape, and the same number in the list of labels under the picture. */
+.anomalous-ai-mark-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: var(--mark);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.anomalous-ai-mark > .anomalous-ai-mark-number {
+    position: absolute;
+    top: -9px;
+    left: -9px;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+
+.anomalous-ai-mark-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.anomalous-ai-mark-label {
+    --mark: var(--ai-mark-red);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 3px 10px 3px 4px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--mark) 55%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mark) 12%, transparent);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: zoom-in;
+}
+
+.anomalous-ai-mark-label.is-on {
+    background: color-mix(in srgb, var(--mark) 30%, transparent);
+    cursor: zoom-out;
+}
+
+/* ---------- the slider ---------- */
+.anomalous-ai-slider-stage {
+    position: relative;
+    max-width: 640px;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    user-select: none;
+}
+
+.anomalous-ai-slider-stage img,
+.anomalous-ai-slider-stage video {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.anomalous-ai-slider-stage .anomalous-ai-slider-after {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-ai-slider-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: #fff;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+.anomalous-ai-slider-knob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    line-height: 30px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+    transform: translate(-50%, -50%);
+}
+
+.anomalous-ai-slider-range {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+}
+
+.anomalous-ai-slider-tag {
+    position: absolute;
+    bottom: 10px;
+    padding: 2px 9px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 11.5px;
+    pointer-events: none;
+}
+
+.anomalous-ai-slider-tag.is-before { left: 10px; }
+.anomalous-ai-slider-tag.is-after { right: 10px; }
+
+/* ---------- picks ---------- */
+.anomalous-ai-picks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anomalous-ai-picks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 12px;
+}
+
+.anomalous-ai-pick {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.anomalous-ai-pick.is-recommended {
+    border-color: color-mix(in srgb, var(--amb-ok) 45%, transparent);
+}
+
+.anomalous-ai-pick.is-picked {
+    border-color: var(--amb-ok);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--amb-ok) 35%, transparent);
+}
+
+.anomalous-ai-pick-picture {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: none;
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    aspect-ratio: 1;
+    cursor: zoom-in;
+}
+
+.anomalous-ai-pick-picture img,
+.anomalous-ai-pick-picture video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-ai-pick-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--amb-ok);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.anomalous-ai-pick-label {
+    color: var(--amb-text-main);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomalous-ai-pick-reason {
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.anomalous-ai-pick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin-top: auto;
+}
+
+.anomalous-ai-pick-take {
+    padding: 6px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-ai-pick-take:hover:not(:disabled) {
+    border-color: var(--amb-ok);
+    background: color-mix(in srgb, var(--amb-ok) 14%, transparent);
+}
+
+.anomalous-ai-pick.is-picked .anomalous-ai-pick-take {
+    border-color: var(--amb-ok);
+    background: color-mix(in srgb, var(--amb-ok) 20%, transparent);
+}
+
+.anomalous-ai-pick-take:disabled {
+    cursor: default;
+}
+
+.anomalous-ai-pick:not(.is-picked) .anomalous-ai-pick-take:disabled {
+    opacity: 0.45;
+}
+
+/* ---------- the diagram ---------- */
+.anomalous-ai-diagram-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 6px 2px 10px;
+}
+
+.anomalous-ai-diagram {
+    position: relative;
+    margin: 0 auto;
+}
+
+.anomalous-ai-diagram-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: visible;
+}
+
+.anomalous-ai-diagram-lines > path {
+    fill: none;
+    stroke: color-mix(in srgb, var(--amb-text-dim) 80%, transparent);
+    stroke-width: 1.6;
+}
+
+.anomalous-ai-diagram-lines marker path {
+    fill: color-mix(in srgb, var(--amb-text-dim) 80%, transparent);
+    stroke: none;
+}
+
+.anomalous-ai-diagram-edge {
+    position: absolute;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--amb-bg-panel, #17171c);
+    color: var(--amb-text-dim);
+    font-size: 10.5px;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+}
+
+.anomalous-ai-diagram-box {
+    --box: var(--amb-border-strong);
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    border: 1px solid var(--box);
+    border-radius: 10px;
+    background: var(--amb-bg-panel, #17171c);
+    color: var(--amb-text-main);
+    font: inherit;
+    text-align: left;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.anomalous-ai-diagram-box.is-red { --box: var(--ai-mark-red); }
+.anomalous-ai-diagram-box.is-green { --box: var(--ai-mark-green); }
+.anomalous-ai-diagram-box.is-blue { --box: var(--ai-mark-blue); }
+.anomalous-ai-diagram-box.is-yellow { --box: var(--ai-mark-yellow); }
+.anomalous-ai-diagram-box.is-purple { --box: var(--ai-mark-purple); }
+
+.anomalous-ai-diagram-box.is-findable {
+    cursor: pointer;
+}
+
+.anomalous-ai-diagram-box.is-findable:hover {
+    background: color-mix(in srgb, var(--box) 14%, var(--amb-bg-panel, #17171c));
+}
+
+.anomalous-ai-diagram-label {
+    overflow: hidden;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-ai-diagram-detail {
+    overflow: hidden;
+    color: var(--amb-text-soft);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

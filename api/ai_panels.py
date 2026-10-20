@@ -2,11 +2,15 @@
 the user gives on them.
 
 A panel is a step of the AI's current task (ai_tasks.py) holding a title and a list of blocks:
-heading, text, images (from ComfyUI's output folder), models (the user's, by model_id), table,
-list, params, choices (buttons; one or several picks) and input (a line of text), progress,
-divider. Nothing the AI sends is run or rendered as markup: every block is checked here to be
-one of these shapes, with plain strings of bounded length, pictures only from the output
-folder and models only from the user's folders. The page draws them (ui_ai_panel.js).
+heading, text, images (from ComfyUI's output folder, with marks: circles or boxes and a label
+at places given as fractions of the picture), slider (two pictures over each other, a line to
+drag between them), picks (pictures with a reason and "take this one"), models (the user's, by
+model_id), diagram (boxes and arrows, laid out by the page; a box can name a canvas node),
+table, list, params, choices (buttons; one or several picks) and input (a line of text),
+progress, divider. Nothing the AI sends is run or rendered as markup, and no drawing of its own
+(SVG) is taken: every block is checked here to be one of these shapes, with plain strings and
+numbers of bounded size, pictures only from the output folder and models only from the user's
+folders. The page draws them (ui_ai_panel.js).
 
 The user's answers come back through POST /anomalous/ai_tasks/{task}/answer and wait in the
 step until the AI asks for them (get_answers, which may wait a while for one). Anomalous
@@ -29,7 +33,11 @@ MAX_COLUMNS = 8
 MAX_WAIT = 55
 TONES = ("normal", "muted", "tip", "warning")
 LAYOUTS = ("row", "grid", "compare")
-INTERACTIVE = ("choices", "input")
+INTERACTIVE = ("choices", "input", "picks")
+COLORS = ("red", "green", "blue", "yellow", "purple")
+MAX_MARKS = 8
+MAX_NODES = 24
+MAX_EDGES = 40
 
 _answered = threading.Condition(ai_tasks._lock)
 
@@ -59,12 +67,65 @@ def _list(value, limit, where):
     return value
 
 
+def _fraction(value, where):
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or not 0 <= value <= 1:
+        raise PanelError(f"{where} must be a number from 0 to 1 (a fraction of the picture)")
+    return round(float(value), 4)
+
+
+def _marks(value, where):
+    marks = []
+    for i, mark in enumerate(_list(value, MAX_MARKS, where)):
+        here = f"{where}[{i}]"
+        if not isinstance(mark, dict):
+            raise PanelError(f"{here} must be {{x, y, w, h | r, label, color}}")
+        out = {"x": _fraction(mark.get("x"), f"{here}.x"), "y": _fraction(mark.get("y"), f"{here}.y"),
+               "label": _text(mark.get("label"), 60, f"{here}.label"),
+               "color": mark.get("color") if mark.get("color") in COLORS else "red"}
+        if mark.get("w") is not None or mark.get("h") is not None:
+            out.update(w=_fraction(mark.get("w"), f"{here}.w"), h=_fraction(mark.get("h"), f"{here}.h"))
+        else:
+            out["r"] = _fraction(mark.get("r", 0.06), f"{here}.r")
+        marks.append(out)
+    return marks
+
+
 def _image(item, where):
     image = item.get("image") if isinstance(item, dict) else item
     found = ai_tasks._output_media(str(image or ""))
     if not found:
         raise PanelError(f"{where}: {image!r} is not a picture in ComfyUI's output folder (subfolder/name.png, as search_images gives it)")
-    return {**found, "caption": _text(item.get("caption") if isinstance(item, dict) else "", 120, f"{where}.caption")}
+    out = {**found, "caption": _text(item.get("caption") if isinstance(item, dict) else "", 120, f"{where}.caption")}
+    if isinstance(item, dict) and item.get("marks"):
+        out["marks"] = _marks(item["marks"], f"{where}.marks")
+    return out
+
+
+def _diagram(block, where):
+    nodes, ids = [], set()
+    for i, node in enumerate(_list(block.get("nodes"), MAX_NODES, f"{where}.nodes")):
+        here = f"{where}.nodes[{i}]"
+        if not isinstance(node, dict):
+            raise PanelError(f"{here} must be {{id, label, detail, node_id}}")
+        node_id = _text(node.get("id") or f"n{i + 1}", 40, f"{here}.id")
+        if node_id in ids:
+            raise PanelError(f"{here}.id {node_id!r} twice")
+        ids.add(node_id)
+        out = {"id": node_id, "label": _text(node.get("label"), 40, f"{here}.label", True),
+               "detail": _text(node.get("detail"), 80, f"{here}.detail"),
+               "color": node.get("color") if node.get("color") in COLORS else ""}
+        if node.get("node_id") not in (None, ""):
+            out["node_id"] = _text(node.get("node_id"), 20, f"{here}.node_id")
+        nodes.append(out)
+    if not nodes:
+        raise PanelError(f"{where}.nodes is empty")
+    edges = []
+    for i, edge in enumerate(_list(block.get("edges"), MAX_EDGES, f"{where}.edges")):
+        here = f"{where}.edges[{i}]"
+        if not isinstance(edge, dict) or edge.get("from") not in ids or edge.get("to") not in ids:
+            raise PanelError(f"{here} must be {{from, to, label}} naming two node ids")
+        edges.append({"from": edge["from"], "to": edge["to"], "label": _text(edge.get("label"), 30, f"{here}.label")})
+    return {"nodes": nodes, "edges": edges, "direction": "down" if block.get("direction") == "down" else "right"}
 
 
 def _model(item, where):
@@ -103,6 +164,30 @@ def clean_block(block, at, taken):
             raise PanelError(f"{where}.items is empty")
         out["items"] = [_image(item, f"{where}.items[{i}]") for i, item in enumerate(items)]
         out["layout"] = block.get("layout") if block.get("layout") in LAYOUTS else "row"
+    elif kind == "slider":
+        out.update(before=_image(block.get("before"), f"{where}.before"), after=_image(block.get("after"), f"{where}.after"),
+                   before_label=_text(block.get("before_label"), 40, f"{where}.before_label"),
+                   after_label=_text(block.get("after_label"), 40, f"{where}.after_label"))
+    elif kind == "picks":
+        items, ids = [], set()
+        raw = _list(block.get("items"), MAX_ITEMS, f"{where}.items")
+        if len(raw) < 2:
+            raise PanelError(f"{where}.items needs 2 to {MAX_ITEMS} pictures")
+        for i, item in enumerate(raw):
+            here = f"{where}.items[{i}]"
+            if not isinstance(item, dict):
+                raise PanelError(f"{here} must be {{id, image, label, reason, recommended}}")
+            item_id = _text(item.get("id") or f"p{i + 1}", 40, f"{here}.id")
+            if item_id in ids:
+                raise PanelError(f"{here}.id {item_id!r} twice")
+            ids.add(item_id)
+            picture = _image(item, here)
+            items.append({**picture, "id": item_id, "label": _text(item.get("label"), 60, f"{here}.label"),
+                          "reason": _text(item.get("reason"), 200, f"{here}.reason"), "recommended": item.get("recommended") is True})
+        out.update(question=_text(block.get("question"), 200, f"{where}.question"), items=items,
+                   multiple=block.get("multiple") is True)
+    elif kind == "diagram":
+        out.update(_diagram(block, where))
     elif kind == "models":
         items = _list(block.get("items"), MAX_ITEMS, f"{where}.items")
         if not items:
@@ -159,8 +244,8 @@ def clean_block(block, at, taken):
     elif kind == "divider":
         pass
     else:
-        raise PanelError(f"{where}.type {kind!r} is not one of heading, text, images, models, table, list, params, "
-                         "choices, input, progress, divider")
+        raise PanelError(f"{where}.type {kind!r} is not one of heading, text, images, slider, picks, models, diagram, "
+                         "table, list, params, choices, input, progress, divider")
     if kind in INTERACTIVE:
         block_id = _text(block.get("id") or f"q{at + 1}", 40, f"{where}.id")
         if block_id in taken:
@@ -236,9 +321,10 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None):
         if block_id in step.setdefault("answers", {}):
             raise PanelError("Already answered")
         entry = {"at": time.time() if now is None else now, "delivered": False}
-        if block["type"] == "choices":
+        if block["type"] in ("choices", "picks"):
             picked = choice if isinstance(choice, list) else [choice]
-            known = {option["id"]: option["label"] for option in block["options"]}
+            options = block["options"] if block["type"] == "choices" else block["items"]
+            known = {option["id"]: option.get("label") or option["id"] for option in options}
             picked = [str(item) for item in picked if str(item) in known]
             if not picked or (len(picked) > 1 and not block.get("multiple")):
                 raise PanelError("Pick one of the options")

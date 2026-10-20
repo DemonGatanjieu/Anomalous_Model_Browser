@@ -157,7 +157,13 @@ covered by the `styles.css` manifest.
   in through `POST /anomalous/ai_tasks/{id}/answer` and wait there until the AI reads them
   (`get_answers`, which can wait up to 55 s for one; Anomalous cannot call the AI).
   `web/modules/ui_ai_panel.js` draws a panel in the timeline (textContent only) and the toast
-  when the AI shows one while the user is elsewhere.
+  when the AI shows one while the user is elsewhere. The stage blocks are data the page lays
+  out, never drawings of the AI's own (no SVG is taken): marks on pictures (circles or boxes at
+  fractions of the picture, a label that zooms there), the slider (before and after over each
+  other), picks (pictures with a reason, "Take this one", "Put on the canvas" through ComfyUI's
+  own file loading, drag onto the canvas) and the diagram (boxes and arrows; a box naming a
+  canvas node finds it). `ui_ai_stage.js` draws them, `ai_stage_layout.js` holds where they go
+  without DOM (a diagram's layers by its longest chain of arrows, boxes, arrow ends, marks).
 - `api/backup.py` is Settings → Backup (`/anomalous/backup/*`): one .zip of the user's stores
   (recipes, combos, materials, parameters, optionally ComfyUI's saved workflows), the plugin
   settings without the Civitai key, and each model's user layer and own cover; putting it

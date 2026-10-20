@@ -17,7 +17,7 @@ import { translate as t } from './locales.js';
 import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
 import { changeNodeId } from './activity_diff.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
-import { anomalousConfirm, anomalousPrompt, copyText } from './ui_dialog.js';
+import { anomalousAlert, anomalousConfirm, anomalousPrompt, copyText } from './ui_dialog.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { listCombos } from './image_keep.js';
 import { panelToast, renderPanel } from './ui_ai_panel.js';
@@ -157,11 +157,16 @@ async function openComboNamed(name) {
 
 function locate(entry, note) {
     const change = (entry?.detail?.changes || []).find(item => item.kind !== 'removed' && changeNodeId(item) !== null);
-    const id = change ? changeNodeId(change) : null;
+    locateNode(change ? changeNodeId(change) : null, note);
+}
+
+/** Closes the browser on canvas node `id`, selected and centred (a note says when it is gone). */
+function locateNode(id, note) {
     const graph = app.canvas?.graph || app.graph;
     const node = id === null ? null : graph?.getNodeById?.(Number(id)) ?? graph?.getNodeById?.(id);
     if (!node) {
-        note.textContent = t('activityLocateMissing');
+        if (note) note.textContent = t('activityLocateMissing');
+        else void anomalousAlert(t('activityLocateMissing'));
         return;
     }
     state.owner?.close?.();
@@ -233,8 +238,10 @@ function stepRow(step) {
     if (step.kind === 'panel' && state.task) {
         body.append(renderPanel(step, {
             taskId: state.task.id,
+            owner: state.owner,
             openPicture: (url, video) => state.owner?.showGalleryViewer?.(url, video),
             openModel,
+            locateNode: id => locateNode(id, null),
             changed: () => void refresh(),
         }));
     }
@@ -333,7 +340,7 @@ function renderTask() {
     tools.append(button('anomalous-ai-link', t('aiRename'), async () => {
         const title = await anomalousPrompt(t('aiRenamePrompt'), task.title || '', t('aiRename'));
         if (title === null || title === undefined) return;
-        await postTask(task.id, { title }).catch(error => alert(error.message));
+        await postTask(task.id, { title }).catch(error => anomalousAlert(error.message));
         await refresh();
     }));
     if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
@@ -341,7 +348,7 @@ function renderTask() {
     }
     tools.append(button('anomalous-ai-link is-danger', t('aiRemove'), async () => {
         if (!await anomalousConfirm(t('aiRemoveConfirm'), t('aiRemove'))) return;
-        await postTask(task.id, { remove: true }).catch(error => alert(error.message));
+        await postTask(task.id, { remove: true }).catch(error => anomalousAlert(error.message));
         state.selected = null;
         state.task = null;
         state.narrowView = 'list';

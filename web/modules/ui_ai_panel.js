@@ -1,8 +1,9 @@
 /**
  * A panel the AI drew in its task (api/ai_panels.py), drawn here from its blocks: headings,
- * text, pictures (a row, a grid or side by side to compare), the user's models as cards with
- * their covers, tables, lists, settings, a progress bar, and questions: buttons (one pick or
- * several) and a line of text, whose answers go back to the server for the AI to read. Only
+ * text, pictures (a row, a grid or side by side to compare, with marks), the slider, picks and
+ * the diagram (ui_ai_stage.js), the user's models as cards with their covers, tables, lists,
+ * settings, a progress bar, and questions: buttons (one pick or several), picks and a line of
+ * text, whose answers go back to the server for the AI to read. Only
  * text is ever written into the page (textContent); the blocks were checked by the server and
  * are checked again by their shape here. Also the toast when the AI shows a panel while the
  * user is elsewhere.
@@ -10,6 +11,7 @@
 
 import { translate as t } from './locales.js';
 import { outputUrl, isVideo } from './ai_task_view.js';
+import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -57,6 +59,10 @@ function picture(item, ctx, className) {
     open.append(media);
     box.append(open);
     if (item.caption) box.append(el('figcaption', '', item.caption));
+    if (Array.isArray(item.marks) && item.marks.length) {
+        box.classList.add('has-marks');
+        addMarks(open, media, item.marks, box);
+    }
     return box;
 }
 
@@ -222,11 +228,24 @@ const DRAW = {
     input,
     progress,
     divider: () => el('hr', 'anomalous-ai-panel-divider'),
+    slider,
+    diagram,
+    picks: (block, ctx) => picks(block, {
+        ...ctx,
+        send: async (ids, note) => {
+            try {
+                await send(ctx.taskId, { step: ctx.stepId, block: block.id, choice: ids });
+                ctx.changed();
+            } catch (error) {
+                note.textContent = error.message;
+            }
+        },
+    }),
 };
 
 /**
- * The panel of a panel step. `ctx`: `{ taskId, openPicture(url, video), openModel(item), changed() }`
- * (changed: an answer went in, draw the task again).
+ * The panel of a panel step. `ctx`: `{ taskId, owner, openPicture(url, video), openModel(item),
+ * locateNode(id), changed() }` (changed: an answer went in, draw the task again).
  */
 export function renderPanel(step, ctx) {
     const panel = step.panel || {};
@@ -237,7 +256,7 @@ export function renderPanel(step, ctx) {
         const draw = DRAW[block?.type];
         if (draw) card.append(draw(block, blockCtx));
     }
-    const asks = list(panel.blocks).some(block => block?.type === 'choices' || block?.type === 'input');
+    const asks = list(panel.blocks).some(block => ['choices', 'input', 'picks'].includes(block?.type));
     if (asks) card.append(el('div', 'anomalous-ai-panel-foot', t(panel.closed ? 'aiPanelClosed' : 'aiPanelHow')));
     return card;
 }

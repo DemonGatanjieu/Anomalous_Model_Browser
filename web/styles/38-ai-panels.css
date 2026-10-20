@@ -91,6 +91,11 @@
     width: 160px;
 }
 
+/* A picture with marks is shown larger, so they can be seen. */
+.anomalous-ai-panel-images.is-row .anomalous-ai-panel-figure.has-marks {
+    width: min(360px, 100%);
+}
+
 .anomalous-ai-panel-figure figcaption {
     color: var(--amb-text-soft);
     font-size: 12px;

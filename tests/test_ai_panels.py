@@ -76,6 +76,67 @@ class BlockTests(unittest.TestCase):
                     ai_panels.clean_blocks(blocks)
 
 
+class StageTests(unittest.TestCase):
+    """Marks on pictures, the slider, picks and the diagram: data only, laid out by the page."""
+
+    def setUp(self):
+        isolate()
+
+    def test_marks_slider_picks_and_diagram(self):
+        with mock.patch.object(ai_tasks.folder_paths, "get_output_directory", return_value=OUTPUT):
+            blocks = ai_panels.clean_blocks([
+                {"type": "images", "items": [{"image": "a.png", "marks": [
+                    {"x": 0.6, "y": 0.5, "label": "手指修好了", "color": "green"},
+                    {"x": 0.2, "y": 0.2, "w": 0.3, "h": 0.2, "label": "光影", "color": "pink"}]}]},
+                {"type": "slider", "before": {"image": "a.png"}, "after": "b.png", "before_label": "改之前", "after_label": "改之后"},
+                {"type": "picks", "id": "lora", "question": "哪个权重？", "items": [
+                    {"id": "w06", "image": "a.png", "label": "0.6", "reason": "偏淡"},
+                    {"image": "b.png", "label": "0.8", "reason": "推荐", "recommended": True}]},
+                {"type": "diagram", "direction": "sideways", "nodes": [
+                    {"id": "m", "label": "模型", "node_id": 4}, {"id": "s", "label": "采样", "color": "blue"}],
+                 "edges": [{"from": "m", "to": "s", "label": "MODEL"}]},
+            ])
+        marks = blocks[0]["items"][0]["marks"]
+        self.assertEqual(marks[0], {"x": 0.6, "y": 0.5, "label": "手指修好了", "color": "green", "r": 0.06})
+        self.assertEqual(marks[1], {"x": 0.2, "y": 0.2, "label": "光影", "color": "red", "w": 0.3, "h": 0.2})
+        self.assertEqual((blocks[1]["before"]["filename"], blocks[1]["after"]["filename"]), ("a.png", "b.png"))
+        self.assertEqual([item["id"] for item in blocks[2]["items"]], ["w06", "p2"])
+        self.assertTrue(blocks[2]["items"][1]["recommended"])
+        self.assertEqual(blocks[2]["id"], "lora")
+        self.assertEqual(blocks[3]["direction"], "right")
+        self.assertEqual(blocks[3]["nodes"][0]["node_id"], "4")
+        self.assertEqual(blocks[3]["edges"], [{"from": "m", "to": "s", "label": "MODEL"}])
+
+    def test_stage_blocks_refused(self):
+        bad = [
+            [{"type": "images", "items": [{"image": "a.png", "marks": [{"x": 1.5, "y": 0}]}]}],
+            [{"type": "images", "items": [{"image": "a.png", "marks": [{"x": 0.1, "y": 0.1}] * 9}]}],
+            [{"type": "slider", "before": "a.png"}],
+            [{"type": "picks", "items": [{"image": "a.png"}]}],
+            [{"type": "picks", "items": [{"id": "x", "image": "a.png"}, {"id": "x", "image": "b.png"}]}],
+            [{"type": "diagram", "nodes": []}],
+            [{"type": "diagram", "nodes": [{"id": "a", "label": "A"}], "edges": [{"from": "a", "to": "zz"}]}],
+            [{"type": "svg", "svg": "<svg onload=alert(1)>"}],
+        ]
+        with mock.patch.object(ai_tasks.folder_paths, "get_output_directory", return_value=OUTPUT):
+            for blocks in bad:
+                with self.assertRaises(ai_panels.PanelError, msg=str(blocks)[:80]):
+                    ai_panels.clean_blocks(blocks)
+
+    def test_a_pick_is_an_answer(self):
+        with mock.patch.object(ai_tasks.folder_paths, "get_output_directory", return_value=OUTPUT):
+            shown = ai_panels.show("A", "选一张", [{"type": "picks", "id": "pick", "question": "哪张？",
+                                                 "items": [{"id": "l", "image": "a.png", "label": "左"}, {"id": "r", "image": "b.png"}]}])
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        step = ai_tasks.get_task(task_id)["steps"][0]
+        self.assertEqual(ai_tasks.list_tasks()[0]["asks"], 1)
+        with self.assertRaises(ai_panels.PanelError):
+            ai_panels.answer(task_id, step["id"], "pick", ["x"])
+        ai_panels.answer(task_id, step["id"], "pick", ["r"])
+        got = ai_panels.get_answers("A", shown["id"])["answers"]
+        self.assertEqual(got, [{"panel": shown["id"], "question": "pick", "asked": "哪张？", "choice": ["r"], "labels": ["r"]}])
+
+
 class AnswerTests(unittest.TestCase):
     def setUp(self):
         isolate()
