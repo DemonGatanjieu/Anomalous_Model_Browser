@@ -10,8 +10,10 @@ and Host and Origin (when sent) must name a loopback host, which stops DNS rebin
 Answers are always one JSON object; there are no server-initiated messages. The tools are
 in mcp_tools.py (reading), mcp_actions.py (acting) and mcp_task_tools.py (the AI workbench's
 begin_task and report); every call is kept as a step of a task (ai_tasks.py) for the AI
-workbench page. POST /anomalous/mcp/bridge is where the open ComfyUI page claims and answers
-canvas actions (mcp_bridge.py).
+workbench page, starting in state "running" and updated on completion, with unread user
+messages and panel answers attached to the next successful tool response. POST
+/anomalous/mcp/bridge is where the open ComfyUI page claims and answers canvas actions
+(mcp_bridge.py).
 """
 
 import asyncio
@@ -21,7 +23,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_tasks, mcp_bridge
+from . import ai_panels, ai_tasks, mcp_bridge
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_task_tools import TASK_TOOLS
@@ -44,9 +46,11 @@ INSTRUCTIONS = (
     "Combos, Prompts, Voices). The user watches your work in Anomalous's AI workbench: call begin_task "
     "with a short title when you start what they asked for (it continues the waiting or active task; "
     "new_task=true is only for a separate user request), and report to explain a choice, hand in "
-    "pictures made another way, or end the task (done=true). The user can write to you there too: call "
-    "get_answers between steps of longer work to read it. Show plans, workflow explanations and results in "
-    "chronological order with show_panel; update_panel appends new content below what the user already saw."
+    "pictures made another way, or end the task (done=true). The user can write to you or answer "
+    "panel questions there: call get_answers to wait for or read them, and any unread user_messages "
+    "or user_answers attached to a tool result must also be honoured. Show plans, workflow explanations "
+    "and results in chronological order with show_panel; update_panel appends new content below what "
+    "the user already saw."
 )
 LIST_TTL_MS = 300000
 # Requests run tools in threads; a few at a time is plenty for one person's AI app.
@@ -131,17 +135,42 @@ def _modern_header_problem(request, method, params, version):
 
 async def _call(params, request):
     name = params.get("name")
-    arguments = params.get("arguments") or {}
-    if name not in TOOLS or not isinstance(arguments, dict):
+    raw_arguments = params.get("arguments") or {}
+    if name not in TOOLS or not isinstance(raw_arguments, dict):
         return None
+    arguments = dict(raw_arguments)
     client = ai_tasks.client_of(request.headers, params)
-    ctx = {"base_url": f"{request.scheme}://{request.host}", "client": client}  # loopback, checked in api_mcp
+    session = ai_tasks.session_of(request.headers, params)
+    task_id = ai_tasks.task_of(request.headers, params, arguments)
+    if "task" in arguments and "task" not in TOOLS[name]["spec"]["inputSchema"].get("properties", {}):
+        arguments.pop("task", None)
+    ctx = {"base_url": f"{request.scheme}://{request.host}", "client": client, "session": session, "task": task_id}  # loopback, checked in api_mcp
     started = time.time()
-    async with _slots:
-        before = await asyncio.to_thread(ai_tasks.prompt_ids) if name == "run_workflow" else None
-        result = await asyncio.to_thread(call_tool, TOOLS, name, arguments, ctx)
     read_only = bool(TOOLS[name]["spec"].get("annotations", {}).get("readOnlyHint", True))
-    await asyncio.to_thread(ai_tasks.record, client, name, arguments, result, started, read_only, before)
+    step_ref = await asyncio.to_thread(
+        ai_tasks.begin_step, client, name, arguments, started, read_only, session=session, task_id=task_id,
+    )
+    active_task = step_ref[0] if step_ref else task_id
+    if active_task:
+        ctx["task"] = active_task
+    try:
+        async with _slots:
+            before = await asyncio.to_thread(ai_tasks.prompt_ids) if name == "run_workflow" else None
+            result = await asyncio.to_thread(call_tool, TOOLS, name, arguments, ctx)
+    except BaseException as error:
+        failed_result = {"content": [{"type": "text", "text": f"{name} failed: {error}"}], "isError": True}
+        await asyncio.to_thread(
+            ai_tasks.finish_step, client, name, arguments, failed_result, started, read_only, None,
+            step_ref=step_ref, session=session, task_id=active_task,
+        )
+        raise
+    await asyncio.to_thread(
+        ai_tasks.finish_step, client, name, arguments, result, started, read_only, before,
+        step_ref=step_ref, session=session, task_id=active_task,
+    )
+    if name != "get_answers" and isinstance(result, dict) and not result.get("isError"):
+        resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)
+        await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task)
     return result
 
 

@@ -11,16 +11,22 @@ def begin_task(ctx, title, new_task=False):
     title = str(title or "").strip()
     if not title:
         raise ToolError("title is empty: a few words on what the user asked for.")
-    task = ai_tasks.begin_task(ctx.get("client") or "AI", title, new_task=bool(new_task))
+    task = ai_tasks.begin_task(
+        ctx.get("client") or "AI", title, new_task=bool(new_task),
+        session=ctx.get("session") or "", task_id=ctx.get("task"),
+    )
     return {"task": task["id"], "title": task["title"], "note": "Continue this task; do not begin another for its individual steps. "
                                        "Every call from now on is a step of this task in Anomalous's AI workbench, "
                                        "where the user sees, opens and undoes them. Call report to explain a choice "
                                        "or to hand in pictures you made another way; report with done=true at the end."}
 
 
-def report(ctx, text="", images=None, done=False):
+def report(ctx, text="", images=None, done=False, task=None):
     try:
-        step, missing = ai_tasks.report(ctx.get("client") or "AI", text, images or [], bool(done))
+        step, missing = ai_tasks.report(
+            ctx.get("client") or "AI", text, images or [], bool(done),
+            session=ctx.get("session") or "", task_id=task or ctx.get("task"),
+        )
     except ValueError as error:
         raise ToolError(str(error))
     answer = {"noted": True, "pictures": len(step["results"])}
@@ -30,9 +36,12 @@ def report(ctx, text="", images=None, done=False):
     return answer
 
 
-def show_panel(ctx, title, blocks):
+def show_panel(ctx, title, blocks, task=None):
     try:
-        panel = ai_panels.show(ctx.get("client") or "AI", title, blocks)
+        panel = ai_panels.show(
+            ctx.get("client") or "AI", title, blocks,
+            session=ctx.get("session") or "", task_id=task or ctx.get("task"),
+        )
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
     asks = [block["id"] for block in panel["blocks"] if block["type"] in ai_panels.INTERACTIVE]
@@ -45,7 +54,8 @@ def show_panel(ctx, title, blocks):
     return answer
 
 
-def update_panel(ctx, panel, title=None, blocks=None, closed=None):
+def update_panel(ctx, panel, title=None, blocks=None, closed=None, task=None):
+    del ctx, task
     try:
         updated = ai_panels.update(panel, title, blocks, closed)
     except ai_panels.PanelError as error:
@@ -54,9 +64,9 @@ def update_panel(ctx, panel, title=None, blocks=None, closed=None):
                                         for block in updated["blocks"]]}
 
 
-def get_answers(ctx, panel=None, wait_seconds=0):
+def get_answers(ctx, panel=None, wait_seconds=0, task=None):
     try:
-        return ai_panels.get_answers(ctx.get("client") or "AI", panel, wait_seconds)
+        return ai_panels.get_answers(ctx.get("client") or "AI", panel, wait_seconds, task_id=task or ctx.get("task"))
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
 
@@ -78,6 +88,8 @@ BLOCKS_HELP = (
     "Each block may have a stable id; the tool returns block ids in display order. "
     "Plain text only (no markup, no links); up to 30 blocks, 12 pictures or models a block."
 )
+
+_TASK_PROP = {"type": "string", "description": "Optional task id returned by begin_task."}
 
 
 def _task_tool(name, title, description, run, properties, required=()):
@@ -104,14 +116,15 @@ TASK_TOOLS = dict([
                "make, so they are kept with the task. done=true ends the task.",
                report, {"text": {"type": "string"},
                         "images": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_LIMIT},
-                        "done": {"type": "boolean", "default": False}}),
+                        "done": {"type": "boolean", "default": False}, "task": _TASK_PROP}),
     _task_tool("show_panel", "Show the user a panel",
                "Draws a panel in the AI workbench, in Anomalous's own style, from blocks: to compare pictures side by "
                "side, present models with their covers, lay out settings, a table, and to ask (buttons or a line of "
                "text). Use a new panel for each new phase (plan, workflow, then results), in the order they happen. "
                "Use it when a choice is the user's, or to show results better than words do. " + BLOCKS_HELP,
                show_panel, {"title": {"type": "string"},
-                            "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS}},
+                            "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
+                            "task": _TASK_PROP},
                ["title", "blocks"]),
     _task_tool("update_panel", "Change a panel",
                "Adds new output at the BOTTOM of an existing panel, preserving earlier content and its order. "
@@ -122,7 +135,7 @@ TASK_TOOLS = dict([
                "Can also change title, or set closed=true to stop answers; existing answers stay.",
                update_panel, {"panel": {"type": "string"}, "title": {"type": "string"},
                               "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
-                              "closed": {"type": "boolean"}}, ["panel"]),
+                              "closed": {"type": "boolean"}, "task": _TASK_PROP}, ["panel"]),
     _task_tool("get_answers", "Read the user's answers and messages",
                "What the user picked or typed on your panels, and what they wrote to you in the AI workbench "
                "(messages: a change of mind, 'stop', 'make it brighter'), since you last asked; each once. For one "
@@ -130,5 +143,6 @@ TASK_TOOLS = dict([
                "yet: for that panel's open questions, or with no panel for anything the user sends. still_waiting "
                "lists the questions not answered. Check it between steps of longer work.",
                get_answers, {"panel": {"type": "string"},
-                             "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": 0}}),
+                             "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": 0},
+                             "task": _TASK_PROP}),
 ])

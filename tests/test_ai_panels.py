@@ -302,5 +302,25 @@ class AnswerTests(unittest.TestCase):
         self.assertEqual(len({b["id"] for b in changed["blocks"]}), 3)
 
 
+    def test_attach_pending_delivers_once_and_skips_errors(self):
+        shown = ai_panels.show("Claude", "挑一张", [CHOICES])
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        step = ai_tasks.get_task(task_id)["steps"][0]
+        ai_panels.answer(task_id, step["id"], "pick", "a")
+        ai_panels.leave_message(task_id, "再来一张特写")
+        notified = []
+        with mock.patch.object(ai_tasks, "_notify", side_effect=notified.append):
+            failed = {"content": [{"type": "text", "text": "err"}], "structuredContent": {}, "isError": True}
+            self.assertEqual(ai_panels.attach_pending(copy.deepcopy(failed), "Claude", task_id=task_id), failed)
+            self.assertEqual(notified, [], "failed tool calls must not consume pending messages or answers")
+            ok_res = {"content": [{"type": "text", "text": json.dumps({"total": 1})}], "structuredContent": {"total": 1}, "isError": False}
+            delivered = ai_panels.attach_pending(ok_res, "Claude", task_id=task_id)
+        self.assertIn(task_id, notified)
+        self.assertEqual([m["text"] for m in delivered["structuredContent"]["user_messages"]], ["再来一张特写"])
+        self.assertEqual(delivered["structuredContent"]["user_answers"][0]["choice"], ["a"])
+        again = {"content": [{"type": "text", "text": "{}"}], "structuredContent": {}, "isError": False}
+        self.assertNotIn("user_messages", ai_panels.attach_pending(again, "Claude", task_id=task_id)["structuredContent"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,8 +9,8 @@
  * with a line in the timeline that brings it there; its questions are answered there, and when it
  * comes while the user is elsewhere a toast says so. The task list can be folded away.
  * Under the timeline the user can write to the AI on that task; the message waits until the AI
- * asks (get_answers), and says whether it has. The list groups the tasks by day, each with
- * an icon for where it stands.
+ * asks (get_answers) or runs its next step, and says whether it has. The list groups the tasks
+ * by day, each with an icon for where it stands.
  * In a narrow window the list and the task take turns. The rules are in ai_task_view.js.
  * Also the home page's "What the AI did lately" and the rail entry's dot for news.
  */
@@ -136,7 +136,8 @@ function renderList(box) {
 
 /** One step of the timeline; `number` is its place in the task (the dot shows it). */
 function stepRow(step, number) {
-    const row = el('div', `anomalous-ai-step is-${step.kind}${step.ok ? '' : ' is-failed'}`);
+    const running = step.state === 'running';
+    const row = el('div', `anomalous-ai-step is-${step.kind}${step.ok ? '' : ' is-failed'}${running ? ' is-running' : ''}`);
     row.append(el('span', 'anomalous-ai-step-dot', number));
     const body = el('div', 'anomalous-ai-step-body');
     const line = el('div', 'anomalous-ai-step-line');
@@ -158,7 +159,7 @@ function stepRow(step, number) {
         body.append(panelLine(step, () => showOnStage(step.panel.id)));
     }
     if (step.error) body.append(el('div', 'anomalous-ai-step-error', step.error));
-    if (step.state === 'running') body.append(el('div', 'anomalous-ai-step-running', t('aiRunRunning')));
+    if (running) body.append(el('div', 'anomalous-ai-step-running', t(step.kind === 'run' ? 'aiRunRunning' : 'aiStepRunning')));
     const links = resultLinks(step);
     if (links) body.append(links);
     const when = el('div', 'anomalous-ai-step-when');
@@ -285,16 +286,17 @@ function renderTask() {
     if (!items.length && task.waiting) rows.push({ key: `waiting:${task.title}`, make: () => waitingCard(task) });
     else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     if (status === 'live') {
-        // What comes next: the following number, waiting.
         const running = (task.steps || []).some(step => step.state === 'running');
-        rows.push({
-            key: `next:${items.length}:${running}`,
-            make: () => {
-                const next = el('div', 'anomalous-ai-step is-next');
-                next.append(el('span', 'anomalous-ai-step-dot', items.length + 1), el('div', 'anomalous-ai-working', t(running ? 'aiRunRunning' : 'aiWorking')));
-                return next;
-            },
-        });
+        if (!running) {
+            rows.push({
+                key: `next:${items.length}:waiting`,
+                make: () => {
+                    const next = el('div', 'anomalous-ai-step is-next');
+                    next.append(el('span', 'anomalous-ai-step-dot', items.length + 1), el('div', 'anomalous-ai-working', t('aiWorking')));
+                    return next;
+                },
+            });
+        }
     }
     syncRows(view.timeline, rows);
     updateMessageBox(view.message, Boolean(task.ended), status);

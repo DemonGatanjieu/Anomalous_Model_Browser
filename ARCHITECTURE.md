@@ -147,7 +147,7 @@ covered by the `styles.css` manifest.
   instead of joining its last task (one waiting at a time, found again after a restart).
   `begin_task` resumes a waiting or active task, including preliminary reads, and keeps a user's title;
   `new_task=true` explicitly separates a new request. Ended or idle tasks are not resumed.
-  `mcp_server.py` records each call after it ran (the app's name from its client
+  `mcp_server.py` starts an in-flight `"running"` step before each call and updates the same step in place when it finishes or fails (the app's name from its client
   info or User-Agent); `api/mcp_task_tools.py` holds the AI's own tools for it, `begin_task`
   and `report` (a note, with pictures from the output folder it made another way).
   `web/modules/ui_ai_workbench.js` is the page (rail entry `ai`): the tasks, one task's
@@ -188,7 +188,7 @@ covered by the `styles.css` manifest.
   in through `POST /anomalous/ai_tasks/{id}/answer` and wait there until the AI reads them
   (`get_answers`, which can wait up to 55 s for one; Anomalous cannot call the AI). The user
   can also write to the AI on a task (`POST /anomalous/ai_tasks/{id}/message`, a `user` step);
-  `get_answers` brings those messages too, and with no panel named waits for one.
+  `get_answers` brings those messages too, and with no panel named waits for one; unread answers and user messages are also piggybacked once onto the next successful MCP tool response (`ai_panels.attach_pending`) so AI apps that do not poll `get_answers` still receive them immediately.
   `web/modules/ui_ai_panel.js` draws a panel in the timeline (textContent only) and the toast
   when the AI shows one while the user is elsewhere. The stage blocks are data the page lays
   out, never drawings of the AI's own (no SVG is taken): marks on pictures (circles or boxes at

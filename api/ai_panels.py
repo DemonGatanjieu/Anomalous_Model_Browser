@@ -13,12 +13,13 @@ numbers of bounded size, pictures only from the output folder and models only fr
 folders. The page draws them (ui_ai_panel.js).
 
 The user's answers come back through POST /anomalous/ai_tasks/{task}/answer and wait in the
-step until the AI asks for them (get_answers, which may wait a while for one). The user can
-also write to the AI in a task (POST /anomalous/ai_tasks/{task}/message): the message is a
-step of its own and reaches the AI the same way. Anomalous cannot call the AI itself; the page
-says so where it asks.
+step until the AI asks for them (get_answers, which may wait a while for one) or makes its next
+successful MCP tool call (attach_pending). The user can also write to the AI in a task
+(POST /anomalous/ai_tasks/{task}/message): the message is a step of its own and reaches the AI
+the same way.
 """
 
+import json
 import os
 import threading
 import time
@@ -321,14 +322,14 @@ def _find(panel_id):
     return None, None
 
 
-def show(client, title, blocks, now=None):
+def show(client, title, blocks, now=None, session="", task_id=None):
     title = _text(title, 120, "title", True)
     panel = {"id": uuid.uuid4().hex[:10], "title": title, "blocks": _block_ids(clean_blocks(blocks)), "closed": False}
     now = time.time() if now is None else now
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "show_panel", "kind": "panel", "ok": True,
             "summary": f"show_panel: {title}", "panel": panel, "answers": {}, "results": []}
     with ai_tasks._lock:
-        task = ai_tasks.current_task(client, now)
+        task = ai_tasks.current_task(client, now, session=session, task_id=task_id)
         ai_tasks._add_step(task, step)
         ai_tasks._save(task)
     ai_tasks._notify(task["id"], {"panel": title, "asks": any(b["type"] in INTERACTIVE for b in panel["blocks"])})
@@ -412,19 +413,27 @@ def leave_message(task_id, text, now=None):
     return step
 
 
-def _collect(client, panel_id):
-    """Answers and messages not given to the AI yet (its own tasks, or panel `panel_id` and the
-    messages of that panel's task), marked as given. Under the lock."""
+def _collect(client, panel_id, task_id=None):
+    """Answers and messages not given to the AI yet (its own tasks, task `task_id`, or panel
+    `panel_id` and the messages of that panel's task), marked as given. Under the lock."""
     out, waiting, messages, changed = [], [], [], set()
+    tasks = ai_tasks._load()
     panel_task = _find(panel_id)[0] if panel_id is not None else None
-    for task in ai_tasks._load().values():
-        if panel_id is None and task.get("client") != client:
+    named_task = tasks.get(task_id) if task_id else None
+    for task in tasks.values():
+        if panel_id is not None:
+            if task is not panel_task:
+                continue
+        elif named_task is not None:
+            if task is not named_task and task.get("client") != client:
+                continue
+        elif task.get("client") != client:
             continue
         for step in task.get("steps") or []:
             if step.get("kind") == "user" and not step.get("delivered") and (panel_id is None or task is panel_task):
                 step["delivered"] = True
                 changed.add(task["id"])
-                messages.append({"task": task["id"], "text": step["text"], "at": step["at"]})
+                messages.append({"id": step["id"], "task": task["id"], "text": step["text"], "at": step["at"]})
                 continue
             panel = step.get("panel")
             if step.get("kind") != "panel" or (panel_id is not None and panel["id"] != panel_id):
@@ -444,25 +453,63 @@ def _collect(client, panel_id):
                 item = {"panel": panel["id"], "question": block["id"], "asked": block.get("question", "")}
                 item.update({key: given[key] for key in ("choice", "labels", "text") if key in given})
                 out.append(item)
-    for task_id in changed:
-        ai_tasks._save(ai_tasks._load()[task_id])
-    return out, waiting, messages
+    for tid in changed:
+        ai_tasks._save(tasks[tid])
+    return out, waiting, messages, changed
 
 
-def get_answers(client, panel_id=None, wait_seconds=0):
+def get_answers(client, panel_id=None, wait_seconds=0, task_id=None):
     """The user's new answers and messages; with `wait_seconds`, waits up to that long (MAX_WAIT)
     for one: for a panel's question still open, or (no panel named) for anything the user sends."""
     deadline = time.monotonic() + max(0, min(float(wait_seconds or 0), MAX_WAIT))
     panel_id = str(panel_id) if panel_id else None
+    notified = set()
+    try:
+        with _answered:
+            if panel_id is not None and _find(panel_id)[1] is None:
+                raise PanelError(f"No panel {panel_id!r}; show_panel returns its id.")
+            while True:
+                answers, waiting, messages, changed = _collect(client, panel_id, task_id=task_id)
+                notified.update(changed)
+                left = deadline - time.monotonic()
+                if answers or messages or left <= 0 or (panel_id is not None and not waiting):
+                    answer = {"answers": answers, "still_waiting": waiting}
+                    if messages:
+                        answer["messages"] = messages
+                    return answer
+                _answered.wait(left)
+    finally:
+        for tid in notified:
+            ai_tasks._notify(tid)
+
+
+def attach_pending(result, client, task_id=None):
+    """Attaches unread user messages and panel answers to a successful tool result so an AI
+    that does not call get_answers still receives them once."""
+    if not isinstance(result, dict) or result.get("isError"):
+        return result
     with _answered:
-        if panel_id is not None and _find(panel_id)[1] is None:
-            raise PanelError(f"No panel {panel_id!r}; show_panel returns its id.")
-        while True:
-            answers, waiting, messages = _collect(client, panel_id)
-            left = deadline - time.monotonic()
-            if answers or messages or left <= 0 or (panel_id is not None and not waiting):
-                answer = {"answers": answers, "still_waiting": waiting}
-                if messages:
-                    answer["messages"] = messages
-                return answer
-            _answered.wait(left)
+        answers, waiting, messages, changed = _collect(client, None, task_id=task_id)
+    for tid in changed:
+        ai_tasks._notify(tid)
+    if not answers and not messages:
+        return result
+    data = result.get("structuredContent")
+    data = dict(data) if isinstance(data, dict) else {}
+    if messages:
+        data["user_messages"] = messages
+    if answers:
+        data["user_answers"] = answers
+    if waiting:
+        data["still_waiting"] = waiting
+    data["user_notice"] = (
+        "The user sent new input in the AI workbench. Read user_messages / user_answers and follow them."
+    )
+    result["structuredContent"] = data
+    content = list(result.get("content") or [])
+    if content and isinstance(content[0], dict) and content[0].get("type") == "text":
+        content[0] = {"type": "text", "text": json.dumps(data, ensure_ascii=False)}
+    else:
+        content.insert(0, {"type": "text", "text": json.dumps(data, ensure_ascii=False)})
+    result["content"] = content
+    return result

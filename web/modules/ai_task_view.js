@@ -8,14 +8,14 @@
 export const KINDS = ['panel', 'user', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'look'];
 
 /**
- * The timeline: each step, but reads that follow each other fold into one row (`looks`), so
- * looking around does not push the work out of sight. A failed read stays a row of its own.
+ * The timeline: each step, but completed reads that follow each other fold into one row (`looks`),
+ * so looking around does not push the work out of sight. A running or failed read stays a row of its own.
  */
 export function groupSteps(steps) {
     const items = [];
     for (const step of steps || []) {
         const last = items.at(-1);
-        if (step.kind === 'look' && step.ok) {
+        if (step.kind === 'look' && step.ok && step.state !== 'running') {
             if (last?.type === 'looks') last.steps.push(step);
             else items.push({ type: 'looks', steps: [step] });
         } else {

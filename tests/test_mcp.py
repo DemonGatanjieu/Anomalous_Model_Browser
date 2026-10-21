@@ -13,7 +13,7 @@ from aiohttp.test_utils import make_mocked_request
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_tasks, lora_info, mcp_actions, mcp_bridge, mcp_server, mcp_tools  # noqa: E402
+from api import ai_panels, ai_tasks, lora_info, mcp_actions, mcp_bridge, mcp_server, mcp_tools  # noqa: E402
 
 MODERN = "2026-07-28"
 # Every call is kept as an AI workbench step: keep them in a temporary folder, never the user's.
@@ -321,6 +321,30 @@ class LoraHeaderTests(unittest.TestCase):
         self.assertFalse(lora_info.trains_text_encoder(self.lora(["lora_unet_double_blocks.alpha"])))  # Flux
         self.assertFalse(lora_info.trains_text_encoder(self.lora(["diffusion_model.blocks.0.lora_A.weight"])))  # Anima
         self.assertTrue(lora_info.trains_text_encoder(str(Path(self.temp.name) / "old.ckpt")))  # unknown: assume it does
+
+
+    def test_tool_call_records_in_flight_step_and_piggybacks_pending_user_input(self):
+        task = ai_tasks.start_task("画一张白毛魔女")
+        ai_panels.leave_message(task["id"], "背景加点星光")
+        seen_in_flight = []
+
+        def fake_summarize():
+            current = ai_tasks.get_task(task["id"])
+            seen_in_flight.append([s["state"] for s in current["steps"] if s["tool"] == "scan_report"])
+            return dict.fromkeys(("total", "matched", "unmatched", "new", "pending"), 0) | {"unmatched_models": [], "new_models": []}
+
+        call = {"jsonrpc": "2.0", "id": 9, "method": "tools/call",
+                "params": {"name": "scan_report", "arguments": {"task": task["id"]}, "_meta": meta()}}
+        with mock.patch.object(mcp_tools, "_summarize", side_effect=fake_summarize), \
+                mock.patch.object(mcp_tools, "last_scan_path", return_value="no such file"):
+            status, body = post(call, modern_headers("tools/call", "scan_report"))
+        self.assertEqual(status, 200)
+        self.assertEqual(seen_in_flight, [["running"]], "step is visible as running while tool executes")
+        steps = [s for s in ai_tasks.get_task(task["id"])["steps"] if s["tool"] == "scan_report"]
+        self.assertEqual(len(steps), 1, "same step updated in place without duplicates")
+        self.assertEqual(steps[0]["state"], "done")
+        msgs = body["result"]["structuredContent"].get("user_messages", [])
+        self.assertEqual([m["text"] for m in msgs], ["背景加点星光"])
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@
 ## v1.62.0 — unreleased
 
 ### Fixes / 修复
+- AI 工作台与 MCP 调用实时生命周期及消息送达：每个工具调用开始时立即写入“正在执行…”步骤并接手等待中的任务，完成后原位更新同一步骤（不再等到耗时操作结束后才显示，也不会重复生成步骤）；用户在工作台留下的消息和展台面板回答，除了可通过 `get_answers` 读取外，还会在 AI 下一次成功调用任意工具时自动附带送达一次，并立即在界面上更新为“AI 已经看到”；多会话与显式 `task` ID 互不串任务。
+- Live in-flight MCP step lifecycle and automatic delivery of user messages and panel answers: every tool call now starts a `"running"` step immediately and updates the same step in place on completion or failure; unread user messages and panel answers are piggybacked once onto the next successful MCP tool response (in addition to `get_answers`) and immediately notify the workbench UI; concurrent sessions and explicit `task` ids stay isolated.
 - 展台内容按出现顺序保留：`update_panel` 新增的成图、说明等接在已有内容下面，即使 AI 把整张看板按“结果在前”重发，也不会倒置旧内容。省略旧内容不再将它删除；重复提交不重复追加。明确指定积木 ID 时仍可原位更新进度、问题或修正内容，已有回答保留。超出 30 块时提示新开面板，不截掉旧内容。旧记录保留其已保存的排版。
 - Panel updates append new output after what the user already saw, preserve omitted blocks, and avoid duplicating unchanged resubmissions. Stable block ids allow deliberate in-place edits; invalid or over-limit updates leave the panel untouched. Historical records keep their saved layout.
 - 展台右上角增加“关闭展台”，关闭后时间线展开；任务标题旁的“打开展台”或时间线里的面板入口可重新打开，保留面板和未提交的输入。当前任务更新不会强行重开。面板编号改为“来自第 N 步”，明确它的创建位置。The stage can be closed and reopened without losing panels or drafts; step labels now say “From step N”.

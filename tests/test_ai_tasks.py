@@ -80,6 +80,44 @@ class TaskTests(unittest.TestCase):
         with self.assertRaises(mcp_task_tools.ToolError):
             mcp_task_tools.begin_task({"client": "Claude"}, "  ")
 
+    def test_in_flight_step_updates_in_place_without_duplicates(self):
+        waiting = ai_tasks.start_task("生成测试", now=50.0)
+        ref = ai_tasks.begin_step("Gemini", "speak", {"character": "Arona", "text": "hello"}, started=60.0)
+        self.assertIsNotNone(ref)
+        task_id, step_id = ref
+        self.assertEqual(task_id, waiting["id"], "starting a tool claims the waiting task immediately")
+        running_task = ai_tasks.get_task(task_id)
+        self.assertEqual(len(running_task["steps"]), 1)
+        self.assertEqual(running_task["steps"][0]["state"], "running")
+        self.assertTrue(ai_tasks.task_summary(running_task, now=61.0)["live"])
+        finished = ai_tasks.finish_step(
+            "Gemini", "speak", {"character": "Arona", "text": "hello"},
+            ok({"done": True, "files": ["audio/Arona/1.flac"]}), 60.0, step_ref=ref,
+        )
+        self.assertEqual(finished["id"], step_id)
+        done_task = ai_tasks.get_task(task_id)
+        self.assertEqual(len(done_task["steps"]), 1, "completed step updates in place, no duplicate")
+        self.assertEqual((done_task["steps"][0]["state"], done_task["steps"][0]["ok"]), ("done", True))
+        self.assertEqual(done_task["steps"][0]["results"], [{"type": "audio", "file": "audio/Arona/1.flac"}])
+        # A failing tool updates its in-flight step to error.
+        err_ref = ai_tasks.begin_step("Gemini", "set_model", {"model_id": "bad"}, started=70.0)
+        ai_tasks.finish_step("Gemini", "set_model", {"model_id": "bad"}, failed("No model file"), 70.0, step_ref=err_ref)
+        err_step = ai_tasks.get_task(task_id)["steps"][1]
+        self.assertEqual((err_step["id"], err_step["state"], err_step["ok"], err_step["error"]),
+                         (err_ref[1], "error", False, "No model file"))
+
+    def test_sessions_and_explicit_task_ids_do_not_collide(self):
+        t1 = ai_tasks.begin_task("Claude", "任务一", now=100.0, session="s1")
+        t2 = ai_tasks.begin_task("Claude", "任务二", now=101.0, session="s2")
+        self.assertNotEqual(t1["id"], t2["id"])
+        ai_tasks.record("Claude", "search_models", {"query": "one"}, ok({"models": [1]}), 102.0, True, session="s1")
+        ai_tasks.record("Claude", "search_models", {"query": "two"}, ok({"models": [1, 2]}), 103.0, True, session="s2")
+        self.assertEqual(ai_tasks.get_task(t1["id"])["steps"][0]["summary"], "search_models: one")
+        self.assertEqual(ai_tasks.get_task(t2["id"])["steps"][0]["summary"], "search_models: two")
+        # An explicit task id routes even when called from a fallback client name.
+        ai_tasks.record("AI", "describe_canvas", {}, ok({}), 104.0, True, task_id=t1["id"])
+        self.assertEqual(len(ai_tasks.get_task(t1["id"])["steps"]), 2)
+
     def test_what_steps_made(self):
         with mock.patch.object(ai_tasks, "_model_result", side_effect=lambda model_id: {"type": "model", "model_id": model_id}):
             ai_tasks.record("A", "add_lora", {"model_id": "m1"}, ok({"_activity": "e2"}), 1.0)

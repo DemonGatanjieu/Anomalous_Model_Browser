@@ -4,13 +4,15 @@ import {
     audioResult, duration, groupSteps, isVideo, lookTools, outputUrl, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
-const look = (tool, ok = true) => ({ kind: 'look', tool, ok, summary: tool });
-const act = (tool, kind = 'canvas') => ({ kind, tool, ok: true, summary: `${tool}: K` });
+const look = (tool, ok = true, state = 'done') => ({ kind: 'look', tool, ok, state, summary: tool });
+const act = (tool, kind = 'canvas') => ({ kind, tool, ok: true, state: 'done', summary: `${tool}: K` });
 
-// Reads that follow each other fold into one row; a failed read and the work stay rows.
+// Reads that follow each other fold into one row; a running or failed read and the work stay rows.
 const items = groupSteps([look('search_models'), look('describe_canvas'), act('place_combo'), look('list_combos', false), look('search_images')]);
 assert.deepEqual(items.map(item => item.type), ['looks', 'step', 'step', 'looks']);
 assert.equal(items[0].steps.length, 2);
+const inFlight = groupSteps([look('search_models'), look('describe_canvas', true, 'running')]);
+assert.deepEqual(inFlight.map(item => item.type), ['looks', 'step'], 'an in-flight read stays visible until it finishes');
 assert.deepEqual(groupSteps(undefined), []);
 assert.deepEqual(lookTools([look('a'), look('b'), look('a')]), [{ tool: 'a', count: 2 }, { tool: 'b', count: 1 }]);
 
