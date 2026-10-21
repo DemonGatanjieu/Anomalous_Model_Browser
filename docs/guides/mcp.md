@@ -132,6 +132,8 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 
 展台右上角的 **× 关闭展台**只收起这一栏，不删除面板、不结束任务；当前任务继续更新时也不会强行重开。任务标题旁的“打开展台”，或时间线里的“在展台打开”可以恢复，未提交的输入会保留。“来自第 N 步”指创建这个面板的那一步；后续修改同一个面板不会改变它的来源编号。
 
+**按过程往下看**：建议 AI 把“搭配方案 → 节点说明 → 成图结果”作为不同阶段依次展示。更新同一个面板时，新内容也只接在底部，已有内容不会因为 AI 重排或省略而消失。`show_panel` / `update_panel` 会返回积木 ID；明确带上已有 ID 才是在原位置修正那块内容，进度条也可以按唯一的标签更新。单面板最多 30 块，满了就用 `show_panel` 展示下一阶段。旧记录只保留了最终排版，没有每次更新前的顺序，因此不会自动重排旧记录。
+
 ## 6. 注意
 
 - **隐私**：如果 AI 软件用的是云端模型，查询结果（模型名、提示词、图片的生成参数）会发给那家 AI 服务商。附上封面或缩略图时，图片也会一起发过去。介意的话可以用本地模型，或者不让 AI 附图。
@@ -141,6 +143,13 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 ---
 
 ## English
+
+The stage reads chronologically: use `show_panel` for successive phases. `update_panel` appends
+new blocks below existing content, keeps omitted blocks and deduplicates unchanged resubmissions.
+Tools return stable block ids for deliberate in-place corrections (including progress/questions);
+an id keeps its type and position. A uniquely labelled progress bar also updates without an id.
+The total remains bounded to 30 blocks; use a new panel for the next phase. Old records retain
+their saved layout because earlier revisions were not recorded.
 
 While ComfyUI runs, Anomalous serves an MCP endpoint at `http://127.0.0.1:8188/anomalous/mcp` (use your ComfyUI port). Add it as a Streamable HTTP server in your AI app (Claude Code: `claude mcp add --transport http anomalous <url>`; Cursor and VS Code: a `url` / `"type": "http"` entry; Claude Desktop: through `npx mcp-remote <url> --transport http-only`). Both the 2026-07-28 protocol and the earlier `initialize`-based versions are served.
 

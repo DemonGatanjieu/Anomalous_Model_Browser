@@ -1,5 +1,7 @@
 """Panels the AI draws from Anomalous's blocks (api/ai_panels.py): what is let through, the
 user's answers, and the AI waiting for them. Kept in a temporary folder."""
+import copy
+import json
 import os
 import sys
 import tempfile
@@ -150,6 +152,8 @@ class AnswerTests(unittest.TestCase):
         self.assertEqual((task["asks"], task["kinds"]), (2, {"panel": 1}))
         step = ai_tasks.get_task(task["id"])["steps"][0]
         self.assertEqual(step["panel"]["title"], "挑一张")
+        with self.assertRaises(ai_panels.PanelError):
+            ai_panels.answer(task["id"], step["id"], shown["blocks"][0]["id"], text="not a question")
         self.assertEqual(ai_panels.get_answers("Claude", shown["panel"])["answers"], [])
         with self.assertRaises(ai_panels.PanelError):
             ai_panels.answer(task["id"], step["id"], "pick", ["c"])
@@ -219,6 +223,83 @@ class AnswerTests(unittest.TestCase):
             mcp_task_tools.get_answers({}, "nope")
         with self.assertRaises(mcp_task_tools.ToolError):
             mcp_task_tools.show_panel({}, "坏的", [{"type": "html"}])
+
+    def test_later_results_append_even_when_client_prepends_them(self):
+        plan = [{"type": "heading", "text": "搭配方案"},
+                {"type": "text", "text": "先选模型"},
+                {"type": "diagram", "nodes": [{"id": "sampler", "label": "采样器"}], "edges": []}]
+        result = [{"type": "heading", "text": "成图结果"}, {"type": "images", "items": ["a.png"]}]
+        shown = mcp_task_tools.show_panel({"client": "A"}, "过程", plan)
+        with mock.patch.object(ai_tasks.folder_paths, "get_output_directory", return_value=OUTPUT):
+            changed = mcp_task_tools.update_panel({}, shown["panel"], blocks=result + plan)
+            again = mcp_task_tools.update_panel({}, shown["panel"], blocks=result + plan)
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        task = ai_tasks.get_task(task_id)
+        blocks = task["steps"][0]["panel"]["blocks"]
+        self.assertEqual([b["type"] for b in blocks], ["heading", "text", "diagram", "heading", "images"])
+        self.assertEqual([blocks[0]["text"], blocks[3]["text"]], ["搭配方案", "成图结果"])
+        self.assertEqual(changed["blocks"][:3], shown["blocks"], "existing handles and order stay")
+        self.assertEqual(again, changed, "retrying does not duplicate content")
+        ai_tasks._tasks = None
+        self.assertEqual(ai_tasks.get_task(task_id)["steps"][0]["panel"]["blocks"], blocks,
+                         "chronological order survives reload")
+
+    def test_partial_update_keeps_earlier_content_answers_and_progress_position(self):
+        shown = ai_panels.show("A", "过程", [CHOICES, {"type": "progress", "value": 1, "max": 4}])
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        step = ai_tasks.get_task(task_id)["steps"][0]
+        ai_panels.answer(task_id, step["id"], "pick", "a")
+        progress_id = shown["blocks"][1]["id"]
+        changed = ai_panels.update(shown["id"], blocks=[{"type": "text", "text": "结果好了"},
+                                  {"type": "progress", "id": progress_id, "value": 4, "max": 4}])
+        self.assertEqual([b["type"] for b in changed["blocks"]], ["choices", "progress", "text"])
+        self.assertEqual(changed["blocks"][1]["value"], 4)
+        self.assertEqual(ai_panels.get_answers("A")["answers"][0]["choice"], ["a"])
+        self.assertEqual(ai_panels.get_answers("A")["answers"], [])
+
+    def test_invalid_update_keeps_panel_and_disk_unchanged(self):
+        shown = ai_panels.show("A", "保留标题", [{"type": "text", "text": "保留内容"}])
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        before = copy.deepcopy(ai_tasks.get_task(task_id))
+        bad = [
+            [{"type": "html"}],
+            [{"type": "progress", "id": shown["blocks"][0]["id"], "value": 1}],
+            [{"type": "text", "text": str(i)} for i in range(ai_panels.MAX_BLOCKS)],
+            [{"type": "text", "id": "same", "text": "a"}, {"type": "divider", "id": "same"}],
+        ]
+        for blocks in bad:
+            with self.subTest(blocks=blocks), self.assertRaises(ai_panels.PanelError):
+                ai_panels.update(shown["id"], title="不能留下的新标题", blocks=blocks)
+            self.assertEqual(ai_tasks.get_task(task_id), before)
+            with open(ai_tasks._path(task_id), encoding="utf-8") as source:
+                self.assertEqual(json.load(source), before)
+
+    def test_anonymous_followup_question_does_not_replace_answered_question(self):
+        original = {"type": "input", "question": "先画什么？"}
+        followup = {"type": "input", "question": "结果要改哪里？"}
+        shown = ai_panels.show("A", "问答", [original])
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        step = ai_tasks.get_task(task_id)["steps"][0]
+        first_id = shown["blocks"][0]["id"]
+        ai_panels.answer(task_id, step["id"], first_id, text="海边")
+        updated = ai_panels.update(shown["id"], blocks=[followup])
+        self.assertEqual([b["question"] for b in updated["blocks"]], [original["question"], followup["question"]])
+        self.assertNotEqual(updated["blocks"][1]["id"], first_id)
+        again = ai_panels.update(shown["id"], blocks=[followup])
+        self.assertEqual(again["blocks"], updated["blocks"], "an unchanged retry keeps the question id")
+        self.assertEqual(ai_tasks.list_tasks()[0]["asks"], 1)
+        self.assertEqual(ai_panels.get_answers("A")["answers"][0]["text"], "海边")
+
+    def test_legacy_blocks_keep_order_when_updated(self):
+        plan = [{"type": "text", "text": "之前的方案"}, {"type": "progress", "value": 1}]
+        shown = ai_panels.show("A", "旧面板", plan)
+        for block in shown["blocks"]:
+            block.pop("id")  # old records did not give static blocks handles
+        changed = ai_panels.update(shown["id"], blocks=[{"type": "text", "text": "后来的结果"},
+                                  plan[0], {"type": "progress", "value": 100}])
+        self.assertEqual([b["type"] for b in changed["blocks"]], ["text", "progress", "text"])
+        self.assertEqual(changed["blocks"][1]["value"], 100)
+        self.assertEqual(len({b["id"] for b in changed["blocks"]}), 3)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@
 ## v1.62.0 — unreleased
 
 ### Fixes / 修复
+- 展台内容按出现顺序保留：`update_panel` 新增的成图、说明等接在已有内容下面，即使 AI 把整张看板按“结果在前”重发，也不会倒置旧内容。省略旧内容不再将它删除；重复提交不重复追加。明确指定积木 ID 时仍可原位更新进度、问题或修正内容，已有回答保留。超出 30 块时提示新开面板，不截掉旧内容。旧记录保留其已保存的排版。
+- Panel updates append new output after what the user already saw, preserve omitted blocks, and avoid duplicating unchanged resubmissions. Stable block ids allow deliberate in-place edits; invalid or over-limit updates leave the panel untouched. Historical records keep their saved layout.
 - 展台右上角增加“关闭展台”，关闭后时间线展开；任务标题旁的“打开展台”或时间线里的面板入口可重新打开，保留面板和未提交的输入。当前任务更新不会强行重开。面板编号改为“来自第 N 步”，明确它的创建位置。The stage can be closed and reopened without losing panels or drafts; step labels now say “From step N”.
 - AI 工作台：AI 先查询再调用 `begin_task`，现在会继续已接手的任务，保留用户标题和之前的步骤；重复调用不会拆任务。另一件事可用 `new_task=true` 明确新建，已结束或长时间闲置的任务仍分开记录。
 - 展台打开历史任务时定位到底部；新增面板、更新最新面板及图片加载后继续跟随底部。往上翻看时保留位置，用“查看最新”回到底部，时间线的定位链接仍跳到对应面板开头。

@@ -248,7 +248,7 @@ def clean_block(block, at, taken):
     else:
         raise PanelError(f"{where}.type {kind!r} is not one of heading, text, images, slider, picks, models, diagram, "
                          "table, list, params, choices, input, progress, divider")
-    if kind in INTERACTIVE:
+    if kind in INTERACTIVE or block.get("id") is not None:
         block_id = _text(block.get("id") or f"q{at + 1}", 40, f"{where}.id")
         if block_id in taken:
             raise PanelError(f"{where}.id {block_id!r} twice")
@@ -265,6 +265,53 @@ def clean_blocks(blocks):
     return [clean_block(block, at, taken) for at, block in enumerate(blocks)]
 
 
+def _block_ids(blocks):
+    """Stable handles for deliberate edits; old records get them only when updated."""
+    taken = {block["id"] for block in blocks if block.get("id")}
+    out = []
+    for block in blocks:
+        block = dict(block)
+        if not block.get("id"):
+            block_id = uuid.uuid4().hex[:10]
+            while block_id in taken:
+                block_id = uuid.uuid4().hex[:10]
+            block["id"] = block_id
+            taken.add(block_id)
+        out.append(block)
+    return out
+
+
+def _merge_blocks(existing, incoming):
+    """Keep the order already seen, append new output, edit only identified blocks in place."""
+    merged = list(existing)
+    by_id = {block["id"]: at for at, block in enumerate(existing) if block.get("id")}
+    used = set()
+    for raw, block in zip(incoming, clean_blocks(incoming)):
+        if block["type"] in INTERACTIVE and not raw.get("id"):
+            # Positional q1/q2 defaults cannot identify a question in a partial append.
+            block.pop("id")
+        at = by_id.get(block.get("id"))
+        if at is None and not block.get("id"):
+            # A client may send its entire previous layout again. That cannot reorder it.
+            at = next((i for i, old in enumerate(existing) if i not in used
+                       and {key: value for key, value in old.items() if key != "id"} == block), None)
+            if at is None and block["type"] == "progress":
+                matches = [i for i, old in enumerate(existing) if old["type"] == "progress"
+                           and old.get("label") == block.get("label")]
+                if len(matches) == 1:
+                    at = matches[0]
+        if at is None:
+            merged.append(block)
+        else:
+            if existing[at]["type"] != block["type"]:
+                raise PanelError("An existing block id must keep its type; use a new id for new output.")
+            merged[at] = {**block, **({"id": existing[at]["id"]} if existing[at].get("id") else {})}
+            used.add(at)
+    if len(merged) > MAX_BLOCKS:
+        raise PanelError(f"The panel would exceed {MAX_BLOCKS} blocks; use show_panel for the next stage of work.")
+    return _block_ids(merged)
+
+
 def _find(panel_id):
     """(task, step) holding panel `panel_id`, or (None, None). Call under the lock."""
     for task in ai_tasks._load().values():
@@ -276,7 +323,7 @@ def _find(panel_id):
 
 def show(client, title, blocks, now=None):
     title = _text(title, 120, "title", True)
-    panel = {"id": uuid.uuid4().hex[:10], "title": title, "blocks": clean_blocks(blocks), "closed": False}
+    panel = {"id": uuid.uuid4().hex[:10], "title": title, "blocks": _block_ids(clean_blocks(blocks)), "closed": False}
     now = time.time() if now is None else now
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "show_panel", "kind": "panel", "ok": True,
             "summary": f"show_panel: {title}", "panel": panel, "answers": {}, "results": []}
@@ -293,15 +340,15 @@ def update(panel_id, title=None, blocks=None, closed=None):
         task, step = _find(str(panel_id))
         if not step:
             raise PanelError(f"No panel {panel_id!r}; show_panel returns its id.")
-        panel = step["panel"]
+        # Validate the whole update before replacing the saved panel.
+        panel = dict(step["panel"])
         if title is not None:
             panel["title"] = _text(title, 120, "title", True)
         if blocks is not None:
-            panel["blocks"] = clean_blocks(blocks)
-            keep = {block["id"] for block in panel["blocks"] if block["type"] in INTERACTIVE}
-            step["answers"] = {key: value for key, value in step.get("answers", {}).items() if key in keep}
+            panel["blocks"] = _merge_blocks(panel["blocks"], blocks)
         if closed is not None:
             panel["closed"] = bool(closed)
+        step["panel"] = panel
         task["updated"] = max(task.get("updated", 0), time.time())
         ai_tasks._save(task)
     ai_tasks._notify(task["id"])
@@ -318,7 +365,7 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None):
         if step["panel"].get("closed"):
             raise PanelError("The AI closed this panel")
         block = next((b for b in step["panel"]["blocks"] if b.get("id") == block_id), None)
-        if not block:
+        if not block or block["type"] not in INTERACTIVE:
             raise PanelError("No such question")
         if block_id in step.setdefault("answers", {}):
             raise PanelError("Already answered")

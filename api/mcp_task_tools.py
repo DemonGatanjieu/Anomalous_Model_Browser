@@ -36,7 +36,8 @@ def show_panel(ctx, title, blocks):
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
     asks = [block["id"] for block in panel["blocks"] if block["type"] in ai_panels.INTERACTIVE]
-    answer = {"panel": panel["id"], "shown": True}
+    answer = {"panel": panel["id"], "shown": True,
+              "blocks": [{"id": block["id"], "type": block["type"]} for block in panel["blocks"]]}
     if asks:
         answer["questions"] = asks
         answer["note"] = ("The user answers in Anomalous when they get to it; call get_answers with this panel id "
@@ -46,10 +47,11 @@ def show_panel(ctx, title, blocks):
 
 def update_panel(ctx, panel, title=None, blocks=None, closed=None):
     try:
-        ai_panels.update(panel, title, blocks, closed)
+        updated = ai_panels.update(panel, title, blocks, closed)
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
-    return {"updated": True}
+    return {"updated": True, "blocks": [{"id": block.get("id"), "type": block["type"]}
+                                        for block in updated["blocks"]]}
 
 
 def get_answers(ctx, panel=None, wait_seconds=0):
@@ -73,6 +75,7 @@ BLOCKS_HELP = (
     "table {columns: [...], rows: [[...]]}; list {items: [...], ordered}; params {items: [{label, value}]}; "
     "choices {id, question, options: [{id, label, detail}] (2-8), multiple} (buttons the user presses); "
     "input {id, question, placeholder} (a line the user types); progress {label, value, max}; divider {}. "
+    "Each block may have a stable id; the tool returns block ids in display order. "
     "Plain text only (no markup, no links); up to 30 blocks, 12 pictures or models a block."
 )
 
@@ -105,13 +108,18 @@ TASK_TOOLS = dict([
     _task_tool("show_panel", "Show the user a panel",
                "Draws a panel in the AI workbench, in Anomalous's own style, from blocks: to compare pictures side by "
                "side, present models with their covers, lay out settings, a table, and to ask (buttons or a line of "
-               "text). Use it when a choice is the user's, or to show results better than words do. " + BLOCKS_HELP,
+               "text). Use a new panel for each new phase (plan, workflow, then results), in the order they happen. "
+               "Use it when a choice is the user's, or to show results better than words do. " + BLOCKS_HELP,
                show_panel, {"title": {"type": "string"},
                             "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS}},
                ["title", "blocks"]),
     _task_tool("update_panel", "Change a panel",
-               "Changes a panel shown before: its title, its blocks (answers given to questions kept by id stay), or "
-               "closed=true when its questions no longer matter (the user can no longer answer them).",
+               "Adds new output at the BOTTOM of an existing panel, preserving earlier content and its order. "
+               "Send only the new blocks; repeated unchanged blocks are kept once. To deliberately correct an "
+               "existing block or update a progress bar/question in place, include its returned block id and "
+               "the same type. Omitted blocks are retained, not deleted. Never reuse an old block id for a new "
+               "result: append it or use show_panel for the next phase. Up to 30 total blocks per panel. "
+               "Can also change title, or set closed=true to stop answers; existing answers stay.",
                update_panel, {"panel": {"type": "string"}, "title": {"type": "string"},
                               "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
                               "closed": {"type": "boolean"}}, ["panel"]),

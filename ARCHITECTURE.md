@@ -176,7 +176,15 @@ covered by the `styles.css` manifest.
   Panels the AI draws (`show_panel`, `update_panel`): `api/ai_panels.py` checks every block
   against a fixed set (heading, text, images from the output folder, models by id with their
   covers, table, list, params, choices, input, progress, divider; plain strings of bounded
-  length, nothing run or read as markup) and keeps the panel as a step; the user's answers come
+  length, nothing run or read as markup) and keeps the panel as a step. `update_panel` preserves
+  the order already seen: new blocks append; omitted blocks remain; unchanged resubmitted
+  blocks match without their ids. Every new block gets a stable id, returned by the tools;
+  an explicit existing id edits that block in place without changing its type or position.
+  A uniquely labelled progress block also updates in place for clients that omit ids.
+  The cumulative limit is 30 blocks; overflow or invalid input rejects the entire update
+  before changing the panel, title or answers. Legacy records are not reordered on load;
+  blocks without ids receive handles when updated. New phases should use `show_panel`.
+  The user's answers come
   in through `POST /anomalous/ai_tasks/{id}/answer` and wait there until the AI reads them
   (`get_answers`, which can wait up to 55 s for one; Anomalous cannot call the AI). The user
   can also write to the AI on a task (`POST /anomalous/ai_tasks/{id}/message`, a `user` step);

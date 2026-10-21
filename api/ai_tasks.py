@@ -473,7 +473,8 @@ def task_summary(task, now=None):
         kinds[step["kind"]] = kinds.get(step["kind"], 0) + 1
     images = [item for step in steps for item in step.get("results") or [] if item.get("type") == "image"]
     asks = sum(1 for step in steps if step.get("kind") == "panel" and not step["panel"].get("closed")
-               for block in step["panel"]["blocks"] if block.get("id") and block["id"] not in step.get("answers", {}))
+               for block in step["panel"]["blocks"] if block.get("type") in ("choices", "input", "picks")
+               and block.get("id") and block["id"] not in step.get("answers", {}))
     return {
         "id": task["id"], "title": task.get("title") or "", "client": task.get("client") or ("" if task.get("waiting") else "AI"),
         "started": task.get("started"), "updated": task.get("updated"), "ended": task.get("ended"),
