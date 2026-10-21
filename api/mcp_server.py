@@ -42,7 +42,8 @@ INSTRUCTIONS = (
     "one tool (model_id, image, node ids) are what the others take. For what no tool does, tell "
     "the user where in Anomalous to do it (the rail on the left: Models, Gallery, Workflows, "
     "Combos, Prompts, Voices). The user watches your work in Anomalous's AI workbench: call begin_task "
-    "with a short title when you start what they asked for, and report to explain a choice, hand in "
+    "with a short title when you start what they asked for (it continues the waiting or active task; "
+    "new_task=true is only for a separate user request), and report to explain a choice, hand in "
     "pictures made another way, or end the task (done=true). The user can write to you there too: call "
     "get_answers between steps of longer work to read it."
 )

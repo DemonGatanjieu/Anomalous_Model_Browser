@@ -45,7 +45,7 @@ const state = {
     selected: null,   // task id shown
     pinned: false,    // the user picked it: a new task of the AI does not take its place
     view: null,       // the shown task's parts kept between redraws (renderTask)
-    stage: { taskId: null, count: 0, atBottom: true, focus: null, tab: 'timeline', unseen: false }, // ui_ai_side.js
+    stage: { taskId: null, latestKey: null, atBottom: true, focus: null, tab: 'timeline', unseen: false }, // ui_ai_side.js
     numbers: new Map(), // step id -> its number in the timeline (the stage shows it)
     tasksCollapsed: (() => { try { return localStorage.getItem(COLLAPSED_KEY) === '1'; } catch (_) { return false; } })(),
     task: null,       // its full record

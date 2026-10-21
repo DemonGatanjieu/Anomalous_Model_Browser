@@ -1,0 +1,70 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>AI stage browser regression</title>
+<link rel="stylesheet" href="../web/styles/40-ai-side.css">
+<link rel="stylesheet" href="../web/styles/38-ai-panels.css">
+<style>
+  body { background: #202027; color: #eee; font: 14px sans-serif; }
+  #stage { width: 620px; height: 420px; border: 1px solid #777; }
+  #results { white-space: pre-wrap; }
+</style>
+<!-- Only the unused ComfyUI canvas boundary is stubbed; panel DOM and CSS are real. -->
+<script type="importmap">{"imports":{"/scripts/app.js":"data:text/javascript,export const app = {};"}}</script>
+<div id="results">Running…</div>
+<div id="stage" class="anomalous-ai-stage"></div>
+<script type="module">
+import { renderStage, stageNews, focusPanel } from '../web/modules/ui_ai_side.js';
+const box = document.querySelector('#stage');
+const results = document.querySelector('#results');
+const stage = {};
+const ctx = { numberOf: id => id, tab() {}, changed() {} };
+const panel = id => ({ id, kind: 'panel', panel: { id, title: `Panel ${id}`, blocks:
+    Array.from({ length: 25 }, (_, n) => ({ type: 'text', text: `${id}: line ${n + 1}` })) }, answers: {} });
+let task = { id: 'historical', steps: [panel('1')] };
+const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+const body = () => box.querySelector('.anomalous-ai-stage-body');
+const bottom = () => body().scrollHeight - body().clientHeight - body().scrollTop < 2;
+const check = (value, label) => { if (!value) throw Error(label); results.textContent += `PASS ${label}\n`; };
+async function draw() { const news = stageNews(task, stage); renderStage(box, task, stage, ctx, news.arrived); await settle(); }
+try {
+    results.textContent = '';
+    await draw();
+    check(bottom() && body().scrollTop > 100, 'historical single tall panel opens at bottom');
+    task.steps.push(panel('2'));
+    await draw();
+    check(bottom(), 'new tall panel follows to its bottom');
+    check([...body().children].map(el => el.dataset.panelId).join(',') === '1,2', 'oldest first');
+    task.steps[1].panel.blocks.push({ type: 'text', text: 'new content '.repeat(80) });
+    await draw();
+    check(bottom(), 'update_panel follows with unchanged panel count');
+    const img = document.createElement('img');
+    body().lastElementChild.append(img);
+    img.style.height = '250px';
+    img.dispatchEvent(new Event('load'));
+    await settle();
+    check(bottom(), 'late image layout follows to bottom');
+    body().scrollTop = 100;
+    body().dispatchEvent(new Event('scroll'));
+    task.steps[1].panel.blocks.push({ type: 'text', text: 'another update' });
+    await draw();
+    check(body().scrollTop === 100 && stage.unseen, 'reading earlier content stays put on update');
+    box.querySelector('.anomalous-ai-stage-new').click();
+    await settle();
+    check(bottom() && !stage.unseen && !box.querySelector('.anomalous-ai-stage-new'), 'see latest resumes bottom follow');
+    focusPanel(stage, '1');
+    await draw();
+    await new Promise(resolve => setTimeout(resolve, 700));
+    check(body().scrollTop < 10, 'timeline link goes to panel start');
+    const unchanged = body().firstElementChild;
+    await draw();
+    check(body().firstElementChild === unchanged, 'unchanged panels keep their DOM');
+    task = { id: 'hidden', steps: [panel('3')] };
+    box.style.display = 'none';
+    await draw();
+    check(!stage.placed, 'hidden stage waits for visible layout');
+    box.style.display = 'flex';
+    await draw();
+    check(bottom() && stage.placed, 'showing stage tab positions latest');
+    results.textContent += 'ALL PASSED';
+} catch (error) { results.textContent += `FAIL ${error.stack}`; }
+</script>

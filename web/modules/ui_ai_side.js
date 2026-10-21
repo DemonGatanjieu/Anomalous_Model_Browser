@@ -2,12 +2,12 @@
  * The AI workbench's stage (展台): the column on the right where the panels the AI draws are
  * shown (ui_ai_panel.js), so they stay in view however many steps come after them. Like the
  * timeline it reads from the top down: the task's panels in the order they came, each with its
- * step number, the newest at the bottom. A new panel scrolls the stage down to it while the user
- * is at the bottom; otherwise a "New panel ↓" button says it came. A panel's line in the timeline
+ * step number, the newest at the bottom. A new or updated latest panel follows to the bottom
+ * while the user is there; otherwise a "See latest ↓" button says it changed. A panel's line in the timeline
  * brings the stage to that panel. In a window too narrow for three columns, the timeline and the
  * stage take turns behind two tabs, and a panel that asks something brings the stage forward.
  *
- * `stage` is the workbench's `{ taskId, count, atBottom, focus, tab, unseen, placed }`.
+ * `stage` is the workbench's `{ taskId, latestKey, atBottom, focus, tab, unseen, placed }`.
  */
 
 import { translate as t } from './locales.js';
@@ -41,16 +41,18 @@ export function openQuestions(step) {
 
 /**
  * What changed on the stage since the last look, updating `stage`: `{ arrived, asking }` -
- * `arrived` the newest panel when the task got a new one, `asking` its open questions.
+ * `arrived` the latest panel when it is new or updated, `asking` its open questions.
  */
 export function stageNews(task, stage) {
     const steps = panelSteps(task);
+    const latest = steps.at(-1);
+    const latestKey = JSON.stringify(latest?.panel || null);
     if (stage.taskId !== task?.id) {
-        Object.assign(stage, { taskId: task?.id, count: steps.length, atBottom: true, focus: null, unseen: false, placed: false });
+        Object.assign(stage, { taskId: task?.id, latestKey, atBottom: true, focus: null, unseen: false, placed: false });
         return { arrived: null, asking: 0 };
     }
-    const arrived = steps.length > stage.count ? steps.at(-1) : null;
-    stage.count = steps.length;
+    const arrived = latestKey !== stage.latestKey ? latest : null;
+    stage.latestKey = latestKey;
     if (arrived && !stage.atBottom) stage.unseen = true;
     return { arrived, asking: arrived ? openQuestions(arrived) : 0 };
 }
@@ -89,6 +91,15 @@ function scrollToItem(body, item, smooth = true) {
     body.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
 }
 
+function scrollToLatest(body, stage) {
+    if (!body.isConnected || !body.clientHeight) return;
+    body.scrollTop = body.scrollHeight;
+    stage.atBottom = true;
+    stage.unseen = false;
+    stage.placed = true;
+    body.parentElement.querySelector('.anomalous-ai-stage-new')?.remove();
+}
+
 /**
  * The stage into `box` for `task`. `ctx`: what ui_ai_panel.js needs, `numberOf(stepId)` (the
  * step's number in the timeline) and `tab(id)`. A panel is drawn again only when it changed, so
@@ -114,6 +125,10 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
                 head.querySelector('.anomalous-ai-stage-new')?.remove();
             }
         });
+        // Images can grow a panel after the first layout. Follow only while reading the latest.
+        body.addEventListener('load', () => {
+            if (stage.atBottom && !stage.focus) scrollToLatest(body, stage);
+        }, true);
     }
     const newTabs = tabBar(stage, asks, ctx.tab);
     tabs.replaceWith(newTabs);
@@ -122,8 +137,7 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
     parts.push(el('span', 'anomalous-ai-gap'));
     if (stage.unseen) {
         parts.push(button('anomalous-ai-stage-new', t('aiStageNew'), () => {
-            stage.unseen = false;
-            scrollToItem(body, body.lastElementChild);
+            scrollToLatest(body, stage);
         }));
     }
     head.replaceChildren(...parts);
@@ -146,6 +160,8 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
     if (stage.focus) {
         const item = find(stage.focus);
         stage.focus = null;
+        stage.placed = true;
+        stage.atBottom = false;
         requestAnimationFrame(() => {
             scrollToItem(body, item);
             item?.classList.remove('is-flash');
@@ -153,15 +169,16 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
             item?.classList.add('is-flash');
         });
     } else if (arrived && stage.atBottom) {
-        requestAnimationFrame(() => scrollToItem(body, find(arrived.panel.id)));
+        requestAnimationFrame(() => {
+            if (stage.atBottom) scrollToLatest(body, stage);
+        });
     }
     // A task's stage starts at its newest panel, as a conversation does: once it is first seen
     // (in a narrow window it may sit behind its tab until then).
     if (!stage.placed) {
         requestAnimationFrame(() => {
             if (stage.placed || !body.clientHeight) return;
-            stage.placed = true;
-            scrollToItem(body, body.lastElementChild, false);
+            scrollToLatest(body, stage);
         });
     }
 }

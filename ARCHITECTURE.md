@@ -144,7 +144,10 @@ covered by the `styles.css` manifest.
   `anomalous.ai_task` event; `api/ai_tasks_routes.py` serves `/anomalous/ai_tasks` (list, one
   task, start, rename or remove, a panel's answer, a message). The user can start a task first
   (New task): it waits, and the next app that calls takes it over, so its work starts there
-  instead of joining its last task (one waiting at a time, found again after a restart). `mcp_server.py` records each call after it ran (the app's name from its client
+  instead of joining its last task (one waiting at a time, found again after a restart).
+  `begin_task` resumes a waiting or active task, including preliminary reads, and keeps a user's title;
+  `new_task=true` explicitly separates a new request. Ended or idle tasks are not resumed.
+  `mcp_server.py` records each call after it ran (the app's name from its client
   info or User-Agent); `api/mcp_task_tools.py` holds the AI's own tools for it, `begin_task`
   and `report` (a note, with pictures from the output folder it made another way).
   `web/modules/ui_ai_workbench.js` is the page (rail entry `ai`): the tasks, one task's
@@ -157,8 +160,10 @@ covered by the `styles.css` manifest.
   step made and where it leads (and the strip of a task's results). `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a line per
   panel that brings it there): like the timeline it reads from the top down, the task's panels in
-  the order they came with their step numbers, the newest at the bottom (a new one scrolls there
-  while the user is at the bottom, else a "New panel" button says so); in a window too narrow
+  the order they came with their step numbers, the newest at the bottom. Opening a task,
+  new/updated latest panels and late image loads follow the bottom while the reader is there;
+  reading earlier content pauses follow, with a "See latest" button to resume. Timeline links
+  instead locate the requested panel's start. In a window too narrow
   for three columns the timeline and the stage are two tabs (a panel that asks brings the stage
   forward). The task list can be folded. `ui_ai_connect.js` says how to connect an AI app (the
   address, a sentence to send the AI so it sets itself up and starts on a waiting task, each

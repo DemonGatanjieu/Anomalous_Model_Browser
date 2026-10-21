@@ -7,12 +7,13 @@ from . import ai_panels, ai_tasks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 
-def begin_task(ctx, title):
+def begin_task(ctx, title, new_task=False):
     title = str(title or "").strip()
     if not title:
         raise ToolError("title is empty: a few words on what the user asked for.")
-    task = ai_tasks.begin_task(ctx.get("client") or "AI", title)
-    return {"task": task["id"], "note": "Every call from now on is a step of this task in Anomalous's AI workbench, "
+    task = ai_tasks.begin_task(ctx.get("client") or "AI", title, new_task=bool(new_task))
+    return {"task": task["id"], "title": task["title"], "note": "Continue this task; do not begin another for its individual steps. "
+                                       "Every call from now on is a step of this task in Anomalous's AI workbench, "
                                        "where the user sees, opens and undoes them. Call report to explain a choice "
                                        "or to hand in pictures you made another way; report with done=true at the end."}
 
@@ -88,9 +89,11 @@ def _task_tool(name, title, description, run, properties, required=()):
 TASK_TOOLS = dict([
     _task_tool("begin_task", "Begin a task",
                "Call first when you start what the user asked for: names it in Anomalous's AI workbench, where the "
-               "user sees each of your steps with what it made, and can open or undo it. Without it, your calls are "
-               "grouped by themselves.",
-               begin_task, {"title": {"type": "string", "description": "A few words, in the user's language."}},
+               "user sees each of your steps with what it made, and can open or undo it. Reuses the user's waiting "
+               "task or your active task, including any preliminary reads. Use new_task=true only for a separate "
+               "user request, never for another step of the same work.",
+               begin_task, {"title": {"type": "string", "description": "A few words, in the user's language."},
+                            "new_task": {"type": "boolean", "default": False}},
                ["title"]),
     _task_tool("report", "Tell the user",
                "Leaves a note in the AI workbench: why you chose something, what to look at, what is left. images: "

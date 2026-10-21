@@ -220,27 +220,24 @@ def current_task(client, now=None):
         return _new_task(client, now=now)
 
 
-def begin_task(client, title, now=None):
+def begin_task(client, title, now=None, new_task=False):
+    """Name or resume the active task; only an explicit new piece of work splits it."""
+    now = time.time() if now is None else now
     with _lock:
-        waiting = _take_waiting(client, time.time() if now is None else now)
-        if waiting:
-            # The user named it already, or the AI names it now.
-            if not waiting.get("title"):
-                waiting["title"] = _short(title, MAX_TITLE)
-                waiting["title_from"] = "ai"
-            _save(waiting)
-            task = waiting
-        else:
-            task = None
-    if task:
-        _notify(task["id"])
-        return task
-    with _lock:
+        task = _take_waiting(client, now)
         previous = _load().get(_current.get(client))
-        if previous and not previous.get("ended"):
-            previous["ended"] = time.time() if now is None else now
-            _save(previous)
-        task = _new_task(client, title, now)
+        if task is None and not new_task and previous and not previous.get("ended"):
+            if now - previous.get("updated", 0) < IDLE_SECONDS:
+                task = previous
+        if task is None:
+            if previous and not previous.get("ended"):
+                previous["ended"] = now
+                _save(previous)
+            task = _new_task(client, title, now)
+        elif not task.get("title") or task.get("title_from") == "auto":
+            task["title"] = _short(title, MAX_TITLE)
+            task["title_from"] = "ai"
+        task["updated"] = now
         _save(task)
     _notify(task["id"])
     return task

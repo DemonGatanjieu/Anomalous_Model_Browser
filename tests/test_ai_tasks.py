@@ -63,15 +63,16 @@ class TaskTests(unittest.TestCase):
         self.assertEqual(len([task for task in ai_tasks.list_tasks() if task["client"] == "Claude Code"]), 2)
         self.assertTrue(ai_tasks.get_task(claude["id"])["ended"])
 
-    def test_begin_task_names_it_and_ends_the_last(self):
+    def test_begin_task_keeps_preliminary_reads_and_names_it(self):
         ai_tasks.record("Claude", "describe_canvas", {}, ok({}), 10.0, True)
         first = ai_tasks.list_tasks()[0]["id"]
         answer = mcp_task_tools.begin_task({"client": "Claude"}, "画一张海边的阿罗娜")
-        self.assertTrue(ai_tasks.get_task(first)["ended"])
+        self.assertEqual(answer["task"], first)
+        self.assertIsNone(ai_tasks.get_task(first)["ended"])
         ai_tasks.record("Claude", "run_workflow", {"batch": 2}, failed("No workflow is open"), 20.0)
         task = ai_tasks.get_task(answer["task"])
         self.assertEqual(task["title"], "画一张海边的阿罗娜")
-        step = task["steps"][0]
+        step = task["steps"][-1]
         self.assertFalse(step["ok"])
         self.assertEqual(step["error"], "No workflow is open")
         self.assertEqual(step["results"], [])
@@ -131,7 +132,7 @@ class TaskTests(unittest.TestCase):
         self.assertFalse(ai_tasks.remove_task(task_id))
         with mock.patch.object(ai_tasks, "MAX_TASKS", 3):
             for index in range(5):
-                ai_tasks.begin_task("A", f"t{index}", now=100.0 + index)
+                ai_tasks.begin_task("A", f"t{index}", now=100.0 + index, new_task=True)
         self.assertEqual([task["title"] for task in ai_tasks.list_tasks()], ["t4", "t3", "t2"])
         self.assertEqual(len(os.listdir(TMP)), 3)
 
@@ -156,6 +157,36 @@ class TaskTests(unittest.TestCase):
         with mock.patch.object(ai_tasks.time, "time", return_value=310.0):
             got = mcp_task_tools.begin_task({"client": "Cursor"}, "整理 LoRA")
         self.assertEqual((got["task"], ai_tasks.get_task(unnamed["id"])["title"]), (unnamed["id"], "整理 LoRA"))
+
+    def test_begin_after_claim_keeps_user_task_and_repeated_begin_is_safe(self):
+        for title in ("", "用户定的标题"):
+            with self.subTest(title=title):
+                isolate()
+                started = ai_tasks.start_task(title, now=100)
+                with mock.patch.object(ai_tasks.time, "time", return_value=110):
+                    ai_tasks.record("Gemini", "describe_canvas", {}, ok({}), 110, True)
+                    first = mcp_task_tools.begin_task({"client": "Gemini"}, "AI 标题")
+                    second = mcp_task_tools.begin_task({"client": "Gemini"}, "重复调用")
+                self.assertEqual((first["task"], second["task"]), (started["id"], started["id"]))
+                task = ai_tasks.get_task(started["id"])
+                self.assertEqual(task["title"], title or "AI 标题")
+                self.assertEqual(len(task["steps"]), 1)
+                self.assertIsNone(task["ended"])
+                self.assertEqual(len(ai_tasks.list_tasks()), 1)
+
+    def test_begin_can_explicitly_split_and_completed_or_idle_tasks_stay_separate(self):
+        first = ai_tasks.begin_task("A", "first", now=100)
+        second = ai_tasks.begin_task("A", "second", now=110, new_task=True)
+        self.assertNotEqual(first["id"], second["id"])
+        self.assertEqual(first["ended"], 110)
+        ai_tasks.report("A", "done", done=True, now=120)
+        third = ai_tasks.begin_task("A", "third", now=130)
+        self.assertNotEqual(second["id"], third["id"])
+        fourth = ai_tasks.begin_task("A", "fourth", now=130 + ai_tasks.IDLE_SECONDS)
+        self.assertNotEqual(third["id"], fourth["id"])
+        self.assertIsNotNone(third["ended"])
+        other = ai_tasks.begin_task("B", "other", now=140)
+        self.assertNotEqual(fourth["id"], other["id"])
 
     def test_client_names(self):
         self.assertEqual(ai_tasks.client_of({}, {"_meta": {"io.modelcontextprotocol/clientInfo": {"name": "claude-code"}}}), "Claude Code")

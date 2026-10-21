@@ -2,6 +2,11 @@
 
 ## v1.62.0 — unreleased
 
+### Fixes / 修复
+- AI 工作台：AI 先查询再调用 `begin_task`，现在会继续已接手的任务，保留用户标题和之前的步骤；重复调用不会拆任务。另一件事可用 `new_task=true` 明确新建，已结束或长时间闲置的任务仍分开记录。
+- 展台打开历史任务时定位到底部；新增面板、更新最新面板及图片加载后继续跟随底部。往上翻看时保留位置，用“查看最新”回到底部，时间线的定位链接仍跳到对应面板开头。
+- The workbench keeps preliminary reads and repeated `begin_task` calls in the active task; `new_task=true` explicitly starts separate work. The stage opens at the bottom, follows updates and loaded images while there, and preserves the reader's position when browsing earlier content.
+
 ### ✨ AI workbench: see everything the AI did, open it, undo it (AI 工作台)
 - **A new page on the rail, *AI workbench***: every step an AI app (Claude Code, Cursor, Cherry Studio… connected through Anomalous's MCP) takes is kept, grouped into **tasks**. The AI names a task when it starts (a new `begin_task` tool); otherwise one app's calls that follow each other make one task.
 - **A task is a timeline**: what it looked up (folded into one line, a click shows each), what it changed on the canvas, the workflow runs, downloads, scans and spoken lines, and the AI's own notes (a new `report` tool, also for pictures it made another way). Each step says when, how long it took, and why it failed when it did. Steps are **numbered in order** (1, 2, 3… down the line), each dot in its kind's colour; while the AI works, the next number waits at the foot.
