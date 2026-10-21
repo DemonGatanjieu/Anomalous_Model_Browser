@@ -3,6 +3,7 @@
 ## v1.62.0 — unreleased
 
 ### Fixes / 修复
+- 展台右上角增加“关闭展台”，关闭后时间线展开；任务标题旁的“打开展台”或时间线里的面板入口可重新打开，保留面板和未提交的输入。当前任务更新不会强行重开。面板编号改为“来自第 N 步”，明确它的创建位置。The stage can be closed and reopened without losing panels or drafts; step labels now say “From step N”.
 - AI 工作台：AI 先查询再调用 `begin_task`，现在会继续已接手的任务，保留用户标题和之前的步骤；重复调用不会拆任务。另一件事可用 `new_task=true` 明确新建，已结束或长时间闲置的任务仍分开记录。
 - 展台打开历史任务时定位到底部；新增面板、更新最新面板及图片加载后继续跟随底部。往上翻看时保留位置，用“查看最新”回到底部，时间线的定位链接仍跳到对应面板开头。
 - The workbench keeps preliminary reads and repeated `begin_task` calls in the active task; `new_task=true` explicitly starts separate work. The stage opens at the bottom, follows updates and loaded images while there, and preserves the reader's position when browsing earlier content.

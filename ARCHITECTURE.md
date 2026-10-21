@@ -163,7 +163,10 @@ covered by the `styles.css` manifest.
   the order they came with their step numbers, the newest at the bottom. Opening a task,
   new/updated latest panels and late image loads follow the bottom while the reader is there;
   reading earlier content pauses follow, with a "See latest" button to resume. Timeline links
-  instead locate the requested panel's start. In a window too narrow
+  instead locate the requested panel's start. The stage's close button hides it for the selected
+  task (`stage.hidden`); updates preserve that choice and its DOM/drafts. The task header's
+  Open stage button or a timeline panel link reopens it; selecting a different task resets it.
+  In a window too narrow
   for three columns the timeline and the stage are two tabs (a panel that asks brings the stage
   forward). The task list can be folded. `ui_ai_connect.js` says how to connect an AI app (the
   address, a sentence to send the AI so it sets itself up and starts on a waiting task, each

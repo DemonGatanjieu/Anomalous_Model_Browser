@@ -45,7 +45,7 @@ const state = {
     selected: null,   // task id shown
     pinned: false,    // the user picked it: a new task of the AI does not take its place
     view: null,       // the shown task's parts kept between redraws (renderTask)
-    stage: { taskId: null, latestKey: null, atBottom: true, focus: null, tab: 'timeline', unseen: false }, // ui_ai_side.js
+    stage: { taskId: null, latestKey: null, atBottom: true, focus: null, tab: 'timeline', unseen: false, hidden: false }, // ui_ai_side.js
     numbers: new Map(), // step id -> its number in the timeline (the stage shows it)
     tasksCollapsed: (() => { try { return localStorage.getItem(COLLAPSED_KEY) === '1'; } catch (_) { return false; } })(),
     task: null,       // its full record
@@ -243,6 +243,9 @@ function renderTask() {
         el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled')),
         el('span', `anomalous-ai-state is-${status}`, t(`aiState_${status}`)));
     const tools = el('div', 'anomalous-ai-task-tools');
+    if (state.stage.hidden && panelSteps(task).length) {
+        tools.append(button('anomalous-ai-link', t('aiStageShow'), () => pickTab('stage')));
+    }
     tools.append(button('anomalous-ai-link', t('aiRename'), async () => {
         const title = await anomalousPrompt(t('aiRenamePrompt'), task.title || '', t('aiRename'));
         if (title === null || title === undefined) return;
@@ -311,7 +314,7 @@ function drawStage(task, arrived = null) {
     const stage = state.page?.querySelector('.anomalous-ai-stage');
     if (!stage) return;
     const has = panelSteps(task).length > 0;
-    state.page.classList.toggle('has-stage', has);
+    state.page.classList.toggle('has-stage', has && !state.stage.hidden);
     if (!has) {
         stage.replaceChildren();
         layout();
@@ -326,6 +329,11 @@ function drawStage(task, arrived = null) {
         changed: () => void refresh(),
         numberOf: id => state.numbers.get(id) || '',
         tab: pickTab,
+        close: () => {
+            state.stage.hidden = true;
+            state.stage.tab = 'timeline';
+            renderTask();
+        },
     }, arrived);
     layout();
 }
@@ -356,6 +364,7 @@ async function newTask() {
 }
 
 function pickTab(id) {
+    if (id === 'stage') state.stage.hidden = false;
     state.stage.tab = id;
     renderTask();
 }

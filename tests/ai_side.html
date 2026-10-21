@@ -17,7 +17,10 @@ import { renderStage, stageNews, focusPanel } from '../web/modules/ui_ai_side.js
 const box = document.querySelector('#stage');
 const results = document.querySelector('#results');
 const stage = {};
-const ctx = { numberOf: id => id, tab() {}, changed() {} };
+const ctx = { numberOf: id => id, tab() {}, changed() {}, close() {
+    stage.hidden = true;
+    box.style.display = 'none';
+} };
 const panel = id => ({ id, kind: 'panel', panel: { id, title: `Panel ${id}`, blocks:
     Array.from({ length: 25 }, (_, n) => ({ type: 'text', text: `${id}: line ${n + 1}` })) }, answers: {} });
 let task = { id: 'historical', steps: [panel('1')] };
@@ -53,7 +56,8 @@ try {
     check(bottom() && !stage.unseen && !box.querySelector('.anomalous-ai-stage-new'), 'see latest resumes bottom follow');
     focusPanel(stage, '1');
     await draw();
-    await new Promise(resolve => setTimeout(resolve, 700));
+    const deadline = performance.now() + 3000;
+    while (body().scrollTop >= 10 && performance.now() < deadline) await settle();
     check(body().scrollTop < 10, 'timeline link goes to panel start');
     const unchanged = body().firstElementChild;
     await draw();
@@ -65,6 +69,23 @@ try {
     box.style.display = 'flex';
     await draw();
     check(bottom() && stage.placed, 'showing stage tab positions latest');
+    task.steps[0].panel.blocks.push({ type: 'input', id: 'draft', question: 'Draft' });
+    await draw();
+    const draft = box.querySelector('input');
+    draft.value = 'keep this draft';
+    const keptPanel = body().firstElementChild;
+    box.querySelector('[aria-label="关闭展台"]').click();
+    check(stage.hidden && !box.clientHeight, 'close button hides stage');
+    await draw();
+    check(stage.hidden, 'task refresh does not reopen stage');
+    focusPanel(stage, '3');
+    box.style.display = 'flex';
+    await draw();
+    check(!stage.hidden && body().firstElementChild === keptPanel && draft.value === 'keep this draft',
+        'timeline entry reopens without discarding drafts');
+    stage.hidden = true;
+    stageNews({ id: 'another-task', steps: [] }, stage);
+    check(!stage.hidden, 'another task resets closed state');
     results.textContent += 'ALL PASSED';
 } catch (error) { results.textContent += `FAIL ${error.stack}`; }
 </script>

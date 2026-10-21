@@ -7,7 +7,7 @@
  * brings the stage to that panel. In a window too narrow for three columns, the timeline and the
  * stage take turns behind two tabs, and a panel that asks something brings the stage forward.
  *
- * `stage` is the workbench's `{ taskId, latestKey, atBottom, focus, tab, unseen, placed }`.
+ * `stage` is the workbench's `{ taskId, latestKey, atBottom, focus, tab, unseen, placed, hidden }`.
  */
 
 import { translate as t } from './locales.js';
@@ -48,7 +48,7 @@ export function stageNews(task, stage) {
     const latest = steps.at(-1);
     const latestKey = JSON.stringify(latest?.panel || null);
     if (stage.taskId !== task?.id) {
-        Object.assign(stage, { taskId: task?.id, latestKey, atBottom: true, focus: null, unseen: false, placed: false });
+        Object.assign(stage, { taskId: task?.id, latestKey, atBottom: true, focus: null, unseen: false, placed: false, hidden: false });
         return { arrived: null, asking: 0 };
     }
     const arrived = latestKey !== stage.latestKey ? latest : null;
@@ -59,6 +59,7 @@ export function stageNews(task, stage) {
 
 /** The stage goes to panel `panelId` (from its line in the timeline). */
 export function focusPanel(stage, panelId) {
+    stage.hidden = false;
     stage.focus = panelId;
     stage.tab = 'stage';
 }
@@ -140,6 +141,9 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
             scrollToLatest(body, stage);
         }));
     }
+    const close = button('anomalous-ai-stage-close', '×', ctx.close, t('aiStageHide'));
+    close.setAttribute('aria-label', t('aiStageHide'));
+    parts.push(close);
     head.replaceChildren(...parts);
 
     // The panels, oldest first; only the ones that changed are drawn again.
