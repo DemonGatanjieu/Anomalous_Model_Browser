@@ -104,6 +104,12 @@ try {
   await settle();
   check(receipt.querySelectorAll('.anomalous-canvas-change').length===4,'remaining changes expand without losing prior rows');
   check(canvasChanges(null).textContent.includes('不可用'),'old records have an explicit unavailable state');
+  const tagReceipt=canvasChanges({detail:{total:1,changes:[{kind:'changed',node:'Prompt #2',widget:'text',before:'masterpiece, best quality, slime girl, purple hair, smile',after:'masterpiece, best quality, vampire girl, silver hair, smile'}]}});
+  check(tagReceipt.querySelectorAll('.anomalous-canvas-tag.is-out').length===2&&tagReceipt.querySelectorAll('.anomalous-canvas-tag.is-in').length===2,'a prompt receipt lists the tags taken out and put in');
+  tagReceipt.querySelector('.anomalous-canvas-change-full').open=true;await settle();
+  check(tagReceipt.querySelectorAll('.anomalous-canvas-mark.is-in').length===2,'the whole texts mark the tags put in');
+  const cut=canvasChanges({detail:{total:1,changes:[{kind:'changed',node:'P',widget:'text',before:'…iece, best quality, a, b, slime girl, c, d, smi…',after:'…iece, best quality, a, b, vampire girl, c, d, sm…'}]}});
+  check([...cut.querySelectorAll('.anomalous-canvas-tag')].map(n=>n.textContent).join('|')==='slime girl|vampire girl','half tags at cut ends are never called changed');
   const comparisonSlider=slider({before:a,after:b});
   check(Boolean(comparisonSlider.querySelector('.anomalous-ai-slider-compare')),'AI slider connects to real parameter comparison');
   const broken=imageResults([a,{filename:'missing.png'}],{});fixture.append(broken);

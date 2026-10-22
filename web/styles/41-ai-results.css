@@ -226,5 +226,34 @@
 .anomalous-canvas-change-note { margin-top: 10px; color: var(--amb-text-dim); font-size: 11px; line-height: 1.5; }
 .anomalous-canvas-change-more { margin-top: 12px; }
 .anomalous-canvas-change-more > summary { margin-bottom: 10px; color: var(--amb-link); cursor: pointer; font-size: 12px; }
+/* What a prompt change took out and put in (ui_canvas_changes.js), then both texts marked. */
+.anomalous-canvas-tags { display: flex; flex-direction: column; gap: 8px; }
+.anomalous-canvas-tags-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.anomalous-canvas-tags-label { min-width: 64px; color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-canvas-tag {
+    display: inline-flex;
+    flex-direction: column;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+}
+.anomalous-canvas-tag.is-out {
+    background: color-mix(in srgb, var(--amb-danger) 16%, transparent);
+    color: color-mix(in srgb, var(--amb-danger) 80%, var(--amb-text-main));
+}
+.anomalous-canvas-tag.is-out .anomalous-canvas-tag-text { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--amb-danger) 70%, transparent); }
+.anomalous-canvas-tag.is-in {
+    background: color-mix(in srgb, var(--amb-ok) 18%, transparent);
+    color: color-mix(in srgb, var(--amb-ok) 75%, var(--amb-text-main));
+}
+.anomalous-canvas-tag-gloss { color: var(--amb-text-soft); font-size: 11px; }
+.anomalous-canvas-tags-gloss { align-self: flex-start; }
+.anomalous-canvas-change-full { margin-top: 10px; }
+.anomalous-canvas-change-full > summary { margin-bottom: 8px; color: var(--amb-link); font-size: 12px; cursor: pointer; }
+.anomalous-canvas-same { color: var(--amb-text-dim); }
+.anomalous-canvas-mark { padding: 0 3px; border-radius: 4px; }
+.anomalous-canvas-mark.is-out { background: color-mix(in srgb, var(--amb-danger) 22%, transparent); color: var(--amb-text-main); text-decoration: line-through; }
+.anomalous-canvas-mark.is-in { background: color-mix(in srgb, var(--amb-ok) 24%, transparent); color: var(--amb-text-main); }
 @container (max-width: 310px) { .anomalous-canvas-change-values { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-live-dot, .anomalous-ai-working { animation: none; } }

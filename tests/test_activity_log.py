@@ -50,14 +50,16 @@ class ActivityLogTests(unittest.TestCase):
         self.assertLessEqual(len(entry['target']), activity_log.MAX_VALUE_CHARS + 1)
 
     def test_a_change_late_in_a_long_text_still_shows(self):
-        before = ', '.join(f'tag{i}' for i in range(200))  # far longer than MAX_VALUE_CHARS
-        after = before.replace('tag180', 'tag180, extra')
+        before = ', '.join(f'tag{i}' for i in range(600))  # far longer than MAX_CHANGE_CHARS
+        after = before.replace('tag580', 'tag580, extra')
         item = activity_log._clean_changes([{'kind': 'changed', 'node': 'n', 'widget': 'text',
                                              'before': before, 'after': after}])[0]
         self.assertNotEqual(item['before'], item['after'])
         self.assertIn('extra', item['after'])
         self.assertTrue(item['before'].startswith('…'))
-        self.assertLessEqual(len(item['after']), activity_log.MAX_VALUE_CHARS + 2)
+        self.assertLessEqual(len(item['after']), activity_log.MAX_CHANGE_CHARS + 2)
+        short = activity_log._clean_changes([{'kind': 'changed', 'node': 'n', 'widget': 'text', 'before': before[:1500], 'after': 'x'}])[0]
+        self.assertEqual(short['before'], before[:1500], 'a whole prompt is kept for its receipt')
 
     def test_failure_responses_are_not_recorded(self):
         ok = web.json_response({'success': True})
