@@ -291,7 +291,10 @@ A tool's own failure (bad id, missing file, unexpected error) is a result with
 `isError: true`, not a protocol error. Pictures attached on request are the gallery's
 512 px thumbnails (at most 1.5 MB).
 
-Acting tools (`api/mcp_actions.py`) never delete or rename files. Canvas actions go
+Acting tools (`api/mcp_actions.py`, and `api/mcp_canvas_edit.py` for building a workflow)
+never delete or rename files; `remove_nodes` removes canvas nodes only, one Ctrl+Z step, and
+`new_workflow` opens a new unsaved tab named after the AI's words and the time, so it never
+opens or replaces a saved workflow. Canvas actions go
 through `mcp_bridge.ask_page`: it sends `{id, action, args}` as the `anomalous.mcp`
 websocket event to every open page and waits (30 s, 90 s for model checks; at most 20
 waiting). The first page to POST `{id, claim: true}` to `/anomalous/mcp/bridge` gets it

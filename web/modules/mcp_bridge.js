@@ -13,6 +13,7 @@ import { translate as t } from './locales.js';
 import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { postCanvasActivity } from './activity_log.js';
 import { keepUndo, workflowKey } from './canvas_undo.js';
+import { canvasEditActions } from './mcp_canvas_edit.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { chainEnd, mainModelLoaders, planLoraInsertion, spliceLora } from './graph_splice.js';
 import { checkWorkflowModels, fixWorkflowModels, isProblem } from './model_check.js';
@@ -289,6 +290,7 @@ const ACTIONS = {
     download_model: downloadModel,
     run_workflow: runWorkflow,
     open_model: openModel,
+    ...canvasEditActions({ recorded, nodeById }),
 };
 
 const post = body => fetch('/anomalous/mcp/bridge', {

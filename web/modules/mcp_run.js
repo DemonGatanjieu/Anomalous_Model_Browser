@@ -1,3 +1,6 @@
+// ComfyUI's own words when it refuses a prompt (which node, what is wrong), not just "failed".
+const reason = failure => String((failure?.response && failure.toString?.()) || failure?.message || failure).slice(0, 800);
+
 /** Capture submission receipts from one native ComfyUI queue request, preserving its seed/widget hooks. */
 export async function queueTracked(app, api, batch = 1) {
     if (app.processingQueue) throw new Error('ComfyUI is submitting another batch. Wait for submission to finish, then try again.');
@@ -24,7 +27,7 @@ export async function queueTracked(app, api, batch = 1) {
             }
             return result;
         } catch (failure) {
-            if (ours) { error = String(failure?.message || failure).slice(0, 300); capturing = false; complete(); }
+            if (ours) { error = reason(failure); capturing = false; complete(); }
             throw failure; // the native error display and partial-batch handling still run
         }
     };
@@ -35,11 +38,11 @@ export async function queueTracked(app, api, batch = 1) {
         // Native queuePrompt may also drain later manual requests. Return our receipt as soon as
         // our batch ends, but still handle a later rejection from the native queue promise.
         const nativeDone = Promise.resolve(app.queuePrompt(0, batch)).catch(failure => {
-            if (ids.length < batch) error ||= String(failure?.message || failure).slice(0, 300);
+            if (ids.length < batch) error ||= reason(failure);
         });
         await Promise.race([nativeDone, ownDone]);
     } catch (failure) {
-        error ||= String(failure?.message || failure).slice(0, 300);
+        error ||= reason(failure);
     } finally {
         capturing = false;
         if (api.queuePrompt === wrapped) api.queuePrompt = original;

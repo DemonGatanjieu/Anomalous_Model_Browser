@@ -255,7 +255,7 @@ def _clean_changes(changes):
         if not isinstance(change, dict):
             continue
         item = _short_values(change, ('kind', 'node', 'type', 'widget', 'before', 'after'))
-        if item.get('kind') in ('changed', 'added', 'removed', 'opened'):
+        if item.get('kind') in ('changed', 'wired', 'added', 'removed', 'opened'):
             cleaned.append(item)
     return cleaned
 

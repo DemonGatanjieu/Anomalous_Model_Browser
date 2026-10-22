@@ -134,6 +134,15 @@ covered by the `styles.css` manifest.
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
   side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's; the
   outcome carries the log entry's id as `_activity`, for the AI workbench's undo).
+  `api/mcp_canvas_edit.py` holds the tools that build a workflow where the user watches:
+  `find_nodes` reads this ComfyUI's node types from its own `/object_info` (kept two
+  minutes); `add_node`, `connect_nodes`, `set_values`, `remove_nodes` and `new_workflow` (a
+  new tab, blank or built from a workflow in ComfyUI's API form, never the open one) are
+  checked for shape there and done by `web/modules/mcp_canvas_edit.js` through the bridge's
+  `recorded`, after checking types, settings and choices against the nodes themselves;
+  `web/modules/canvas_build.js` is its pure part (type fit, value checks, a free spot, the
+  layered layout). A rewired input shows in the receipt as a `wired` change
+  (`activity_diff.js` keeps what feeds each input).
   `web/modules/mcp_run.js` captures exact prompt IDs from one native queue request,
   preserving native seed/widget callbacks and excluding later manual batches. Busy submissions
   and unsupported host request IDs are refused before queueing; wrappers/listeners are released.

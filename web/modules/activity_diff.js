@@ -13,9 +13,25 @@ export function valueText(value) {
     }
 }
 
+const linkOf = (graph, id) => graph?.getLink?.(id) ?? graph?.links?.get?.(id) ?? graph?.links?.[id] ?? null;
+
+/** What feeds each linked input of `node`: { input name → { from: node id, text: "Title #id · output" } }. */
+function sourcesOf(graph, node) {
+    const sources = {};
+    for (const input of node.inputs || []) {
+        const link = input?.link != null ? linkOf(graph, input.link) : null;
+        if (!input?.name || !link) continue;
+        const origin = graph.getNodeById?.(link.origin_id);
+        const output = origin?.outputs?.[link.origin_slot]?.name ?? link.origin_slot;
+        sources[input.name] = { from: String(link.origin_id), text: `${origin?.title || origin?.type || '?'} #${link.origin_id} · ${output}` };
+    }
+    return sources;
+}
+
 /**
- * `Map(node id → { type, title, widgets: { name → text }, links })`; buttons have no value.
- * `links`: the node's input links, so a rewiring shows (canvas_undo.js uses it).
+ * `Map(node id → { type, title, widgets: { name → text }, links, sources })`; buttons have no value.
+ * `links`: the node's input links, so a rewiring shows (canvas_undo.js uses it); `sources`:
+ * what feeds each input, in words (sourcesOf).
  */
 export function snapshotGraph(graph) {
     const nodes = new Map();
@@ -27,7 +43,7 @@ export function snapshotGraph(graph) {
             widgets[widget.name] = valueText(widget.value);
         }
         const links = (node.inputs || []).map(input => input?.link ?? '').join(',');
-        nodes.set(String(node.id), { type: node.type || '', title: node.title || node.type || '', widgets, links });
+        nodes.set(String(node.id), { type: node.type || '', title: node.title || node.type || '', widgets, links, sources: sourcesOf(graph, node) });
     }
     return nodes;
 }
@@ -36,7 +52,8 @@ const nodeLabel = (id, node) => `${node.title} #${id}`;
 
 /**
  * What changed from `before` to `after` (both from snapshotGraph): widget values
- * (`changed`), nodes `added` and `removed`, in canvas order.
+ * (`changed`), inputs fed from somewhere else (`wired`: `widget` is the input; not the inputs
+ * a removed node fed), nodes `added` and `removed`, in canvas order.
  */
 export function diffSnapshots(before, after) {
     const changes = [];
@@ -52,6 +69,12 @@ export function diffSnapshots(before, after) {
                 kind: 'changed', node: nodeLabel(id, now), type: now.type, widget: name,
                 before: was.widgets[name] ?? '', after: now.widgets[name] ?? '',
             });
+        }
+        const [old, fed] = [was.sources || {}, now.sources || {}];
+        for (const name of new Set([...Object.keys(old), ...Object.keys(fed)])) {
+            if (old[name]?.text === fed[name]?.text) continue;
+            if (!fed[name] && !after.has(old[name].from)) continue; // its source was removed: that says it
+            changes.push({ kind: 'wired', node: nodeLabel(id, now), type: now.type, widget: name, before: old[name]?.text ?? '', after: fed[name]?.text ?? '' });
         }
     }
     for (const [id, was] of before) {

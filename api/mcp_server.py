@@ -26,10 +26,11 @@ from aiohttp import web
 from . import ai_gates, ai_panels, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
+from .mcp_canvas_edit import CANVAS_TOOLS
 from .mcp_task_tools import TASK_TOOLS
 from .mcp_tools import TOOLS as READ_TOOLS, call_tool
 
-TOOLS = {**READ_TOOLS, **ACTIONS, **TASK_TOOLS, **mcp_apps.APP_TOOLS}
+TOOLS = {**READ_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **mcp_apps.APP_TOOLS}
 CAPABILITIES = {
     "tools": {"listChanged": False}, "prompts": {"listChanged": False}, "resources": {"listChanged": False},
     "extensions": {mcp_apps.EXTENSION: {"mimeTypes": [mcp_apps.MIME]}},  # the card in the conversation (mcp_apps.py)
@@ -43,7 +44,9 @@ INSTRUCTIONS = (
     "their Civitai information, output images with their generation settings, combos (a model, "
     "LoRAs and a prompt), workflow recipes, saved prompts, generated audio, the scan status and "
     "the activity log; and tools that act on the workflow open in ComfyUI (read it with "
-    "describe_canvas first), scan models, or have an Anomalous TTS voice speak. Canvas changes "
+    "describe_canvas first) or build one where the user watches (find_nodes to look node types up, "
+    "new_workflow for a new tab, add_node, connect_nodes, set_values), scan models, or have an "
+    "Anomalous TTS voice speak. Canvas changes "
     "are single Ctrl+Z steps and are logged as the AI's; nothing deletes files. Ids returned by "
     "one tool (model_id, image, node ids) are what the others take. For what no tool does, tell "
     "the user where in Anomalous to do it (the rail on the left: Models, Gallery, Workflows, "

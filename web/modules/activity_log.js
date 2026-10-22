@@ -132,6 +132,9 @@ export function changeLine(change) {
     const empty = t('activityEmptyValue');
     if (change.kind === 'added') return t('activityAdded', { node: change.node });
     if (change.kind === 'removed') return t('activityRemoved', { node: change.node });
+    if (change.kind === 'wired') {
+        return t('activityWired', { node: change.node, input: change.widget, before: change.before || empty, after: change.after || empty });
+    }
     return t('activityChangedValue', {
         node: change.node, widget: change.widget, before: change.before || empty, after: change.after || empty,
     });

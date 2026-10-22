@@ -33,6 +33,23 @@ const a = snapshotGraph(graph([node(1, 'Img', { image: { name: 'a.png' } })]));
 const b = snapshotGraph(graph([node(1, 'Img', { image: { name: 'a.png' }, extra: 2 })]));
 assert.deepEqual(diffSnapshots(a, b).map(c => [c.widget, c.before, c.after]), [['extra', '', '2']]);
 
+// Rewiring: what feeds an input, in words; not the inputs a removed node fed.
+const wired = (links, extra = []) => {
+    const nodes = [
+        { id: 1, type: 'CheckpointLoaderSimple', title: 'Load', outputs: [{ name: 'MODEL' }] },
+        { id: 2, type: 'LoraLoader', title: 'LoRA', outputs: [{ name: 'MODEL' }] },
+        { id: 3, type: 'KSampler', title: 'KSampler', inputs: [{ name: 'model', link: links.model ?? null }] },
+        ...extra,
+    ];
+    const table = new Map([[10, { origin_id: 1, origin_slot: 0 }], [11, { origin_id: 2, origin_slot: 0 }]]);
+    return snapshotGraph({ _nodes: nodes, links: table, getNodeById: id => nodes.find(n => n.id === id) });
+};
+assert.deepEqual(diffSnapshots(wired({}), wired({ model: 10 })).map(c => [c.kind, c.node, c.widget, c.before, c.after]),
+    [['wired', 'KSampler #3', 'model', '', 'Load #1 · MODEL']]);
+assert.deepEqual(diffSnapshots(wired({ model: 10 }), wired({ model: 11 }))[0].after, 'LoRA #2 · MODEL');
+const gone = snapshotGraph({ _nodes: [{ id: 3, type: 'KSampler', title: 'KSampler', inputs: [{ name: 'model', link: null }] }] });
+assert.deepEqual(diffSnapshots(wired({ model: 10 }), gone).map(c => c.kind), ['removed', 'removed'], 'the removal says it');
+
 assert.equal(changeNodeId({ node: 'KSampler #12' }), '12');
 assert.equal(changeNodeId({ node: 'Title with # sign #7' }), '7');
 assert.equal(changeNodeId({ node: 'no id' }), null);
