@@ -25,8 +25,10 @@ import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.j
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { focusPanel, openQuestions, panelLine, panelSteps, renderStage, stageNews, tabBar } from './ui_ai_side.js';
-import { connectGuide, openConnectGuide, waitingCard } from './ui_ai_connect.js';
-import { gateCard, openGates } from './ui_ai_gate.js';
+import { connectHint, waitingCard } from './ui_ai_connect.js';
+import { gateCard } from './ui_ai_gate.js';
+import { iconButton } from './ui_ai_icons.js';
+import { renderTaskList, stateIcon } from './ui_ai_task_list.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
 import { locateNode, openModel, resultLinks, shared, strip, updateRunProgress } from './ui_ai_results.js';
@@ -41,7 +43,6 @@ import {
 const NARROW_PX = 720;
 const STAGE_FROM = 760; // the room the timeline and the stage need side by side
 const COLLAPSED_KEY = 'anomalous_ai_tasks_collapsed';
-const STATE_ICONS = { waiting: '…', live: '●', asks: '?', error: '!', done: '✓' };
 const RECENT_COUNT = 3;
 
 const state = {
@@ -102,44 +103,12 @@ const fetchTask = id => getJson(`/anomalous/ai_tasks/${encodeURIComponent(id)}`)
 
 // ---------------------------------------------------------------- the list
 
-function taskRow(summary) {
-    const status = taskState(summary);
-    const row = button(`anomalous-ai-task-row is-${status}${summary.id === state.selected ? ' is-current' : ''}`, '', () => {
-        // Picking the newest task follows the AI again; an older one stays put.
-        state.pinned = summary.id !== state.tasks[0]?.id;
-        void select(summary.id);
-    });
-    const top = el('div', 'anomalous-ai-task-row-top');
-    const icon = el('span', `anomalous-ai-state-icon is-${status}`, STATE_ICONS[status]);
-    icon.title = t(`aiState_${status}`);
-    top.append(icon, el('span', 'anomalous-ai-task-row-title', summary.title || t('aiUntitled')));
-    if (status === 'live') top.append(el('span', 'anomalous-ai-live-dot'));
-    const meta = [summary.client, timeLabel(summary.updated), t('aiStepCount', { count: summary.steps })].filter(Boolean);
-    row.append(top, el('div', 'anomalous-ai-task-row-meta', meta.join(' · ')));
-    const counts = taskCounts(summary);
-    if (counts.length) row.append(el('div', 'anomalous-ai-task-row-counts', counts.map(say).join(' · ')));
-    return row;
-}
-
 function renderList(box) {
-    const head = el('div', 'anomalous-ai-tasks-head');
-    head.append(el('span', 'anomalous-ai-tasks-title', t('aiTasks')), el('span', 'anomalous-ai-tasks-count', t('aiTaskCount', { count: state.tasks.length })),
-        button('anomalous-ai-fold', '‹', () => foldTasks(true), t('aiTasksCollapse')));
-    const actions = el('div', 'anomalous-ai-tasks-actions');
-    actions.append(button('anomalous-ai-new-task', `＋ ${t('aiNewTask')}`, newTask, t('aiNewTaskHint')),
-        button('anomalous-ai-link', t('aiConnect'), openConnectGuide), button('anomalous-ai-link', t('aiGates'), openGates, t('aiGatesHint')));
-    const list = el('div', 'anomalous-ai-tasks-list');
-    // Newest first, under a heading for each day (today, yesterday, a date).
-    let day = null;
-    for (const summary of state.tasks) {
-        const label = dayLabel(summary.updated);
-        if (label !== day) {
-            day = label;
-            list.append(el('div', 'anomalous-ai-tasks-day', label));
-        }
-        list.append(taskRow(summary));
-    }
-    box.replaceChildren(head, actions, list);
+    renderTaskList(box, {
+        tasks: state.tasks, selected: state.selected, onNew: newTask, onFold: () => foldTasks(true),
+        // Picking the newest task follows the AI again; an older one stays put.
+        onPick: (summary) => { state.pinned = summary.id !== state.tasks[0]?.id; void select(summary.id); },
+    });
 }
 
 // ---------------------------------------------------------------- one task
@@ -274,30 +243,29 @@ function renderTask() {
     const header = view.header;
     const titleLine = el('div', 'anomalous-ai-task-title-line');
     titleLine.append(button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => { state.narrowView = 'list'; layout(); }),
-        button('anomalous-ai-unfold', '›', () => foldTasks(false), t('aiTasksExpand')),
-        el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled')),
-        el('span', `anomalous-ai-state is-${status}`, t(`aiState_${status}`)));
+        iconButton('anomalous-ai-unfold', 'chevronRight', t('aiTasksExpand'), () => foldTasks(false), { iconOnly: true }),
+        el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled')), stateChip(status));
     const tools = el('div', 'anomalous-ai-task-tools');
     if (state.stage.hidden && panelSteps(task).length) {
-        tools.append(button('anomalous-ai-link', t('aiStageShow'), () => pickTab('stage')));
+        tools.append(iconButton('anomalous-ai-tool', 'panel', t('aiStageShow'), () => pickTab('stage')));
     }
-    tools.append(toolboxButton(task, () => void refresh()), button('anomalous-ai-link', t('aiRename'), async () => {
+    tools.append(toolboxButton(task, () => void refresh()));
+    if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
+        tools.append(iconButton('anomalous-ai-tool', 'undo', t('aiUndoAll'), () => undoAll(task)));
+    }
+    tools.append(iconButton('anomalous-ai-tool is-icon', 'pencil', t('aiRename'), async () => {
         const title = await anomalousPrompt(t('aiRenamePrompt'), task.title || '', t('aiRename'));
         if (title === null || title === undefined) return;
         await postTask(task.id, { title }).catch(error => anomalousAlert(error.message));
         await refresh();
-    }));
-    if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
-        tools.append(button('anomalous-ai-link', t('aiUndoAll'), () => undoAll(task)));
-    }
-    tools.append(button('anomalous-ai-link is-danger', t('aiRemove'), async () => {
+    }, { iconOnly: true }), iconButton('anomalous-ai-tool is-icon is-danger', 'trash', t('aiRemove'), async () => {
         if (!await anomalousConfirm(t('aiRemoveConfirm'), t('aiRemove'))) return;
         await postTask(task.id, { remove: true }).catch(error => anomalousAlert(error.message));
         state.selected = null;
         state.task = null;
         state.narrowView = 'list';
         await refresh();
-    }));
+    }, { iconOnly: true }));
     titleLine.append(tools);
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);
@@ -384,6 +352,12 @@ function drawStage(task, arrived = null) {
         },
     }, arrived);
     layout();
+}
+
+function stateChip(status) {
+    const chip = el('span', `anomalous-ai-state is-${status}`);
+    chip.append(stateIcon(status, 12), el('span', '', t(`aiState_${status}`)));
+    return chip;
 }
 
 function showOnStage(panelId) {
@@ -491,8 +465,11 @@ function layout() {
 
 function emptyPage() {
     const box = el('div', 'anomalous-ai-welcome');
-    box.append(el('h2', 'anomalous-ai-welcome-title', t('aiWelcomeTitle')), el('p', 'anomalous-ai-welcome-body', t('aiWelcomeBody')),
-        connectGuide(), button('anomalous-ai-new-task', `＋ ${t('aiNewTask')}`, newTask, t('aiNewTaskHint')));
+    const picture = el('img', 'anomalous-ai-welcome-art');
+    picture.src = new URL('../assets/ai_tasks_empty.webp', import.meta.url).href;
+    picture.alt = '';
+    box.append(picture, el('h2', 'anomalous-ai-welcome-title', t('aiWelcomeTitle')), el('p', 'anomalous-ai-welcome-body', t('aiWelcomeBody')),
+        iconButton('anomalous-ai-new-task', 'plus', t('aiNewTask'), newTask, { title: t('aiNewTaskHint') }), connectHint());
     return box;
 }
 

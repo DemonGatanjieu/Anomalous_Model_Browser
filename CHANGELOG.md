@@ -6,6 +6,12 @@
 - AI 可以在你眼前的画布上搭工作流了：查这台 ComfyUI 有哪些节点（包括自定义节点）、每个节点有哪些输入输出和可选项；新建一个工作流标签页（空白的，或者一次搭好整套并自动排好位置，不动你正在开的那个）；加节点、连线、改参数、删节点。每一步都在画布上当场发生，是一次 Ctrl+Z，记在操作记录里，并在 AI 工作台那一步下面显示改了什么，连线也会写成“某节点的输入 model：（空）→ 加载模型 #4 · MODEL”。连不上的类型、不存在的选项、写错的参数会先被拦下并告诉 AI 正确的写法，画布不会留下半截。新建的标签页名字带时间，不会打开或覆盖你存过的工作流。连线会绕成死循环时也会先拦下。运行被 ComfyUI 拒绝时，AI 收到的是 ComfyUI 给的具体原因（哪个节点、什么问题），不再只有一句“运行失败”。
 - The AI can build workflows on the canvas the user sees: look up this ComfyUI's node types (custom nodes too) with their inputs, outputs and choices; open a new tab, blank or built and laid out from a workflow in API form (the open one is left alone); add, wire, set and remove nodes. Each is one Ctrl+Z step, logged as the AI's and shown under its AI workbench step, rewiring included. Wrong types, choices and settings are refused with what fits, before anything changes. Wiring that would loop is refused too, and a run ComfyUI rejects reports ComfyUI's own reason.
 
+### AI 工作台换新外观 / A new look for the AI workbench
+- 左边任务栏：“新任务”成了醒目的主按钮，“连接 AI”和“关卡”变成带图标的按钮；下面写着最近接入的是哪个 AI、什么时候；有任务在进行、等你回答或出错时，上面出现对应的筛选按钮和数量；每个任务前的状态换成清楚的图标，选中的任务左边有一条色条。
+- 任务标题栏：状态标签带图标；“素材”“全部撤销”“显示展台”是统一样式的按钮，“改名”和“从列表移除”换成铅笔和垃圾桶图标（鼠标移上去有说明，删除悬停时变红）。
+- 等 AI 接手的任务：左边一张插图，右边标题；下面是三个带编号、连成一条线的步骤（想让 AI 做什么 → 把这句话发给 AI，大号“复制这句话”按钮 → AI 的每一步会出现在这里，附淡淡的示意）；最下面“第一次用？先把 AI 连上 AMB”是一张带插图的卡片，点“查看连接方法”就在原地展开。没有任何任务时的欢迎页也换成插图加同样的卡片。插图是用 ChatGPT 画的。
+- The task list leads with a New task button, icon buttons for Connect an AI and the gates, which AI came last, quick filters by state and state icons; a task's header uses icon buttons; a waiting task shows a picture, three numbered steps and a connect card that opens in place; the empty page matches. Illustrations made with ChatGPT.
+
 ### 给 AI 的素材 / Materials for the AI
 - AI 工作台每个任务上多了“素材”按钮：按来源分组列出这台 ComfyUI 的全部节点（自带的、你装的每个第三方节点包、只在网页里的小工具、会花积分的付费 API 节点单独放在最后），还有你的搭配、工作流、提示词和模型。勾选这次想让 AI 用的，点“交给 AI”；可以选“优先用这些”或“只能用这些节点”（自带节点照常可用，AI 想加别的第三方或付费节点会被拦下）。☆ 设为常用后，没挑素材的任务自动带上常用的。AI 下一步就会收到，时间线上也记着你给了什么、AI 收到没有。
 - AI 能在新标签页里打开你存的工作流，在它的基础上改；工作流详情页也有“✦ 交给 AI”。AI 查节点时会标出你挑的节点和付费节点。

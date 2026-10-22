@@ -10,7 +10,8 @@
 import { translate as t } from './locales.js';
 import { outputThumbnail } from './ui_kept_toast.js';
 import { recipeAssetUrl } from './ui_recipe_media.js';
-import { icon, socketColor, sourceBadge, standInCover } from './ui_ai_toolbox_icons.js';
+import { icon } from './ui_ai_icons.js';
+import { socketColor, sourceBadge, standInCover } from './ui_ai_toolbox_icons.js';
 
 const SOCKETS_SHOWN = 4;
 const withQuery = (url, query) => `${url}${url.includes('?') ? '&' : '?'}${query}`;

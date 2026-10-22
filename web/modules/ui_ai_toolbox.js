@@ -14,7 +14,8 @@ import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { KINDS, keptCatalog, loadCatalog, nodeItems, nodeSources, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
 import { card, coverUrl, detail, refreshCard } from './ui_ai_toolbox_cards.js';
-import { emptyPicture, icon, sourceBadge } from './ui_ai_toolbox_icons.js';
+import { icon } from './ui_ai_icons.js';
+import { emptyPicture, sourceBadge } from './ui_ai_toolbox_icons.js';
 
 const MODES = ['prefer', 'only'];
 const CHUNK = 60;

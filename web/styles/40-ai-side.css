@@ -243,28 +243,28 @@
 /* ---------- folding the task list ---------- */
 .anomalous-ai-fold,
 .anomalous-ai-unfold {
-    width: 24px;
-    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
     padding: 0;
     border: 1px solid var(--amb-border);
-    border-radius: 6px;
+    border-radius: 8px;
     background: none;
     color: var(--amb-text-soft);
-    font: inherit;
-    font-size: 13px;
     cursor: pointer;
 }
 
-.anomalous-ai-fold {
-    margin-left: 8px;
-}
+.anomalous-ai-fold:hover,
+.anomalous-ai-unfold:hover { background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
 
 .anomalous-ai-unfold {
     display: none;
 }
 
 .anomalous-ai.tasks-collapsed .anomalous-ai-unfold {
-    display: inline-block;
+    display: inline-flex;
 }
 
 .anomalous-ai.is-narrow .anomalous-ai-fold,
@@ -272,150 +272,224 @@
     display: none;
 }
 
-/* ---------- new task, connecting an AI ---------- */
+/* ---------- new task, the ways in, which AI came last ---------- */
 .anomalous-ai-tasks-actions {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 14px 8px;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 14px 12px;
 }
 
 .anomalous-ai-new-task {
-    padding: 6px 12px;
-    border: 1px solid color-mix(in srgb, var(--amb-link) 50%, transparent);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
-    color: var(--amb-text-main);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 36px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--amb-btn-primary-bg, var(--amb-link));
+    color: var(--amb-btn-primary-text, #fff);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.15s;
+}
+
+.anomalous-ai-new-task:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+.anomalous-ai-tasks-ways { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+.anomalous-ai-way {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 30px;
+    border: 1px solid var(--amb-border);
+    border-radius: 9px;
+    background: none;
+    color: var(--amb-text-soft);
     font: inherit;
     font-size: 12.5px;
-    font-weight: 600;
     cursor: pointer;
 }
 
-.anomalous-ai-new-task:hover {
-    background: color-mix(in srgb, var(--amb-link) 22%, transparent);
-}
+.anomalous-ai-way:hover { border-color: var(--amb-border-strong); background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
+
+.anomalous-ai-visit { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-ai-visit-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--amb-text-dim); opacity: 0.6; }
+.anomalous-ai-visit.is-known .anomalous-ai-visit-dot { background: var(--amb-ok); opacity: 1; }
+.anomalous-ai-visit-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .anomalous-ai-state-icon.is-waiting {
     background: color-mix(in srgb, var(--amb-link) 20%, transparent);
     color: var(--amb-link);
 }
 
-/* A task waiting for an AI (ui_ai_connect.js waitingCard): centred, one thing to do. */
+/* A task waiting for an AI (ui_ai_connect.js waitingCard): a picture, three numbered steps, the connect card. */
 .anomalous-ai-waiting {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    max-width: 620px;
-    margin: 24px auto 0;
-    text-align: center;
+    gap: 22px;
+    max-width: 720px;
+    margin: 8px auto 0;
 }
 
-.anomalous-ai-waiting-mark {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
-    color: var(--amb-link);
-    font-size: 24px;
-    animation: anomalous-ai-waiting-breathe 2.4s ease-in-out infinite;
-}
-
-@keyframes anomalous-ai-waiting-breathe { 50% { transform: scale(1.08); opacity: 0.75; } }
+.anomalous-ai-waiting-hero { display: flex; align-items: center; gap: 24px; }
+.anomalous-ai-waiting-art { flex: none; width: 168px; height: 168px; object-fit: contain; animation: anomalous-ai-waiting-float 4s ease-in-out infinite; }
+@keyframes anomalous-ai-waiting-float { 50% { transform: translateY(-6px); } }
+.anomalous-ai-waiting-words { min-width: 0; }
 
 .anomalous-ai-waiting-title {
     color: var(--amb-text-main);
-    font-size: 17px;
-    font-weight: 700;
+    font-size: 21px;
+    font-weight: 800;
 }
 
 .anomalous-ai-waiting-body {
-    margin: -4px 0 4px;
+    margin: 6px 0 0;
     color: var(--amb-text-soft);
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 13.5px;
+    line-height: 1.7;
 }
 
-.anomalous-ai-waiting-wish {
-    width: 100%;
-    padding: 12px 14px;
+.anomalous-ai-waiting-steps {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.anomalous-ai-waiting-steps::before {
+    position: absolute;
+    top: 14px;
+    bottom: 14px;
+    left: 13px;
+    width: 2px;
+    background: linear-gradient(var(--amb-link), color-mix(in srgb, var(--amb-link) 10%, transparent));
+    content: "";
+    opacity: 0.45;
+}
+
+.anomalous-ai-waiting-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 44px;
+}
+
+.anomalous-ai-waiting-num {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--amb-link);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--amb-link) 18%, transparent);
+}
+
+.anomalous-ai-waiting-step-label { color: var(--amb-text-main); font-size: 14px; font-weight: 700; line-height: 28px; }
+
+.anomalous-ai-waiting-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
     border: 1px solid var(--amb-border-strong);
-    border-radius: 10px;
+    border-radius: 12px;
     background: var(--amb-bg-panel);
+    color: var(--amb-text-dim);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.anomalous-ai-waiting-field:focus-within { border-color: var(--amb-link); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb-link) 20%, transparent); }
+
+.anomalous-ai-waiting-wish {
+    flex: 1;
+    min-width: 0;
+    height: 46px;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
     color: var(--amb-text-main);
     font: inherit;
     font-size: 14px;
 }
 
-.anomalous-ai-waiting-wish:focus {
-    border-color: var(--amb-link);
-    outline: none;
+.anomalous-ai-waiting-ghost { display: flex; flex-direction: column; gap: 6px; }
+
+.anomalous-ai-waiting-ghost-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px dashed var(--amb-border);
+    border-radius: 10px;
+    color: var(--amb-text-dim);
+    font-size: 12.5px;
 }
 
-.anomalous-ai-waiting-say {
+.anomalous-ai-waiting-ghost-row:nth-child(2) { opacity: 0.7; }
+.anomalous-ai-waiting-ghost-row:nth-child(3) { opacity: 0.45; }
+
+/* The card for an AI not connected yet (ui_ai_connect.js connectHint). */
+.anomalous-ai-hint {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    width: 100%;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 30%, var(--amb-border));
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--amb-link) 7%, transparent);
     text-align: left;
 }
 
-.anomalous-ai-waiting-label {
-    color: var(--amb-text-dim);
-    font-size: 12px;
-}
+.anomalous-ai-hint-row { display: flex; align-items: center; gap: 18px; }
+.anomalous-ai-hint-art { flex: none; width: 132px; height: 88px; object-fit: contain; }
+.anomalous-ai-hint-words { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.anomalous-ai-hint-title { color: var(--amb-text-main); font-size: 14.5px; font-weight: 700; }
+.anomalous-ai-hint-body { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.65; }
 
-.anomalous-ai-waiting-steps {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px 18px;
-    margin: 2px 0 0;
-    padding: 0;
-    list-style: none;
-    counter-reset: waiting-step;
-    color: var(--amb-text-soft);
-    font-size: 12px;
-}
-
-.anomalous-ai-waiting-steps li { counter-increment: waiting-step; }
-
-.anomalous-ai-waiting-steps li::before {
-    content: counter(waiting-step);
+.anomalous-ai-hint-open {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    margin-right: 6px;
-    border-radius: 50%;
-    background: rgba(var(--amb-ink-rgb), 0.08);
+    gap: 6px;
+    height: 30px;
+    margin-top: 2px;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 55%, transparent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
     color: var(--amb-text-main);
-    font-size: 11px;
-}
-
-.anomalous-ai-waiting-setup {
-    width: 100%;
-    margin-top: 6px;
-    padding-top: 12px;
-    border-top: 1px solid var(--amb-border);
-    text-align: left;
-}
-
-.anomalous-ai-waiting-setup > summary {
-    color: var(--amb-link);
+    font: inherit;
     font-size: 12.5px;
-    text-align: center;
     cursor: pointer;
 }
 
-.anomalous-ai-waiting-setup[open] > summary { margin-bottom: 12px; }
+.anomalous-ai-hint-open:hover { background: color-mix(in srgb, var(--amb-link) 24%, transparent); }
+.anomalous-ai-hint-guide { padding-top: 14px; border-top: 1px solid var(--amb-border); }
 
-@media (prefers-reduced-motion: reduce) { .anomalous-ai-waiting-mark { animation: none; } }
+@media (max-width: 640px) {
+    .anomalous-ai-waiting-hero, .anomalous-ai-hint-row { flex-direction: column; text-align: center; }
+    .anomalous-ai-hint-words { align-items: center; }
+}
+
+@media (prefers-reduced-motion: reduce) { .anomalous-ai-waiting-art { animation: none; } }
 
 .anomalous-ai-connect {
     display: flex;
@@ -480,16 +554,25 @@
 }
 
 .anomalous-ai-copy-button {
+    display: inline-flex;
     flex: none;
-    padding: 5px 10px;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 6px;
-    background: none;
-    color: var(--amb-text-main);
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--amb-link);
+    color: #fff;
     font: inherit;
-    font-size: 12px;
+    font-size: 12.5px;
+    font-weight: 600;
     cursor: pointer;
+    transition: filter 0.15s, background 0.15s;
 }
+
+.anomalous-ai-copy-button:hover { filter: brightness(1.1); }
+.anomalous-ai-copy-button.is-done { background: var(--amb-ok); }
 
 .anomalous-ai-connect-overlay {
     position: fixed;
@@ -535,7 +618,4 @@
     cursor: pointer;
 }
 
-.anomalous-ai-welcome .anomalous-ai-connect {
-    margin: 0 auto 16px;
-    max-width: 520px;
-}
+.anomalous-ai-welcome .anomalous-ai-hint { width: 100%; }

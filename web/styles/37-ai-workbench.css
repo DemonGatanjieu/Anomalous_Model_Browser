@@ -33,18 +33,19 @@
 
 .anomalous-ai-tasks-head {
     display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding: 14px 14px 8px;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 14px 10px;
 }
 
 .anomalous-ai-tasks-title {
     color: var(--amb-text-main);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
 }
 
 .anomalous-ai-tasks-count {
+    flex: 1;
     color: var(--amb-text-dim);
     font-size: 11.5px;
 }
@@ -58,12 +59,13 @@
 }
 
 .anomalous-ai-task-row {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    padding: 9px 10px;
+    gap: 4px;
+    padding: 10px 12px;
     border: 1px solid transparent;
-    border-radius: 10px;
+    border-radius: 12px;
     background: none;
     color: inherit;
     font: inherit;
@@ -79,6 +81,46 @@
     border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
     background: color-mix(in srgb, var(--amb-link) 12%, transparent);
 }
+
+.anomalous-ai-task-row.is-current::before {
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    left: -1px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--amb-link);
+    content: "";
+}
+
+/* Quick filters over the list: working, asking you, failed. */
+.anomalous-ai-task-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 2px 14px 8px;
+}
+
+.anomalous-ai-task-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 9px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 11.5px;
+    cursor: pointer;
+}
+
+.anomalous-ai-task-filter:hover { color: var(--amb-text-main); background: rgba(var(--amb-ink-rgb), 0.05); }
+.anomalous-ai-task-filter.is-on { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 16%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-task-filter.is-asks .anomalous-ai-task-filter-count { color: var(--amb-warn-text); }
+.anomalous-ai-task-filter.is-error .anomalous-ai-task-filter-count { color: var(--amb-danger-text); }
+.anomalous-ai-task-filter-count { color: var(--amb-text-dim); font-variant-numeric: tabular-nums; }
 
 .anomalous-ai-task-row-top {
     display: flex;
@@ -99,13 +141,11 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: rgba(var(--amb-ink-rgb), 0.08);
     color: var(--amb-text-dim);
-    font-size: 10px;
-    font-weight: 700;
 }
 
 .anomalous-ai-state-icon.is-live {
@@ -209,7 +249,10 @@
 }
 
 .anomalous-ai-state {
-    padding: 2px 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 10px 2px 3px;
     border-radius: 999px;
     background: rgba(var(--amb-ink-rgb), 0.07);
     color: var(--amb-text-soft);
@@ -226,12 +269,36 @@
     color: var(--amb-danger-text);
 }
 
+.anomalous-ai-state .anomalous-ai-state-icon { width: 18px; height: 18px; background: none; color: inherit; }
+
+/* A task's tools: Materials, Undo all, show the stage, then rename and remove as icons. */
 .anomalous-ai-task-tools {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    align-items: center;
+    gap: 6px;
     margin-left: auto;
 }
+
+.anomalous-ai-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 11px;
+    border: 1px solid var(--amb-border);
+    border-radius: 9px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.anomalous-ai-tool:hover { border-color: var(--amb-border-strong); background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
+.anomalous-ai-tool.is-icon { width: 30px; padding: 0; justify-content: center; }
+.anomalous-ai-tool.is-danger:hover { border-color: color-mix(in srgb, var(--amb-danger) 55%, transparent); background: color-mix(in srgb, var(--amb-danger) 14%, transparent); color: var(--amb-danger-text); }
 
 .anomalous-ai-task-meta {
     color: var(--amb-text-dim);
@@ -583,10 +650,16 @@
 }
 
 .anomalous-ai-welcome {
-    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 560px;
     padding: 32px 24px;
     text-align: center;
 }
+
+.anomalous-ai-welcome-art { width: 200px; height: 200px; object-fit: contain; }
+.anomalous-ai-welcome > .anomalous-ai-new-task { margin-bottom: 22px; }
 
 .anomalous-ai-welcome-title {
     margin: 0 0 8px;

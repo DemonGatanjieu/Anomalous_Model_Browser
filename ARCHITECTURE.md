@@ -154,7 +154,7 @@ covered by the `styles.css` manifest.
   covers), read ahead when a task header is drawn and kept a minute.
   `web/modules/ui_ai_toolbox_cards.js` draws the cards (a node in miniature with its sockets in
   ComfyUI's colours, covers, prompt text) and the detail pane; `web/modules/ui_ai_toolbox_icons.js`
-  the vector icons, each pack's badge, and the illustrations (`web/assets/toolbox_*.webp`, made
+  each pack's badge, and the illustrations (`web/assets/toolbox_*.webp`, made
   with ChatGPT): the empty selection and the stand-in cover of a combo, workflow or model. Favourites (`anomalous/ai_toolbox.json`) stand in until the user picks for
   a task. A pick is a `user_toolbox` step the AI gets as a message (kind `toolbox`); begin_task
   names the picks, `get_toolbox` gives them in full, find_nodes lists them first.
@@ -240,10 +240,15 @@ covered by the `styles.css` manifest.
   Open stage button or a timeline panel link reopens it; selecting a different task resets it.
   In a window too narrow
   for three columns the timeline and the stage are two tabs (a panel that asks brings the stage
-  forward). The task list can be folded. `ui_ai_connect.js` says how to connect an AI app (the
-  address, a sentence to send the AI so it sets itself up and starts on a waiting task, each
-  common app's way), in a window from the list's "Connect an AI", on the empty page and in a
-  task waiting for an AI. `ai_task_view.js` holds
+  forward). The task list can be folded; `ui_ai_task_list.js` draws it (New task, Connect an AI
+  and the gates, which AI came last, quick filters by state, the tasks by day with a state
+  icon each). `ui_ai_icons.js` is the AI pages' one set of line icons and the icon button.
+  `ui_ai_connect.js` says how to connect an AI app (the address, a sentence to send the AI so
+  it sets itself up and starts on a waiting task, each common app's way), in a window from the
+  list's "Connect an AI", and as a card (`connectHint`) that opens the guide in place on the
+  empty page and under a task waiting for an AI (three numbered steps under a picture: what to
+  do, the sentence to send, where the steps will show). The pictures (`web/assets/ai_*.webp`)
+  were made with ChatGPT. `ai_task_view.js` holds
   its rules without DOM (folding reads, tool words, counts, result addresses).
   Panels the AI draws (`show_panel`, `update_panel`): `api/ai_panels.py` checks every block
   against a fixed set (heading, text, images from the output folder, models by id with their
