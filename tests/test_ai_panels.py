@@ -347,5 +347,56 @@ class AnswerTests(unittest.TestCase):
         self.assertEqual([m["text"] for m in answer["messages"]], ["one"], "legacy callers without routing still read their own input")
 
 
+class AskUserTests(unittest.TestCase):
+    """ask_user: the AI's question shows in the workbench and the answer comes back to the same call."""
+
+    def setUp(self):
+        isolate()
+        self.ctx = {"client": "Gemini", "session": "s1"}
+
+    def answer_later(self, **given):
+        def go():
+            for _ in range(100):
+                tasks = ai_tasks.list_tasks()
+                task = ai_tasks.get_task(tasks[0]["id"]) if tasks else None
+                step = next((item for item in (task or {}).get("steps", []) if item.get("kind") == "panel"), None)
+                if step:
+                    ai_panels.answer(task["id"], step["id"], "answer", **given)
+                    return
+                time.sleep(0.02)
+        threading.Thread(target=go, daemon=True).start()
+
+    def test_a_pick_comes_back_and_the_recommended_one_is_marked(self):
+        options = [{"label": "光与暗双生少女", "detail": "高难度", "recommended": True}, {"label": "猫耳娘咖啡馆"}]
+        self.answer_later(choice=["o2"])
+        got = mcp_task_tools.ask_user(self.ctx, "先测哪种双人题材？", options, wait_seconds=5)
+        self.assertEqual((got["answered"], got["labels"]), (True, ["猫耳娘咖啡馆"]))
+        step = ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"][0]
+        block = step["panel"]["blocks"][0]
+        self.assertEqual((step["panel"]["title"], block["options"][0].get("recommended"), block["other"]), ("先测哪种双人题材？", True, True))
+        self.assertEqual(step["tool"], "ask_user", "the timeline says the AI asked")
+
+    def test_their_own_answer_when_no_option_fits(self):
+        self.answer_later(text="冰与火，但要室内")
+        got = mcp_task_tools.ask_user(self.ctx, "选哪个？", ["甲", "乙"], wait_seconds=5)
+        self.assertEqual((got["text"], got["answered"]), ("冰与火，但要室内", True))
+        self.assertIn("own answer", got["note"])
+
+    def test_no_options_is_a_line_and_no_answer_yet_says_how_to_keep_waiting(self):
+        got = mcp_task_tools.ask_user(self.ctx, "想要几张？", wait_seconds=0)
+        self.assertFalse(got["answered"])
+        self.assertIn("get_answers", got["note"])
+        step = ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"][0]
+        self.assertEqual(step["panel"]["blocks"][0]["type"], "input")
+
+    def test_other_text_only_where_the_question_allows_it(self):
+        panel = ai_panels.show("Gemini", "q", [{"type": "choices", "id": "answer", "options": ["a", "b"]}])
+        task = ai_tasks.list_tasks()[0]["id"]
+        step = ai_tasks.get_task(task)["steps"][0]["id"]
+        with self.assertRaises(ai_panels.PanelError):
+            ai_panels.answer(task, step, "answer", text="随便")
+        self.assertTrue(panel["id"])
+
+
 if __name__ == "__main__":
     unittest.main()

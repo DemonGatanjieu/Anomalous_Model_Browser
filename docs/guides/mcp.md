@@ -108,6 +108,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | download_status | 看下载进度和结果 |
 | list_voices / speak | 列出 Anomalous TTS 的角色；让某个角色读一段台词并保存（最多等两分钟） |
 | begin_task / report | 在 AI 工作台里起一个任务的标题；给你留言、交上它用别的方式做出来的图、结束任务（见第 5 节） |
+| ask_user | 在 AI 工作台里问你一个问题：几个选项（AI 推荐的那个标着“推荐”），加一行“都不是？写下你的想法”；AI 在同一步里等你回答 |
 | show_panel / update_panel / get_answers | 在 AI 工作台里画一个面板（对比图片、模型卡片、表格、按钮和输入框）；改它或关掉它的问题；读你的回答（见第 5 节） |
 
 ## 5. AI 工作台：AI 做了什么，一目了然（1.62 起）

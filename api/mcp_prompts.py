@@ -10,8 +10,8 @@ PROMPTS = {
         "arguments": [{"name": "what", "description": "What to do", "required": True}],
         "text": ("Use Anomalous for this: {what}\n"
                  "Call begin_task with a short title in my language first. Show your plan, then results, with "
-                 "show_panel in the order they happen; when a choice is mine, ask with choices or picks and wait "
-                 "with get_answers. Honour any user_messages that come with a tool result. End with report(done=true)."),
+                 "show_panel in the order they happen; when a choice is mine, ask it with ask_user (or a picks panel, "
+                 "waiting with get_answers), never in this chat. Honour any user_messages that come with a tool result. End with report(done=true)."),
     },
     "pick_best": {
         "title": "Make a few, let me pick",

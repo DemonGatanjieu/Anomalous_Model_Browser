@@ -344,6 +344,25 @@
     font-weight: 600;
 }
 
+.anomalous-ai-panel-option.is-recommended {
+    border-color: color-mix(in srgb, var(--amb-link) 65%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+}
+
+.anomalous-ai-panel-option-badge {
+    align-self: flex-start;
+    margin-bottom: 2px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--amb-link);
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 17px;
+}
+
+.anomalous-ai-panel-input.is-other { margin-top: 10px; }
+
 .anomalous-ai-panel-option-detail {
     color: var(--amb-text-soft);
     font-size: 11.5px;

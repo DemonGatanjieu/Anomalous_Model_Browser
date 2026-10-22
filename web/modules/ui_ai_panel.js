@@ -138,6 +138,36 @@ function progress(block) {
     return box;
 }
 
+/** An answer none of the options is: a line under them. */
+function otherLine(ctx, block, options) {
+    const line = el('div', 'anomalous-ai-panel-input is-other');
+    const field = el('input');
+    field.type = 'text';
+    field.maxLength = 2000;
+    field.placeholder = t('aiPanelOther');
+    const go = button('anomalous-ai-panel-send', t('aiPanelSend'), async () => {
+        if (!field.value.trim()) return;
+        go.disabled = true;
+        options.querySelectorAll('button').forEach(node => { node.disabled = true; });
+        try {
+            await send(ctx.taskId, { step: ctx.stepId, block: block.id, text: field.value });
+            ctx.changed();
+        } catch (error) {
+            go.disabled = false;
+            options.querySelectorAll('button').forEach(node => { node.disabled = false; });
+            field.setCustomValidity(error.message);
+            field.reportValidity();
+        }
+    });
+    field.addEventListener('keydown', (event) => {
+        event.stopPropagation(); // typing here is not the browser's shortcuts
+        if (event.key === 'Enter' && !event.isComposing) go.click();
+    });
+    field.addEventListener('input', () => field.setCustomValidity(''));
+    line.append(field, go);
+    return line;
+}
+
 function choices(block, ctx) {
     const box = el('div', 'anomalous-ai-panel-ask');
     if (block.question) box.append(el('div', 'anomalous-ai-panel-question', block.question));
@@ -162,6 +192,10 @@ function choices(block, ctx) {
             confirm.disabled = !options.querySelector('.anomalous-ai-panel-option.is-picked');
         });
         node.dataset.id = option.id;
+        if (option.recommended) {
+            node.classList.add('is-recommended');
+            node.append(el('span', 'anomalous-ai-panel-option-badge', t('aiPanelRecommended')));
+        }
         node.append(el('span', 'anomalous-ai-panel-option-label', option.label));
         if (option.detail) node.append(el('span', 'anomalous-ai-panel-option-detail', option.detail));
         node.disabled = Boolean(answer) || ctx.closed;
@@ -173,6 +207,8 @@ function choices(block, ctx) {
     });
     confirm.disabled = true;
     if (block.multiple && !answer && !ctx.closed) box.append(confirm);
+    if (answer?.text) box.append(el('div', 'anomalous-ai-panel-typed', answer.text));
+    else if (block.other && !answer && !ctx.closed) box.append(otherLine(ctx, block, options));
     const note = el('div', 'anomalous-ai-panel-error');
     box.append(note);
     if (answer) box.append(answerNote(answer));

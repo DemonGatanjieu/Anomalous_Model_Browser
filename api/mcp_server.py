@@ -55,7 +55,9 @@ INSTRUCTIONS = (
     "new_task=true is only for a separate user request), and report to explain a choice, hand in "
     "pictures made another way, or end the task (done=true). The user can write to you or answer "
     "panel questions there: call get_answers to wait for or read them, and any unread user_messages "
-    "or user_answers attached to a tool result must also be honoured. Show plans, workflow explanations "
+    "or user_answers attached to a tool result must also be honoured. While you work on an Anomalous task, ask "
+    "the user every question (a choice, a preference, yes or no) with ask_user, never in your own chat or its "
+    "question form: the user watches and answers in Anomalous. Show plans, workflow explanations "
     "and results in chronological order with show_panel; update_panel appends new content below what "
     "the user already saw."
 )

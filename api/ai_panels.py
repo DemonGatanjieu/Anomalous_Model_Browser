@@ -233,9 +233,11 @@ def clean_block(block, at, taken):
             if option_id in ids:
                 raise PanelError(f"{where}.options: id {option_id!r} twice")
             ids.add(option_id)
-            options.append({"id": option_id, "label": label, "detail": _text(option.get("detail"), 200, f"{where}.options[{i}].detail")})
+            options.append({"id": option_id, "label": label, "detail": _text(option.get("detail"), 200, f"{where}.options[{i}].detail"),
+                            **({"recommended": True} if option.get("recommended") is True else {})})
+        # other: a line for an answer none of the options is
         out.update(question=_text(block.get("question"), 200, f"{where}.question"), options=options,
-                   multiple=block.get("multiple") is True)
+                   multiple=block.get("multiple") is True, other=block.get("other") is True)
     elif kind == "input":
         out.update(question=_text(block.get("question"), 200, f"{where}.question", True),
                    placeholder=_text(block.get("placeholder"), 80, f"{where}.placeholder"))
@@ -322,12 +324,12 @@ def _find(panel_id):
     return None, None
 
 
-def show(client, title, blocks, now=None, session="", task_id=None):
+def show(client, title, blocks, now=None, session="", task_id=None, tool="show_panel"):
     title = _text(title, 120, "title", True)
     panel = {"id": uuid.uuid4().hex[:10], "title": title, "blocks": _block_ids(clean_blocks(blocks)), "closed": False}
     now = time.time() if now is None else now
-    step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "show_panel", "kind": "panel", "ok": True,
-            "summary": f"show_panel: {title}", "panel": panel, "answers": {}, "results": []}
+    step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": tool, "kind": "panel", "ok": True,
+            "summary": f"{tool}: {title}", "panel": panel, "answers": {}, "results": []}
     with ai_tasks._lock:
         task = ai_tasks.current_task(client, now, session=session, task_id=task_id)
         ai_tasks._add_step(task, step)
@@ -371,7 +373,9 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None):
         if block_id in step.setdefault("answers", {}):
             raise PanelError("Already answered")
         entry = {"at": time.time() if now is None else now, "delivered": False}
-        if block["type"] in ("choices", "picks"):
+        if block["type"] == "choices" and block.get("other") and not choice and isinstance(text, str) and text.strip():
+            entry.update(choice=["other"], labels=["other"], text=_text(text, 2000, "text", True))
+        elif block["type"] in ("choices", "picks"):
             picked = choice if isinstance(choice, list) else [choice]
             options = block["options"] if block["type"] == "choices" else block["items"]
             known = {option["id"]: option.get("label") or option["id"] for option in options}

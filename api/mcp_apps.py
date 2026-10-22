@@ -19,7 +19,7 @@ from .mcp_tools import ToolError, _image_content, _resolve_image, _schema
 EXTENSION = "io.modelcontextprotocol/ui"
 MIME = "text/html;profile=mcp-app"
 CARD_URI = "ui://anomalous/task-card.html"
-CARD_TOOLS = ("show_panel", "report", "run_workflow", "begin_task")
+CARD_TOOLS = ("show_panel", "ask_user", "report", "run_workflow", "begin_task")
 MAX_PICTURES = 6
 MAX_STEPS = 8
 HTML = os.path.join(os.path.dirname(__file__), "mcp_app", "task_card.html")

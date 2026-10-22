@@ -16,6 +16,7 @@ def begin_task(ctx, title, new_task=False):
         session=ctx.get("session") or "", task_id=ctx.get("task"),
     )
     answer = {"task": task["id"], "title": task["title"], "note": "Continue this task; do not begin another for its individual steps. "
+                                         "Ask the user anything with ask_user: they answer in Anomalous's AI workbench, not in your chat. "
                                          "Every call from now on is a step of this task in Anomalous's AI workbench, "
                                          "where the user sees, opens and undoes them. Call report to explain a choice "
                                          "or to hand in pictures you made another way; report with done=true at the end."}
@@ -62,6 +63,32 @@ def show_panel(ctx, title, blocks, task=None):
         answer["note"] = ("The user answers in Anomalous when they get to it; call get_answers with this panel id "
                           "(wait_seconds up to 55 waits for it) before going on with what depends on it.")
     return answer
+
+
+def ask_user(ctx, question, options=None, multiple=False, other=True, wait_seconds=ai_panels.MAX_WAIT, task=None):
+    """A question in the AI workbench, where the user watches the work: options to press (one may be
+    recommended), a line of their own; waits for the answer."""
+    block = ({"type": "choices", "id": "answer", "options": options, "multiple": bool(multiple), "other": bool(other)}
+             if options else {"type": "input", "id": "answer", "question": str(question or "")[:200]})
+    try:
+        panel = ai_panels.show(ctx.get("client") or "AI", question, [block], session=ctx.get("session") or "",
+                               task_id=task or ctx.get("task"), tool="ask_user")
+        answer = ai_panels.get_answers(ctx.get("client") or "AI", panel["id"], wait_seconds)
+    except ai_panels.PanelError as error:
+        raise ToolError(str(error))
+    given = next((item for item in answer["answers"] if item["question"] == "answer"), None)
+    if not given:
+        return {"answered": False, "panel": panel["id"],
+                "note": "The user has not answered yet. Keep waiting with get_answers(panel, wait_seconds=55); "
+                        "do not ask the same in your own chat, they answer in Anomalous."}
+    out = {"answered": True, "panel": panel["id"]}
+    if given.get("text"):
+        out["text"] = given["text"]
+        if given.get("choice") == ["other"]:
+            out["note"] = "None of your options: the user wrote their own answer."
+    else:
+        out.update(choice=given.get("choice"), labels=given.get("labels"))
+    return out
 
 
 def update_panel(ctx, panel, title=None, blocks=None, closed=None, task=None):
@@ -181,6 +208,20 @@ TASK_TOOLS = dict([
                             "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
                             "task": _TASK_PROP},
                ["title", "blocks"]),
+    _task_tool("ask_user", "Ask the user",
+               "Asks the user in Anomalous's AI workbench, where they watch your work, and waits for the answer: "
+               "a question with options to press (2-8 {label, detail, recommended}: mark the one you suggest with "
+               "recommended=true instead of writing it into the label) and, unless other=false, a line for their own "
+               "answer; no options: a question they answer in a line. Use it for every choice or preference that is "
+               "the user's while you work on an Anomalous task, never your own chat's question form. Returns the "
+               "choice (or their text); if they have not answered within wait_seconds, keep waiting with get_answers.",
+               ask_user, {"question": {"type": "string"},
+                          "options": {"type": "array", "maxItems": 8, "items": {"type": "object", "properties": {
+                              "label": {"type": "string"}, "detail": {"type": "string"}, "recommended": {"type": "boolean"}}}},
+                          "multiple": {"type": "boolean", "default": False}, "other": {"type": "boolean", "default": True},
+                          "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": ai_panels.MAX_WAIT},
+                          "task": _TASK_PROP},
+               ["question"]),
     _task_tool("update_panel", "Change a panel",
                "Adds new output at the BOTTOM of an existing panel, preserving earlier content and its order. "
                "Send only the new blocks; repeated unchanged blocks are kept once. To deliberately correct an "

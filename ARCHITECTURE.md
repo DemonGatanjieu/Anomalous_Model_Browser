@@ -250,6 +250,10 @@ covered by the `styles.css` manifest.
   do, the sentence to send, where the steps will show). The pictures (`web/assets/ai_*.webp`)
   were made with ChatGPT. `ai_task_view.js` holds
   its rules without DOM (folding reads, tool words, counts, result addresses).
+  `ask_user` (`api/mcp_task_tools.py`) is the AI's question in the workbench: a one-block panel
+  (choices with an optional `recommended` option and an `other` line, or an input) whose answer
+  it waits for in the same call; the server instructions and `begin_task` tell the AI to ask
+  this way rather than in its own chat.
   Panels the AI draws (`show_panel`, `update_panel`): `api/ai_panels.py` checks every block
   against a fixed set (heading, text, images from the output folder, models by id with their
   covers, table, list, params, choices, input, progress, divider; plain strings of bounded

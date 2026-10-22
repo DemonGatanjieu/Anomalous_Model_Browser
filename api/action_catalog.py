@@ -57,6 +57,7 @@ TOOLS = {
     # the AI's own: notes and panels are steps; the rest only steer the task
     "report": Entry("note", None, None),
     "show_panel": Entry("panel", None, None),
+    "ask_user": Entry("panel", None, None),
     "begin_task": Entry(None, None, None),
     "update_panel": Entry(None, None, None),
     "get_answers": Entry(None, None, None),
