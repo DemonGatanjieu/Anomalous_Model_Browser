@@ -3,10 +3,12 @@
 ## v1.62.0 — unreleased
 
 ### AI 工作台与插件能力融合 / Integrated task results
-- 工作台的出图结果和 AI 展台图片可直接打开完整图片参数检查器、与当前画布对比，或通过原来的保存菜单存成工作流、搭配和提示词。任务成果区可选择跨步骤的两张图片，用插件现有参数对比查看真实差异；新结果到达后保留已选的图片。视频不提供不支持的参数操作，缩略图按需加载。
+- 工作台的出图结果和 AI 展台图片：鼠标移到图片上，右上角出现 ⓘ 图片与参数、⇄ 和当前画布对比、☆ 保存为（同一个保存菜单存成工作流、搭配和提示词），不再在每张图下面排三个大按钮。左上角可以勾选：勾两张（不同步骤、不同任务都行），页面底部出现“查看参数差异”，用插件现有的参数对比看真实差异；勾第三张会替换最早那张。“本次成果”直接显示缩略图，不用再点开。视频和临时文件没有这些参数操作，缩略图按需加载。
+- AI 干活时你在 AMB 里做的改动（画布改动、改模型信息、存搭配和提示词等）会作为“你在 AMB 里改了”出现在同一条时间线上，画布改动附带修改前后；AI 下一次调用任何工具时会收到这条改动，并被告知保留它，不要改回去；时间线上写着 AI 是否已经知道。操作记录页里 AI 做的、以及 AI 干活期间你做的记录，旁边有“AI 任务 →”可以跳到对应任务。
+- ComfyUI 在 AI 某一步进行到一半时重启，这一步不再永远显示“正在执行…”，而是标成没有结束。
 - 画布操作直接显示记录中的“修改前 / 修改后”、新增或删除的节点；与操作记录页共用展示，保留定位和适用时的撤销。旧记录缺失时明确提示，不用当前画布猜历史。任务页更新隔离迟到请求，并整理了结果卡片、时间线和窄布局。
 - 修复参数对比窗口遮挡撤销提示的问题，撤销按钮现在可直接点击。
-- Task outputs and AI panel pictures now use the existing image inspector, Keep menu and image/canvas parameter comparison. The task overview compares images across steps and preserves the chosen pair as results arrive. Canvas changes share recorded before/after receipts with the activity page. Unavailable history is explicit; stale task responses cannot replace a newer selection. Refined result cards and timeline styling, and fixed Undo toasts being blocked by the comparison overlay.
+- Task outputs and AI panel pictures now use the existing image inspector, Keep menu and image/canvas parameter comparison, as tools over each picture on hover; tick any two pictures (any step or task) and compare their settings from the bar at the foot of the page. The results strip shows thumbnails straight away. Changes you make in Anomalous while an AI works join its timeline, and the AI is told of them (to keep, not undo) with its next call; activity entries link to their AI task. Steps a restart interrupted are marked as not finished instead of running forever. Canvas changes share recorded before/after receipts with the activity page. Unavailable history is explicit; stale task responses cannot replace a newer selection. Refined result cards and timeline styling, and fixed Undo toasts being blocked by the comparison overlay.
 
 ### Fixes / 修复
 - AI 工作台与 MCP 调用实时生命周期及消息送达：每个工具调用开始时立即写入“正在执行…”步骤并接手等待中的任务，完成后原位更新同一步骤（不再等到耗时操作结束后才显示，也不会重复生成步骤）；用户在工作台留下的消息和展台面板回答，除了可通过 `get_answers` 读取外，还会在 AI 下一次成功调用任意工具时自动附带送达一次，并立即在界面上更新为“AI 已经看到”；多会话与显式 `task` ID 互不串任务。

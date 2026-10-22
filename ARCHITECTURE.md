@@ -140,7 +140,16 @@ covered by the `styles.css` manifest.
   named by the AI (`begin_task`) or is one app's calls without a long pause (20 minutes); a
   step keeps the tool, a short summary, whether it worked and what it made (models, the combo,
   the canvas change by its activity entry, the spoken audio, the scan; a run's pictures are
-  watched in ComfyUI's history until it ends). It tells the page through the
+  watched in ComfyUI's history until it ends, `api/ai_task_runs.py`). A step a restart left
+  `"running"` is marked stopped when the record is read again. What each tool is, in one
+  place, is `api/action_catalog.py`: its kind (colours, words, counts), the stage of the work
+  it belongs to (model, combo, prompt, canvas, run, picture, voice, library: the flow over a
+  task) and its gate (canvas, gpu, download, network: what the user may want to approve); a
+  test keeps it and the MCP tools in step. `api/ai_task_changes.py` puts the user's own changes
+  (activity entries, `activity_log.add_listener`) made while an AI works into that AI's task
+  as `user_activity` steps, which the AI receives once with its next call (a message of kind
+  `change`); `activity_log.tag` names the task on the entry, and the activity page links to
+  it. It tells the page through the
   `anomalous.ai_task` event; `api/ai_tasks_routes.py` serves `/anomalous/ai_tasks` (list, one
   task, start, rename or remove, a panel's answer, a message). The user can start a task first
   (New task): it waits, and the next app that calls takes it over, so its work starts there
@@ -198,8 +207,9 @@ covered by the `styles.css` manifest.
   canvas node finds it). `ui_ai_stage.js` draws them, `ai_stage_layout.js` holds where they go
   without DOM (a diagram's layers by its longest chain of arrows, boxes, arrow ends, marks).
 - `ui_ai_images.js` connects task outputs and panel pictures to the existing image inspector,
-  keep menu and `ui_param_compare.js`. Image-pair choices belong to the task view and survive
-  result refreshes; candidates are unique output pictures (no videos or temporary files).
+  keep menu and `ui_param_compare.js`: tools over each output picture (shown on hover), and a
+  tick; two ticked pictures, from any step or task, are compared from the bar at the foot of
+  the AI page (a third tick replaces the oldest). Videos and temporary files get neither.
   Thumbnails load initially, metadata only after an explicit action. `ui_canvas_changes.js`
   renders the activity record's bounded before/after receipt for both the AI timeline and
   `ui_activity.js`, with a caller-owned locate action. Missing records show unavailable;

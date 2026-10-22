@@ -138,6 +138,19 @@
     background: var(--amb-bg-card-hover);
 }
 
+.anomalous-activity-ai-task {
+    padding: 1px 4px;
+    border: 0;
+    background: transparent;
+    color: var(--amb-link);
+    font: inherit;
+    cursor: pointer;
+}
+
+.anomalous-activity-ai-task:hover {
+    text-decoration: underline;
+}
+
 .anomalous-activity-undone {
     color: var(--amb-text-muted);
 }

@@ -6,8 +6,11 @@ without a long pause. A step starts in state "running" when the call begins and 
 place when it finishes: what was done (the tool, a short summary of its arguments), whether it
 worked, and what came out of it, so the page can show it live and lead there: the models it
 used, the combo it placed, the canvas change it made (by its activity log entry, for undo),
-the pictures a run made (watched in ComfyUI's history until the run ends), the audio it spoke.
-The AI can also leave a note (report), with pictures it made another way.
+the pictures a run made (ai_task_runs.py watches ComfyUI's history until the run ends), the
+audio it spoke. The AI can also leave a note (report), with pictures it made another way. What
+each tool is (kind, stage of the work, gate) is action_catalog.py's; the user's own changes
+made while an AI works join its task through ai_task_changes.py. A step a restart left
+"running" is marked stopped when the record is read again.
 
 The user can start a task first (New task, POST /anomalous/ai_tasks): it waits for an AI, and
 the next app that calls takes it over, so the work it does next starts there instead of joining
@@ -30,6 +33,7 @@ import uuid
 
 import folder_paths
 
+from . import action_catalog, activity_log
 from .path_utils import atomic_write_json
 
 FORMAT = 1
@@ -43,17 +47,9 @@ MAX_NOTE = 2000
 MAX_TITLE = 80
 MAX_RESULTS = 40
 RUN_WATCH_SECONDS = 30 * 60
-RUN_POLL_SECONDS = 2.0
 MEDIA_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".mp4", ".webm"}
 
-# What each tool is, for the page's colours and words. Tools not named are reads.
-KINDS = {
-    "set_prompt": "canvas", "set_model": "canvas", "add_lora": "canvas", "place_combo": "canvas",
-    "fix_workflow_models": "canvas", "run_workflow": "run", "download_missing_models": "download",
-    "download_model": "download", "scan_models": "scan", "speak": "speech", "open_in_anomalous": "show",
-    "report": "note", "show_panel": "panel",
-}
-QUIET = {"begin_task", "update_panel", "get_answers"}  # not steps of their own
+# What each tool is (its kind, stage and gate) is action_catalog.py's.
 OWN_STEPS = {"report", "show_panel"}  # make their step themselves (with its text or panel)
 
 _lock = threading.RLock()
@@ -74,8 +70,10 @@ def tasks_dir():
     os.makedirs(directory, exist_ok=True)
     return directory
 
+
 def _path(task_id):
     return os.path.join(tasks_dir(), f"{task_id}.json")
+
 
 def _load():
     global _tasks
@@ -91,17 +89,31 @@ def _load():
                 continue
             if isinstance(task, dict) and task.get("format") == FORMAT and isinstance(task.get("id"), str):
                 _tasks[task["id"]] = task
+                if _stop_running(task):
+                    _save(task)
         # A task the user started before ComfyUI restarted still waits for the next AI.
         waiting = [task for task in _tasks.values() if task.get("waiting") and not task.get("ended")]
         if waiting and _waiting[0] is None:
             _waiting[0] = max(waiting, key=lambda task: task.get("started", 0))["id"]
     return _tasks
 
+
+def _stop_running(task):
+    """Steps a call or a run left "running" when ComfyUI stopped: nothing watches them any more."""
+    stopped = False
+    for step in task.get("steps") or []:
+        if step.get("state") == "running":
+            step.update(state="stopped", ok=False, error="ComfyUI 重启时这一步还没结束 / ComfyUI restarted before this step ended")
+            stopped = True
+    return stopped
+
+
 def _save(task):
     try:
         atomic_write_json(_path(task["id"]), task, MAX_TASK_BYTES)
     except (OSError, ValueError) as error:
         log.warning("Anomalous AI tasks: %s not saved: %s", task["id"], error)
+
 
 def _drop_oldest():
     tasks = _load()
@@ -113,6 +125,7 @@ def _drop_oldest():
             os.remove(_path(task["id"]))  # the plugin's own record; the pictures and files stay
         except OSError:
             pass
+
 
 def _notify(task_id, extra=None):
     try:
@@ -129,6 +142,7 @@ _CLIENT_NAMES = (
     ("windsurf", "Windsurf"), ("codex", "Codex"), ("gemini", "Gemini"), ("vscode", "VS Code"), ("cline", "Cline"),
 )
 
+
 def client_of(headers, params):
     """A short name for the AI app making a call: the client info it sends, else its User-Agent."""
     meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else {}
@@ -143,11 +157,13 @@ def client_of(headers, params):
     clean = re.sub(r"[^\w .-]", "", raw).strip()[:40]
     return clean or "AI"
 
+
 def session_of(headers, params):
     """An optional session key when one app runs multiple MCP sessions at once."""
     meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else {}
     raw = headers.get("Mcp-Session-Id") or headers.get("X-Anomalous-Session") or meta.get("sessionId") or meta.get("conversationId") or ""
     return re.sub(r"[^\w .:-]", "", str(raw)).strip()[:64] if isinstance(raw, str) else ""
+
 
 def task_of(headers, params, arguments=None):
     """An explicit task id from headers, request metadata or tool arguments."""
@@ -156,8 +172,10 @@ def task_of(headers, params, arguments=None):
     raw = arg_task or headers.get("X-Anomalous-Task") or meta.get("anomalous/task") or meta.get("task") or ""
     return re.sub(r"[^\w-]", "", str(raw)).strip()[:64] if isinstance(raw, str) else ""
 
+
 def _owner_key(client, session=""):
     return f"{client}::{session}" if session else client
+
 
 def _bind_owner(client, session, task_id):
     _current[_owner_key(client, session)] = task_id
@@ -171,6 +189,7 @@ def _short(value, limit=MAX_TEXT):
     text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
     return text if len(text) <= limit else text[:limit] + "…"
 
+
 def _new_task(client, title="", now=None, session=""):
     now = time.time() if now is None else now
     task = {"format": FORMAT, "id": f"{int(now)}_{uuid.uuid4().hex[:8]}", "title": _short(title, MAX_TITLE),
@@ -182,6 +201,7 @@ def _new_task(client, title="", now=None, session=""):
     _bind_owner(client, session, task["id"])
     _drop_oldest()
     return task
+
 
 def _claim_explicit(tasks, task_id, client, session=""):
     if not task_id or task_id not in tasks or tasks[task_id].get("ended"):
@@ -195,6 +215,7 @@ def _claim_explicit(tasks, task_id, client, session=""):
         picked["client"] = client
     _bind_owner(client, session, task_id)
     return picked
+
 
 def _take_waiting(client, now, session=""):
     """The task the user started, now this app's (its own open task ends), or None."""
@@ -214,6 +235,7 @@ def _take_waiting(client, now, session=""):
     _bind_owner(client, session, task["id"])
     return task
 
+
 def start_task(title="", now=None):
     """A task the user starts; it waits for the next AI app that calls. Returns the task."""
     now = time.time() if now is None else now
@@ -232,6 +254,7 @@ def start_task(title="", now=None):
     _notify(task["id"])
     return task
 
+
 def active_task_id(client, session="", task_id=None):
     """The active task id for this caller without creating a new task."""
     with _lock:
@@ -240,6 +263,7 @@ def active_task_id(client, session="", task_id=None):
             return task_id
         found = _current.get(_owner_key(client, session)) or (None if session else _current.get(client))
         return found if found in tasks else None
+
 
 def current_task(client, now=None, session="", task_id=None):
     """The task this app's calls go to now: an explicit task, one the user started for the next
@@ -261,6 +285,7 @@ def current_task(client, now=None, session="", task_id=None):
             task["ended"] = task.get("updated")
             _save(task)
         return _new_task(client, now=now, session=session)
+
 
 def begin_task(client, title, now=None, new_task=False, session="", task_id=None):
     """Name or resume the active task; only an explicit new piece of work splits it."""
@@ -287,6 +312,7 @@ def begin_task(client, title, now=None, new_task=False, session="", task_id=None
     _notify(task["id"])
     return task
 
+
 def _add_step(task, step):
     task["steps"].append(step)
     del task["steps"][:-MAX_STEPS]
@@ -294,12 +320,14 @@ def _add_step(task, step):
     if task.get("title_from") == "auto" and not task.get("title") and step["kind"] not in ("look", "note") and step["ok"]:
         task["title"] = step["summary"][:MAX_TITLE]
 
+
 def summary_of(tool, arguments):
     """A few words on what a call asked for: its main argument."""
     for key in ("title", "query", "text", "name", "character", "model_id", "url", "what", "names"):
         if arguments.get(key) not in (None, "", []):
             return _short(f"{tool}: {_short(arguments[key], 120)}", 160)
     return tool
+
 
 def _model_result(model_id):
     from .mcp_tools import _resolve_model
@@ -310,6 +338,7 @@ def _model_result(model_id):
     rel = os.path.relpath(file_path, base_dir).replace(os.sep, "/")
     return {"type": "model", "model_id": str(model_id), "folder": folder_type, "path_idx": path_idx, "rel": rel,
             "name": os.path.basename(file_path)}
+
 
 def results_of(tool, arguments, data):
     """What came out of a call, for the page to show and lead to."""
@@ -329,6 +358,7 @@ def results_of(tool, arguments, data):
         out.append({"type": "download"})
     return out[:MAX_RESULTS]
 
+
 def _count_of(data):
     """How many things a read found: the length of its first list."""
     if isinstance(data, dict):
@@ -337,15 +367,16 @@ def _count_of(data):
                 return len(value)
     return None
 
+
 def begin_step(client, tool, arguments, started=None, read_only=False, session="", task_id=None):
     """Starts an in-flight step in state 'running' before a tool executes. Returns (task_id, step_id) or None."""
-    if tool in QUIET or tool in OWN_STEPS:
+    if not action_catalog.is_step(tool) or tool in OWN_STEPS:
         return None
     try:
         started = time.time() if started is None else started
         args = arguments if isinstance(arguments, dict) else {}
-        step = {"id": uuid.uuid4().hex[:10], "at": started, "ms": 0, "tool": tool,
-                "kind": KINDS.get(tool, "look" if read_only or tool not in KINDS else "act"),
+        what = action_catalog.entry(tool, read_only)
+        step = {"id": uuid.uuid4().hex[:10], "at": started, "ms": 0, "tool": tool, "kind": what.kind, "stage": what.stage,
                 "ok": True, "state": "running", "summary": summary_of(tool, args), "results": []}
         with _lock:
             task = current_task(client, started, session=session, task_id=task_id)
@@ -357,10 +388,10 @@ def begin_step(client, tool, arguments, started=None, read_only=False, session="
         log.warning("Anomalous AI tasks: begin_step of %s failed", tool, exc_info=True)
         return None
 
-def finish_step(client, tool, arguments, result, started, read_only=False, run_before=None,
-                step_ref=None, session="", task_id=None):
+
+def finish_step(client, tool, arguments, result, started, read_only=False, step_ref=None, session="", task_id=None):
     """Completes an in-flight step (or creates one if step_ref is None) with its final outcome. Never raises."""
-    if tool in QUIET or tool in OWN_STEPS:
+    if not action_catalog.is_step(tool) or tool in OWN_STEPS:
         return None
     try:
         args = arguments if isinstance(arguments, dict) else {}
@@ -368,7 +399,8 @@ def finish_step(client, tool, arguments, result, started, read_only=False, run_b
         failed = not isinstance(result, dict) or bool(result.get("isError"))
         error = _short(" ".join(item.get("text", "") for item in result.get("content") or [] if isinstance(item, dict))) if failed and isinstance(result, dict) else ""
         ms = max(0, int((time.time() - started) * 1000))
-        kind = KINDS.get(tool, "look" if read_only or tool not in KINDS else "act")
+        what = action_catalog.entry(tool, read_only)
+        kind = what.kind
         state = "error" if failed else ("running" if tool == "run_workflow" else "done")
         summary = summary_of(tool, args)
         results = [] if failed else results_of(tool, args, data)
@@ -378,7 +410,7 @@ def finish_step(client, tool, arguments, result, started, read_only=False, run_b
             if task is None:
                 task = current_task(client, started, session=session, task_id=task_id)
             if step is None:
-                step = {"id": uuid.uuid4().hex[:10], "at": started, "ms": ms, "tool": tool, "kind": kind,
+                step = {"id": uuid.uuid4().hex[:10], "at": started, "ms": ms, "tool": tool, "kind": kind, "stage": what.stage,
                         "ok": not failed, "state": state, "summary": summary, "results": results}
                 _add_step(task, step)
             else:
@@ -393,18 +425,19 @@ def finish_step(client, tool, arguments, result, started, read_only=False, run_b
             if task.get("title_from") == "auto" and not task.get("title") and kind not in ("look", "note") and step["ok"]:
                 task["title"] = summary[:MAX_TITLE]
             _save(task)
+        for result in results:
+            if result["type"] == "canvas":
+                activity_log.tag(result["activity"], task["id"])  # the activity page links back to the task
         _notify(task["id"])
-        if tool == "run_workflow" and not failed:
-            _watch_run(task["id"], step["id"], run_before or set())
         return step
     except Exception:  # noqa: BLE001 - the record must never fail the AI's call
         log.warning("Anomalous AI tasks: step of %s not recorded", tool, exc_info=True)
         return None
 
-def record(client, tool, arguments, result, started, read_only=False, run_before=None, session="", task_id=None):
+
+def record(client, tool, arguments, result, started, read_only=False, session="", task_id=None):
     """One tool call as a step of the app's current task. Never raises."""
-    return finish_step(client, tool, arguments, result, started, read_only, run_before,
-                       step_ref=None, session=session, task_id=task_id)
+    return finish_step(client, tool, arguments, result, started, read_only, session=session, task_id=task_id)
 
 
 # ---------------------------------------------------------------- notes from the AI
@@ -420,6 +453,7 @@ def _output_media(path):
     rel = os.path.relpath(full, root).replace(os.sep, "/")
     subfolder, _, filename = rel.rpartition("/")
     return {"type": "image", "filename": filename, "subfolder": subfolder, "folder": "output"}
+
 
 def report(client, text, images=None, done=False, now=None, session="", task_id=None):
     """A note from the AI, with pictures it made (in ComfyUI's output folder). Returns the step."""
@@ -441,95 +475,6 @@ def report(client, text, images=None, done=False, now=None, session="", task_id=
         _save(task)
     _notify(task["id"])
     return step, missing
-
-
-# ---------------------------------------------------------------- what a run made
-
-def _queue():
-    from server import PromptServer
-    return PromptServer.instance.prompt_queue
-
-def prompt_ids():
-    """Prompts queued, running or recently done: before and after run_workflow, the new ones are its."""
-    try:
-        queue = _queue()
-        running, pending = queue.get_current_queue()
-        ids = {item[1] for item in [*running, *pending]}
-        ids.update(queue.get_history(max_items=64).keys())
-        return ids
-    except Exception:  # noqa: BLE001 - no server (tests): nothing to watch
-        return set()
-
-def outputs_of(record_):
-    """Saved pictures and videos in one history record."""
-    out = []
-    for output in (record_.get("outputs") or {}).values():
-        for key in ("images", "gifs", "videos"):
-            for item in output.get(key) or []:
-                if isinstance(item, dict) and item.get("type") == "output" and item.get("filename"):
-                    out.append({"type": "image", "filename": item["filename"], "subfolder": item.get("subfolder") or "",
-                                "folder": "output"})
-    return out
-
-def _finish_run(task_id, step_id, prompts, history):
-    images, failed, done = [], False, 0
-    for prompt_id in prompts:
-        record_ = history.get(prompt_id)
-        if not record_:
-            continue
-        status = record_.get("status") or {}
-        if status.get("status_str") == "error":
-            failed = True
-            done += 1
-        elif status.get("completed"):
-            done += 1
-        for image in outputs_of(record_):
-            if image not in images:  # a prompt ComfyUI answers from its cache repeats the same file
-                images.append(image)
-    with _lock:
-        task = _load().get(task_id)
-        step = next((item for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
-        if not step:
-            return True
-        step["results"] = [item for item in step["results"] if item["type"] != "image"] + images[:MAX_RESULTS]
-        step["state"] = "running" if done < len(prompts) else ("error" if failed else "done")
-        step["prompts"] = len(prompts)
-        if failed:
-            step["ok"] = False
-            step["error"] = "ComfyUI 运行出错 / The run failed"
-        if done >= len(prompts):
-            step["ms"] = int((time.time() - step["at"]) * 1000)
-            task["updated"] = max(task["updated"], time.time())
-        _save(task)
-    _notify(task_id)
-    return done >= len(prompts)
-
-def _watch_run(task_id, step_id, before):
-    def watch():
-        start = time.monotonic()
-        prompts = []
-        while time.monotonic() - start < RUN_WATCH_SECONDS:
-            if not prompts:
-                prompts = sorted(prompt_ids() - before)
-                if not prompts and time.monotonic() - start > 10:
-                    _finish_run(task_id, step_id, [], {})
-                    return  # nothing was queued after all
-            if prompts:
-                try:
-                    history = {pid: _queue().get_history(prompt_id=pid).get(pid) for pid in prompts}
-                except Exception:  # noqa: BLE001
-                    return
-                if _finish_run(task_id, step_id, prompts, {k: v for k, v in history.items() if v}):
-                    return
-            time.sleep(RUN_POLL_SECONDS)
-
-    with _lock:
-        task = _load().get(task_id)
-        step = next((item for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
-        if step:
-            step["state"] = "running"
-            _save(task)
-    threading.Thread(target=watch, name="anomalous-ai-run", daemon=True).start()
 
 
 # ---------------------------------------------------------------- the page's view
@@ -554,15 +499,18 @@ def task_summary(task, now=None):
         "images": len(images), "cover": images[-1] if images else None, "asks": asks,
     }
 
+
 def list_tasks(limit=100):
     with _lock:
         tasks = sorted(_load().values(), key=lambda task: task.get("updated", 0), reverse=True)
         return [task_summary(task) for task in tasks[:limit]]
 
+
 def get_task(task_id):
     with _lock:
         task = _load().get(task_id)
         return json.loads(json.dumps(task)) if task else None
+
 
 def rename_task(task_id, title):
     with _lock:
@@ -573,6 +521,7 @@ def rename_task(task_id, title):
         task["title_from"] = "user" if task["title"] else "auto"
         _save(task)
         return task
+
 
 def remove_task(task_id):
     with _lock:

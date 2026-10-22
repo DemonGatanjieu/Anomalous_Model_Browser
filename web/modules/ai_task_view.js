@@ -75,6 +75,14 @@ export function taskResults(task) {
     return out;
 }
 
+/** The activity log entries a task's steps show: the AI's canvas changes and the user's own. */
+export function activityIds(task) {
+    return (task?.steps || []).flatMap(step => [
+        ...(step.results || []).filter(result => result.type === 'canvas').map(result => result.activity),
+        ...(step.tool === 'user_activity' && step.activity ? [step.activity] : []),
+    ]);
+}
+
 /** The address ComfyUI's /view serves an output picture or sound at. */
 export function outputUrl(result) {
     const params = new URLSearchParams({ filename: result.filename, subfolder: result.subfolder || '', type: result.folder || 'output' });

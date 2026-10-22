@@ -66,6 +66,7 @@ ACTIVITY_DETAIL = web.RequestKey("activity_detail", dict) if hasattr(web, "Reque
 
 _lock = threading.RLock()
 _entries = None
+_listeners = []  # called with each new entry once it is saved (ai_tasks.note_activity)
 
 
 def log_path():
@@ -145,7 +146,27 @@ def add_entry(source, action, target='', detail=None):
         entries.insert(0, entry)
         _trim(entries)
         atomic_write_json(log_path(), entries)
+    for listener in _listeners:
+        try:
+            listener(entry)
+        except Exception:  # noqa: BLE001 - a listener must never fail the action recorded
+            logging.getLogger(__name__).warning('Anomalous activity log: a listener failed', exc_info=True)
     return entry
+
+
+def add_listener(listener):
+    if listener not in _listeners:
+        _listeners.append(listener)
+
+
+def tag(entry_id, task_id):
+    """Names the AI task an entry belongs to (made by the AI, or by the user while it worked)."""
+    with _lock:
+        entries = _load()
+        found = next((entry for entry in entries if entry.get('id') == entry_id), None)
+        if found and found.get('task') != task_id:
+            found['task'] = task_id
+            atomic_write_json(log_path(), entries)
 
 
 def list_entries(limit=100, source=None):

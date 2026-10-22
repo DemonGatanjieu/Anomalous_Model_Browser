@@ -433,7 +433,10 @@ def _collect(client, panel_id, task_id=None):
             if step.get("kind") == "user" and not step.get("delivered") and (panel_id is None or task is panel_task):
                 step["delivered"] = True
                 changed.add(task["id"])
-                messages.append({"id": step["id"], "task": task["id"], "text": step["text"], "at": step["at"]})
+                message = {"id": step["id"], "task": task["id"], "text": step["text"], "at": step["at"]}
+                if step.get("tool") == "user_activity":
+                    message["kind"] = "change"  # something the user changed in Anomalous, not words to the AI
+                messages.append(message)
                 continue
             panel = step.get("panel")
             if step.get("kind") != "panel" or (panel_id is not None and panel["id"] != panel_id):
@@ -503,7 +506,8 @@ def attach_pending(result, client, task_id=None):
     if waiting:
         data["still_waiting"] = waiting
     data["user_notice"] = (
-        "The user sent new input in the AI workbench. Read user_messages / user_answers and follow them."
+        "The user sent new input in the AI workbench. Read user_messages / user_answers and follow them; "
+        "kind=change messages are changes the user made themselves while you worked: keep them, do not undo them."
     )
     result["structuredContent"] = data
     content = list(result.get("content") or [])

@@ -18,7 +18,8 @@
 import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { translate as t } from './locales.js';
-import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
+import { dayLabel, entrySummary, fetchActivity, timeLabel } from './activity_log.js';
+import { changeNodeId } from './activity_diff.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
@@ -27,8 +28,10 @@ import { focusPanel, openQuestions, panelLine, panelSteps, renderStage, stageNew
 import { connectGuide, openConnectGuide } from './ui_ai_connect.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
 import { locateNode, openModel, resultLinks, shared, strip } from './ui_ai_results.js';
+import { compareBar } from './ui_ai_images.js';
+import { canvasChanges } from './ui_canvas_changes.js';
 import {
-    duration, groupSteps, lookTools, stepDetail, taskCounts, taskResults, taskState, toolKey,
+    activityIds, duration, groupSteps, lookTools, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
 
 const NARROW_PX = 720;
@@ -54,6 +57,7 @@ const state = {
     refreshTimer: null,
     request: 0,       // newer navigation/refresh invalidates older responses
     observer: null,
+    bar: null,        // the ticked pictures' compare bar (ui_ai_images.js), made once
 };
 
 function el(tag, className, text) {
@@ -144,14 +148,16 @@ function stepRow(step, number) {
     const body = el('div', 'anomalous-ai-step-body');
     const line = el('div', 'anomalous-ai-step-line');
     line.append(el('span', 'anomalous-ai-kind', t(`aiKind_${step.kind}`)), el('span', 'anomalous-ai-step-title', t(toolKey(step.tool))));
-    const detail = step.kind === 'panel' ? '' : stepDetail(step);
+    const detail = step.kind === 'panel' || step.tool === 'user_activity' ? '' : stepDetail(step);
     if (detail) {
         const text = el('span', 'anomalous-ai-step-detail', detail);
         text.title = detail;
         line.append(text);
     }
     body.append(line);
-    if (step.kind === 'user') {
+    if (step.tool === 'user_activity') {
+        body.append(userChange(step));
+    } else if (step.kind === 'user') {
         body.append(el('div', 'anomalous-ai-user-text', step.text),
             el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
     } else if (step.text) {
@@ -170,6 +176,19 @@ function stepRow(step, number) {
     if (took) when.append(el('span', '', say(took)));
     row.append(body, when);
     return row;
+}
+
+/** A change the user made in Anomalous while the AI worked (an activity entry), and whether the AI knows. */
+function userChange(step) {
+    const box = el('div', 'anomalous-ai-user-change');
+    const entry = state.entries.get(step.activity);
+    box.append(el('div', 'anomalous-ai-user-text', entry ? entrySummary(entry) : step.text));
+    if (entry?.source === 'canvas') {
+        const note = el('span', 'anomalous-ai-link-note');
+        box.append(canvasChanges(entry, { locate: change => locateNode(changeNodeId(change), note) }), note);
+    }
+    box.append(el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiChangeSeen' : 'aiChangeWaiting')));
+    return box;
 }
 
 function looksRow(steps, number) {
@@ -223,7 +242,7 @@ function renderTask() {
     if (!view || view.taskId !== task.id || !box.contains(view.timeline)) {
         view = state.view = {
             taskId: task.id, header: el('div', 'anomalous-ai-task-head'), made: el('div', 'anomalous-ai-made-holder'),
-            timeline: el('div', 'anomalous-ai-timeline'), madeKey: null, comparison: {},
+            timeline: el('div', 'anomalous-ai-timeline'), madeKey: null,
             message: messageBox(async (text) => {
                 await postTask(task.id, { text }, 'message');
                 await refresh();
@@ -274,7 +293,7 @@ function renderTask() {
     const madeKey = JSON.stringify(taskResults(task));
     if (madeKey !== view.madeKey) {
         view.madeKey = madeKey;
-        const made = strip(task, view.comparison);
+        const made = strip(task);
         view.made.replaceChildren(...(made ? [made] : []));
     }
 
@@ -399,10 +418,10 @@ function syncRows(parent, rows) {
 }
 
 async function loadEntries(task) {
-    const wanted = new Set(taskResults(task).canvas.map(result => result.activity));
+    const wanted = new Set(activityIds(task));
     const kept = new Map([...state.entries].filter(([id]) => wanted.has(id)));
     if (wanted.size && [...wanted].some(id => !kept.has(id))) {
-        const entries = await fetchActivity({ limit: 500, source: 'canvas' });
+        const entries = await fetchActivity({ limit: 500 });
         for (const entry of entries) if (wanted.has(entry.id)) kept.set(entry.id, entry);
     }
     return kept;
@@ -456,13 +475,13 @@ async function refresh() {
     if (!tasks || !state.page || request !== state.request) return;
     state.tasks = tasks;
     if (!tasks.length) {
-        state.page.replaceChildren(emptyPage());
+        state.page.replaceChildren(emptyPage(), state.bar);
         state.page.classList.add('is-empty');
         return;
     }
     if (state.page.classList.contains('is-empty') || !state.page.querySelector('.anomalous-ai-tasks')) {
         state.page.classList.remove('is-empty');
-        state.page.replaceChildren(el('aside', 'anomalous-ai-tasks'), el('section', 'anomalous-ai-task'), el('section', 'anomalous-ai-stage'));
+        state.page.replaceChildren(el('aside', 'anomalous-ai-tasks'), el('section', 'anomalous-ai-task'), el('section', 'anomalous-ai-stage'), state.bar);
     }
     // The newest task while the AI works on it, unless the user picked another one.
     const follow = !state.pinned && tasks[0].live && tasks[0].id !== state.selected;
@@ -487,6 +506,7 @@ export function renderAiWorkbench(owner, panel) {
     state.owner = owner;
     shared.owner = owner;
     state.panel = panel;
+    state.bar ||= compareBar();
     if (!state.page || state.page.parentNode !== panel) {
         state.observer?.disconnect();
         state.page = el('div', 'anomalous-ai');
@@ -518,14 +538,17 @@ export function watchAiTasks(owner) {
     });
 }
 
+/** Opens task `id` on the AI page (from the activity log, the home page). */
+export function openAiTask(owner, id, newest = null) {
+    state.selected = id;
+    state.pinned = id !== newest;
+    owner.goTo('ai');
+}
+
 /** The home page's short list (ui_ai_recent.js); a row opens its task here. */
 export function renderRecentAiTasks(owner, container) {
     drawRecentAiTasks(owner, container, {
         fetchTasks: () => fetchTasks(RECENT_COUNT),
-        open: (summary, newest) => {
-            state.selected = summary.id;
-            state.pinned = summary.id !== newest;
-            owner.goTo('ai');
-        },
+        open: (summary, newest) => openAiTask(owner, summary.id, newest),
     });
 }

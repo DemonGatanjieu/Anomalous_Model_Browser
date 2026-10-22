@@ -13,6 +13,7 @@ import { anomalousConfirm } from './ui_dialog.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { newestCompareButton } from './ui_param_compare.js';
 import { canvasChanges } from './ui_canvas_changes.js';
+import { openAiTask } from './ui_ai_workbench.js';
 
 const FILTERS = [['', 'activityAll'], ['canvas', 'activityCanvas'], ['file', 'activityFiles']];
 const PAGE_SIZE = 300;
@@ -84,6 +85,15 @@ function renderEntry(entry, { compact = false, owner = null } = {}) {
         });
         undo.onkeydown = (event) => event.stopPropagation();
         head.appendChild(undo);
+    }
+    // Made by an AI, or by the user while one worked: its task on the AI workbench.
+    if (entry.task && owner) {
+        const task = button('anomalous-activity-ai-task', t('activityAiTask'), (event) => {
+            event.stopPropagation();
+            openAiTask(owner, entry.task);
+        });
+        task.onkeydown = (event) => event.stopPropagation();
+        head.appendChild(task);
     }
     const note = el('div', 'anomalous-activity-note');
     const lines = entryLines(entry, owner, note);

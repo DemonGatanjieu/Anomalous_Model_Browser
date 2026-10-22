@@ -14,7 +14,7 @@ import { anomalousAlert } from './ui_dialog.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { listCombos } from './image_keep.js';
 import { audioResult, outputUrl, taskResults } from './ai_task_view.js';
-import { imageComparison, imageResults } from './ui_ai_images.js';
+import { imageResults } from './ui_ai_images.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 
 export const shared = { owner: null, entries: new Map(), player: null };
@@ -86,11 +86,7 @@ export function locateNode(id, note) {
 export function resultLinks(step, changed = () => {}) {
     const box = el('div', 'anomalous-ai-results');
     const pictures = (step.results || []).filter(result => result.type === 'image');
-    if (pictures.length) {
-        box.append(imageResults(pictures, shared.owner));
-        const compare = imageComparison(pictures);
-        if (compare) box.append(compare);
-    }
+    if (pictures.length) box.append(imageResults(pictures, shared.owner));
     const links = el('div', 'anomalous-ai-links');
     const note = el('span', 'anomalous-ai-link-note');
     for (const result of step.results || []) {
@@ -128,24 +124,14 @@ export function resultLinks(step, changed = () => {}) {
     return box.childNodes.length ? box : null;
 }
 
-export function strip(task, selection = {}) {
+export function strip(task) {
     const made = taskResults(task);
     if (!made.image.length && !made.model.length && !made.combo.length && !made.audio.length) return null;
     const box = el('div', 'anomalous-ai-made');
     box.append(el('div', 'anomalous-ai-made-title', t('aiMade')));
     if (made.image.length) {
-        const compare = imageComparison(made.image, selection);
-        if (compare) box.append(compare);
-        const pictures = el('details', 'anomalous-ai-result-overview');
-        pictures.open = Boolean(selection.expanded);
-        pictures.append(el('summary', '', t('aiBrowseResults')));
-        const draw = () => {
-            selection.expanded = pictures.open;
-            if (pictures.open && pictures.children.length === 1) pictures.append(imageResults(made.image, shared.owner, { compact: true }));
-        };
-        pictures.addEventListener('toggle', draw);
-        draw();
-        box.append(pictures);
+        if (made.image.length > 1) box.firstChild.append(el('span', 'anomalous-ai-made-hint', t('aiTickHint')));
+        box.append(imageResults(made.image, shared.owner, { compact: true }));
     }
     const chips = el('div', 'anomalous-ai-links');
     const seen = new Set();

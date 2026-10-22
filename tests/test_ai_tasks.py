@@ -13,9 +13,11 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_tasks, ai_tasks_routes, mcp_task_tools  # noqa: E402
+from api import action_catalog, activity_log, ai_panels, ai_task_changes, ai_task_runs, ai_tasks, ai_tasks_routes, mcp_task_tools  # noqa: E402
+from api.mcp_server import TOOLS  # noqa: E402
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_tasks_")
+LOG = tempfile.mkdtemp(prefix="amb_ai_activity_")
 OUTPUT = tempfile.mkdtemp(prefix="amb_ai_output_")
 
 
@@ -27,6 +29,11 @@ def isolate():
     ai_tasks._waiting[0] = None
     for name in os.listdir(TMP):
         os.remove(os.path.join(TMP, name))
+    activity_log.log_path = lambda: os.path.join(LOG, "activity_log.json")
+    activity_log._entries = None
+    activity_log.add_listener(ai_task_changes.note_activity)
+    if os.path.exists(activity_log.log_path()):
+        os.remove(activity_log.log_path())
 
 
 def ok(data):
@@ -137,10 +144,10 @@ class TaskTests(unittest.TestCase):
         history = {"p1": {"status": {"completed": True, "status_str": "success"},
                           "outputs": {"9": {"images": [{"filename": "a.png", "subfolder": "x", "type": "output"},
                                                        {"filename": "t.png", "subfolder": "", "type": "temp"}]}}}}
-        self.assertFalse(ai_tasks._finish_run(task_id, step["id"], ["p1", "p2"], history), "p2 still runs")
+        self.assertFalse(ai_task_runs._finish_run(task_id, step["id"], ["p1", "p2"], history), "p2 still runs")
         self.assertEqual(ai_tasks.get_task(task_id)["steps"][0]["state"], "running")
         history["p2"] = {"status": {"status_str": "error"}, "outputs": history["p1"]["outputs"]}  # cached: same file
-        self.assertTrue(ai_tasks._finish_run(task_id, step["id"], ["p1", "p2"], history))
+        self.assertTrue(ai_task_runs._finish_run(task_id, step["id"], ["p1", "p2"], history))
         step = ai_tasks.get_task(task_id)["steps"][0]
         self.assertEqual(step["results"], [{"type": "image", "filename": "a.png", "subfolder": "x", "folder": "output"}])
         self.assertEqual((step["state"], step["ok"]), ("error", False))
@@ -225,6 +232,68 @@ class TaskTests(unittest.TestCase):
         self.assertIsNotNone(third["ended"])
         other = ai_tasks.begin_task("B", "other", now=140)
         self.assertNotEqual(fourth["id"], other["id"])
+
+    def test_every_tool_is_in_the_catalog(self):
+        self.assertEqual(set(TOOLS) - set(action_catalog.TOOLS), set())
+        self.assertEqual(set(action_catalog.TOOLS) - set(TOOLS), set(), "no entries for tools that are gone")
+        for tool, what in action_catalog.TOOLS.items():
+            self.assertIn(what.stage, (None, *action_catalog.STAGES), tool)
+            self.assertIn(what.gate, (None, *action_catalog.GATES), tool)
+            read_only = TOOLS[tool]["spec"].get("annotations", {}).get("readOnlyHint", True)
+            if what.gate:
+                self.assertFalse(read_only, f"{tool} is guarded but says it only reads")
+        self.assertEqual(ai_tasks.list_tasks(), [])
+
+    def test_steps_carry_their_stage(self):
+        ai_tasks.record("A", "search_models", {"query": "x"}, ok({"models": []}), 1.0, True)
+        ai_tasks.record("A", "set_prompt", {"text": "x"}, ok({}), 2.0)
+        steps = ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"]
+        self.assertEqual([(s["kind"], s["stage"]) for s in steps], [("look", "model"), ("canvas", "prompt")])
+
+    def test_steps_left_running_by_a_restart_are_stopped(self):
+        ref = ai_tasks.begin_step("A", "describe_canvas", {}, 1.0, True)
+        ai_tasks._tasks = None  # ComfyUI started again
+        step = ai_tasks.get_task(ref[0])["steps"][0]
+        self.assertEqual((step["state"], step["ok"]), ("stopped", False))
+        self.assertIn("restarted", step["error"])
+        ai_tasks._tasks = None
+        self.assertEqual(ai_tasks.get_task(ref[0])["steps"][0]["state"], "stopped", "saved, said once")
+
+    def test_the_users_own_changes_join_the_task_the_ai_works_on(self):
+        now = ai_tasks.time.time()
+        ai_tasks.record("A", "place_combo", {"name": "K"}, ok({"_activity": "none"}), now)
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        mine = activity_log.add_entry("canvas", "canvas", "wf", {"changes": [
+            {"kind": "changed", "node": "KSampler", "widget": "cfg", "before": "7", "after": "5"}], "total": 1})
+        ais = activity_log.add_entry("canvas", "canvas", "wf", {"changes": [{"kind": "added", "node": "Lora"}], "via": "mcp"})
+        activity_log.add_entry("file", "model_download", "x.safetensors")  # an AI's download could make this
+        steps = ai_tasks.get_task(task_id)["steps"]
+        self.assertEqual([s["tool"] for s in steps], ["place_combo", "user_activity"])
+        self.assertEqual((steps[1]["activity"], steps[1]["stage"]), (mine["id"], "canvas"))
+        self.assertEqual(activity_log.list_entries()[2]["task"], task_id, "the entry names its task")
+        self.assertNotIn("task", ais)
+        # The AI hears of it with its next call, once.
+        result = ai_panels.attach_pending(ok({}), "A", task_id=task_id)
+        change = result["structuredContent"]["user_messages"][0]
+        self.assertEqual(change["kind"], "change")
+        self.assertIn("KSampler cfg: 7 -> 5", change["text"])
+        self.assertNotIn("user_messages", ai_panels.attach_pending(ok({}), "A", task_id=task_id)["structuredContent"])
+        self.assertTrue(ai_tasks.get_task(task_id)["steps"][1]["delivered"])
+
+    def test_no_task_hears_of_changes_once_the_ai_is_done_or_gone(self):
+        ai_tasks.record("A", "describe_canvas", {}, ok({}), ai_tasks.time.time(), True)
+        gone = ai_tasks.list_tasks()[0]["id"]
+        ai_tasks._load()[gone]["updated"] -= ai_task_changes.USER_STEP_SECONDS + 1  # the AI went quiet
+        activity_log.add_entry("file", "model_edit", "a.safetensors")
+        ai_tasks.report("B", "done", done=True)  # this one ended
+        activity_log.add_entry("file", "model_edit", "a.safetensors")
+        for summary in ai_tasks.list_tasks():
+            self.assertNotIn("user_activity", [s["tool"] for s in ai_tasks.get_task(summary["id"])["steps"]])
+
+    def test_the_ais_canvas_step_tags_its_activity_entry(self):
+        entry = activity_log.add_entry("canvas", "canvas", "wf", {"changes": [{"kind": "added", "node": "L"}], "via": "mcp"})
+        ai_tasks.record("A", "add_lora", {}, ok({"_activity": entry["id"]}), ai_tasks.time.time())
+        self.assertEqual(activity_log.list_entries()[0]["task"], ai_tasks.list_tasks()[0]["id"])
 
     def test_client_names(self):
         self.assertEqual(ai_tasks.client_of({}, {"_meta": {"io.modelcontextprotocol/clientInfo": {"name": "claude-code"}}}), "Claude Code")

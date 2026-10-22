@@ -45,23 +45,12 @@
 }
 
 .anomalous-ai-image-caption {
-    padding: 8px 12px 0;
+    padding: 6px 10px 8px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--amb-text-soft);
-    font-size: 12px;
-}
-
-.anomalous-ai-image-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-}
-
-.anomalous-ai-image-card > .anomalous-ai-image-actions {
-    padding: 0 10px 10px;
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
 }
 
 .anomalous-ai-action {
@@ -76,40 +65,141 @@
     cursor: pointer;
 }
 
-.anomalous-ai-action:hover:not(:disabled) {
-    border-color: var(--amb-link);
-    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
-}
-
-.anomalous-ai-action:disabled { opacity: 0.45; cursor: default; }
+.anomalous-ai-action:hover { border-color: var(--amb-link); }
 .anomalous-ai-action[hidden] { display: none; }
 .anomalous-ai-image-results > .anomalous-ai-action { margin-top: 10px; }
 
+/* The results strip: small pictures in a row that wraps. */
 .anomalous-ai-image-results.is-compact .anomalous-ai-image-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    margin-top: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
 }
+.anomalous-ai-image-card.is-compact { border-radius: 8px; }
 .anomalous-ai-image-card.is-compact img,
-.anomalous-ai-image-card.is-compact video { height: 100px; }
-.anomalous-ai-image-card.is-compact .anomalous-ai-image-caption { padding: 6px 8px; }
+.anomalous-ai-image-card.is-compact video { height: 96px; object-fit: cover; }
+.anomalous-ai-made-hint { margin-left: 8px; color: var(--amb-text-dim); font-size: 11.5px; font-weight: 400; letter-spacing: 0; }
 
-.anomalous-ai-comparison {
-    display: flex;
-    flex-wrap: wrap;
+/* A picture's tick (to compare two) and tools (inspector, compare with the canvas, keep): over its
+   corners, the tools only while the pointer is on the picture (always on touch screens). */
+.anomalous-ai-pic { position: relative; }
+.anomalous-ai-image-frame,
+.anomalous-ai-panel-frame,
+.anomalous-ai-pick-frame { display: block; min-width: 0; }
+
+.anomalous-ai-tick,
+.anomalous-ai-pic-tool {
+    display: inline-flex;
     align-items: center;
-    gap: 8px 12px;
-    min-width: 0;
-    padding: 12px;
-    border: 1px solid var(--amb-border);
-    border-radius: 10px;
-    background: rgba(var(--amb-ink-rgb), 0.025);
-    grid-column: 1 / -1;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
 }
-.anomalous-ai-comparison-title { flex-basis: 100%; color: var(--amb-text-soft); font-size: 12px; }
-.anomalous-ai-comparison-fields { display: flex; flex: 1 1 260px; flex-wrap: wrap; gap: 8px; min-width: 0; }
-.anomalous-ai-comparison-side { display: flex; flex: 1 1 120px; align-items: center; gap: 6px; min-width: 0; color: var(--amb-text-soft); font-size: 12px; }
-.anomalous-ai-comparison-select { width: 100%; min-width: 0; padding: 6px; border: 1px solid var(--amb-border); border-radius: 6px; background: var(--amb-bg-panel); color: var(--amb-text-main); font: inherit; }
-.anomalous-ai-result-overview > summary { color: var(--amb-link); font-size: 12px; cursor: pointer; }
+
+.anomalous-ai-tick {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 2;
+    color: transparent;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.anomalous-ai-tick.is-on {
+    border-color: var(--amb-link);
+    background: var(--amb-link);
+    color: #fff;
+    opacity: 1;
+}
+
+.anomalous-ai-pic-tools {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.anomalous-ai-pic:hover > .anomalous-ai-tick,
+.anomalous-ai-pic:focus-within > .anomalous-ai-tick,
+.anomalous-ai-pic:hover > .anomalous-ai-pic-tools,
+.anomalous-ai-pic:focus-within > .anomalous-ai-pic-tools { opacity: 1; }
+
+.anomalous-ai-tick:hover,
+.anomalous-ai-pic-tool:hover:not(:disabled) { border-color: var(--amb-link); background: rgba(0, 0, 0, 0.75); }
+.anomalous-ai-tick.is-on:hover { background: var(--amb-link); }
+.anomalous-ai-pic-tool:disabled { opacity: 0.4; cursor: default; }
+
+.anomalous-ai-image-card.is-compact .anomalous-ai-pic-tools { display: none; }
+.anomalous-ai-image-card.is-compact .anomalous-ai-tick { top: 4px; left: 4px; width: 22px; height: 22px; font-size: 11px; }
+
+@media (hover: none) {
+    .anomalous-ai-tick,
+    .anomalous-ai-pic-tools { opacity: 1; }
+}
+
+/* Two ticked pictures: their saved settings compared (ui_param_compare.js). */
+.anomalous-ai-compare-bar {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 16px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: var(--amb-bg-float, var(--amb-bg-dialog));
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+.anomalous-ai-compare-bar[hidden],
+.anomalous-ai-compare-go[hidden] { display: none; }
+
+.anomalous-ai-compare-go {
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--amb-link);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.anomalous-ai-compare-clear {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 15px;
+    cursor: pointer;
+}
+.anomalous-ai-compare-clear:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-main); }
+
+.anomalous-ai-slider-compare { margin-top: 8px; }
+
+/* A change the user made while the AI worked. */
+.anomalous-ai-user-change { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.anomalous-ai-user-change > .anomalous-canvas-changes { align-self: stretch; }
 
 /* The same receipt is used by the activity page and the AI workbench. */
 .anomalous-canvas-changes {

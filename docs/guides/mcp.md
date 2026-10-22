@@ -112,7 +112,9 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 
 ## 5. AI 工作台：AI 做了什么，一目了然（1.62 起）
 
-出图后不必回图库寻找功能：结果卡片的 **图片与参数** 打开完整检查器，**和当前画布对比** 打开现有参数对比，**保存为…** 使用同一个菜单保存工作流、搭配或提示词。任务上方的 **图片参数对比** 可以选择不同步骤产生的两张图片；它读取图片实际保存的工作流，不依赖 AI 口述参数。没有可用工作流的图片会显示原因，视频不提供这些参数操作。AI 展台的图片、挑选卡片和滑动对比也接入相同能力。
+出图后不必回图库寻找功能：鼠标移到结果图片上，右上角的 **ⓘ** 打开完整的图片与参数，**⇄** 和当前画布对比，**☆** 用同一个菜单保存成工作流、搭配或提示词。图片左上角可以 **勾选**：勾两张（不同步骤、不同任务都行），页面底部出现 **查看参数差异**；它读取图片实际保存的工作流，不依赖 AI 口述参数。没有可用工作流的图片会显示原因，视频没有这些参数操作。AI 展台的图片、挑选卡片也一样；滑动对比下面有 **查看参数差异**。
+
+**AI 干活时你自己改的东西**：AI 在做一个任务时（10 分钟内调用过），你在 AMB 里做的改动，比如画布上的改动、改模型信息、存搭配或提示词，会以“你在 AMB 里改了”出现在这个任务的时间线上，画布改动带修改前后。AI 下一次调用任何工具时会收到它（并被告知保留你的改动，不要改回去），时间线上写着它是否已经知道。操作记录页里，AI 做的和 AI 干活时你做的记录旁边有 **AI 任务 →**。
 
 画布操作下面直接显示操作记录中的 **修改前 / 修改后**，可以定位对应节点，并在允许时撤销。长提示词可能只保留变化附近的片段；早期操作记录被清理后会提示不可用，不会用现在的画布替代历史值。操作记录页使用相同的改动展示。
 
@@ -148,7 +150,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 
 ## English
 
-Task output cards and AI panel pictures open the existing image inspector, image/canvas parameter comparison and Keep menu. The task overview compares any two recorded output pictures across steps, using their actual embedded workflows. Canvas steps show recorded before/after values with node navigation and undo where available, shared with the activity page. Missing historical receipts and images without reusable workflows are reported explicitly.
+Output pictures in a task and on AI panels carry the existing image inspector, image/canvas parameter comparison and Keep menu as tools shown on hover; tick any two (any step or task) and the bar at the foot of the page compares their actual embedded workflows. Changes you make in Anomalous while an AI works on a task (it called within 10 minutes) join its timeline and reach the AI once with its next call, marked as yours to keep; activity entries link to their task. Canvas steps show recorded before/after values with node navigation and undo where available, shared with the activity page. Missing historical receipts and images without reusable workflows are reported explicitly.
 
 The stage reads chronologically: use `show_panel` for successive phases. `update_panel` appends
 new blocks below existing content, keeps omitted blocks and deduplicates unchanged resubmissions.

@@ -138,7 +138,8 @@ TASK_TOOLS = dict([
                               "closed": {"type": "boolean"}, "task": _TASK_PROP}, ["panel"]),
     _task_tool("get_answers", "Read the user's answers and messages",
                "What the user picked or typed on your panels, and what they wrote to you in the AI workbench "
-               "(messages: a change of mind, 'stop', 'make it brighter'), since you last asked; each once. For one "
+               "(messages: a change of mind, 'stop', 'make it brighter'; kind=change: something they changed "
+               "themselves in Anomalous while you worked, keep it), since you last asked; each once. For one "
                "panel (and its task's messages), or all of yours. wait_seconds (up to 55) waits when nothing is there "
                "yet: for that panel's open questions, or with no panel for anything the user sends. still_waiting "
                "lists the questions not answered. Check it between steps of longer work.",

@@ -12,7 +12,7 @@
 import { translate as t } from './locales.js';
 import { outputUrl, isVideo } from './ai_task_view.js';
 import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
-import { imageActions, imageComparison } from './ui_ai_images.js';
+import { decoratePicture } from './ui_ai_images.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -58,14 +58,14 @@ function picture(item, ctx, className) {
         media.preload = 'metadata';
     }
     open.append(media);
-    box.append(open);
+    const frame = el('div', 'anomalous-ai-panel-frame');
+    frame.append(open);
+    box.append(decoratePicture(frame, item, ctx.owner));
     if (item.caption) box.append(el('figcaption', '', item.caption));
     if (Array.isArray(item.marks) && item.marks.length) {
         box.classList.add('has-marks');
         addMarks(open, media, item.marks, box);
     }
-    const actions = imageActions(item, ctx.owner);
-    if (actions) box.append(actions);
     return box;
 }
 
@@ -73,8 +73,6 @@ function images(block, ctx) {
     const layout = ['row', 'grid', 'compare'].includes(block.layout) ? block.layout : 'row';
     const box = el('div', `anomalous-ai-panel-images is-${layout}`);
     box.append(...list(block.items).map(item => picture(item, ctx, 'anomalous-ai-panel-figure')));
-    const compare = imageComparison(block.items);
-    if (compare) box.append(compare);
     return box;
 }
 

@@ -23,7 +23,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_panels, ai_tasks, mcp_bridge
+from . import ai_panels, ai_task_runs, ai_tasks, mcp_bridge
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_task_tools import TASK_TOOLS
@@ -155,19 +155,21 @@ async def _call(params, request):
         ctx["task"] = active_task
     try:
         async with _slots:
-            before = await asyncio.to_thread(ai_tasks.prompt_ids) if name == "run_workflow" else None
+            before = await asyncio.to_thread(ai_task_runs.prompt_ids) if name == "run_workflow" else None
             result = await asyncio.to_thread(call_tool, TOOLS, name, arguments, ctx)
     except BaseException as error:
         failed_result = {"content": [{"type": "text", "text": f"{name} failed: {error}"}], "isError": True}
         await asyncio.to_thread(
-            ai_tasks.finish_step, client, name, arguments, failed_result, started, read_only, None,
+            ai_tasks.finish_step, client, name, arguments, failed_result, started, read_only,
             step_ref=step_ref, session=session, task_id=active_task,
         )
         raise
-    await asyncio.to_thread(
-        ai_tasks.finish_step, client, name, arguments, result, started, read_only, before,
+    step = await asyncio.to_thread(
+        ai_tasks.finish_step, client, name, arguments, result, started, read_only,
         step_ref=step_ref, session=session, task_id=active_task,
     )
+    if name == "run_workflow" and step and step.get("state") == "running":
+        ai_task_runs.watch(step["id"], before or set())
     if name != "get_answers" and isinstance(result, dict) and not result.get("isError"):
         resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)
         await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task)

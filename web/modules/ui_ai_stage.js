@@ -11,8 +11,9 @@ import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { arrowEnds, diagramBoxes, markBox } from './ai_stage_layout.js';
-import { isVideo, outputUrl } from './ai_task_view.js';
-import { imageActions, imageComparison } from './ui_ai_images.js';
+import { isVideo, outputPicture, outputUrl } from './ai_task_view.js';
+import { decoratePicture } from './ui_ai_images.js';
+import { openParamCompare } from './ui_param_compare.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -111,8 +112,12 @@ export function slider(block) {
     if (block.before_label) stage.append(el('span', 'anomalous-ai-slider-tag is-before', block.before_label));
     if (block.after_label) stage.append(el('span', 'anomalous-ai-slider-tag is-after', block.after_label));
     box.append(stage);
-    const compare = imageComparison([block.before, block.after]);
-    if (compare) box.append(compare);
+    // Before and after are two output pictures: their saved settings side by side, as in the gallery.
+    const [was, now] = [outputPicture(block.before), outputPicture(block.after)];
+    if (was && now) {
+        box.append(button('anomalous-ai-link anomalous-ai-slider-compare', t('aiCompareParams'),
+            () => openParamCompare({ image: was }, { image: now })));
+    }
     return box;
 }
 
@@ -153,7 +158,9 @@ export function picks(block, ctx) {
         });
         frame.append(picture);
         if (item.recommended) frame.append(el('span', 'anomalous-ai-pick-badge', t('aiPickRecommended')));
-        card.append(frame);
+        const holder = el('div', 'anomalous-ai-pick-frame');
+        holder.append(frame);
+        card.append(decoratePicture(holder, item, ctx.owner));
         addMarks(frame, picture, item.marks, card);
         if (item.label) card.append(el('div', 'anomalous-ai-pick-label', item.label));
         if (item.reason) card.append(el('div', 'anomalous-ai-pick-reason', item.reason));
@@ -166,8 +173,6 @@ export function picks(block, ctx) {
         take.disabled = Boolean(answer) || ctx.closed;
         actions.append(take, button('anomalous-ai-link', t('aiPickCanvas'), () => putOnCanvas(item, ctx.owner), t('aiPickCanvasHint')));
         card.append(actions);
-        const imageTools = imageActions(item, ctx.owner);
-        if (imageTools) card.append(imageTools);
         grid.append(card);
     }
     box.append(grid);

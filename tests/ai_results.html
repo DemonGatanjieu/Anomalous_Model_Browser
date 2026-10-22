@@ -32,37 +32,39 @@
 <pre id="results">Running…</pre>
 <div id="fixture"></div>
 <script type="module">
-import { imageActions, imageComparison, imageResults } from '../web/modules/ui_ai_images.js';
+import { compareBar, imageResults } from '../web/modules/ui_ai_images.js';
 import { canvasChanges } from '../web/modules/ui_canvas_changes.js';
-import { pictureKey } from '../web/modules/ai_task_view.js';
 import { closeKeepMenu } from '../web/modules/ui_keep_menu.js';
 import { slider } from '../web/modules/ui_ai_stage.js';
 const fixture=document.querySelector('#fixture'), results=document.querySelector('#results');
 const a={filename:'a.png'}, b={filename:'b.png'}, c={filename:'c.png'}, video={filename:'clip.mp4'};
-const check=(value,message)=>{if(!value)throw Error(message);results.textContent+=`PASS ${message}\n`;};
+const check=(value,message)=>{if(!value)throw Error(message);results.textContent+=`PASS ${message}
+`;};
 const settle=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
 const waitFor=async predicate=>{for(let i=0;i<120;i++){if(predicate())return;await settle();}throw Error('Timed out');};
 const closeCompare=()=>document.querySelector('.anomalous-compare-done').click();
+const tickOf=(box,name)=>[...box.querySelectorAll('figure')].find(f=>f.querySelector('img')?.alt===name)?.querySelector('.anomalous-ai-tick');
 try {
   results.textContent='';
-  const choice={};
-  let compare=imageComparison([a,b,a,video,{filename:'a.png',folder:'temp'}],choice);
-  fixture.append(compare);
-  check(compare.querySelectorAll('option').length===4,'comparison excludes videos/temp files and duplicate results');
-  check(requests.length===0,'rendering result actions does not preload metadata');
-  const select=compare.querySelector('select');
-  select.value=pictureKey(b);select.dispatchEvent(new Event('change'));
-  check(compare.querySelector('button').disabled,'the same image cannot be compared to itself');
-  select.value=pictureKey(a);select.dispatchEvent(new Event('change'));
-  compare.replaceWith(imageComparison([a,b,c],choice));
-  compare=fixture.querySelector('.anomalous-ai-comparison');
-  check(compare.querySelectorAll('select')[1].value===pictureKey(b),'arriving results preserve the chosen pair');
-  compare.querySelector('button').click();
+  const bar=compareBar();
+  const cards=imageResults([a,b,a,video,{filename:'a.png',folder:'temp'}],{});
+  fixture.append(cards,bar);
+  check(cards.querySelectorAll('.anomalous-ai-tick').length===2,'only output pictures can be ticked (no videos or temp files, no duplicates)');
+  check(requests.length===0,'rendering result tools does not preload metadata');
+  check(bar.hidden,'no compare bar until a picture is ticked');
+  tickOf(cards,'a.png').click();
+  check(!bar.hidden && bar.querySelector('.anomalous-ai-compare-go').hidden,'one tick asks for a second');
+  tickOf(cards,'b.png').click();
+  check(!bar.querySelector('.anomalous-ai-compare-go').hidden,'two ticks can be compared');
+  const later=imageResults([c],{});fixture.append(later);
+  tickOf(later,'c.png').click();
+  check(!tickOf(cards,'a.png').classList.contains('is-on') && tickOf(cards,'b.png').classList.contains('is-on'),'a third tick replaces the oldest, also on pictures drawn before');
+  bar.querySelector('.anomalous-ai-compare-go').click();
   await waitFor(()=>document.querySelector('.anomalous-compare-row:not(.is-head)'));
-  check([...document.querySelectorAll('.anomalous-compare-value')].map(n=>n.textContent).join(',')==='7,8','actual parameter comparer reads workflows and displays cfg difference');
+  check([...document.querySelectorAll('.anomalous-compare-value')].map(n=>n.textContent).join(',')==='8,7','actual parameter comparer reads both ticked workflows');
   closeCompare();
-  const actions=imageActions(b,{});fixture.append(actions);
-  actions.children[1].click();
+  const tools=[...cards.querySelectorAll('figure')].find(f=>f.querySelector('img')?.alt==='b.png').querySelector('.anomalous-ai-pic-tools');
+  tools.children[1].click();
   await waitFor(()=>document.querySelector('.anomalous-compare-apply'));
   document.querySelector('.anomalous-compare-apply').click();
   check(ambTestApp.graph._nodes[0].widgets[0].value===8,'real comparison apply writes the canvas parameter');
@@ -74,11 +76,13 @@ try {
   check(ambTestApp.graph._nodes[0].widgets[0].value===7,'real comparison undo restores the prior value');
   check(ambTestApp.graph._nodes[0].widgets[1].value===123,'seed is never changed by comparison apply');
   closeCompare();
-  actions.children[2].click();
+  tools.children[2].click();
   await waitFor(()=>document.querySelector('.anomalous-keep-row'));
   check(document.querySelectorAll('.anomalous-keep-row').length===3,'result Keep uses the existing workflow/combo/prompt menu');
   closeKeepMenu();
-  check(imageActions(video,{})===null,'videos offer no unsupported parameter or save-workflow actions');
+  check(![...cards.querySelectorAll('figure')].find(f=>f.querySelector('video'))?.querySelector('.anomalous-ai-pic-tools'),'videos offer no unsupported parameter or save-workflow tools');
+  bar.querySelector('.anomalous-ai-compare-clear').click();
+  check(bar.hidden && !fixture.querySelector('.anomalous-ai-tick.is-on'),'clearing unticks every picture');
   const many=imageResults(Array.from({length:15},(_,i)=>({filename:`${i}.png`})),{});
   fixture.append(many);
   check(many.querySelectorAll('figure').length===12,'initial image DOM is bounded');
@@ -101,9 +105,10 @@ try {
   check(receipt.querySelectorAll('.anomalous-canvas-change').length===4,'remaining changes expand without losing prior rows');
   check(canvasChanges(null).textContent.includes('不可用'),'old records have an explicit unavailable state');
   const comparisonSlider=slider({before:a,after:b});
-  check(Boolean(comparisonSlider.querySelector('.anomalous-ai-comparison')),'AI slider connects to real parameter comparison');
-  fixture.append(imageComparison([a,{filename:'missing.png'}]));
-  fixture.querySelector('.anomalous-ai-comparison button').click();
+  check(Boolean(comparisonSlider.querySelector('.anomalous-ai-slider-compare')),'AI slider connects to real parameter comparison');
+  const broken=imageResults([a,{filename:'missing.png'}],{});fixture.append(broken);
+  tickOf(broken,'a.png').click();tickOf(broken,'missing.png').click();
+  bar.querySelector('.anomalous-ai-compare-go').click();
   await waitFor(()=>document.querySelector('.anomalous-compare-summary.is-error'));
   check(!document.querySelector('.anomalous-compare-apply'),'missing workflow fails without an apply action');
   closeCompare();

@@ -15,6 +15,7 @@
     --ai-scan: var(--amb-warn);
     --ai-note: var(--amb-text-soft);
     --ai-look: var(--amb-text-dim);
+    position: relative; /* the compare bar (41-ai-results.css) sits at its foot */
     display: grid;
     grid-template-columns: minmax(200px, 250px) minmax(0, 1fr);
     flex: 1;

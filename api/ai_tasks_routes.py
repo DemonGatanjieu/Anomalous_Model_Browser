@@ -5,7 +5,7 @@ the writes to this computer)."""
 
 from aiohttp import web
 
-from . import ai_tasks
+from . import activity_log, ai_task_changes, ai_tasks
 
 
 async def api_list(request):
@@ -84,6 +84,7 @@ async def api_message(request):
 
 
 def register_routes(app):
+    activity_log.add_listener(ai_task_changes.note_activity)  # the user's changes while an AI works
     app.router.add_get("/anomalous/ai_tasks", api_list)
     app.router.add_post("/anomalous/ai_tasks", api_start)
     app.router.add_get("/anomalous/ai_tasks/{task_id}", api_get)
