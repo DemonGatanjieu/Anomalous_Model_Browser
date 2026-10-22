@@ -1,8 +1,9 @@
 /**
- * The materials picker's pictures (ui_ai_toolbox.js), all vector and in the theme's colours:
- * line icons for the kinds and actions, a badge for each node source (a custom node pack gets
- * its initials on a colour of its own, the same every time), and the picture of an empty
- * selection. Static SVG text only; nothing from a user or a file goes into it.
+ * The materials picker's pictures (ui_ai_toolbox.js): vector line icons for the kinds and
+ * actions in the theme's colours, a badge for each node source (a custom node pack gets its
+ * initials on a colour of its own, the same every time), and the illustrations in web/assets
+ * (made with ChatGPT for this window): the empty selection, and the stand-in cover of a combo,
+ * workflow or model that has none. Static SVG text only; nothing from a user or a file goes in.
  */
 
 const PATHS = {
@@ -67,21 +68,28 @@ export function sourceBadge(source, size = 26) {
     return badge;
 }
 
-/** The picture of an empty selection: a toolbox with node cards rising out of it. */
-export function emptyPicture() {
-    const holder = document.createElement('div');
-    holder.className = 'anomalous-tb-empty-art';
-    holder.setAttribute('aria-hidden', 'true');
-    holder.innerHTML = `<svg viewBox="0 0 220 150" width="220" height="150" fill="none" stroke-linecap="round" stroke-linejoin="round">
-<g class="tb-art-soft"><circle cx="40" cy="38" r="3"/><circle cx="186" cy="30" r="2.5"/><circle cx="196" cy="98" r="3"/><circle cx="24" cy="102" r="2"/></g>
-<g class="tb-art-card tb-art-a" transform="rotate(-10 72 52)"><rect x="46" y="30" width="54" height="40" rx="7"/><path d="M54 42h22M54 50h32M54 58h16"/><circle cx="100" cy="50" r="3"/></g>
-<g class="tb-art-card tb-art-b" transform="rotate(8 150 46)"><rect x="124" y="24" width="54" height="40" rx="7"/><path d="M132 36h26M132 44h18M132 52h30"/><circle cx="124" cy="44" r="3"/></g>
-<path class="tb-art-link" d="M103 50c10 0 12-6 18-6"/>
-<g class="tb-art-box"><path d="M38 84h144l-10 50H48z"/><path d="M38 84l14-14h116l14 14"/><rect x="92" y="96" width="36" height="12" rx="4"/></g>
-<path class="tb-art-spark" d="M110 10c.8 6 3.2 8.4 9.2 9.2-6 .8-8.4 3.2-9.2 9.2-.8-6-3.2-8.4-9.2-9.2 6-.8 8.4-3.2 9.2-9.2z"/>
-</svg>`;
-    return holder;
+const ART = {
+    empty: new URL('../assets/toolbox_empty.webp', import.meta.url).href,
+    combos: new URL('../assets/toolbox_combo.webp', import.meta.url).href,
+    workflows: new URL('../assets/toolbox_workflow.webp', import.meta.url).href,
+    models: new URL('../assets/toolbox_model.webp', import.meta.url).href,
+};
+
+function art(src, className) {
+    const img = document.createElement('img');
+    img.className = className;
+    img.src = src;
+    img.alt = '';
+    img.decoding = 'async';
+    img.setAttribute('aria-hidden', 'true');
+    return img;
 }
+
+/** The picture of an empty selection: a toolbox with cards rising out of it. */
+export const emptyPicture = () => art(ART.empty, 'anomalous-tb-empty-art');
+
+/** The stand-in cover of a combo, workflow or model without one. */
+export const standInCover = kind => art(ART[kind], 'anomalous-tb-stand-in');
 
 /** The colour ComfyUI draws a socket type with: the open canvas's own when it says, else ComfyUI's defaults. */
 const SOCKET_COLORS = {

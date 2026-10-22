@@ -231,7 +231,7 @@
 .anomalous-tb-cover { display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; overflow: hidden; background: rgba(var(--amb-ink-rgb), 0.06); }
 .anomalous-tb-cover img, .anomalous-tb-detail-cover img { width: 100%; height: 100%; object-fit: cover; }
 .anomalous-tb-card:hover .anomalous-tb-cover img { transform: scale(1.04); transition: transform 0.35s; }
-.anomalous-tb-cover-icon { color: var(--amb-text-dim); opacity: 0.7; }
+.anomalous-tb-cover img.anomalous-tb-stand-in, .anomalous-tb-detail-cover img.anomalous-tb-stand-in { width: 82%; height: 82%; object-fit: contain; }
 .anomalous-tb-card.is-combos .anomalous-tb-cover { background: color-mix(in srgb, #2bb38a 14%, transparent); }
 .anomalous-tb-card.is-workflows .anomalous-tb-cover { background: color-mix(in srgb, #e08a3c 14%, transparent); }
 .anomalous-tb-card.is-models .anomalous-tb-cover { background: color-mix(in srgb, #8a7be0 14%, transparent); }
@@ -252,13 +252,7 @@
 .anomalous-tb-pane { min-width: 0; padding: 16px; overflow-y: auto; border-left: 1px solid var(--amb-border); background: rgba(var(--amb-ink-rgb), 0.025); }
 .anomalous-tb-pane-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 30px; text-align: center; }
 .anomalous-tb-pane-title { color: var(--amb-text-main); font-size: 15px; font-weight: 700; }
-.anomalous-tb-empty-art svg { color: var(--amb-link); }
-.tb-art-box { stroke: var(--amb-text-soft); stroke-width: 2; fill: rgba(var(--amb-ink-rgb), 0.06); }
-.tb-art-card { stroke: var(--amb-link); stroke-width: 2; fill: color-mix(in srgb, var(--amb-link) 14%, transparent); }
-.tb-art-b { stroke: #e08a3c; fill: color-mix(in srgb, #e08a3c 14%, transparent); }
-.tb-art-link { stroke: var(--amb-text-dim); stroke-width: 2; stroke-dasharray: 3 4; }
-.tb-art-spark { fill: #f2b544; }
-.tb-art-soft { fill: var(--amb-text-dim); opacity: 0.5; }
+.anomalous-tb-empty-art { width: 220px; height: 220px; }
 .anomalous-tb-detail { display: flex; flex-direction: column; gap: 12px; }
 .anomalous-tb-detail-cover { aspect-ratio: 16 / 10; overflow: hidden; border-radius: 12px; background: rgba(var(--amb-ink-rgb), 0.06); display: flex; align-items: center; justify-content: center; }
 .anomalous-tb-detail-head { display: flex; align-items: center; gap: 12px; }

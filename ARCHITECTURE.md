@@ -154,7 +154,8 @@ covered by the `styles.css` manifest.
   covers), read ahead when a task header is drawn and kept a minute.
   `web/modules/ui_ai_toolbox_cards.js` draws the cards (a node in miniature with its sockets in
   ComfyUI's colours, covers, prompt text) and the detail pane; `web/modules/ui_ai_toolbox_icons.js`
-  the vector icons, each pack's badge and the empty picture. Favourites (`anomalous/ai_toolbox.json`) stand in until the user picks for
+  the vector icons, each pack's badge, and the illustrations (`web/assets/toolbox_*.webp`, made
+  with ChatGPT): the empty selection and the stand-in cover of a combo, workflow or model. Favourites (`anomalous/ai_toolbox.json`) stand in until the user picks for
   a task. A pick is a `user_toolbox` step the AI gets as a message (kind `toolbox`); begin_task
   names the picks, `get_toolbox` gives them in full, find_nodes lists them first.
   A rewired input shows in the receipt as a `wired` change

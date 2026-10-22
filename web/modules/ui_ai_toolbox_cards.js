@@ -10,7 +10,7 @@
 import { translate as t } from './locales.js';
 import { outputThumbnail } from './ui_kept_toast.js';
 import { recipeAssetUrl } from './ui_recipe_media.js';
-import { icon, socketColor, sourceBadge } from './ui_ai_toolbox_icons.js';
+import { icon, socketColor, sourceBadge, standInCover } from './ui_ai_toolbox_icons.js';
 
 const SOCKETS_SHOWN = 4;
 const withQuery = (url, query) => `${url}${url.includes('?') ? '&' : '?'}${query}`;
@@ -36,7 +36,7 @@ export function coverUrl(item) {
 function picture(item, className) {
     const box = el('div', className);
     const url = coverUrl(item);
-    const fallback = () => box.replaceChildren(icon(item.kind, 30, 'anomalous-tb-cover-icon'));
+    const fallback = () => box.replaceChildren(standInCover(item.kind));
     if (!url) {
         fallback();
         return box;
