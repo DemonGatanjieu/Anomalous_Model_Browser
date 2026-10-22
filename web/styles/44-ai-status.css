@@ -1,14 +1,25 @@
-/* Compact execution status button in the task toolbar + floating popover card. */
+/* Compact execution status icon-button in the task toolbar + unclipped fixed popover card. */
 .anomalous-ai-execution {
     position: relative;
     display: inline-flex;
     align-items: center;
 }
 .anomalous-ai-status-btn {
-    gap: 6px;
+    position: relative;
+    gap: 5px;
     font-variant-numeric: tabular-nums;
 }
-.anomalous-ai- execution.is-open .anomalous-ai-status-btn,
+.anomalous-ai-status-btn.is-icon .anomalous-ai-status-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+}
+.anomalous-ai-status-text {
+    font-size: 12px;
+    font-weight: 600;
+}
 .anomalous-ai-execution.is-open .anomalous-ai-status-btn {
     border-color: var(--amb-border-strong);
     background: rgba(var(--amb-ink-rgb), 0.08);
@@ -37,16 +48,15 @@
 .anomalous-ai-status-dot.is-batch { background: #a78bfa; }
 
 .anomalous-ai-status-popover {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    z-index: 30;
-    width: min(320px, 82vw);
+    position: fixed;
+    z-index: 1000000;
+    width: 300px;
+    box-sizing: border-box;
     padding: 14px 16px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 12px;
     background: var(--amb-bg-panel);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.48);
     color: var(--amb-text-main);
     font-size: 12.5px;
 }

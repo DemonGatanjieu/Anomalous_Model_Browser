@@ -1,11 +1,11 @@
-/** Compact toolbar button + popover for confirmed task execution status (inspired by Claude's status popover). */
+/** Compact toolbar icon-button + fixed-position popover for confirmed task execution status. */
 import { translate as t } from './locales.js';
 import { taskStatus } from './ai_task_status.js';
 import { icon } from './ui_ai_icons.js';
 import { runProgress } from './ui_ai_results.js';
 
 let openTaskId = null;
-let boundOutside = false;
+let boundGlobal = false;
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -14,37 +14,68 @@ function el(tag, className, text) {
     return node;
 }
 
-function bindOutsideClose() {
-    if (boundOutside || typeof document === 'undefined') return;
-    boundOutside = true;
+function closeOpenPopover() {
+    openTaskId = null;
+    const wrap = document.querySelector('.anomalous-ai-execution.is-open');
+    if (wrap) {
+        wrap.classList.remove('is-open');
+        wrap.querySelector('.anomalous-ai-status-popover')?.remove();
+    }
+}
+
+function positionPopover(card, anchor) {
+    if (!anchor?.isConnected) return;
+    const rect = anchor.getBoundingClientRect();
+    const host = anchor.closest('.anomalous-ai-task') || anchor.closest('.anomalous-ai') || document.body;
+    const bounds = host.getBoundingClientRect();
+    const width = Math.min(300, Math.max(220, window.innerWidth - 24));
+    card.style.width = `${width}px`;
+    const minLeft = Math.max(12, bounds.left + 10);
+    const maxLeft = Math.max(minLeft, Math.min(window.innerWidth - width - 12, bounds.right - width - 10));
+    let left = rect.right - width;
+    if (left < minLeft) left = Math.min(Math.max(rect.left, minLeft), maxLeft);
+    left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
+    const top = Math.min(rect.bottom + 6, window.innerHeight - 220);
+    card.style.left = `${Math.round(left)}px`;
+    card.style.top = `${Math.round(Math.max(12, top))}px`;
+}
+
+function bindGlobalListeners() {
+    if (boundGlobal || typeof document === 'undefined') return;
+    boundGlobal = true;
     document.addEventListener('pointerdown', (event) => {
         if (!openTaskId) return;
         const wrap = document.querySelector('.anomalous-ai-execution.is-open');
-        if (wrap && !wrap.contains(event.target)) {
-            openTaskId = null;
-            wrap.classList.remove('is-open');
-            wrap.querySelector('.anomalous-ai-status-popover')?.remove();
-        }
+        if (wrap && !wrap.contains(event.target)) closeOpenPopover();
     });
     document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || !openTaskId) return;
-        const wrap = document.querySelector('.anomalous-ai-execution.is-open');
-        if (wrap) {
-            openTaskId = null;
-            wrap.classList.remove('is-open');
-            wrap.querySelector('.anomalous-ai-status-popover')?.remove();
-        }
+        if (event.key === 'Escape' && openTaskId) closeOpenPopover();
     });
+    window.addEventListener('resize', () => {
+        const wrap = document.querySelector('.anomalous-ai-execution.is-open');
+        const btn = wrap?.querySelector('.anomalous-ai-status-btn');
+        const card = wrap?.querySelector('.anomalous-ai-status-popover');
+        if (btn && card) positionPopover(card, btn);
+    });
+    document.addEventListener('scroll', (event) => {
+        if (!openTaskId) return;
+        const wrap = document.querySelector('.anomalous-ai-execution.is-open');
+        if (wrap && event.target instanceof Node && event.target.contains(wrap)) {
+            const btn = wrap.querySelector('.anomalous-ai-status-btn');
+            const card = wrap.querySelector('.anomalous-ai-status-popover');
+            if (btn && card) positionPopover(card, btn);
+        }
+    }, true);
 }
 
-function buttonLabel(status) {
+function activeLabel(status) {
     if (status.state === 'running' && Number.isFinite(status.run?.progress?.percent)) {
-        return `${t('aiExecution_running')} ${status.run.progress.percent}%`;
+        return `${status.run.progress.percent}%`;
     }
     if (status.state === 'queued' || status.state === 'submitting') {
         return t(`aiExecution_${status.state}`);
     }
-    return t('aiExecution');
+    return '';
 }
 
 function buildPopover(task, status, refresh) {
@@ -92,32 +123,40 @@ function buildPopover(task, status, refresh) {
 }
 
 export function executionStatus(task, refresh) {
-    bindOutsideClose();
+    bindGlobalListeners();
     const status = taskStatus(task);
     const isOpen = openTaskId === task.id;
+    const label = activeLabel(status);
     const wrap = el('div', `anomalous-ai-execution is-${status.state}${isOpen ? ' is-open' : ''}`);
-    const btn = el('button', `anomalous-ai-tool anomalous-ai-status-btn is-${status.state}`);
+    const btn = el('button', `anomalous-ai-tool anomalous-ai-status-btn is-${status.state}${label ? '' : ' is-icon'}`);
     btn.type = 'button';
-    btn.title = `${t('aiExecution')}: ${t(`aiExecution_${status.state}`)}`;
+    const fullTitle = `${t('aiExecution')}: ${t(`aiExecution_${status.state}`)}`;
+    btn.title = fullTitle;
+    btn.setAttribute('aria-label', fullTitle);
     btn.append(
-        el('span', `anomalous-ai-status-dot is-${status.state}`),
         icon('pulse', 15),
-        el('span', '', buttonLabel(status)),
+        el('span', `anomalous-ai-status-dot is-${status.state}`),
     );
+    if (label) btn.append(el('span', 'anomalous-ai-status-text', label));
+
+    const openPopover = () => {
+        wrap.querySelector('.anomalous-ai-status-popover')?.remove();
+        const card = buildPopover(task, status, refresh);
+        wrap.append(card);
+        requestAnimationFrame(() => positionPopover(card, btn));
+    };
+
     btn.onclick = (event) => {
         event.stopPropagation();
         if (openTaskId === task.id) {
-            openTaskId = null;
-            wrap.classList.remove('is-open');
-            wrap.querySelector('.anomalous-ai-status-popover')?.remove();
+            closeOpenPopover();
         } else {
             openTaskId = task.id;
             wrap.classList.add('is-open');
-            wrap.querySelector('.anomalous-ai-status-popover')?.remove();
-            wrap.append(buildPopover(task, status, refresh));
+            openPopover();
         }
     };
     wrap.append(btn);
-    if (isOpen) wrap.append(buildPopover(task, status, refresh));
+    if (isOpen) openPopover();
     return wrap;
 }
