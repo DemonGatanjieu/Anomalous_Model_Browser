@@ -197,6 +197,8 @@ def clean_block(block, at, taken):
                           "reason": _text(item.get("reason"), 200, f"{here}.reason"), "recommended": item.get("recommended") is True})
         out.update(question=_text(block.get("question"), 200, f"{where}.question"), items=items,
                    multiple=block.get("multiple") is True)
+    elif kind == "run_map":  # a run's real shape (ai_run_map.py), drawn by the page from the step; only show_run_map makes it
+        out["step"] = _text(block.get("step"), 20, f"{where}.step", True)
     elif kind == "diagram":
         out.update(_diagram(block, where))
     elif kind == "models":
@@ -448,6 +450,9 @@ def _collect(client, panel_id, task_id=None):
                 message = {"id": step["id"], "task": task["id"], "text": step["text"], "at": step["at"]}
                 if step.get("tool") == "user_activity":
                     message["kind"] = "change"  # something the user changed in Anomalous, not words to the AI
+                elif step.get("tool") == "user_pictures":
+                    from . import ai_pictures
+                    message.update(ai_pictures.message_of(step))  # the pictures themselves go with it
                 elif step.get("tool") == "user_stop":
                     message["kind"] = "stop"  # the user stopped the AI's run (ai_run_control.py)
                 elif step.get("tool") == "user_toolbox":
@@ -550,7 +555,8 @@ def attach_pending(result, client, task_id=None):
         "answer them in Anomalous, not in your chat: report(reply_to=<its id>) with what you see and how you would "
         "fix it (show_panel can show the picture with your own marks), and ask_user which fix to do; "
         "kind=toolbox messages are the nodes, combos, workflows, prompts and models the user picked for you to use; "
-        "kind=stop: the user stopped your run, so do not run it again until they say what to change."
+        "kind=stop: the user stopped your run, so do not run it again until they say what to change; "
+        "kind=pictures: pictures the user handed you (attached), with made_with read from each picture's own workflow."
     )
     pictures = ai_marks.image_items(messages)
     result["structuredContent"] = data

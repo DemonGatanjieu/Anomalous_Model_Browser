@@ -8,14 +8,15 @@ the step's "progress", sent to the page with each change, and status() answers t
 run_status with it, waiting for the end when asked. tell() puts the same news in the AI's
 other answers: where the run stands while it goes, and once that it ended. The console's lines,
 the time left and the card's memory join the progress, and the size each sampler works at with
-its warnings is the step's "estimate" (ai_run_watch.py); a run the user or the AI stopped
+its warnings is the step's "estimate" (ai_run_watch.py), the run's shape in boxes its "map" with
+what changed since the task's run before it (ai_run_map.py); a run the user or the AI stopped
 (ai_run_control.py) ends "cancelled"."""
 
 import json
 import threading
 import time
 
-from . import ai_run_watch, ai_tasks
+from . import ai_run_map, ai_run_watch, ai_tasks
 
 RUN_POLL_SECONDS = 2.0
 MAX_STATUS_WAIT = 55
@@ -200,8 +201,9 @@ def watch(step_id, receipt):
                 queued = {item[1]: item for item in [*running, *pending]}
             except Exception:  # noqa: BLE001 - the queue only helps (estimate, a stopped run); history decides
                 queued = None
-            if not estimated and queued:
-                estimated = _estimate(task_id, step_id, next((queued[pid] for pid in prompts if pid in queued), None))
+            if not estimated:  # from the queue, or from the history of a run that was quicker than this look
+                item = next((queued[pid] for pid in prompts if pid in (queued or {})), None)                     or next(((history.get(pid) or {}).get("prompt") for pid in prompts if (history.get(pid) or {}).get("prompt")), None)
+                estimated = _estimate(task_id, step_id, item)
             if _finish_run(task_id, step_id, prompts, {k: v for k, v in history.items() if v},
                            None if queued is None else set(queued)):
                 return
@@ -220,20 +222,24 @@ def watch(step_id, receipt):
 
 
 def _estimate(task_id, step_id, item):
-    """The run's estimate (ai_run_watch.estimate) from its queued prompt `item`, kept on the step once."""
+    """The run's estimate (ai_run_watch.estimate) and map (ai_run_map) from its queued prompt `item`,
+    kept on the step once, with what changed since the task's run before."""
     if not item or len(item) < 3 or not isinstance(item[2], dict):
         return False
     memory = ai_run_watch.vram()
     try:
         found = ai_run_watch.estimate(item[2], (memory or {}).get("total_mb"))
+        shape = ai_run_map.map_of(item[2])
     except Exception:  # noqa: BLE001 - an odd prompt leaves the run without an estimate, nothing more
         return True
     with ai_tasks._lock:
         task = ai_tasks._load().get(task_id)
-        step = next((entry for entry in (task or {}).get("steps", []) if entry["id"] == step_id), None)
-        if not step:
+        steps = (task or {}).get("steps", [])
+        at = next((index for index, entry in enumerate(steps) if entry["id"] == step_id), None)
+        if at is None:
             return True
-        step["estimate"] = found
+        before = next((entry["map"] for entry in reversed(steps[:at]) if entry.get("tool") == "run_workflow" and entry.get("map")), None)
+        steps[at].update(estimate=found, map=shape, changes=ai_run_map.changes(before, shape))
         ai_tasks._save(task)
     ai_tasks._notify(task_id)
     return True

@@ -23,7 +23,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_gates, ai_panels, ai_run_tracking, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
+from . import ai_gates, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
@@ -166,6 +166,7 @@ async def _call(params, request):
     active_task = step_ref[0] if step_ref else task_id
     if active_task:
         ctx["task"] = active_task
+    canvas_call = ai_task_canvas.begin_call(active_task)  # the page works on the task's own tab
     try:
         # The user's gate first (ai_gates.py): it may wait for their OK, or answer for them.
         result = await asyncio.to_thread(ai_gates.check, name, arguments, step_ref)
@@ -183,6 +184,7 @@ async def _call(params, request):
         ai_tasks.finish_step, client, name, arguments, result, started, read_only,
         step_ref=step_ref, session=session, task_id=active_task,
     )
+    ai_task_canvas.tell(result, canvas_call)
     if name == "run_workflow" and step and step.get("state") == "running":
         ai_task_runs.watch(step["id"], result.get("structuredContent") or {})
         await asyncio.to_thread(ai_run_tracking.wait_for_receipt, result, client, session, active_task,

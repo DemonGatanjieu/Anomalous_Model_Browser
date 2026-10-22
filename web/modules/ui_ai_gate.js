@@ -2,7 +2,8 @@
  * Gates on the AI workbench (api/ai_gates.py): the card under a step that waits for the user's OK
  * (what the AI wants to do; Allow, No with a reason for the AI, and "from now on, go ahead"), what
  * the user answered, and the Gates window where each kind of action is set to go ahead, ask first
- * or never (changing the canvas, using the GPU, downloading, going online).
+ * or never (changing the canvas, using the GPU, downloading, going online), and whether a new
+ * task works in a canvas tab of its own (api/ai_task_canvas.py).
  */
 
 import { translate as t } from './locales.js';
@@ -83,8 +84,11 @@ export async function openGates() {
     const body = el('div', 'anomalous-ai-gates');
     body.append(el('p', 'anomalous-ai-gates-intro', t('aiGatesIntro')));
     let policies = {};
+    let canvasTab = 'new';
     try {
-        policies = (await (await fetch('/anomalous/ai_gates')).json()).policies || {};
+        const known = await (await fetch('/anomalous/ai_gates')).json();
+        policies = known.policies || {};
+        canvasTab = known.canvas_tab || 'new';
     } catch (_) { /* drawn with nothing chosen; a change still saves */ }
     for (const gate of GATES) {
         const row = el('div', 'anomalous-ai-gates-row');
@@ -108,6 +112,25 @@ export async function openGates() {
         row.append(words, choice);
         body.append(row);
     }
-    body.append(el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
+    const row = el('div', 'anomalous-ai-gates-row');
+    const words = el('div', 'anomalous-ai-gates-words');
+    words.append(el('div', 'anomalous-ai-gates-name', t('aiGate_canvasTab')), el('div', 'anomalous-ai-gates-tools', t('aiGateWhy_canvasTab')));
+    const choice = el('div', 'anomalous-ai-gates-choice');
+    choice.setAttribute('role', 'radiogroup');
+    for (const mode of ['new', 'current']) {
+        const option = button(`anomalous-ai-gates-option${canvasTab === mode ? ' is-on' : ''}`, t(`aiCanvasTab_${mode}`), async () => {
+            try {
+                canvasTab = (await post('/anomalous/ai_gates', { canvas_tab: mode })).canvas_tab;
+            } catch (error) {
+                await anomalousAlert(error.message);
+                return;
+            }
+            choice.querySelectorAll('button').forEach((item, at) => item.classList.toggle('is-on', ['new', 'current'][at] === canvasTab));
+        });
+        option.setAttribute('role', 'radio');
+        choice.append(option);
+    }
+    row.append(words, choice);
+    body.append(row, el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
     aiWindow(t('aiGates'), body);
 }

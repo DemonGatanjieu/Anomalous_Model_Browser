@@ -1,14 +1,14 @@
 """The AI workbench's routes over ai_tasks.py (the record) and ai_panels.py (panels, answers,
 messages): the list and one task (reads, open like the other pages), and the writes the page
 makes - start a task, rename or remove one, answer a panel, write to the AI, answer a gate and
-set the gates' policies (ai_gates.py), stop a run (ai_run_control.py) - (local_guard.py keeps the
-writes to this computer)."""
+set the gates' policies (ai_gates.py), stop a run (ai_run_control.py), hand the AI pictures
+(ai_pictures.py) - (local_guard.py keeps the writes to this computer)."""
 
 import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_gates, ai_marks, ai_run_control, ai_task_changes, ai_tasks, ai_toolbox
+from . import activity_log, ai_gates, ai_marks, ai_run_control, ai_task_canvas, ai_task_changes, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -33,11 +33,14 @@ async def api_start(request):
 
 async def api_get(request):
     task = ai_tasks.get_task(request.match_info["task_id"])
+    if task:
+        task["canvas_mode"] = ai_task_canvas.mode_of(task)  # the task's own choice, else the user's default
     return web.json_response({"task": task}) if task else web.json_response({"error": "not_found"}, status=404)
 
 
 async def api_change(request):
-    """POST /anomalous/ai_tasks/{id}: {"title": "…"} renames it, {"remove": true} takes it off the list."""
+    """POST /anomalous/ai_tasks/{id}: {"title": "…"} renames it, {"remove": true} takes it off the list,
+    {"canvas": "new" | "current"} sets whether the AI works in a tab of the task's own."""
     task_id = request.match_info["task_id"]
     try:
         body = await request.json()
@@ -47,6 +50,11 @@ async def api_change(request):
         return web.json_response({"error": "Expected {title} or {remove: true}"}, status=400)
     if body.get("remove") is True:
         return web.json_response({"removed": ai_tasks.remove_task(task_id)})
+    if "canvas" in body:
+        try:
+            return web.json_response({"canvas": ai_task_canvas.set_mode(task_id, body["canvas"])})
+        except ValueError as error:
+            return web.json_response({"error": str(error)}, status=400)
     if "title" in body:
         task = ai_tasks.rename_task(task_id, body["title"])
         return web.json_response({"task": ai_tasks.task_summary(task)}) if task else web.json_response({"error": "not_found"}, status=404)
@@ -110,15 +118,19 @@ async def api_gate(request):
 
 
 async def api_gates(request):
-    """GET /anomalous/ai_gates: {gate: policy}; POST {gate, policy} changes one."""
+    """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab}; POST {gate, policy} changes one,
+    POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py)."""
     if request.method == "GET":
-        return web.json_response({"policies": ai_gates.policies()})
+        return web.json_response({"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode()})
     body = await _body(request)
     try:
-        policies = ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
+        if "canvas_tab" in (body or {}):
+            ai_task_canvas.set_default(body["canvas_tab"])
+        else:
+            ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
     except ValueError as error:
         return web.json_response({"error": str(error)}, status=400)
-    return web.json_response({"policies": policies})
+    return web.json_response({"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode()})
 
 
 async def api_marks(request):
@@ -153,6 +165,19 @@ async def api_toolbox_pick(request):
     try:
         step = ai_toolbox.pick(request.match_info["task_id"], body if body is not None else None, (body or {}).get("mode", "prefer"))
     except ai_toolbox.ToolboxError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    ai_panels.wake()
+    return web.json_response({"step": step})
+
+
+async def api_pictures(request):
+    """POST /anomalous/ai_tasks/{id}/pictures: {images: ["subfolder/name.png"], text?} - the user hands the AI pictures."""
+    from . import ai_panels, ai_pictures
+
+    body = await _body(request)
+    try:
+        step = await asyncio.to_thread(ai_pictures.hand, request.match_info["task_id"], (body or {}).get("images"), (body or {}).get("text") or "")
+    except ai_pictures.PicturesError as error:
         return web.json_response({"error": str(error)}, status=400)
     ai_panels.wake()
     return web.json_response({"step": step})
@@ -201,6 +226,7 @@ def register_routes(app):
     app.router.add_get("/anomalous/ai_tasks/{task_id}/marks/{name}", api_marked)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/toolbox", api_toolbox_pick)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/runs/{step_id}/stop", api_stop)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/pictures", api_pictures)
     app.router.add_get("/anomalous/ai_toolbox", api_toolbox)
     app.router.add_get("/anomalous/ai_toolbox/favorites", api_toolbox)
     app.router.add_post("/anomalous/ai_toolbox/favorites", api_toolbox)

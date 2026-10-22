@@ -289,6 +289,21 @@ once, the size each sampler's `latent_image` works at (following LoadImage's fil
 latents, scale and upscale-model nodes) and keeps `estimate` on the step: warnings for an
 upscale model's output sampled again, a sampler past the card's comfort (4.2 MP on 12 GB,
 scaled by its memory) and a huge `VAEDecode`. `run_status` and `your_run` carry them in words.
+From the same prompt (or the history of a run quicker than the first look) the watcher keeps
+`map` (`api/ai_run_map.py`: boxes by role with their facts, links typed from
+`NODE_CLASS_MAPPINGS[...].RETURN_TYPES`, reroutes and primitives wired through, seeds left out
+of `params`) and `changes` against the task's previous run with a map.
+
+Canvas actions carry the task's own tab: `mcp_server._call` marks the call with its task
+(`ai_task_canvas.begin_call`, a context variable that `asyncio.to_thread` copies), `ask_page`
+adds `_task_canvas: {mode, tab, title}` to the page actions in `TAB_ACTIONS` and keeps the tab
+an outcome reports (`remember`); `tell` adds `canvas_tab` to the answer once when a tab was made.
+The default mode is in `anomalous/ai_canvas.json` (GET/POST `/anomalous/ai_gates` `canvas_tab`),
+a task's own in its `canvas` record (POST `/anomalous/ai_tasks/{id}` `{canvas}`).
+
+`POST /anomalous/ai_tasks/{id}/pictures` (`api/ai_pictures.py`) hands output pictures to an open
+task; pictures handed before the AI looked join one step.
+
 `api/ai_run_control.py` stops a run by its own prompt IDs only (dequeue, then
 `interrupt_if_running`); with `stop` set, an interrupted prompt's "error" history and a
 dequeued prompt's missing one both count as ended and the step becomes `cancelled`.

@@ -58,6 +58,7 @@ TOOLS = {
     "report": Entry("note", None, None),
     "show_panel": Entry("panel", None, None),
     "ask_user": Entry("panel", None, None),
+    "show_run_map": Entry("panel", None, None),
     "begin_task": Entry(None, None, None),
     "track_run": Entry(None, "run", None),  # attaches an existing submission; creates its own run step
     "update_panel": Entry(None, None, None),

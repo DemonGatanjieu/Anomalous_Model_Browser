@@ -4,10 +4,13 @@
  * starts a task with it (POST /anomalous/ai_tasks, `about` naming the model, image or combo, so
  * the AI gets their ids from begin_task) and shows the sentence to paste into the AI app:
  * Anomalous cannot wake an AI by itself. The task waits on the AI workbench until an AI takes it.
+ * Pictures (the inspector's ✦, a gallery card's menu) can instead go to the task open now: the AI
+ * gets the pictures themselves and what made them (POST /anomalous/ai_tasks/{id}/pictures).
  */
 
 import { translate as t } from './locales.js';
-import { anomalousAlert, anomalousPrompt } from './ui_dialog.js';
+import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
+import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { aiWindow, copyLine, openConnectGuide } from './ui_ai_connect.js';
 
 function el(tag, className, text) {
@@ -63,12 +66,52 @@ export function handModelToAi(owner, model, where) {
     return handToAi(owner, t('aiHandModelWish', { name }), [{ type: 'model', model_id: modelId, label: name }]);
 }
 
+/** The task an AI is on now (the latest one not ended), or null. */
+async function openTask() {
+    try {
+        const tasks = (await (await fetch('/anomalous/ai_tasks?limit=20')).json()).tasks || [];
+        return tasks.find(task => !task.ended) || null;
+    } catch (_) {
+        return null;
+    }
+}
+
+/** Hands output pictures `images` ("subfolder/name.png") to `task`'s AI, with the user's words if they want. */
+async function sendPictures(owner, task, images, leave) {
+    const text = await anomalousPrompt(t('aiPicturesWords'), '', t('aiPicturesSend', { count: images.length }), { multiline: true, rows: 3, maxLength: 1000 });
+    if (text === null || text === undefined) return;
+    try {
+        const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(task.id)}/pictures`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ images, text: String(text).trim() }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);
+    } catch (error) {
+        await anomalousAlert(error.message);
+        return;
+    }
+    showWorkbenchToast(t('aiPicturesSent', { count: images.length, task: task.title || t('aiUntitled') }));
+    leave?.();
+}
+
+/** Output pictures to an AI: to the task open now (its AI gets the pictures themselves), or a new task about the first. */
+export async function handPicturesToAi(owner, images, leave = null) {
+    const task = await openTask();
+    if (task) {
+        const toTask = await anomalousConfirm(t('aiPicturesWhere', { task: task.title || t('aiUntitled'), count: images.length }), t('aiHand'),
+            { okLabel: t('aiPicturesToTask'), noLabel: t('aiPicturesNewTask'), okClass: 'anomalous-btn-primary' });
+        if (toTask === null) return;
+        if (toTask) return sendPictures(owner, task, images, leave);
+    }
+    const name = images[0].split('/').pop();
+    return handToAi(owner, t('aiHandImageWish', { name }), [{ type: 'image', image: images[0], label: name }], leave);
+}
+
 /** An output image in the inspector (item: {filename, subfolder, sourceImage}); `leave` closes the inspector. */
 export function handImageToAi(owner, item, leave) {
     const source = item.sourceImage || { type: 'output', filename: item.filename, subfolder: item.subfolder || '' };
     if (source.type && source.type !== 'output') return anomalousAlert(t('aiHandOutputOnly'));
-    const image = [source.subfolder, source.filename].filter(Boolean).join('/');
-    return handToAi(owner, t('aiHandImageWish', { name: source.filename }), [{ type: 'image', image, label: source.filename }], leave);
+    return handPicturesToAi(owner, [[source.subfolder, source.filename].filter(Boolean).join('/')], leave);
 }
 
 /** A saved workflow (its page on the Workflows page). */

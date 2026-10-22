@@ -12,6 +12,7 @@
 import { translate as t } from './locales.js';
 import { outputUrl, isVideo } from './ai_task_view.js';
 import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
+import { runMapBox } from './ui_ai_run_map.js';
 import { decoratePicture } from './ui_ai_images.js';
 
 function el(tag, className, text) {
@@ -269,6 +270,7 @@ const DRAW = {
     divider: () => el('hr', 'anomalous-ai-panel-divider'),
     slider,
     diagram,
+    run_map: (block, ctx) => runMapBox(ctx.stepOf?.(block.step), ctx, true) || el('p', 'anomalous-ai-panel-text', t('aiMapGone')),
     picks: (block, ctx) => picks(block, {
         ...ctx,
         send: async (ids, note) => {
@@ -284,7 +286,8 @@ const DRAW = {
 
 /**
  * The panel of a panel step. `ctx`: `{ taskId, owner, openPicture(url, video), openModel(item),
- * locateNode(id), changed() }` (changed: an answer went in, draw the task again).
+ * locateNode(id), stepOf(id), changed() }` (changed: an answer went in, draw the task again; stepOf:
+ * the task's step of that id, for a run_map block).
  */
 export function renderPanel(step, ctx) {
     const panel = step.panel || {};

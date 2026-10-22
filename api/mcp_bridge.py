@@ -6,7 +6,8 @@ to every open ComfyUI page and waits. One page claims it (the first claim wins, 
 pages claim first: web/modules/mcp_bridge.js), does the action with Anomalous's own canvas
 code and posts the outcome back; `claim` and `resolve` take those posts
 (routes in mcp_server.py). With no page open, or none answering in time, the tool fails
-with words the AI can pass on.
+with words the AI can pass on. Actions on the canvas carry the task's own tab
+(ai_task_canvas.py), and the tab the page made or opened for it is kept.
 """
 
 import threading
@@ -37,6 +38,11 @@ def ask_page(action, args=None, timeout=TIMEOUT_SECONDS, required_capability=Non
     server = _server()
     if not getattr(server, "sockets", None):
         raise PageUnavailable("ComfyUI is not open in a browser on this computer. Open it, then try again.")
+    from . import ai_task_canvas
+
+    task_canvas = ai_task_canvas.spec(action)
+    if task_canvas:
+        args = {**(args or {}), "_task_canvas": task_canvas}
     request_id = uuid.uuid4().hex
     entry = {"event": threading.Event(), "claimed": False, "outcome": None, "required": required_capability}
     with _lock:
@@ -52,6 +58,8 @@ def ask_page(action, args=None, timeout=TIMEOUT_SECONDS, required_capability=Non
         with _lock:
             _waiting.pop(request_id, None)
     outcome = entry["outcome"] or {}
+    if task_canvas and outcome.get("tab"):
+        ai_task_canvas.remember(outcome["tab"])
     if not outcome.get("ok"):
         raise PageRefused(str(outcome.get("error") or "The page could not do that."))
     return outcome.get("value")

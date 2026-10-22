@@ -302,6 +302,23 @@
 
 .anomalous-ai-tool:hover { border-color: var(--amb-border-strong); background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
 .anomalous-ai-tool.is-icon { width: 30px; padding: 0; justify-content: center; }
+/* Where the AI works on the canvas (ui_ai_task_canvas.js): its own tab or the open canvas, and that tab. */
+.anomalous-ai-canvas { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.anomalous-ai-canvas-mode.is-new { border-color: color-mix(in srgb, var(--amb-link) 45%, transparent); color: var(--amb-link); }
+.anomalous-ai-canvas-tab {
+    max-width: 160px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px dashed color-mix(in srgb, var(--amb-link) 50%, transparent);
+    border-radius: 9px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.anomalous-ai-canvas-tab:hover { background: color-mix(in srgb, var(--amb-link) 12%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-canvas-tab-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-tool.is-danger:hover { border-color: color-mix(in srgb, var(--amb-danger) 55%, transparent); background: color-mix(in srgb, var(--amb-danger) 14%, transparent); color: var(--amb-danger-text); }
 
 .anomalous-ai-task-meta {

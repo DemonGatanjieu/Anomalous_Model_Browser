@@ -78,6 +78,19 @@ covered by the `styles.css` manifest.
   a huge decode). `api/ai_run_control.py` stops a run (`stop_run`, the workbench's stop
   button): only its own prompts leave the queue or are interrupted; the step ends `cancelled`
   and a user's stop reaches the AI as a `stop` message. `tests/test_ai_run_watch.py`.
+- `api/ai_run_map.py` reads a run's shape from the prompt ComfyUI queued (plumbing wired
+  through; boxes with a role and facts, links with ComfyUI's types) and what changed since the
+  task's run before; `ai_task_runs.py` keeps both on the run step, `show_run_map` puts it on the
+  stage (a `run_map` block), `web/modules/ui_ai_run_map.js` words and draws it (top down, shrunk
+  to its column). `api/ai_task_canvas.py` keeps each task's own canvas tab (default "new", set in
+  the Gates window or per task): `mcp_bridge.ask_page` gives canvas actions the task's tab,
+  `web/modules/mcp_task_tab.js` brings it to the front by clicking ComfyUI's tab (the store
+  alone would not load its graph) or copies the open workflow into a new one before the first
+  change; `web/modules/ui_ai_task_canvas.js` is the header's switch and the tab's chip.
+  `api/ai_pictures.py` hands the AI output pictures (gallery card menu, the inspector's ✦): a
+  `user_pictures` step, delivered as a `pictures` message with the pictures attached and
+  what made each (read with ai_run_map); `search_images(with_pictures)` attaches the first
+  six. `tests/test_ai_run_map.py`.
 
 - `api/config.py` owns configured paths and active model-folder types.
 - `api/path_utils.py` owns containment, filename validation, atomic JSON writes, and resolving

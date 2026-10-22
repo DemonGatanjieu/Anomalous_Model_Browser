@@ -1,6 +1,6 @@
 /**
- * A gallery card's right-click menu: put the picture on the canvas as a Load Image node, or
- * open its parameters. The picture is uploaded into the input folder the way a dropped file is
+ * A gallery card's right-click menu: put the picture on the canvas as a Load Image node, open
+ * its parameters, or hand it to the AI (ui_ai_handoff.js). The picture is uploaded into the input folder the way a dropped file is
  * (ComfyUI keeps one copy of the same picture): a "name.png [output]" value would be flagged
  * as a missing file by ComfyUI's checks for any picture not made since ComfyUI started.
  */
@@ -11,6 +11,7 @@ import { recordCanvasStep } from './canvas_history.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { canvasPoint, followPointer } from './notebook_canvas.js';
 import { openActionMenu } from './action_menu.js';
+import { handPicturesToAi } from './ui_ai_handoff.js';
 
 /** The output picture uploaded into the input folder; its name there for a Load Image node. */
 async function copyToInput(image) {
@@ -64,5 +65,6 @@ export function openGalleryCardMenu(event, image, { owner, openDetails }) {
     openActionMenu(event, [
         { icon: '🖼️', label: t('galleryInsertAsNode'), run: (click) => insertLoadImageNode(owner, image, click) },
         { icon: '🔍', label: t('materialViewParameters'), run: openDetails },
+        ...(image.type && image.type !== 'output' ? [] : [{ icon: '✦', label: t('aiPicturesMenu'), run: () => handPicturesToAi(owner, [[image.subfolder, image.filename].filter(Boolean).join('/')]) }]),
     ]);
 }

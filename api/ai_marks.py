@@ -160,12 +160,13 @@ def save(task_id, image, png, marks, text="", now=None, mask=None):
 
 
 def image_items(messages):
-    """MCP image items of the marked pictures among `messages` (their thumbnails), taking their
-    private "_marked" paths off the messages."""
+    """MCP image items of the marked pictures among `messages` and of the pictures the user handed
+    over (ai_pictures.py), their thumbnails, taking their private "_marked" / "_pictures" paths off
+    the messages."""
     items = []
     for message in messages:
-        path = message.pop("_marked", None)
-        item = _image_content(path) if path else None
-        if item:
-            items.append(item)
+        for path in [message.pop("_marked", None), *message.pop("_pictures", [])]:
+            item = _image_content(path) if path else None
+            if item:
+                items.append(item)
     return items

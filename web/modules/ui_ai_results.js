@@ -19,6 +19,7 @@ import { audioResult, outputUrl, taskResults } from './ai_task_view.js';
 import { imageResults } from './ui_ai_images.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import { estimateBox, runProgress } from './ui_ai_run_live.js';
+import { runMapBox } from './ui_ai_run_map.js';
 
 export const shared = { owner: null, taskId: null, entries: new Map(), player: null };
 
@@ -106,6 +107,8 @@ export function resultLinks(step, changed = () => {}) {
     if (step.tool === 'run_workflow' && step.state === 'running') box.append(liveRun({ state: 'submitting', ...step.progress, step: step.id, stopping: step.stop || step.progress?.stopping }));
     const sizes = step.tool === 'run_workflow' ? estimateBox(step.estimate) : null;
     if (sizes) box.append(sizes);
+    const shape = step.tool === 'run_workflow' ? runMapBox(step, { locateNode: id => locateNode(id, null) }) : null;
+    if (shape) box.append(shape);
     const pictures = (step.results || []).filter(result => result.type === 'image');
     if (pictures.length) box.append(imageResults(pictures, shared.owner));
     const links = el('div', 'anomalous-ai-links');

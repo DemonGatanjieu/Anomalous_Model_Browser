@@ -3,7 +3,8 @@
  * {id, action, args} as the "anomalous.mcp" event; one open page claims it (a hidden tab
  * waits a moment so a visible one goes first), does it with Anomalous's own canvas code and
  * posts the outcome back. Every change is one Ctrl+Z step, lands in the activity log marked
- * as the AI's (with its undo), and shows a toast. Errors are written for the AI to read.
+ * as the AI's (with its undo), and shows a toast. Errors are written for the AI to read. A
+ * canvas action happens on the task's own tab when the task has one (mcp_task_tab.js).
  */
 
 import { app } from '../../../scripts/app.js';
@@ -14,6 +15,7 @@ import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { postCanvasActivity } from './activity_log.js';
 import { keepUndo, workflowKey } from './canvas_undo.js';
 import { canvasEditActions } from './mcp_canvas_edit.js';
+import { onTaskTab } from './mcp_task_tab.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { chainEnd, mainModelLoaders, planLoraInsertion, spliceLora } from './graph_splice.js';
 import { checkWorkflowModels, fixWorkflowModels, isProblem } from './model_check.js';
@@ -304,12 +306,15 @@ async function handle(detail, getOwner) {
     if (document.visibilityState !== 'visible') await new Promise(resolve => setTimeout(resolve, HIDDEN_PAGE_DELAY_MS));
     const claim = await post({ id, claim: true, capabilities: ['prompt_ids'] }).catch(() => null);
     if (!claim?.granted) return; // another tab took it
+    const { _task_canvas: taskCanvas, ...given } = args || {};
     let outcome;
+    let tab = null; // a tab made or opened for the task is kept even when the action then fails
     try {
-        outcome = { ok: true, value: (await run(args || {}, getOwner)) ?? null };
+        outcome = { ok: true, value: (await onTaskTab(action, taskCanvas, () => run(given, getOwner), (made) => { tab = made; })) ?? null };
     } catch (error) {
         outcome = { ok: false, error: String(error?.message || error) };
     }
+    if (tab) outcome.tab = tab;
     await post({ id, outcome }).catch(error => console.warn('[AMB] MCP: could not send the result back.', error));
 }
 

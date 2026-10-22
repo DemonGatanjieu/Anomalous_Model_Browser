@@ -37,6 +37,7 @@ from .scan_report import last_scan_path
 from .scan_summary import _summarize
 
 MAX_LIMIT = 50
+MAX_SEARCH_PICTURES = 6  # search_images(with_pictures): the first few attached
 MAX_TEXT = 1500
 MAX_IMAGE_BYTES = 1_500_000
 IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
@@ -256,7 +257,7 @@ def scan_report():
 
 # ---------------------------------------------------------------- outputs
 
-def search_images(query="", limit=20, page=1):
+def search_images(query="", limit=20, page=1, with_pictures=False):
     images = _gallery_listing(folder_paths.get_output_directory(), False, str(query or "").strip())
     limit = _limit(limit)
     try:
@@ -265,7 +266,7 @@ def search_images(query="", limit=20, page=1):
         page = 1
     kept = _kept_lookup()
     chosen = images[(page - 1) * limit:page * limit]
-    return {
+    found = {
         "total_matches": len(images), "page": page,
         "images": [{"image": "/".join(part for part in (item["subfolder"], item["filename"]) if part),
                     "created": _when(item.get("mtime")),
@@ -273,6 +274,15 @@ def search_images(query="", limit=20, page=1):
                        if (item["subfolder"], item["filename"]) in kept else {})}
                    for item in chosen],
     }
+    if not with_pictures:
+        return found
+    pictures = []  # the first few themselves, in the order listed, so an AI that sees pictures need not ask for each
+    for entry in found["images"][:MAX_SEARCH_PICTURES]:
+        item = _image_content(_resolve_image(entry["image"])[1])
+        entry["attached"] = bool(item)
+        if item:
+            pictures.append(item)
+    return found, pictures
 
 
 def get_image_info(image, include_image=False):
@@ -448,8 +458,10 @@ TOOLS = dict([
           scan_report),
     _tool("search_images", "Search output images",
           "Find images ComfyUI generated, newest first, by words in their prompt, model or settings (e.g. a LoRA "
-          "name or 'seed:123'). Returns image paths for get_image_info.",
-          search_images, {"query": _QUERY, "limit": _LIMIT, "page": {"type": "integer", "minimum": 1, "default": 1}}),
+          "name or 'seed:123'). Returns image paths for get_image_info. with_pictures attaches the first 6 "
+          "themselves (512 px), in the listed order, so you can look at them at once.",
+          search_images, {"query": _QUERY, "limit": _LIMIT, "page": {"type": "integer", "minimum": 1, "default": 1},
+                          "with_pictures": {"type": "boolean", "default": False}}),
     _tool("get_image_info", "Image generation settings",
           "The nodes and settings that produced an output image (prompts, models, seed, sampler…) and whether the "
           "user kept it as a recipe, combo or prompt. include_image attaches a 512 px copy.",

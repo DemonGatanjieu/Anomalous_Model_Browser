@@ -10,7 +10,12 @@ localization, media, or explicit canvas mutations.
 with a stop button beside it while a run goes. `web/modules/ui_ai_run_live.js` draws a running run for both the
 popover and the timeline: bar and percent, time left and per step, VRAM, the console's note and last lines in a
 `<details>`, the stop button (`POST /anomalous/ai_tasks/{id}/runs/{step}/stop`), and the step's size `estimate`
-with its warnings (also kept after the run).
+with its warnings (also kept after the run). `web/modules/ui_ai_run_map.js` draws a run's `map` under its step
+(one line, the changes as chips, the boxes in a `<details>`, scaled to the column) and for a `run_map` stage block
+(the panel ctx's `stepOf`). `web/modules/mcp_task_tab.js` wraps each page action in `mcp_bridge.js`: with the task's
+mode "new", it clicks the task tab's button in `.workflow-tabs` (falling back to `Workspace.NextOpenedWorkflow`)
+and waits for `activeWorkflow` to be it, or copies `app.graph.serialize()` into a new tab before a change; the outcome
+reports `tab`. `ui_ai_task_canvas.js` is the header's mode switch and tab chip.
 The header shares progress with the timeline. Websocket updates also update the in-memory
 step; a five-second visible-page refresh recovers missed events. The loop stops when the
 workbench/page is hidden or removed, and resumes on open or browser visibility return.

@@ -37,6 +37,7 @@ import { compareBar, setMarker } from './ui_ai_images.js';
 import { marksStep, openMarker } from './ui_ai_marker.js';
 import { toolboxButton, toolboxStep } from './ui_ai_toolbox.js';
 import { executionStatus } from './ui_ai_status.js';
+import { canvasControls } from './ui_ai_task_canvas.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import {
     activityIds, duration, groupSteps, lookTools, stepDetail, taskCounts, taskResults, taskState, toolKey,
@@ -137,6 +138,9 @@ function stepRow(step, number) {
         body.append(toolboxStep(step));
     } else if (step.tool === 'user_activity') {
         body.append(userChange(step));
+    } else if (step.tool === 'user_pictures') {
+        body.append(el('div', 'anomalous-ai-user-text', step.text || t('aiPicturesStep', { count: (step.results || []).length })),
+            el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiPicturesSeen' : 'aiMessageWaiting')));
     } else if (step.tool === 'user_stop') {
         body.append(el('div', 'anomalous-ai-user-text', t('aiRunStoppedByYou')),
             el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
@@ -260,7 +264,7 @@ function renderTask() {
     if (state.stage.hidden && panelSteps(task).length) {
         tools.append(iconButton('anomalous-ai-tool', 'panel', t('aiStageShow'), () => pickTab('stage')));
     }
-    tools.append(executionStatus(task, refresh), toolboxButton(task, () => void refresh()));
+    tools.append(executionStatus(task, refresh), canvasControls(task, () => void refresh(), () => state.owner?.close?.()), toolboxButton(task, () => void refresh()));
     if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
         tools.append(iconButton('anomalous-ai-tool', 'undo', t('aiUndoAll'), () => undoAll(task)));
     }
@@ -340,6 +344,7 @@ function drawStage(task, arrived = null) {
         openPicture: (url, video) => state.owner?.showGalleryViewer?.(url, video),
         openModel,
         locateNode: id => locateNode(id, null),
+        stepOf: id => task.steps.find(item => item.id === id),
         changed: () => void refresh(),
         numberOf: id => state.numbers.get(id) || '',
         tab: pickTab,

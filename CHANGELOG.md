@@ -5,6 +5,12 @@
 - AI 工作台任务工具栏新增小巧的“运行状态”按钮与浮窗（移除遮挡时间线的常驻大横条）：点开即可查看真实运行状态、排队、节点进度、用时和结果，运行中直接在按钮上显示进度百分比；没有收到运行信息时明确提示，不再空转显示“AI 正在工作”或把沉默当成完成。页面可见时自动补查状态。运行工具默认等待 15 秒并返回实际结果；外部提交可用 `track_run` 接入准确的运行 ID，不会重新出图。
 - The AI workbench now places confirmed execution state, queue/node progress, elapsed time and results inside a compact toolbar button and popover (instead of a tall sticky banner), with visible-page refresh. Untracked work and silence are explicit. Run calls wait briefly for real results; `track_run` attaches external submission IDs without resubmitting.
 
+### 看得见 AI 跑了什么、专用标签页、图片直接给 AI / What the AI ran, its own tab, pictures straight to the AI
+- 每次运行下面都有 **节点结构**：一行写明底模、几个 LoRA、尺寸、步数，点开是方块图（LoRA 带权重、正负提示词、采样器设置……，点方块定位到画布上的节点），还用黄色小块标出 **比上次改了什么**，比如“步数 20 → 30”“LoRA 权重 0.65 → 0.8”“新增「加载LoRA」”。图是 AMB 按 ComfyUI 实际收到的工作流画的，不靠 AI 描述；AI 讲解时用新工具 `show_run_map` 一次把它放上展台。
+- **AI 的专用标签页**（默认开）：AI 第一次改画布前，AMB 把你正开着的工作流复制到以任务命名的新标签页，之后它只在那一页改和运行；你切去别处，它下次动手前会切回来；你原来的工作流一笔不动。任务标题栏能切换“专用标签页 / 当前画布”、点标签页名字跳过去；关卡窗口里设定新任务的默认做法。
+- **图片直接发给 AI**：图库右键“发给 AI”或看图窗口的 ✦，可以发给 AI 正在做的任务（也能开新任务），可附一句话。AI 收到图片本身和从图里读出的模型、LoRA、提示词、尺寸、采样设置。AI 搜图库时也能让结果直接带上前 6 张图。
+- Each run shows the shape ComfyUI actually ran (boxes, links, settings; boxes locate their nodes) and what changed since the run before; `show_run_map` puts it on the stage. By default the AI works in a tab of the task's own: the open workflow is copied before its first change and brought back before later ones, the user's tab untouched (per task, and a default in the Gates window). Output pictures can be handed to the task an AI is on (gallery menu, inspector): the AI gets them attached with what made them; `search_images(with_pictures)` attaches the first six.
+
 ### 运行时看得更清楚，也能一键停 / See more of a run, and stop it in one click
 - AI 运行工作流时，进度条旁边多了红色的 **■ 停止**（任务工具栏的运行状态按钮旁边也有）：一点就停下这一次运行，排队中的移出队列、正在跑的立刻中断，只动这次运行。时间线上记着“你停止了运行”，AI 也会收到，不会自己再跑一遍；AI 自己也能用新工具 `stop_run` 停掉自己的运行。
 - 进度条下面多了当前节点**约剩多久**、每步几秒、**显存还剩多少**，以及 ComfyUI **控制台**最新的一行（比如放大模型加载、`Model Initializing ...`），点开看最近几行。AI 收到的进度里也有这些，不用再去翻控制台。

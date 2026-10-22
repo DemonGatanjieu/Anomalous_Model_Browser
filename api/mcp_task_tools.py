@@ -20,6 +20,8 @@ def begin_task(ctx, title, new_task=False):
                                          "Use run_workflow to submit and see real execution progress. If you submit via /prompt or another tool, "
                                          "immediately call track_run(prompt_ids, task) with the exact IDs from YOUR submission response. "
                                          "External work is invisible until attached; never guess ownership from the global queue. "
+                                         "When the user's setting is a tab of the task's own, Anomalous keeps your canvas work in it "
+                                         "(it copies their open workflow there before your first change); do not switch tabs yourself. "
                                          "Every AMB tool call from now on is a step of this task in Anomalous's AI workbench, "
                                          "where the user sees, opens and undoes them. Call report to explain a choice "
                                          "or to hand in pictures you made another way; report with done=true at the end."}
@@ -109,6 +111,23 @@ def run_status(ctx, wait_seconds=0, task=None):
         return ai_task_runs.status(ctx.get("client") or "AI", ctx.get("session") or "", task or ctx.get("task"), wait_seconds)
     except ValueError as error:
         raise ToolError(str(error))
+
+
+def show_run_map(ctx, title, run=None, task=None):
+    client, session = ctx.get("client") or "AI", ctx.get("session") or ""
+    task_id = ai_tasks.active_task_id(client, session, task or ctx.get("task"))
+    runs = [step for step in (ai_tasks.get_task(task_id) or {}).get("steps", []) if step.get("tool") == "run_workflow"] if task_id else []
+    found = next((step for step in reversed(runs) if step.get("map") and (not run or step["id"] == run)), None)
+    if not found:
+        raise ToolError("No run of this task has its shape yet: it is read once ComfyUI has queued the run (run_workflow).")
+    try:
+        panel = ai_panels.show(client, title, [{"type": "run_map", "step": found["id"]}], session=session, task_id=task_id,
+                               tool="show_run_map")
+    except ai_panels.PanelError as error:
+        raise ToolError(str(error))
+    boxes = found["map"]["boxes"]
+    return {"panel": panel["id"], "shown": True, "run": found["id"], "changes": found.get("changes") or [],
+            "boxes": [{"node_id": box["id"], "title": box["title"], "role": box["role"]} for box in boxes]}
 
 
 def stop_run(ctx, task=None):
@@ -270,6 +289,13 @@ TASK_TOOLS = dict([
                "carry the same news as your_run, and once more when it ends.",
                run_status, {"wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_task_runs.MAX_STATUS_WAIT, "default": 0},
                             "task": _TASK_PROP}),
+    _task_tool("show_run_map", "Show what the run really was",
+               "Puts the shape of your task's latest run (or `run`, a run step id) on the user's stage: the nodes it "
+               "really ran as boxes (models, LoRAs with weights, prompts, size, sampler settings, saving), linked, "
+               "each one locates its node on the canvas, with what changed since the run before. Anomalous reads it "
+               "from the prompt ComfyUI queued, so use this instead of drawing the workflow yourself; add your "
+               "explanation with report. title: a few words in the user's language.",
+               show_run_map, {"title": {"type": "string"}, "run": {"type": "string"}, "task": _TASK_PROP}, ["title"]),
     _task_tool("stop_run", "Stop the run",
                "Stops your task's run that is still going: its prompts still queued leave ComfyUI's queue and the one "
                "running is interrupted (never anyone else's). Use it when run_status warns that the run is far too big "

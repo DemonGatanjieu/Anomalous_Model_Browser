@@ -98,7 +98,7 @@ function wire(g, from, slot, to, target) {
 }
 
 /** A new tab's name: the AI's words and the time, so it never opens a saved workflow of that name. */
-function tabName(name) {
+export function tabName(name) {
     const words = String(name || '').replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 60) || 'AI workflow';
     const now = new Date();
     return `${words} ${[now.getHours(), now.getMinutes(), now.getSeconds()].map(n => String(n).padStart(2, '0')).join('')}`;
