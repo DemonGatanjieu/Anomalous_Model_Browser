@@ -92,6 +92,33 @@ export function isVideo(result) {
     return /\.(mp4|webm)$/i.test(String(result?.filename || ''));
 }
 
+/** Only output pictures can enter the gallery's parameter and keep workflows. */
+export function outputPicture(result) {
+    if (!result?.filename || isVideo(result) || (result.folder && result.folder !== 'output')) return null;
+    if (!/\.(png|jpe?g|webp|gif)$/i.test(result.filename)) return null;
+    return { type: 'output', filename: result.filename, subfolder: result.subfolder || '' };
+}
+
+export const pictureKey = image => JSON.stringify([image.folder || 'output', image.subfolder || '', image.filename]);
+
+/** One file may be mentioned by both a run and a report; keep its first position. */
+export function uniquePictures(images) {
+    const seen = new Set();
+    return (images || []).filter(image => {
+        if (!image?.filename) return false;
+        const key = pictureKey(image);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+/** Thumbnails for output pictures; other media retain their actual ComfyUI address. */
+export function picturePreview(result) {
+    const source = outputPicture(result);
+    return source ? `/anomalous/output_thumbnail?${new URLSearchParams({ filename: source.filename, subfolder: source.subfolder })}` : outputUrl(result);
+}
+
 /** How long a step took, as `{ key, values }`, or null for quick ones. */
 export function duration(ms) {
     if (!(ms >= 1000)) return null;

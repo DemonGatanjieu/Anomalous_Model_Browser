@@ -12,6 +12,7 @@ import { changeNodeId } from './activity_diff.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { newestCompareButton } from './ui_param_compare.js';
+import { canvasChanges } from './ui_canvas_changes.js';
 
 const FILTERS = [['', 'activityAll'], ['canvas', 'activityCanvas'], ['file', 'activityFiles']];
 const PAGE_SIZE = 300;
@@ -95,7 +96,8 @@ function renderEntry(entry, { compact = false, owner = null } = {}) {
     head.setAttribute('aria-expanded', 'false');
     const details = el('div', 'anomalous-activity-details');
     details.hidden = true;
-    for (const { text, label, onClick } of lines) {
+    if (entry.source === 'canvas') details.append(canvasChanges(entry, { locate: change => locateNode(change, note) }));
+    for (const { text, label, onClick } of entry.source === 'canvas' ? [] : lines) {
         const line = el('div', 'anomalous-activity-change');
         line.appendChild(el('span', 'anomalous-activity-change-text', text));
         line.title = text;
@@ -104,7 +106,7 @@ function renderEntry(entry, { compact = false, owner = null } = {}) {
     }
     const shown = entry.source === 'canvas' ? lines.length : (entry.detail?.files || []).length;
     const total = entry.detail?.total || shown;
-    if (total > shown) details.appendChild(el('div', 'anomalous-activity-more', t('activityMore', { count: total - shown })));
+    if (entry.source !== 'canvas' && total > shown) details.appendChild(el('div', 'anomalous-activity-more', t('activityMore', { count: total - shown })));
     details.appendChild(note);
     const toggle = () => {
         details.hidden = !details.hidden;

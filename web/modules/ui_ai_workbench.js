@@ -52,6 +52,8 @@ const state = {
     entries: shared.entries, // activity entries of its canvas steps, for undo and locate (ui_ai_results.js)
     narrowView: 'list',
     refreshTimer: null,
+    request: 0,       // newer navigation/refresh invalidates older responses
+    observer: null,
 };
 
 function el(tag, className, text) {
@@ -160,7 +162,7 @@ function stepRow(step, number) {
     }
     if (step.error) body.append(el('div', 'anomalous-ai-step-error', step.error));
     if (running) body.append(el('div', 'anomalous-ai-step-running', t(step.kind === 'run' ? 'aiRunRunning' : 'aiStepRunning')));
-    const links = resultLinks(step);
+    const links = resultLinks(step, renderTask);
     if (links) body.append(links);
     const when = el('div', 'anomalous-ai-step-when');
     when.append(el('span', '', timeLabel(step.at)));
@@ -221,7 +223,7 @@ function renderTask() {
     if (!view || view.taskId !== task.id || !box.contains(view.timeline)) {
         view = state.view = {
             taskId: task.id, header: el('div', 'anomalous-ai-task-head'), made: el('div', 'anomalous-ai-made-holder'),
-            timeline: el('div', 'anomalous-ai-timeline'), madeKey: null,
+            timeline: el('div', 'anomalous-ai-timeline'), madeKey: null, comparison: {},
             message: messageBox(async (text) => {
                 await postTask(task.id, { text }, 'message');
                 await refresh();
@@ -272,7 +274,7 @@ function renderTask() {
     const madeKey = JSON.stringify(taskResults(task));
     if (madeKey !== view.madeKey) {
         view.madeKey = madeKey;
-        const made = strip(task);
+        const made = strip(task, view.comparison);
         view.made.replaceChildren(...(made ? [made] : []));
     }
 
@@ -380,7 +382,7 @@ function foldTasks(folded) {
 /** Which canvas changes of a step can be undone now (part of when its row is drawn again). */
 function undoable(step) {
     return (step.results || []).filter(result => result.type === 'canvas')
-        .map(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)));
+        .map(result => [state.entries.get(result.activity) || null, state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity))]);
 }
 
 /** Rows into `parent` in this order, keeping those whose key is the same (they are not touched). */
@@ -398,22 +400,28 @@ function syncRows(parent, rows) {
 
 async function loadEntries(task) {
     const wanted = new Set(taskResults(task).canvas.map(result => result.activity));
-    if (!wanted.size || [...wanted].every(id => state.entries.has(id))) return;
-    const entries = await fetchActivity({ limit: 500, source: 'canvas' }).catch(() => []);
-    for (const entry of entries) if (wanted.has(entry.id)) state.entries.set(entry.id, entry);
+    const kept = new Map([...state.entries].filter(([id]) => wanted.has(id)));
+    if (wanted.size && [...wanted].some(id => !kept.has(id))) {
+        const entries = await fetchActivity({ limit: 500, source: 'canvas' });
+        for (const entry of entries) if (wanted.has(entry.id)) kept.set(entry.id, entry);
+    }
+    return kept;
 }
 
 async function select(id) {
+    const request = ++state.request;
     state.selected = id;
     state.narrowView = 'task';
     state.page?.querySelectorAll('.anomalous-ai-task-row').forEach(row => row.classList.remove('is-current'));
     renderList(state.page.querySelector('.anomalous-ai-tasks'));
     layout();
     const task = await fetchTask(id).catch(() => null);
-    if (state.selected !== id) return;
+    if (state.selected !== id || request !== state.request) return;
+    const entries = task ? await loadEntries(task).catch(() => new Map()) : new Map();
+    if (state.selected !== id || request !== state.request) return;
     state.task = task;
-    if (task) await loadEntries(task);
-    if (state.selected === id) renderTask();
+    shared.entries = state.entries = entries;
+    renderTask();
 }
 
 // ---------------------------------------------------------------- the page
@@ -443,8 +451,9 @@ function emptyPage() {
 
 async function refresh() {
     if (!state.page) return;
+    const request = ++state.request;
     const tasks = await fetchTasks().catch(() => null);
-    if (!tasks || !state.page) return;
+    if (!tasks || !state.page || request !== state.request) return;
     state.tasks = tasks;
     if (!tasks.length) {
         state.page.replaceChildren(emptyPage());
@@ -464,8 +473,11 @@ async function refresh() {
     }
     renderList(state.page.querySelector('.anomalous-ai-tasks'));
     const task = await fetchTask(state.selected).catch(() => null);
+    if (request !== state.request) return;
+    const entries = task ? await loadEntries(task).catch(() => new Map()) : new Map();
+    if (request !== state.request) return;
     state.task = task;
-    if (task) await loadEntries(task);
+    shared.entries = state.entries = entries;
     renderTask();
     layout();
 }
@@ -476,9 +488,13 @@ export function renderAiWorkbench(owner, panel) {
     shared.owner = owner;
     state.panel = panel;
     if (!state.page || state.page.parentNode !== panel) {
+        state.observer?.disconnect();
         state.page = el('div', 'anomalous-ai');
         panel.replaceChildren(state.page);
-        if (typeof ResizeObserver === 'function') new ResizeObserver(layout).observe(state.page);
+        if (typeof ResizeObserver === 'function') {
+            state.observer = new ResizeObserver(layout);
+            state.observer.observe(state.page);
+        }
     }
     owner.railNews?.('ai', false);
     hidePanelToast();

@@ -197,6 +197,14 @@ covered by the `styles.css` manifest.
   own file loading, drag onto the canvas) and the diagram (boxes and arrows; a box naming a
   canvas node finds it). `ui_ai_stage.js` draws them, `ai_stage_layout.js` holds where they go
   without DOM (a diagram's layers by its longest chain of arrows, boxes, arrow ends, marks).
+- `ui_ai_images.js` connects task outputs and panel pictures to the existing image inspector,
+  keep menu and `ui_param_compare.js`. Image-pair choices belong to the task view and survive
+  result refreshes; candidates are unique output pictures (no videos or temporary files).
+  Thumbnails load initially, metadata only after an explicit action. `ui_canvas_changes.js`
+  renders the activity record's bounded before/after receipt for both the AI timeline and
+  `ui_activity.js`, with a caller-owned locate action. Missing records show unavailable;
+  receipts never reconstruct history from the current graph. The workbench retains only
+  its selected task's activity entries and ignores superseded refresh/navigation responses.
 - `api/backup.py` is Settings → Backup (`/anomalous/backup/*`): one .zip of the user's stores
   (recipes, combos, materials, parameters, optionally ComfyUI's saved workflows), the plugin
   settings without the Civitai key, and each model's user layer and own cover; putting it

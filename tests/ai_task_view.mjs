@@ -1,7 +1,7 @@
 // The AI workbench's rules (web/modules/ai_task_view.js): folding reads, words, counts, addresses.
 import assert from 'node:assert/strict';
 import {
-    audioResult, duration, groupSteps, isVideo, lookTools, outputUrl, stepDetail, taskCounts, taskResults, taskState, toolKey,
+    audioResult, duration, groupSteps, isVideo, lookTools, outputUrl, outputPicture, pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
 const look = (tool, ok = true, state = 'done') => ({ kind: 'look', tool, ok, state, summary: tool });
@@ -49,6 +49,17 @@ assert.deepEqual(audioResult({ file: 'audio/Aris/a.flac' }), { filename: 'a.flac
 assert.deepEqual(audioResult({ file: 'a.flac' }), { filename: 'a.flac', subfolder: '', folder: 'output' });
 assert.equal(isVideo({ filename: 'clip.MP4' }), true);
 assert.equal(isVideo({ filename: 'a.png' }), false);
+
+// Output-only reuse: never compare an input/temp file with a same-named output by accident.
+assert.equal(outputPicture({ filename: 'a.png', folder: 'temp' }), null);
+assert.equal(outputPicture({ filename: 'a.mp4' }), null);
+assert.equal(outputPicture({ filename: 'a.flac' }), null);
+assert.deepEqual(outputPicture({ filename: 'a.png', subfolder: 'x' }), { type: 'output', filename: 'a.png', subfolder: 'x' });
+const repeated = uniquePictures([{ filename: 'a.png' }, { filename: 'a.png', folder: 'output' }, { filename: 'a.png', subfolder: 'b' }]);
+assert.equal(repeated.length, 2);
+assert.notEqual(pictureKey(repeated[0]), pictureKey(repeated[1]));
+assert.match(picturePreview({ filename: 'a b.png', subfolder: 'x/y' }), /^\/anomalous\/output_thumbnail\?filename=a\+b.png&subfolder=x%2Fy$/);
+assert.equal(picturePreview({ filename: 'a.mp4' }), outputUrl({ filename: 'a.mp4' }));
 
 // How long a step took.
 assert.equal(duration(400), null);

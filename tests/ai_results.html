@@ -1,0 +1,113 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>AI result integration regression</title>
+<link rel="stylesheet" href="../web/styles/07-prompt-studio.css">
+<link rel="stylesheet" href="../web/styles/27-param-compare.css">
+<link rel="stylesheet" href="../web/styles/37-ai-workbench.css">
+<link rel="stylesheet" href="../web/styles/41-ai-results.css">
+<style>
+  :root { --amb-bg-panel:#202027; --amb-text-main:#eee; --amb-text-soft:#bbb; --amb-text-dim:#999; --amb-border:#454550; --amb-link:#b39eef; --amb-ok:#52b98d; --amb-ink-rgb:240,240,250; --amb-scrim:#0008; }
+  body { background:#17171b; color:#eee; font:14px sans-serif; margin:20px; }
+  #fixture { max-width:760px; } #results { white-space:pre-wrap; }
+</style>
+<!-- Host graph and network are the only substituted boundaries. All AMB rendering/actions are real imports. -->
+<script type="importmap">{"imports":{"/scripts/app.js":"data:text/javascript,export const app = globalThis.ambTestApp;","/scripts/api.js":"data:text/javascript,export const api = new EventTarget();"}}</script>
+<script>
+  const sampler = cfg => ({id:3,type:'TestSampler',title:'Sampler',mode:0,inputs:[],widgets:[{name:'cfg',value:cfg},{name:'seed',value:123}]});
+  const graph = {_nodes:[sampler(7)],links:{},getNodeById(id){return this._nodes.find(node=>String(node.id)===String(id));}};
+  globalThis.ambTestApp = {graph,rootGraph:graph,canvas:{graph}};
+  globalThis.LiteGraph = {LGraph:class {configure(workflow){this._nodes=workflow.nodes;this.links={};}}};
+  const requests = [];
+  globalThis.fetch = async (url,options={}) => {
+    requests.push(String(url));
+    if(String(url).includes('inspect_image_material')) {
+      const source=JSON.parse(options.body).source_image;
+      if(source.filename==='missing.png') return new Response('{}',{status:400});
+      return new Response(JSON.stringify({workflow:{nodes:[sampler(source.filename==='b.png'?8:7)]}}),{headers:{'Content-Type':'application/json'}});
+    }
+    if(String(url).includes('kept_images')) return new Response(JSON.stringify({images:[]}));
+    throw Error(`Unexpected request: ${url}`);
+  };
+</script>
+<pre id="results">Running…</pre>
+<div id="fixture"></div>
+<script type="module">
+import { imageActions, imageComparison, imageResults } from '../web/modules/ui_ai_images.js';
+import { canvasChanges } from '../web/modules/ui_canvas_changes.js';
+import { pictureKey } from '../web/modules/ai_task_view.js';
+import { closeKeepMenu } from '../web/modules/ui_keep_menu.js';
+import { slider } from '../web/modules/ui_ai_stage.js';
+const fixture=document.querySelector('#fixture'), results=document.querySelector('#results');
+const a={filename:'a.png'}, b={filename:'b.png'}, c={filename:'c.png'}, video={filename:'clip.mp4'};
+const check=(value,message)=>{if(!value)throw Error(message);results.textContent+=`PASS ${message}\n`;};
+const settle=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+const waitFor=async predicate=>{for(let i=0;i<120;i++){if(predicate())return;await settle();}throw Error('Timed out');};
+const closeCompare=()=>document.querySelector('.anomalous-compare-done').click();
+try {
+  results.textContent='';
+  const choice={};
+  let compare=imageComparison([a,b,a,video,{filename:'a.png',folder:'temp'}],choice);
+  fixture.append(compare);
+  check(compare.querySelectorAll('option').length===4,'comparison excludes videos/temp files and duplicate results');
+  check(requests.length===0,'rendering result actions does not preload metadata');
+  const select=compare.querySelector('select');
+  select.value=pictureKey(b);select.dispatchEvent(new Event('change'));
+  check(compare.querySelector('button').disabled,'the same image cannot be compared to itself');
+  select.value=pictureKey(a);select.dispatchEvent(new Event('change'));
+  compare.replaceWith(imageComparison([a,b,c],choice));
+  compare=fixture.querySelector('.anomalous-ai-comparison');
+  check(compare.querySelectorAll('select')[1].value===pictureKey(b),'arriving results preserve the chosen pair');
+  compare.querySelector('button').click();
+  await waitFor(()=>document.querySelector('.anomalous-compare-row:not(.is-head)'));
+  check([...document.querySelectorAll('.anomalous-compare-value')].map(n=>n.textContent).join(',')==='7,8','actual parameter comparer reads workflows and displays cfg difference');
+  closeCompare();
+  const actions=imageActions(b,{});fixture.append(actions);
+  actions.children[1].click();
+  await waitFor(()=>document.querySelector('.anomalous-compare-apply'));
+  document.querySelector('.anomalous-compare-apply').click();
+  check(ambTestApp.graph._nodes[0].widgets[0].value===8,'real comparison apply writes the canvas parameter');
+  await waitFor(()=>document.querySelector('.anomalous-mixer-toast.is-show'));
+  const undo=document.querySelector('.anomalous-mixer-toast-action');
+  const r=undo.getBoundingClientRect();
+  check(undo.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),'Undo remains clickable above the comparison overlay');
+  undo.click();
+  check(ambTestApp.graph._nodes[0].widgets[0].value===7,'real comparison undo restores the prior value');
+  check(ambTestApp.graph._nodes[0].widgets[1].value===123,'seed is never changed by comparison apply');
+  closeCompare();
+  actions.children[2].click();
+  await waitFor(()=>document.querySelector('.anomalous-keep-row'));
+  check(document.querySelectorAll('.anomalous-keep-row').length===3,'result Keep uses the existing workflow/combo/prompt menu');
+  closeKeepMenu();
+  check(imageActions(video,{})===null,'videos offer no unsupported parameter or save-workflow actions');
+  const many=imageResults(Array.from({length:15},(_,i)=>({filename:`${i}.png`})),{});
+  fixture.append(many);
+  check(many.querySelectorAll('figure').length===12,'initial image DOM is bounded');
+  many.querySelector(':scope > button').click();
+  check(many.querySelectorAll('figure').length===15,'more results are reachable on demand');
+  const moved=[];
+  const receipt=canvasChanges({detail:{total:5,changes:[
+    {kind:'changed',node:'Sampler #3',widget:'cfg',before:'7',after:'8'},
+    {kind:'changed',node:'Prompt #6',widget:'text',before:'<img src=x onerror=alert(1)>',after:'soft light'},
+    {kind:'removed',node:'Old #9'},
+    {kind:'added',node:'New #10'},
+  ]}},{locate:change=>moved.push(change.node)});
+  fixture.replaceChildren(receipt);
+  check(receipt.querySelectorAll('.anomalous-canvas-change').length===3,'receipt initially shows three changes');
+  check(!receipt.querySelector('img'),'recorded text is not interpreted as markup');
+  check(!receipt.querySelector('.is-removed button'),'removed nodes do not offer locate');
+  receipt.querySelector('button').click();check(moved[0]==='Sampler #3','locate passes the recorded node to its owner');
+  receipt.querySelector('details').open=true;
+  await settle();
+  check(receipt.querySelectorAll('.anomalous-canvas-change').length===4,'remaining changes expand without losing prior rows');
+  check(canvasChanges(null).textContent.includes('不可用'),'old records have an explicit unavailable state');
+  const comparisonSlider=slider({before:a,after:b});
+  check(Boolean(comparisonSlider.querySelector('.anomalous-ai-comparison')),'AI slider connects to real parameter comparison');
+  fixture.append(imageComparison([a,{filename:'missing.png'}]));
+  fixture.querySelector('.anomalous-ai-comparison button').click();
+  await waitFor(()=>document.querySelector('.anomalous-compare-summary.is-error'));
+  check(!document.querySelector('.anomalous-compare-apply'),'missing workflow fails without an apply action');
+  closeCompare();
+  results.textContent+='ALL PASSED\n';
+  document.title='PASS AI result integration';
+} catch(error) { results.textContent+=`FAIL ${error.stack}\n`;document.title='FAIL AI result integration'; }
+</script>

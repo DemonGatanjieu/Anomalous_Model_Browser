@@ -112,6 +112,10 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 
 ## 5. AI 工作台：AI 做了什么，一目了然（1.62 起）
 
+出图后不必回图库寻找功能：结果卡片的 **图片与参数** 打开完整检查器，**和当前画布对比** 打开现有参数对比，**保存为…** 使用同一个菜单保存工作流、搭配或提示词。任务上方的 **图片参数对比** 可以选择不同步骤产生的两张图片；它读取图片实际保存的工作流，不依赖 AI 口述参数。没有可用工作流的图片会显示原因，视频不提供这些参数操作。AI 展台的图片、挑选卡片和滑动对比也接入相同能力。
+
+画布操作下面直接显示操作记录中的 **修改前 / 修改后**，可以定位对应节点，并在允许时撤销。长提示词可能只保留变化附近的片段；早期操作记录被清理后会提示不可用，不会用现在的画布替代历史值。操作记录页使用相同的改动展示。
+
 左边栏的 **AI 工作台** 记下 AI 通过这个接口做的每一步，按**任务**分好：
 
 - AI 开始干活时会调用 `begin_task` 起个标题；没起的话，同一个 AI 软件连续做的事自动算一个任务，停了 20 分钟以上就算新的。
@@ -143,6 +147,8 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 ---
 
 ## English
+
+Task output cards and AI panel pictures open the existing image inspector, image/canvas parameter comparison and Keep menu. The task overview compares any two recorded output pictures across steps, using their actual embedded workflows. Canvas steps show recorded before/after values with node navigation and undo where available, shared with the activity page. Missing historical receipts and images without reusable workflows are reported explicitly.
 
 The stage reads chronologically: use `show_panel` for successive phases. `update_panel` appends
 new blocks below existing content, keeps omitted blocks and deduplicates unchanged resubmissions.

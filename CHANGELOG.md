@@ -2,6 +2,12 @@
 
 ## v1.62.0 — unreleased
 
+### AI 工作台与插件能力融合 / Integrated task results
+- 工作台的出图结果和 AI 展台图片可直接打开完整图片参数检查器、与当前画布对比，或通过原来的保存菜单存成工作流、搭配和提示词。任务成果区可选择跨步骤的两张图片，用插件现有参数对比查看真实差异；新结果到达后保留已选的图片。视频不提供不支持的参数操作，缩略图按需加载。
+- 画布操作直接显示记录中的“修改前 / 修改后”、新增或删除的节点；与操作记录页共用展示，保留定位和适用时的撤销。旧记录缺失时明确提示，不用当前画布猜历史。任务页更新隔离迟到请求，并整理了结果卡片、时间线和窄布局。
+- 修复参数对比窗口遮挡撤销提示的问题，撤销按钮现在可直接点击。
+- Task outputs and AI panel pictures now use the existing image inspector, Keep menu and image/canvas parameter comparison. The task overview compares images across steps and preserves the chosen pair as results arrive. Canvas changes share recorded before/after receipts with the activity page. Unavailable history is explicit; stale task responses cannot replace a newer selection. Refined result cards and timeline styling, and fixed Undo toasts being blocked by the comparison overlay.
+
 ### Fixes / 修复
 - AI 工作台与 MCP 调用实时生命周期及消息送达：每个工具调用开始时立即写入“正在执行…”步骤并接手等待中的任务，完成后原位更新同一步骤（不再等到耗时操作结束后才显示，也不会重复生成步骤）；用户在工作台留下的消息和展台面板回答，除了可通过 `get_answers` 读取外，还会在 AI 下一次成功调用任意工具时自动附带送达一次，并立即在界面上更新为“AI 已经看到”；多会话与显式 `task` ID 互不串任务。
 - Live in-flight MCP step lifecycle and automatic delivery of user messages and panel answers: every tool call now starts a `"running"` step immediately and updates the same step in place on completion or failure; unread user messages and panel answers are piggybacked once onto the next successful MCP tool response (in addition to `get_answers`) and immediately notify the workbench UI; concurrent sessions and explicit `task` ids stay isolated.

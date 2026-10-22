@@ -1,0 +1,140 @@
+/* Real gallery actions and shared canvas receipts inside the AI task and its panels. */
+.anomalous-ai-image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 12px;
+}
+
+.anomalous-ai-image-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--amb-bg-panel);
+}
+
+.anomalous-ai-image-preview {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    cursor: zoom-in;
+}
+
+.anomalous-ai-image-preview img,
+.anomalous-ai-image-preview video {
+    display: block;
+    width: 100%;
+    height: 210px;
+    object-fit: contain;
+}
+
+.anomalous-ai-video-label {
+    position: absolute;
+    inset: auto 8px 8px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
+    font-size: 12px;
+}
+
+.anomalous-ai-image-caption {
+    padding: 8px 12px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+}
+
+.anomalous-ai-image-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.anomalous-ai-image-card > .anomalous-ai-image-actions {
+    padding: 0 10px 10px;
+}
+
+.anomalous-ai-action {
+    min-height: 30px;
+    padding: 5px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 7px;
+    background: rgba(var(--amb-ink-rgb), 0.035);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-ai-action:hover:not(:disabled) {
+    border-color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+}
+
+.anomalous-ai-action:disabled { opacity: 0.45; cursor: default; }
+.anomalous-ai-action[hidden] { display: none; }
+.anomalous-ai-image-results > .anomalous-ai-action { margin-top: 10px; }
+
+.anomalous-ai-image-results.is-compact .anomalous-ai-image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    margin-top: 10px;
+}
+.anomalous-ai-image-card.is-compact img,
+.anomalous-ai-image-card.is-compact video { height: 100px; }
+.anomalous-ai-image-card.is-compact .anomalous-ai-image-caption { padding: 6px 8px; }
+
+.anomalous-ai-comparison {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.025);
+    grid-column: 1 / -1;
+}
+.anomalous-ai-comparison-title { flex-basis: 100%; color: var(--amb-text-soft); font-size: 12px; }
+.anomalous-ai-comparison-fields { display: flex; flex: 1 1 260px; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.anomalous-ai-comparison-side { display: flex; flex: 1 1 120px; align-items: center; gap: 6px; min-width: 0; color: var(--amb-text-soft); font-size: 12px; }
+.anomalous-ai-comparison-select { width: 100%; min-width: 0; padding: 6px; border: 1px solid var(--amb-border); border-radius: 6px; background: var(--amb-bg-panel); color: var(--amb-text-main); font: inherit; }
+.anomalous-ai-result-overview > summary { color: var(--amb-link); font-size: 12px; cursor: pointer; }
+
+/* The same receipt is used by the activity page and the AI workbench. */
+.anomalous-canvas-changes {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
+    container-type: inline-size;
+}
+.anomalous-canvas-changes-title { margin-bottom: 10px; font-size: 12px; font-weight: 600; color: var(--amb-text-soft); }
+.anomalous-canvas-change + .anomalous-canvas-change { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--amb-border); }
+.anomalous-canvas-change-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 7px; font-size: 12px; }
+.anomalous-canvas-change-node { overflow-wrap: anywhere; }
+.anomalous-canvas-change-widget { color: var(--amb-text-dim); overflow-wrap: anywhere; }
+.anomalous-canvas-change-head > button { margin-left: auto; }
+.anomalous-canvas-change-values { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.anomalous-canvas-change-value { min-width: 0; padding: 8px 10px; border-radius: 6px; background: rgba(var(--amb-ink-rgb), 0.045); }
+.anomalous-canvas-change-value.is-after { background: color-mix(in srgb, var(--amb-ok) 9%, var(--amb-bg-panel)); }
+.anomalous-canvas-change-label { display: block; margin-bottom: 4px; color: var(--amb-text-dim); font-size: 11px; }
+.anomalous-canvas-change-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.6; }
+.anomalous-canvas-change-description { color: var(--amb-text-soft); font-size: 12px; }
+.anomalous-canvas-change-note { margin-top: 10px; color: var(--amb-text-dim); font-size: 11px; line-height: 1.5; }
+.anomalous-canvas-change-more { margin-top: 12px; }
+.anomalous-canvas-change-more > summary { margin-bottom: 10px; color: var(--amb-link); cursor: pointer; font-size: 12px; }
+@container (max-width: 310px) { .anomalous-canvas-change-values { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .anomalous-ai-live-dot, .anomalous-ai-working { animation: none; } }

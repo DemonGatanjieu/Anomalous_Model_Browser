@@ -13,9 +13,9 @@ import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { listCombos } from './image_keep.js';
-import { audioResult, isVideo, outputUrl, taskResults } from './ai_task_view.js';
-
-const STRIP_MAX = 24;
+import { audioResult, outputUrl, taskResults } from './ai_task_view.js';
+import { imageComparison, imageResults } from './ui_ai_images.js';
+import { canvasChanges } from './ui_canvas_changes.js';
 
 export const shared = { owner: null, entries: new Map(), player: null };
 
@@ -32,25 +32,6 @@ function button(className, label, onClick, title) {
     node.onclick = onClick;
     if (title) node.title = title;
     return node;
-}
-
-function picture(result, className = 'anomalous-ai-thumb') {
-    const url = outputUrl(result);
-    const thumb = button(className, '', () => shared.owner?.showGalleryViewer?.(url, isVideo(result)), t('aiOpenPicture'));
-    if (isVideo(result)) {
-        const video = el('video');
-        video.src = url;
-        video.muted = true;
-        video.preload = 'metadata';
-        thumb.append(video);
-    } else {
-        const image = el('img');
-        image.loading = 'lazy';
-        image.src = url;
-        image.alt = result.filename;
-        thumb.append(image);
-    }
-    return thumb;
 }
 
 function playButton(result) {
@@ -102,13 +83,13 @@ export function locateNode(id, note) {
 }
 
 /** The links under a step: what it made and where that leads. */
-export function resultLinks(step) {
+export function resultLinks(step, changed = () => {}) {
     const box = el('div', 'anomalous-ai-results');
     const pictures = (step.results || []).filter(result => result.type === 'image');
     if (pictures.length) {
-        const strip = el('div', 'anomalous-ai-step-pictures');
-        strip.append(...pictures.map(result => picture(result)));
-        box.append(strip);
+        box.append(imageResults(pictures, shared.owner));
+        const compare = imageComparison(pictures);
+        if (compare) box.append(compare);
     }
     const links = el('div', 'anomalous-ai-links');
     const note = el('span', 'anomalous-ai-link-note');
@@ -125,6 +106,7 @@ export function resultLinks(step) {
             links.append(chip);
         } else if (result.type === 'canvas') {
             const entry = shared.entries.get(result.activity);
+            box.append(canvasChanges(entry, { locate: change => locateNode(changeNodeId(change), note) }));
             if (entry) {
                 links.append(button('anomalous-ai-link', t('activityLocate'), () => locate(entry, note)));
                 if (canUndo(app, entry)) {
@@ -132,6 +114,7 @@ export function resultLinks(step) {
                         let done = t('activityUndone');
                         try { undoEntry(app, entry); } catch (_) { done = t('activityUndoGone'); }
                         undo.replaceWith(el('span', 'anomalous-ai-link-done', done));
+                        changed();
                     });
                     links.append(undo);
                 }
@@ -145,17 +128,24 @@ export function resultLinks(step) {
     return box.childNodes.length ? box : null;
 }
 
-export function strip(task) {
+export function strip(task, selection = {}) {
     const made = taskResults(task);
     if (!made.image.length && !made.model.length && !made.combo.length && !made.audio.length) return null;
     const box = el('div', 'anomalous-ai-made');
     box.append(el('div', 'anomalous-ai-made-title', t('aiMade')));
     if (made.image.length) {
-        const row = el('div', 'anomalous-ai-made-pictures');
-        // Oldest first, like the timeline; it opens scrolled to the newest at the right.
-        row.append(...made.image.slice(-STRIP_MAX).map(result => picture(result, 'anomalous-ai-made-picture')));
-        box.append(row);
-        requestAnimationFrame(() => { row.scrollLeft = row.scrollWidth; });
+        const compare = imageComparison(made.image, selection);
+        if (compare) box.append(compare);
+        const pictures = el('details', 'anomalous-ai-result-overview');
+        pictures.open = Boolean(selection.expanded);
+        pictures.append(el('summary', '', t('aiBrowseResults')));
+        const draw = () => {
+            selection.expanded = pictures.open;
+            if (pictures.open && pictures.children.length === 1) pictures.append(imageResults(made.image, shared.owner, { compact: true }));
+        };
+        pictures.addEventListener('toggle', draw);
+        draw();
+        box.append(pictures);
     }
     const chips = el('div', 'anomalous-ai-links');
     const seen = new Set();
