@@ -266,7 +266,7 @@ class EditDetailTests(unittest.TestCase):
             with mock.patch.object(model_metadata, "resolve_folder_subdir", return_value=(temp, temp)):
                 asyncio.run(model_metadata.api_update_metadata(request))
         self.assertEqual(request[activity_log.ACTIVITY_DETAIL], {"fields": [{"field": "custom_name", "before": "Old", "after": "New"}]})
-        self.assertEqual(activity_log._clean_detail({"fields": [{"field": "custom_notes", "after": "x" * 900}]})["fields"][0]["after"][-1], "…")
+        self.assertEqual(activity_log._clean_detail({"fields": [{"field": "custom_notes", "after": "x" * (activity_log.MAX_CHANGE_CHARS + 100)}]})["fields"][0]["after"][-1], "…")
 
 
 class ScanPlanTests(unittest.TestCase):
