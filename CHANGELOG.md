@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.60.1 Beta (Cloud Servers, Generation Presets, Full Window, Faster Scan Page) — 2026-10-22
+## v1.60.1 (Cloud Servers, Generation Presets, Full Window, Faster Scan Page) — 2026-10-22
 
 ### 🔍 Scanning (扫描)
 - **The scan page opens at once, also with many models**: it shows the last counts right away, says it is updating them, and shows the fresh ones when they come. What each model file's header says is now kept on disk (`user/anomalous/model_heads.json`, by file, read again only when the file changes), so a big library or a network drive is not read again after every restart either; requests that come while the page counts share that one count.
@@ -31,7 +31,7 @@
 - **Models that are links (模型是快捷方式/链接时)**: on a cloud server such as AutoDL every model in the models folder is a link into the platform's shared model disk. Scans wrote the info beside the link, but the cards read it from the disk behind it: a scanned model showed as not scanned, under the disk's file name (`6b4679…`) instead of its own, and editing, deleting, opening its folder or finding it from a saved workflow could be refused as "outside the models folder". A linked model is now taken as named, with its covers and info beside the link; edits, renames and deletes act on the link, never on the shared disk; moving one in Tidy moves the link instead of copying the model disk's file onto the server. Names leaving the folder (`..`) are refused as before.
 - **Models linked from another tool keep their info**: a model that is a link with no info beside it shows the info beside the file it links to (A1111's Civitai Helper leaves `.civitai.info` there). Only read there; covers, edits and scans stay beside the link.
 
-## v1.60.0 Beta (Model Import, Tidy, Parameter Compare, Workflows Rebuilt, Base Model Filter, Settings Tabs) — 2026-10-22
+## v1.60.0 (Model Import, Tidy, Parameter Compare, Workflows Rebuilt, Base Model Filter, Settings Tabs) — 2026-10-22
 
 ### 📥 Drop a model in, it goes to the right folder (拖进来自动归位)
 - **Models page → + Import**, or drop model files anywhere on the models page: each file gets a card saying what it is — Checkpoint, LoRA, VAE, text encoder, diffusion model, ControlNet, Embedding, CLIP Vision, upscale model — with its base model, how sure that is, and one line on what such a model is for. It is read from the file's header only; .ckpt/.pt files, which can carry code, are never opened (you pick their type).
