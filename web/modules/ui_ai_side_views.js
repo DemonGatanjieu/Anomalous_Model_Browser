@@ -4,7 +4,9 @@
  * shape of a run at full size (ui_ai_run_map.js; the newest run, or one picked from the list or
  * from its step in the timeline), or the materials picker (ui_ai_toolbox.js) docked there.
  * Picking the view that is shown closes the column. Each view keeps its own pane, so going back
- * finds it as it was: a scrolled stage, materials picked but not handed over yet.
+ * finds it as it was: a scrolled stage, materials picked but not handed over yet. The column is a
+ * card of its own beside the timeline; its left edge drags it wider or narrower (kept on this
+ * browser, the timeline keeps room), a double click there puts the usual width back.
  *
  * `side` is the workbench's stage state (ui_ai_side.js): `view`, `mapStep`, `hidden`, `tab`.
  */
@@ -15,6 +17,20 @@ import { icon, iconButton } from './ui_ai_icons.js';
 import { runMapBox } from './ui_ai_run_map.js';
 import { closeToolbox, openToolbox, setToolboxHost, toolboxOpenFor } from './ui_ai_toolbox.js';
 import { openQuestions, panelSteps, renderStage, tabBar } from './ui_ai_side.js';
+
+const WIDTH_KEY = 'anomalous.aiSideWidth';
+const WIDTH = { min: 340, start: 440 };
+export const TIMELINE_MIN = 380; // what the timeline keeps beside the column
+
+/** The column's width: as the user dragged it, or the usual one. */
+export function sideWidth() {
+    try {
+        const kept = Number(localStorage.getItem(WIDTH_KEY));
+        return kept >= WIDTH.min ? kept : WIDTH.start;
+    } catch (_) {
+        return WIDTH.start;
+    }
+}
 
 export const VIEWS = { stage: ['panel', 'aiStage'], map: ['nodes', 'aiSideMap'], toolbox: ['sparkle', 'aiToolbox'] };
 
@@ -76,10 +92,53 @@ export function sideShown(side, task) {
     return !side.hidden && (side.view !== 'stage' || panelSteps(task).length > 0);
 }
 
-/** The side column's panes into `box` (once): the narrow window's tabs, then one pane per view. */
+/** The grip on the column's left edge: drag to resize (the timeline keeps its room), double click for the usual width. */
+function grip(box) {
+    const node = el('div', 'anomalous-ai-side-grip');
+    node.setAttribute('role', 'separator');
+    node.setAttribute('aria-orientation', 'vertical');
+    node.title = t('aiSideResize');
+    const page = box.closest('.anomalous-ai');
+    const set = (width, keep) => {
+        const list = page.querySelector('.anomalous-ai-tasks');
+        const used = list && getComputedStyle(list).position !== 'absolute' ? list.offsetWidth : 0;
+        const room = Math.max(WIDTH.min, page.clientWidth - used - TIMELINE_MIN);
+        const fit = Math.round(Math.max(WIDTH.min, Math.min(width, room)));
+        page.style.setProperty('--ai-side-w', `${fit}px`);
+        try {
+            if (keep) localStorage.setItem(WIDTH_KEY, String(fit));
+        } catch (_) { /* only not kept */ }
+    };
+    page?.style.setProperty('--ai-side-w', `${sideWidth()}px`);
+    node.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        node.setPointerCapture(event.pointerId);
+        node.classList.add('is-dragging');
+        document.body.classList.add('anomalous-ai-resizing');
+        const right = box.getBoundingClientRect().right;
+        const move = moved => set(right - moved.clientX, false);
+        const stop = (ended) => {
+            node.removeEventListener('pointermove', move);
+            node.classList.remove('is-dragging');
+            document.body.classList.remove('anomalous-ai-resizing');
+            set(right - ended.clientX, true);
+        };
+        node.addEventListener('pointermove', move);
+        node.addEventListener('pointerup', stop, { once: true });
+        node.addEventListener('pointercancel', stop, { once: true });
+    });
+    node.addEventListener('dblclick', () => {
+        try { localStorage.removeItem(WIDTH_KEY); } catch (_) { /* nothing kept */ }
+        set(WIDTH.start, false);
+    });
+    return node;
+}
+
+/** The side column's panes into `box` (once): the narrow window's tabs, the grip, then one pane per view. */
 function sidePanes(box) {
     if (!box.querySelector(':scope > .anomalous-ai-side-pane')) {
-        box.replaceChildren(el('div', 'anomalous-ai-tabs'), ...Object.keys(VIEWS).map(view => {
+        box.replaceChildren(el('div', 'anomalous-ai-tabs'), grip(box), ...Object.keys(VIEWS).map(view => {
             const pane = el('div', `anomalous-ai-side-pane is-${view}`);
             pane.dataset.view = view;
             return pane;

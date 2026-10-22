@@ -1,8 +1,8 @@
 /* The AI workbench's stage (ui_ai_side.js): the panels on the right, the tabs of a narrow window,
-   the task list folded away. */
+   the task list folded away. The side column is as wide as its grip set (--ai-side-w). */
 
 .anomalous-ai.has-stage {
-    grid-template-columns: minmax(200px, 250px) minmax(300px, 0.85fr) minmax(380px, 1.3fr);
+    grid-template-columns: minmax(200px, 250px) minmax(0, 1fr) var(--ai-side-w, 440px);
 }
 
 .anomalous-ai.tasks-collapsed {
@@ -10,7 +10,7 @@
 }
 
 .anomalous-ai.tasks-collapsed.has-stage {
-    grid-template-columns: minmax(300px, 0.85fr) minmax(380px, 1.3fr);
+    grid-template-columns: minmax(0, 1fr) var(--ai-side-w, 440px);
 }
 
 .anomalous-ai.tasks-collapsed .anomalous-ai-tasks {
@@ -85,17 +85,25 @@
 
 /* ---------- the stage ---------- */
 .anomalous-ai-stage {
+    position: relative;
     display: flex;
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    padding: 18px 20px 20px;
-    border-left: 1px solid var(--amb-border);
-    background: linear-gradient(180deg, color-mix(in srgb, #a487f5 5%, transparent), transparent 220px);
+    margin: 10px 10px 10px 0;
+    padding: 16px 18px 18px;
+    border: 1px solid var(--amb-border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, color-mix(in srgb, #a487f5 5%, transparent), transparent 220px), rgba(var(--amb-ink-rgb), 0.025);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
 }
 
 .anomalous-ai.is-tabbed .anomalous-ai-stage {
-    border-left: none;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
 }
 
 .anomalous-ai-stage-head {
@@ -238,38 +246,6 @@
 
 .anomalous-ai-panel-line.is-shown .anomalous-ai-panel-line-go {
     color: var(--amb-text-soft);
-}
-
-/* ---------- folding the task list ---------- */
-.anomalous-ai-fold,
-.anomalous-ai-unfold {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    border: 1px solid var(--amb-border);
-    border-radius: 8px;
-    background: none;
-    color: var(--amb-text-soft);
-    cursor: pointer;
-}
-
-.anomalous-ai-fold:hover,
-.anomalous-ai-unfold:hover { background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
-
-.anomalous-ai-unfold {
-    display: none;
-}
-
-.anomalous-ai.tasks-collapsed .anomalous-ai-unfold {
-    display: inline-flex;
-}
-
-.anomalous-ai.is-narrow .anomalous-ai-fold,
-.anomalous-ai.is-narrow .anomalous-ai-unfold {
-    display: none;
 }
 
 /* ---------- new task, the ways in, which AI came last ---------- */

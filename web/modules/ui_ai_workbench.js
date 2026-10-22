@@ -9,7 +9,7 @@
  * in the window's title bar (ui_ai_side_views.js): the stage with the panels the AI drew (ui_ai_side.js; a line in the
  * timeline brings it there, its questions are answered there, a toast says so while the user is
  * elsewhere), a run's shape at full size, or the materials picker. The header stays on top while
- * the timeline scrolls. The task list can be folded away.
+ * the timeline scrolls. The task list folds from the title bar's button and peeks from it.
  * Under the timeline the user can write to the AI on that task; the message waits until the AI
  * asks (get_answers) or runs its next step, and says whether it has. The list groups the tasks
  * by day, each with an icon for where it stands.
@@ -31,14 +31,14 @@ import { connectHint, waitingCard } from './ui_ai_connect.js';
 import { gateCard } from './ui_ai_gate.js';
 import { iconButton } from './ui_ai_icons.js';
 import { noteNode } from './ai_text_format.js';
-import { renderTaskList, stateIcon } from './ui_ai_task_list.js';
+import { listToggle, renderTaskList, stateIcon } from './ui_ai_task_list.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
 import { locateNode, openModel, resultLinks, shared, strip, updateRunProgress } from './ui_ai_results.js';
 import { compareBar, setMarker } from './ui_ai_images.js';
 import { marksStep, openMarker } from './ui_ai_marker.js';
 import { toolboxCount, toolboxStep } from './ui_ai_toolbox.js';
-import { connectSide, drawSide, pickView, sideShown, sideSwitch, viewLabel } from './ui_ai_side_views.js';
+import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewLabel } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
 import { canvasChanges } from './ui_canvas_changes.js';
@@ -48,7 +48,6 @@ import {
 } from './ai_task_view.js';
 
 const NARROW_PX = 720;
-const STAGE_FROM = 760; // the room the timeline and the stage need side by side
 const COLLAPSED_KEY = 'anomalous_ai_tasks_collapsed';
 const RECENT_COUNT = 3;
 
@@ -112,7 +111,7 @@ const fetchTask = id => getJson(`/anomalous/ai_tasks/${encodeURIComponent(id)}`)
 
 function renderList(box) {
     renderTaskList(box, {
-        tasks: state.tasks, selected: state.selected, onNew: newTask, onFold: () => foldTasks(true),
+        tasks: state.tasks, selected: state.selected, onNew: newTask,
         // Picking the newest task follows the AI again; an older one stays put.
         onPick: (summary) => { state.pinned = summary.id !== state.tasks[0]?.id; void select(summary.id); },
     });
@@ -261,7 +260,6 @@ function renderTask() {
     const header = view.header;
     const titleLine = el('div', 'anomalous-ai-task-title-line');
     titleLine.append(button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => { state.narrowView = 'list'; layout(); }),
-        iconButton('anomalous-ai-unfold', 'chevronRight', t('aiTasksExpand'), () => foldTasks(false), { iconOnly: true }),
         el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled')), stateChip(status));
     const tools = el('div', 'anomalous-ai-task-tools');
     tools.append(executionStatus(task, refresh), canvasControls(task, () => void refresh(), () => state.owner?.close?.()));
@@ -390,7 +388,13 @@ function pickTab(id) {
     renderTask();
 }
 
-function foldTasks(folded) {
+/** The title bar's list button: folds or shows the task list (in a narrow window, goes to it and back). */
+function toggleTasks() {
+    if (state.page?.classList.contains('is-narrow')) {
+        state.narrowView = state.narrowView === 'list' && state.selected ? 'task' : 'list';
+        return layout();
+    }
+    const folded = !state.tasksCollapsed;
     state.tasksCollapsed = folded;
     try { localStorage.setItem(COLLAPSED_KEY, folded ? '1' : '0'); } catch (_) { /* this viewer's convenience */ }
     layout();
@@ -464,7 +468,7 @@ function layout() {
     page.classList.toggle('tasks-collapsed', folded);
     // Three columns when there is room; else the timeline and the stage take turns behind tabs.
     const room = width - (narrow || folded ? 0 : 260);
-    const tabbed = page.classList.contains('has-stage') && (narrow || room < STAGE_FROM);
+    const tabbed = page.classList.contains('has-stage') && (narrow || room < sideWidth() + TIMELINE_MIN);
     page.classList.toggle('is-tabbed', tabbed);
     page.classList.toggle('shows-stage', tabbed && state.stage.tab === 'stage');
 }
@@ -541,6 +545,7 @@ export function renderAiWorkbench(owner, panel) {
             state.observer.observe(state.page);
         }
     }
+    owner.headerLeadTools?.replaceChildren(listToggle(state.page, toggleTasks));
     owner.railNews?.('ai', false);
     hidePanelToast();
     void refresh();

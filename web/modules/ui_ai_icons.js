@@ -39,6 +39,8 @@ const PATHS = {
     chevronRight: '<path d="m9.5 6 6 6-6 6"/>',
     pulse: '<path d="M3 12h4l2.5-5.5 4 11L16 12h5"/>',
     stop: '<rect x="6" y="6" width="12" height="12" rx="2.4" fill="currentColor"/>',
+    info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".9" fill="currentColor"/>',
+    sidebar: '<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M9.5 4v16"/>',
     clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
     chip: '<rect x="6.5" y="6.5" width="11" height="11" rx="1.8"/><path d="M9.5 3v3.5M14.5 3v3.5M9.5 17.5V21M14.5 17.5V21M3 9.5h3.5M3 14.5h3.5M17.5 9.5H21M17.5 14.5H21"/>',
     terminal: '<rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="m7 9.5 3 2.5-3 2.5M12.5 15h4.5"/>',

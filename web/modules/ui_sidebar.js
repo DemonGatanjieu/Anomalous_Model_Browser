@@ -128,7 +128,9 @@ export function createDOM() {
         const listToggle = headerButton('anomalous-list-toggle', SIDEBAR_ICONS.LIST, t('sidebarToggle'));
         const pageTitle = document.createElement('span');
         pageTitle.className = 'anomalous-page-title';
-        leftGroup.append(listToggle, pageTitle);
+        this.headerLeadTools = document.createElement('div'); // a page's own, before its title (the AI page's task list button)
+        this.headerLeadTools.className = 'anomalous-header-page-tools is-lead';
+        leftGroup.append(listToggle, this.headerLeadTools, pageTitle);
 
         const updateNoticeBtn = headerButton('anomalous-update-notice-btn', '', t('updateGuideNoticeTooltip'));
         updateNoticeBtn.classList.add('anomalous-update-notice-btn');

@@ -217,7 +217,7 @@
     position: sticky;
     top: -24px; /* stays on top while the timeline scrolls (the column's own top padding) */
     z-index: 2;
-    background: var(--amb-bg-panel);
+    background: var(--amb-bg-page); /* the window's own, so the header is no band of its own */
     display: flex;
     flex-direction: column;
     gap: 10px;

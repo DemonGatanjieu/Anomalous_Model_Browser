@@ -277,7 +277,9 @@ covered by the `styles.css` manifest.
   closes the column), one pane per view kept between switches, and the picker's dock there.
   The task's header stays on top while the timeline scrolls. In a window too narrow
   for three columns the timeline and the side column are two tabs (a panel that asks brings the stage
-  forward). The task list can be folded; `ui_ai_task_list.js` draws it (New task, Connect an AI
+  forward). The side column is a card whose left-edge grip sets its width (`--ai-side-w`, kept;
+  the timeline keeps `TIMELINE_MIN`). The task list folds from the title bar's list button
+  (`headerLeadTools`, `listToggle`); folded, pointing at it peeks the list over the page. `ui_ai_task_list.js` draws it (New task, Connect an AI
   and the gates, which AI came last, quick filters by state, the tasks by day with a state
   icon each). `ui_ai_icons.js` is the AI pages' one set of line icons and the icon button.
   `ai_text_format.js` lays out what the AI writes (its notes and replies: headings, lists, bold,

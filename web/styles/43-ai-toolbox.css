@@ -185,6 +185,9 @@
 .anomalous-tb-card:hover .anomalous-tb-star, .anomalous-tb-star.is-on, .anomalous-tb-card:focus-within .anomalous-tb-star { opacity: 1; }
 .anomalous-tb-star:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-main); }
 .anomalous-tb-star.is-on { color: #f2b544; }
+.anomalous-tb-info { display: none; }
+.anomalous-tb.is-side .anomalous-tb-info { position: absolute; right: 36px; bottom: 8px; display: inline-flex; padding: 4px; border: 0; border-radius: 8px; background: transparent; color: var(--amb-text-soft); cursor: pointer; }
+.anomalous-tb.is-side .anomalous-tb-info:hover { background: rgba(var(--amb-ink-rgb), 0.12); color: var(--amb-text-main); }
 .anomalous-tb-card-body { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; padding-right: 34px; }
 .anomalous-tb-card-title { overflow: hidden; color: var(--amb-text-main); font-size: 13.5px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-tb-card-sub { overflow: hidden; color: var(--amb-text-dim); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }

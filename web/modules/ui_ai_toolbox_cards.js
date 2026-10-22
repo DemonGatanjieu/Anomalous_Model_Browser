@@ -109,8 +109,9 @@ function tags(item) {
 }
 
 /**
- * One card. `ctx`: { picked(item), favorite(item), toggle(item), star(item), focus(item) }.
- * A press picks or unpicks; focus or the pointer shows it in the detail pane.
+ * One card. `ctx`: { picked(item), favorite(item), toggle(item), star(item), focus(item), peek(item) }.
+ * A press picks or unpicks; focus or the pointer peeks at it (the large window's detail pane),
+ * ⓘ opens its detail (the side panel's way: there the detail covers the cards).
  */
 export function card(item, ctx) {
     const node = el('div', `anomalous-tb-card is-${item.kind}${ctx.picked(item) ? ' is-picked' : ''}`);
@@ -141,7 +142,15 @@ export function card(item, ctx) {
         event.stopPropagation();
         void ctx.star(item);
     };
-    node.append(body, check, star);
+    const info = el('button', 'anomalous-tb-info');
+    info.type = 'button';
+    info.title = t('aiTbDetail');
+    info.append(icon('info', 15));
+    info.onclick = (event) => {
+        event.stopPropagation();
+        ctx.focus(item);
+    };
+    node.append(body, check, star, info);
     node.onclick = () => ctx.toggle(item);
     node.onkeydown = (event) => {
         if (event.target === node && (event.key === 'Enter' || event.key === ' ')) {
@@ -149,8 +158,8 @@ export function card(item, ctx) {
             ctx.toggle(item);
         }
     };
-    node.onfocus = () => ctx.focus(item);
-    node.onpointerenter = () => ctx.focus(item);
+    node.onfocus = () => ctx.peek(item);
+    node.onpointerenter = () => ctx.peek(item);
     return node;
 }
 

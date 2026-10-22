@@ -189,6 +189,7 @@ export async function openToolbox(task, changed = () => {}) {
     const cards = new Map(); // key -> drawn card
     const ctx = {
         picked, favorite: liked, focus: (item) => { state.focus = item; drawPane(); },
+        peek: (item) => { if (!body.classList.contains('is-side')) ctx.focus(item); }, // the side panel's detail would cover the cards
         toggle: item => setPick(item.kind, item.id, !picked(item)),
         star: item => setFavorite(item),
         promptPicked: id => state.picks.prompts.includes(id),

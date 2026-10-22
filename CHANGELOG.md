@@ -8,6 +8,10 @@
 ### 右边一栏一次一样，按钮固定在右上角 / One view at a time on the right, switched from the top right
 - 工作台右边那一栏一次只显示一样东西，用窗口右上角的三个按钮切换：**展台**、**节点结构**（AI 跑过的节点结构图，大图，可以选看哪一次运行）、**素材**（原来停在屏幕右边的素材小窗，现在就在这一栏里）。再点一下亮着的按钮收起这一栏；切走再切回来，内容都还在。时间线里每次运行都有 **在右侧看大图**。
 - 任务标题和那一排按钮在时间线往下翻时一直停在顶上。
+- 右边这一栏改成一张单独的卡片，不再用一条线硬隔开；默认窄一些，给中间的时间线留出地方。鼠标移到它左边缘会出现小竖条，拖动调宽窄（记得住，双击恢复）。
+- 左边的任务列表用窗口左上角的按钮收起 / 展开；收起后鼠标移到按钮上，列表会临时浮出来，点任务或移开就收回。
+- 素材在右边这一栏里时，鼠标移过卡片不再自动跳进详细说明（之前很难操作），点卡片上的 ⓘ 才看。
+- The side column is a card of its own, narrower by default and resizable from its left edge (kept; double-click resets). The task list folds from a title-bar button and peeks over the page while pointed at. In the docked materials picker, hovering a card no longer opens its detail; its ⓘ does.
 - The AI workbench's side column shows one view at a time, switched from the window's title bar: the stage, a run's node map at full size (pick the run), or the materials picker docked there. Pressing the shown one hides the column; each view keeps its state. Each run's step has "See it large". The task's header stays on top while the timeline scrolls.
 
 ### 回答发出去了没有，一眼看清 / See at a glance whether the AI has your answer

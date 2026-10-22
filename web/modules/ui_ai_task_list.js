@@ -3,6 +3,8 @@
  * the ways in (connect an AI, the gates), which AI came last and when, quick filters by where a
  * task stands (working, asking the user, failed) with their counts, and the tasks by day, each
  * with an icon for where it stands. The filter is this column's own; the rest comes in `view`.
+ * The column folds away from a button at the top left of the window (listToggle); folded, the
+ * pointer on that button brings it over the page for a moment to pick a task from.
  */
 
 import { translate as t } from './locales.js';
@@ -57,12 +59,11 @@ function lastVisit(tasks) {
 }
 
 /**
- * Draws the column into `box`. `view`: { tasks, selected, onPick(summary), onNew(), onFold() }.
+ * Draws the column into `box`. `view`: { tasks, selected, onPick(summary), onNew() }.
  */
 export function renderTaskList(box, view) {
     const head = el('div', 'anomalous-ai-tasks-head');
-    head.append(el('span', 'anomalous-ai-tasks-title', t('aiTasks')), el('span', 'anomalous-ai-tasks-count', t('aiTaskCount', { count: view.tasks.length })),
-        iconButton('anomalous-ai-fold', 'chevronLeft', t('aiTasksCollapse'), view.onFold, { iconOnly: true }));
+    head.append(el('span', 'anomalous-ai-tasks-title', t('aiTasks')), el('span', 'anomalous-ai-tasks-count', t('aiTaskCount', { count: view.tasks.length })));
     const actions = el('div', 'anomalous-ai-tasks-actions');
     const ways = el('div', 'anomalous-ai-tasks-ways');
     ways.append(iconButton('anomalous-ai-way', 'plug', t('aiConnect'), openConnectGuide, { title: t('aiConnectHint') }),
@@ -98,4 +99,34 @@ export function renderTaskList(box, view) {
         list.append(taskRow(summary, view));
     });
     box.replaceChildren(head, actions, ...(filters.children.length > 1 ? [filters] : []), list);
+}
+
+const PEEK_LEAVE_MS = 280;
+
+/**
+ * The button that shows or folds the column (`onToggle()`), for the window's title bar. While
+ * the column is folded, the pointer on it, or on the column it brings, shows the column over
+ * the page; leaving both, or picking a task, puts it away again.
+ */
+export function listToggle(page, onToggle) {
+    const node = iconButton('anomalous-ai-list-toggle', 'sidebar', t('aiTasksToggle'), () => {
+        page.classList.remove('is-peeking');
+        onToggle();
+    }, { iconOnly: true });
+    let timer = null;
+    const peek = (on) => {
+        clearTimeout(timer);
+        if (on) page.classList.toggle('is-peeking', page.classList.contains('tasks-collapsed'));
+        else timer = setTimeout(() => page.classList.remove('is-peeking'), PEEK_LEAVE_MS);
+    };
+    node.addEventListener('pointerenter', () => peek(true));
+    node.addEventListener('pointerleave', () => peek(false));
+    if (!page.dataset.peeks) {
+        page.dataset.peeks = '1';
+        const inList = target => Boolean(target?.closest?.('.anomalous-ai-tasks'));
+        page.addEventListener('pointerover', (event) => { if (page.classList.contains('is-peeking') && inList(event.target)) peek(true); });
+        page.addEventListener('pointerout', (event) => { if (inList(event.target) && !inList(event.relatedTarget)) peek(false); });
+        page.addEventListener('click', (event) => { if (event.target.closest('.anomalous-ai-task-row')) page.classList.remove('is-peeking'); });
+    }
+    return node;
 }

@@ -86,9 +86,13 @@
 }
 .anomalous-ai-run-map-side:hover { text-decoration: underline; }
 
-/* In the window's title bar, on the AI page only: its generic button look does not apply. */
+/* In the window's title bar, on the AI page only: its generic button look does not apply. The
+   list button takes the place of the page list's own (the AI page has none). */
 .anomalous-header-page-tools { display: none; }
 #anomalous-container[data-page="ai"] .anomalous-header-page-tools { display: flex; align-items: center; margin-right: 4px; }
+#anomalous-container[data-page="ai"] #anomalous-list-toggle { display: none !important; }
+#anomalous-header .anomalous-ai-list-toggle { width: 28px; padding: 0 !important; }
+#anomalous-header .anomalous-ai-list-toggle svg { width: 16px !important; height: 16px !important; }
 #anomalous-header .anomalous-ai-side-switch { padding: 2px; border-radius: 9px; }
 #anomalous-header .anomalous-ai-side-btn {
     height: 26px !important;
@@ -108,3 +112,54 @@
     color: var(--amb-text-main) !important;
 }
 #anomalous-header .anomalous-ai-side-btn svg { width: 15px !important; height: 15px !important; }
+
+/* The side column's grip: its left edge, a bar that shows on hover; dragging sets --ai-side-w. */
+.anomalous-ai-side-grip {
+    position: absolute;
+    z-index: 3;
+    top: 14px;
+    bottom: 14px;
+    left: -8px;
+    width: 12px;
+    cursor: col-resize;
+    touch-action: none;
+}
+.anomalous-ai-side-grip::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    width: 4px;
+    height: 46px;
+    margin-top: -23px;
+    border-radius: 2px;
+    background: var(--amb-border-strong, var(--amb-border));
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s;
+}
+.anomalous-ai-stage:hover > .anomalous-ai-side-grip::after { opacity: 0.8; }
+.anomalous-ai-side-grip:hover::after, .anomalous-ai-side-grip.is-dragging::after { background: var(--amb-link); opacity: 1; }
+.anomalous-ai.is-tabbed .anomalous-ai-side-grip { display: none; }
+body.anomalous-ai-resizing, body.anomalous-ai-resizing * { cursor: col-resize !important; user-select: none !important; }
+
+/* The task list folded away: the title bar's button brings it over the page for a moment. */
+.anomalous-ai.tasks-collapsed.is-peeking:not(.is-narrow) .anomalous-ai-tasks {
+    position: absolute;
+    z-index: 30;
+    top: 8px;
+    bottom: 8px;
+    left: 8px;
+    display: flex;
+    width: 270px;
+    border: 1px solid var(--amb-border);
+    border-radius: 14px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    animation: anomalous-ai-peek 0.16s ease-out;
+}
+@keyframes anomalous-ai-peek { from { opacity: 0; transform: translateX(-10px); } }
+@media (prefers-reduced-motion: reduce) { .anomalous-ai.is-peeking .anomalous-ai-tasks { animation: none; } }
+
+/* Thin scrollbars, so a column's edge is no wide bar. */
+.anomalous-ai-task, .anomalous-ai-stage-body, .anomalous-ai-tasks, .anomalous-ai-side-pane .anomalous-tb-scroller { scrollbar-width: thin; }
+.anomalous-tb.is-side .anomalous-tb-card-body { padding-right: 62px; }
