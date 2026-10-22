@@ -249,6 +249,16 @@ descriptions. Its picks go to `/anomalous/scan_all` as `targets`, like a list pa
 
 ## MCP endpoint
 
+`track_run(prompt_ids, task, wait_seconds)` attaches existing submissions from this server to
+an open task without running anything. IDs must exist in its queue/history; each is owned by
+one recorded run. Retrying an identical batch returns that run, not the task's newest run.
+External callers must supply their own returned IDs; no queue-difference attribution is used.
+`run_workflow` waits up to `wait_seconds` (default 15, max 55) after starting its watcher,
+outside the submission semaphore. Text and structured responses include actual state,
+results/error and next action. Long runs still require `run_status(wait_seconds=55)`;
+the stateless MCP transport cannot wake an idle AI on its own. Task `live` reflects an
+in-flight recorded step, not recency of contact.
+
 AI gate decisions are single-use: `ai_gates.check` consumes an immediate approval before
 dispatch; only an unused timed-out approval may authorize an identical retry. Missing
 step records fail closed for `ask`. `finish_step` preserves decisions received after a

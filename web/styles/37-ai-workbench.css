@@ -214,6 +214,10 @@
 }
 
 .anomalous-ai-task-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--amb-bg-panel);
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -472,12 +476,6 @@
     color: var(--amb-text-soft);
 }
 
-.anomalous-ai-step.is-next .anomalous-ai-step-dot {
-    border: 1.5px dashed var(--amb-ok);
-    background: var(--amb-bg-panel, #16161a);
-    color: var(--amb-ok-text);
-}
-
 .anomalous-ai-step-body {
     display: flex;
     flex-direction: column;
@@ -576,14 +574,9 @@
     font-size: 12px;
 }
 
-.anomalous-ai-step-running,
-.anomalous-ai-working {
+.anomalous-ai-step-running {
     color: var(--amb-ok-text);
     font-size: 12.5px;
-}
-
-.anomalous-ai-working {
-    animation: anomalous-ai-breathe 1.8s ease-in-out infinite;
 }
 
 @keyframes anomalous-ai-breathe {

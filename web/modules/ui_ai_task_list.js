@@ -12,8 +12,8 @@ import { icon, iconButton } from './ui_ai_icons.js';
 import { openConnectGuide } from './ui_ai_connect.js';
 import { openGates } from './ui_ai_gate.js';
 
-const STATE_ICONS = { waiting: 'sparkle', live: 'pulse', asks: 'question', error: 'alert', done: 'check' };
-const FILTERS = { all: () => true, live: state => state === 'live' || state === 'waiting', asks: state => state === 'asks', error: state => state === 'error' };
+const STATE_ICONS = { waiting: 'sparkle', idle: 'pulse', live: 'pulse', asks: 'question', error: 'alert', done: 'check' };
+const FILTERS = { all: () => true, live: state => ['live', 'waiting', 'idle'].includes(state), asks: state => state === 'asks', error: state => state === 'error' };
 
 let filter = 'all';
 

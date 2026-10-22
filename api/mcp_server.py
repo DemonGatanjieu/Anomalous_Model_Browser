@@ -23,7 +23,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_gates, ai_panels, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
+from . import ai_gates, ai_panels, ai_run_tracking, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
@@ -60,7 +60,10 @@ INSTRUCTIONS = (
     "question form: the user watches and answers in Anomalous. Likewise write your explanations and replies "
     "there with report (reply_to answers their message or marks), not only in your chat. Show plans, workflow explanations "
     "and results in chronological order with show_panel; update_panel appends new content below what "
-    "the user already saw."
+    "the user already saw. Use run_workflow for execution: it returns real state/results after a bounded wait. "
+    "If you submit through /prompt or another tool, immediately call track_run with YOUR returned prompt_ids "
+    "and task ID, or the workbench cannot observe it. For running results use run_status(wait_seconds=55); "
+    "do not inspect output directories or resubmit to find out whether it finished."
 )
 LIST_TTL_MS = 300000
 # Requests run tools in threads; a few at a time is plenty for one person's AI app.
@@ -182,6 +185,8 @@ async def _call(params, request):
     )
     if name == "run_workflow" and step and step.get("state") == "running":
         ai_task_runs.watch(step["id"], result.get("structuredContent") or {})
+        await asyncio.to_thread(ai_run_tracking.wait_for_receipt, result, client, session, active_task,
+                                arguments.get("wait_seconds", 15), step["id"])
     # The user's news and the run's go to the AI, never to the card's own calls (they do not reach the AI).
     if name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)

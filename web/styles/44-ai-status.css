@@ -1,0 +1,25 @@
+/* Execution facts stay near the task title, independently of the timeline's output. */
+.anomalous-ai-execution {
+    padding: 16px 18px;
+    margin-top: 16px;
+    border: 1px solid var(--amb-border);
+    border-left: 3px solid var(--amb-link);
+    border-radius: 12px;
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
+    font-size: 13px;
+}
+.anomalous-ai-execution-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
+.anomalous-ai-execution-label { color: var(--amb-text-dim); font-size: 11px; }
+.anomalous-ai-execution-top strong { font-size: 15px; }
+.anomalous-ai-execution-top button { margin-left: auto; }
+.anomalous-ai-execution .anomalous-ai-run-progress { margin-top: 14px; }
+.anomalous-ai-execution .anomalous-ai-run-bar { height: 8px; }
+.anomalous-ai-execution-meta { margin-top: 10px; font-variant-numeric: tabular-nums; }
+.anomalous-ai-execution-hint { color: var(--amb-text-muted); line-height: 1.7; margin: 10px 0 0; }
+.anomalous-ai-execution-contact { color: var(--amb-text-dim); font-size: 11px; margin-top: 8px; }
+.anomalous-ai-execution-error { color: var(--amb-danger); margin-top: 8px; overflow-wrap: anywhere; }
+.anomalous-ai-execution.is-untracked, .anomalous-ai-execution.is-stopped { border-left-color: var(--amb-warn); }
+.anomalous-ai-execution.is-error { border-left-color: var(--amb-danger); }
+.anomalous-ai-execution.is-done { border-left-color: #41b883; }
+.anomalous-ai-state.is-idle, .anomalous-ai-state-icon.is-idle { color: var(--amb-text-dim); }

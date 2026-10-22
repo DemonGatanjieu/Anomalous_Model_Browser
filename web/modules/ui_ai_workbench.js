@@ -36,6 +36,7 @@ import { locateNode, openModel, resultLinks, shared, strip, updateRunProgress } 
 import { compareBar, setMarker } from './ui_ai_images.js';
 import { marksStep, openMarker } from './ui_ai_marker.js';
 import { toolboxButton, toolboxStep } from './ui_ai_toolbox.js';
+import { executionStatus } from './ui_ai_status.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import {
     activityIds, duration, groupSteps, lookTools, stepDetail, taskCounts, taskResults, taskState, toolKey,
@@ -275,7 +276,7 @@ function renderTask() {
     titleLine.append(tools);
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);
-    header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')));
+    header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')), executionStatus(task, refresh));
 
     const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
     view.flow.replaceChildren(...(flow ? [flow] : []));
@@ -301,19 +302,6 @@ function renderTask() {
         }) });
     }
     else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
-    if (status === 'live') {
-        const running = (task.steps || []).some(step => step.state === 'running');
-        if (!running) {
-            rows.push({
-                key: `next:${items.length}:waiting`,
-                make: () => {
-                    const next = el('div', 'anomalous-ai-step is-next');
-                    next.append(el('span', 'anomalous-ai-step-dot', items.length + 1), el('div', 'anomalous-ai-working', t('aiWorking')));
-                    return next;
-                },
-            });
-        }
-    }
     syncRows(view.timeline, rows);
     updateMessageBox(view.message, Boolean(task.ended), status);
     view.message.hidden = Boolean(task.waiting && !items.length); // nobody to write to yet: the card says what to do
@@ -495,7 +483,8 @@ async function refresh() {
         state.page.replaceChildren(el('aside', 'anomalous-ai-tasks'), el('section', 'anomalous-ai-task'), el('section', 'anomalous-ai-stage'), state.bar);
     }
     // The newest task while the AI works on it, unless the user picked another one.
-    const follow = !state.pinned && tasks[0].live && tasks[0].id !== state.selected;
+    const follow = !state.pinned && !tasks[0].ended && tasks[0].id !== state.selected
+        && (tasks[0].live || tasks[0].started > (state.task?.started || 0));
     if (follow || !tasks.some(task => task.id === state.selected)) {
         state.selected = tasks[0].id;
         state.pinned = false;
@@ -510,6 +499,17 @@ async function refresh() {
     shared.entries = state.entries = entries;
     renderTask();
     layout();
+}
+
+// Poll only while this view is visible: reconnects and missed websocket events must not freeze its status.
+let pollTimer = null;
+function pollVisible() {
+    clearTimeout(pollTimer);
+    pollTimer = setTimeout(async () => {
+        if (document.hidden || !state.page?.isConnected || !visible()
+            || !state.owner?.modal?.classList.contains('visible') || state.owner.currentShellPage?.() !== 'ai') return;
+        try { await refresh(); } finally { pollVisible(); }
+    }, 5000);
 }
 
 /** The whole page into `panel`. */
@@ -530,18 +530,25 @@ export function renderAiWorkbench(owner, panel) {
     owner.railNews?.('ai', false);
     hidePanelToast();
     void refresh();
+    pollVisible();
 }
 
 /** Once: the server's "anomalous.ai_task" event refreshes the page, the home list and the rail's dot. */
 export function watchAiTasks(owner) {
     state.owner = owner;
     shared.owner = owner;
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pollVisible(); });
     api.addEventListener('anomalous.ai_task', (event) => {
         const detail = event?.detail || {};
         const onPage = () => owner.modal?.classList.contains('visible') && owner.currentShellPage?.() === 'ai' && visible();
         // A run's progress only moves its bar (every couple of seconds while it runs): no refetch.
         if (detail.progress) {
-            if (onPage()) updateRunProgress(state.page, detail.progress);
+            const step = state.task?.id === detail.id && state.task.steps.find(item => item.id === detail.progress.step);
+            if (step) step.progress = detail.progress;
+            if (onPage() && step) {
+                updateRunProgress(state.page, detail.progress);
+                state.view?.header.querySelector('.anomalous-ai-execution')?.replaceWith(executionStatus(state.task, refresh));
+            }
             return;
         }
         if (detail.panel && !onPage()) panelToast(owner, String(detail.panel), Boolean(detail.asks));

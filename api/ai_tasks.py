@@ -539,8 +539,7 @@ def task_summary(task, now=None):
         "id": task["id"], "title": task.get("title") or "", "client": task.get("client") or ("" if task.get("waiting") else "AI"),
         "started": task.get("started"), "updated": task.get("updated"), "ended": task.get("ended"),
         "waiting": bool(task.get("waiting")) and not task.get("ended"),
-        "live": (not task.get("ended") and not task.get("waiting") and now - task.get("updated", 0) < 90)
-                or any(step.get("state") == "running" and now - step.get("at", 0) < RUN_WATCH_SECONDS for step in steps),
+        "live": any(step.get("state") == "running" and now - step.get("at", 0) < RUN_WATCH_SECONDS for step in steps),
         "steps": len(steps), "kinds": kinds, "errors": sum(1 for step in steps if not step.get("ok")),
         "images": len(images), "cover": images[-1] if images else None, "asks": asks,
     }

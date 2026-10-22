@@ -29,7 +29,8 @@ assert.equal(taskState({ live: true, asks: 1 }), 'asks', 'a question waiting for
 assert.equal(taskState({ waiting: true }), 'waiting', 'a task the user started, before an AI takes it');
 assert.deepEqual(taskCounts({ asks: 2 }), [{ key: 'aiCountAsks', values: { count: 2 } }]);
 assert.equal(taskState({ errors: 2 }), 'error');
-assert.equal(taskState({}), 'done');
+assert.equal(taskState({}), 'idle', 'silence without an explicit end is not completion');
+assert.equal(taskState({ ended: 100 }), 'done');
 assert.deepEqual(taskCounts({ kinds: { canvas: 2, look: 5, speech: 1 }, images: 3, errors: 1 }), [
     { key: 'aiCountCanvas', values: { count: 2 } }, { key: 'aiCountImages', values: { count: 3 } },
     { key: 'aiCountSpeech', values: { count: 1 } }, { key: 'aiCountErrors', values: { count: 1 } },

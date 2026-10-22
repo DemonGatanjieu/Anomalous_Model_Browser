@@ -121,7 +121,9 @@ def download_status(ctx):
                                           "failed (error says why; starting it again continues it), cancelled."}
 
 
-def run_workflow(ctx, batch=1):
+def run_workflow(ctx, batch=1, wait_seconds=15):
+    from .ai_run_tracking import checked_wait
+    checked_wait(wait_seconds)  # Reject malformed waits before anything can be submitted.
     batch = max(1, min(8, int(batch)))
     try:
         answer = ask_page("run_workflow", {"batch": batch}, required_capability="prompt_ids")
@@ -298,7 +300,9 @@ ACTIONS = dict([
     _action("run_workflow", "Run the workflow",
             "Queues the open workflow in ComfyUI, like pressing Run. Uses the GPU. Follow it with run_status, which "
             "says where it stands and gives its pictures when done; do not look in the output folder for them.",
-            run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1}}),
+            run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1},
+                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 15,
+                                            "description": "Wait for execution after submission; returns actual state/results. Never resubmit while running."}}),
     _action("open_in_anomalous", "Show a model",
             "Opens Anomalous Model Browser on this model's page, so the user sees its cover and details.",
             open_in_anomalous, {"model_id": _MODEL}, ["model_id"]),

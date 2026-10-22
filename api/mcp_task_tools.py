@@ -3,7 +3,7 @@ work, report leaves a note for the user (with pictures made outside Anomalous's 
 show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
 reads what the user picked or typed on it."""
 
-from . import ai_marks, ai_panels, ai_task_runs, ai_tasks, ai_toolbox
+from . import ai_marks, ai_panels, ai_run_tracking, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 
@@ -17,7 +17,10 @@ def begin_task(ctx, title, new_task=False):
     )
     answer = {"task": task["id"], "title": task["title"], "note": "Continue this task; do not begin another for its individual steps. "
                                          "Ask the user anything with ask_user: they answer in Anomalous's AI workbench, not in your chat. "
-                                         "Every call from now on is a step of this task in Anomalous's AI workbench, "
+                                         "Use run_workflow to submit and see real execution progress. If you submit via /prompt or another tool, "
+                                         "immediately call track_run(prompt_ids, task) with the exact IDs from YOUR submission response. "
+                                         "External work is invisible until attached; never guess ownership from the global queue. "
+                                         "Every AMB tool call from now on is a step of this task in Anomalous's AI workbench, "
                                          "where the user sees, opens and undoes them. Call report to explain a choice "
                                          "or to hand in pictures you made another way; report with done=true at the end."}
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
@@ -184,6 +187,14 @@ def _task_tool(name, title, description, run, properties, required=()):
 
 
 TASK_TOOLS = dict([
+    _task_tool("track_run", "Track an externally submitted run",
+               "Immediately after YOU submit to this ComfyUI server via /prompt or another tool, attach the exact "
+               "prompt_ids returned by your submissions to your task. This does NOT submit or rerun anything. "
+               "The workbench then shows real queue/node progress and results. Never use another user's IDs or "
+               "guess from queue differences. Repeating the same IDs is safe. Waits up to wait_seconds and returns "
+               "state, summary, pictures and errors; if still running, keep waiting with run_status(wait_seconds=55).",
+               ai_run_tracking.track_run, {"prompt_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 8},
+                   "task": _TASK_PROP, "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 15}}, ["prompt_ids"]),
     _task_tool("begin_task", "Begin a task",
                "Call first when you start what the user asked for: names it in Anomalous's AI workbench, where the "
                "user sees each of your steps with what it made, and can open or undo it. Reuses the user's waiting "

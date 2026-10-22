@@ -73,7 +73,7 @@ export function taskState(summary) {
     if (summary?.waiting) return 'waiting';
     if (summary?.asks) return 'asks';
     if (summary?.live) return 'live';
-    return summary?.errors ? 'error' : 'done';
+    return summary?.errors ? 'error' : summary?.ended ? 'done' : 'idle';
 }
 
 /** A task's counts for its row: changes, pictures, sounds… as `[{ key, values }]` (only those it has). */

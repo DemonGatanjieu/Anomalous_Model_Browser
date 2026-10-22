@@ -69,6 +69,9 @@ covered by the `styles.css` manifest.
 
 ### Backend
 
+- `api/ai_run_tracking.py` attaches exact external prompt IDs to one task, prevents duplicate
+  ownership, and returns bounded-wait execution receipts to the AI.
+
 - `api/config.py` owns configured paths and active model-folder types.
 - `api/path_utils.py` owns containment, filename validation, atomic JSON writes, and resolving
   a saved model value inside the model folders;

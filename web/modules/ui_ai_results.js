@@ -89,7 +89,9 @@ export function runProgress(progress) {
     let words;
     let share = null;
     let percent = '';
-    if (progress.state === 'queued') {
+    if (progress.state === 'submitting') {
+        words = t('aiExecution_submitting');
+    } else if (progress.state === 'queued') {
         words = t('aiRunQueued', { ahead: progress.ahead });
     } else {
         const parts = [];

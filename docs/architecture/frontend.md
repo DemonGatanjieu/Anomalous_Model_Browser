@@ -5,6 +5,13 @@ localization, media, or explicit canvas mutations.
 
 ## Bootstrap and module ownership
 
+`web/modules/ai_task_status.js` derives confirmed task execution state;
+`web/modules/ui_ai_status.js` renders the task header's execution summary from run steps.
+The header shares progress with the timeline. Websocket updates also update the in-memory
+step; a five-second visible-page refresh recovers missed events. The loop stops when the
+workbench/page is hidden or removed, and resumes on open or browser visibility return.
+Unended tasks with no active step await an update; silence never means completion.
+
 `mcp_run.js` follows one native `app.queuePrompt` request by its host request ID and
 `promptQueueing`/`promptQueued` events. A temporary `api.queuePrompt` wrapper preserves the
 original receiver/arguments and collects only that batch's submission responses, stopping

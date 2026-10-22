@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import { taskStatus } from '../web/modules/ai_task_status.js';
+const task = { started: 10, updated: 99, steps: [] };
+assert.equal(taskStatus(task, 100).state, 'untracked');
+assert.equal(taskStatus(task, 100).age, 90, 'user activity does not pretend the AI made contact');
+const run = { id: 'r', tool: 'run_workflow', state: 'running', at: 20, progress: { state: 'queued', ahead: 2 } };
+task.steps.push(run);
+assert.equal(taskStatus(task, 100).state, 'queued');
+run.progress = { state: 'running', max: 20, value: 7 };
+assert.equal(taskStatus(task, 100).seconds, 80);
+run.state = 'done'; run.ms = 8000;
+assert.equal(taskStatus(task, 100).state, 'done');
+assert.equal(taskStatus(task, 100).seconds, 8);
+task.steps.push({ tool: 'describe_canvas', state: 'running', at: 80 });
+assert.equal(taskStatus(task, 100).state, 'tool', 'a later tool does not replay an old run as current');
+task.steps.at(-1).state = 'done'; run.state = 'error';
+assert.equal(taskStatus(task, 100).state, 'error');
+console.log('ai_task_status: confirmed run state and untracked work passed');
