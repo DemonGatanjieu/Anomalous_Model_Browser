@@ -65,8 +65,8 @@ export function connectGuide(title = '') {
     return box;
 }
 
-/** The guide in a window over the page (Esc or the backdrop closes it). */
-export function openConnectGuide() {
+/** A window over the page with `title` and `body` (Esc, ×, or the backdrop closes it); returns close. */
+export function aiWindow(title, body) {
     const overlay = el('div', 'anomalous-ai-connect-overlay');
     const dialog = el('div', 'anomalous-ai-connect-dialog');
     dialog.setAttribute('role', 'dialog');
@@ -81,10 +81,16 @@ export function openConnectGuide() {
         close();
     };
     const head = el('div', 'anomalous-ai-connect-head');
-    head.append(el('div', 'anomalous-ai-connect-title', t('aiConnect')), button('anomalous-ai-connect-close', '×', close, t('close')));
-    dialog.append(head, connectGuide());
+    head.append(el('div', 'anomalous-ai-connect-title', title), button('anomalous-ai-connect-close', '×', close, t('close')));
+    dialog.append(head, body);
     overlay.append(dialog);
     overlay.addEventListener('click', (event) => { if (event.target === overlay) close(); });
     window.addEventListener('keydown', onKey, true);
     document.body.append(overlay);
+    return close;
+}
+
+/** The guide in a window over the page. */
+export function openConnectGuide() {
+    aiWindow(t('aiConnect'), connectGuide());
 }

@@ -26,6 +26,8 @@ import { messageBox, updateMessageBox } from './ui_ai_message.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { focusPanel, openQuestions, panelLine, panelSteps, renderStage, stageNews, tabBar } from './ui_ai_side.js';
 import { connectGuide, openConnectGuide } from './ui_ai_connect.js';
+import { gateCard, openGates } from './ui_ai_gate.js';
+import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
 import { locateNode, openModel, resultLinks, shared, strip } from './ui_ai_results.js';
 import { compareBar } from './ui_ai_images.js';
@@ -123,7 +125,7 @@ function renderList(box) {
         button('anomalous-ai-fold', '‹', () => foldTasks(true), t('aiTasksCollapse')));
     const actions = el('div', 'anomalous-ai-tasks-actions');
     actions.append(button('anomalous-ai-new-task', `＋ ${t('aiNewTask')}`, newTask, t('aiNewTaskHint')),
-        button('anomalous-ai-link', t('aiConnect'), openConnectGuide));
+        button('anomalous-ai-link', t('aiConnect'), openConnectGuide), button('anomalous-ai-link', t('aiGates'), openGates, t('aiGatesHint')));
     const list = el('div', 'anomalous-ai-tasks-list');
     // Newest first, under a heading for each day (today, yesterday, a date).
     let day = null;
@@ -143,7 +145,8 @@ function renderList(box) {
 /** One step of the timeline; `number` is its place in the task (the dot shows it). */
 function stepRow(step, number) {
     const running = step.state === 'running';
-    const row = el('div', `anomalous-ai-step is-${step.kind}${step.ok ? '' : ' is-failed'}${running ? ' is-running' : ''}`);
+    const row = el('div', `anomalous-ai-step is-${step.kind}${step.ok ? '' : ' is-failed'}${running ? ' is-running' : ''}${step.state === 'asking' ? ' is-asking' : ''}`);
+    row.dataset.stepIds = step.id;
     row.append(el('span', 'anomalous-ai-step-dot', number));
     const body = el('div', 'anomalous-ai-step-body');
     const line = el('div', 'anomalous-ai-step-line');
@@ -166,7 +169,9 @@ function stepRow(step, number) {
     if (step.kind === 'panel' && state.task) {
         body.append(panelLine(step, () => showOnStage(step.panel.id)));
     }
-    if (step.error) body.append(el('div', 'anomalous-ai-step-error', step.error));
+    const gate = state.task && gateCard(step, state.task.id, () => void refresh());
+    if (gate) body.append(gate);
+    if (step.error && !gate) body.append(el('div', 'anomalous-ai-step-error', step.error));
     if (running) body.append(el('div', 'anomalous-ai-step-running', t(step.kind === 'run' ? 'aiRunRunning' : 'aiStepRunning')));
     const links = resultLinks(step, renderTask);
     if (links) body.append(links);
@@ -193,6 +198,7 @@ function userChange(step) {
 
 function looksRow(steps, number) {
     const row = el('div', 'anomalous-ai-step is-look is-folded');
+    row.dataset.stepIds = steps.map(step => step.id).join(' ');
     row.append(el('span', 'anomalous-ai-step-dot', number));
     const body = el('div', 'anomalous-ai-step-body');
     const tools = lookTools(steps).map(({ tool, count }) => (count > 1 ? `${t(toolKey(tool))} ×${count}` : t(toolKey(tool))));
@@ -241,7 +247,8 @@ function renderTask() {
     let view = state.view;
     if (!view || view.taskId !== task.id || !box.contains(view.timeline)) {
         view = state.view = {
-            taskId: task.id, header: el('div', 'anomalous-ai-task-head'), made: el('div', 'anomalous-ai-made-holder'),
+            taskId: task.id, header: el('div', 'anomalous-ai-task-head'), flow: el('div', 'anomalous-ai-flow-holder'),
+            made: el('div', 'anomalous-ai-made-holder'),
             timeline: el('div', 'anomalous-ai-timeline'), madeKey: null,
             message: messageBox(async (text) => {
                 await postTask(task.id, { text }, 'message');
@@ -249,7 +256,7 @@ function renderTask() {
             }),
         };
         view.tabs = el('div', 'anomalous-ai-tabs');
-        box.replaceChildren(view.tabs, view.header, view.made, view.timeline, view.message);
+        box.replaceChildren(view.tabs, view.header, view.flow, view.made, view.timeline, view.message);
     }
     // A new panel that asks something brings the stage forward when the window is narrow.
     const news = stageNews(task, state.stage);
@@ -290,6 +297,9 @@ function renderTask() {
         ...taskCounts(summary).map(say)].filter(Boolean);
     header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')));
 
+    const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
+    view.flow.replaceChildren(...(flow ? [flow] : []));
+
     const madeKey = JSON.stringify(taskResults(task));
     if (madeKey !== view.madeKey) {
         view.madeKey = madeKey;
@@ -323,6 +333,15 @@ function renderTask() {
     updateMessageBox(view.message, Boolean(task.ended), status);
     box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
     drawStage(task, news.arrived);
+}
+
+/** Brings a step's row into view (from the flow), marked for a moment. */
+function showStep(timeline, stepId) {
+    const row = [...timeline.querySelectorAll('[data-step-ids]')].find(item => item.dataset.stepIds.split(' ').includes(stepId));
+    if (!row) return;
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row.classList.add('is-flash');
+    setTimeout(() => row.classList.remove('is-flash'), 1600);
 }
 
 /** An empty task the user started: say what to tell the AI, and how to connect one. */
@@ -529,6 +548,7 @@ export function watchAiTasks(owner) {
         const detail = event?.detail || {};
         const onPage = () => owner.modal?.classList.contains('visible') && owner.currentShellPage?.() === 'ai' && visible();
         if (detail.panel && !onPage()) panelToast(owner, String(detail.panel), Boolean(detail.asks));
+        else if (detail.gate && !onPage()) panelToast(owner, t(`aiGateQ_${detail.gate}`), true);
         clearTimeout(state.refreshTimer);
         state.refreshTimer = setTimeout(() => {
             if (onPage()) void refresh();

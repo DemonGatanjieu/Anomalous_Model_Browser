@@ -1,11 +1,11 @@
 """The AI workbench's routes over ai_tasks.py (the record) and ai_panels.py (panels, answers,
 messages): the list and one task (reads, open like the other pages), and the writes the page
-makes - start a task, rename or remove one, answer a panel, write to the AI (local_guard.py keeps
-the writes to this computer)."""
+makes - start a task, rename or remove one, answer a panel, write to the AI, answer a gate and
+set the gates' policies (ai_gates.py) - (local_guard.py keeps the writes to this computer)."""
 
 from aiohttp import web
 
-from . import activity_log, ai_task_changes, ai_tasks
+from . import activity_log, ai_gates, ai_task_changes, ai_tasks
 
 
 async def api_list(request):
@@ -83,6 +83,39 @@ async def api_message(request):
     return web.json_response({"step": step})
 
 
+async def _body(request):
+    try:
+        body = await request.json()
+    except (ValueError, UnicodeDecodeError):
+        return None
+    return body if isinstance(body, dict) else None
+
+
+async def api_gate(request):
+    """POST /anomalous/ai_tasks/{id}/gate: {step, decision: allow | deny, text?, remember?}."""
+    body = await _body(request)
+    if body is None:
+        return web.json_response({"error": "Expected {step, decision}"}, status=400)
+    try:
+        step = ai_gates.decide(request.match_info["task_id"], str(body.get("step")), body.get("decision"),
+                               body.get("text") or "", bool(body.get("remember")))
+    except ValueError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    return web.json_response({"step": step})
+
+
+async def api_gates(request):
+    """GET /anomalous/ai_gates: {gate: policy}; POST {gate, policy} changes one."""
+    if request.method == "GET":
+        return web.json_response({"policies": ai_gates.policies()})
+    body = await _body(request)
+    try:
+        policies = ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
+    except ValueError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    return web.json_response({"policies": policies})
+
+
 def register_routes(app):
     activity_log.add_listener(ai_task_changes.note_activity)  # the user's changes while an AI works
     app.router.add_get("/anomalous/ai_tasks", api_list)
@@ -91,3 +124,6 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}", api_change)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/message", api_message)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/gate", api_gate)
+    app.router.add_get("/anomalous/ai_gates", api_gates)
+    app.router.add_post("/anomalous/ai_gates", api_gates)

@@ -23,7 +23,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_panels, ai_task_runs, ai_tasks, mcp_bridge
+from . import ai_gates, ai_panels, ai_task_runs, ai_tasks, mcp_bridge
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_task_tools import TASK_TOOLS
@@ -153,10 +153,14 @@ async def _call(params, request):
     active_task = step_ref[0] if step_ref else task_id
     if active_task:
         ctx["task"] = active_task
+    before = None
     try:
-        async with _slots:
-            before = await asyncio.to_thread(ai_task_runs.prompt_ids) if name == "run_workflow" else None
-            result = await asyncio.to_thread(call_tool, TOOLS, name, arguments, ctx)
+        # The user's gate first (ai_gates.py): it may wait for their OK, or answer for them.
+        result = await asyncio.to_thread(ai_gates.check, name, arguments, step_ref)
+        if result is None:
+            async with _slots:
+                before = await asyncio.to_thread(ai_task_runs.prompt_ids) if name == "run_workflow" else None
+                result = await asyncio.to_thread(call_tool, TOOLS, name, arguments, ctx)
     except BaseException as error:
         failed_result = {"content": [{"type": "text", "text": f"{name} failed: {error}"}], "isError": True}
         await asyncio.to_thread(

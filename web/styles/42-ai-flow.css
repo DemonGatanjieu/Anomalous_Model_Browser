@@ -1,0 +1,145 @@
+/* The flow over an AI task (ui_ai_flow.js), the step that waits for the user's OK and the Gates
+   window (ui_ai_gate.js). */
+.anomalous-ai-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: -4px 0 16px;
+}
+
+.anomalous-ai-flow-arrow { color: var(--amb-text-dim); }
+
+.anomalous-ai-flow-stage {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-ai-flow-stage:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+
+.anomalous-ai-flow-mark {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--amb-text-dim);
+}
+
+.anomalous-ai-flow-stage.is-done .anomalous-ai-flow-mark { background: var(--amb-ok); }
+.anomalous-ai-flow-stage.is-running .anomalous-ai-flow-mark { background: var(--amb-link); animation: anomalous-ai-flow-pulse 1.2s ease-in-out infinite; }
+.anomalous-ai-flow-stage.is-error .anomalous-ai-flow-mark { background: var(--amb-danger); }
+.anomalous-ai-flow-stage.is-asking {
+    border-color: var(--amb-warn);
+    background: color-mix(in srgb, var(--amb-warn) 14%, transparent);
+    color: var(--amb-text-main);
+}
+.anomalous-ai-flow-stage.is-asking .anomalous-ai-flow-mark { background: var(--amb-warn); }
+.anomalous-ai-flow-count { color: var(--amb-text-dim); font-size: 11px; }
+
+@keyframes anomalous-ai-flow-pulse { 50% { opacity: 0.35; } }
+
+.anomalous-ai-step.is-flash > .anomalous-ai-step-body {
+    border-radius: 8px;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--amb-link) 60%, transparent);
+}
+
+/* A step that waits for the user's OK. */
+.anomalous-ai-step.is-asking > .anomalous-ai-step-dot { border-color: var(--amb-warn); color: var(--amb-warn); }
+
+.anomalous-ai-gate {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--amb-warn) 60%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--amb-warn) 7%, var(--amb-bg-panel));
+}
+
+.anomalous-ai-gate-title { color: var(--amb-text-main); font-size: 13.5px; font-weight: 600; }
+.anomalous-ai-gate-why,
+.anomalous-ai-gate-note { color: var(--amb-text-soft); font-size: 12px; }
+
+.anomalous-ai-gate-lines {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 4px 12px;
+    margin: 0;
+    font-size: 12px;
+}
+.anomalous-ai-gate-lines dt { color: var(--amb-text-dim); }
+.anomalous-ai-gate-lines dd { margin: 0; color: var(--amb-text-main); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.anomalous-ai-gate-reason {
+    padding: 7px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 7px;
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+}
+
+.anomalous-ai-gate-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.anomalous-ai-gate-allow,
+.anomalous-ai-gate-deny {
+    padding: 6px 16px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.anomalous-ai-gate-allow { border-color: var(--amb-ok); background: color-mix(in srgb, var(--amb-ok) 22%, transparent); }
+.anomalous-ai-gate-allow:hover { background: color-mix(in srgb, var(--amb-ok) 35%, transparent); }
+.anomalous-ai-gate-deny:hover { border-color: var(--amb-danger); }
+.anomalous-ai-gate-actions button:disabled { opacity: 0.5; cursor: default; }
+
+.anomalous-ai-gate-remember { display: inline-flex; align-items: center; gap: 6px; color: var(--amb-text-soft); font-size: 12px; }
+
+.anomalous-ai-gate-answer { margin-top: 6px; color: var(--amb-text-soft); font-size: 12px; }
+.anomalous-ai-gate-answer.is-allow { color: var(--amb-ok); }
+.anomalous-ai-gate-answer.is-deny { color: var(--amb-danger); }
+
+/* The Gates window. */
+.anomalous-ai-gates { display: flex; flex-direction: column; gap: 12px; max-width: 560px; }
+.anomalous-ai-gates-intro,
+.anomalous-ai-gates-note { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
+.anomalous-ai-gates-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 10px 0;
+    border-top: 1px solid var(--amb-border);
+}
+.anomalous-ai-gates-words { flex: 1 1 220px; min-width: 0; }
+.anomalous-ai-gates-name { color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
+.anomalous-ai-gates-tools { color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-ai-gates-choice { display: inline-flex; border: 1px solid var(--amb-border); border-radius: 8px; overflow: hidden; }
+.anomalous-ai-gates-option {
+    padding: 5px 12px;
+    border: 0;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.anomalous-ai-gates-option + .anomalous-ai-gates-option { border-left: 1px solid var(--amb-border); }
+.anomalous-ai-gates-option.is-on { background: color-mix(in srgb, var(--amb-link) 22%, transparent); color: var(--amb-text-main); }
+
+@media (prefers-reduced-motion: reduce) { .anomalous-ai-flow-stage.is-running .anomalous-ai-flow-mark { animation: none; } }

@@ -1,7 +1,7 @@
 // The AI workbench's rules (web/modules/ai_task_view.js): folding reads, words, counts, addresses.
 import assert from 'node:assert/strict';
 import {
-    audioResult, duration, groupSteps, isVideo, lookTools, outputUrl, outputPicture, pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskResults, taskState, toolKey,
+    activityIds, audioResult, duration, flowStages, groupSteps, isVideo, lookTools, outputUrl, outputPicture, pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
 const look = (tool, ok = true, state = 'done') => ({ kind: 'look', tool, ok, state, summary: tool });
@@ -65,5 +65,20 @@ assert.equal(picturePreview({ filename: 'a.mp4' }), outputUrl({ filename: 'a.mp4
 assert.equal(duration(400), null);
 assert.deepEqual(duration(48_200), { key: 'aiSeconds', values: { count: 48 } });
 assert.deepEqual(duration(150_000), { key: 'aiMinutes', values: { count: 3 } });
+
+// The flow: stages in the order they came, each with its last step's state.
+const staged = (id, stage, extra = {}) => ({ id, stage, ok: true, state: 'done', results: [], ...extra });
+const flow = flowStages({ steps: [
+    staged('a', 'model'), staged('b', 'prompt'), staged('c', 'model', { state: 'running' }),
+    { id: 'd', kind: 'note', ok: true, results: [{ type: 'image', filename: 'x.png' }] }, { id: 'e', kind: 'user', ok: true },
+    staged('f', 'run', { state: 'asking' }), staged('g', 'canvas', { ok: false, state: 'stopped' }),
+] });
+assert.deepEqual(flow.map(item => [item.stage, item.state, item.first, item.count]), [
+    ['model', 'running', 'a', 2], ['prompt', 'done', 'b', 1], ['picture', 'done', 'd', 1], ['run', 'asking', 'f', 1], ['canvas', 'error', 'g', 1],
+]);
+assert.deepEqual(flowStages(null), []);
+
+// The activity entries a task shows: the AI's canvas changes and the user's own.
+assert.deepEqual(activityIds({ steps: [{ results: [{ type: 'canvas', activity: 'a1' }, { type: 'model' }] }, { tool: 'user_activity', activity: 'u1', results: [] }] }), ['a1', 'u1']);
 
 console.log('ai_task_view: ok');

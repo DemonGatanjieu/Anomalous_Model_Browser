@@ -149,7 +149,15 @@ covered by the `styles.css` manifest.
   (activity entries, `activity_log.add_listener`) made while an AI works into that AI's task
   as `user_activity` steps, which the AI receives once with its next call (a message of kind
   `change`); `activity_log.tag` names the task on the entry, and the activity page links to
-  it. It tells the page through the
+  it. `api/ai_gates.py` holds the user's gates: each gate is `auto`, `ask` or `never`
+  (`anomalous/ai_gates.json`, `/anomalous/ai_gates`); `mcp_server.py` asks it before running a
+  tool. With `ask` the step waits in state `asking` (what it would do listed) for up to 50 s;
+  the user's Allow or No comes through `POST /anomalous/ai_tasks/{id}/gate`. Unanswered by
+  then, the AI is told to wait and call again; the later answer reaches it as a message of kind
+  `gate`, and the same call made again after an Allow goes ahead without asking twice.
+  `web/modules/ui_ai_gate.js` draws the card under a step that asks and the Gates window;
+  `ui_ai_flow.js` the flow over a task (its stages in order, each done, running, waiting or
+  failed; a stage leads to its first step). It tells the page through the
   `anomalous.ai_task` event; `api/ai_tasks_routes.py` serves `/anomalous/ai_tasks` (list, one
   task, start, rename or remove, a panel's answer, a message). The user can start a task first
   (New task): it waits, and the next app that calls takes it over, so its work starts there

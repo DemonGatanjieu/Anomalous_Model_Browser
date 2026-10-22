@@ -25,6 +25,26 @@ export function groupSteps(steps) {
     return items;
 }
 
+/**
+ * The stages a task's steps went through, in the order they first came, with the last step's
+ * state for each: 'asking' (waits for the user's OK), 'running', 'error' or 'done'. Notes that
+ * hand in pictures count as the picture stage. `first`: the stage's first step, `count` its steps.
+ */
+export function flowStages(task) {
+    const stages = new Map();
+    for (const step of task?.steps || []) {
+        const stage = step.stage || ((step.results || []).some(result => result.type === 'image') ? 'picture' : null);
+        if (!stage) continue;
+        const item = stages.get(stage) || { stage, first: step.id, count: 0 };
+        item.count += 1;
+        item.state = step.state === 'asking' ? 'asking'
+            : step.state === 'running' || step.state === 'allowed' ? 'running'
+                : step.ok === false ? 'error' : 'done';
+        stages.set(stage, item);
+    }
+    return [...stages.values()];
+}
+
 /** The locale key naming a step's tool. */
 export function toolKey(tool) {
     return `aiTool_${String(tool || '').replace(/[^a-z_]/g, '')}`;

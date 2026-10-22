@@ -438,6 +438,15 @@ def _collect(client, panel_id, task_id=None):
                     message["kind"] = "change"  # something the user changed in Anomalous, not words to the AI
                 messages.append(message)
                 continue
+            asked = step.get("gate") or {}
+            if asked.get("timed_out") and asked.get("decision") and not asked.get("delivered") and panel_id is None:
+                asked["delivered"] = True
+                changed.add(task["id"])
+                messages.append({"id": step["id"], "task": task["id"], "kind": "gate", "at": asked.get("at"),
+                                 "text": (f"The user allowed {step['tool']}: call it again with the same arguments now."
+                                          if asked["decision"] == "allow" else
+                                          f"The user said no to {step['tool']}." + (f" They said: {asked['text']}" if asked.get("text") else ""))})
+                continue
             panel = step.get("panel")
             if step.get("kind") != "panel" or (panel_id is not None and panel["id"] != panel_id):
                 continue

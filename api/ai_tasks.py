@@ -401,7 +401,8 @@ def finish_step(client, tool, arguments, result, started, read_only=False, step_
         ms = max(0, int((time.time() - started) * 1000))
         what = action_catalog.entry(tool, read_only)
         kind = what.kind
-        state = "error" if failed else ("running" if tool == "run_workflow" else "done")
+        waiting = isinstance(data, dict) and data.get("waiting_for_user")  # a gate the user has not answered (ai_gates.py)
+        state = "error" if failed else "asking" if waiting else "running" if tool == "run_workflow" else "done"
         summary = summary_of(tool, args)
         results = [] if failed else results_of(tool, args, data)
         with _lock:
@@ -489,6 +490,7 @@ def task_summary(task, now=None):
     asks = sum(1 for step in steps if step.get("kind") == "panel" and not step["panel"].get("closed")
                for block in step["panel"]["blocks"] if block.get("type") in ("choices", "input", "picks")
                and block.get("id") and block["id"] not in step.get("answers", {}))
+    asks += sum(1 for step in steps if step.get("state") == "asking")
     return {
         "id": task["id"], "title": task.get("title") or "", "client": task.get("client") or ("" if task.get("waiting") else "AI"),
         "started": task.get("started"), "updated": task.get("updated"), "ended": task.get("ended"),
