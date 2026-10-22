@@ -3,6 +3,8 @@ messages): the list and one task (reads, open like the other pages), and the wri
 makes - start a task, rename or remove one, answer a panel, write to the AI, answer a gate and
 set the gates' policies (ai_gates.py) - (local_guard.py keeps the writes to this computer)."""
 
+import asyncio
+
 from aiohttp import web
 
 from . import activity_log, ai_gates, ai_marks, ai_task_changes, ai_tasks
@@ -126,7 +128,8 @@ async def api_marks(request):
     if body is None:
         return web.json_response({"error": "Expected {image, png, marks}"}, status=400)
     try:
-        step = ai_marks.save(request.match_info["task_id"], body.get("image"), body.get("png"), body.get("marks"), body.get("text"))
+        step = await asyncio.to_thread(ai_marks.save, request.match_info["task_id"], body.get("image"),
+                                       body.get("png"), body.get("marks"), body.get("text"))
     except ai_marks.MarksError as error:
         return web.json_response({"error": str(error)}, status=400)
     ai_panels.wake()

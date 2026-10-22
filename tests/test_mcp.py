@@ -50,6 +50,12 @@ def modern_headers(method, name=None):
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_non_string_tool_names_return_protocol_error(self):
+        for name in ([], {}, 123):
+            status, body = post({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": name}})
+            self.assertEqual(status, 200)
+            self.assertEqual(body["error"]["code"], -32602)
+
     def test_legacy_clients_initialize_then_list_tools(self):
         status, body = post({"jsonrpc": "2.0", "id": 1, "method": "initialize",
                              "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "c", "version": "1"}}})

@@ -117,6 +117,9 @@ def _stop_running(task):
     """Steps a call or a run left "running" when ComfyUI stopped: nothing watches them any more."""
     stopped = False
     for step in task.get("steps") or []:
+        if step.get("state") == "asking" and step.get("gate") and not step["gate"].get("timed_out"):
+            step["gate"]["timed_out"] = True  # no old process is still waiting for this decision
+            stopped = True
         if step.get("state") == "running":
             step.update(state="stopped", ok=False, error="ComfyUI 重启时这一步还没结束 / ComfyUI restarted before this step ended")
             stopped = True
@@ -437,6 +440,12 @@ def finish_step(client, tool, arguments, result, started, read_only=False, step_
         with _lock:
             task = _load().get(step_ref[0]) if isinstance(step_ref, tuple) and len(step_ref) == 2 else None
             step = next((item for item in (task or {}).get("steps", []) if item.get("id") == step_ref[1]), None) if task else None
+            # A user can answer just after check() times out, before this call returns.
+            gate = (step or {}).get("gate") or {}
+            if waiting and gate.get("decision"):
+                failed = gate["decision"] == "deny"
+                state = "error" if failed else "done" if gate.get("used") else "allowed"
+                error = (step.get("error") or "你没有允许 / You said no") if failed else ""
             if task is None:
                 task = current_task(client, started, session=session, task_id=task_id)
             if step is None:

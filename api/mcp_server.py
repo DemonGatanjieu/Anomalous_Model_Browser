@@ -140,7 +140,7 @@ def _modern_header_problem(request, method, params, version):
 async def _call(params, request):
     name = params.get("name")
     raw_arguments = params.get("arguments") or {}
-    if name not in TOOLS or not isinstance(raw_arguments, dict):
+    if not isinstance(name, str) or name not in TOOLS or not isinstance(raw_arguments, dict):
         return None
     arguments = dict(raw_arguments)
     client = ai_tasks.client_of(request.headers, params)
@@ -181,7 +181,7 @@ async def _call(params, request):
     # The user's news goes to the AI, never to the card's own calls (they do not reach the AI).
     if name != "get_answers" and name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)
-        await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task)
+        await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task or ("" if session else None))
     return result
 
 

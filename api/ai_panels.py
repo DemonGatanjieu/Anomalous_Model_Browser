@@ -424,8 +424,8 @@ def _collect(client, panel_id, task_id=None):
         if panel_id is not None:
             if task is not panel_task:
                 continue
-        elif named_task is not None:
-            if task is not named_task and task.get("client") != client:
+        elif task_id is not None:
+            if task is not named_task:
                 continue
         elif task.get("client") != client:
             continue

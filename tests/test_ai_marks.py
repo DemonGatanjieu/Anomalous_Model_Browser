@@ -77,6 +77,11 @@ class MarkTests(unittest.TestCase):
             ai_marks.save("no-task", "a.png", png(), MARKS)
         self.assertIsNone(ai_marks.path_of(self.task, "../../x.png"))
 
+    def test_path_on_another_drive_is_a_validation_error(self):
+        with mock.patch.object(ai_tasks, "_output_media", side_effect=ValueError("Paths don't have the same drive")):
+            with self.assertRaises(ai_marks.MarksError):
+                ai_marks.save(self.task, "Z:/outside.png", png(), MARKS)
+
 
 if __name__ == "__main__":
     unittest.main()

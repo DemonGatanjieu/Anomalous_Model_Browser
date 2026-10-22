@@ -99,6 +99,9 @@ def _show_progress(task_id, step_id, progress):
 
 
 def _finish_run(task_id, step_id, prompts, history):
+    if not prompts:
+        _stop_run(task_id, step_id, "没有找到已排队的运行 / No queued run was found; completion cannot be confirmed")
+        return True
     images, failed, done = [], False, 0
     for prompt_id in prompts:
         record_ = history.get(prompt_id)
@@ -119,7 +122,8 @@ def _finish_run(task_id, step_id, prompts, history):
         if not step:
             return True
         results = [item for item in step["results"] if item["type"] != "image"] + images[:ai_tasks.MAX_RESULTS]
-        if done < len(prompts) and results == step["results"] and step.get("prompts") == len(prompts):
+        if (done < len(prompts) and results == step["results"] and step.get("prompts") == len(prompts)
+                and (not failed or step.get("ok") is False)):
             return False  # nothing new to keep: no write
         step["results"] = results
         step["state"] = "running" if done < len(prompts) else ("error" if failed else "done")
@@ -134,6 +138,20 @@ def _finish_run(task_id, step_id, prompts, history):
         ai_tasks._save(task)
     ai_tasks._notify(task_id)
     return done >= len(prompts)
+
+
+def _stop_run(task_id, step_id, reason):
+    """Monitoring ended without proof of completion; never pretend the run succeeded."""
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id)
+        step = next((item for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
+        if not step or step.get("state") != "running":
+            return
+        step.update(state="stopped", ok=False, error=reason, ms=max(0, int((time.time() - step["at"]) * 1000)))
+        step.pop("progress", None)
+        task["updated"] = max(task["updated"], time.time())
+        ai_tasks._save(task)
+    ai_tasks._notify(task_id)
 
 
 def watch(step_id, before):
@@ -156,14 +174,19 @@ def watch(step_id, before):
             if prompts:
                 try:
                     history = {pid: _queue().get_history(prompt_id=pid).get(pid) for pid in prompts}
-                except Exception:  # noqa: BLE001
+                except Exception:  # noqa: BLE001 - stop the receipt, not the actual ComfyUI run
+                    _stop_run(task_id, step_id, "无法读取运行记录 / Run history could not be read; check ComfyUI's queue")
                     return
                 if _finish_run(task_id, step_id, prompts, {k: v for k, v in history.items() if v}):
                     return
-                progress = progress_of([pid for pid in prompts if not history.get(pid)])
+                try:
+                    progress = progress_of(prompts)
+                except (AttributeError, KeyError, TypeError, ValueError):
+                    progress = None  # progress is optional; keep watching the authoritative history
                 if progress:
                     _show_progress(task_id, step_id, progress)
             time.sleep(RUN_POLL_SECONDS)
+        _stop_run(task_id, step_id, "运行跟踪已超时，未停止出图 / Monitoring timed out; the workflow was not cancelled. Check ComfyUI's queue")
 
     threading.Thread(target=follow, name="anomalous-ai-run", daemon=True).start()
 

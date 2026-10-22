@@ -96,7 +96,10 @@ def _words(marks, text):
 
 def save(task_id, image, png, marks, text="", now=None):
     """Keeps the marked picture and adds the user's marks to the task. Returns the step."""
-    picture = ai_tasks._output_media(image)
+    try:
+        picture = ai_tasks._output_media(image)
+    except (ValueError, OSError):
+        picture = None
     if not picture:
         raise MarksError("Only a picture in the output folder can be marked")
     data = _png(png)

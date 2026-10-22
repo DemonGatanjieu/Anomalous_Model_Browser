@@ -86,6 +86,47 @@ class ProgressTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ai_task_runs.status("A")
 
+    def run_step(self):
+        step = ai_tasks.record("A", "run_workflow", {}, ok({"queued": 1}), time.time())
+        return ai_tasks.active_task_id("A"), step["id"]
+
+    def test_no_queued_prompt_is_not_success(self):
+        task, step = self.run_step()
+        ai_task_runs._finish_run(task, step, [], {})
+        self.assertEqual(ai_task_runs.status("A")["state"], "stopped")
+        self.assertFalse(ai_tasks.get_task(task)["steps"][-1]["ok"])
+
+    def test_failure_is_recorded_even_when_other_prompts_are_pending(self):
+        task, step = self.run_step()
+        ai_task_runs._finish_run(task, step, ["one", "two"], {})
+        ai_task_runs._finish_run(task, step, ["one", "two"], {"one": {"status": {"status_str": "error"}}})
+        self.assertFalse(ai_tasks.get_task(task)["steps"][-1]["ok"])
+        self.assertIn("error", ai_task_runs.status("A"))
+
+    def test_watcher_timeout_and_history_failure_stop_the_receipt(self):
+        # Run the actual watcher synchronously; replace only time and host queue boundaries.
+        def inline_thread(target, **kwargs):
+            return SimpleNamespace(start=target)
+        for fail_history in (False, True):
+            isolate()
+            task, step = self.run_step()
+            queue = mock.Mock()
+            queue.get_history.side_effect = OSError("unavailable")
+            with mock.patch.object(ai_task_runs.threading, "Thread", side_effect=inline_thread), \
+                    mock.patch.object(ai_task_runs, "prompt_ids", return_value={"mine"}), \
+                    mock.patch.object(ai_task_runs, "_queue", return_value=queue), \
+                    mock.patch.object(ai_tasks, "RUN_WATCH_SECONDS", 60 if fail_history else 0):
+                ai_task_runs.watch(step, set())
+            status = ai_task_runs.status("A")
+            self.assertEqual(status["state"], "stopped")
+            self.assertIn("history" if fail_history else "timed out", status["error"])
+
+    def test_batch_progress_keeps_total_and_current_index(self):
+        task, step = self.run_step()
+        queue = Queue(running=[(2, "two")])
+        with mock.patch.object(ai_task_runs, "_queue", return_value=queue), mock.patch.object(ai_task_runs, "_registry", return_value=None):
+            self.assertEqual(ai_task_runs.progress_of(["one", "two"]), {"state": "running", "prompt": 2, "prompts": 2})
+
 
 if __name__ == "__main__":
     unittest.main()

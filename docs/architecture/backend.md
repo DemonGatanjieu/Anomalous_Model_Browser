@@ -249,6 +249,20 @@ descriptions. Its picks go to `/anomalous/scan_all` as `targets`, like a list pa
 
 ## MCP endpoint
 
+AI gate decisions are single-use: `ai_gates.check` consumes an immediate approval before
+dispatch; only an unused timed-out approval may authorize an identical retry. Missing
+step records fail closed for `ask`. `finish_step` preserves decisions received after a
+gate timeout; loading an unanswered gate after restart makes it eligible for late-answer
+delivery. Gate decisions wake both gate waiters and `get_answers` readers. Explicit task
+selection in `ai_panels._collect` is exclusive, including when that task no longer exists;
+session-scoped `get_answers` resolves its own active task before collecting input.
+
+Run monitoring failures end the receipt as `stopped` with a reason without cancelling the
+host workflow. No detected queue entry is not success. Batch progress keeps the complete
+prompt list, and partial errors are saved even before all prompts finish. Marked-image
+validation and persistence run in a worker thread; invalid cross-drive paths are validation
+errors rather than uncaught route failures.
+
 `POST /anomalous/mcp` (`api/mcp_server.py`) answers one JSON-RPC message per POST with
 one JSON object; GET and DELETE get 405, and nothing is sent unasked. A request whose
 `params._meta` carries `io.modelcontextprotocol/protocolVersion` is served as 2026-07-28:

@@ -79,7 +79,11 @@ def run_status(ctx, wait_seconds=0, task=None):
 
 def get_answers(ctx, panel=None, wait_seconds=0, task=None):
     try:
-        answer = ai_panels.get_answers(ctx.get("client") or "AI", panel, wait_seconds, task_id=task or ctx.get("task"))
+        client = ctx.get("client") or "AI"
+        task_id = task or ctx.get("task") or None
+        if not task_id and ctx.get("session"):
+            task_id = ai_tasks.active_task_id(client, ctx["session"]) or ""
+        answer = ai_panels.get_answers(client, panel, wait_seconds, task_id=task_id)
         return answer, ai_marks.image_items(answer.get("messages") or [])  # marked pictures, as pictures
     except ai_panels.PanelError as error:
         raise ToolError(str(error))

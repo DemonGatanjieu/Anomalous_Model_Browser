@@ -2,6 +2,13 @@
 
 ## v1.62.0 — unreleased
 
+### AI 后端修复 / AI backend fixes
+- “允许一次”只用于一次调用，不会被相同参数的后续调用重复使用；无法建立确认记录时不会直接执行。修复确认超时后用户刚好回答、工具返回又覆盖答案的问题；重启后的待确认步骤仍能把后续答案交给 AI，回答也会唤醒正在等待的 AI。
+- 指定任务或会话读取留言时，不再取走同一 AI 客户端其他任务的留言、标记和回答。
+- 没找到排队记录、无法读取运行记录、跟踪超时均明确标为未完成，不再误报完成或永久显示运行中；批次内出错及时记录，批次进度保留总数。跟踪停止不会取消 ComfyUI 实际运行。
+- 标图的校验和保存移到工作线程；跨盘图片路径返回校验错误，错误类型的 MCP 工具名返回协议错误。
+- One-shot approvals cannot be reused, missing approval records fail closed, and timeout/restart races preserve user decisions and wake waiting readers. Task/session input stays isolated. Missing or unreadable run history and monitoring timeouts no longer imply success or leave receipts running forever. Marked-image validation/storage runs off the event loop; malformed image paths and tool names return controlled errors.
+
 ### AI 工作台与插件能力融合 / Integrated task results
 - 工作台的出图结果和 AI 展台图片：鼠标移到图片上，右上角出现 ⓘ 图片与参数、⇄ 和当前画布对比、☆ 保存为（同一个保存菜单存成工作流、搭配和提示词），不再在每张图下面排三个大按钮。左上角可以勾选：勾两张（不同步骤、不同任务都行），页面底部出现“查看参数差异”，用插件现有的参数对比看真实差异；勾第三张会替换最早那张。“本次成果”直接显示缩略图，不用再点开。视频和临时文件没有这些参数操作，缩略图按需加载。
 - AI 干活时你在 AMB 里做的改动（画布改动、改模型信息、存搭配和提示词等）会作为“你在 AMB 里改了”出现在同一条时间线上，画布改动附带修改前后；AI 下一次调用任何工具时会收到这条改动，并被告知保留它，不要改回去；时间线上写着 AI 是否已经知道。操作记录页里 AI 做的、以及 AI 干活期间你做的记录，旁边有“AI 任务 →”可以跳到对应任务。

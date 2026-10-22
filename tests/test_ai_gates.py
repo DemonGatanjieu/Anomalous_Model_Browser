@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 from pathlib import Path
 
 PLUGIN = Path(__file__).resolve().parents[1]
@@ -77,6 +78,73 @@ class GateTests(unittest.TestCase):
         verdict = ai_gates.check("download_model", {"type": "loras", "url": "u"}, ref)
         self.assertTrue(verdict["isError"])
         self.assertIn("use the one I have", verdict["content"][0]["text"])
+
+    def test_one_allow_cannot_authorize_another_call(self):
+        ai_gates.set_policy("gpu", "ask")
+        ref = ai_tasks.begin_step("Claude", "run_workflow", {}, time.time())
+        self.answer_soon(ref, "allow")
+        self.assertIsNone(ai_gates.check("run_workflow", {}, ref))
+        with mock.patch.object(ai_gates, "WAIT_SECONDS", 0):
+            _, verdict = self.call("run_workflow", {})
+        self.assertTrue(verdict["structuredContent"]["waiting_for_user"])
+
+    def test_late_allow_is_consumed_only_once_even_after_retry(self):
+        ai_gates.set_policy("gpu", "ask")
+        with mock.patch.object(ai_gates, "WAIT_SECONDS", 0):
+            ref, _ = self.call("run_workflow", {})
+            ai_gates.decide(*ref, "allow")
+            self.assertIsNone(self.call("run_workflow", {})[1])
+            self.assertTrue(self.call("run_workflow", {})[1]["structuredContent"]["waiting_for_user"])
+
+    def test_ask_fails_closed_without_its_record(self):
+        ai_gates.set_policy("gpu", "ask")
+        for ref in (None, ("missing", "missing")):
+            self.assertTrue(ai_gates.check("run_workflow", {}, ref)["isError"])
+
+    def test_late_decision_survives_tool_completion_race(self):
+        ai_gates.set_policy("gpu", "ask")
+        for decision, expected in (("allow", "allowed"), ("deny", "error")):
+            arguments = {"batch": 1 if decision == "allow" else 2}
+            ref = ai_tasks.begin_step("Claude", "run_workflow", arguments, time.time())
+            with mock.patch.object(ai_gates, "WAIT_SECONDS", 0):
+                verdict = ai_gates.check("run_workflow", arguments, ref)
+            ai_gates.decide(*ref, decision)
+            ai_tasks.finish_step("Claude", "run_workflow", {}, verdict, time.time(), step_ref=ref)
+            step = ai_tasks.get_task(ref[0])["steps"][-1]
+            self.assertEqual(step["state"], expected)
+            self.assertEqual(step["ok"], decision == "allow")
+
+    def test_restart_makes_pending_gate_answer_deliverable(self):
+        ai_gates.set_policy("gpu", "ask")
+        ref = ai_tasks.begin_step("Claude", "run_workflow", {}, time.time())
+        task = ai_tasks._load()[ref[0]]
+        task["steps"][-1].update(state="asking", gate={"gate": "gpu", "signature": ai_gates._signature("run_workflow", {})})
+        ai_tasks._save(task)
+        ai_tasks._tasks = None  # the call waiting on the old process is gone
+        ai_gates.decide(*ref, "allow")
+        self.assertEqual(ai_tasks.get_task(ref[0])["steps"][-1]["state"], "allowed")
+        self.assertEqual(ai_panels.get_answers("Claude", task_id=ref[0])["messages"][0]["kind"], "gate")
+
+    def test_late_decision_wakes_a_waiting_answer_reader(self):
+        ai_gates.set_policy("gpu", "ask")
+        with mock.patch.object(ai_gates, "WAIT_SECONDS", 0):
+            ref, _ = self.call("run_workflow", {})
+        waiting = threading.Event()
+        original = ai_panels._answered.wait
+        def wait(timeout=None):
+            waiting.set()
+            return original(timeout)
+        answers = []
+        with mock.patch.object(ai_panels._answered, "wait", side_effect=wait):
+            reader = threading.Thread(target=lambda: answers.append(ai_panels.get_answers("Claude", task_id=ref[0], wait_seconds=3)))
+            reader.start()
+            self.assertTrue(waiting.wait(1))
+            ai_gates.decide(*ref, "allow")
+            reader.join(1)
+            woke_promptly = not reader.is_alive()
+            reader.join(3)
+        self.assertTrue(woke_promptly, "a decision should wake get_answers, not wait out its timeout")
+        self.assertEqual(answers[0]["messages"][0]["kind"], "gate")
 
     def test_an_answer_after_the_ai_stopped_waiting(self):
         ai_gates.set_policy("gpu", "ask")

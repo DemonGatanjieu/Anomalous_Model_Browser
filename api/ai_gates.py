@@ -45,9 +45,10 @@ def policies():
 def set_policy(gate, policy):
     if gate not in DEFAULTS or policy not in POLICIES:
         raise ValueError("Unknown gate or policy")
-    current = policies()
-    current[gate] = policy
-    atomic_write_json(_path(), current)
+    with _decided:
+        current = policies()
+        current[gate] = policy
+        atomic_write_json(_path(), current)
     return current
 
 
@@ -91,15 +92,16 @@ def check(tool, arguments, step_ref, now=None):
     with _decided:
         task, step = _step(step_ref)
         if not step:
-            return None  # nothing recorded the call: nothing to show the user, so nothing to wait on
+            return _blocked("Approval could not be recorded; nothing was done. Retry after reopening the AI workbench.")
         # An Allow given after the AI stopped waiting: the same call again goes ahead.
         for earlier in task["steps"]:
             asked = earlier.get("gate") or {}
-            if (asked.get("signature") == signature and asked.get("decision") == "allow" and not asked.get("used")
+            if (asked.get("timed_out") and asked.get("signature") == signature
+                    and asked.get("decision") == "allow" and not asked.get("used")
                     and now - asked.get("at", 0) < ALLOWED_SECONDS):
                 asked["used"] = True
                 earlier["state"] = "done"
-                step["gate"] = {"gate": gate, "signature": signature, "decision": "allow", "earlier": earlier["id"]}
+                step["gate"] = {"gate": gate, "signature": signature, "decision": "allow", "used": True, "earlier": earlier["id"]}
                 ai_tasks._save(task)
                 return None
         step["state"] = "asking"
@@ -111,6 +113,7 @@ def check(tool, arguments, step_ref, now=None):
         _decided.wait_for(lambda: "decision" in step["gate"], WAIT_SECONDS)
         asked = step["gate"]
         if asked.get("decision") == "allow":
+            asked["used"] = True
             step["state"] = "running"
             ai_tasks._save(task)
             return None
@@ -149,4 +152,6 @@ def decide(task_id, step_id, decision, text="", remember=False, now=None):
     if remember and decision == "allow":
         set_policy(asked["gate"], "auto")
     ai_tasks._notify(task_id)
+    from . import ai_panels
+    ai_panels.wake()
     return step

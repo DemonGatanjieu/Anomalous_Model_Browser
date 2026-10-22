@@ -322,6 +322,30 @@ class AnswerTests(unittest.TestCase):
         again = {"content": [{"type": "text", "text": "{}"}], "structuredContent": {}, "isError": False}
         self.assertNotIn("user_messages", ai_panels.attach_pending(again, "Claude", task_id=task_id)["structuredContent"])
 
+    def test_explicit_task_never_consumes_another_sessions_input(self):
+        first = ai_tasks.begin_task("Claude", "first", session="one")["id"]
+        second = ai_tasks.begin_task("Claude", "second", session="two")["id"]
+        ai_panels.leave_message(first, "first only")
+        ai_panels.leave_message(second, "second only")
+        result = {"content": [], "structuredContent": {}}
+        ai_panels.attach_pending(result, "Claude", task_id=first)
+        self.assertEqual([m["text"] for m in result["structuredContent"]["user_messages"]], ["first only"])
+        self.assertFalse(ai_tasks.get_task(second)["steps"][-1]["delivered"])
+        self.assertEqual(ai_panels.get_answers("Claude", task_id="missing").get("messages", []), [])
+        self.assertEqual(ai_panels.get_answers("Claude", task_id=second)["messages"][0]["text"], "second only")
+
+    def test_get_answers_tool_resolves_its_session_before_collecting(self):
+        first = ai_tasks.begin_task("Claude", "first", session="one")["id"]
+        second = ai_tasks.begin_task("Claude", "second", session="two")["id"]
+        ai_panels.leave_message(first, "one")
+        ai_panels.leave_message(second, "two")
+        self.assertNotIn("messages", mcp_task_tools.get_answers({"client": "Claude", "session": "unknown"})[0])
+        answer, _ = mcp_task_tools.get_answers({"client": "Claude", "session": "two", "task": ""})
+        self.assertEqual([m["text"] for m in answer["messages"]], ["two"])
+        self.assertFalse(ai_tasks.get_task(first)["steps"][-1]["delivered"])
+        answer, _ = mcp_task_tools.get_answers({"client": "Claude", "session": "", "task": ""})
+        self.assertEqual([m["text"] for m in answer["messages"]], ["one"], "legacy callers without routing still read their own input")
+
 
 if __name__ == "__main__":
     unittest.main()
