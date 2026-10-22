@@ -113,7 +113,7 @@ export function createDOM() {
         this.sidebar = panel('anomalous-sidebar', '');
         this.sidebarWrapper.appendChild(this.sidebar);
 
-        // Content: header (list button, page title, guide, dock, close) and the page panels.
+        // Content: header (list button, page title, a page's own tools, guide, dock, close) and the page panels.
         const content = panel('anomalous-content', '');
         const header = panel('anomalous-header', '');
         bindShellDrag(container, header);
@@ -158,7 +158,9 @@ export function createDOM() {
         closeBtn.innerHTML = '&times;';
         closeBtn.onclick = () => this.close();
 
-        rightGroup.append(updateNoticeBtn, maxBtn, dockBtn, closeBtn);
+        this.headerTools = document.createElement('div'); // a page's own (the AI page's side switch), shown on that page
+        this.headerTools.className = 'anomalous-header-page-tools';
+        rightGroup.append(this.headerTools, updateNoticeBtn, maxBtn, dockBtn, closeBtn);
         centerGroup.append(createModelSearch(this));
         header.append(leftGroup, centerGroup, rightGroup);
         markRemoteView(container, leftGroup); // opened from another device: "view only"

@@ -8,8 +8,9 @@
  * model type, a grid of cards (ui_ai_toolbox_cards.js) drawn as it scrolls, the card in focus
  * in full on the right, and the picks below with how strictly the AI keeps to them. Node types
  * are the page's own (no waiting); the rest is read ahead and kept (ai_toolbox_data.js). The
- * user's last choice of the two is remembered on this browser.
- * toolboxButton() is the entry in a task's header, toolboxStep() the timeline row of a pick.
+ * user's last choice of the two is remembered on this browser. On the AI page the side panel is a
+ * view of the workbench's side column (setToolboxHost, ui_ai_side_views.js); elsewhere it docks
+ * on the right of the screen. toolboxStep() is the timeline row of a pick.
  */
 
 import { translate as t } from './locales.js';
@@ -26,6 +27,7 @@ const CHUNK = 60;
 const SEARCH_DELAY_MS = 120;
 const LAYOUT_KEY = 'anomalous.aiToolboxLayout';
 let openNow = null; // {task, body, close} of the picker on screen
+let sideHost = null; // (body, expand) => close, or null when the AI page is not shown
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -165,7 +167,7 @@ export async function openToolbox(task, changed = () => {}) {
         keepLayout(layout);
         body.classList.toggle('is-side', layout === 'side');
         if (layout === 'side') {
-            closeFrame = dockPanel(t('aiToolboxTitle'), body, () => place('full'));
+            closeFrame = sideHost?.(body, () => place('full')) || dockPanel(t('aiToolboxTitle'), body, () => place('full'));
         } else {
             closeFrame = aiWindow(t('aiToolboxTitle'), body);
             const dialog = body.closest('.anomalous-ai-connect-dialog');
@@ -435,13 +437,24 @@ export async function openToolbox(task, changed = () => {}) {
     });
 }
 
-/** The entry in a task's header: an icon, "Materials", and how many the task has. Reads the catalogue ahead. */
-export function toolboxButton(task, changed) {
+/** Where the side panel goes on the AI page: `host(body, expand)` puts it there and returns its close, or null. */
+export function setToolboxHost(host) {
+    sideHost = host;
+}
+
+/** Whether the picker is open for task `taskId` (shown or behind another view of the side column). */
+export const toolboxOpenFor = taskId => Boolean(openNow?.body.isConnected && openNow.task === taskId);
+
+/** Puts the picker away (the workbench moved to another task). */
+export function closeToolbox() {
+    openNow?.close();
+    openNow = null;
+}
+
+/** How many materials task `task` has; reads the catalogue ahead for the picker. */
+export function toolboxCount(task) {
     prefetchToolbox();
-    const count = total(task.toolbox);
-    const node = button(`anomalous-tb-open${count ? ' has-picks' : ''}`, [icon('sparkle', 15), t('aiToolbox')], () => void openToolbox(task, changed), t('aiToolboxTitle'));
-    if (count) node.append(el('span', 'anomalous-tb-count', String(count)));
-    return node;
+    return total(task.toolbox);
 }
 
 /** A pick on the timeline: what was handed over, how strictly, and whether the AI has it. */

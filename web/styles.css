@@ -35,11 +35,12 @@
 @import url("./styles/34-voice-over-panel.css?v=20261021-sample");
 @import url("./styles/35-voice-over-drafts.css?v=20261020-drafts");
 @import url("./styles/36-reference-audio.css?v=20261020-remove");
-@import url("./styles/37-ai-workbench.css?v=20261024-delivery");
+@import url("./styles/37-ai-workbench.css?v=20261024-side");
 @import url("./styles/38-ai-panels.css?v=20261024-delivery");
 @import url("./styles/39-ai-stage.css?v=20261021-stage");
 @import url("./styles/40-ai-side.css?v=20261023-look");
 @import url("./styles/41-ai-results.css?v=20261023-tags");
 @import url("./styles/42-ai-flow.css?v=20261024-runmap");
-@import url("./styles/43-ai-toolbox.css?v=20261024-dock2");
+@import url("./styles/43-ai-toolbox.css?v=20261024-side");
 @import url("./styles/44-ai-status.css?v=20261024-stop");
+@import url("./styles/45-ai-side-views.css?v=20261024-side2");

@@ -166,7 +166,8 @@ covered by the `styles.css` manifest.
   `web/modules/canvas_build.js` is its pure part (type fit, value checks, a free spot, the
   layered layout). `open_workflow` opens one of the user's saved workflows in a new tab.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
-  `web/modules/ui_ai_toolbox.js`, from the task header a side panel on the right that leaves
+  `web/modules/ui_ai_toolbox.js`, from the task header a side panel (on the AI page a view of
+  its side column, `setToolboxHost`; elsewhere docked on the right) that leaves
   the page usable (kinds as tabs, two columns, a card's detail over them) or, expanded, a large
   window: search, kinds, a column by source / origin / type, a card grid drawn as it scrolls,
   a detail pane, the picks below; the last choice is kept in the browser),
@@ -269,10 +270,13 @@ covered by the `styles.css` manifest.
   new/updated latest panels and late image loads follow the bottom while the reader is there;
   reading earlier content pauses follow, with a "See latest" button to resume. Timeline links
   instead locate the requested panel's start. The stage's close button hides it for the selected
-  task (`stage.hidden`); updates preserve that choice and its DOM/drafts. The task header's
-  Open stage button or a timeline panel link reopens it; selecting a different task resets it.
-  In a window too narrow
-  for three columns the timeline and the stage are two tabs (a panel that asks brings the stage
+  task (`stage.hidden`); updates preserve that choice and its DOM/drafts. A timeline panel
+  link reopens it; selecting a different task resets it. The stage is one view of the side
+  column: `ui_ai_side_views.js` is the switch in the window title bar, AI page only (stage, a run's
+  node map at full size with a list of the runs, the materials picker; the shown one again
+  closes the column), one pane per view kept between switches, and the picker's dock there.
+  The task's header stays on top while the timeline scrolls. In a window too narrow
+  for three columns the timeline and the side column are two tabs (a panel that asks brings the stage
   forward). The task list can be folded; `ui_ai_task_list.js` draws it (New task, Connect an AI
   and the gates, which AI came last, quick filters by state, the tasks by day with a state
   icon each). `ui_ai_icons.js` is the AI pages' one set of line icons and the icon button.
@@ -647,7 +651,8 @@ covered by the `styles.css` manifest.
   recorded in each file, plus a section for unsaved temp previews that can be
   copied into `output/audio/`.
 - `ui_sidebar.js` assembles the browser window (rail, list column, header, page panels;
-  `remote_view.js` adds the header's "view only" chip when opened from another device)
+  `remote_view.js` adds the header's "view only" chip when opened from another device;
+  `headerTools` is a page's own slot in the header, shown on that page: the AI page's side switch)
   and puts the model folder column in the list column (`ui_folder_list.js`: the folders of the
   type the chips show, counts with subfolders, 📂 to open one in Explorer). `ui_shell_rail.js` owns the left icon rail: one
   entry per page, the tool slots and the settings slot. `ui_shell_nav.js` owns page

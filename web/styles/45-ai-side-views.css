@@ -1,0 +1,110 @@
+/* The side column's views (ui_ai_side_views.js): the switch at the right of the task's header,
+   one pane per view, a run's shape at full size, the materials picker docked there. */
+
+.anomalous-ai-side-switch {
+    display: inline-flex;
+    flex: none;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+}
+
+.anomalous-ai-side-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 26px;
+    padding: 0 9px;
+    border: none;
+    border-radius: 7px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.anomalous-ai-side-btn:hover { background: rgba(var(--amb-ink-rgb), 0.07); color: var(--amb-text-main); }
+.anomalous-ai-side-btn.is-on { background: color-mix(in srgb, var(--amb-link) 20%, transparent); color: var(--amb-text-main); font-weight: 600; }
+.anomalous-ai-side-btn.is-asking::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--amb-warn);
+}
+.anomalous-ai-side-btn-count {
+    min-width: 17px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--amb-link);
+    color: var(--amb-btn-primary-text, #fff);
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+@media (max-width: 1100px) {
+    .anomalous-ai-side-btn-label { display: none; }
+}
+
+.anomalous-ai-side-pane { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.anomalous-ai-side-pane[hidden] { display: none; }
+.anomalous-ai-side-pane.is-toolbox { gap: 12px; }
+.anomalous-ai-side-pane.is-toolbox > .anomalous-tb { min-height: 0; }
+
+.anomalous-ai-side-map-pick {
+    min-width: 0;
+    max-width: 220px;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+}
+.anomalous-ai-side-map > .anomalous-ai-run-map { margin-top: 0; }
+
+/* A run's step in the timeline: see its shape large in the side column. */
+.anomalous-ai-run-map-side {
+    flex: none;
+    margin-left: auto;
+    padding: 0 4px;
+    border: none;
+    background: none;
+    color: var(--amb-link);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.anomalous-ai-run-map-side:hover { text-decoration: underline; }
+
+/* In the window's title bar, on the AI page only: its generic button look does not apply. */
+.anomalous-header-page-tools { display: none; }
+#anomalous-container[data-page="ai"] .anomalous-header-page-tools { display: flex; align-items: center; margin-right: 4px; }
+#anomalous-header .anomalous-ai-side-switch { padding: 2px; border-radius: 9px; }
+#anomalous-header .anomalous-ai-side-btn {
+    height: 26px !important;
+    padding: 0 9px !important;
+    border: none !important;
+    border-radius: 7px !important;
+    background: none !important;
+    color: var(--amb-text-soft) !important;
+    font-size: 12.5px !important;
+    letter-spacing: 0;
+    backdrop-filter: none;
+    transform: none !important;
+}
+#anomalous-header .anomalous-ai-side-btn:hover { background: rgba(var(--amb-ink-rgb), 0.08) !important; color: var(--amb-text-main) !important; }
+#anomalous-header .anomalous-ai-side-btn.is-on {
+    background: color-mix(in srgb, var(--amb-link) 22%, transparent) !important;
+    color: var(--amb-text-main) !important;
+}
+#anomalous-header .anomalous-ai-side-btn svg { width: 15px !important; height: 15px !important; }

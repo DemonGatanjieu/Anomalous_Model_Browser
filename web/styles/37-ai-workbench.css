@@ -214,16 +214,16 @@
 }
 
 .anomalous-ai-task-head {
-    position: relative;
-
+    position: sticky;
+    top: -24px; /* stays on top while the timeline scrolls (the column's own top padding) */
     z-index: 2;
     background: var(--amb-bg-panel);
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-bottom: 18px;
+    padding: 24px 0 14px;
     border-bottom: 1px solid var(--amb-border);
-    margin-bottom: 18px;
+    margin: -24px 0 18px;
 }
 
 .anomalous-ai-task-title-line {

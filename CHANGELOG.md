@@ -5,6 +5,11 @@
 - AI 工作台任务工具栏新增小巧的“运行状态”按钮与浮窗（移除遮挡时间线的常驻大横条）：点开即可查看真实运行状态、排队、节点进度、用时和结果，运行中直接在按钮上显示进度百分比；没有收到运行信息时明确提示，不再空转显示“AI 正在工作”或把沉默当成完成。页面可见时自动补查状态。运行工具默认等待 15 秒并返回实际结果；外部提交可用 `track_run` 接入准确的运行 ID，不会重新出图。
 - The AI workbench now places confirmed execution state, queue/node progress, elapsed time and results inside a compact toolbar button and popover (instead of a tall sticky banner), with visible-page refresh. Untracked work and silence are explicit. Run calls wait briefly for real results; `track_run` attaches external submission IDs without resubmitting.
 
+### 右边一栏一次一样，按钮固定在右上角 / One view at a time on the right, switched from the top right
+- 工作台右边那一栏一次只显示一样东西，用窗口右上角的三个按钮切换：**展台**、**节点结构**（AI 跑过的节点结构图，大图，可以选看哪一次运行）、**素材**（原来停在屏幕右边的素材小窗，现在就在这一栏里）。再点一下亮着的按钮收起这一栏；切走再切回来，内容都还在。时间线里每次运行都有 **在右侧看大图**。
+- 任务标题和那一排按钮在时间线往下翻时一直停在顶上。
+- The AI workbench's side column shows one view at a time, switched from the window's title bar: the stage, a run's node map at full size (pick the run), or the materials picker docked there. Pressing the shown one hides the column; each view keeps its state. Each run's step has "See it large". The task's header stays on top while the timeline scrolls.
+
 ### 回答发出去了没有，一眼看清 / See at a glance whether the AI has your answer
 - 面板上每个回答、你的留言、批注、发给 AI 的图片下面都有醒目的状态标签：琥珀色 **已发送 · 等 AI 来取**，AI 拿到后变成绿色 **AI 已收到 · 时间**（取代原来那行灰色小字）。鼠标停在“已发送”上会提示 AI 停下时该怎么办。
 - 面板上的问题可以点 **这题跳过**：可选的问题不再一直显示“等你回答”，AI 会收到“你跳过了”，自己拿主意。

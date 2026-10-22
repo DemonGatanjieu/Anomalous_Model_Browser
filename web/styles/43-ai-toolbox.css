@@ -376,22 +376,7 @@
 .anomalous-tb-send:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .anomalous-tb-send:disabled { opacity: 0.6; cursor: progress; }
 
-/* The entry in a task's header, and the timeline row. */
-.anomalous-tb-open {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    height: 26px;
-    padding: 0 10px;
-    border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
-    color: var(--amb-link);
-    font: inherit;
-    font-size: 12.5px;
-    cursor: pointer;
-}
-.anomalous-tb-open:hover { background: color-mix(in srgb, var(--amb-link) 20%, transparent); }
+/* The timeline row of a pick. */
 .anomalous-tb-step { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; }
 .anomalous-tb-step-mode { display: inline-flex; align-items: center; gap: 6px; color: var(--amb-text-soft); font-size: 12px; }
 .anomalous-tb-step-mode.is-only { color: var(--amb-warn); }

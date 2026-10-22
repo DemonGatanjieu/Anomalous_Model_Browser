@@ -5,9 +5,10 @@
  * step number, the newest at the bottom. A new or updated latest panel follows to the bottom
  * while the user is there; otherwise a "See latest ↓" button says it changed. A panel's line in the timeline
  * brings the stage to that panel. In a window too narrow for three columns, the timeline and the
- * stage take turns behind two tabs, and a panel that asks something brings the stage forward.
+ * side column take turns behind two tabs, and a panel that asks something brings the stage forward.
+ * The stage is one of the side column's views (ui_ai_side_views.js).
  *
- * `stage` is the workbench's `{ taskId, latestKey, atBottom, focus, tab, unseen, placed, hidden }`.
+ * `stage` is the workbench's `{ taskId, latestKey, atBottom, focus, tab, view, mapStep, unseen, placed, hidden }`.
  */
 
 import { translate as t } from './locales.js';
@@ -48,7 +49,7 @@ export function stageNews(task, stage) {
     const latest = steps.at(-1);
     const latestKey = JSON.stringify(latest?.panel || null);
     if (stage.taskId !== task?.id) {
-        Object.assign(stage, { taskId: task?.id, latestKey, atBottom: true, focus: null, unseen: false, placed: false, hidden: false });
+        Object.assign(stage, { taskId: task?.id, latestKey, atBottom: true, focus: null, unseen: false, placed: false, hidden: false, view: 'stage', mapStep: null });
         return { arrived: null, asking: 0 };
     }
     const arrived = latestKey !== stage.latestKey ? latest : null;
@@ -61,6 +62,7 @@ export function stageNews(task, stage) {
 export function focusPanel(stage, panelId) {
     stage.hidden = false;
     stage.focus = panelId;
+    stage.view = 'stage';
     stage.tab = 'stage';
 }
 
@@ -74,12 +76,12 @@ export function panelLine(step, onOpen) {
     return line;
 }
 
-/** The two tabs of a narrow window: the timeline and the stage (lit while a question waits). */
-export function tabBar(stage, asks, onPick) {
+/** The two tabs of a narrow window: the timeline and the side column's view `label` (lit while a question waits). */
+export function tabBar(stage, asks, onPick, label = t('aiStage')) {
     const bar = el('div', 'anomalous-ai-tabs');
     for (const id of ['timeline', 'stage']) {
         const tab = button(`anomalous-ai-tab${stage.tab === id ? ' is-on' : ''}${id === 'stage' && asks ? ' is-asking' : ''}`,
-            t(id === 'stage' ? 'aiStage' : 'aiTimeline'), () => onPick(id));
+            id === 'stage' ? label : t('aiTimeline'), () => onPick(id));
         tab.setAttribute('aria-pressed', String(stage.tab === id));
         bar.append(tab);
     }
@@ -103,22 +105,20 @@ function scrollToLatest(body, stage) {
 
 /**
  * The stage into `box` for `task`. `ctx`: what ui_ai_panel.js needs, `numberOf(stepId)` (the
- * step's number in the timeline) and `tab(id)`. A panel is drawn again only when it changed, so
+ * step's number in the timeline) and `close()`. A panel is drawn again only when it changed, so
  * its scroll and half-typed answers stay while the AI works.
  */
 export function renderStage(box, task, stage, ctx, arrived = null) {
     const steps = panelSteps(task);
     const asks = steps.reduce((sum, item) => sum + openQuestions(item), 0);
-    let tabs = box.querySelector(':scope > .anomalous-ai-tabs');
     let head = box.querySelector(':scope > .anomalous-ai-stage-head');
     let body = box.querySelector(':scope > .anomalous-ai-stage-body');
     const fresh = !body || box.dataset.taskId !== task.id;
     if (fresh) {
-        tabs = el('div', 'anomalous-ai-tabs');
         head = el('div', 'anomalous-ai-stage-head');
         body = el('div', 'anomalous-ai-stage-body');
         box.dataset.taskId = task.id;
-        box.replaceChildren(tabs, head, body);
+        box.replaceChildren(head, body);
         body.addEventListener('scroll', () => {
             stage.atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < BOTTOM_PX;
             if (stage.atBottom && stage.unseen) {
@@ -131,8 +131,6 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
             if (stage.atBottom && !stage.focus) scrollToLatest(body, stage);
         }, true);
     }
-    const newTabs = tabBar(stage, asks, ctx.tab);
-    tabs.replaceWith(newTabs);
     const parts = [el('span', 'anomalous-ai-stage-title', t('aiStage')), el('span', 'anomalous-ai-stage-count', t('aiStagePanels', { count: steps.length }))];
     if (asks) parts.push(el('span', 'anomalous-ai-state is-asks', t('aiCountAsks', { count: asks })));
     parts.push(el('span', 'anomalous-ai-gap'));

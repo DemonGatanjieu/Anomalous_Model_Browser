@@ -5,9 +5,11 @@
  * reads folded into one row, each step with what it made and where that leads (the picture
  * in the viewer, the model's page, the combo, the canvas change found or undone). A task the
  * AI is still working on grows by itself ("anomalous.ai_task" events) and says so at the foot.
- * A panel the AI drew (show_panel) is shown on the stage, the column on the right (ui_ai_side.js),
- * with a line in the timeline that brings it there; its questions are answered there, and when it
- * comes while the user is elsewhere a toast says so. The task list can be folded away.
+ * The column on the right shows one view, picked by the switch at the top right
+ * in the window's title bar (ui_ai_side_views.js): the stage with the panels the AI drew (ui_ai_side.js; a line in the
+ * timeline brings it there, its questions are answered there, a toast says so while the user is
+ * elsewhere), a run's shape at full size, or the materials picker. The header stays on top while
+ * the timeline scrolls. The task list can be folded away.
  * Under the timeline the user can write to the AI on that task; the message waits until the AI
  * asks (get_answers) or runs its next step, and says whether it has. The list groups the tasks
  * by day, each with an icon for where it stands.
@@ -24,7 +26,7 @@ import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
-import { focusPanel, openQuestions, panelLine, panelSteps, renderStage, stageNews, tabBar } from './ui_ai_side.js';
+import { focusPanel, openQuestions, panelLine, panelSteps, stageNews, tabBar } from './ui_ai_side.js';
 import { connectHint, waitingCard } from './ui_ai_connect.js';
 import { gateCard } from './ui_ai_gate.js';
 import { iconButton } from './ui_ai_icons.js';
@@ -35,7 +37,8 @@ import { drawRecentAiTasks } from './ui_ai_recent.js';
 import { locateNode, openModel, resultLinks, shared, strip, updateRunProgress } from './ui_ai_results.js';
 import { compareBar, setMarker } from './ui_ai_images.js';
 import { marksStep, openMarker } from './ui_ai_marker.js';
-import { toolboxButton, toolboxStep } from './ui_ai_toolbox.js';
+import { toolboxCount, toolboxStep } from './ui_ai_toolbox.js';
+import { connectSide, drawSide, pickView, sideShown, sideSwitch, viewLabel } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
 import { canvasChanges } from './ui_canvas_changes.js';
@@ -57,7 +60,7 @@ const state = {
     selected: null,   // task id shown
     pinned: false,    // the user picked it: a new task of the AI does not take its place
     view: null,       // the shown task's parts kept between redraws (renderTask)
-    stage: { taskId: null, latestKey: null, atBottom: true, focus: null, tab: 'timeline', unseen: false, hidden: false }, // ui_ai_side.js
+    stage: { taskId: null, latestKey: null, atBottom: true, focus: null, tab: 'timeline', view: 'stage', mapStep: null, unseen: false, hidden: false }, // ui_ai_side.js
     numbers: new Map(), // step id -> its number in the timeline (the stage shows it)
     tasksCollapsed: (() => { try { return localStorage.getItem(COLLAPSED_KEY) === '1'; } catch (_) { return false; } })(),
     task: null,       // its full record
@@ -225,6 +228,7 @@ function renderTask() {
     const task = state.task;
     if (!task) {
         box.replaceChildren(el('div', 'anomalous-ai-empty-task', state.tasks.length ? t('aiPickTask') : ''));
+        state.owner?.headerTools?.replaceChildren();
         return;
     }
     const keepBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
@@ -249,9 +253,9 @@ function renderTask() {
     }
     // A new panel that asks something brings the stage forward when the window is narrow.
     const news = stageNews(task, state.stage);
-    if (news.asking) state.stage.tab = 'stage';
+    if (news.asking) Object.assign(state.stage, { tab: 'stage', view: 'stage' });
     const asking = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
-    const tabs = tabBar(state.stage, asking, pickTab);
+    const tabs = tabBar(state.stage, asking, pickTab, viewLabel(state.stage.view));
     view.tabs.replaceWith(tabs);
     view.tabs = tabs;
     const header = view.header;
@@ -260,10 +264,7 @@ function renderTask() {
         iconButton('anomalous-ai-unfold', 'chevronRight', t('aiTasksExpand'), () => foldTasks(false), { iconOnly: true }),
         el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled')), stateChip(status));
     const tools = el('div', 'anomalous-ai-task-tools');
-    if (state.stage.hidden && panelSteps(task).length) {
-        tools.append(iconButton('anomalous-ai-tool', 'panel', t('aiStageShow'), () => pickTab('stage')));
-    }
-    tools.append(executionStatus(task, refresh), canvasControls(task, () => void refresh(), () => state.owner?.close?.()), toolboxButton(task, () => void refresh()));
+    tools.append(executionStatus(task, refresh), canvasControls(task, () => void refresh(), () => state.owner?.close?.()));
     if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
         tools.append(iconButton('anomalous-ai-tool', 'undo', t('aiUndoAll'), () => undoAll(task)));
     }
@@ -280,7 +281,10 @@ function renderTask() {
         state.narrowView = 'list';
         await refresh();
     }, { iconOnly: true }));
+    const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
     titleLine.append(tools);
+    state.owner?.headerTools?.replaceChildren(sideSwitch(state.stage, shown, { stage: asking, toolbox: toolboxCount(task) },
+        view => pickView(state.stage, view, shown, task, renderTask, () => void refresh())));
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);
     header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')));
@@ -326,18 +330,12 @@ function showStep(timeline, stepId) {
     setTimeout(() => row.classList.remove('is-flash'), 1600);
 }
 
-/** The stage beside the timeline, while the task has panels. */
+/** The side column beside the timeline: the view picked (ui_ai_side_views.js). */
 function drawStage(task, arrived = null) {
-    const stage = state.page?.querySelector('.anomalous-ai-stage');
-    if (!stage) return;
-    const has = panelSteps(task).length > 0;
-    state.page.classList.toggle('has-stage', has && !state.stage.hidden);
-    if (!has) {
-        stage.replaceChildren();
-        layout();
-        return;
-    }
-    renderStage(stage, task, state.stage, {
+    const box = state.page?.querySelector('.anomalous-ai-stage');
+    if (!box) return;
+    state.page.classList.toggle('has-stage', sideShown(state.stage, task));
+    drawSide(box, task, state.stage, {
         taskId: task.id,
         owner: state.owner,
         openPicture: (url, video) => state.owner?.showGalleryViewer?.(url, video),
@@ -346,13 +344,12 @@ function drawStage(task, arrived = null) {
         stepOf: id => task.steps.find(item => item.id === id),
         changed: () => void refresh(),
         numberOf: id => state.numbers.get(id) || '',
-        tab: pickTab,
         close: () => {
             state.stage.hidden = true;
             state.stage.tab = 'timeline';
             renderTask();
         },
-    }, arrived);
+    }, pickTab, arrived);
     layout();
 }
 
@@ -448,6 +445,12 @@ async function select(id) {
 /** Pictures on the AI page can be marked for the task shown (ui_ai_marker.js). */
 setMarker(image => state.task && openMarker(image, state.task.id, () => void refresh()));
 
+/** The materials picker docks in the side column while this page is shown; a run's step opens its shape there. */
+shared.openMap = connectSide({
+    side: state.stage, task: () => state.task, redraw: () => renderTask(),
+    box: () => (visible() && state.page?.querySelector('.anomalous-ai-stage')) || null,
+});
+
 // ---------------------------------------------------------------- the page
 
 function layout() {
@@ -484,6 +487,7 @@ async function refresh() {
     state.tasks = tasks;
     if (!tasks.length) {
         state.page.replaceChildren(emptyPage(), state.bar);
+        state.owner?.headerTools?.replaceChildren();
         state.page.classList.add('is-empty');
         return;
     }

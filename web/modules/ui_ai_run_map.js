@@ -3,7 +3,8 @@
  * model, how many LoRAs, the size, the steps), what changed since the run before as chips, and,
  * opened, its nodes as boxes and links drawn by the stage's diagram (ui_ai_stage.js), each box
  * locating its node on the canvas. The words are the user's language, made here from the facts
- * the server read; show_run_map puts the same on the stage (a "run_map" block).
+ * the server read; show_run_map puts the same on the stage (a "run_map" block), and the step's
+ * "see it large" shows it in the side column (ui_ai_side_views.js).
  */
 
 import { translate as t } from './locales.js';
@@ -92,7 +93,7 @@ function fitDiagram(wrap) {
 }
 
 /** Under a run step (or on the stage): the line, the changes, the boxes; null for a run without a map.
- * `ctx`: {locateNode(id)}; `open` shows the boxes at once. */
+ * `ctx`: {locateNode(id), openSide(stepId) when it can be seen large}; `open` shows the boxes at once. */
 export function runMapBox(step, ctx, open = false) {
     if (!step?.map?.boxes?.length) return null;
     const box = el('div', 'anomalous-ai-run-map');
@@ -107,6 +108,15 @@ export function runMapBox(step, ctx, open = false) {
     more.open = open;
     const head = el('summary', 'anomalous-ai-run-map-head');
     head.append(el('span', 'anomalous-ai-run-map-title', t('aiMapTitle')), el('span', 'anomalous-ai-run-map-line', mapLine(step.map)));
+    if (ctx.openSide) {
+        const large = el('button', 'anomalous-ai-run-map-side', t('aiMapOpenSide'));
+        large.type = 'button';
+        large.onclick = (event) => {
+            event.preventDefault(); // not the summary's open and close
+            ctx.openSide(step.id);
+        };
+        head.append(large);
+    }
     more.append(head);
     let drawn = false;
     const draw = () => {
