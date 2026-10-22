@@ -3,8 +3,10 @@
  * combo, workflow, prompt or model: a node shows itself in miniature (its sockets in ComfyUI's
  * colours, outputs on the right, how many settings) under its source's badge; combos,
  * workflows and models show their cover; a prompt shows its text. A press picks or unpicks,
- * the star keeps it among the favourites. The detail pane shows the card in focus in full,
- * and for a combo or workflow can pick just the prompt inside it.
+ * the star keeps it among the favourites. In the side panel a card is one line instead
+ * (rowCard: its badge or a small cover, its name and where it is from), so a short panel still
+ * lists many. The detail pane shows the card in focus in full, and for a combo or workflow can
+ * pick just the prompt inside it.
  */
 
 import { translate as t } from './locales.js';
@@ -132,6 +134,34 @@ export function card(item, ctx) {
     if (item.kind !== 'nodes') body.append(el('div', 'anomalous-tb-card-title', item.title));
     if (item.sub) body.append(el('div', 'anomalous-tb-card-sub', item.sub));
     body.append(tags(item));
+    node.append(body);
+    return controls(node, item, ctx);
+}
+
+/** A card as one line, for the side panel: badge or small cover, name, where it is from. */
+export function rowCard(item, ctx) {
+    const node = el('div', `anomalous-tb-card is-row is-${item.kind}${ctx.picked(item) ? ' is-picked' : ''}`);
+    node.tabIndex = 0;
+    node.setAttribute('role', 'button');
+    node.setAttribute('aria-pressed', String(ctx.picked(item)));
+    node.dataset.key = `${item.kind}|${item.id}`;
+    const lead = el('span', 'anomalous-tb-row-lead');
+    if (item.kind === 'nodes') lead.append(sourceBadge(item.source, 26));
+    else if (item.kind === 'prompts') lead.append(icon('prompts', 17));
+    else lead.append(picture(item, 'anomalous-tb-row-cover'));
+    const text = el('div', 'anomalous-tb-row-text');
+    const name = item.title || item.positive || item.id;
+    const from = item.kind === 'nodes' ? [item.category?.split('/').pop(), item.paid ? t('aiTbPaid') : ''].filter(Boolean).join(' · ')
+        : item.kind === 'prompts' && item.title ? item.positive : item.sub;
+    text.append(el('div', 'anomalous-tb-row-title', name));
+    if (from) text.append(el('div', 'anomalous-tb-row-sub', from));
+    text.title = [name, from].filter(Boolean).join('\n');
+    node.append(lead, text);
+    return controls(node, item, ctx);
+}
+
+/** The tick, the star and ⓘ of a card, and what a press, a key and the pointer do. */
+function controls(node, item, ctx) {
     const check = el('span', 'anomalous-tb-check');
     check.append(icon('check', 14));
     const star = el('button', `anomalous-tb-star${ctx.favorite(item) ? ' is-on' : ''}`);
@@ -150,7 +180,7 @@ export function card(item, ctx) {
         event.stopPropagation();
         ctx.focus(item);
     };
-    node.append(body, check, star, info);
+    node.append(info, star, check);
     node.onclick = () => ctx.toggle(item);
     node.onkeydown = (event) => {
         if (event.target === node && (event.key === 'Enter' || event.key === ' ')) {

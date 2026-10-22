@@ -168,7 +168,7 @@ covered by the `styles.css` manifest.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
   `web/modules/ui_ai_toolbox.js`, from the task header a side panel (on the AI page a view of
   its side column, `setToolboxHost`; elsewhere docked on the right) that leaves
-  the page usable (kinds as tabs, two columns, a card's detail over them) or, expanded, a large
+  the page usable (kinds as tabs, one line per item (`rowCard`), a card's detail over them) or, expanded, a large
   window: search, kinds, a column by source / origin / type, a card grid drawn as it scrolls,
   a detail pane, the picks below; the last choice is kept in the browser),
   by the names the AI's tools use, with a mode: prefer, or only (add_node / new_workflow then

@@ -17,7 +17,7 @@ import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { KINDS, keptCatalog, loadCatalog, nodeItems, nodeSources, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
-import { card, coverUrl, detail, refreshCard } from './ui_ai_toolbox_cards.js';
+import { card, coverUrl, detail, refreshCard, rowCard } from './ui_ai_toolbox_cards.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture, sourceBadge } from './ui_ai_toolbox_icons.js';
 import { deliveryState } from './ui_ai_delivery.js';
@@ -165,6 +165,7 @@ export async function openToolbox(task, changed = () => {}) {
         body.remove();
         closeFrame();
         keepLayout(layout);
+        const changed = body.classList.contains('is-side') !== (layout === 'side');
         body.classList.toggle('is-side', layout === 'side');
         if (layout === 'side') {
             closeFrame = sideHost?.(body, () => place('full')) || dockPanel(t('aiToolboxTitle'), body, () => place('full'));
@@ -175,7 +176,8 @@ export async function openToolbox(task, changed = () => {}) {
             const shut = dialog?.querySelector('.anomalous-ai-connect-close');
             shut?.before(iconButton('anomalous-tb-dock-btn', 'panel', t('aiTbDock'), () => place('side'), { iconOnly: true }));
         }
-        scroller.scrollTop = scrolled;
+        if (changed && grid.childElementCount) drawGrid(); // lines in the side panel, cards in the window
+        else scroller.scrollTop = scrolled;
         drawPane();
     }
     const close = () => {
@@ -260,7 +262,7 @@ export async function openToolbox(task, changed = () => {}) {
             const node = button(`anomalous-tb-filter${state.filter === key ? ' is-on' : ''}`, [key === 'liked' ? icon('star', 14) : key === 'picked' ? icon('check', 14) : icon('list', 14), label], () => {
                 state.filter = key;
                 drawAll();
-            });
+            }, label); // the side panel shows the icons alone
             if (count) node.append(el('span', 'anomalous-tb-count', String(count)));
             return node;
         }));
@@ -308,7 +310,7 @@ export async function openToolbox(task, changed = () => {}) {
             const next = items.slice(drawn, drawn + CHUNK);
             drawn += next.length;
             grid.append(...next.map((item) => {
-                const node = card(item, ctx);
+                const node = (body.classList.contains('is-side') ? rowCard : card)(item, ctx);
                 cards.set(keyOf(item.kind, item.id), node);
                 return node;
             }));
