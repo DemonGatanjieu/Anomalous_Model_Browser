@@ -9,7 +9,7 @@
 
 [![ComfyUI Manager](https://img.shields.io/badge/ComfyUI-Manager-green?style=for-the-badge&logo=comfyui)](https://github.com/ltdrdata/ComfyUI-Manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![Changelog](https://img.shields.io/badge/📖_Changelog-v1.60.1_Beta-blue?style=for-the-badge)](CHANGELOG.md)
+[![Changelog](https://img.shields.io/badge/📖_Changelog-v1.60.1-blue?style=for-the-badge)](CHANGELOG.md)
 [![Bilibili Video](https://img.shields.io/badge/Bilibili-视频演示-00A1D6?style=for-the-badge&logo=bilibili)](https://www.bilibili.com/video/BV1boHx61Enc/)
 [![Bilibili Voices](https://img.shields.io/badge/Bilibili-配音演示-00A1D6?style=for-the-badge&logo=bilibili)](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
 [![Reddit](https://img.shields.io/badge/Reddit-r%2Fcomfyui-FF4500?style=for-the-badge&logo=reddit)](https://www.reddit.com/r/comfyui/s/n38ihf3DLf)
