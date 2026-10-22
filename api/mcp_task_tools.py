@@ -3,7 +3,7 @@ work, report leaves a note for the user (with pictures made outside Anomalous's 
 show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
 reads what the user picked or typed on it."""
 
-from . import ai_panels, ai_tasks
+from . import ai_panels, ai_task_runs, ai_tasks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 
@@ -70,6 +70,13 @@ def update_panel(ctx, panel, title=None, blocks=None, closed=None, task=None):
                                         for block in updated["blocks"]]}
 
 
+def run_status(ctx, wait_seconds=0, task=None):
+    try:
+        return ai_task_runs.status(ctx.get("client") or "AI", ctx.get("session") or "", task or ctx.get("task"), wait_seconds)
+    except ValueError as error:
+        raise ToolError(str(error))
+
+
 def get_answers(ctx, panel=None, wait_seconds=0, task=None):
     try:
         return ai_panels.get_answers(ctx.get("client") or "AI", panel, wait_seconds, task_id=task or ctx.get("task"))
@@ -102,7 +109,7 @@ def _task_tool(name, title, description, run, properties, required=()):
     return name, {"run": run, "context": True, "spec": {
         "name": name, "title": title, "description": description,
         "inputSchema": _schema(properties, required),
-        "annotations": {"title": title, "readOnlyHint": False, "destructiveHint": False,
+        "annotations": {"title": title, "readOnlyHint": name == "run_status", "destructiveHint": False,
                         "idempotentHint": False, "openWorldHint": False},
     }}
 
@@ -142,6 +149,12 @@ TASK_TOOLS = dict([
                update_panel, {"panel": {"type": "string"}, "title": {"type": "string"},
                               "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
                               "closed": {"type": "boolean"}, "task": _TASK_PROP}, ["panel"]),
+    _task_tool("run_status", "How the run is going",
+               "Where your task's latest workflow run stands: queued (how many runs are ahead), running (which node, "
+               "its steps, nodes done of all), done (with the pictures it saved) or failed. wait_seconds (up to 55) "
+               "waits for it to end. Runs take a while: call this instead of guessing whether a run has finished.",
+               run_status, {"wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_task_runs.MAX_STATUS_WAIT, "default": 0},
+                            "task": _TASK_PROP}),
     _task_tool("get_answers", "Read the user's answers and messages",
                "What the user picked or typed on your panels, and what they wrote to you in the AI workbench "
                "(messages: a change of mind, 'stop', 'make it brighter'; kind=change: something they changed "

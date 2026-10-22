@@ -29,7 +29,7 @@ import { connectGuide, openConnectGuide, waitingCard } from './ui_ai_connect.js'
 import { gateCard, openGates } from './ui_ai_gate.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
-import { locateNode, openModel, resultLinks, shared, strip } from './ui_ai_results.js';
+import { locateNode, openModel, resultLinks, shared, strip, updateRunProgress } from './ui_ai_results.js';
 import { compareBar } from './ui_ai_images.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import {
@@ -547,6 +547,11 @@ export function watchAiTasks(owner) {
     api.addEventListener('anomalous.ai_task', (event) => {
         const detail = event?.detail || {};
         const onPage = () => owner.modal?.classList.contains('visible') && owner.currentShellPage?.() === 'ai' && visible();
+        // A run's progress only moves its bar (every couple of seconds while it runs): no refetch.
+        if (detail.progress) {
+            if (onPage()) updateRunProgress(state.page, detail.progress);
+            return;
+        }
         if (detail.panel && !onPage()) panelToast(owner, String(detail.panel), Boolean(detail.asks));
         else if (detail.gate && !onPage()) panelToast(owner, t(`aiGateQ_${detail.gate}`), true);
         clearTimeout(state.refreshTimer);

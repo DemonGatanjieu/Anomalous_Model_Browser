@@ -148,3 +148,12 @@
 .anomalous-ai-handoff { display: flex; flex-direction: column; gap: 12px; max-width: 560px; }
 .anomalous-ai-handoff-text { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
 .anomalous-ai-handoff-actions { display: flex; flex-wrap: wrap; gap: 14px; }
+
+/* A run's progress under its step (ui_ai_results.js runProgress). */
+.anomalous-ai-run-progress { display: flex; flex-direction: column; gap: 5px; max-width: 520px; margin: 6px 0 4px; }
+.anomalous-ai-run-words { color: var(--amb-text-soft); font-size: 12px; font-variant-numeric: tabular-nums; }
+.anomalous-ai-run-bar { position: relative; height: 6px; overflow: hidden; border-radius: 999px; background: rgba(var(--amb-ink-rgb), 0.08); }
+.anomalous-ai-run-fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; background: var(--ai-run, var(--amb-ok)); transition: width 0.6s ease; }
+.anomalous-ai-run-bar.is-waiting .anomalous-ai-run-fill { width: 30%; animation: anomalous-ai-run-wait 1.6s ease-in-out infinite; }
+@keyframes anomalous-ai-run-wait { 0% { left: -30%; } 100% { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .anomalous-ai-run-bar.is-waiting .anomalous-ai-run-fill { animation: none; } }

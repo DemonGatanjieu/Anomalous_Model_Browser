@@ -123,7 +123,11 @@ def download_status(ctx):
 
 def run_workflow(ctx, batch=1):
     batch = max(1, min(8, int(batch)))
-    return _page("run_workflow", {"batch": batch})
+    answer = _page("run_workflow", {"batch": batch})
+    if isinstance(answer, dict):
+        answer["note"] = ("Queued. A run takes a while: follow it with run_status (wait_seconds up to 55) until it "
+                          "says done; do not guess from the time passed. Its pictures come with run_status.")
+    return answer
 
 
 def open_in_anomalous(ctx, model_id):

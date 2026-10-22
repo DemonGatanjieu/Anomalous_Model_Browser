@@ -53,6 +53,7 @@ TOOLS = {
     "begin_task": Entry(None, None, None),
     "update_panel": Entry(None, None, None),
     "get_answers": Entry(None, None, None),
+    "run_status": Entry("look", "run", None),
     # Anomalous's card in the conversation (mcp_apps.py): its own calls, not the AI's steps
     "app_task_view": Entry(None, None, None),
     "app_answer": Entry(None, None, None),
