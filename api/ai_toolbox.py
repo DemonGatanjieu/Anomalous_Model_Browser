@@ -6,7 +6,7 @@ except ComfyUI's own built-in ones and the helpers that live only in the page). 
 "user_toolbox" step the AI receives like a message (kind toolbox, ai_panels.py); begin_task
 names the task's picks and get_toolbox gives them in full. The catalogue the picker shows uses
 the same names the AI's tools use: node types from ComfyUI's /object_info (mcp_canvas_edit.py),
-the rest from mcp_tools.py's lists."""
+the rest from ai_toolbox_catalog.py."""
 
 import json
 import os
@@ -21,7 +21,6 @@ KINDS = ("nodes", "combos", "workflows", "prompts", "models")
 MODES = ("prefer", "only")
 MAX_ITEMS = 60
 MAX_NAME = 300
-CATALOG_LIMIT = 50  # the lists' own most; a search finds the rest
 _lock = threading.Lock()
 
 
@@ -84,7 +83,8 @@ def words(box):
     """The picks in a sentence or two for the AI."""
     parts = []
     labels = {"nodes": "node types", "combos": "combos (place_combo)", "workflows": "workflows (open_workflow opens one in a new tab)",
-              "prompts": "saved prompts", "models": "models (model_id for set_model / add_lora / get_model)"}
+              "prompts": "prompts (combo:<name> / workflow:<name> are the prompts inside that combo or workflow)",
+              "models": "models (model_id for set_model / add_lora / get_model)"}
     for kind in KINDS:
         if box.get(kind):
             parts.append(f"{labels[kind]}: {', '.join(box[kind])}")
@@ -140,29 +140,10 @@ def source_of(info):
     return "api" if module.startswith("comfy_api_nodes") else "builtin"
 
 
-def catalog(ctx, kind, query=""):
-    """What the picker lists for `kind`, by the names the AI's tools use."""
-    from . import mcp_tools
-    from .mcp_canvas_edit import _object_info
+def catalog(kind):
+    """What the picker lists besides node types (ai_toolbox_catalog.py); the page has those itself."""
+    from .ai_toolbox_catalog import everything
 
-    if kind == "nodes":
-        groups = {}
-        for name, info in _object_info(ctx).items():
-            groups.setdefault(source_of(info), []).append({
-                "type": name, "label": info.get("display_name") or name, "category": info.get("category") or "",
-                **({"deprecated": True} if info.get("deprecated") else {})})
-        return {"groups": [{"source": source, "nodes": sorted(items, key=lambda item: item["label"].lower())}
-                           for source, items in sorted(groups.items(), key=lambda pair: (pair[0] not in ("builtin",), pair[0] == "api", pair[0].lower()))]}
-    if kind == "combos":
-        return {"items": [{"name": item["name"], "detail": item.get("main_model") or ""}
-                          for item in mcp_tools.list_combos(query, CATALOG_LIMIT)["combos"]]}
-    if kind == "workflows":
-        return {"items": [{"name": item["name"], "detail": " ".join(item.get("tags") or [])}
-                          for item in mcp_tools.list_workflows(query, CATALOG_LIMIT)["workflows"]]}
-    if kind == "prompts":
-        return {"items": [{"name": item["name"], "detail": item.get("positive", "")[:120]}
-                          for item in mcp_tools.list_saved_prompts(query, CATALOG_LIMIT)["prompts"]]}
-    if kind == "models":
-        return {"items": [{"name": item["model_id"], "label": item["name"], "detail": f"{item['type']} · {item.get('base_model') or ''}".strip(" ·")}
-                          for item in mcp_tools.search_models(query, limit=CATALOG_LIMIT)["models"]]}
-    raise ToolboxError(f"kind is one of {', '.join(KINDS)}")
+    if kind != "all":
+        raise ToolboxError("kind is all; node types come from the page")
+    return everything()

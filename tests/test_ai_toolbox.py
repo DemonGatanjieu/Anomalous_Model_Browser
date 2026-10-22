@@ -90,10 +90,25 @@ class ToolboxTests(unittest.TestCase):
         self.assertEqual((box["mode"], box["nodes"][0]["type"], box["page_only_nodes"]), ("only", "FaceDetailer", ["Fast Groups Muter (rgthree)"]))
         self.assertTrue(box["models"][0]["missing"])
 
-    def test_the_picker_lists_nodes_by_source(self):
-        groups = ai_toolbox.catalog({}, "nodes")["groups"]
-        self.assertEqual([group["source"] for group in groups], ["builtin", "ComfyUI-Impact-Pack", "api"])
-        self.assertEqual([node["type"] for node in groups[1]["nodes"]], ["FaceDetailer", "SAMLoader"])
+    def test_the_picker_gets_everything_in_one_answer_and_prompts_inside_combos_and_workflows(self):
+        from api import ai_toolbox_catalog as catalog
+
+        combos = [{"name": "赛博少女", "model": "a.safetensors", "loras": [], "base": "", "prompt": "1girl, neon", "structure": False,
+                   "cover": "/anomalous/image?x", "image": None}]
+        flows = [{"name": "高清修复", "filename": "f.json", "tags": ["SDXL"], "prompt": "city", "negative": "blurry"},
+                 {"name": "空的", "filename": "e.json", "tags": [], "prompt": "", "negative": ""}]
+        with mock.patch.object(catalog, "_combos", return_value=combos), mock.patch.object(catalog, "_workflows", return_value=flows), \
+                mock.patch.object(catalog, "_models", return_value=[{"id": "loras:0:x.safetensors"}]), \
+                mock.patch("api.mcp_tools.saved_prompts", return_value=iter([{"name": "夜景", "tags": [], "positive": "night", "negative": ""}])):
+            data = ai_toolbox.catalog("all")
+            ids = [entry["id"] for entry in data["prompts"]]
+            self.assertEqual(ids, ["夜景", "combo:赛博少女", "workflow:高清修复"], "a workflow without prompts has none to pick")
+            ai_toolbox.pick(self.task, {"prompts": ["workflow:高清修复"]}, "prefer")
+            box = mcp_task_tools.get_toolbox(self.ctx)
+        self.assertEqual((box["prompts"][0]["positive"], box["prompts"][0]["negative"]), ("city", "blurry"))
+        self.assertIn("workflow:<name>", ai_toolbox.words(ai_toolbox.effective(ai_tasks.get_task(self.task))))
+        self.assertIs(ai_toolbox.catalog("all"), data, "kept a few seconds")
+        catalog._cache.update(at=0.0, data=None)
 
     def test_what_is_refused(self):
         for picks, mode in [(None, "prefer"), ({"nodes": "FaceDetailer"}, "prefer"), ({"nodes": [3]}, "prefer"),
@@ -104,7 +119,7 @@ class ToolboxTests(unittest.TestCase):
         with self.assertRaises(ai_toolbox.ToolboxError):
             ai_toolbox.pick("no-task", {}, "prefer")
         with self.assertRaises(ai_toolbox.ToolboxError):
-            ai_toolbox.catalog({}, "secrets")
+            ai_toolbox.catalog("nodes")
 
 
 if __name__ == "__main__":

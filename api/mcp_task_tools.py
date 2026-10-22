@@ -95,15 +95,20 @@ def get_toolbox(ctx, task=None):
         answer["nodes"] = found["nodes"]
         if found.get("not_found"):
             answer["page_only_nodes"] = found["not_found"]  # helpers that live only in the page: add_node takes them
-    for kind, lister, key in (("combos", mcp_tools.list_combos, "combos"), ("workflows", mcp_tools.list_workflows, "workflows"),
-                              ("prompts", mcp_tools.list_saved_prompts, "prompts")):
+    for kind, lister, key in (("combos", mcp_tools.list_combos, "combos"), ("workflows", mcp_tools.list_workflows, "workflows")):
         if box.get(kind):
             answer[kind] = [item for name in box[kind] for item in lister(name, 5)[key] if item["name"] == name][:ai_toolbox.MAX_ITEMS]
+    if box.get("prompts"):
+        from .ai_toolbox_catalog import everything
+
+        prompts = {entry["id"]: entry for entry in everything()["prompts"]}
+        answer["prompts"] = [prompts[name] for name in box["prompts"] if name in prompts]
     if box.get("models"):
         answer["models"] = []
         for model_id in box["models"]:
             try:
-                answer["models"].append(mcp_tools.get_model(model_id))
+                found = mcp_tools.get_model(model_id)
+                answer["models"].append(found[0] if isinstance(found, tuple) else found)  # without its cover picture
             except ToolError:
                 answer["models"].append({"model_id": model_id, "missing": True})
     return answer

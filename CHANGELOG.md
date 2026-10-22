@@ -9,6 +9,8 @@
 ### 给 AI 的素材 / Materials for the AI
 - AI 工作台每个任务上多了“素材”按钮：按来源分组列出这台 ComfyUI 的全部节点（自带的、你装的每个第三方节点包、只在网页里的小工具、会花积分的付费 API 节点单独放在最后），还有你的搭配、工作流、提示词和模型。勾选这次想让 AI 用的，点“交给 AI”；可以选“优先用这些”或“只能用这些节点”（自带节点照常可用，AI 想加别的第三方或付费节点会被拦下）。☆ 设为常用后，没挑素材的任务自动带上常用的。AI 下一步就会收到，时间线上也记着你给了什么、AI 收到没有。
 - AI 能在新标签页里打开你存的工作流，在它的基础上改；工作流详情页也有“✦ 交给 AI”。AI 查节点时会标出你挑的节点和付费节点。
+- 素材窗口重做：大窗口，顶部一个搜索框搜所有素材（按 / 直接搜），左边分类显示各自挑了几个、搜到几个；节点可以按来源筛选，每个第三方节点包有自己的彩色徽标；节点卡片画成一个迷你节点，输入输出的颜色和 ComfyUI 画布上一样，写着有几个参数；搭配、工作流、模型显示封面；提示词显示原文，并且能直接挑搭配和工作流里的提示词。鼠标移到卡片上，右边显示完整说明（节点的每个输入、参数、输出，提示词全文）。下面一排是挑好的素材，带缩略图，可以一个个去掉；“优先用 / 只能用”做成了开关。图标、徽标和空白时的插图都是矢量画的，跟着深浅色主题变。
+- 打开不用等了：节点列表直接用网页里已有的节点信息，其他素材一次读完、提前读好、留一分钟，打开窗口时先显示留着的，再在后台刷新。
 - 实测：你装的 10 个第三方节点包（Impact Pack、IPAdapter、Easy-Use、Comfyroll、rgthree、ControlNet 预处理器等）共 1642 种节点，AI 都能放到画布上；用 Comfyroll 节点搭的工作流真实跑出了图。
 - A Materials button on each AI task: every node type of this ComfyUI grouped by source (built-in, each custom node pack, page-only helpers, paid API nodes last), plus combos, workflows, prompts and models; picks go to the AI as prefer or only-these-nodes (built-in nodes stay allowed), favourites stand in for tasks without picks. The AI can open a saved workflow in a new tab; a workflow's page can hand it to the AI.
 

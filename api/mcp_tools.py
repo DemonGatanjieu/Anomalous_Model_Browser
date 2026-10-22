@@ -332,28 +332,31 @@ def _model_name(model):
     return str(model or "")
 
 
+def combo_view(note):
+    """A combo (one of _list_notebooks) as the AI and the materials picker see it, with its LoRAs and texts."""
+    data = note.get("data") or {}
+    if data.get("kind") == "nodes":  # its own node structure: model and text slots by their names
+        structure = data.get("structure") or {}
+        values = data.get("values") or {}
+        slots = structure.get("slots") or []
+        models = [{"slot": s.get("label") or s.get("widget"), "folder": s.get("folder") or "",
+                   "file": os.path.basename(str(values.get(s["id"]) or "").replace("\\", "/"))}
+                  for s in slots if s.get("kind") == "model"]
+        texts = [{"slot": s.get("label") or s.get("widget"), "text": _text(values.get(s["id"]), 400)}
+                 for s in slots if s.get("kind") == "text"]
+        combo = {"name": note.get("name"), "kind": "node structure", "models": models, "texts": texts,
+                 "nodes": [n.get("name") or n.get("type") for n in structure.get("nodes") or []],
+                 "main_model": models[0]["file"] if models else "", "prompt": texts[0]["text"] if texts else ""}
+        return combo, [model["file"] for model in models[1:]] + [text["text"] for text in texts[1:]]
+    loras = [_model_name(lora) for lora in data.get("loras") or []]
+    return {"name": note.get("name"), "base_model": data.get("baseModel") or "", "main_model": _model_name(data.get("mainModel")),
+            "loras": loras, "prompt": _text(data.get("promptEn"), 800)}, loras
+
+
 def list_combos(query="", limit=20):
     terms, found = _terms(query), []
     for note in _list_notebooks():
-        data = note.get("data") or {}
-        if data.get("kind") == "nodes":  # its own node structure: model and text slots by their names
-            structure = data.get("structure") or {}
-            values = data.get("values") or {}
-            slots = structure.get("slots") or []
-            models = [{"slot": s.get("label") or s.get("widget"), "folder": s.get("folder") or "",
-                       "file": os.path.basename(str(values.get(s["id"]) or "").replace("\\", "/"))}
-                      for s in slots if s.get("kind") == "model"]
-            texts = [{"slot": s.get("label") or s.get("widget"), "text": _text(values.get(s["id"]), 400)}
-                     for s in slots if s.get("kind") == "text"]
-            combo = {"name": note.get("name"), "kind": "node structure", "models": models, "texts": texts,
-                     "nodes": [n.get("name") or n.get("type") for n in structure.get("nodes") or []],
-                     "main_model": models[0]["file"] if models else "", "prompt": texts[0]["text"] if texts else ""}
-            loras = [model["file"] for model in models[1:]] + [text["text"] for text in texts[1:]]
-        else:
-            loras = [_model_name(lora) for lora in data.get("loras") or []]
-            combo = {"name": note.get("name"), "base_model": data.get("baseModel") or "",
-                     "main_model": _model_name(data.get("mainModel")), "loras": loras,
-                     "prompt": _text(data.get("promptEn"), 800)}
+        combo, loras = combo_view(note)
         if not _matches(terms, combo["name"], combo["main_model"], combo["prompt"], " ".join(loras)):
             continue
         found.append(combo)
@@ -373,8 +376,8 @@ def list_workflows(query="", limit=20):
     return {"total_matches": len(found), "workflows": found[:_limit(limit)]}
 
 
-def list_saved_prompts(query="", limit=20):
-    terms, found = _terms(query), []
+def saved_prompts():
+    """Every saved prompt plan: {name, tags, positive, negative}."""
     directory = get_materials_dir()
     for summary in _list_materials(directory):
         if summary.get("kind") != "prompt_plan" or summary.get("moved_to_recipe"):
@@ -383,10 +386,14 @@ def list_saved_prompts(query="", limit=20):
             plan = _read_material(os.path.join(directory, summary["filename"])).get("plan") or {}
         except (OSError, ValueError, KeyError):
             continue
-        prompt = {"name": summary.get("name"), "tags": summary.get("tags") or [],
-                  "positive": _text(plan.get("positive"), 1200), "negative": _text(plan.get("negative"), 600)}
-        if _matches(terms, prompt["name"], " ".join(prompt["tags"]), prompt["positive"], prompt["negative"]):
-            found.append(prompt)
+        yield {"name": summary.get("name"), "tags": summary.get("tags") or [],
+               "positive": _text(plan.get("positive"), 1200), "negative": _text(plan.get("negative"), 600)}
+
+
+def list_saved_prompts(query="", limit=20):
+    terms = _terms(query)
+    found = [prompt for prompt in saved_prompts()
+             if _matches(terms, prompt["name"], " ".join(prompt["tags"]), prompt["positive"], prompt["negative"])]
     return {"total_matches": len(found), "prompts": found[:_limit(limit)]}
 
 

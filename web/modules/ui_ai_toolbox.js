@@ -1,217 +1,338 @@
 /**
- * "给 AI 的素材": what the user hands the AI to work with in a task (api/ai_toolbox.py). A window
- * lists node types grouped by where they come from (ComfyUI's own, each custom node pack, the
- * helpers that live only in the page, paid API nodes), then the user's combos, saved workflows,
- * prompts and models, by the names the AI's tools use. A tick picks one for this task; the star
- * keeps it among the favourites a task has until the user picks for it. "Hand to the AI" sends
- * the picks and how strictly (prefer / only) as a step the AI receives. toolboxButton() is the
- * entry in a task's header, toolboxStep() the timeline row of a pick.
+ * "给 AI 的素材": what the user hands the AI to work with in a task (api/ai_toolbox.py). A large
+ * window: a search over everything, the kinds on the left (node types, combos, workflows,
+ * prompts, models) with how many are picked, a second column to narrow by source (each custom
+ * node pack with its badge, ComfyUI's own, paid API nodes), by where a prompt comes from or by
+ * model type, a grid of cards (ui_ai_toolbox_cards.js) drawn as it scrolls, the card in focus
+ * in full on the right, and the picks below with how strictly the AI keeps to them. Node types
+ * are the page's own (no waiting); the rest is read ahead and kept (ai_toolbox_data.js).
+ * toolboxButton() is the entry in a task's header, toolboxStep() the timeline row of a pick.
  */
 
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
+import { KINDS, keptCatalog, loadCatalog, nodeItems, nodeSources, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
+import { card, coverUrl, detail, refreshCard } from './ui_ai_toolbox_cards.js';
+import { emptyPicture, icon, sourceBadge } from './ui_ai_toolbox_icons.js';
 
-const KINDS = ['nodes', 'combos', 'workflows', 'prompts', 'models'];
 const MODES = ['prefer', 'only'];
-const ROWS_SHOWN = 80;
-const SEARCH_DELAY_MS = 250;
-
-let nodeGroups = null; // read once per page: ComfyUI's node list does not change while it runs
+const CHUNK = 60;
+const SEARCH_DELAY_MS = 120;
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
+    if (text !== undefined && text !== null) node.textContent = text;
     return node;
 }
 
-function button(className, label, onClick, title) {
-    const node = el('button', className, label);
+function button(className, children, onClick, title) {
+    const node = el('button', className);
     node.type = 'button';
+    node.append(...[].concat(children).map(child => (typeof child === 'string' ? el('span', '', child) : child)));
     node.onclick = onClick;
     if (title) node.title = title;
     return node;
 }
 
-async function getJson(url, options) {
-    const response = await fetch(url, options);
+async function postJson(url, body) {
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
     return data;
 }
 
-const post = (url, body) => getJson(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 const empty = () => Object.fromEntries(KINDS.map(kind => [kind, []]));
 const total = box => KINDS.reduce((sum, kind) => sum + (box?.[kind]?.length || 0), 0);
-const shortName = (kind, name) => (kind === 'models' ? String(name).split(/[\\/:]/).pop() : name);
+const keyOf = (kind, id) => `${kind}|${id}`;
 
-/** Node types by source; the page-only helpers (in LiteGraph, not in ComfyUI's list) before the paid API nodes. */
-async function loadNodeGroups() {
-    if (nodeGroups) return nodeGroups;
-    const { groups } = await getJson('/anomalous/ai_toolbox?kind=nodes');
-    const known = new Set(groups.flatMap(group => group.nodes.map(node => node.type)));
-    const registered = globalThis.LiteGraph?.registered_node_types || {};
-    const pageOnly = Object.keys(registered).filter(type => !known.has(type)).sort()
-        .map(type => ({ type, label: registered[type]?.title || type }));
-    const paid = groups.filter(group => group.source === 'api');
-    nodeGroups = [...groups.filter(group => group.source !== 'api'), ...(pageOnly.length ? [{ source: 'page', nodes: pageOnly }] : []), ...paid];
-    return nodeGroups;
+let nodesKept = null; // the page's node types do not change while it is open
+const pageNodes = () => (nodesKept ||= nodeItems(globalThis.LiteGraph?.registered_node_types));
+
+/** What narrows a kind in the second column: a node's source, a prompt's origin, a model's type. */
+function facetOf(item) {
+    if (item.kind === 'nodes') return { key: item.source.key, label: item.source.kind === 'pack' ? item.source.label : t(`aiTbSource_${item.source.kind}`), source: item.source };
+    if (item.kind === 'prompts') return { key: item.source, label: t(`aiTbPromptFrom_${item.source}`) };
+    if (item.kind === 'models') return { key: item.type, label: item.type };
+    return null;
 }
 
-const sourceLabel = source => (['builtin', 'api', 'page'].includes(source) ? t(`aiToolboxSource_${source}`) : source);
+function facets(items, kind) {
+    if (kind === 'nodes') {
+        return nodeSources(items).map(source => ({ key: source.key, count: source.count, source,
+            label: source.kind === 'pack' ? source.label : t(`aiTbSource_${source.kind}`) }));
+    }
+    const found = new Map();
+    for (const item of items) {
+        const facet = facetOf(item);
+        if (!facet) continue;
+        const entry = found.get(facet.key) || { ...facet, count: 0 };
+        entry.count++;
+        found.set(facet.key, entry);
+    }
+    return [...found.values()].sort((a, b) => b.count - a.count);
+}
 
 /** The window for task `task`; `changed()` after the picks were handed over. */
 export async function openToolbox(task, changed = () => {}) {
-    const state = { kind: 'nodes', query: '', mode: task.toolbox?.mode || 'prefer', picks: empty(), favorites: empty(), open: new Set(['builtin']) };
-    try {
-        state.favorites = { ...empty(), ...(await getJson('/anomalous/ai_toolbox/favorites')).favorites };
-    } catch (_) { /* no favourites yet; starring still saves */ }
     const fromTask = Boolean(task.toolbox);
+    const state = {
+        kind: 'nodes', query: '', filter: 'all', facet: null, focus: null, mode: task.toolbox?.mode || 'prefer',
+        picks: empty(), favorites: empty(), nodes: pageNodes(), catalog: keptCatalog(), error: '',
+    };
+    const byKey = new Map();
+    const index = () => {
+        byKey.clear();
+        for (const item of [...state.nodes, ...(state.catalog || [])]) byKey.set(keyOf(item.kind, item.id), item);
+    };
+    index();
+    try {
+        const response = await fetch('/anomalous/ai_toolbox/favorites');
+        if (response.ok) state.favorites = { ...empty(), ...(await response.json()).favorites };
+    } catch (_) { /* none yet; a star still saves */ }
     for (const kind of KINDS) state.picks[kind] = [...((fromTask ? task.toolbox : state.favorites)[kind] || [])];
 
-    const body = el('div', 'anomalous-ai-toolbox');
-    const search = el('input', 'anomalous-ai-toolbox-search');
+    const body = el('div', 'anomalous-tb');
+    const top = el('div', 'anomalous-tb-top');
+    const searchBox = el('label', 'anomalous-tb-search');
+    const search = el('input');
     search.type = 'search';
-    search.placeholder = t('aiToolboxSearch');
-    const kinds = el('div', 'anomalous-ai-toolbox-kinds');
-    const list = el('div', 'anomalous-ai-toolbox-list');
-    const tray = el('div', 'anomalous-ai-toolbox-tray');
-    const intro = el('p', 'anomalous-ai-toolbox-intro', `${t('aiToolboxIntro')}${!fromTask && total(state.favorites) ? ` ${t('aiToolboxFromFavorites')}` : ''}`);
-    const main = el('div', 'anomalous-ai-toolbox-main');
-    main.append(kinds, list);
-    body.append(intro, search, main, tray);
+    search.placeholder = t('aiTbSearch');
+    searchBox.append(icon('search', 18), search, el('kbd', 'anomalous-tb-kbd', '/'));
+    const filters = el('div', 'anomalous-tb-filters');
+    top.append(el('div', 'anomalous-tb-for', t('aiTbFor', { task: task.title || t('aiUntitled') })), searchBox, filters);
+    const rail = el('nav', 'anomalous-tb-rail');
+    const side = el('aside', 'anomalous-tb-facets');
+    const gridWrap = el('div', 'anomalous-tb-grid-wrap');
+    const gridHead = el('div', 'anomalous-tb-grid-head');
+    const scroller = el('div', 'anomalous-tb-scroller');
+    const grid = el('div', 'anomalous-tb-grid');
+    const sentinel = el('div', 'anomalous-tb-sentinel');
+    scroller.append(grid, sentinel);
+    gridWrap.append(gridHead, scroller);
+    const pane = el('div', 'anomalous-tb-pane');
+    const main = el('div', 'anomalous-tb-main');
+    main.append(rail, side, gridWrap, pane);
+    const tray = el('div', 'anomalous-tb-tray');
+    body.append(top, main, tray);
     const close = aiWindow(t('aiToolboxTitle'), body);
-    body.closest('.anomalous-ai-connect-dialog')?.classList.add('is-wide');
+    body.closest('.anomalous-ai-connect-dialog')?.classList.add('is-toolbox');
 
-    const picked = (kind, name) => state.picks[kind].includes(name);
-    const toggle = (kind, name, on) => {
-        state.picks[kind] = on ? [...new Set([...state.picks[kind], name])] : state.picks[kind].filter(item => item !== name);
-        drawKinds();
+    const picked = item => state.picks[item.kind].includes(item.id);
+    const liked = item => state.favorites[item.kind].includes(item.id);
+    const cards = new Map(); // key -> drawn card
+    const ctx = {
+        picked, favorite: liked, focus: (item) => { state.focus = item; drawPane(); },
+        toggle: item => setPick(item.kind, item.id, !picked(item)),
+        star: item => setFavorite(item),
+        promptPicked: id => state.picks.prompts.includes(id),
+        pickPrompt: id => setPick('prompts', id, !state.picks.prompts.includes(id)),
+    };
+
+    function setPick(kind, id, on) {
+        state.picks[kind] = on ? [...new Set([...state.picks[kind], id])] : state.picks[kind].filter(item => item !== id);
+        const item = byKey.get(keyOf(kind, id));
+        const drawn = cards.get(keyOf(kind, id));
+        if (drawn && item) refreshCard(drawn, item, ctx);
+        drawRail();
+        drawFilters();
         drawTray();
-    };
-    const star = (kind, name) => {
-        const on = state.favorites[kind].includes(name);
-        const node = button(`anomalous-ai-toolbox-star${on ? ' is-on' : ''}`, on ? '★' : '☆', async () => {
-            const next = { ...state.favorites, [kind]: on ? state.favorites[kind].filter(item => item !== name) : [...state.favorites[kind], name] };
-            try {
-                state.favorites = { ...empty(), ...(await post('/anomalous/ai_toolbox/favorites', next)).favorites };
-            } catch (error) {
-                await anomalousAlert(error.message);
-                return;
-            }
-            node.replaceWith(star(kind, name));
-        }, t(on ? 'aiToolboxUnfavorite' : 'aiToolboxFavorite'));
-        return node;
-    };
-    const row = (kind, name, label, detail) => {
-        const item = el('label', 'anomalous-ai-toolbox-row');
-        const box = el('input');
-        box.type = 'checkbox';
-        box.checked = picked(kind, name);
-        box.onchange = () => toggle(kind, name, box.checked);
-        const words = el('span', 'anomalous-ai-toolbox-name', label || shortName(kind, name));
-        item.append(box, words);
-        if (detail) item.append(el('span', 'anomalous-ai-toolbox-detail', detail));
-        item.append(star(kind, name));
-        return item;
-    };
+        drawPane();
+        if (state.filter === 'picked') drawGrid();
+    }
 
-    function drawKinds() {
-        kinds.replaceChildren(...KINDS.map((kind) => {
+    async function setFavorite(item) {
+        const next = { ...state.favorites, [item.kind]: liked(item) ? state.favorites[item.kind].filter(id => id !== item.id) : [...state.favorites[item.kind], item.id] };
+        try {
+            state.favorites = { ...empty(), ...(await postJson('/anomalous/ai_toolbox/favorites', next)).favorites };
+        } catch (error) {
+            await anomalousAlert(error.message);
+            return;
+        }
+        const drawn = cards.get(keyOf(item.kind, item.id));
+        if (drawn) refreshCard(drawn, item, ctx);
+        drawFilters();
+        drawPane();
+        if (state.filter === 'liked') drawGrid();
+    }
+
+    const itemsOf = kind => (kind === 'nodes' ? state.nodes : (state.catalog || []).filter(item => item.kind === kind));
+
+    /** The cards of the current kind after the search, the filter and the second column. */
+    function shown() {
+        let items = searchItems(itemsOf(state.kind), state.query);
+        if (state.filter === 'picked') items = items.filter(picked);
+        if (state.filter === 'liked') items = items.filter(liked);
+        const beforeFacet = items;
+        if (state.facet) items = items.filter(item => facetOf(item)?.key === state.facet);
+        return { items, beforeFacet };
+    }
+
+    function drawRail() {
+        rail.replaceChildren(...KINDS.map((kind) => {
             const count = state.picks[kind].length;
-            const node = button(`anomalous-ai-toolbox-kind${state.kind === kind ? ' is-on' : ''}`, t(`aiToolboxKind_${kind}`), () => {
+            const matches = state.query ? searchItems(itemsOf(kind), state.query).length : null;
+            const node = button(`anomalous-tb-kind${state.kind === kind ? ' is-on' : ''}`, [icon(kind, 20), t(`aiToolboxKind_${kind}`)], () => {
                 state.kind = kind;
-                drawKinds();
-                void drawList();
+                state.facet = null;
+                state.focus = null;
+                drawAll();
             });
-            if (count) node.append(el('span', 'anomalous-ai-toolbox-kind-count', String(count)));
+            const meta = el('span', 'anomalous-tb-kind-meta');
+            if (matches !== null) meta.append(el('span', 'anomalous-tb-kind-matches', String(matches)));
+            if (count) meta.append(el('span', 'anomalous-tb-count', String(count)));
+            node.append(meta);
             return node;
         }));
     }
 
-    async function drawNodes() {
-        list.replaceChildren(el('div', 'anomalous-ai-toolbox-note', t('aiToolboxLoading')));
-        const groups = await loadNodeGroups();
-        const query = state.query.toLowerCase();
-        const shown = [];
-        for (const group of groups) {
-            const nodes = query ? group.nodes.filter(node => `${node.type} ${node.label} ${node.category || ''}`.toLowerCase().includes(query)) : group.nodes;
-            if (!nodes.length) continue;
-            const holder = el('details', `anomalous-ai-toolbox-group is-${['builtin', 'api', 'page'].includes(group.source) ? group.source : 'pack'}`);
-            holder.open = Boolean(query) || state.open.has(group.source);
-            const count = nodes.filter(node => picked('nodes', node.type)).length;
-            const summary = el('summary', 'anomalous-ai-toolbox-group-head');
-            summary.append(el('span', 'anomalous-ai-toolbox-group-name', sourceLabel(group.source)),
-                el('span', 'anomalous-ai-toolbox-detail', t('aiToolboxGroupCount', { count: nodes.length })));
-            if (count) summary.append(el('span', 'anomalous-ai-toolbox-kind-count', String(count)));
-            holder.append(summary);
-            const fill = () => {
-                if (holder.children.length > 1) return;
-                holder.append(...nodes.slice(0, ROWS_SHOWN).map(node => row('nodes', node.type, node.label, node.label !== node.type ? node.type : '')));
-                if (nodes.length > ROWS_SHOWN) holder.append(el('div', 'anomalous-ai-toolbox-note', t('aiToolboxMore', { count: nodes.length - ROWS_SHOWN })));
-            };
-            holder.addEventListener('toggle', () => {
-                if (holder.open) state.open.add(group.source); else state.open.delete(group.source);
-                if (holder.open) fill();
+    function drawFilters() {
+        const picks = total(state.picks);
+        const likes = total(state.favorites);
+        filters.replaceChildren(...[['all', t('aiTbAll'), null], ['picked', t('aiTbPickedFilter'), picks], ['liked', t('aiTbLiked'), likes]].map(([key, label, count]) => {
+            const node = button(`anomalous-tb-filter${state.filter === key ? ' is-on' : ''}`, [key === 'liked' ? icon('star', 14) : key === 'picked' ? icon('check', 14) : icon('list', 14), label], () => {
+                state.filter = key;
+                drawAll();
             });
-            if (holder.open) fill();
-            shown.push(holder);
-        }
-        list.replaceChildren(...(shown.length ? shown : [el('div', 'anomalous-ai-toolbox-note', t('aiToolboxEmptyList'))]));
+            if (count) node.append(el('span', 'anomalous-tb-count', String(count)));
+            return node;
+        }));
     }
 
-    async function drawItems(kind) {
-        list.replaceChildren(el('div', 'anomalous-ai-toolbox-note', t('aiToolboxLoading')));
-        const { items } = await getJson(`/anomalous/ai_toolbox?kind=${kind}&query=${encodeURIComponent(state.query)}`);
-        if (state.kind !== kind) return;
-        const listed = new Set(items.map(item => item.name));
-        // What is picked stays on top, also when a search does not find it, so it can be taken back.
-        const kept = state.picks[kind].filter(name => !listed.has(name)).map(name => row(kind, name));
-        const rows = items.map(item => row(kind, item.name, item.label, item.detail));
-        list.replaceChildren(...kept, ...(rows.length || kept.length ? rows : [el('div', 'anomalous-ai-toolbox-note', t('aiToolboxEmptyList'))]));
+    function drawFacets(beforeFacet) {
+        const list = facets(beforeFacet, state.kind);
+        side.hidden = list.length < 2;
+        if (side.hidden) return;
+        const row = (facet, label, count, badge) => {
+            const node = button(`anomalous-tb-facet${state.facet === facet ? ' is-on' : ''}`, [badge || icon('list', 16), label], () => {
+                state.facet = facet;
+                drawGrid();
+            });
+            node.title = label;
+            node.append(el('span', 'anomalous-tb-facet-count', String(count)));
+            return node;
+        };
+        side.replaceChildren(el('div', 'anomalous-tb-facets-title', t(state.kind === 'nodes' ? 'aiTbSources' : 'aiTbNarrow')),
+            row(null, t('aiTbEverything'), beforeFacet.length),
+            ...list.map(facet => row(facet.key, facet.label, facet.count, facet.source ? sourceBadge(facet.source, 22) : null)));
     }
 
-    async function drawList() {
-        try {
-            await (state.kind === 'nodes' ? drawNodes() : drawItems(state.kind));
-        } catch (error) {
-            list.replaceChildren(el('div', 'anomalous-ai-toolbox-note is-error', error.message));
+    let observer = null;
+    function drawGrid() {
+        observer?.disconnect();
+        cards.clear();
+        const { items, beforeFacet } = shown();
+        drawFacets(beforeFacet);
+        const facetLabel = state.facet ? (facets(beforeFacet, state.kind).find(facet => facet.key === state.facet)?.label || state.facet) : '';
+        gridHead.replaceChildren(el('span', 'anomalous-tb-grid-title', facetLabel || t(`aiToolboxKind_${state.kind}`)),
+            el('span', 'anomalous-tb-grid-count', t('aiTbCount', { count: items.length })));
+        if (state.kind !== 'nodes' && !state.catalog) {
+            grid.replaceChildren(...Array.from({ length: 8 }, () => el('div', 'anomalous-tb-card is-skeleton')));
+            if (state.error) grid.replaceChildren(el('div', 'anomalous-tb-note is-error', state.error));
+            return;
         }
+        if (!items.length) {
+            grid.replaceChildren(el('div', 'anomalous-tb-note', state.filter === 'picked' ? t('aiToolboxNone') : t('aiToolboxEmptyList')));
+            return;
+        }
+        grid.replaceChildren();
+        let drawn = 0;
+        const more = () => {
+            const next = items.slice(drawn, drawn + CHUNK);
+            drawn += next.length;
+            grid.append(...next.map((item) => {
+                const node = card(item, ctx);
+                cards.set(keyOf(item.kind, item.id), node);
+                return node;
+            }));
+            if (drawn >= items.length) observer?.disconnect();
+        };
+        more();
+        observer = new IntersectionObserver(entries => { if (entries.some(entry => entry.isIntersecting)) more(); }, { root: scroller, rootMargin: '400px' });
+        observer.observe(sentinel);
+        scroller.scrollTop = 0;
+    }
+
+    function drawPane() {
+        if (state.focus) {
+            pane.replaceChildren(detail(state.focus, ctx));
+            return;
+        }
+        const box = el('div', 'anomalous-tb-pane-empty');
+        box.append(emptyPicture(), el('div', 'anomalous-tb-pane-title', total(state.picks) ? t('aiTbPaneCount', { count: total(state.picks) }) : t('aiTbPaneHello')),
+            el('p', 'anomalous-tb-text is-soft', t('aiTbPaneTips')));
+        pane.replaceChildren(box);
+    }
+
+    function chip(kind, id) {
+        const item = byKey.get(keyOf(kind, id));
+        const inner = kind === 'prompts' && /^(combo|workflow):/.test(id);
+        const label = inner ? t('aiTbPromptOf', { name: id.replace(/^(combo|workflow):/, '') }) : item?.title || String(id).split(/[\\/:]/).pop();
+        const node = el('span', `anomalous-tb-chip is-${kind}`);
+        const url = item && ['combos', 'workflows', 'models'].includes(kind) ? coverUrl(item) : '';
+        if (url) {
+            const img = el('img');
+            img.src = url;
+            img.alt = '';
+            img.loading = 'lazy';
+            img.onerror = () => img.replaceWith(icon(kind, 14));
+            node.append(img);
+        } else if (kind === 'nodes' && item) {
+            node.append(sourceBadge(item.source, 16));
+        } else {
+            node.append(icon(kind, 14));
+        }
+        node.append(el('span', 'anomalous-tb-chip-name', label));
+        node.title = `${t(`aiToolboxKind_${kind}`)} · ${label}`;
+        node.append(button('anomalous-tb-chip-x', [icon('close', 12)], () => setPick(kind, id, false), t('aiTbRemove')));
+        return node;
     }
 
     function drawTray() {
-        const chips = el('div', 'anomalous-ai-toolbox-chips');
-        for (const kind of KINDS) {
-            for (const name of state.picks[kind]) {
-                chips.append(button(`anomalous-ai-toolbox-chip is-${kind}`, `${shortName(kind, name)} ×`, () => {
-                    toggle(kind, name, false);
-                    void drawList();
-                }, t(`aiToolboxKind_${kind}`)));
-            }
+        const chips = el('div', 'anomalous-tb-chips');
+        for (const kind of KINDS) for (const id of state.picks[kind]) chips.append(chip(kind, id));
+        if (!chips.children.length) chips.append(el('span', 'anomalous-tb-tray-empty', t('aiTbTrayEmpty')));
+        const clear = button('anomalous-tb-clear', [icon('trash', 15)], () => {
+            state.picks = empty();
+            for (const [key, node] of cards) refreshCard(node, byKey.get(key), ctx);
+            drawRail();
+            drawFilters();
+            drawTray();
+            drawPane();
+        }, t('aiTbClear'));
+        clear.hidden = !total(state.picks);
+        const modes = el('div', 'anomalous-tb-modes');
+        modes.setAttribute('role', 'radiogroup');
+        for (const mode of MODES) {
+            const option = button(`anomalous-tb-mode${state.mode === mode ? ' is-on' : ''}`, [icon(mode === 'only' ? 'lock' : 'target', 16), t(`aiTbMode_${mode}`)], () => {
+                state.mode = mode;
+                drawTray();
+            }, t(`aiTbModeHint_${mode}`));
+            option.setAttribute('role', 'radio');
+            option.setAttribute('aria-checked', String(state.mode === mode));
+            modes.append(option);
         }
-        if (!chips.children.length) chips.append(el('span', 'anomalous-ai-toolbox-detail', t('aiToolboxNone')));
-        const mode = el('select', 'anomalous-ai-toolbox-mode');
-        for (const value of MODES) {
-            const option = el('option', '', t(`aiToolboxMode_${value}`));
-            option.value = value;
-            option.selected = state.mode === value;
-            mode.append(option);
-        }
-        mode.onchange = () => { state.mode = mode.value; };
-        const send = button('anomalous-ai-toolbox-send', t('aiToolboxSend'), async () => {
+        const send = button('anomalous-tb-send', [icon('sparkle', 17), t('aiTbSend', { count: total(state.picks) })], async () => {
+            send.disabled = true;
             try {
-                await post(`/anomalous/ai_tasks/${encodeURIComponent(task.id)}/toolbox`, { mode: state.mode, ...state.picks });
+                await postJson(`/anomalous/ai_tasks/${encodeURIComponent(task.id)}/toolbox`, { mode: state.mode, ...state.picks });
             } catch (error) {
+                send.disabled = false;
                 await anomalousAlert(error.message);
                 return;
             }
             close();
             changed();
         });
-        const actions = el('div', 'anomalous-ai-toolbox-actions');
-        actions.append(mode, send);
-        tray.replaceChildren(el('span', 'anomalous-ai-toolbox-detail', t('aiToolboxPicked')), chips, actions);
+        tray.replaceChildren(chips, clear, modes, send);
+    }
+
+    function drawAll() {
+        drawRail();
+        drawFilters();
+        drawGrid();
+        drawPane();
     }
 
     let timer = null;
@@ -219,34 +340,74 @@ export async function openToolbox(task, changed = () => {}) {
         clearTimeout(timer);
         timer = setTimeout(() => {
             state.query = search.value.trim();
-            void drawList();
+            state.facet = null;
+            drawRail();
+            drawGrid();
         }, SEARCH_DELAY_MS);
     });
-    drawKinds();
+    body.addEventListener('keydown', (event) => {
+        if (event.key === '/' && event.target !== search) {
+            event.preventDefault();
+            search.focus();
+        }
+    });
+    drawAll();
     drawTray();
-    await drawList();
     search.focus();
+    // The rest of the catalogue: what was kept is shown already; this brings it up to date.
+    loadCatalog({ fresh: Boolean(state.catalog) }).then((items) => {
+        state.catalog = items;
+        index();
+        drawRail();
+        drawTray();
+        if (state.kind !== 'nodes') drawGrid();
+    }).catch((error) => {
+        state.error = error.message;
+        if (state.kind !== 'nodes' && !state.catalog) drawGrid();
+    });
 }
 
-/** The entry in a task's header: "Materials", with how many the task has. */
+/** The entry in a task's header: an icon, "Materials", and how many the task has. Reads the catalogue ahead. */
 export function toolboxButton(task, changed) {
+    prefetchToolbox();
     const count = total(task.toolbox);
-    return button('anomalous-ai-link', count ? t('aiToolboxCount', { count }) : t('aiToolbox'), () => void openToolbox(task, changed), t('aiToolboxTitle'));
+    const node = button(`anomalous-tb-open${count ? ' has-picks' : ''}`, [icon('sparkle', 15), t('aiToolbox')], () => void openToolbox(task, changed), t('aiToolboxTitle'));
+    if (count) node.append(el('span', 'anomalous-tb-count', String(count)));
+    return node;
 }
 
 /** A pick on the timeline: what was handed over, how strictly, and whether the AI has it. */
 export function toolboxStep(step) {
-    const box = el('div', 'anomalous-ai-toolbox-step');
+    const box = el('div', 'anomalous-tb-step');
     const picks = step.toolbox || {};
     if (!total(picks)) {
         box.append(el('div', 'anomalous-ai-user-text', t('aiToolboxCleared')));
     } else {
-        box.append(el('div', 'anomalous-ai-toolbox-detail', t(`aiToolboxStepMode_${picks.mode === 'only' ? 'only' : 'prefer'}`)));
-        const chips = el('div', 'anomalous-ai-toolbox-chips');
+        const mode = el('div', `anomalous-tb-step-mode is-${picks.mode === 'only' ? 'only' : 'prefer'}`);
+        mode.append(icon(picks.mode === 'only' ? 'lock' : 'target', 14), el('span', '', t(`aiToolboxStepMode_${picks.mode === 'only' ? 'only' : 'prefer'}`)));
+        const chips = el('div', 'anomalous-tb-chips is-static');
+        const known = new Map([...(picks.nodes?.length ? pageNodes() : []), ...(keptCatalog() || [])].map(item => [keyOf(item.kind, item.id), item]));
         for (const kind of KINDS) {
-            for (const name of picks[kind] || []) chips.append(el('span', `anomalous-ai-toolbox-chip is-${kind}`, shortName(kind, name)));
+            for (const id of picks[kind] || []) {
+                const item = known.get(keyOf(kind, id));
+                const node = el('span', `anomalous-tb-chip is-${kind}`);
+                const url = item && kind !== 'prompts' ? coverUrl(item) : '';
+                if (url) {
+                    const img = el('img');
+                    img.src = url;
+                    img.alt = '';
+                    img.loading = 'lazy';
+                    img.onerror = () => img.replaceWith(icon(kind, 14));
+                    node.append(img);
+                } else {
+                    node.append(kind === 'nodes' && item ? sourceBadge(item.source, 16) : icon(kind, 14));
+                }
+                const inner = kind === 'prompts' && /^(combo|workflow):/.test(id);
+                node.append(el('span', 'anomalous-tb-chip-name', inner ? t('aiTbPromptOf', { name: id.replace(/^(combo|workflow):/, '') }) : item?.title || String(id).split(/[\\/:]/).pop()));
+                chips.append(node);
+            }
         }
-        box.append(chips);
+        box.append(mode, chips);
     }
     box.append(el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
     return box;

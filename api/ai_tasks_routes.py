@@ -158,7 +158,7 @@ async def api_toolbox_pick(request):
 
 
 async def api_toolbox(request):
-    """GET /anomalous/ai_toolbox?kind=&query=: what the picker lists; GET/POST /anomalous/ai_toolbox/favorites."""
+    """GET /anomalous/ai_toolbox?kind=all: what the picker lists; GET/POST /anomalous/ai_toolbox/favorites."""
     if request.path.endswith("/favorites"):
         if request.method == "GET":
             return web.json_response({"favorites": ai_toolbox.favorites()})
@@ -167,10 +167,8 @@ async def api_toolbox(request):
             return web.json_response({"favorites": ai_toolbox.set_favorites(body if body is not None else None)})
         except ai_toolbox.ToolboxError as error:
             return web.json_response({"error": str(error)}, status=400)
-    ctx = {"base_url": f"{request.scheme}://{request.host}"}
     try:
-        return web.json_response(await asyncio.to_thread(ai_toolbox.catalog, ctx, request.query.get("kind", ""),
-                                                         request.query.get("query", "")[:200]))
+        return web.json_response(await asyncio.to_thread(ai_toolbox.catalog, request.query.get("kind", "")))
     except ai_toolbox.ToolboxError as error:
         return web.json_response({"error": str(error)}, status=400)
     except Exception as error:  # noqa: BLE001 - ComfyUI's node list or a store unreadable: say so to the page

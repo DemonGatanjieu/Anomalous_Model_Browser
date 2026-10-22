@@ -143,11 +143,18 @@ covered by the `styles.css` manifest.
   `web/modules/canvas_build.js` is its pure part (type fit, value checks, a free spot, the
   layered layout). `open_workflow` opens one of the user's saved workflows in a new tab.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
-  `web/modules/ui_ai_toolbox.js`, from the task header): node types grouped by where they come
-  from (built-in, each custom node folder from `/object_info`'s `python_module`, page-only
-  helpers, paid API nodes), combos, saved workflows, prompts and models, by the names the AI's
-  tools use, with a mode: prefer, or only (add_node / new_workflow then refuse other custom or
-  paid node types). Favourites (`anomalous/ai_toolbox.json`) stand in until the user picks for
+  `web/modules/ui_ai_toolbox.js`, a large window from the task header: search, kinds, a column
+  by source / origin / type, a card grid drawn as it scrolls, a detail pane, the picks below),
+  by the names the AI's tools use, with a mode: prefer, or only (add_node / new_workflow then
+  refuse other custom or paid node types). Node types come from the page's own definitions
+  (`web/modules/ai_toolbox_data.js`: LiteGraph's registered types and their `nodeData`, so no
+  request; page-only helpers go with their pack when their name says which); the rest in one
+  answer from `api/ai_toolbox_catalog.py` (combos, workflows with covers and prompts, prompts
+  saved or inside combos and workflows as `combo:<name>` / `workflow:<name>`, models with
+  covers), read ahead when a task header is drawn and kept a minute.
+  `web/modules/ui_ai_toolbox_cards.js` draws the cards (a node in miniature with its sockets in
+  ComfyUI's colours, covers, prompt text) and the detail pane; `web/modules/ui_ai_toolbox_icons.js`
+  the vector icons, each pack's badge and the empty picture. Favourites (`anomalous/ai_toolbox.json`) stand in until the user picks for
   a task. A pick is a `user_toolbox` step the AI gets as a message (kind `toolbox`); begin_task
   names the picks, `get_toolbox` gives them in full, find_nodes lists them first.
   A rewired input shows in the receipt as a `wired` change
