@@ -314,7 +314,7 @@
 
 /* The tray: picks, how strictly, hand over. */
 .anomalous-tb-tray { display: flex; align-items: center; gap: 12px; }
-.anomalous-tb-chips { display: flex; flex: 1; gap: 6px; min-width: 0; padding: 2px 0; overflow-x: auto; scrollbar-width: thin; }
+.anomalous-tb-chips { display: flex; flex: 1; gap: 6px; min-width: 0; padding: 2px 0; overflow-x: auto; }
 .anomalous-tb-chips.is-static { flex-wrap: wrap; overflow: visible; }
 .anomalous-tb-chip {
     display: inline-flex;
@@ -453,7 +453,6 @@ body.anomalous-tb-docked #anomalous-container.anomalous-maximized .anomalous-ai 
     overflow-x: auto;
     border-right: 0;
     border-bottom: 1px solid var(--amb-border);
-    scrollbar-width: thin;
 }
 .anomalous-tb.is-side .anomalous-tb-kind { flex: 1 0 auto; justify-content: center; gap: 4px; min-height: 32px; padding: 0 6px; font-size: 12px; }
 .anomalous-tb.is-side .anomalous-tb-kind .anomalous-tb-icon svg { width: 16px; height: 16px; }

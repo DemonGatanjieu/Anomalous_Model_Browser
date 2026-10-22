@@ -11,6 +11,8 @@
 - 右边这一栏改成一张单独的卡片，不再用一条线硬隔开；默认窄一些，给中间的时间线留出地方。鼠标移到它左边缘会出现小竖条，拖动调宽窄（记得住，双击恢复）。
 - 左边的任务列表用窗口左上角的按钮收起 / 展开；收起后鼠标移到按钮上，列表会临时浮出来，点任务或移开就收回。
 - 素材在右边这一栏里时，鼠标移过卡片不再自动跳进详细说明（之前很难操作），点卡片上的 ⓘ 才看。
+- AI 工作台和素材窗口里的滚动条变细，平时看不见，鼠标移到能滚动的那一块上才显出来。
+- Scrollbars on the AI page and in the materials picker are thin and show only while the pointer is over what scrolls.
 - The side column is a card of its own, narrower by default and resizable from its left edge (kept; double-click resets). The task list folds from a title-bar button and peeks over the page while pointed at. In the docked materials picker, hovering a card no longer opens its detail; its ⓘ does.
 - The AI workbench's side column shows one view at a time, switched from the window's title bar: the stage, a run's node map at full size (pick the run), or the materials picker docked there. Pressing the shown one hides the column; each view keeps its state. Each run's step has "See it large". The task's header stays on top while the timeline scrolls.
 

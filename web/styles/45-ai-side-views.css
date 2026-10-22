@@ -160,6 +160,13 @@ body.anomalous-ai-resizing, body.anomalous-ai-resizing * { cursor: col-resize !i
 @keyframes anomalous-ai-peek { from { opacity: 0; transform: translateX(-10px); } }
 @media (prefers-reduced-motion: reduce) { .anomalous-ai.is-peeking .anomalous-ai-tasks { animation: none; } }
 
-/* Thin scrollbars, so a column's edge is no wide bar. */
-.anomalous-ai-task, .anomalous-ai-stage-body, .anomalous-ai-tasks, .anomalous-ai-side-pane .anomalous-tb-scroller { scrollbar-width: thin; }
+/* Scrollbars on the AI page and in the materials picker: thin, and seen only while the pointer
+   is over what scrolls (their room is kept, so nothing moves when they show). */
+#anomalous-container[data-page="ai"] *, .anomalous-tb, .anomalous-tb * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+#anomalous-container[data-page="ai"] *:hover, .anomalous-tb:hover, .anomalous-tb *:hover {
+    scrollbar-color: rgba(var(--amb-ink-rgb), 0.24) transparent;
+}
 .anomalous-tb.is-side .anomalous-tb-card-body { padding-right: 62px; }
