@@ -137,6 +137,9 @@ function stepRow(step, number) {
         body.append(toolboxStep(step));
     } else if (step.tool === 'user_activity') {
         body.append(userChange(step));
+    } else if (step.tool === 'user_stop') {
+        body.append(el('div', 'anomalous-ai-user-text', t('aiRunStoppedByYou')),
+            el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
     } else if (step.kind === 'user') {
         body.append(el('div', 'anomalous-ai-user-text', step.text),
             el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
@@ -154,7 +157,8 @@ function stepRow(step, number) {
     const gate = state.task && gateCard(step, state.task.id, () => void refresh());
     if (gate) body.append(gate);
     if (step.error && !gate) body.append(el('div', 'anomalous-ai-step-error', step.error));
-    if (running) body.append(el('div', 'anomalous-ai-step-running', t(step.kind === 'run' ? 'aiRunRunning' : 'aiStepRunning')));
+    if (step.state === 'cancelled') body.append(el('div', 'anomalous-ai-step-cancelled', t(step.stop === 'user' ? 'aiRunCancelledByYou' : 'aiRunCancelledByAi')));
+    if (running && step.kind !== 'run') body.append(el('div', 'anomalous-ai-step-running', t('aiStepRunning')));
     const links = resultLinks(step, renderTask);
     if (links) body.append(links);
     const when = el('div', 'anomalous-ai-step-when');
@@ -433,6 +437,7 @@ async function select(id) {
     if (state.selected !== id || request !== state.request) return;
     state.task = task;
     shared.entries = state.entries = entries;
+    shared.taskId = task?.id || null;
     renderTask();
 }
 
@@ -497,6 +502,7 @@ async function refresh() {
     if (request !== state.request) return;
     state.task = task;
     shared.entries = state.entries = entries;
+    shared.taskId = task?.id || null;
     renderTask();
     layout();
 }

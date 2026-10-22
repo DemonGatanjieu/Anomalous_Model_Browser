@@ -66,7 +66,8 @@ const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-wfd
  * Esc on the browser: a page one level down (a model's details, one combo or one recipe) goes
  * back as its own back button does; any other page closes the browser. Not while one of this
  * plugin's dialogs, overlays or menus, or a ComfyUI dialog, sits above it (they close
- * themselves), and not while a text field has the key (Esc there belongs to the field). It
+ * themselves; a card inside the browser that does says so with `data-anomalous-escape`), and
+ * not while a text field has the key (Esc there belongs to the field). It
  * listens first (capture), so a dialog that closes on this same Esc still counts as above.
  * ComfyUI's own keybindings mark Esc as handled, so `defaultPrevented` says nothing here.
  */
@@ -78,6 +79,7 @@ export function bindBrowserEscape(owner) {
             .some(el => el !== owner.modal && el.getClientRects().length
                 && (el.getAttribute('role') === 'menu' || [...el.classList].some(c => c.startsWith('anomalous-') && c.endsWith('overlay'))));
         if (layered || document.querySelector('dialog[open], .p-dialog-mask')) return;
+        if ([...document.querySelectorAll('[data-anomalous-escape]')].some(el => el.getClientRects().length)) return;
         // Voice-over lets go of its picked lines with this Esc (ui_script_director.js).
         if (owner.modal.querySelector('.anomalous-sd-line-card.is-picked')) return;
         // A model's Outputs window lies over its details inside the browser: Esc closes it, as its ✖ does.

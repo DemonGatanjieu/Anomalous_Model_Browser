@@ -1,11 +1,14 @@
 /**
- * "给 AI 的素材": what the user hands the AI to work with in a task (api/ai_toolbox.py). A large
- * window: a search over everything, the kinds on the left (node types, combos, workflows,
+ * "给 AI 的素材": what the user hands the AI to work with in a task (api/ai_toolbox.py). A side
+ * panel on the right of the screen that leaves the workbench and the canvas usable (the kinds as
+ * tabs, the cards in two columns, a card's detail over them), or, expanded, a large window: a
+ * search over everything, the kinds on the left (node types, combos, workflows,
  * prompts, models) with how many are picked, a second column to narrow by source (each custom
  * node pack with its badge, ComfyUI's own, paid API nodes), by where a prompt comes from or by
  * model type, a grid of cards (ui_ai_toolbox_cards.js) drawn as it scrolls, the card in focus
  * in full on the right, and the picks below with how strictly the AI keeps to them. Node types
- * are the page's own (no waiting); the rest is read ahead and kept (ai_toolbox_data.js).
+ * are the page's own (no waiting); the rest is read ahead and kept (ai_toolbox_data.js). The
+ * user's last choice of the two is remembered on this browser.
  * toolboxButton() is the entry in a task's header, toolboxStep() the timeline row of a pick.
  */
 
@@ -14,12 +17,14 @@ import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { KINDS, keptCatalog, loadCatalog, nodeItems, nodeSources, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
 import { card, coverUrl, detail, refreshCard } from './ui_ai_toolbox_cards.js';
-import { icon } from './ui_ai_icons.js';
+import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture, sourceBadge } from './ui_ai_toolbox_icons.js';
 
 const MODES = ['prefer', 'only'];
 const CHUNK = 60;
 const SEARCH_DELAY_MS = 120;
+const LAYOUT_KEY = 'anomalous.aiToolboxLayout';
+let openNow = null; // {task, body, close} of the picker on screen
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -47,6 +52,33 @@ async function postJson(url, body) {
 const empty = () => Object.fromEntries(KINDS.map(kind => [kind, []]));
 const total = box => KINDS.reduce((sum, kind) => sum + (box?.[kind]?.length || 0), 0);
 const keyOf = (kind, id) => `${kind}|${id}`;
+
+function savedLayout() {
+    try { return localStorage.getItem(LAYOUT_KEY) === 'full' ? 'full' : 'side'; } catch (_) { return 'side'; }
+}
+
+function keepLayout(layout) {
+    try { localStorage.setItem(LAYOUT_KEY, layout); } catch (_) { /* only not remembered */ }
+}
+
+/** `body` in a panel on the right of the screen (nothing else blocked; the full-screen browser makes
+ * room for it): its title, expand, close. Returns close. */
+function dockPanel(title, body, expand) {
+    const panel = el('aside', 'anomalous-tb-dock');
+    panel.setAttribute('aria-label', title);
+    const head = el('div', 'anomalous-tb-dock-head');
+    const close = () => {
+        panel.remove();
+        document.body.classList.remove('anomalous-tb-docked');
+    };
+    document.body.classList.add('anomalous-tb-docked');
+    head.append(icon('sparkle', 16), el('div', 'anomalous-tb-dock-title', title),
+        iconButton('anomalous-tb-dock-btn', 'expand', t('aiTbExpand'), expand, { iconOnly: true }),
+        iconButton('anomalous-tb-dock-btn', 'close', t('close'), close, { iconOnly: true }));
+    panel.append(head, body);
+    document.body.append(panel);
+    return close;
+}
 
 let nodesKept = null; // the page's node types do not change while it is open
 const pageNodes = () => (nodesKept ||= nodeItems(globalThis.LiteGraph?.registered_node_types));
@@ -77,6 +109,12 @@ function facets(items, kind) {
 
 /** The window for task `task`; `changed()` after the picks were handed over. */
 export async function openToolbox(task, changed = () => {}) {
+    if (openNow?.body.isConnected) {
+        const same = openNow.task === task.id;
+        openNow.close();
+        openNow = null;
+        if (same) return; // its button again: put it away
+    }
     const fromTask = Boolean(task.toolbox);
     const state = {
         kind: 'nodes', query: '', filter: 'all', facet: null, focus: null, mode: task.toolbox?.mode || 'prefer',
@@ -117,8 +155,31 @@ export async function openToolbox(task, changed = () => {}) {
     main.append(rail, side, gridWrap, pane);
     const tray = el('div', 'anomalous-tb-tray');
     body.append(top, main, tray);
-    const close = aiWindow(t('aiToolboxTitle'), body);
-    body.closest('.anomalous-ai-connect-dialog')?.classList.add('is-toolbox');
+    let closeFrame = () => {};
+    /** Shows the picker as a side panel or a large window, moving the same `body` (nothing is redrawn but the pane). */
+    function place(layout) {
+        const scrolled = scroller.scrollTop;
+        body.remove();
+        closeFrame();
+        keepLayout(layout);
+        body.classList.toggle('is-side', layout === 'side');
+        if (layout === 'side') {
+            closeFrame = dockPanel(t('aiToolboxTitle'), body, () => place('full'));
+        } else {
+            closeFrame = aiWindow(t('aiToolboxTitle'), body);
+            const dialog = body.closest('.anomalous-ai-connect-dialog');
+            dialog?.classList.add('is-toolbox');
+            const shut = dialog?.querySelector('.anomalous-ai-connect-close');
+            shut?.before(iconButton('anomalous-tb-dock-btn', 'panel', t('aiTbDock'), () => place('side'), { iconOnly: true }));
+        }
+        scroller.scrollTop = scrolled;
+        drawPane();
+    }
+    const close = () => {
+        body.remove();
+        closeFrame();
+        if (openNow?.body === body) openNow = null;
+    };
 
     const picked = item => state.picks[item.kind].includes(item.id);
     const liked = item => state.favorites[item.kind].includes(item.id);
@@ -256,8 +317,11 @@ export async function openToolbox(task, changed = () => {}) {
     }
 
     function drawPane() {
+        const side = body.classList.contains('is-side');
+        pane.hidden = side && !state.focus; // beside the cards in the window; over them, while a card is open, in the side panel
         if (state.focus) {
-            pane.replaceChildren(detail(state.focus, ctx));
+            const back = button('anomalous-tb-pane-back', [icon('chevronLeft', 16), t('aiTbBack')], () => { state.focus = null; drawPane(); });
+            pane.replaceChildren(...(side ? [back] : []), detail(state.focus, ctx));
             return;
         }
         const box = el('div', 'anomalous-tb-pane-empty');
@@ -352,6 +416,8 @@ export async function openToolbox(task, changed = () => {}) {
             search.focus();
         }
     });
+    place(savedLayout());
+    openNow = { task: task.id, body, close };
     drawAll();
     drawTray();
     search.focus();

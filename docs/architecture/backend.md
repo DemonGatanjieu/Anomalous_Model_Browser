@@ -281,6 +281,18 @@ never a global queue difference. A partial batch continues tracking accepted IDs
 as an error with its pictures retained. `run_status` includes these IDs. Missing receipts
 cannot trigger guessing or an automatic retry.
 
+While a run goes, its watcher adds `api/ai_run_watch.py`'s readings to the progress: the
+console lines written since the step began (ComfyUI's `app.logger` buffer, `\r` redraws kept
+at their latest, colours stripped), the tqdm bar's note, seconds left and per step (else a pace
+from the steps seen), and the card's free / total memory. From the queued prompt it estimates,
+once, the size each sampler's `latent_image` works at (following LoadImage's file, empty
+latents, scale and upscale-model nodes) and keeps `estimate` on the step: warnings for an
+upscale model's output sampled again, a sampler past the card's comfort (4.2 MP on 12 GB,
+scaled by its memory) and a huge `VAEDecode`. `run_status` and `your_run` carry them in words.
+`api/ai_run_control.py` stops a run by its own prompt IDs only (dequeue, then
+`interrupt_if_running`); with `stop` set, an interrupted prompt's "error" history and a
+dequeued prompt's missing one both count as ended and the step becomes `cancelled`.
+
 `POST /anomalous/mcp` (`api/mcp_server.py`) answers one JSON-RPC message per POST with
 one JSON object; GET and DELETE get 405, and nothing is sent unasked. A request whose
 `params._meta` carries `io.modelcontextprotocol/protocolVersion` is served as 2026-07-28:

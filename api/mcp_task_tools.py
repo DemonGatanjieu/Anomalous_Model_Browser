@@ -3,7 +3,7 @@ work, report leaves a note for the user (with pictures made outside Anomalous's 
 show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
 reads what the user picked or typed on it."""
 
-from . import ai_marks, ai_panels, ai_run_tracking, ai_task_runs, ai_tasks, ai_toolbox
+from . import ai_marks, ai_panels, ai_run_control, ai_run_tracking, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 
@@ -109,6 +109,20 @@ def run_status(ctx, wait_seconds=0, task=None):
         return ai_task_runs.status(ctx.get("client") or "AI", ctx.get("session") or "", task or ctx.get("task"), wait_seconds)
     except ValueError as error:
         raise ToolError(str(error))
+
+
+def stop_run(ctx, task=None):
+    client, session = ctx.get("client") or "AI", ctx.get("session") or ""
+    task_id = ai_tasks.active_task_id(client, session, task or ctx.get("task"))
+    run = next((step for step in reversed((ai_tasks.get_task(task_id) or {}).get("steps", []))
+                if step.get("tool") == "run_workflow"), None) if task_id else None
+    if not run:
+        raise ToolError("No run in this task yet.")
+    try:
+        done = ai_run_control.stop(run["id"], by="ai", task_id=task_id)
+    except ai_run_control.RunControlError as error:
+        raise ToolError(str(error))
+    return {**done, "stopped": True, "note": "Stopping: run_status(wait_seconds=10) confirms it ended."}
 
 
 def get_toolbox(ctx, task=None):
@@ -256,6 +270,11 @@ TASK_TOOLS = dict([
                "carry the same news as your_run, and once more when it ends.",
                run_status, {"wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_task_runs.MAX_STATUS_WAIT, "default": 0},
                             "task": _TASK_PROP}),
+    _task_tool("stop_run", "Stop the run",
+               "Stops your task's run that is still going: its prompts still queued leave ComfyUI's queue and the one "
+               "running is interrupted (never anyone else's). Use it when run_status warns that the run is far too big "
+               "or slow and the user agrees (ask_user), or when the user asks you to stop.",
+               stop_run, {"task": _TASK_PROP}),
     _task_tool("get_toolbox", "What the user picked for you",
                "The node types, combos, saved workflows, prompts and models the user picked in the AI workbench for "
                "this task, in full (inputs and outputs of the nodes, the combos' models and prompts…), and how strictly: "

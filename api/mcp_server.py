@@ -190,7 +190,7 @@ async def _call(params, request):
     # The user's news and the run's go to the AI, never to the card's own calls (they do not reach the AI).
     if name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)
-        if name not in ("run_workflow", "run_status") and resolved_task:
+        if name not in ("run_workflow", "run_status", "stop_run") and resolved_task:
             await asyncio.to_thread(ai_task_runs.tell, result, resolved_task)
     if name != "get_answers" and name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task or ("" if session else None))

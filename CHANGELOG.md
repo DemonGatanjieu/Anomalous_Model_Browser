@@ -5,6 +5,17 @@
 - AI 工作台任务工具栏新增小巧的“运行状态”按钮与浮窗（移除遮挡时间线的常驻大横条）：点开即可查看真实运行状态、排队、节点进度、用时和结果，运行中直接在按钮上显示进度百分比；没有收到运行信息时明确提示，不再空转显示“AI 正在工作”或把沉默当成完成。页面可见时自动补查状态。运行工具默认等待 15 秒并返回实际结果；外部提交可用 `track_run` 接入准确的运行 ID，不会重新出图。
 - The AI workbench now places confirmed execution state, queue/node progress, elapsed time and results inside a compact toolbar button and popover (instead of a tall sticky banner), with visible-page refresh. Untracked work and silence are explicit. Run calls wait briefly for real results; `track_run` attaches external submission IDs without resubmitting.
 
+### 运行时看得更清楚，也能一键停 / See more of a run, and stop it in one click
+- AI 运行工作流时，进度条旁边多了红色的 **■ 停止**（任务工具栏的运行状态按钮旁边也有）：一点就停下这一次运行，排队中的移出队列、正在跑的立刻中断，只动这次运行。时间线上记着“你停止了运行”，AI 也会收到，不会自己再跑一遍；AI 自己也能用新工具 `stop_run` 停掉自己的运行。
+- 进度条下面多了当前节点**约剩多久**、每步几秒、**显存还剩多少**，以及 ComfyUI **控制台**最新的一行（比如放大模型加载、`Model Initializing ...`），点开看最近几行。AI 收到的进度里也有这些，不用再去翻控制台。
+- 出图一排上队，AMB 就读这次工作流，算出每个采样器要在多大的图上采样。放大模型放大后又整张重新采样、尺寸超出这张显卡的舒适范围、要解码特别大的图时，会出现黄色提醒，说清可能很慢或爆显存，以及怎么改（只想放大就单用放大模型，或先缩小、减步数、换分块解码）。AI 收到同样的提醒，并被要求先问你要不要停。
+- 运行状态浮窗开着时按 Esc 只关浮窗，不再把整个 AMB 窗口一起关掉。
+- A stop button on a running run (and beside the run-status button): only this run's prompts leave the queue or are interrupted; the step ends "cancelled", the AI hears that the user stopped it, and `stop_run` lets the AI stop its own. Runs show time left and per step, VRAM, and ComfyUI's console (the bar's note, models loading), for the user and the AI alike. Once queued, each sampler's working size is estimated from the prompt, with warnings for an upscaled picture sampled again, a size past the card or a huge decode. Esc closes the run-status card only.
+
+### 素材面板的侧边栏小窗 / The materials picker as a side panel
+- “素材”默认在屏幕右边打开成侧边栏小窗，不挡工作台和画布：种类是一排标签，卡片两列，点卡片在小窗里看说明。右上角 ⤢ 展开成原来的大窗口，大窗口里也能收回侧栏；AMB 记得你上次用的哪种。
+- The materials picker opens as a side panel by default (the page stays usable), and expands to the large window and back; the last choice is remembered.
+
 ### AI 在画布上搭工作流 / The AI builds workflows on the canvas
 - AI 可以在你眼前的画布上搭工作流了：查这台 ComfyUI 有哪些节点（包括自定义节点）、每个节点有哪些输入输出和可选项；新建一个工作流标签页（空白的，或者一次搭好整套并自动排好位置，不动你正在开的那个）；加节点、连线、改参数、删节点。每一步都在画布上当场发生，是一次 Ctrl+Z，记在操作记录里，并在 AI 工作台那一步下面显示改了什么，连线也会写成“某节点的输入 model：（空）→ 加载模型 #4 · MODEL”。连不上的类型、不存在的选项、写错的参数会先被拦下并告诉 AI 正确的写法，画布不会留下半截。新建的标签页名字带时间，不会打开或覆盖你存过的工作流。连线会绕成死循环时也会先拦下。运行被 ComfyUI 拒绝时，AI 收到的是 ComfyUI 给的具体原因（哪个节点、什么问题），不再只有一句“运行失败”。
 - The AI can build workflows on the canvas the user sees: look up this ComfyUI's node types (custom nodes too) with their inputs, outputs and choices; open a new tab, blank or built and laid out from a workflow in API form (the open one is left alone); add, wire, set and remove nodes. Each is one Ctrl+Z step, logged as the AI's and shown under its AI workbench step, rewiring included. Wrong types, choices and settings are refused with what fits, before anything changes. Wiring that would loop is refused too, and a run ComfyUI rejects reports ComfyUI's own reason.

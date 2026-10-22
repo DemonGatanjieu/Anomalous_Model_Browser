@@ -71,6 +71,13 @@ covered by the `styles.css` manifest.
 
 - `api/ai_run_tracking.py` attaches exact external prompt IDs to one task, prevents duplicate
   ownership, and returns bounded-wait execution receipts to the AI.
+- `api/ai_run_watch.py` reads what a run shows beyond its node and steps: ComfyUI's console
+  since it began (`app.logger`'s buffer: the bar with its note, the models loading), the time
+  per step and left, the card's memory, and once per run the size each sampler works at from
+  the queued prompt, with warnings (an upscaled picture sampled again, a size past the card,
+  a huge decode). `api/ai_run_control.py` stops a run (`stop_run`, the workbench's stop
+  button): only its own prompts leave the queue or are interrupted; the step ends `cancelled`
+  and a user's stop reaches the AI as a `stop` message. `tests/test_ai_run_watch.py`.
 
 - `api/config.py` owns configured paths and active model-folder types.
 - `api/path_utils.py` owns containment, filename validation, atomic JSON writes, and resolving
@@ -146,8 +153,10 @@ covered by the `styles.css` manifest.
   `web/modules/canvas_build.js` is its pure part (type fit, value checks, a free spot, the
   layered layout). `open_workflow` opens one of the user's saved workflows in a new tab.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
-  `web/modules/ui_ai_toolbox.js`, a large window from the task header: search, kinds, a column
-  by source / origin / type, a card grid drawn as it scrolls, a detail pane, the picks below),
+  `web/modules/ui_ai_toolbox.js`, from the task header a side panel on the right that leaves
+  the page usable (kinds as tabs, two columns, a card's detail over them) or, expanded, a large
+  window: search, kinds, a column by source / origin / type, a card grid drawn as it scrolls,
+  a detail pane, the picks below; the last choice is kept in the browser),
   by the names the AI's tools use, with a mode: prefer, or only (add_node / new_workflow then
   refuse other custom or paid node types). Node types come from the page's own definitions
   (`web/modules/ai_toolbox_data.js`: LiteGraph's registered types and their `nodeData`, so no
@@ -188,7 +197,9 @@ covered by the `styles.css` manifest.
   done; kept on the step in memory, sent to the page as `progress` events that only move the
   step's bar, and given to the AI by `run_status`, which can wait for the run to end, and as
   `your_run` with one sentence in the AI's other answers while it goes and once after it ends,
-  so the AI need not look for itself). A step a restart left
+  so the AI need not look for itself; the console's lines, time left, memory and the size
+  warnings come with it, `api/ai_run_watch.py`, and the page draws them with a stop button,
+  `web/modules/ui_ai_run_live.js`). A step a restart left
   `"running"` is marked stopped when the record is read again. What each tool is, in one
   place, is `api/action_catalog.py`: its kind (colours, words, counts), the stage of the work
   it belongs to (model, combo, prompt, canvas, run, picture, voice, library: the flow over a

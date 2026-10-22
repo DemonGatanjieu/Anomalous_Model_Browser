@@ -1,13 +1,14 @@
 """The AI workbench's routes over ai_tasks.py (the record) and ai_panels.py (panels, answers,
 messages): the list and one task (reads, open like the other pages), and the writes the page
 makes - start a task, rename or remove one, answer a panel, write to the AI, answer a gate and
-set the gates' policies (ai_gates.py) - (local_guard.py keeps the writes to this computer)."""
+set the gates' policies (ai_gates.py), stop a run (ai_run_control.py) - (local_guard.py keeps the
+writes to this computer)."""
 
 import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_gates, ai_marks, ai_task_changes, ai_tasks, ai_toolbox
+from . import activity_log, ai_gates, ai_marks, ai_run_control, ai_task_changes, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -157,6 +158,18 @@ async def api_toolbox_pick(request):
     return web.json_response({"step": step})
 
 
+async def api_stop(request):
+    """POST /anomalous/ai_tasks/{id}/runs/{step}/stop - the user stops a run the AI started."""
+    from . import ai_panels
+
+    try:
+        answer = await asyncio.to_thread(ai_run_control.stop, request.match_info["step_id"], "user", request.match_info["task_id"])
+    except ai_run_control.RunControlError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    ai_panels.wake()
+    return web.json_response(answer)
+
+
 async def api_toolbox(request):
     """GET /anomalous/ai_toolbox?kind=all: what the picker lists; GET/POST /anomalous/ai_toolbox/favorites."""
     if request.path.endswith("/favorites"):
@@ -187,6 +200,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}/marks", api_marks)
     app.router.add_get("/anomalous/ai_tasks/{task_id}/marks/{name}", api_marked)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/toolbox", api_toolbox_pick)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/runs/{step_id}/stop", api_stop)
     app.router.add_get("/anomalous/ai_toolbox", api_toolbox)
     app.router.add_get("/anomalous/ai_toolbox/favorites", api_toolbox)
     app.router.add_post("/anomalous/ai_toolbox/favorites", api_toolbox)

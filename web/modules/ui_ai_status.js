@@ -1,8 +1,10 @@
-/** Compact toolbar icon-button + fixed-position popover for confirmed task execution status. */
+/** Compact toolbar icon-button + fixed-position popover for confirmed task execution status; while
+ * a run goes, a stop button beside it, and the card shows the run's time left, memory, console and
+ * size warnings (ui_ai_run_live.js). */
 import { translate as t } from './locales.js';
 import { taskStatus } from './ai_task_status.js';
 import { icon } from './ui_ai_icons.js';
-import { runProgress } from './ui_ai_results.js';
+import { estimateBox, runProgress, stopButton } from './ui_ai_run_live.js';
 
 let openTaskId = null;
 let boundGlobal = false;
@@ -81,6 +83,7 @@ function activeLabel(status) {
 function buildPopover(task, status, refresh) {
     const card = el('section', `anomalous-ai-status-popover is-${status.state}`);
     card.setAttribute('aria-label', t('aiExecution'));
+    card.dataset.anomalousEscape = ''; // Esc closes this card, not the browser (ui_browser_navigation.js)
     const top = el('div', 'anomalous-ai-execution-top');
     top.append(
         el('span', 'anomalous-ai-execution-label', t('aiExecution')),
@@ -98,7 +101,9 @@ function buildPopover(task, status, refresh) {
 
     if (status.run) {
         const run = status.run;
-        if (run.state === 'running') card.append(runProgress(run.progress || { state: 'submitting' }));
+        if (run.state === 'running') card.append(runProgress({ state: 'submitting', ...run.progress }, { task: task.id, step: run.id, stopped: refresh }));
+        const sizes = estimateBox(run.estimate);
+        if (sizes) card.append(sizes);
         const count = (run.prompt_ids || []).length;
         const pictures = (run.results || []).filter(item => item.type === 'image').length;
         const rows = el('div', 'anomalous-ai-execution-rows');
@@ -157,6 +162,10 @@ export function executionStatus(task, refresh) {
         }
     };
     wrap.append(btn);
+    if (status.run?.state === 'running' && status.run.prompt_ids?.length) {
+        wrap.append(stopButton(task.id, status.run.id, refresh, true, Boolean(status.run.stop || status.run.progress?.stopping)));
+    }
+    if (status.run?.state === 'running' && status.run.estimate?.warnings?.length) btn.classList.add('has-warning');
     if (isOpen) openPopover();
     return wrap;
 }

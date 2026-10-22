@@ -44,6 +44,9 @@
 .anomalous-ai-status-dot.is-stopped,
 .anomalous-ai-status-dot.is-asking { background: var(--amb-warn); }
 .anomalous-ai-status-dot.is-error { background: var(--amb-danger); }
+.anomalous-ai-status-dot.is-cancelled { background: var(--amb-text-dim); }
+.anomalous-ai-status-btn.has-warning { border-color: color-mix(in srgb, var(--amb-warn) 60%, transparent); color: var(--amb-warn-text); }
+.anomalous-ai-status-popover .anomalous-ai-estimate { margin-top: 10px; }
 .anomalous-ai-status-dot.is-time { background: var(--amb-link); }
 .anomalous-ai-status-dot.is-batch { background: #a78bfa; }
 

@@ -569,6 +569,15 @@
 .anomalous-ai-reply-link:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
 .anomalous-ai-reply-link.is-replied { border-color: color-mix(in srgb, var(--amb-ok) 55%, transparent); color: var(--amb-ok-text); }
 
+.anomalous-ai-step-cancelled {
+    align-self: flex-start;
+    margin-top: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-soft);
+    font-size: 12px;
+}
 .anomalous-ai-step-error {
     color: var(--amb-danger-text);
     font-size: 12px;

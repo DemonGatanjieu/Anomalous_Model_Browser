@@ -63,6 +63,7 @@ TOOLS = {
     "update_panel": Entry(None, None, None),
     "get_answers": Entry(None, None, None),
     "run_status": Entry("look", "run", None),
+    "stop_run": Entry(None, "run", None),  # ends a run step of its own; the step says who stopped it
     "get_toolbox": Entry(None, None, None),
     # Anomalous's card in the conversation (mcp_apps.py): its own calls, not the AI's steps
     "app_task_view": Entry(None, None, None),

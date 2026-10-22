@@ -2,9 +2,10 @@
  * What an AI task made, and where it leads (ui_ai_workbench.js draws the task): the pictures a
  * step made (the viewer), its models (their page), the combo, the spoken audio (▶), the canvas
  * change (found on the canvas, undone while it can be), the scan; and the strip of everything
- * a task made above its timeline, and a run's progress while it goes (runProgress, kept live by
- * updateRunProgress from the server's events). `shared` is set by the workbench: the browser (`owner`) and
- * the activity entries of the task's canvas steps.
+ * a task made above its timeline, and a run's progress while it goes with its stop button and
+ * size warnings (ui_ai_run_live.js, kept live by updateRunProgress from the server's events).
+ * `shared` is set by the workbench: the browser (`owner`), the task shown (`taskId`) and the
+ * activity entries of the task's canvas steps.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -17,8 +18,12 @@ import { listCombos } from './image_keep.js';
 import { audioResult, outputUrl, taskResults } from './ai_task_view.js';
 import { imageResults } from './ui_ai_images.js';
 import { canvasChanges } from './ui_canvas_changes.js';
+import { estimateBox, runProgress } from './ui_ai_run_live.js';
 
-export const shared = { owner: null, entries: new Map(), player: null };
+export const shared = { owner: null, taskId: null, entries: new Map(), player: null };
+
+/** A run step's progress with its stop button (while the task shown is the run's). */
+const liveRun = progress => runProgress(progress, shared.taskId ? { task: shared.taskId, step: progress.step } : null);
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -83,43 +88,12 @@ export function locateNode(id, note) {
     app.canvas.setDirty?.(true, true);
 }
 
-/** Where a run stands (api/ai_task_runs.py progress_of): queued, or the node running and its steps. */
-export function runProgress(progress) {
-    const box = el('div', 'anomalous-ai-run-progress');
-    let words;
-    let share = null;
-    let percent = '';
-    if (progress.state === 'submitting') {
-        words = t('aiExecution_submitting');
-    } else if (progress.state === 'queued') {
-        words = t('aiRunQueued', { ahead: progress.ahead });
-    } else {
-        const parts = [];
-        if (progress.prompts > 1) parts.push(t('aiRunPrompt', { at: progress.prompt, count: progress.prompts }));
-        if (progress.node) parts.push(progress.max > 1 ? `${progress.node} ${progress.value}/${progress.max}` : progress.node);
-        if (progress.nodes) parts.push(t('aiRunNodes', { done: progress.nodes_done, count: progress.nodes }));
-        words = parts.join(' · ') || t('aiRunRunning');
-        share = progress.max > 1 ? progress.value / progress.max : progress.nodes ? progress.nodes_done / progress.nodes : null;
-        if (Number.isFinite(progress.percent)) share = progress.percent / 100;
-        if (share !== null) percent = `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%`;
-    }
-    const bar = el('div', `anomalous-ai-run-bar${share === null ? ' is-waiting' : ''}`);
-    const fill = el('span', 'anomalous-ai-run-fill');
-    if (share !== null) fill.style.width = `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%`;
-    bar.append(fill);
-    const line = el('div', 'anomalous-ai-run-line');
-    line.append(el('span', 'anomalous-ai-run-words', words));
-    if (percent) line.append(el('b', 'anomalous-ai-run-percent', percent));
-    box.append(line, bar);
-    return box;
-}
-
 /** A progress event for step `progress.step` drawn into `root` in place; false when it is not shown there. */
 export function updateRunProgress(root, progress) {
     const row = [...(root?.querySelectorAll('[data-step-ids]') || [])].find(item => item.dataset.stepIds.split(' ').includes(progress.step));
     const body = row?.querySelector('.anomalous-ai-step-body');
     if (!body) return false;
-    const fresh = runProgress(progress);
+    const fresh = liveRun(progress);
     const there = body.querySelector('.anomalous-ai-run-progress');
     if (there) there.replaceWith(fresh);
     else body.append(fresh);
@@ -129,7 +103,9 @@ export function updateRunProgress(root, progress) {
 /** The links under a step: what it made and where that leads. */
 export function resultLinks(step, changed = () => {}) {
     const box = el('div', 'anomalous-ai-results');
-    if (step.tool === 'run_workflow' && step.state === 'running' && step.progress) box.append(runProgress(step.progress));
+    if (step.tool === 'run_workflow' && step.state === 'running') box.append(liveRun({ state: 'submitting', ...step.progress, step: step.id, stopping: step.stop || step.progress?.stopping }));
+    const sizes = step.tool === 'run_workflow' ? estimateBox(step.estimate) : null;
+    if (sizes) box.append(sizes);
     const pictures = (step.results || []).filter(result => result.type === 'image');
     if (pictures.length) box.append(imageResults(pictures, shared.owner));
     const links = el('div', 'anomalous-ai-links');

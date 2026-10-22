@@ -6,13 +6,16 @@ anything. While it runs, where it stands (queued and how many are ahead, the nod
 its steps, nodes done; read from ComfyUI's queue and its progress registry, never changed) is
 the step's "progress", sent to the page with each change, and status() answers the AI's
 run_status with it, waiting for the end when asked. tell() puts the same news in the AI's
-other answers: where the run stands while it goes, and once that it ended."""
+other answers: where the run stands while it goes, and once that it ended. The console's lines,
+the time left and the card's memory join the progress, and the size each sampler works at with
+its warnings is the step's "estimate" (ai_run_watch.py); a run the user or the AI stopped
+(ai_run_control.py) ends "cancelled"."""
 
 import json
 import threading
 import time
 
-from . import ai_tasks
+from . import ai_run_watch, ai_tasks
 
 RUN_POLL_SECONDS = 2.0
 MAX_STATUS_WAIT = 55
@@ -87,20 +90,30 @@ def _show_progress(task_id, step_id, progress):
     with ai_tasks._lock:
         task = ai_tasks._load().get(task_id)
         step = next((item for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
+        if step and step.get("stop"):
+            progress = {**progress, "stopping": step["stop"]}
         if not step or step.get("progress") == progress or step.get("state") != "running":
             return
         step["progress"] = progress
     ai_tasks._notify(task_id, {"progress": {"step": step_id, **progress}})
 
 
-def _finish_run(task_id, step_id, prompts, history):
+def _finish_run(task_id, step_id, prompts, history, queued=None):
     if not prompts:
         _stop_run(task_id, step_id, "没有找到已排队的运行 / No queued run was found; completion cannot be confirmed")
         return True
     images, failed, done = [], False, 0
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id)
+        stopped = next((item.get("stop") for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
     for prompt_id in prompts:
         record_ = history.get(prompt_id)
         if not record_:
+            if stopped and queued is not None and prompt_id not in queued:
+                done += 1  # taken out of the queue before it started: it never gets a history
+            continue
+        if stopped and (record_.get("status") or {}).get("status_str") == "error":
+            done += 1  # the interrupt ends a prompt "error"; it was stopped, not broken
             continue
         status = record_.get("status") or {}
         if status.get("status_str") == "error":
@@ -117,12 +130,13 @@ def _finish_run(task_id, step_id, prompts, history):
         if not step:
             return True
         failed = failed or bool(step.get("submission_error"))
+        stopped = step.get("stop")
         results = [item for item in step["results"] if item["type"] != "image"] + images[:ai_tasks.MAX_RESULTS]
         if (done < len(prompts) and results == step["results"] and step.get("prompts") == len(prompts)
                 and (not failed or step.get("ok") is False)):
             return False  # nothing new to keep: no write
         step["results"] = results
-        step["state"] = "running" if done < len(prompts) else ("error" if failed else "done")
+        step["state"] = "running" if done < len(prompts) else ("cancelled" if stopped else "error" if failed else "done")
         step["prompts"] = len(prompts)
         if failed:
             step["ok"] = False
@@ -167,22 +181,34 @@ def watch(step_id, receipt):
         if not step:
             return  # The user may remove the task while its submission is returning.
         step["prompt_ids"] = list(prompts)
+        step_at = step["at"]
         if receipt.get("submission_error"):
             step.update(submission_error=receipt["submission_error"], error=receipt["submission_error"], ok=False)
         ai_tasks._save(task)
 
     def follow():
         start = time.monotonic()
+        pace, estimated = ai_run_watch.Pace(), False
         while time.monotonic() - start < ai_tasks.RUN_WATCH_SECONDS:
             try:
                 history = {pid: _queue().get_history(prompt_id=pid).get(pid) for pid in prompts}
             except Exception:  # noqa: BLE001 - stop the receipt, not the actual ComfyUI run
                 _stop_run(task_id, step_id, "无法读取运行记录 / Run history could not be read; check ComfyUI's queue")
                 return
-            if _finish_run(task_id, step_id, prompts, {k: v for k, v in history.items() if v}):
+            try:
+                running, pending = _queue().get_current_queue()
+                queued = {item[1]: item for item in [*running, *pending]}
+            except Exception:  # noqa: BLE001 - the queue only helps (estimate, a stopped run); history decides
+                queued = None
+            if not estimated and queued:
+                estimated = _estimate(task_id, step_id, next((queued[pid] for pid in prompts if pid in queued), None))
+            if _finish_run(task_id, step_id, prompts, {k: v for k, v in history.items() if v},
+                           None if queued is None else set(queued)):
                 return
             try:
                 progress = progress_of(prompts)
+                if progress and progress["state"] == "running":
+                    _more_progress(progress, step_at, pace)
             except (AttributeError, KeyError, TypeError, ValueError):
                 progress = None  # progress is optional; keep watching the authoritative history
             if progress:
@@ -193,11 +219,53 @@ def watch(step_id, receipt):
     threading.Thread(target=follow, name="anomalous-ai-run", daemon=True).start()
 
 
+def _estimate(task_id, step_id, item):
+    """The run's estimate (ai_run_watch.estimate) from its queued prompt `item`, kept on the step once."""
+    if not item or len(item) < 3 or not isinstance(item[2], dict):
+        return False
+    memory = ai_run_watch.vram()
+    try:
+        found = ai_run_watch.estimate(item[2], (memory or {}).get("total_mb"))
+    except Exception:  # noqa: BLE001 - an odd prompt leaves the run without an estimate, nothing more
+        return True
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id)
+        step = next((entry for entry in (task or {}).get("steps", []) if entry["id"] == step_id), None)
+        if not step:
+            return True
+        step["estimate"] = found
+        ai_tasks._save(task)
+    ai_tasks._notify(task_id)
+    return True
+
+
+def _more_progress(progress, started, pace):
+    """The console's last lines, its bar's time left (else the pace of the steps), the card's memory."""
+    lines = ai_run_watch.console_since(started)
+    if lines:
+        progress["console"] = lines
+    bar = ai_run_watch.bar_of(lines)
+    if bar and bar.get("note"):
+        progress["note"] = bar["note"]
+    timing = None
+    if bar and bar["max"] == progress.get("max"):
+        timing = {key: bar[key] for key in ("left", "rate") if key in bar}
+    if not timing and progress.get("max", 0) > 1:
+        timing = pace.update((progress.get("prompt"), progress.get("node")), progress["value"], progress["max"])
+    if timing:
+        progress.update(timing)
+    memory = ai_run_watch.vram()
+    if memory:
+        progress["vram"] = memory
+
+
 def summary(run):
     """One sentence for the AI on where run step `run` stands."""
     state, progress = run.get("state"), run.get("progress") or {}
+    warned = " ".join(ai_run_watch.warning_words(item) for item in (run.get("estimate") or {}).get("warnings", []))
+    warning = (f" Warning: {warned} Tell the user (report) and ask_user whether to stop it (stop_run)." if warned and state == "running" else "")
     if state == "running" and progress.get("state") == "queued":
-        return f"Your run is queued, {progress.get('ahead', 0)} ahead of it; it has not started. Do not run it again."
+        return f"Your run is queued, {progress.get('ahead', 0)} ahead of it; it has not started. Do not run it again.{warning}"
     if state == "running":
         parts = []
         if progress.get("prompts", 0) > 1:
@@ -209,9 +277,16 @@ def summary(run):
             parts.append(f"{progress['percent']}%")
         if progress.get("nodes"):
             parts.append(f"{progress['nodes_done']} of {progress['nodes']} nodes done")
+        if progress.get("left") is not None:
+            parts.append(f"about {progress['left']} s left in this node")
         parts.append(f"{round(time.time() - run['at'])} s so far")
+        if progress.get("note"):
+            parts.append(f"console says: {progress['note']}")
         return (f"Your run is still going ({', '.join(parts)}). It has not finished: call run_status with "
-                "wait_seconds to wait for it; do not look in the output folder or guess.")
+                "wait_seconds to wait for it; do not look in the output folder or guess." + warning)
+    if state == "cancelled":
+        return ("The user stopped your run in Anomalous; do not start it again unless they ask." if run.get("stop") == "user"
+                else "Your run was stopped (stop_run).")
     if state == "done":
         pictures = [item["filename"] for item in run.get("results") or [] if item.get("type") == "image"]
         return f"Your run finished in {round(run.get('ms', 0) / 1000)} s with {len(pictures)} picture(s): {', '.join(pictures[:8])}."
@@ -280,6 +355,8 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
                 ai_tasks._save(task)
     if run.get("progress"):
         answer["progress"] = run["progress"]
+    if (run.get("estimate") or {}).get("samplers"):
+        answer["estimate"] = run["estimate"]
     if run.get("prompt_ids"):
         answer["prompt_ids"] = run["prompt_ids"]
     pictures = ["/".join(part for part in (item.get("subfolder"), item["filename"]) if part)
@@ -292,5 +369,6 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
         "running": "Still running: call run_status again (wait_seconds up to 55) instead of guessing it is done.",
         "done": "Finished: the pictures are in the output folder (search_images / get_image_info show them).",
         "asking": "Waiting for the user's OK in Anomalous before it runs.",
+        "cancelled": "Stopped before it finished; nothing more will come of it.",
     }.get(run.get("state"), "The run did not finish; see error.")
     return answer

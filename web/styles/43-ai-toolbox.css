@@ -1,6 +1,6 @@
 /* "给 AI 的素材" (ui_ai_toolbox.js, ui_ai_toolbox_cards.js, ui_ai_toolbox_icons.js): the large
-   picker window (search, kinds, sources, card grid, detail pane, tray), the entry in a task's
-   header and the timeline row of a pick. */
+   picker window (search, kinds, sources, card grid, detail pane, tray), the same picker as a side
+   panel (.is-side, at the end), the entry in a task's header and the timeline row of a pick. */
 .anomalous-ai-connect-dialog.is-toolbox {
     width: min(1340px, 96vw);
     height: min(880px, 90vh);
@@ -250,6 +250,21 @@
 
 /* The detail pane. */
 .anomalous-tb-pane { min-width: 0; padding: 16px; overflow-y: auto; border-left: 1px solid var(--amb-border); background: rgba(var(--amb-ink-rgb), 0.025); }
+.anomalous-tb-pane-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: -4px 0 10px -6px;
+    padding: 4px 8px 4px 4px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.anomalous-tb-pane-back:hover { background: rgba(var(--amb-ink-rgb), 0.07); color: var(--amb-text-main); }
 .anomalous-tb-pane-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 30px; text-align: center; }
 .anomalous-tb-pane-title { color: var(--amb-text-main); font-size: 15px; font-weight: 700; }
 .anomalous-tb-empty-art { width: 220px; height: 220px; }
@@ -392,6 +407,82 @@
     .anomalous-tb-kind.is-on::before { display: none; }
     .anomalous-tb-tray { flex-wrap: wrap; }
 }
+/* The side panel: on the right of the screen, the workbench and canvas still usable beside it. */
+.anomalous-tb-dock {
+    position: fixed;
+    z-index: 1000000;
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(400px, calc(100vw - 24px));
+    box-sizing: border-box;
+    padding: 12px 12px 14px;
+    border: 1px solid var(--amb-border-strong, var(--amb-border));
+    border-radius: 16px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    color: var(--amb-text-main);
+}
+/* The full-screen browser's AI page moves over for it, so the task's own buttons stay in reach. */
+body.anomalous-tb-docked #anomalous-container.anomalous-maximized .anomalous-ai { padding-right: calc(min(400px, 100vw - 24px) + 12px); }
+.anomalous-tb-dock-head { display: flex; align-items: center; gap: 8px; padding: 0 2px; color: var(--amb-link); }
+.anomalous-tb-dock-title { flex: 1; min-width: 0; color: var(--amb-text-main); font-size: 14.5px; font-weight: 700; }
+.anomalous-tb-dock-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    cursor: pointer;
+}
+.anomalous-tb-dock-btn:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-main); }
+.anomalous-ai-connect-head .anomalous-tb-dock-btn { margin-left: auto; }
+.anomalous-tb.is-side { gap: 10px; }
+.anomalous-tb.is-side .anomalous-tb-top { gap: 8px; }
+.anomalous-tb.is-side .anomalous-tb-for, .anomalous-tb.is-side .anomalous-tb-kbd, .anomalous-tb.is-side .anomalous-tb-facets-title { display: none; }
+.anomalous-tb.is-side .anomalous-tb-search { flex-basis: 100%; height: 36px; border-radius: 10px; }
+.anomalous-tb.is-side .anomalous-tb-filters { display: flex; width: 100%; }
+.anomalous-tb.is-side .anomalous-tb-filter { flex: 1; justify-content: center; height: 28px; padding: 0 6px; font-size: 12px; }
+.anomalous-tb.is-side .anomalous-tb-main,
+.anomalous-tb.is-side .anomalous-tb-main:has(> .anomalous-tb-facets[hidden]) {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    border-radius: 12px;
+}
+.anomalous-tb.is-side .anomalous-tb-rail, .anomalous-tb.is-side .anomalous-tb-facets {
+    flex-direction: row;
+    gap: 4px;
+    padding: 6px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--amb-border);
+    scrollbar-width: thin;
+}
+.anomalous-tb.is-side .anomalous-tb-kind { flex: 1 0 auto; justify-content: center; gap: 4px; min-height: 32px; padding: 0 6px; font-size: 12px; }
+.anomalous-tb.is-side .anomalous-tb-kind .anomalous-tb-icon svg { width: 16px; height: 16px; }
+.anomalous-tb.is-side .anomalous-tb-kind-meta { margin-left: 0; }
+.anomalous-tb.is-side .anomalous-tb-kind-matches { display: none; }
+.anomalous-tb.is-side .anomalous-tb-kind.is-on::before { display: none; }
+.anomalous-tb.is-side .anomalous-tb-facet { flex: none; max-width: 170px; min-height: 28px; }
+.anomalous-tb.is-side .anomalous-tb-grid-head { padding: 8px 10px 6px; }
+.anomalous-tb.is-side .anomalous-tb-scroller { padding: 10px; }
+.anomalous-tb.is-side .anomalous-tb-grid { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
+.anomalous-tb.is-side .anomalous-tb-pane { position: absolute; z-index: 2; inset: 0; display: block; border-left: 0; background: var(--amb-bg-panel); }
+.anomalous-tb.is-side .anomalous-tb-pane[hidden] { display: none; }
+.anomalous-tb.is-side .anomalous-tb-tray { flex-wrap: wrap; gap: 8px; }
+.anomalous-tb.is-side .anomalous-tb-chips { flex-basis: 100%; }
+.anomalous-tb.is-side .anomalous-tb-modes { flex: 1; }
+.anomalous-tb.is-side .anomalous-tb-mode { flex: 1; justify-content: center; height: 30px; padding: 0 8px; font-size: 12px; }
+.anomalous-tb.is-side .anomalous-tb-send { flex-basis: 100%; justify-content: center; height: 38px; }
 @media (prefers-reduced-motion: reduce) {
     .anomalous-tb-card, .anomalous-tb-card:hover .anomalous-tb-cover img, .anomalous-tb-send { transition: none; transform: none; }
     .anomalous-tb-card.is-skeleton { animation: none; }
