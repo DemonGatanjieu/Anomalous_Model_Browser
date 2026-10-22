@@ -288,6 +288,8 @@
     flex-direction: column;
 }
 
+.anomalous-ai-timeline.is-waiting::before { display: none; }
+
 .anomalous-ai-timeline::before {
     content: '';
     position: absolute;
@@ -348,6 +350,8 @@
     border-radius: 12px;
     background: rgba(var(--amb-ink-rgb), 0.03);
 }
+
+.anomalous-ai-message[hidden] { display: none; }
 
 .anomalous-ai-message.is-quiet {
     opacity: 0.8;

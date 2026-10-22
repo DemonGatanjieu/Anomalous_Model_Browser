@@ -25,7 +25,7 @@ import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.j
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { focusPanel, openQuestions, panelLine, panelSteps, renderStage, stageNews, tabBar } from './ui_ai_side.js';
-import { connectGuide, openConnectGuide } from './ui_ai_connect.js';
+import { connectGuide, openConnectGuide, waitingCard } from './ui_ai_connect.js';
 import { gateCard, openGates } from './ui_ai_gate.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
@@ -314,7 +314,12 @@ function renderTask() {
         : { key: JSON.stringify(['step', at, item.step, undoable(item.step)]), make: () => stepRow(item.step, at + 1) }));
     state.numbers = new Map(items.flatMap((item, at) => (item.type === 'looks' ? item.steps : [item.step]).map(step => [step.id, at + 1])));
     // A task the user started waits for an AI: how to get one on it.
-    if (!items.length && task.waiting) rows.push({ key: `waiting:${task.title}`, make: () => waitingCard(task) });
+    if (!items.length && task.waiting) {
+        rows.push({ key: `waiting:${task.title}`, make: () => waitingCard(task, async (title) => {
+            await postTask(task.id, { title }).catch(error => anomalousAlert(error.message));
+            await refresh();
+        }) });
+    }
     else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     if (status === 'live') {
         const running = (task.steps || []).some(step => step.state === 'running');
@@ -331,6 +336,8 @@ function renderTask() {
     }
     syncRows(view.timeline, rows);
     updateMessageBox(view.message, Boolean(task.ended), status);
+    view.message.hidden = Boolean(task.waiting && !items.length); // nobody to write to yet: the card says what to do
+    view.timeline.classList.toggle('is-waiting', Boolean(task.waiting && !items.length));
     box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
     drawStage(task, news.arrived);
 }
@@ -342,13 +349,6 @@ function showStep(timeline, stepId) {
     row.scrollIntoView({ block: 'center', behavior: 'smooth' });
     row.classList.add('is-flash');
     setTimeout(() => row.classList.remove('is-flash'), 1600);
-}
-
-/** An empty task the user started: say what to tell the AI, and how to connect one. */
-function waitingCard(task) {
-    const card = el('div', 'anomalous-ai-waiting');
-    card.append(el('div', 'anomalous-ai-waiting-title', t('aiWaitingTitle')), el('p', 'anomalous-ai-waiting-body', t('aiWaitingBody')), connectGuide(task.title));
-    return card;
 }
 
 /** The stage beside the timeline, while the task has panels. */

@@ -2,7 +2,8 @@
  * How to connect an AI app to Anomalous (the AI workbench's "Connect an AI", its empty page and a
  * task waiting for an AI): the address, a sentence to paste to the AI so it sets itself up (and
  * starts on the task, when one waits), and the way for each common app. Only this computer can
- * connect; the address is this page's own.
+ * connect; the address is this page's own. A task waiting for an AI (waitingCard) leads with
+ * what the user wants and the one sentence to send; connecting is folded under it.
  */
 
 import { translate as t } from './locales.js';
@@ -63,6 +64,37 @@ export function connectGuide(title = '') {
     apps.append(el('div', 'anomalous-ai-connect-app', 'Cherry Studio'), el('div', 'anomalous-ai-connect-note', t('aiConnectCherry', { url })));
     box.append(apps, el('div', 'anomalous-ai-connect-note', t('aiConnectLocal')));
     return box;
+}
+
+/**
+ * A task the user started, waiting for an AI: what they want (a line that renames the task:
+ * `rename(title)`), the sentence that has the AI take it, three small steps, and, folded, how to
+ * connect an AI that is not connected yet.
+ */
+export function waitingCard(task, rename) {
+    const card = el('div', 'anomalous-ai-waiting');
+    card.append(el('div', 'anomalous-ai-waiting-mark', '✦'), el('div', 'anomalous-ai-waiting-title', t('aiWaitingTitle')),
+        el('p', 'anomalous-ai-waiting-body', t('aiWaitingBody')));
+    const wish = el('input', 'anomalous-ai-waiting-wish');
+    wish.placeholder = t('aiWaitingWish');
+    wish.value = task.title || '';
+    wish.setAttribute('aria-label', t('aiWaitingWish'));
+    wish.addEventListener('keydown', (event) => {
+        event.stopPropagation();
+        if (event.key === 'Enter' && !event.isComposing) wish.blur();
+    });
+    wish.addEventListener('blur', () => {
+        if (wish.value.trim() !== (task.title || '')) void rename(wish.value.trim());
+    });
+    const sentence = task.title ? t('aiHandSentence', { task: task.title }) : t('aiWaitingSentence');
+    const say = el('div', 'anomalous-ai-waiting-say');
+    say.append(el('div', 'anomalous-ai-waiting-label', t('aiWaitingSay')), copyLine(sentence, { code: false, label: t('aiConnectCopySentence') }));
+    const steps = el('ol', 'anomalous-ai-waiting-steps');
+    for (const key of ['aiWaitingStep1', 'aiWaitingStep2', 'aiWaitingStep3']) steps.append(el('li', '', t(key)));
+    const setup = el('details', 'anomalous-ai-waiting-setup');
+    setup.append(el('summary', '', t('aiWaitingSetup')), connectGuide(task.title));
+    card.append(wish, say, steps, setup);
+    return card;
 }
 
 /** A window over the page with `title` and `body` (Esc, ×, or the backdrop closes it); returns close. */
