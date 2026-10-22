@@ -134,6 +134,16 @@ covered by the `styles.css` manifest.
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
   side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's; the
   outcome carries the log entry's id as `_activity`, for the AI workbench's undo).
+  `api/mcp_prompts.py` serves `prompts/list` / `prompts/get`: ready-made requests (the AI app's
+  slash commands) that tell the AI how to do a common job so the user can follow it on the AI
+  workbench. `api/mcp_apps.py` serves the MCP Apps extension (`io.modelcontextprotocol/ui`):
+  `api/mcp_app/task_card.html`, Anomalous's own card that apps supporting it show in the
+  conversation under `begin_task`, `show_panel`, `report` and `run_workflow` results
+  (`resources/list` / `resources/read`, `_meta.ui.resourceUri` on those tools). The card reads
+  the task through `app_task_view` (steps, inline gallery thumbnails, open questions) and
+  answers the AI's questions through `app_answer`, tools marked for the card only
+  (`visibility: ["app"]`, never steps, never given the user's news). It never answers a gate:
+  an OK is only given in Anomalous, so no tool an AI can reach grants one.
   User guide: `docs/guides/mcp.md`.
 - The AI workbench (1.62). `api/ai_tasks.py` keeps every MCP call as a step of a task (one
   file per task in the ComfyUI user folder, `anomalous/ai_tasks/`, the newest 300): a task is

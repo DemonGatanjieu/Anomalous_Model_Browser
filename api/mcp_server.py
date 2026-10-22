@@ -23,13 +23,17 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_gates, ai_panels, ai_task_runs, ai_tasks, mcp_bridge
+from . import ai_gates, ai_panels, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_task_tools import TASK_TOOLS
 from .mcp_tools import TOOLS as READ_TOOLS, call_tool
 
-TOOLS = {**READ_TOOLS, **ACTIONS, **TASK_TOOLS}
+TOOLS = {**READ_TOOLS, **ACTIONS, **TASK_TOOLS, **mcp_apps.APP_TOOLS}
+CAPABILITIES = {
+    "tools": {"listChanged": False}, "prompts": {"listChanged": False}, "resources": {"listChanged": False},
+    "extensions": {mcp_apps.EXTENSION: {"mimeTypes": [mcp_apps.MIME]}},  # the card in the conversation (mcp_apps.py)
+}
 
 MODERN_VERSIONS = ("2026-07-28",)
 LEGACY_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26")
@@ -93,7 +97,7 @@ def _result(id_, result, modern):
 
 
 def _tool_list(modern):
-    result = {"tools": [tool["spec"] for tool in TOOLS.values()]}
+    result = {"tools": [mcp_apps.with_card(tool["spec"]) for tool in TOOLS.values()]}
     if modern:
         result.update(ttlMs=LIST_TTL_MS, cacheScope="public")
     return result
@@ -103,7 +107,7 @@ def _initialize(params):
     requested = params.get("protocolVersion")
     return {
         "protocolVersion": requested if requested in LEGACY_VERSIONS else LEGACY_VERSIONS[0],
-        "capabilities": {"tools": {"listChanged": False}},
+        "capabilities": CAPABILITIES,
         "serverInfo": SERVER_INFO,
         "instructions": INSTRUCTIONS,
     }
@@ -112,7 +116,7 @@ def _initialize(params):
 def _discover():
     return {
         "supportedVersions": list(MODERN_VERSIONS + LEGACY_VERSIONS),
-        "capabilities": {"tools": {"listChanged": False}},
+        "capabilities": CAPABILITIES,
         "_meta": {"io.modelcontextprotocol/serverInfo": SERVER_INFO},
         "instructions": INSTRUCTIONS,
         "ttlMs": LIST_TTL_MS,
@@ -174,7 +178,8 @@ async def _call(params, request):
     )
     if name == "run_workflow" and step and step.get("state") == "running":
         ai_task_runs.watch(step["id"], before or set())
-    if name != "get_answers" and isinstance(result, dict) and not result.get("isError"):
+    # The user's news goes to the AI, never to the card's own calls (they do not reach the AI).
+    if name != "get_answers" and name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)
         await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task)
     return result
@@ -221,6 +226,20 @@ async def api_mcp(request):
         return _result(id_, {}, modern)
     if method == "tools/list":
         return _result(id_, _tool_list(modern), modern)
+    if method == "prompts/list":
+        return _result(id_, mcp_prompts.list_prompts(), modern)
+    if method == "prompts/get":
+        prompt = mcp_prompts.get_prompt(params.get("name"), params.get("arguments"))
+        if prompt is None:
+            return _error(id_, INVALID_PARAMS, f"Unknown prompt or missing arguments: {params.get('name')}")
+        return _result(id_, prompt, modern)
+    if method == "resources/list":
+        return _result(id_, {"resources": mcp_apps.resources()}, modern)
+    if method == "resources/read":
+        resource = await asyncio.to_thread(mcp_apps.read, params.get("uri"))
+        if resource is None:
+            return _error(id_, INVALID_PARAMS, f"Unknown resource: {params.get('uri')}")
+        return _result(id_, resource, modern)
     if method == "tools/call":
         result = await _call(params, request)
         if result is None:

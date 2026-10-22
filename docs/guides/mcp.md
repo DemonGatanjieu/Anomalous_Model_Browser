@@ -114,6 +114,10 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 
 出图后不必回图库寻找功能：鼠标移到结果图片上，右上角的 **ⓘ** 打开完整的图片与参数，**⇄** 和当前画布对比，**☆** 用同一个菜单保存成工作流、搭配或提示词。图片左上角可以 **勾选**：勾两张（不同步骤、不同任务都行），页面底部出现 **查看参数差异**；它读取图片实际保存的工作流，不依赖 AI 口述参数。没有可用工作流的图片会显示原因，视频没有这些参数操作。AI 展台的图片、挑选卡片也一样；滑动对比下面有 **查看参数差异**。
 
+**AI 软件里的 AMB 卡片**（Claude、ChatGPT、VS Code 等支持 MCP Apps 的软件）：AI 开始任务、出图、画面板或留言时，对话里会出现一张 AMB 的卡片：它做了哪几步、最新几张图、它问你的问题。直接在卡片里点选项就是回答，AI 会马上收到并继续。卡片是 AMB 自己的页面，AI 只能给它数据。要你点头的“关卡”只能在 AMB 里允许，卡片只提示你去 AMB；这样 AI 没有办法替你点。Gemini 命令行、Claude Code 终端版这类只显示文字的软件看不到卡片，照常在 AMB 的 AI 工作台里看和回答。
+
+**斜杠命令**：支持 MCP prompts 的软件（比如 Claude）里可以直接选 AMB 提供的四个现成请求：在工作台开一个任务、出几张让我挑、补齐缺的模型、讲讲现在的画布。
+
 **流程图和关卡**：任务标题下面的一排流程按 AI 做事的先后列出它经过的阶段（模型、搭配、提示词、运行、挑图……），点一下跳到那一步。任务列表上方的 **关卡** 里，改画布、用显卡出图配音、下载模型、联网扫描四类事各自可以选 **直接做 / 先问我 / 不许做**（默认只有下载先问）。选了“先问我”，AI 的那一步会停在时间线上列出它要做什么，你点 **允许** 才做；点 **不要** 时可以写原因或想怎么改，AI 会收到。AI 最多等 50 秒，等不及的话会先去问你的回答（`get_answers`），你允许后它再做一次，不会问第二遍。
 
 **AI 干活时你自己改的东西**：AI 在做一个任务时（10 分钟内调用过），你在 AMB 里做的改动，比如画布上的改动、改模型信息、存搭配或提示词，会以“你在 AMB 里改了”出现在这个任务的时间线上，画布改动带修改前后。AI 下一次调用任何工具时会收到它（并被告知保留你的改动，不要改回去），时间线上写着它是否已经知道。操作记录页里，AI 做的和 AI 干活时你做的记录旁边有 **AI 任务 →**。
@@ -153,6 +157,8 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 ## English
 
 Output pictures in a task and on AI panels carry the existing image inspector, image/canvas parameter comparison and Keep menu as tools shown on hover; tick any two (any step or task) and the bar at the foot of the page compares their actual embedded workflows. Changes you make in Anomalous while an AI works on a task (it called within 10 minutes) join its timeline and reach the AI once with its next call, marked as yours to keep; activity entries link to their task. Canvas steps show recorded before/after values with node navigation and undo where available, shared with the activity page. Missing historical receipts and images without reusable workflows are reported explicitly.
+
+Apps that support MCP Apps show Anomalous's own card (`ui://anomalous/task-card.html`) under begin_task, show_panel, report and run_workflow results: the task's steps, latest thumbnails and the AI's open questions, answered from the card (gates are never answerable there, only in Anomalous). Four prompts (workbench_task, pick_best, fix_missing_models, explain_canvas) appear as slash commands.
 
 The stage reads chronologically: use `show_panel` for successive phases. `update_panel` appends
 new blocks below existing content, keeps omitted blocks and deduplicates unchanged resubmissions.

@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anomalous</title>
+<!-- Anomalous's card in the AI app's conversation (api/mcp_apps.py). Everything the AI or the task
+     says is drawn with textContent; pictures are inline thumbnails; nothing is loaded from elsewhere. -->
+<style>
+  :root { --bg: #ffffff; --soft: #f4f4f6; --line: #e2e2e8; --text: #1d1d22; --dim: #6b6b75; --accent: #7c5cdb; --ok: #2f9e6e; --warn: #c98a04; --bad: #d64545; }
+  :root.dark { --bg: #1d1d22; --soft: #26262d; --line: #36363f; --text: #ececf1; --dim: #9a9aa6; --accent: #b39eef; --ok: #52b98d; --warn: #fbbf24; --bad: #f87171; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 14px 16px; background: var(--bg); color: var(--text); font: 13.5px/1.55 system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+  .head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .brand { color: var(--accent); font-weight: 600; font-size: 12px; }
+  .title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .state { padding: 1px 8px; border-radius: 999px; background: var(--soft); color: var(--dim); font-size: 11.5px; }
+  .state.live { color: var(--ok); }
+  .steps { display: flex; flex-direction: column; gap: 4px; margin: 0 0 10px; padding: 0; list-style: none; }
+  .steps li { display: flex; gap: 8px; color: var(--dim); font-size: 12.5px; }
+  .steps li::before { content: "•"; color: var(--ok); }
+  .steps li.running::before { color: var(--accent); }
+  .steps li.asking::before, .steps li.allowed::before { color: var(--warn); }
+  .steps li.bad::before { color: var(--bad); }
+  .steps li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pictures { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin-bottom: 10px; }
+  .pictures img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; background: var(--soft); }
+  .box { margin-bottom: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); }
+  .box.warn { border-color: var(--warn); }
+  .question { margin-bottom: 8px; font-weight: 600; }
+  .options { display: flex; flex-wrap: wrap; gap: 6px; }
+  button { padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 12.5px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.primary { border-color: var(--accent); background: var(--accent); color: #fff; }
+  input { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; }
+  .row { display: flex; gap: 6px; }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); font-size: 12px; }
+  .link { padding: 0; border: 0; background: none; color: var(--accent); }
+  .note { margin-bottom: 8px; color: var(--dim); font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="card"><div class="note" id="loading"></div></div>
+<script>
+(() => {
+  let zh = /^zh/i.test(navigator.language || '');
+  const words = {
+    loading: ['Reading the task from Anomalous…', '正在从 AMB 读取任务…'],
+    live: ['Working', '进行中'], done: ['Done', '已完成'],
+    asking: ['The AI waits for your OK in Anomalous', 'AI 在等你在 AMB 里点头'],
+    askingHow: ['Allowing is only done in Anomalous\'s AI workbench, so the AI can never allow itself.', '为了安全，允许只能在 AMB 的 AI 工作台里点，AI 自己没法替你点。'],
+    openAmb: ['Open in Anomalous', '在 AMB 里看'], send: ['Send', '发送'], refresh: ['Refresh', '刷新'],
+    picked: ['I picked in the card: ', '我在卡片里选了：'], typed: ['My answer in the card: ', '我在卡片里回答：'],
+    youAnswered: ['You answered: ', '你回答了：'], none: ['No task to show yet.', '还没有任务可看。'],
+  };
+  const t = key => words[key][zh ? 1 : 0];
+  const card = document.getElementById('card');
+  document.getElementById('loading').textContent = t('loading');
+
+  // JSON-RPC with the AI app (MCP Apps): requests wait for their answer by id.
+  let nextId = 1;
+  const waiting = new Map();
+  const send = (message) => window.parent.postMessage({ jsonrpc: '2.0', ...message }, '*');
+  const request = (method, params) => new Promise((resolve, reject) => {
+    const id = nextId++;
+    waiting.set(id, { resolve, reject });
+    send({ id, method, params });
+  });
+  const notify = (method, params) => send({ method, params });
+  const resize = () => notify('ui/notifications/size-changed', { width: document.body.scrollWidth, height: document.body.scrollHeight });
+
+  let target = {}; // { panel } or { task }: what the card shows
+  let openUrl = '';
+  let polls = 0;
+  let timer = null;
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = String(text);
+    return node;
+  }
+
+  async function callTool(name, args) {
+    const result = await request('tools/call', { name, arguments: args });
+    if (result?.isError) throw new Error(result.content?.[0]?.text || 'error');
+    return result?.structuredContent || {};
+  }
+
+  async function answer(question, choice, text, label) {
+    card.querySelectorAll('button, input').forEach((node) => { node.disabled = true; });
+    try {
+      await callTool('app_answer', { panel: question.panel, block: question.block, ...(choice ? { choice: [choice] } : { text }) });
+      // Also said in the conversation, so the AI goes on even when it is not waiting.
+      await request('ui/message', { role: 'user', content: [{ type: 'text', text: (choice ? t('picked') : t('typed')) + label }] }).catch(() => {});
+    } catch (error) {
+      card.append(el('div', 'note', error.message));
+    }
+    await load();
+  }
+
+  function questionBox(question) {
+    const box = el('div', 'box');
+    box.append(el('div', 'question', question.question));
+    if (question.type === 'input') {
+      const row = el('div', 'row');
+      const field = el('input');
+      const go = el('button', 'primary', t('send'));
+      go.onclick = () => field.value.trim() && answer(question, null, field.value.trim(), field.value.trim());
+      field.onkeydown = (event) => { if (event.key === 'Enter') go.click(); };
+      row.append(field, go);
+      box.append(row);
+    } else {
+      const options = el('div', 'options');
+      for (const option of question.options) {
+        const pick = el('button', '', option.label);
+        pick.onclick = () => answer(question, option.id, null, option.label);
+        options.append(pick);
+      }
+      box.append(options);
+    }
+    return box;
+  }
+
+  function draw(view) {
+    openUrl = view.open_url || openUrl;
+    const head = el('div', 'head');
+    head.append(el('span', 'brand', 'Anomalous'), el('span', 'title', view.title || ''),
+      el('span', `state${view.ended ? '' : ' live'}`, t(view.ended ? 'done' : 'live')));
+    const steps = el('ul', 'steps');
+    for (const step of view.steps || []) {
+      const line = el('li', `${step.state || ''}${step.ok === false ? ' bad' : ''}`);
+      line.append(el('span', '', step.text || step.tool));
+      steps.append(line);
+    }
+    const parts = [head, steps];
+    if (view.pictures?.length) {
+      const pictures = el('div', 'pictures');
+      for (const picture of view.pictures) {
+        const image = el('img');
+        image.alt = picture.name;
+        image.title = picture.name;
+        image.src = picture.src; // a data: thumbnail from Anomalous
+        image.onload = resize;
+        pictures.append(image);
+      }
+      parts.push(pictures);
+    }
+    for (const item of view.answered || []) parts.push(el('div', 'note', `${t('youAnswered')}${item.question ? `${item.question} ` : ''}${item.answer}`));
+    for (const question of view.questions || []) parts.push(questionBox(question));
+    if (view.asking?.length) {
+      const box = el('div', 'box warn');
+      box.append(el('div', 'question', t('asking')), el('div', 'note', t('askingHow')));
+      parts.push(box);
+    }
+    const foot = el('div', 'foot');
+    const open = el('button', 'link', t('openAmb'));
+    open.onclick = () => openUrl && request('ui/open-link', { url: openUrl }).catch(() => {});
+    const again = el('button', 'link', t('refresh'));
+    again.onclick = () => { polls = 0; load(); };
+    foot.append(open, again);
+    parts.push(foot);
+    card.replaceChildren(...parts);
+    resize();
+    // Follows the task for a few minutes while it goes on; Refresh starts again.
+    clearTimeout(timer);
+    if (!view.ended && polls++ < 36) timer = setTimeout(load, 5000);
+  }
+
+  async function load() {
+    try {
+      draw(await callTool('app_task_view', target));
+    } catch (_) {
+      card.replaceChildren(el('div', 'note', t('none')));
+      resize();
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== window.parent) return;
+    const message = event.data;
+    if (!message || message.jsonrpc !== '2.0') return;
+    if (message.id !== undefined && waiting.has(message.id)) {
+      const { resolve, reject } = waiting.get(message.id);
+      waiting.delete(message.id);
+      if (message.error) reject(new Error(message.error.message));
+      else resolve(message.result);
+      return;
+    }
+    if (message.method === 'ui/notifications/tool-result') {
+      const data = message.params?.structuredContent || {};
+      target = data.panel ? { panel: String(data.panel) } : data.task ? { task: String(data.task) } : {};
+      polls = 0;
+      load();
+    } else if (message.method === 'ui/notifications/host-context-changed') {
+      document.documentElement.classList.toggle('dark', message.params?.theme === 'dark');
+    }
+  });
+
+  request('ui/initialize', { appInfo: { name: 'anomalous-task-card', version: '1.0.0' }, appCapabilities: {}, protocolVersion: '2026-01-26' })
+    .then((result) => {
+      const context = result?.hostContext || {};
+      if (context.locale) zh = /^zh/i.test(context.locale);
+      document.documentElement.classList.toggle('dark', context.theme === 'dark');
+      notify('ui/notifications/initialized', {});
+      resize();
+    })
+    .catch(() => {});
+})();
+</script>
+</body>
+</html>

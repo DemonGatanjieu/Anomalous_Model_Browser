@@ -13,13 +13,15 @@ from aiohttp.test_utils import make_mocked_request
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_panels, ai_tasks, lora_info, mcp_actions, mcp_bridge, mcp_server, mcp_tools  # noqa: E402
+from api import ai_gates, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_server, mcp_tools  # noqa: E402
 
 MODERN = "2026-07-28"
 # Every call is kept as an AI workbench step: keep them in a temporary folder, never the user's.
 _AI_TASKS = tempfile.mkdtemp(prefix="amb_mcp_ai_tasks_")
 ai_tasks.tasks_dir = lambda: _AI_TASKS
 ai_tasks._tasks = None
+_GATES = tempfile.mkdtemp(prefix="amb_mcp_gates_")
+ai_gates._path = lambda: os.path.join(_GATES, "ai_gates.json")
 
 
 def meta(version=MODERN):
@@ -94,8 +96,8 @@ class ProtocolTests(unittest.TestCase):
                             {"MCP-Protocol-Version": "2030-01-01", "Mcp-Method": "tools/list"})
         self.assertEqual((status, body["error"]["code"]), (400, -32022))
         self.assertIn(MODERN, body["error"]["data"]["supported"])
-        status, body = post({"jsonrpc": "2.0", "id": 2, "method": "resources/list", "params": {"_meta": meta()}},
-                            modern_headers("resources/list"))
+        status, body = post({"jsonrpc": "2.0", "id": 2, "method": "sampling/createMessage", "params": {"_meta": meta()}},
+                            modern_headers("sampling/createMessage"))
         self.assertEqual((status, body["error"]["code"]), (404, -32601))
         self.assertEqual(post({}, method="GET")[0], 405)
         self.assertEqual(post([{"jsonrpc": "2.0", "id": 1, "method": "ping"}])[0], 400)  # no batches
@@ -345,6 +347,57 @@ class LoraHeaderTests(unittest.TestCase):
         self.assertEqual(steps[0]["state"], "done")
         msgs = body["result"]["structuredContent"].get("user_messages", [])
         self.assertEqual([m["text"] for m in msgs], ["背景加点星光"])
+
+
+
+def rpc(method, params=None, name=None):
+    status, body = post({"jsonrpc": "2.0", "id": 1, "method": method, "params": {**(params or {}), "_meta": meta()}},
+                        modern_headers(method, name))
+    return body
+
+
+class CardAndPromptTests(unittest.TestCase):
+    """MCP Apps (the card in the conversation, mcp_apps.py) and prompts (mcp_prompts.py)."""
+
+    def test_the_card_is_a_resource_named_by_its_tools(self):
+        tools = {tool["name"]: tool for tool in rpc("tools/list")["result"]["tools"]}
+        self.assertEqual(tools["show_panel"]["_meta"]["ui"]["resourceUri"], mcp_apps.CARD_URI)
+        self.assertNotIn("_meta", tools["search_models"])
+        self.assertEqual(tools["app_answer"]["_meta"]["ui"]["visibility"], ["app"], "kept from the AI by apps that show cards")
+        listed = rpc("resources/list")["result"]["resources"]
+        self.assertEqual([item["uri"] for item in listed], [mcp_apps.CARD_URI])
+        content = rpc("resources/read", {"uri": mcp_apps.CARD_URI}, mcp_apps.CARD_URI)["result"]["contents"][0]
+        self.assertEqual(content["mimeType"], "text/html;profile=mcp-app")
+        self.assertIn("ui/initialize", content["text"])
+        self.assertNotIn("innerHTML", content["text"], "the card draws text as text")
+        self.assertEqual(rpc("resources/read", {"uri": "ui://other"}, "ui://other")["error"]["code"], -32602)
+        status, body = post({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18"}})
+        self.assertIn(mcp_apps.EXTENSION, body["result"]["capabilities"]["extensions"])
+
+    def test_the_card_reads_the_task_and_answers_questions_but_never_gates(self):
+        shown = rpc("tools/call", {"name": "show_panel", "arguments": {"title": "Pick", "blocks": [
+            {"type": "choices", "id": "w", "question": "Which?", "options": [{"id": "a", "label": "A"}, {"id": "b", "label": "B"}]}]}},
+            "show_panel")["result"]["structuredContent"]
+        before = len(ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"])
+        view = rpc("tools/call", {"name": "app_task_view", "arguments": {"panel": shown["panel"]}}, "app_task_view")["result"]["structuredContent"]
+        self.assertEqual(view["questions"][0]["options"][1], {"id": "b", "label": "B"})
+        self.assertTrue(view["open_url"].startswith("http://127.0.0.1"))
+        done = rpc("tools/call", {"name": "app_answer", "arguments": {"panel": shown["panel"], "block": "w", "choice": ["b"]}}, "app_answer")
+        self.assertFalse(done["result"]["isError"])
+        self.assertEqual(len(ai_tasks.get_task(view["task"])["steps"]), before, "the card's calls are not steps")
+        got = ai_panels.get_answers("test", shown["panel"])
+        self.assertEqual(got["answers"][0]["choice"], ["b"])
+        self.assertEqual(set(mcp_apps.APP_TOOLS), {"app_task_view", "app_answer"}, "no tool the AI could reach answers a gate")
+
+    def test_prompts(self):
+        names = [item["name"] for item in rpc("prompts/list")["result"]["prompts"]]
+        self.assertIn("pick_best", names)
+        got = rpc("prompts/get", {"name": "pick_best", "arguments": {"what": "seed"}}, "pick_best")["result"]
+        text = got["messages"][0]["content"]["text"]
+        self.assertIn("3 variations", text)
+        self.assertIn("seed", text)
+        self.assertEqual(rpc("prompts/get", {"name": "pick_best", "arguments": {}}, "pick_best")["error"]["code"], -32602)
+        self.assertEqual(rpc("prompts/get", {"name": "nope"}, "nope")["error"]["code"], -32602)
 
 
 if __name__ == "__main__":
