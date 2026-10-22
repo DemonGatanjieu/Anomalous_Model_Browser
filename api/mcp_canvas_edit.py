@@ -10,8 +10,9 @@ import json
 import threading
 import time
 
+from . import ai_tasks, ai_toolbox
 from .mcp_actions import _action, _local, _page
-from .mcp_tools import ToolError
+from .mcp_tools import ToolError, _limit
 
 MAX_FOUND = 20
 MAX_CHOICES = 12
@@ -58,6 +59,25 @@ def _input(name, conf, required, choices):
     return out
 
 
+def _picked(ctx):
+    """The node types the user picked for this task (ai_toolbox.py), first in every search."""
+    box = ai_toolbox.effective(ai_tasks.get_task(ctx["task"])) if ctx.get("task") else None
+    return set((box or {}).get("nodes") or [])
+
+
+def _allowed(ctx, types):
+    """Refuses node types the user's "only" picks leave out, before the page is asked."""
+    if not ctx.get("task"):
+        return
+    info = _object_info(ctx)
+    refused = ai_toolbox.refused(ctx["task"], types, info)
+    if refused:
+        box = ai_toolbox.effective(ai_tasks.get_task(ctx["task"])) or {}
+        raise ToolError(f"For this task the user allowed only these node types (and ComfyUI's built-in ones): "
+                        f"{', '.join(box.get('nodes') or []) or 'none'}. Not allowed: {', '.join(refused)}. "
+                        "If you need one, ask the user in the AI workbench (show_panel) instead.")
+
+
 def _node(type_name, info, choices):
     inputs = []
     for section, required in (("required", True), ("optional", False)):
@@ -66,9 +86,10 @@ def _node(type_name, info, choices):
     names = info.get("output_name") or info.get("output") or []
     outputs = [{"slot": slot, "name": str(name), "type": str(kind)}
                for slot, (name, kind) in enumerate(zip(names, info.get("output") or []))]
+    source = ai_toolbox.source_of(info)
     return {"type": type_name, "display_name": info.get("display_name") or type_name, "category": info.get("category") or "",
-            "description": str(info.get("description") or "")[:300], "inputs": inputs, "outputs": outputs,
-            **({"deprecated": True} if info.get("deprecated") else {})}
+            "source": source, "description": str(info.get("description") or "")[:300], "inputs": inputs, "outputs": outputs,
+            **({"paid": True} if source == "api" else {}), **({"deprecated": True} if info.get("deprecated") else {})}
 
 
 def find_nodes(ctx, query="", types=None):
@@ -80,17 +101,23 @@ def find_nodes(ctx, query="", types=None):
     words = str(query or "").lower().split()
     if not words:
         raise ToolError("Give query (words in a node's name, category or description) or types.")
+    picked = _picked(ctx)
     scored = []
     for name, item in info.items():
-        haystack = " ".join(str(part) for part in (name, item.get("display_name"), item.get("category"), item.get("description"))).lower()
+        haystack = " ".join(str(part or "") for part in (name, item.get("display_name"), item.get("category"), item.get("description"))).lower()
         if all(word in haystack for word in words):
             label = f"{name} {item.get('display_name') or ''}".lower()
-            scored.append((0 if name.lower() == " ".join(words) else 1 if all(w in label for w in words) else 2,
-                           bool(item.get("deprecated")), len(name), name))
+            scored.append((name not in picked, 0 if name.lower() == " ".join(words) else 1 if all(w in label for w in words) else 2,
+                           bool(item.get("deprecated")), ai_toolbox.source_of(item) == "api", len(name), name))
     scored.sort()
-    return {"nodes": [_node(name, info[name], MAX_CHOICES) for *_rest, name in scored[:MAX_FOUND]], "total_matches": len(scored),
+    nodes = [_node(name, info[name], MAX_CHOICES) for *_rest, name in scored[:MAX_FOUND]]
+    for node in nodes:
+        if node["type"] in picked:
+            node["picked_by_user"] = True
+    return {"nodes": nodes, "total_matches": len(scored),
             "note": "Inputs of type choice take one of their choices; others are sockets fed by connect_nodes "
-                    "or settings set by values. types=[...] gives a node's full choice lists."}
+                    "or settings set by values. types=[...] gives a node's full choice lists. picked_by_user: the user "
+                    "wants these used; paid: a Comfy API node that spends the user's credits, use it only when asked."}
 
 
 def _id(value, what):
@@ -117,6 +144,7 @@ def _type(value):
 
 
 def add_node(ctx, type, values=None, title="", near_node_id=None):
+    _allowed(ctx, [_type(type)])
     return _page("add_node", {"type": _type(type), "values": _values(values), "title": str(title or "")[:120],
                               "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")})
 
@@ -155,7 +183,21 @@ def new_workflow(ctx, name="", nodes=None):
                 raise ToolError(f"Node {key[:40]}: each node is {{class_type, inputs: {{name: value or [node id, output slot]}}}}.")
             _type(spec["class_type"])
             _values({name: value for name, value in spec.get("inputs", {}).items() if not isinstance(value, list)})
+        _allowed(ctx, [spec["class_type"] for spec in nodes.values()])
     return _page("new_workflow", {"name": str(name or "")[:60], "nodes": nodes}, timeout=60)
+
+
+def open_workflow(ctx, name):
+    from .mcp_tools import list_workflows
+
+    name = str(name or "").strip()
+    found = [item for item in list_workflows(name, _limit(50))["workflows"] if item["name"] == name] if name else []
+    if not found:
+        raise ToolError(f"No saved workflow called {name}; list_workflows names them.")
+    from .recipe_store import _list_recipes, get_recipes_dir
+    filename = next((recipe["filename"] for recipe in _list_recipes(get_recipes_dir())
+                     if (recipe["data"].get("name") or recipe["filename"]) == name), None)
+    return _page("open_workflow", {"filename": filename, "name": name}, timeout=60)
 
 
 _NODE_ID = {"type": "integer", "description": "A node id from describe_canvas or a tool's answer."}
@@ -195,4 +237,8 @@ CANVAS_TOOLS = dict([
             "{\"text\": \"...\", \"clip\": [\"1\", 1]}}}: a value or [node id, output slot]). Everything is checked "
             "before the tab opens. The answer maps your ids to the canvas's node ids.",
             new_workflow, {"name": {"type": "string"}, "nodes": {"type": "object"}}),
+    _action("open_workflow", "Open a saved workflow",
+            "Opens one of the user's saved workflows (list_workflows names them) in a new tab, leaving the open one "
+            "as it was, to run it or build on it with add_node, connect_nodes and set_values.",
+            open_workflow, {"name": {"type": "string", "description": "A workflow name from list_workflows."}}, ["name"]),
 ])

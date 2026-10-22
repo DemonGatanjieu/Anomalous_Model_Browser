@@ -3,7 +3,7 @@ work, report leaves a note for the user (with pictures made outside Anomalous's 
 show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
 reads what the user picked or typed on it."""
 
-from . import ai_marks, ai_panels, ai_task_runs, ai_tasks
+from . import ai_marks, ai_panels, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 
@@ -19,11 +19,15 @@ def begin_task(ctx, title, new_task=False):
                                          "Every call from now on is a step of this task in Anomalous's AI workbench, "
                                          "where the user sees, opens and undoes them. Call report to explain a choice "
                                          "or to hand in pictures you made another way; report with done=true at the end."}
+    box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
+    if box:
+        answer["toolbox"] = ai_toolbox.words(box)
     if task.get("about"):
         # Handed over from a model page, an image or a combo in Anomalous: the ids the tools take.
         answer["about"] = task["about"]
         answer["about_note"] = ("The user started this task from these in Anomalous; work with them: model_id goes to "
-                                "set_model / add_lora / get_model, image to get_image_info, name to place_combo.")
+                                "set_model / add_lora / get_model, image to get_image_info, a combo's name to place_combo, "
+                                "a workflow's name to open_workflow.")
     return answer
 
 
@@ -77,6 +81,34 @@ def run_status(ctx, wait_seconds=0, task=None):
         raise ToolError(str(error))
 
 
+def get_toolbox(ctx, task=None):
+    from . import mcp_tools
+    from .mcp_canvas_edit import find_nodes
+
+    task_id = task or ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")
+    box = ai_toolbox.effective(ai_tasks.get_task(task_id)) if task_id else None
+    if not box:
+        return {"picked": False, "note": "The user picked nothing for this task; use what fits."}
+    answer = {"picked": True, "mode": box["mode"], "note": ai_toolbox.words(box)}
+    if box.get("nodes"):
+        found = find_nodes(ctx, types=box["nodes"])
+        answer["nodes"] = found["nodes"]
+        if found.get("not_found"):
+            answer["page_only_nodes"] = found["not_found"]  # helpers that live only in the page: add_node takes them
+    for kind, lister, key in (("combos", mcp_tools.list_combos, "combos"), ("workflows", mcp_tools.list_workflows, "workflows"),
+                              ("prompts", mcp_tools.list_saved_prompts, "prompts")):
+        if box.get(kind):
+            answer[kind] = [item for name in box[kind] for item in lister(name, 5)[key] if item["name"] == name][:ai_toolbox.MAX_ITEMS]
+    if box.get("models"):
+        answer["models"] = []
+        for model_id in box["models"]:
+            try:
+                answer["models"].append(mcp_tools.get_model(model_id))
+            except ToolError:
+                answer["models"].append({"model_id": model_id, "missing": True})
+    return answer
+
+
 def get_answers(ctx, panel=None, wait_seconds=0, task=None):
     try:
         client = ctx.get("client") or "AI"
@@ -114,7 +146,7 @@ def _task_tool(name, title, description, run, properties, required=()):
     return name, {"run": run, "context": True, "spec": {
         "name": name, "title": title, "description": description,
         "inputSchema": _schema(properties, required),
-        "annotations": {"title": title, "readOnlyHint": name == "run_status", "destructiveHint": False,
+        "annotations": {"title": title, "readOnlyHint": name in ("run_status", "get_toolbox"), "destructiveHint": False,
                         "idempotentHint": False, "openWorldHint": False},
     }}
 
@@ -162,6 +194,12 @@ TASK_TOOLS = dict([
                "carry the same news as your_run, and once more when it ends.",
                run_status, {"wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_task_runs.MAX_STATUS_WAIT, "default": 0},
                             "task": _TASK_PROP}),
+    _task_tool("get_toolbox", "What the user picked for you",
+               "The node types, combos, saved workflows, prompts and models the user picked in the AI workbench for "
+               "this task, in full (inputs and outputs of the nodes, the combos' models and prompts…), and how strictly: "
+               "prefer (use them first) or only (add_node and new_workflow accept only those node types besides "
+               "ComfyUI's built-in ones). begin_task says when there are any.",
+               get_toolbox, {"task": _TASK_PROP}),
     _task_tool("get_answers", "Read the user's answers and messages",
                "What the user picked or typed on your panels, and what they wrote to you in the AI workbench "
                "(messages: a change of mind, 'stop', 'make it brighter'; kind=change: something they changed "

@@ -1,0 +1,120 @@
+/* "给 AI 的素材" (ui_ai_toolbox.js): the window that picks node types, combos, workflows, prompts
+   and models for an AI task, and the timeline row of a pick. */
+.anomalous-ai-connect-dialog.is-wide { width: min(860px, 100%); }
+.anomalous-ai-toolbox { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.anomalous-ai-toolbox-intro { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
+.anomalous-ai-toolbox-search { width: 100%; box-sizing: border-box; }
+.anomalous-ai-toolbox-main {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 12px;
+    min-height: 320px;
+}
+.anomalous-ai-toolbox-kinds { display: flex; flex-direction: column; gap: 2px; }
+.anomalous-ai-toolbox-kind {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-toolbox-kind:hover { color: var(--amb-text-main); background: rgba(var(--amb-ink-rgb), 0.05); }
+.anomalous-ai-toolbox-kind.is-on { background: color-mix(in srgb, var(--amb-link) 18%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-toolbox-kind-count {
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-link) 30%, transparent);
+    color: var(--amb-text-main);
+    font-size: 11px;
+    text-align: center;
+}
+.anomalous-ai-toolbox-list { display: flex; flex-direction: column; gap: 6px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
+.anomalous-ai-toolbox-group { border: 1px solid var(--amb-border); border-radius: 8px; }
+.anomalous-ai-toolbox-group.is-api { border-style: dashed; }
+.anomalous-ai-toolbox-group-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    cursor: pointer;
+    user-select: none;
+}
+.anomalous-ai-toolbox-group-name { color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
+.anomalous-ai-toolbox-group[open] > .anomalous-ai-toolbox-group-head { border-bottom: 1px solid var(--amb-border); }
+.anomalous-ai-toolbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px 4px 14px;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.anomalous-ai-toolbox-row:hover { background: rgba(var(--amb-ink-rgb), 0.04); }
+.anomalous-ai-toolbox-name { min-width: 0; overflow: hidden; color: var(--amb-text-main); text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-toolbox-detail { min-width: 0; overflow: hidden; color: var(--amb-text-dim); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-toolbox-star {
+    margin-left: auto;
+    padding: 0 4px;
+    border: 0;
+    background: transparent;
+    color: var(--amb-text-dim);
+    font-size: 15px;
+    cursor: pointer;
+}
+.anomalous-ai-toolbox-star.is-on { color: var(--amb-warn); }
+.anomalous-ai-toolbox-note { padding: 8px 10px; color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-toolbox-note.is-error { color: var(--amb-warn-text, var(--amb-warn)); }
+.anomalous-ai-toolbox-tray {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--amb-border);
+}
+.anomalous-ai-toolbox-chips { display: flex; flex: 1 1 300px; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.anomalous-ai-toolbox-chip {
+    max-width: 220px;
+    overflow: hidden;
+    padding: 3px 9px;
+    border: 0;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--ai-chip, var(--amb-link)) 18%, transparent);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+button.anomalous-ai-toolbox-chip { cursor: pointer; }
+.anomalous-ai-toolbox-chip.is-combos { --ai-chip: #2bb38a; }
+.anomalous-ai-toolbox-chip.is-workflows { --ai-chip: #e08a3c; }
+.anomalous-ai-toolbox-chip.is-prompts { --ai-chip: #d65c8f; }
+.anomalous-ai-toolbox-chip.is-models { --ai-chip: #8a7be0; }
+.anomalous-ai-toolbox-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.anomalous-ai-toolbox-mode { height: 30px; font-size: 12.5px; }
+.anomalous-ai-toolbox-send {
+    height: 30px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.anomalous-ai-toolbox-step { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.anomalous-ai-toolbox-step .anomalous-ai-toolbox-chips { flex: none; align-items: flex-start; }
+@media (max-width: 640px) {
+    .anomalous-ai-toolbox-main { grid-template-columns: minmax(0, 1fr); }
+    .anomalous-ai-toolbox-kinds { flex-direction: row; flex-wrap: wrap; }
+}

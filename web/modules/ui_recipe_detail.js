@@ -9,6 +9,7 @@ import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { deriveRecipeModelReferences } from './recipe_identity.js';
 import { appendRecipeToCanvas } from './recipe_actions.js';
+import { handWorkflowToAi } from './ui_ai_handoff.js';
 import { appendText, button } from './ui_recipe_detail_dom.js';
 import { renderVersions } from './ui_recipe_versions.js';
 import { renderRecipeGallery } from './ui_recipe_gallery.js';
@@ -116,6 +117,9 @@ function detailBar(owner, recipe, references, finish) {
         if (await applyRecipeToCanvas(owner, recipe)) finish('canvas');
         open.disabled = false;
     };
+    const hand = button(bar, `✦ ${t('aiHand')}`, 'anomalous-wf-icon-btn');
+    hand.title = t('aiHandHint');
+    hand.onclick = () => void handWorkflowToAi(owner, recipe.name || owner.recipeDetailFilename || '');
     const more = button(bar, '⋯', 'anomalous-wf-icon-btn');
     more.title = t('notebookMore');
     more.onclick = () => openPopupMenu(more, [

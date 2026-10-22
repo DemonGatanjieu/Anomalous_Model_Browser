@@ -6,6 +6,12 @@
 - AI 可以在你眼前的画布上搭工作流了：查这台 ComfyUI 有哪些节点（包括自定义节点）、每个节点有哪些输入输出和可选项；新建一个工作流标签页（空白的，或者一次搭好整套并自动排好位置，不动你正在开的那个）；加节点、连线、改参数、删节点。每一步都在画布上当场发生，是一次 Ctrl+Z，记在操作记录里，并在 AI 工作台那一步下面显示改了什么，连线也会写成“某节点的输入 model：（空）→ 加载模型 #4 · MODEL”。连不上的类型、不存在的选项、写错的参数会先被拦下并告诉 AI 正确的写法，画布不会留下半截。新建的标签页名字带时间，不会打开或覆盖你存过的工作流。连线会绕成死循环时也会先拦下。运行被 ComfyUI 拒绝时，AI 收到的是 ComfyUI 给的具体原因（哪个节点、什么问题），不再只有一句“运行失败”。
 - The AI can build workflows on the canvas the user sees: look up this ComfyUI's node types (custom nodes too) with their inputs, outputs and choices; open a new tab, blank or built and laid out from a workflow in API form (the open one is left alone); add, wire, set and remove nodes. Each is one Ctrl+Z step, logged as the AI's and shown under its AI workbench step, rewiring included. Wrong types, choices and settings are refused with what fits, before anything changes. Wiring that would loop is refused too, and a run ComfyUI rejects reports ComfyUI's own reason.
 
+### 给 AI 的素材 / Materials for the AI
+- AI 工作台每个任务上多了“素材”按钮：按来源分组列出这台 ComfyUI 的全部节点（自带的、你装的每个第三方节点包、只在网页里的小工具、会花积分的付费 API 节点单独放在最后），还有你的搭配、工作流、提示词和模型。勾选这次想让 AI 用的，点“交给 AI”；可以选“优先用这些”或“只能用这些节点”（自带节点照常可用，AI 想加别的第三方或付费节点会被拦下）。☆ 设为常用后，没挑素材的任务自动带上常用的。AI 下一步就会收到，时间线上也记着你给了什么、AI 收到没有。
+- AI 能在新标签页里打开你存的工作流，在它的基础上改；工作流详情页也有“✦ 交给 AI”。AI 查节点时会标出你挑的节点和付费节点。
+- 实测：你装的 10 个第三方节点包（Impact Pack、IPAdapter、Easy-Use、Comfyroll、rgthree、ControlNet 预处理器等）共 1642 种节点，AI 都能放到画布上；用 Comfyroll 节点搭的工作流真实跑出了图。
+- A Materials button on each AI task: every node type of this ComfyUI grouped by source (built-in, each custom node pack, page-only helpers, paid API nodes last), plus combos, workflows, prompts and models; picks go to the AI as prefer or only-these-nodes (built-in nodes stay allowed), favourites stand in for tasks without picks. The AI can open a saved workflow in a new tab; a workflow's page can hand it to the AI.
+
 ### AI 后端修复 / AI backend fixes
 - 出图结果按本次提交返回的准确运行 ID 归属，不再通过全局队列差集猜测；其他 AI、其他页面或后续手动排队不会混入。批次只提交成功一部分时，保留这些运行的进度和图片，并明确报告未全部提交；不会自动重跑整批。旧页面需刷新后才能接手出图，不支持请求 ID 的旧版 ComfyUI 前端会在提交前提示更新。同一页面正在提交时另一 AI 收到忙碌提示，待提交结束即可重试。
 - Workflow runs now follow exact submission IDs in batch order. Partial submissions keep accepted runs/results and report the missing portion; no automatic resubmission. Stale pages cannot claim runs until refreshed, unsupported host frontends fail before queueing, and a second AI waits while the same page is submitting. Native widget/seed behavior is preserved and later manual batches do not delay the AI receipt.

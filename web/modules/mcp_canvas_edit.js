@@ -230,5 +230,21 @@ export function canvasEditActions({ recorded, nodeById }) {
         });
     }
 
-    return { add_node: addNode, connect_nodes: connectNodes, set_values: setValues, remove_nodes: removeNodes, new_workflow: newWorkflow };
+    /** One of the user's saved workflows (a recipe), in a new tab named after it; the open one stays. */
+    async function openWorkflow({ filename, name }, getOwner) {
+        const response = await fetch(`/anomalous/recipe_full?filename=${encodeURIComponent(filename || '')}`);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload.data?.workflow) throw new Error(`The saved workflow ${name} could not be read.`);
+        const tab = tabName(name);
+        getOwner()?.flushCanvasActivity?.();
+        await app.loadGraphData(structuredClone(payload.data.workflow), true, true, tab);
+        showWorkbenchToast(t('mcpDidOpenWorkflow', { name }));
+        const g = app.canvas?.graph || app.graph;
+        return { opened: tab, node_count: (g?._nodes || []).length, note: 'describe_canvas shows its nodes; add_node, connect_nodes and set_values change it.' };
+    }
+
+    return {
+        add_node: addNode, connect_nodes: connectNodes, set_values: setValues, remove_nodes: removeNodes,
+        new_workflow: newWorkflow, open_workflow: openWorkflow,
+    };
 }

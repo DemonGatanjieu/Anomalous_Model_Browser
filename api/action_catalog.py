@@ -47,6 +47,7 @@ TOOLS = {
     "set_values": Entry("canvas", "canvas", "canvas"),
     "remove_nodes": Entry("canvas", "canvas", "canvas"),
     "new_workflow": Entry("canvas", "canvas", "canvas"),
+    "open_workflow": Entry("canvas", "canvas", "canvas"),
     "run_workflow": Entry("run", "run", "gpu"),
     "download_missing_models": Entry("download", "model", "download"),
     "download_model": Entry("download", "model", "download"),
@@ -60,6 +61,7 @@ TOOLS = {
     "update_panel": Entry(None, None, None),
     "get_answers": Entry(None, None, None),
     "run_status": Entry("look", "run", None),
+    "get_toolbox": Entry(None, None, None),
     # Anomalous's card in the conversation (mcp_apps.py): its own calls, not the AI's steps
     "app_task_view": Entry(None, None, None),
     "app_answer": Entry(None, None, None),

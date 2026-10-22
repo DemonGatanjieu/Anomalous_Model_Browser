@@ -1,6 +1,6 @@
 /**
  * Handing something in Anomalous to an AI: "✦ Hand to AI" on a model's page, on an output
- * image's inspector and on a combo card. The user says what they want (prefilled), Anomalous
+ * image's inspector, on a combo card and on a saved workflow's page. The user says what they want (prefilled), Anomalous
  * starts a task with it (POST /anomalous/ai_tasks, `about` naming the model, image or combo, so
  * the AI gets their ids from begin_task) and shows the sentence to paste into the AI app:
  * Anomalous cannot wake an AI by itself. The task waits on the AI workbench until an AI takes it.
@@ -69,6 +69,11 @@ export function handImageToAi(owner, item, leave) {
     if (source.type && source.type !== 'output') return anomalousAlert(t('aiHandOutputOnly'));
     const image = [source.subfolder, source.filename].filter(Boolean).join('/');
     return handToAi(owner, t('aiHandImageWish', { name: source.filename }), [{ type: 'image', image, label: source.filename }], leave);
+}
+
+/** A saved workflow (its page on the Workflows page). */
+export function handWorkflowToAi(owner, name) {
+    return handToAi(owner, t('aiHandWorkflowWish', { name }), [{ type: 'workflow', name, label: name }]);
 }
 
 /** A combo (its card on the Combos page). */

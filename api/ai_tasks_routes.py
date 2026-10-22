@@ -7,7 +7,7 @@ import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_gates, ai_marks, ai_task_changes, ai_tasks
+from . import activity_log, ai_gates, ai_marks, ai_task_changes, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -144,6 +144,39 @@ async def api_marked(request):
     return web.FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
 
 
+async def api_toolbox_pick(request):
+    """POST /anomalous/ai_tasks/{id}/toolbox: {mode, nodes, combos, workflows, prompts, models} - what the user hands the AI."""
+    from . import ai_panels
+
+    body = await _body(request)
+    try:
+        step = ai_toolbox.pick(request.match_info["task_id"], body if body is not None else None, (body or {}).get("mode", "prefer"))
+    except ai_toolbox.ToolboxError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    ai_panels.wake()
+    return web.json_response({"step": step})
+
+
+async def api_toolbox(request):
+    """GET /anomalous/ai_toolbox?kind=&query=: what the picker lists; GET/POST /anomalous/ai_toolbox/favorites."""
+    if request.path.endswith("/favorites"):
+        if request.method == "GET":
+            return web.json_response({"favorites": ai_toolbox.favorites()})
+        body = await _body(request)
+        try:
+            return web.json_response({"favorites": ai_toolbox.set_favorites(body if body is not None else None)})
+        except ai_toolbox.ToolboxError as error:
+            return web.json_response({"error": str(error)}, status=400)
+    ctx = {"base_url": f"{request.scheme}://{request.host}"}
+    try:
+        return web.json_response(await asyncio.to_thread(ai_toolbox.catalog, ctx, request.query.get("kind", ""),
+                                                         request.query.get("query", "")[:200]))
+    except ai_toolbox.ToolboxError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    except Exception as error:  # noqa: BLE001 - ComfyUI's node list or a store unreadable: say so to the page
+        return web.json_response({"error": str(error)}, status=502)
+
+
 def register_routes(app):
     activity_log.add_listener(ai_task_changes.note_activity)  # the user's changes while an AI works
     app.router.add_get("/anomalous/ai_tasks", api_list)
@@ -155,5 +188,9 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}/gate", api_gate)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/marks", api_marks)
     app.router.add_get("/anomalous/ai_tasks/{task_id}/marks/{name}", api_marked)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/toolbox", api_toolbox_pick)
+    app.router.add_get("/anomalous/ai_toolbox", api_toolbox)
+    app.router.add_get("/anomalous/ai_toolbox/favorites", api_toolbox)
+    app.router.add_post("/anomalous/ai_toolbox/favorites", api_toolbox)
     app.router.add_get("/anomalous/ai_gates", api_gates)
     app.router.add_post("/anomalous/ai_gates", api_gates)

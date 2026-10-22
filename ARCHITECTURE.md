@@ -141,7 +141,16 @@ covered by the `styles.css` manifest.
   checked for shape there and done by `web/modules/mcp_canvas_edit.js` through the bridge's
   `recorded`, after checking types, settings and choices against the nodes themselves;
   `web/modules/canvas_build.js` is its pure part (type fit, value checks, a free spot, the
-  layered layout). A rewired input shows in the receipt as a `wired` change
+  layered layout). `open_workflow` opens one of the user's saved workflows in a new tab.
+  `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
+  `web/modules/ui_ai_toolbox.js`, from the task header): node types grouped by where they come
+  from (built-in, each custom node folder from `/object_info`'s `python_module`, page-only
+  helpers, paid API nodes), combos, saved workflows, prompts and models, by the names the AI's
+  tools use, with a mode: prefer, or only (add_node / new_workflow then refuse other custom or
+  paid node types). Favourites (`anomalous/ai_toolbox.json`) stand in until the user picks for
+  a task. A pick is a `user_toolbox` step the AI gets as a message (kind `toolbox`); begin_task
+  names the picks, `get_toolbox` gives them in full, find_nodes lists them first.
+  A rewired input shows in the receipt as a `wired` change
   (`activity_diff.js` keeps what feeds each input).
   `web/modules/mcp_run.js` captures exact prompt IDs from one native queue request,
   preserving native seed/widget callbacks and excluding later manual batches. Busy submissions
