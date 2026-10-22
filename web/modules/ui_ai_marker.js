@@ -1,17 +1,23 @@
 /**
  * Marking a picture for the AI (api/ai_marks.py): a window over the page with the picture and four
  * simple tools - box, circle, arrow, pen - in three colours, each mark numbered with a note of what
- * to change there, plus a line for the whole picture. "Send to the AI" draws the marks onto the
- * picture (at most MAX_EDGE px), and sends that PNG with the marks (fractions of the picture) to
- * the task; the AI gets the notes and the marked picture with its next step. Also the timeline's
- * row for marks sent (marksStep). Every listener lives as long as the window and goes with it.
+ * to change there, plus a line for the whole picture, and a brush that paints the area to repaint.
+ * "Send to the AI" draws the marks onto the picture (at most MAX_EDGE px), and sends that PNG with
+ * the marks (fractions of the picture) to the task; with "make a repaint mask" on, also a mask
+ * (white where boxes, circles, lines and brush strokes are) that the server turns into the picture
+ * ready to repaint. The AI gets the notes and the marked picture with its next step. Also the
+ * timeline's row for marks sent (marksStep). Every listener lives as long as the window and goes with it.
  */
 
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { outputUrl } from './ai_task_view.js';
 
-const TOOLS = [['box', '□'], ['circle', '○'], ['arrow', '↗'], ['pen', '✎']];
+const TOOLS = [['box', '□'], ['circle', '○'], ['arrow', '↗'], ['pen', '✎'], ['mask', '▧']];
+const MASK_COLOR = 'rgba(255, 64, 160, 0.45)';
+const MAX_STROKES = 300;
+const MASK_EDGE = 4096;
+const AREAS = new Set(['box', 'circle', 'pen', 'mask']);
 const COLORS = ['#ff4d4f', '#fadb14', '#36cfc9'];
 const MAX_EDGE = 2048;
 const MAX_MARKS = 20;
@@ -43,8 +49,50 @@ function bounds(mark) {
     return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
 }
 
-/** One mark on a 2D context of `w` × `h` px, with its number. */
+/** A brush stroke of the repaint area on a 2D context of `w` × `h` px, in `color`. */
+function stroke(ctx, mark, w, h, color = MASK_COLOR) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(2, mark.size * Math.min(w, h));
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    const points = mark.points.length > 1 ? mark.points : [mark.points[0], mark.points[0]];
+    points.forEach(([x, y], index) => (index ? ctx.lineTo(x * w, y * h) : ctx.moveTo(x * w, y * h)));
+    ctx.stroke();
+}
+
+/** The repaint mask of `marks` on `w` × `h` px: white where boxes, circles, lines and strokes are. */
+function maskOf(marks, w, h) {
+    const out = document.createElement('canvas');
+    out.width = w;
+    out.height = h;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    for (const mark of marks) {
+        const [start, end] = [mark.points[0], mark.points.at(-1)];
+        if (mark.shape === 'mask') {
+            stroke(ctx, mark, w, h, '#fff');
+        } else if (mark.shape === 'pen') {
+            stroke(ctx, { ...mark, size: 0.03 }, w, h, '#fff');
+        } else if (mark.shape === 'box') {
+            ctx.fillRect(Math.min(start[0], end[0]) * w, Math.min(start[1], end[1]) * h, Math.abs(end[0] - start[0]) * w, Math.abs(end[1] - start[1]) * h);
+        } else if (mark.shape === 'circle') {
+            ctx.beginPath();
+            ctx.ellipse((start[0] + end[0]) / 2 * w, (start[1] + end[1]) / 2 * h, Math.abs(end[0] - start[0]) / 2 * w, Math.abs(end[1] - start[1]) / 2 * h, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    return out.toDataURL('image/png');
+}
+
+/** One mark on a 2D context of `w` × `h` px, with its number (a brush stroke has none). */
 function paint(ctx, mark, number, w, h) {
+    if (mark.shape === 'mask') {
+        stroke(ctx, mark, w, h);
+        return;
+    }
     const line = Math.max(2, Math.round(Math.min(w, h) * 0.006));
     const [start, end] = [mark.points[0], mark.points.at(-1)];
     ctx.strokeStyle = mark.color;
@@ -94,7 +142,9 @@ export function openMarker(image, taskId, sent) {
     const marks = [];
     let tool = 'box';
     let color = COLORS[0];
+    let brush = 0.05;
     let drawing = null;
+    const noted = () => marks.filter(mark => mark.shape !== 'mask');
 
     const overlay = el('div', 'anomalous-ai-marker-overlay');
     const dialog = el('div', 'anomalous-ai-marker');
@@ -105,9 +155,10 @@ export function openMarker(image, taskId, sent) {
 
     const bar = el('div', 'anomalous-ai-marker-tools');
     const toolButtons = TOOLS.map(([id, glyph]) => {
-        const pick = button(`anomalous-ai-marker-tool${id === tool ? ' is-on' : ''}`, `${glyph} ${t(`aiMarkTool_${id}`)}`, () => {
+        const pick = button(`anomalous-ai-marker-tool${id === tool ? ' is-on' : ''}${id === 'mask' ? ' is-mask' : ''}`, `${glyph} ${t(`aiMarkTool_${id}`)}`, () => {
             tool = id;
             toolButtons.forEach(item => item.classList.toggle('is-on', item === pick));
+            size.hidden = id !== 'mask';
         });
         return pick;
     });
@@ -119,7 +170,16 @@ export function openMarker(image, taskId, sent) {
         swatch.style.background = value;
         return swatch;
     });
-    bar.append(...toolButtons, el('span', 'anomalous-ai-marker-gap'), ...colorButtons, el('span', 'anomalous-ai-marker-gap'),
+    const size = el('label', 'anomalous-ai-marker-size');
+    const sizeInput = el('input');
+    sizeInput.type = 'range';
+    sizeInput.min = '1';
+    sizeInput.max = '15';
+    sizeInput.value = String(brush * 100);
+    sizeInput.addEventListener('input', () => { brush = Number(sizeInput.value) / 100; });
+    size.append(el('span', '', t('aiMarkBrush')), sizeInput);
+    size.hidden = true;
+    bar.append(...toolButtons, size, el('span', 'anomalous-ai-marker-gap'), ...colorButtons, el('span', 'anomalous-ai-marker-gap'),
         button('anomalous-ai-marker-tool', `↶ ${t('aiMarkUndo')}`, () => { marks.pop(); redraw(); }),
         button('anomalous-ai-marker-tool', t('aiMarkClear'), () => { marks.length = 0; redraw(); }));
 
@@ -137,7 +197,11 @@ export function openMarker(image, taskId, sent) {
     whole.placeholder = t('aiMarkWhole');
     whole.rows = 3;
     const send = button('anomalous-ai-marker-send', t('aiMarkSend'), () => void submit());
-    side.append(empty, list, whole, send, el('div', 'anomalous-ai-marker-note', t('aiMarkNote')));
+    const repaint = el('label', 'anomalous-ai-marker-repaint');
+    const repaintBox = el('input');
+    repaintBox.type = 'checkbox';
+    repaint.append(repaintBox, el('span', '', t('aiMarkRepaint')));
+    side.append(empty, list, whole, repaint, send, el('div', 'anomalous-ai-marker-note', t('aiMarkNote')));
 
     const body = el('div', 'anomalous-ai-marker-body');
     const left = el('div', 'anomalous-ai-marker-left');
@@ -154,19 +218,23 @@ export function openMarker(image, taskId, sent) {
     function redraw() {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        [...marks, ...(drawing ? [drawing] : [])].forEach((mark, index) => paint(ctx, mark, index + 1, canvas.width, canvas.height));
+        let number = 0;
+        [...marks, ...(drawing ? [drawing] : [])].forEach(mark => paint(ctx, mark, mark.shape === 'mask' ? 0 : ++number, canvas.width, canvas.height));
         empty.hidden = marks.length > 0;
-        // The notes, one per mark, kept as typed.
-        while (list.children.length > marks.length) list.lastElementChild.remove();
-        marks.forEach((mark, index) => {
+        repaintBox.disabled = !marks.some(mark => AREAS.has(mark.shape));
+        if (repaintBox.disabled) repaintBox.checked = false;
+        // The notes, one per mark (not per brush stroke), kept as typed.
+        const notes = noted();
+        while (list.children.length > notes.length) list.lastElementChild.remove();
+        notes.forEach((mark, index) => {
             let row = list.children[index];
             if (!row) {
                 row = el('li', 'anomalous-ai-marker-row');
                 const note = el('input', 'anomalous-ai-marker-input');
                 note.placeholder = t('aiMarkNotePlaceholder');
-                note.addEventListener('input', () => { marks[[...list.children].indexOf(row)].note = note.value; });
+                note.addEventListener('input', () => { noted()[[...list.children].indexOf(row)].note = note.value; });
                 row.append(el('span', 'anomalous-ai-marker-badge'), el('span', 'anomalous-ai-marker-shape'), note,
-                    button('anomalous-ai-marker-remove', '×', () => { marks.splice([...list.children].indexOf(row), 1); redraw(); }, t('aiMarkRemove')));
+                    button('anomalous-ai-marker-remove', '×', () => { marks.splice(marks.indexOf(noted()[[...list.children].indexOf(row)]), 1); redraw(); }, t('aiMarkRemove')));
                 list.append(row);
                 requestAnimationFrame(() => note.focus());
             }
@@ -188,21 +256,27 @@ export function openMarker(image, taskId, sent) {
     observer?.observe(picture);
 
     canvas.addEventListener('pointerdown', (event) => {
-        if (marks.length >= MAX_MARKS) return;
+        if (tool === 'mask' ? marks.length - noted().length >= MAX_STROKES : noted().length >= MAX_MARKS) return;
         canvas.setPointerCapture(event.pointerId);
-        drawing = { shape: tool, color, points: [point(event)], note: '' };
+        drawing = tool === 'mask' ? { shape: 'mask', size: brush, points: [point(event)] } : { shape: tool, color, points: [point(event)], note: '' };
+        if (tool === 'mask') redraw();
     });
     canvas.addEventListener('pointermove', (event) => {
         if (!drawing) return;
-        if (drawing.shape === 'pen') drawing.points.push(point(event));
+        if (drawing.shape === 'pen' || drawing.shape === 'mask') drawing.points.push(point(event));
         else drawing.points[1] = point(event);
         redraw();
     });
     const finish = () => {
         if (!drawing) return;
         const box = bounds(drawing);
-        // A click without a drag makes no mark.
-        if (drawing.points.length > 1 && (box.w > 0.01 || box.h > 0.01)) marks.push(drawing);
+        // A click without a drag makes no mark; a brush click is a dot of the repaint area.
+        if (drawing.shape === 'mask') {
+            marks.push(drawing);
+            repaintBox.checked = true;
+        } else if (drawing.points.length > 1 && (box.w > 0.01 || box.h > 0.01)) {
+            marks.push(drawing);
+        }
         drawing = null;
         redraw();
     };
@@ -236,12 +310,19 @@ export function openMarker(image, taskId, sent) {
         out.height = Math.round(picture.naturalHeight * scale);
         const ctx = out.getContext('2d');
         ctx.drawImage(picture, 0, 0, out.width, out.height);
-        marks.forEach((mark, index) => paint(ctx, mark, index + 1, out.width, out.height));
+        let number = 0;
+        marks.forEach(mark => paint(ctx, mark, mark.shape === 'mask' ? 0 : ++number, out.width, out.height));
         return out.toDataURL('image/png');
     }
 
+    /** The repaint mask at the picture's own size (at most MASK_EDGE px; the server fits it to the picture). */
+    function repaintMask() {
+        const scale = Math.min(1, MASK_EDGE / Math.max(picture.naturalWidth, picture.naturalHeight));
+        return maskOf(marks, Math.round(picture.naturalWidth * scale), Math.round(picture.naturalHeight * scale));
+    }
+
     async function submit() {
-        if (!marks.length) {
+        if (!marks.length || (!noted().length && !repaintBox.checked)) {
             await anomalousAlert(t('aiMarkNeedOne'));
             return;
         }
@@ -251,7 +332,8 @@ export function openMarker(image, taskId, sent) {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     image: [image.subfolder, image.filename].filter(Boolean).join('/'), png: composite(), text: whole.value.trim(),
-                    marks: marks.map(mark => ({ shape: mark.shape, note: (mark.note || '').trim(), ...bounds(mark) })),
+                    marks: noted().map(mark => ({ shape: mark.shape, note: (mark.note || '').trim(), ...bounds(mark) })),
+                    ...(repaintBox.checked ? { mask: repaintMask() } : {}),
                 }),
             });
             const data = await response.json().catch(() => ({}));
@@ -284,6 +366,7 @@ export function marksStep(step, taskId, owner) {
     box.append(open, el('div', 'anomalous-ai-marks-sent-words'));
     const words = box.lastChild;
     if (step.note) words.append(el('div', 'anomalous-ai-user-text', step.note));
+    if (step.inpaint) words.append(el('div', 'anomalous-ai-marks-inpaint', t('aiMarkInpaintReady', { file: step.inpaint })));
     words.append(notes, el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMarksSeen' : 'aiMarksWaiting')));
     return box;
 }

@@ -6,6 +6,10 @@
 - AI 可以在你眼前的画布上搭工作流了：查这台 ComfyUI 有哪些节点（包括自定义节点）、每个节点有哪些输入输出和可选项；新建一个工作流标签页（空白的，或者一次搭好整套并自动排好位置，不动你正在开的那个）；加节点、连线、改参数、删节点。每一步都在画布上当场发生，是一次 Ctrl+Z，记在操作记录里，并在 AI 工作台那一步下面显示改了什么，连线也会写成“某节点的输入 model：（空）→ 加载模型 #4 · MODEL”。连不上的类型、不存在的选项、写错的参数会先被拦下并告诉 AI 正确的写法，画布不会留下半截。新建的标签页名字带时间，不会打开或覆盖你存过的工作流。连线会绕成死循环时也会先拦下。运行被 ComfyUI 拒绝时，AI 收到的是 ComfyUI 给的具体原因（哪个节点、什么问题），不再只有一句“运行失败”。
 - The AI can build workflows on the canvas the user sees: look up this ComfyUI's node types (custom nodes too) with their inputs, outputs and choices; open a new tab, blank or built and laid out from a workflow in API form (the open one is left alone); add, wire, set and remove nodes. Each is one Ctrl+Z step, logged as the AI's and shown under its AI workbench step, rewiring included. Wrong types, choices and settings are refused with what fits, before anything changes. Wiring that would loop is refused too, and a run ComfyUI rejects reports ComfyUI's own reason.
 
+### 局部重绘：涂一涂就交给 AI / Repaint an area: paint it, hand it to the AI
+- 标注窗口多了“▧ 涂重绘区”笔刷（粗细可调）和“同时做成重绘遮罩”开关：涂上要重画的地方（框、圈、画笔圈的地方也算）发给 AI，AMB 就在 ComfyUI 的 input 文件夹里做好一张带遮罩的原图（`anomalous_inpaint_….png`），AI 用 LoadImage 读进来就能局部重绘；AI 同时收到怎么接、重绘强度怎么选的说明。时间线上你的标注下面写着“已做成重绘遮罩”。AI 搭工作流时如果刚生成的文件还不在下拉列表里，AMB 会自动刷新一次列表。
+- The marker's repaint brush and "make a repaint mask": the picture with the painted area as its alpha goes to ComfyUI's input folder for LoadImage, and the AI is told how to inpaint with it. Canvas tools refresh ComfyUI's lists once when a choice is missing.
+
 ### AI 的问题在 AMB 里问 / The AI asks in Anomalous
 - 你在图上标注或给 AI 留言后，AI 的分析和修改方案也回在 AMB 里：它的留言会写明“回复第几步”，你那条标注下面出现“AI 已回复 · 第几步”，两边点一下就互相跳过去。AI 的留言现在有排版：小标题、列表、加粗、`代码` 都会正常显示（只认这几种写法，不会运行网页代码）。AMB 告诉 AI：收到标注和留言就在 AMB 里回复，要你选修法就用选择题问。
 - The AI replies in Anomalous: `report` takes `reply_to` (the user's message or marks), both steps link to each other; its notes are laid out (headings, lists, bold, code) with text only.

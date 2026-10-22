@@ -201,6 +201,13 @@
 }
 .anomalous-ai-marker-tool:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
 .anomalous-ai-marker-tool.is-on { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 20%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-marker-tool.is-mask.is-on { border-color: #ff40a0; background: rgba(255, 64, 160, 0.18); }
+.anomalous-ai-marker-size { display: inline-flex; align-items: center; gap: 6px; color: var(--amb-text-soft); font-size: 12px; }
+.anomalous-ai-marker-size input { width: 90px; }
+.anomalous-ai-marker-repaint { display: flex; align-items: flex-start; gap: 8px; color: var(--amb-text-soft); font-size: 12px; line-height: 1.5; cursor: pointer; }
+.anomalous-ai-marker-repaint input { margin-top: 2px; accent-color: #ff40a0; }
+.anomalous-ai-marker-repaint:has(input:disabled) { opacity: 0.5; cursor: default; }
+.anomalous-ai-marks-inpaint { align-self: flex-start; padding: 2px 9px; border-radius: 999px; background: rgba(255, 64, 160, 0.16); color: var(--amb-text-main); font-size: 11.5px; }
 .anomalous-ai-marker-color { width: 22px; height: 22px; padding: 0; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
 .anomalous-ai-marker-color.is-on { border-color: var(--amb-text-main); }
 .anomalous-ai-marker-stage { position: relative; align-self: center; max-width: 100%; line-height: 0; }

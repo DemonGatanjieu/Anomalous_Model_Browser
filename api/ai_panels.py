@@ -37,6 +37,14 @@ MAX_WAIT = 55
 TONES = ("normal", "muted", "tip", "warning")
 LAYOUTS = ("row", "grid", "compare")
 INTERACTIVE = ("choices", "input", "picks")
+INPAINT_NOTE = (
+    "The user painted where to repaint. LoadImage(image=inpaint_image) gives the picture and, as MASK, that area. "
+    "Use the picture's own model and prompt (get_image_info on image), e.g. new_workflow: CheckpointLoaderSimple, "
+    "LoadImage, CLIPTextEncode x2, VAEEncode(pixels, vae) -> SetLatentNoiseMask(samples, mask) -> KSampler "
+    "(denoise 0.5-0.8 keeps the look; 1.0 with VAEEncodeForInpaint(grow_mask_by 8) replaces it) -> VAEDecode -> "
+    "SaveImage; GrowMask softens the edge. Say in report what you set and why, ask_user the strength if unsure, "
+    "and show the old and new picture with a slider panel."
+)
 COLORS = ("red", "green", "blue", "yellow", "purple")
 MAX_MARKS = 8
 MAX_NODES = 24
@@ -446,6 +454,8 @@ def _collect(client, panel_id, task_id=None):
                     # Marks on a picture: the picture's path for the AI, and the marked one attached (ai_marks.image_items).
                     message.update(kind="marks", image="/".join(part for part in (step["image"].get("subfolder"), step["image"]["filename"]) if part),
                                    _marked=ai_marks.path_of(task["id"], step.get("marked")))
+                    if step.get("inpaint"):
+                        message.update(inpaint_image=step["inpaint"], inpaint_note=INPAINT_NOTE)
                 messages.append(message)
                 continue
             asked = step.get("gate") or {}

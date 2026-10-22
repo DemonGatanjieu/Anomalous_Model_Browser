@@ -7,6 +7,10 @@ like a message (ai_panels._collect, kind "marks": the notes with where each mark
 fractions of the picture) and, attached to the same answer, the marked picture as a thumbnail
 (image_items), so an AI that can see pictures sees the marks. Only an output picture can be
 marked; the PNG is checked (signature, size, dimensions) before it is kept.
+With a mask (the marker's "repaint" brush, and the boxes, circles and lines; white where to
+repaint), the picture is also written to ComfyUI's input folder as anomalous_inpaint_<step>.png
+with that area as its alpha, so LoadImage gives the picture and the area as its MASK for an
+inpaint workflow; the AI gets the file name with the marks.
 """
 
 import base64
@@ -15,6 +19,8 @@ import os
 import re
 import time
 import uuid
+
+import folder_paths
 
 from . import ai_tasks
 from .mcp_tools import _image_content
@@ -71,8 +77,8 @@ def _fraction(value):
         raise MarksError("Mark positions are fractions of the picture")
 
 
-def _clean(marks):
-    if not isinstance(marks, list) or not marks or len(marks) > MAX_MARKS:
+def _clean(marks, masked=False):
+    if not isinstance(marks, list) or (not marks and not masked) or len(marks) > MAX_MARKS:
         raise MarksError(f"Between 1 and {MAX_MARKS} marks")
     out = []
     for mark in marks:
@@ -94,8 +100,32 @@ def _words(marks, text):
     return "\n".join(lines)
 
 
-def save(task_id, image, png, marks, text="", now=None):
-    """Keeps the marked picture and adds the user's marks to the task. Returns the step."""
+def _inpaint_file(picture, mask, step_id):
+    """The picture with mask `mask` (PNG bytes, white where to repaint) as its alpha, in ComfyUI's
+    input folder (a new file, never one that is there): its name for LoadImage."""
+    from PIL import Image, ImageOps
+
+    source = os.path.join(folder_paths.get_output_directory(), picture["subfolder"], picture["filename"])
+    try:
+        with Image.open(source) as original, Image.open(io.BytesIO(mask)) as drawn:
+            area = drawn.convert("L").resize(original.size, Image.NEAREST).point(lambda value: 255 if value > 127 else 0)
+            if not area.getbbox():
+                raise MarksError("The repaint area is empty")
+            out = original.convert("RGB")
+            out.putalpha(ImageOps.invert(area))  # ComfyUI's LoadImage: MASK = 1 - alpha
+    except MarksError:
+        raise
+    except Exception:  # noqa: BLE001 - a picture PIL cannot read cannot be repainted either
+        raise MarksError("The picture cannot be read for repainting")
+    name = f"anomalous_inpaint_{step_id}.png"
+    with open(os.path.join(folder_paths.get_input_directory(), name), "xb") as target:  # never replaces a file
+        out.save(target, "PNG")
+    return name
+
+
+def save(task_id, image, png, marks, text="", now=None, mask=None):
+    """Keeps the marked picture and adds the user's marks to the task; with `mask` (a PNG data
+    URL), also the picture ready to repaint (_inpaint_file). Returns the step."""
     try:
         picture = ai_tasks._output_media(image)
     except (ValueError, OSError):
@@ -103,10 +133,14 @@ def save(task_id, image, png, marks, text="", now=None):
     if not picture:
         raise MarksError("Only a picture in the output folder can be marked")
     data = _png(png)
-    marks = _clean(marks)
+    mask = _png(mask) if mask else None
+    marks = _clean(marks, masked=mask is not None)
     text = ai_tasks._short(str(text or "").strip(), 2000)
     step_id = uuid.uuid4().hex[:10]
     now = time.time() if now is None else now
+    if not ai_tasks.get_task(task_id):
+        raise MarksError("No such task")
+    inpaint = _inpaint_file(picture, mask, step_id) if mask else None  # outside the lock: a picture takes a moment
     with ai_tasks._lock:
         task = ai_tasks._load().get(task_id)
         if not task:
@@ -116,7 +150,7 @@ def save(task_id, image, png, marks, text="", now=None):
             target.write(data)
         step = {"id": step_id, "at": now, "ms": 0, "tool": "user_marks", "kind": "user", "ok": True, "state": "done",
                 "summary": "user_marks", "text": _words(marks, text), "note": text, "image": picture, "marks": marks,
-                "marked": f"{step_id}.png", "delivered": False, "results": []}
+                "marked": f"{step_id}.png", "delivered": False, "results": [], **({"inpaint": inpaint} if inpaint else {})}
         task["steps"].append(step)
         del task["steps"][:-ai_tasks.MAX_STEPS]
         task["updated"] = max(task.get("updated", 0), now)

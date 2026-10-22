@@ -205,8 +205,14 @@ covered by the `styles.css` manifest.
   `anomalous/ai_marks/<task>/`, never the output folder, gone with the task; the marks as
   fractions with notes): a `user_marks` step the AI receives like a message (kind `marks`) with
   the marked picture attached as an image to the same answer. `web/modules/ui_ai_marker.js` is
-  the marker window (box, circle, arrow, pen; three colours; a note per mark) opened from a
-  picture's ✎ on the AI page, and the timeline row of marks sent.
+  the marker window (box, circle, arrow, pen; three colours; a note per mark; a brush for the
+  area to repaint) opened from a picture's ✎ on the AI page, and the timeline row of marks sent.
+  With "make a repaint mask" the page also sends a mask (white where boxes, circles, lines and
+  brush strokes are); the server writes the picture with that area as its alpha to ComfyUI's
+  input folder as `anomalous_inpaint_<step>.png` (a new file, never replacing one; kept when the
+  task goes, as workflows may load it), and the AI's marks message carries its name with how to
+  inpaint with it (LoadImage gives the MASK). The canvas tools read ComfyUI's lists anew once
+  when a value is not among a drop-down's choices, so they take such a new file.
   `web/modules/ui_ai_gate.js` draws the card under a step that asks and the Gates window;
   `ui_ai_flow.js` the flow over a task (its stages in order, each done, running, waiting or
   failed; a stage leads to its first step). `ui_ai_handoff.js` is "Hand to AI" on a model's

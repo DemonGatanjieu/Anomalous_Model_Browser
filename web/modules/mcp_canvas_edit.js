@@ -133,13 +133,29 @@ function prepare(nodes) {
     return { made, plans, links };
 }
 
+/**
+ * `make()` again after ComfyUI's lists were read anew, when a value was not among a drop-down's
+ * choices: a file that has just appeared (a picture Anomalous put in the input folder to repaint).
+ */
+async function withFreshChoices(make) {
+    try {
+        return make();
+    } catch (error) {
+        if (!/has no choice/.test(error.message) || typeof app.refreshComboInNodes !== 'function') throw error;
+        await app.refreshComboInNodes();
+        return make();
+    }
+}
+
 /** The canvas-building actions, given mcp_bridge.js's own helpers. */
 export function canvasEditActions({ recorded, nodeById }) {
     function addNode({ type, title, values, near_node_id: nearId }, getOwner) {
-        return recorded(getOwner, 'mcpDidNode', (g) => {
-            const node = newNode(String(type));
+        return recorded(getOwner, 'mcpDidNode', async (g) => {
+            const { node, plan } = await withFreshChoices(() => {
+                const made = newNode(String(type));
+                return { node: made, plan: valuePlan(made, values) };
+            });
             if (title) node.title = String(title).slice(0, 120);
-            const plan = valuePlan(node, values);
             const near = nearId != null ? nodeById(nearId) : null;
             g.beforeChange?.();
             node.pos = freeSpot(node, (g._nodes || []), near);
@@ -176,9 +192,9 @@ export function canvasEditActions({ recorded, nodeById }) {
     }
 
     function setValues({ node_id: nodeId, values }, getOwner) {
-        return recorded(getOwner, 'mcpDidValues', (g) => {
+        return recorded(getOwner, 'mcpDidValues', async (g) => {
             const node = nodeById(nodeId);
-            const plan = valuePlan(node, values);
+            const plan = await withFreshChoices(() => valuePlan(node, values));
             if (!plan.length) throw new Error('values is empty: {setting name: value}.');
             g.beforeChange?.(node);
             apply(node, plan);
@@ -203,7 +219,7 @@ export function canvasEditActions({ recorded, nodeById }) {
     }
 
     async function newWorkflow({ name, nodes }, getOwner) {
-        const built = nodes ? prepare(nodes) : null; // nothing opens unless all of it fits
+        const built = nodes ? await withFreshChoices(() => prepare(nodes)) : null; // nothing opens unless all of it fits
         const tab = tabName(name);
         getOwner()?.flushCanvasActivity?.(); // what was pending belongs to the tab being left
         await app.loadGraphData(structuredClone(BLANK), true, true, tab);

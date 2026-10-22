@@ -80,6 +80,29 @@ class MarkTests(unittest.TestCase):
         with self.assertRaises(ToolError):
             mcp_task_tools.report({"client": "Claude", "task": self.task}, "x", reply_to=note["id"])  # not the user's
 
+    def test_a_repaint_mask_becomes_the_picture_with_that_area_as_its_mask(self):
+        inputs = tempfile.mkdtemp(prefix="amb_ai_marks_input_")
+        buffer = io.BytesIO()
+        mask = Image.new("L", (64, 48), 0)
+        mask.paste(255, (0, 0, 32, 48))  # the left half
+        mask.save(buffer, "PNG")
+        data = "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode()
+        with mock.patch.object(ai_marks.folder_paths, "get_input_directory", return_value=inputs):
+            step = ai_marks.save(self.task, "a.png", png(), [], "去掉多余的手", mask=data)
+            with self.assertRaises(ai_marks.MarksError):
+                blank = io.BytesIO()
+                Image.new("L", (8, 8), 0).save(blank, "PNG")
+                ai_marks.save(self.task, "a.png", png(), [], "", mask="data:image/png;base64," + base64.b64encode(blank.getvalue()).decode())
+        self.assertRegex(step["inpaint"], r"^anomalous_inpaint_[0-9a-f]{10}\.png$")
+        with Image.open(os.path.join(inputs, step["inpaint"])) as made:
+            self.assertEqual((made.mode, made.size), ("RGBA", (8, 8)))
+            self.assertEqual((made.getpixel((1, 4))[3], made.getpixel((6, 4))[3]), (0, 255), "marked: transparent, so LoadImage's MASK is 1 there")
+        with mock.patch.object(ai_marks, "_image_content", return_value=None):
+            message = ai_panels.attach_pending(ok({}), "Claude", task_id=self.task)["structuredContent"]["user_messages"][0]
+        self.assertEqual(message["inpaint_image"], step["inpaint"])
+        self.assertIn("SetLatentNoiseMask", message["inpaint_note"])
+        self.assertEqual(os.listdir(inputs), [step["inpaint"]], "an empty mask writes nothing")
+
     def test_what_is_refused(self):
         for image, picture, marks in [("../a.png", png(), MARKS), ("nope.png", png(), MARKS), ("a.png", "data:image/jpeg;base64,AAAA", MARKS),
                                       ("a.png", "data:image/png;base64," + base64.b64encode(b"not a png").decode(), MARKS),
