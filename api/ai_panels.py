@@ -27,7 +27,7 @@ import uuid
 
 import folder_paths
 
-from . import ai_tasks
+from . import ai_marks, ai_tasks
 
 MAX_BLOCKS = 30
 MAX_ITEMS = 12
@@ -436,6 +436,10 @@ def _collect(client, panel_id, task_id=None):
                 message = {"id": step["id"], "task": task["id"], "text": step["text"], "at": step["at"]}
                 if step.get("tool") == "user_activity":
                     message["kind"] = "change"  # something the user changed in Anomalous, not words to the AI
+                elif step.get("tool") == "user_marks":
+                    # Marks on a picture: the picture's path for the AI, and the marked one attached (ai_marks.image_items).
+                    message.update(kind="marks", image="/".join(part for part in (step["image"].get("subfolder"), step["image"]["filename"]) if part),
+                                   _marked=ai_marks.path_of(task["id"], step.get("marked")))
                 messages.append(message)
                 continue
             asked = step.get("gate") or {}
@@ -468,6 +472,12 @@ def _collect(client, panel_id, task_id=None):
     for tid in changed:
         ai_tasks._save(tasks[tid])
     return out, waiting, messages, changed
+
+
+def wake():
+    """Anything waiting in get_answers looks again (the user added something to a task)."""
+    with _answered:
+        _answered.notify_all()
 
 
 def get_answers(client, panel_id=None, wait_seconds=0, task_id=None):
@@ -516,13 +526,15 @@ def attach_pending(result, client, task_id=None):
         data["still_waiting"] = waiting
     data["user_notice"] = (
         "The user sent new input in the AI workbench. Read user_messages / user_answers and follow them; "
-        "kind=change messages are changes the user made themselves while you worked: keep them, do not undo them."
+        "kind=change messages are changes the user made themselves while you worked: keep them, do not undo them; "
+        "kind=marks messages are places the user marked on a picture to change (the marked picture is attached)."
     )
+    pictures = ai_marks.image_items(messages)
     result["structuredContent"] = data
     content = list(result.get("content") or [])
     if content and isinstance(content[0], dict) and content[0].get("type") == "text":
         content[0] = {"type": "text", "text": json.dumps(data, ensure_ascii=False)}
     else:
         content.insert(0, {"type": "text", "text": json.dumps(data, ensure_ascii=False)})
-    result["content"] = content
+    result["content"] = content + pictures
     return result

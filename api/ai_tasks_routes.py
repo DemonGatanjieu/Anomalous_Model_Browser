@@ -5,7 +5,7 @@ set the gates' policies (ai_gates.py) - (local_guard.py keeps the writes to this
 
 from aiohttp import web
 
-from . import activity_log, ai_gates, ai_task_changes, ai_tasks
+from . import activity_log, ai_gates, ai_marks, ai_task_changes, ai_tasks
 
 
 async def api_list(request):
@@ -118,6 +118,29 @@ async def api_gates(request):
     return web.json_response({"policies": policies})
 
 
+async def api_marks(request):
+    """POST /anomalous/ai_tasks/{id}/marks: {image, png, marks, text} - the user's marks on a picture for the AI."""
+    from . import ai_panels
+
+    body = await _body(request)
+    if body is None:
+        return web.json_response({"error": "Expected {image, png, marks}"}, status=400)
+    try:
+        step = ai_marks.save(request.match_info["task_id"], body.get("image"), body.get("png"), body.get("marks"), body.get("text"))
+    except ai_marks.MarksError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    ai_panels.wake()
+    return web.json_response({"step": step})
+
+
+async def api_marked(request):
+    """GET /anomalous/ai_tasks/{id}/marks/{name}: a marked picture the user sent."""
+    path = ai_marks.path_of(request.match_info["task_id"], request.match_info["name"])
+    if not path:
+        return web.json_response({"error": "Not found"}, status=404)
+    return web.FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
+
+
 def register_routes(app):
     activity_log.add_listener(ai_task_changes.note_activity)  # the user's changes while an AI works
     app.router.add_get("/anomalous/ai_tasks", api_list)
@@ -127,5 +150,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/message", api_message)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/gate", api_gate)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/marks", api_marks)
+    app.router.add_get("/anomalous/ai_tasks/{task_id}/marks/{name}", api_marked)
     app.router.add_get("/anomalous/ai_gates", api_gates)
     app.router.add_post("/anomalous/ai_gates", api_gates)

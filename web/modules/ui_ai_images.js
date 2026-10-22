@@ -3,7 +3,8 @@
  * the gallery's own tools: on each picture, shown when the pointer is over it, the image
  * inspector, the comparison with the canvas and the Keep menu; and a tick in its corner. Two
  * ticked pictures (from any step or task) are compared with ui_param_compare.js from the bar at
- * the foot of the page (compareBar); a third tick replaces the oldest.
+ * the foot of the page (compareBar); a third tick replaces the oldest. On the AI page a fourth tool
+ * marks the picture for the AI (setMarker: the workbench opens ui_ai_marker.js for its task).
  */
 import { translate as t } from './locales.js';
 import { isVideo, outputPicture, outputUrl, pictureKey, picturePreview, uniquePictures } from './ai_task_view.js';
@@ -13,6 +14,11 @@ import { openKeepMenu } from './ui_keep_menu.js';
 
 const ticked = new Map(); // picture key → output picture, oldest first
 const listeners = new Set();
+let marker = null; // (image) => marks it for the AI; set while the AI page shows a task
+
+export function setMarker(open) {
+    marker = open;
+}
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -71,6 +77,7 @@ export function decoratePicture(holder, image, owner) {
     const keep = button('anomalous-ai-pic-tool', '☆', event => { void openKeepMenu(owner, event.currentTarget, source); }, t('aiKeepImage'));
     inspect.disabled = keep.disabled = !owner;
     tools.append(inspect, button('anomalous-ai-pic-tool', '⇄', () => openParamCompare({ image: source }, { canvas: true }), t('compareWithCanvas')), keep);
+    if (marker) tools.append(button('anomalous-ai-pic-tool is-mark', '✎', () => marker(source), t('aiMarkTitle')));
     holder.append(tick, tools);
     return holder;
 }

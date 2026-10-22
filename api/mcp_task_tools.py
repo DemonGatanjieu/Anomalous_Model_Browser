@@ -3,7 +3,7 @@ work, report leaves a note for the user (with pictures made outside Anomalous's 
 show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
 reads what the user picked or typed on it."""
 
-from . import ai_panels, ai_task_runs, ai_tasks
+from . import ai_marks, ai_panels, ai_task_runs, ai_tasks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 
@@ -79,7 +79,8 @@ def run_status(ctx, wait_seconds=0, task=None):
 
 def get_answers(ctx, panel=None, wait_seconds=0, task=None):
     try:
-        return ai_panels.get_answers(ctx.get("client") or "AI", panel, wait_seconds, task_id=task or ctx.get("task"))
+        answer = ai_panels.get_answers(ctx.get("client") or "AI", panel, wait_seconds, task_id=task or ctx.get("task"))
+        return answer, ai_marks.image_items(answer.get("messages") or [])  # marked pictures, as pictures
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
 

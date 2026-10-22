@@ -30,7 +30,8 @@ import { gateCard, openGates } from './ui_ai_gate.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
 import { locateNode, openModel, resultLinks, shared, strip, updateRunProgress } from './ui_ai_results.js';
-import { compareBar } from './ui_ai_images.js';
+import { compareBar, setMarker } from './ui_ai_images.js';
+import { marksStep, openMarker } from './ui_ai_marker.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import {
     activityIds, duration, groupSteps, lookTools, stepDetail, taskCounts, taskResults, taskState, toolKey,
@@ -158,7 +159,9 @@ function stepRow(step, number) {
         line.append(text);
     }
     body.append(line);
-    if (step.tool === 'user_activity') {
+    if (step.tool === 'user_marks') {
+        body.append(marksStep(step, state.task.id, state.owner));
+    } else if (step.tool === 'user_activity') {
         body.append(userChange(step));
     } else if (step.kind === 'user') {
         body.append(el('div', 'anomalous-ai-user-text', step.text),
@@ -461,6 +464,9 @@ async function select(id) {
     shared.entries = state.entries = entries;
     renderTask();
 }
+
+/** Pictures on the AI page can be marked for the task shown (ui_ai_marker.js). */
+setMarker(image => state.task && openMarker(image, state.task.id, () => void refresh()));
 
 // ---------------------------------------------------------------- the page
 

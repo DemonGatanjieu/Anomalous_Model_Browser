@@ -169,6 +169,13 @@ covered by the `styles.css` manifest.
   the user's Allow or No comes through `POST /anomalous/ai_tasks/{id}/gate`. Unanswered by
   then, the AI is told to wait and call again; the later answer reaches it as a message of kind
   `gate`, and the same call made again after an Allow goes ahead without asking twice.
+  `api/ai_marks.py` keeps the marks the user draws on an output picture for the AI
+  (`POST /anomalous/ai_tasks/{id}/marks`: the marked PNG, checked, kept in
+  `anomalous/ai_marks/<task>/`, never the output folder, gone with the task; the marks as
+  fractions with notes): a `user_marks` step the AI receives like a message (kind `marks`) with
+  the marked picture attached as an image to the same answer. `web/modules/ui_ai_marker.js` is
+  the marker window (box, circle, arrow, pen; three colours; a note per mark) opened from a
+  picture's ✎ on the AI page, and the timeline row of marks sent.
   `web/modules/ui_ai_gate.js` draws the card under a step that asks and the Gates window;
   `ui_ai_flow.js` the flow over a task (its stages in order, each done, running, waiting or
   failed; a stage leads to its first step). `ui_ai_handoff.js` is "Hand to AI" on a model's

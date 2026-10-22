@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import threading
 import time
 import uuid
@@ -75,6 +76,20 @@ def _path(task_id):
     return os.path.join(tasks_dir(), f"{task_id}.json")
 
 
+def marks_dir(task_id):
+    """Where the pictures the user marked for a task are kept (ai_marks.py); gone with the task."""
+    return os.path.join(os.path.dirname(tasks_dir()), "ai_marks", re.sub(r"[^\w-]", "", task_id))
+
+
+def _forget(task_id):
+    """The task's own files: its record and its marked pictures (the plugin's, not the user's pictures)."""
+    try:
+        os.remove(_path(task_id))
+    except OSError:
+        pass
+    shutil.rmtree(marks_dir(task_id), ignore_errors=True)
+
+
 def _load():
     global _tasks
     if _tasks is None:
@@ -121,10 +136,7 @@ def _drop_oldest():
         return
     for task in sorted(tasks.values(), key=lambda item: item.get("updated", 0))[: len(tasks) - MAX_TASKS]:
         tasks.pop(task["id"], None)
-        try:
-            os.remove(_path(task["id"]))  # the plugin's own record; the pictures and files stay
-        except OSError:
-            pass
+        _forget(task["id"])  # the pictures and files it made stay
 
 
 def _notify(task_id, extra=None):
@@ -552,8 +564,5 @@ def remove_task(task_id):
                 _current.pop(client, None)
         if _waiting[0] == task_id:
             _waiting[0] = None
-        try:
-            os.remove(_path(task_id))
-        except OSError:
-            pass
+        _forget(task_id)
         return True

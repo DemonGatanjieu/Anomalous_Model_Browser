@@ -157,3 +157,103 @@
 .anomalous-ai-run-bar.is-waiting .anomalous-ai-run-fill { width: 30%; animation: anomalous-ai-run-wait 1.6s ease-in-out infinite; }
 @keyframes anomalous-ai-run-wait { 0% { left: -30%; } 100% { left: 100%; } }
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-run-bar.is-waiting .anomalous-ai-run-fill { animation: none; } }
+
+/* Marking a picture for the AI (ui_ai_marker.js), and the marks sent, in the timeline. */
+.anomalous-ai-marker-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000001; /* as the AI windows: above the image inspector */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.6);
+}
+.anomalous-ai-marker {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(1280px, 100%);
+    max-height: 100%;
+    padding: 16px 18px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 14px;
+    background: var(--amb-bg-dialog);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.anomalous-ai-marker-head { display: flex; align-items: center; justify-content: space-between; }
+.anomalous-ai-marker-title { color: var(--amb-text-main); font-size: 15px; font-weight: 700; }
+.anomalous-ai-marker-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; min-height: 0; }
+.anomalous-ai-marker-left { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.anomalous-ai-marker-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.anomalous-ai-marker-gap { width: 8px; }
+.anomalous-ai-marker-tool {
+    padding: 5px 11px;
+    border: 1px solid var(--amb-border);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.anomalous-ai-marker-tool:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+.anomalous-ai-marker-tool.is-on { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 20%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-marker-color { width: 22px; height: 22px; padding: 0; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
+.anomalous-ai-marker-color.is-on { border-color: var(--amb-text-main); }
+.anomalous-ai-marker-stage { position: relative; align-self: center; max-width: 100%; line-height: 0; }
+.anomalous-ai-marker-picture { display: block; max-width: 100%; max-height: 70vh; border-radius: 8px; user-select: none; -webkit-user-drag: none; }
+.anomalous-ai-marker-canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+.anomalous-ai-marker-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
+.anomalous-ai-marker-empty, .anomalous-ai-marker-note { color: var(--amb-text-dim); font-size: 12px; line-height: 1.6; }
+.anomalous-ai-marker-empty[hidden] { display: none; }
+.anomalous-ai-marker-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.anomalous-ai-marker-row { display: flex; align-items: center; gap: 6px; }
+.anomalous-ai-marker-badge {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    color: #111;
+    font-size: 11px;
+    font-weight: 700;
+}
+.anomalous-ai-marker-shape { flex-shrink: 0; color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-ai-marker-input, .anomalous-ai-marker-whole {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 9px;
+    border: 1px solid var(--amb-border);
+    border-radius: 7px;
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    resize: vertical;
+}
+.anomalous-ai-marker-input:focus, .anomalous-ai-marker-whole:focus { border-color: var(--amb-link); outline: none; }
+.anomalous-ai-marker-remove { padding: 0 6px; border: 0; background: none; color: var(--amb-text-dim); font-size: 15px; cursor: pointer; }
+.anomalous-ai-marker-remove:hover { color: var(--amb-danger); }
+.anomalous-ai-marker-send {
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--amb-link);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.anomalous-ai-marker-send:disabled { opacity: 0.5; cursor: default; }
+@media (max-width: 760px) { .anomalous-ai-marker-body { grid-template-columns: 1fr; } }
+
+.anomalous-ai-marks-sent { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.anomalous-ai-marks-sent-picture { padding: 0; border: 1px solid var(--amb-border); border-radius: 10px; overflow: hidden; background: none; cursor: zoom-in; }
+.anomalous-ai-marks-sent-picture img { display: block; width: 220px; height: 220px; object-fit: contain; background: rgba(var(--amb-ink-rgb), 0.04); }
+.anomalous-ai-marks-sent-words { display: flex; flex: 1 1 220px; flex-direction: column; gap: 6px; min-width: 0; }
+.anomalous-ai-marks-sent-notes { margin: 0; padding-left: 20px; color: var(--amb-text-main); font-size: 12.5px; line-height: 1.7; }
+.anomalous-ai-pic-tool.is-mark { border-color: color-mix(in srgb, var(--amb-warn) 70%, transparent); }
+.anomalous-ai-marker-whole { flex: none; }

@@ -163,7 +163,8 @@ class AnswerTests(unittest.TestCase):
         with self.assertRaises(ai_panels.PanelError):
             ai_panels.answer(task["id"], step["id"], "pick", ["a"])  # already answered
         self.assertEqual(ai_tasks.list_tasks()[0]["asks"], 1)
-        got = mcp_task_tools.get_answers({"client": "Claude"}, shown["panel"])
+        got, pictures = mcp_task_tools.get_answers({"client": "Claude"}, shown["panel"])
+        self.assertEqual(pictures, [], "no marked pictures here")
         self.assertEqual(got["answers"], [{"panel": shown["panel"], "question": "pick", "asked": "选哪张？", "choice": ["b"], "labels": ["右边"]}])
         self.assertEqual(got["still_waiting"], [{"panel": shown["panel"], "question": "more"}])
         self.assertEqual(ai_panels.get_answers("Claude")["answers"], [], "each answer is given once")
@@ -194,7 +195,7 @@ class AnswerTests(unittest.TestCase):
             ai_panels.leave_message("nope", "hi")
         threading.Timer(0.3, lambda: ai_panels.leave_message(task_id, " 背景再亮一点 ")).start()
         started = time.monotonic()
-        got = mcp_task_tools.get_answers({"client": "Claude"}, None, 5)
+        got, _ = mcp_task_tools.get_answers({"client": "Claude"}, None, 5)
         self.assertLess(time.monotonic() - started, 3, "a message wakes an AI waiting with no panel")
         self.assertEqual([m["text"] for m in got["messages"]], ["背景再亮一点"])
         self.assertEqual(ai_panels.get_answers("Claude"), {"answers": [], "still_waiting": []}, "each message once")
