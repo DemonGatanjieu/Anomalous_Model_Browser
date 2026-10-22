@@ -13,6 +13,8 @@
 - 素材在右边这一栏里时，鼠标移过卡片不再自动跳进详细说明（之前很难操作），点卡片上的 ⓘ 才看。
 - **整个自定义节点包交给 AI**：素材里点“节点”，再在来源那一排点某个自定义节点包，上面会出现“整包交给 AI”。不知道该选哪个节点时，把整个包给它，AI 自己从包里挑；选“只能用”时，这个包里的节点都允许，别的第三方和付费节点照样拦下。AI 用 `get_toolbox` 能看到包里有哪些节点，`find_nodes` 搜索时也把它们排在前面。
 - A whole custom node pack can be picked (from its source in the nodes' second column): the AI gets its node types in get_toolbox, finds them first, and with "only" every node of the pack is allowed.
+- 小窗里的“来源”不再是一条要横着拖的长条，改成一个“来源：全部 ▾”按钮：点开是一张列表（来源多时上面有搜索框），点一个就选上并收起；Esc 或点别处也收起。
+- In the side panel the sources (or types) are one "Source: All ▾" button opening a list to pick from, with a search when it is long, instead of a strip to scroll sideways.
 - 素材在右边这一栏（小窗）里时改成一行一个的列表：左边是图标或小封面，中间是名字和来源，右边是勾选；搜索框和“全部 / 已选 / 常用”并成一行。同样的高度能看到的条目多了好几倍；展开成大窗口还是原来的卡片。
 - In the side panel the materials picker lists one line per item (badge or small cover, name, where it is from, the tick) and puts the search and the filters on one line; the large window keeps the cards.
 - AI 工作台和素材窗口里的滚动条变细，平时看不见，鼠标移到能滚动的那一块上才显出来。

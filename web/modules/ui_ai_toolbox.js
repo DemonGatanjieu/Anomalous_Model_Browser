@@ -5,7 +5,8 @@
  * search over everything, the kinds on the left (node types, combos, workflows,
  * prompts, models) with how many are picked, a second column to narrow by source (each custom
  * node pack with its badge, ComfyUI's own, paid API nodes), by where a prompt comes from or by
- * model type (a custom node pack can be picked whole there: every node type in it), a grid of
+ * model type (a custom node pack can be picked whole there: every node type in it; in the side
+ * panel that column is one "Source: All ▾" button opening a list to search), a grid of
  * cards (ui_ai_toolbox_cards.js) drawn as it scrolls, the card in focus
  * in full on the right, and the picks below with how strictly the AI keeps to them. Node types
  * are the page's own (no waiting); the rest is read ahead and kept (ai_toolbox_data.js). The
@@ -293,9 +294,69 @@ export async function openToolbox(task, changed = () => {}) {
             if (facet && state.picks.packs.includes(facet)) node.classList.add('has-pack');
             return node;
         };
-        side.replaceChildren(el('div', 'anomalous-tb-facets-title', t(state.kind === 'nodes' ? 'aiTbSources' : 'aiTbNarrow')),
-            row(null, t('aiTbEverything'), beforeFacet.length),
-            ...list.map(facet => row(facet.key, facet.label, facet.count, facet.source ? sourceBadge(facet.source, 22) : null)));
+        const title = t(state.kind === 'nodes' ? 'aiTbSources' : 'aiTbNarrow');
+        const rows = () => [row(null, t('aiTbEverything'), beforeFacet.length),
+            ...list.map(facet => row(facet.key, facet.label, facet.count, facet.source ? sourceBadge(facet.source, 22) : null))];
+        if (!body.classList.contains('is-side')) {
+            side.replaceChildren(el('div', 'anomalous-tb-facets-title', title), ...rows());
+            return;
+        }
+        // The side panel: one button saying what is shown, opening the list to pick from (and search).
+        const current = list.find(facet => facet.key === state.facet);
+        const open = button(`anomalous-tb-facet-open${current && state.picks.packs.includes(current.key) ? ' has-pack' : ''}`, [
+            current?.source ? sourceBadge(current.source, 20) : icon('list', 15),
+            el('span', 'anomalous-tb-facet-open-label', `${title}：${current?.label || t('aiTbEverything')}`),
+            el('span', 'anomalous-tb-facet-count', String(current?.count ?? beforeFacet.length)), icon('chevronDown', 14)],
+        () => facetMenu(title, rows), t('aiTbPickSource'));
+        open.setAttribute('aria-haspopup', 'listbox');
+        side.replaceChildren(open);
+    }
+
+    let menu = null;
+    /** The side panel's list of sources (or types) over the cards: a search when it is long; a pick or Esc closes it. */
+    function facetMenu(title, rows) {
+        if (menu?.isConnected) return void closeMenu();
+        menu = el('div', 'anomalous-tb-facet-menu');
+        menu.dataset.anomalousEscape = '1'; // Esc closes this list, not the browser
+        const items = rows();
+        const list = el('div', 'anomalous-tb-facet-menu-list');
+        list.setAttribute('role', 'listbox');
+        list.append(...items);
+        if (items.length > 8) {
+            const find = el('input', 'anomalous-tb-facet-menu-find');
+            find.type = 'search';
+            find.placeholder = t('aiTbFindSource', { what: title });
+            find.addEventListener('input', () => {
+                const words = find.value.trim().toLowerCase();
+                for (const item of items) item.hidden = Boolean(words) && !item.title.toLowerCase().includes(words);
+            });
+            menu.append(find);
+            requestAnimationFrame(() => find.focus());
+        }
+        menu.append(list);
+        menu.addEventListener('click', (event) => { if (event.target.closest('.anomalous-tb-facet')) closeMenu(); });
+        const top = side.offsetTop + side.offsetHeight;
+        menu.style.top = `${top}px`;
+        menu.style.maxHeight = `${Math.max(160, main.clientHeight - top - 8)}px`;
+        main.append(menu);
+        setTimeout(() => document.addEventListener('pointerdown', outside, true));
+        document.addEventListener('keydown', escape);
+    }
+
+    function outside(event) {
+        if (!menu?.contains(event.target) && !event.target.closest?.('.anomalous-tb-facet-open')) closeMenu();
+    }
+
+    // After the browser's own Esc handler has seen the list's mark (it then keeps the browser open).
+    function escape(event) {
+        if (event.key === 'Escape') setTimeout(closeMenu);
+    }
+
+    function closeMenu() {
+        menu?.remove();
+        menu = null;
+        document.removeEventListener('pointerdown', outside, true);
+        document.removeEventListener('keydown', escape);
     }
 
     /** While one custom node pack is shown: its name, how many node types, and picking it whole. */
@@ -313,6 +374,7 @@ export async function openToolbox(task, changed = () => {}) {
 
     let observer = null;
     function drawGrid() {
+        closeMenu();
         observer?.disconnect();
         cards.clear();
         const { items, beforeFacet } = shown();

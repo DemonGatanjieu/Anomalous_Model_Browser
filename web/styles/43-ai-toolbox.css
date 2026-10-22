@@ -464,7 +464,46 @@ body.anomalous-tb-docked #anomalous-container.anomalous-maximized .anomalous-ai 
 .anomalous-tb.is-side .anomalous-tb-kind-matches { display: none; }
 .anomalous-tb.is-side .anomalous-tb-kind.is-on::before { display: none; }
 .anomalous-tb.is-side .anomalous-tb-rail, .anomalous-tb.is-side .anomalous-tb-facets { padding: 4px; }
-.anomalous-tb.is-side .anomalous-tb-facet { flex: none; max-width: 170px; min-height: 26px; padding-block: 0; font-size: 12px; }
+/* Sources (or types) as one button and a list under it, not a strip to scroll sideways. */
+.anomalous-tb.is-side .anomalous-tb-facets { overflow: visible; }
+.anomalous-tb-facet-open {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    height: 32px;
+    padding: 0 10px 0 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.anomalous-tb-facet-open:hover { border-color: var(--amb-border-strong, var(--amb-border)); background: rgba(var(--amb-ink-rgb), 0.07); }
+.anomalous-tb-facet-open.has-pack { border-color: var(--amb-link); }
+.anomalous-tb-facet-open-label { flex: 1; min-width: 0; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-tb-facet-menu {
+    position: absolute;
+    z-index: 4;
+    right: 6px;
+    left: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid var(--amb-border-strong, var(--amb-border));
+    border-radius: 10px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+}
+.anomalous-tb-facet-menu-find { flex: none; height: 30px; padding: 0 10px; border: 1px solid var(--amb-border); border-radius: 7px; background: var(--amb-bg-input, transparent); color: var(--amb-text-main); font: inherit; font-size: 12.5px; outline: 0; }
+.anomalous-tb-facet-menu-find:focus { border-color: var(--amb-link); }
+.anomalous-tb-facet-menu-list { display: flex; flex-direction: column; gap: 1px; min-height: 0; overflow-y: auto; }
+.anomalous-tb-facet-menu .anomalous-tb-facet { flex: none; width: 100%; min-height: 32px; padding: 0 8px; border: 0; border-radius: 7px; background: none; color: var(--amb-text-soft); font: inherit; font-size: 12.5px; cursor: pointer; }
+.anomalous-tb-facet-menu .anomalous-tb-facet[hidden] { display: none; }
 .anomalous-tb.is-side .anomalous-tb-grid-head { display: none; }
 .anomalous-tb.is-side .anomalous-tb-scroller { padding: 4px; }
 .anomalous-tb.is-side .anomalous-tb-grid { grid-template-columns: minmax(0, 1fr); gap: 2px; }

@@ -36,6 +36,7 @@ const PATHS = {
     chat: '<path d="M4 5.5h16v10.5H10l-4.5 3.5V16H4z"/><circle cx="9" cy="10.8" r=".9" fill="currentColor"/><circle cx="12" cy="10.8" r=".9" fill="currentColor"/><circle cx="15" cy="10.8" r=".9" fill="currentColor"/>',
     arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
     chevronLeft: '<path d="m14.5 6-6 6 6 6"/>',
+    chevronDown: '<path d="m6 9.5 6 6 6-6"/>',
     chevronRight: '<path d="m9.5 6 6 6-6 6"/>',
     pulse: '<path d="M3 12h4l2.5-5.5 4 11L16 12h5"/>',
     stop: '<rect x="6" y="6" width="12" height="12" rx="2.4" fill="currentColor"/>',
