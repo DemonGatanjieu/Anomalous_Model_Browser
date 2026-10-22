@@ -156,8 +156,10 @@ TASK_TOOLS = dict([
                               "closed": {"type": "boolean"}, "task": _TASK_PROP}, ["panel"]),
     _task_tool("run_status", "How the run is going",
                "Where your task's latest workflow run stands: queued (how many runs are ahead), running (which node, "
-               "its steps, nodes done of all), done (with the pictures it saved) or failed. wait_seconds (up to 55) "
-               "waits for it to end. Runs take a while: call this instead of guessing whether a run has finished.",
+               "its steps, percent, nodes done of all), done (with the pictures it saved) or failed; summary says it "
+               "in one sentence. wait_seconds (up to 55) waits for it to end. Runs take a while: call this instead of "
+               "guessing, looking in the output folder or at the screen. While a run goes, your other tools' answers "
+               "carry the same news as your_run, and once more when it ends.",
                run_status, {"wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_task_runs.MAX_STATUS_WAIT, "default": 0},
                             "task": _TASK_PROP}),
     _task_tool("get_answers", "Read the user's answers and messages",

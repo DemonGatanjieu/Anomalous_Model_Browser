@@ -5,8 +5,10 @@ every RUN_POLL_SECONDS, for at most ai_tasks.RUN_WATCH_SECONDS; nothing runs whe
 anything. While it runs, where it stands (queued and how many are ahead, the node running and
 its steps, nodes done; read from ComfyUI's queue and its progress registry, never changed) is
 the step's "progress", sent to the page with each change, and status() answers the AI's
-run_status with it, waiting for the end when asked."""
+run_status with it, waiting for the end when asked. tell() puts the same news in the AI's
+other answers: where the run stands while it goes, and once that it ended."""
 
+import json
 import threading
 import time
 
@@ -72,6 +74,11 @@ def progress_of(prompts):
             info = {}
         out["node"] = str((info.get("_meta") or {}).get("title") or info.get("class_type") or active[0])[:80]
         out["value"], out["max"] = int(active[1]["value"]), int(active[1]["max"])
+    # Like ComfyUI's own tab title: the running node's steps; without steps, the nodes done.
+    if out.get("max", 0) > 1:
+        out["percent"] = max(0, min(100, round(100 * out["value"] / out["max"])))
+    elif out["nodes"]:
+        out["percent"] = max(0, min(100, round(100 * out["nodes_done"] / out["nodes"])))
     return out
 
 
@@ -186,6 +193,68 @@ def watch(step_id, receipt):
     threading.Thread(target=follow, name="anomalous-ai-run", daemon=True).start()
 
 
+def summary(run):
+    """One sentence for the AI on where run step `run` stands."""
+    state, progress = run.get("state"), run.get("progress") or {}
+    if state == "running" and progress.get("state") == "queued":
+        return f"Your run is queued, {progress.get('ahead', 0)} ahead of it; it has not started. Do not run it again."
+    if state == "running":
+        parts = []
+        if progress.get("prompts", 0) > 1:
+            parts.append(f"run {progress['prompt']} of {progress['prompts']}")
+        if progress.get("node"):
+            parts.append(f"{progress['node']} step {progress['value']}/{progress['max']}" if progress.get("max", 0) > 1
+                         else progress["node"])
+        if "percent" in progress:
+            parts.append(f"{progress['percent']}%")
+        if progress.get("nodes"):
+            parts.append(f"{progress['nodes_done']} of {progress['nodes']} nodes done")
+        parts.append(f"{round(time.time() - run['at'])} s so far")
+        return (f"Your run is still going ({', '.join(parts)}). It has not finished: call run_status with "
+                "wait_seconds to wait for it; do not look in the output folder or guess.")
+    if state == "done":
+        pictures = [item["filename"] for item in run.get("results") or [] if item.get("type") == "image"]
+        return f"Your run finished in {round(run.get('ms', 0) / 1000)} s with {len(pictures)} picture(s): {', '.join(pictures[:8])}."
+    if state in ("asking", "allowed"):
+        return "Your run waits for the user's OK in Anomalous; it has not started."
+    return f"Your run did not finish: {run.get('error') or state}."
+
+
+def news(task_id):
+    """The run news for the AI working on task `task_id`: while its latest run goes, and once after it ends."""
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id) if task_id else None
+        run = next((step for step in reversed((task or {}).get("steps", [])) if step.get("tool") == "run_workflow"), None)
+        if not run or not run.get("prompt_ids") or run.get("told"):
+            return None
+        answer = {"state": run.get("state"), "summary": summary(run)}
+        if run.get("state") == "running" and run.get("progress"):
+            answer["progress"] = run["progress"]
+        if run.get("state") not in ("running", "asking", "allowed"):
+            run["told"] = True
+            ai_tasks._save(task)
+        return answer
+
+
+def tell(result, task_id):
+    """Puts the run news (news()) into a tool result, so the AI need not go and look."""
+    run = news(task_id) if isinstance(result, dict) and not result.get("isError") else None
+    if not run:
+        return result
+    data = result.get("structuredContent")
+    data = dict(data) if isinstance(data, dict) else {}
+    data["your_run"] = run
+    result["structuredContent"] = data
+    content = list(result.get("content") or [])
+    text = {"type": "text", "text": json.dumps(data, ensure_ascii=False)}
+    if content and isinstance(content[0], dict) and content[0].get("type") == "text":
+        content[0] = text
+    else:
+        content.insert(0, text)
+    result["content"] = content
+    return result
+
+
 def status(client, session="", task_id=None, wait_seconds=0):
     """The AI's run_status: its task's latest run, where it stands, and what it made; with
     `wait_seconds`, waits (up to MAX_STATUS_WAIT) until the run ends."""
@@ -200,7 +269,14 @@ def status(client, session="", task_id=None, wait_seconds=0):
             break
         time.sleep(1)
     answer = {"state": run.get("state"), "seconds": round(run.get("ms", 0) / 1000) if run.get("state") != "running"
-              else round(time.time() - run["at"])}
+              else round(time.time() - run["at"]), "summary": summary(run)}
+    if run.get("state") not in ("running", "asking", "allowed") and not run.get("told"):
+        with ai_tasks._lock:  # told here: the next answers need not repeat it
+            task = ai_tasks._load().get(task_id)
+            step = next((item for item in (task or {}).get("steps", []) if item["id"] == run["id"]), None)
+            if step is not None:
+                step["told"] = True
+                ai_tasks._save(task)
     if run.get("progress"):
         answer["progress"] = run["progress"]
     if run.get("prompt_ids"):

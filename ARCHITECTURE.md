@@ -155,9 +155,11 @@ covered by the `styles.css` manifest.
   the canvas change by its activity entry, the spoken audio, the scan; a run's pictures are
   watched in ComfyUI's history until it ends, `api/ai_task_runs.py`, which also reads where it
   stands from ComfyUI's queue and progress registry, never changing them: queued and how many
-  are ahead, or the node running, its steps and the nodes done; kept on the step in memory,
-  sent to the page as `progress` events that only move the step's bar, and given to the AI
-  by `run_status`, which can wait for the run to end). A step a restart left
+  are ahead, or the node running, its steps, a percent like ComfyUI's tab title and the nodes
+  done; kept on the step in memory, sent to the page as `progress` events that only move the
+  step's bar, and given to the AI by `run_status`, which can wait for the run to end, and as
+  `your_run` with one sentence in the AI's other answers while it goes and once after it ends,
+  so the AI need not look for itself). A step a restart left
   `"running"` is marked stopped when the record is read again. What each tool is, in one
   place, is `api/action_catalog.py`: its kind (colours, words, counts), the stage of the work
   it belongs to (model, combo, prompt, canvas, run, picture, voice, library: the flow over a

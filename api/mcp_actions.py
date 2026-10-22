@@ -296,7 +296,8 @@ ACTIONS = dict([
     _action("download_status", "Downloads", "How the downloads of this ComfyUI run are going.", download_status,
             read_only=True),
     _action("run_workflow", "Run the workflow",
-            "Queues the open workflow in ComfyUI, like pressing Run. Uses the GPU; results appear in the output folder.",
+            "Queues the open workflow in ComfyUI, like pressing Run. Uses the GPU. Follow it with run_status, which "
+            "says where it stands and gives its pictures when done; do not look in the output folder for them.",
             run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1}}),
     _action("open_in_anomalous", "Show a model",
             "Opens Anomalous Model Browser on this model's page, so the user sees its cover and details.",

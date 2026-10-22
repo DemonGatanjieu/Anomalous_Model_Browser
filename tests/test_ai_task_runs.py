@@ -50,7 +50,7 @@ class ProgressTests(unittest.TestCase):
             with mock.patch.object(ai_task_runs, "_registry", return_value=registry("mine", nodes)):
                 got = ai_task_runs.progress_of(["mine"])
         self.assertEqual(got, {"state": "running", "prompt": 1, "prompts": 1, "nodes_done": 1, "nodes": 4,
-                               "node": "采样器", "value": 14, "max": 28})
+                               "node": "采样器", "value": 14, "max": 28, "percent": 50})
         with mock.patch.object(ai_task_runs, "_queue", side_effect=RuntimeError("no server")):
             self.assertIsNone(ai_task_runs.progress_of(["mine"]))
 
@@ -143,6 +143,51 @@ class ProgressTests(unittest.TestCase):
         self.assertEqual(ai_task_runs.status("B")["pictures"], ["other-ai.png"])
         self.assertEqual(ai_task_runs.status("B")["state"], "error")
         self.assertNotIn(mock.call(prompt_id="manual"), queue.get_history.call_args_list)
+
+
+class NewsTests(unittest.TestCase):
+    """The AI hears where its run stands in its other answers, and once that it ended."""
+
+    def setUp(self):
+        isolate()
+        self.step = ai_tasks.record("A", "run_workflow", {}, ok({"queued": 1}), time.time())
+        self.task = ai_tasks.active_task_id("A")
+        with ai_tasks._lock:
+            task = ai_tasks._load()[self.task]
+            task["steps"][-1]["prompt_ids"] = ["p1"]
+            ai_tasks._save(task)
+
+    def told(self):
+        return ai_task_runs.tell({"content": [{"type": "text", "text": "{}"}], "structuredContent": {"n": 1}}, self.task)
+
+    def test_while_it_goes_every_answer_says_where_it_stands(self):
+        with mock.patch.object(ai_tasks, "_notify"):
+            ai_task_runs._show_progress(self.task, self.step["id"], {"state": "running", "prompt": 1, "prompts": 1, "node": "KSampler",
+                                                                     "value": 14, "max": 28, "percent": 50, "nodes_done": 3, "nodes": 9})
+        for _ in range(2):
+            result = self.told()
+            run = result["structuredContent"]["your_run"]
+            self.assertEqual((run["state"], run["progress"]["percent"]), ("running", 50))
+            self.assertIn("KSampler step 14/28, 50%, 3 of 9 nodes done", run["summary"])
+            self.assertIn("your_run", result["content"][0]["text"], "the text says it too")
+            self.assertEqual(result["structuredContent"]["n"], 1, "the tool's own answer stays")
+
+    def test_the_end_is_told_once(self):
+        history = {"p1": {"status": {"completed": True}, "outputs": {"9": {"images": [{"filename": "a.png", "type": "output"}]}}}}
+        with mock.patch.object(ai_tasks, "_notify"):
+            ai_task_runs._finish_run(self.task, self.step["id"], ["p1"], history)
+        self.assertIn("finished", self.told()["structuredContent"]["your_run"]["summary"])
+        self.assertNotIn("your_run", self.told()["structuredContent"])
+
+    def test_run_status_telling_the_end_is_enough(self):
+        with mock.patch.object(ai_tasks, "_notify"):
+            ai_task_runs._finish_run(self.task, self.step["id"], ["p1"], {"p1": {"status": {"completed": True}}})
+        self.assertIn("finished", ai_task_runs.status("A")["summary"])
+        self.assertNotIn("your_run", self.told()["structuredContent"])
+
+    def test_no_run_no_news(self):
+        ai_tasks.begin_task("A", "other", new_task=True)
+        self.assertIsNone(ai_task_runs.news(ai_tasks.active_task_id("A")))
 
 
 if __name__ == "__main__":

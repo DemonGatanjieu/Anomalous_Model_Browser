@@ -88,6 +88,7 @@ export function runProgress(progress) {
     const box = el('div', 'anomalous-ai-run-progress');
     let words;
     let share = null;
+    let percent = '';
     if (progress.state === 'queued') {
         words = t('aiRunQueued', { ahead: progress.ahead });
     } else {
@@ -97,12 +98,17 @@ export function runProgress(progress) {
         if (progress.nodes) parts.push(t('aiRunNodes', { done: progress.nodes_done, count: progress.nodes }));
         words = parts.join(' · ') || t('aiRunRunning');
         share = progress.max > 1 ? progress.value / progress.max : progress.nodes ? progress.nodes_done / progress.nodes : null;
+        if (Number.isFinite(progress.percent)) share = progress.percent / 100;
+        if (share !== null) percent = `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%`;
     }
     const bar = el('div', `anomalous-ai-run-bar${share === null ? ' is-waiting' : ''}`);
     const fill = el('span', 'anomalous-ai-run-fill');
     if (share !== null) fill.style.width = `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%`;
     bar.append(fill);
-    box.append(el('div', 'anomalous-ai-run-words', words), bar);
+    const line = el('div', 'anomalous-ai-run-line');
+    line.append(el('span', 'anomalous-ai-run-words', words));
+    if (percent) line.append(el('b', 'anomalous-ai-run-percent', percent));
+    box.append(line, bar);
     return box;
 }
 
