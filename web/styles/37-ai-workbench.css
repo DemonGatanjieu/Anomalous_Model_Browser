@@ -214,8 +214,8 @@
 }
 
 .anomalous-ai-task-head {
-    position: sticky;
-    top: 0;
+    position: relative;
+
     z-index: 2;
     background: var(--amb-bg-panel);
     display: flex;

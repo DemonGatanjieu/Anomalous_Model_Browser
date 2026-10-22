@@ -1,25 +1,88 @@
-/* Execution facts stay near the task title, independently of the timeline's output. */
+/* Compact execution status button in the task toolbar + floating popover card. */
 .anomalous-ai-execution {
-    padding: 16px 18px;
-    margin-top: 16px;
-    border: 1px solid var(--amb-border);
-    border-left: 3px solid var(--amb-link);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.anomalous-ai-status-btn {
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+}
+.anomalous-ai- execution.is-open .anomalous-ai-status-btn,
+.anomalous-ai-execution.is-open .anomalous-ai-status-btn {
+    border-color: var(--amb-border-strong);
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-main);
+}
+.anomalous-ai-status-dot {
+    width: 7px;
+    height: 7px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--amb-text-dim);
+}
+.anomalous-ai-status-dot.is-running,
+.anomalous-ai-status-dot.is-queued,
+.anomalous-ai-status-dot.is-submitting,
+.anomalous-ai-status-dot.is-tool {
+    background: var(--amb-ok);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--amb-ok) 25%, transparent);
+}
+.anomalous-ai-status-dot.is-done { background: #41b883; }
+.anomalous-ai-status-dot.is-untracked,
+.anomalous-ai-status-dot.is-stopped,
+.anomalous-ai-status-dot.is-asking { background: var(--amb-warn); }
+.anomalous-ai-status-dot.is-error { background: var(--amb-danger); }
+.anomalous-ai-status-dot.is-time { background: var(--amb-link); }
+.anomalous-ai-status-dot.is-batch { background: #a78bfa; }
+
+.anomalous-ai-status-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 30;
+    width: min(320px, 82vw);
+    padding: 14px 16px;
+    border: 1px solid var(--amb-border-strong);
     border-radius: 12px;
     background: var(--amb-bg-panel);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
     color: var(--amb-text-main);
-    font-size: 13px;
+    font-size: 12.5px;
 }
-.anomalous-ai-execution-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
-.anomalous-ai-execution-label { color: var(--amb-text-dim); font-size: 11px; }
-.anomalous-ai-execution-top strong { font-size: 15px; }
+.anomalous-ai-execution-top {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--amb-border);
+}
+.anomalous-ai-execution-label { color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-ai-execution-badge { font-size: 13px; color: var(--amb-text-main); }
 .anomalous-ai-execution-top button { margin-left: auto; }
-.anomalous-ai-execution .anomalous-ai-run-progress { margin-top: 14px; }
-.anomalous-ai-execution .anomalous-ai-run-bar { height: 8px; }
-.anomalous-ai-execution-meta { margin-top: 10px; font-variant-numeric: tabular-nums; }
-.anomalous-ai-execution-hint { color: var(--amb-text-muted); line-height: 1.7; margin: 10px 0 0; }
-.anomalous-ai-execution-contact { color: var(--amb-text-dim); font-size: 11px; margin-top: 8px; }
+.anomalous-ai-status-popover .anomalous-ai-run-progress { margin-top: 12px; }
+.anomalous-ai-status-popover .anomalous-ai-run-bar { height: 6px; }
+.anomalous-ai-execution-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    font-variant-numeric: tabular-nums;
+}
+.anomalous-ai-execution-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--amb-text-soft);
+}
+.anomalous-ai-execution-hint { color: var(--amb-text-muted); line-height: 1.6; margin: 10px 0 0; }
+.anomalous-ai-execution-contact {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--amb-border);
+    color: var(--amb-text-dim);
+    font-size: 11px;
+}
 .anomalous-ai-execution-error { color: var(--amb-danger); margin-top: 8px; overflow-wrap: anywhere; }
-.anomalous-ai-execution.is-untracked, .anomalous-ai-execution.is-stopped { border-left-color: var(--amb-warn); }
-.anomalous-ai-execution.is-error { border-left-color: var(--amb-danger); }
-.anomalous-ai-execution.is-done { border-left-color: #41b883; }
 .anomalous-ai-state.is-idle, .anomalous-ai-state-icon.is-idle { color: var(--amb-text-dim); }

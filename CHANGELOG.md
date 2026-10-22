@@ -2,8 +2,8 @@
 
 ## v1.62.0 — unreleased
 
-- AI 工作台顶部展示真实运行状态、排队、节点进度、用时和结果；没有收到运行信息时明确提示，不再空转显示“AI 正在工作”或把沉默当成完成。页面可见时自动补查状态。运行工具默认等待 15 秒并返回实际结果；外部提交可用 `track_run` 接入准确的运行 ID，不会重新出图。
-- The AI workbench shows confirmed execution state, queue/node progress, elapsed time and results at the top, with visible-page refresh. Untracked work and silence are explicit. Run calls wait briefly for real results; `track_run` attaches external submission IDs without resubmitting.
+- AI 工作台任务工具栏新增小巧的“运行状态”按钮与浮窗（移除遮挡时间线的常驻大横条）：点开即可查看真实运行状态、排队、节点进度、用时和结果，运行中直接在按钮上显示进度百分比；没有收到运行信息时明确提示，不再空转显示“AI 正在工作”或把沉默当成完成。页面可见时自动补查状态。运行工具默认等待 15 秒并返回实际结果；外部提交可用 `track_run` 接入准确的运行 ID，不会重新出图。
+- The AI workbench now places confirmed execution state, queue/node progress, elapsed time and results inside a compact toolbar button and popover (instead of a tall sticky banner), with visible-page refresh. Untracked work and silence are explicit. Run calls wait briefly for real results; `track_run` attaches external submission IDs without resubmitting.
 
 ### AI 在画布上搭工作流 / The AI builds workflows on the canvas
 - AI 可以在你眼前的画布上搭工作流了：查这台 ComfyUI 有哪些节点（包括自定义节点）、每个节点有哪些输入输出和可选项；新建一个工作流标签页（空白的，或者一次搭好整套并自动排好位置，不动你正在开的那个）；加节点、连线、改参数、删节点。每一步都在画布上当场发生，是一次 Ctrl+Z，记在操作记录里，并在 AI 工作台那一步下面显示改了什么，连线也会写成“某节点的输入 model：（空）→ 加载模型 #4 · MODEL”。连不上的类型、不存在的选项、写错的参数会先被拦下并告诉 AI 正确的写法，画布不会留下半截。新建的标签页名字带时间，不会打开或覆盖你存过的工作流。连线会绕成死循环时也会先拦下。运行被 ComfyUI 拒绝时，AI 收到的是 ComfyUI 给的具体原因（哪个节点、什么问题），不再只有一句“运行失败”。

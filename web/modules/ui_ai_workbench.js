@@ -256,7 +256,7 @@ function renderTask() {
     if (state.stage.hidden && panelSteps(task).length) {
         tools.append(iconButton('anomalous-ai-tool', 'panel', t('aiStageShow'), () => pickTab('stage')));
     }
-    tools.append(toolboxButton(task, () => void refresh()));
+    tools.append(executionStatus(task, refresh), toolboxButton(task, () => void refresh()));
     if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
         tools.append(iconButton('anomalous-ai-tool', 'undo', t('aiUndoAll'), () => undoAll(task)));
     }
@@ -276,7 +276,7 @@ function renderTask() {
     titleLine.append(tools);
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);
-    header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')), executionStatus(task, refresh));
+    header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')));
 
     const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
     view.flow.replaceChildren(...(flow ? [flow] : []));
