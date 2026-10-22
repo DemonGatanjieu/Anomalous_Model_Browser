@@ -5,6 +5,11 @@
 - AI 工作台任务工具栏新增小巧的“运行状态”按钮与浮窗（移除遮挡时间线的常驻大横条）：点开即可查看真实运行状态、排队、节点进度、用时和结果，运行中直接在按钮上显示进度百分比；没有收到运行信息时明确提示，不再空转显示“AI 正在工作”或把沉默当成完成。页面可见时自动补查状态。运行工具默认等待 15 秒并返回实际结果；外部提交可用 `track_run` 接入准确的运行 ID，不会重新出图。
 - The AI workbench now places confirmed execution state, queue/node progress, elapsed time and results inside a compact toolbar button and popover (instead of a tall sticky banner), with visible-page refresh. Untracked work and silence are explicit. Run calls wait briefly for real results; `track_run` attaches external submission IDs without resubmitting.
 
+### 回答发出去了没有，一眼看清 / See at a glance whether the AI has your answer
+- 面板上每个回答、你的留言、批注、发给 AI 的图片下面都有醒目的状态标签：琥珀色 **已发送 · 等 AI 来取**，AI 拿到后变成绿色 **AI 已收到 · 时间**（取代原来那行灰色小字）。鼠标停在“已发送”上会提示 AI 停下时该怎么办。
+- 面板上的问题可以点 **这题跳过**：可选的问题不再一直显示“等你回答”，AI 会收到“你跳过了”，自己拿主意。
+- Each answer, message, set of marks and picture handed to the AI shows a pill: "Sent · waiting for the AI", then "The AI has it" with the time. Panel questions can be skipped; the AI reads `skipped: true`.
+
 ### 看得见 AI 跑了什么、专用标签页、图片直接给 AI / What the AI ran, its own tab, pictures straight to the AI
 - 每次运行下面都有 **节点结构**：一行写明底模、几个 LoRA、尺寸、步数，点开是方块图（LoRA 带权重、正负提示词、采样器设置……，点方块定位到画布上的节点），还用黄色小块标出 **比上次改了什么**，比如“步数 20 → 30”“LoRA 权重 0.65 → 0.8”“新增「加载LoRA」”。图是 AMB 按 ComfyUI 实际收到的工作流画的，不靠 AI 描述；AI 讲解时用新工具 `show_run_map` 一次把它放上展台。
 - **AI 的专用标签页**（默认开）：AI 第一次改画布前，AMB 把你正开着的工作流复制到以任务命名的新标签页，之后它只在那一页改和运行；你切去别处，它下次动手前会切回来；你原来的工作流一笔不动。任务标题栏能切换“专用标签页 / 当前画布”、点标签页名字跳过去；关卡窗口里设定新任务的默认做法。

@@ -307,7 +307,10 @@ covered by the `styles.css` manifest.
   can also write to the AI on a task (`POST /anomalous/ai_tasks/{id}/message`, a `user` step);
   `get_answers` brings those messages too, and with no panel named waits for one; unread answers and user messages are also piggybacked once onto the next successful MCP tool response (`ai_panels.attach_pending`) so AI apps that do not poll `get_answers` still receive them immediately.
   `web/modules/ui_ai_panel.js` draws a panel in the timeline (textContent only) and the toast
-  when the AI shows one while the user is elsewhere. The stage blocks are data the page lays
+  when the AI shows one while the user is elsewhere; a question can be skipped (`{skip: true}`,
+  the AI reads `skipped`). `web/modules/ui_ai_delivery.js` is the pill under each answer and
+  each thing the user gave the AI: sent and waiting, or the AI has it at `delivered_at` (set
+  when `ai_panels._collect` hands it over). The stage blocks are data the page lays
   out, never drawings of the AI's own (no SVG is taken): marks on pictures (circles or boxes at
   fractions of the picture, a label that zooms there), the slider (before and after over each
   other), picks (pictures with a reason, "Take this one", "Put on the canvas" through ComfyUI's

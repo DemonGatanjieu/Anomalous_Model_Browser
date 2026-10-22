@@ -87,7 +87,9 @@ def ask_user(ctx, question, options=None, multiple=False, other=True, wait_secon
                 "note": "The user has not answered yet. Keep waiting with get_answers(panel, wait_seconds=55); "
                         "do not ask the same in your own chat, they answer in Anomalous."}
     out = {"answered": True, "panel": panel["id"]}
-    if given.get("text"):
+    if given.get("skipped"):
+        out.update(skipped=True, note="The user skipped this question: go on with your own judgement.")
+    elif given.get("text"):
         out["text"] = given["text"]
         if given.get("choice") == ["other"]:
             out["note"] = "None of your options: the user wrote their own answer."
@@ -313,7 +315,8 @@ TASK_TOOLS = dict([
                "themselves in Anomalous while you worked, keep it), since you last asked; each once. For one "
                "panel (and its task's messages), or all of yours. wait_seconds (up to 55) waits when nothing is there "
                "yet: for that panel's open questions, or with no panel for anything the user sends. still_waiting "
-               "lists the questions not answered. Check it between steps of longer work.",
+               "lists the questions not answered; skipped=true is a question the user chose not to answer (go on with your "
+               "own judgement). Check it between steps of longer work.",
                get_answers, {"panel": {"type": "string"},
                              "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": 0},
                              "task": _TASK_PROP}),

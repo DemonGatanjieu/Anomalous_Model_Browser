@@ -39,6 +39,7 @@ import { toolboxButton, toolboxStep } from './ui_ai_toolbox.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
 import { canvasChanges } from './ui_canvas_changes.js';
+import { deliveryState } from './ui_ai_delivery.js';
 import {
     activityIds, duration, groupSteps, lookTools, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
@@ -140,13 +141,11 @@ function stepRow(step, number) {
         body.append(userChange(step));
     } else if (step.tool === 'user_pictures') {
         body.append(el('div', 'anomalous-ai-user-text', step.text || t('aiPicturesStep', { count: (step.results || []).length })),
-            el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiPicturesSeen' : 'aiMessageWaiting')));
+            deliveryState(step, 'aiPicturesSeen'));
     } else if (step.tool === 'user_stop') {
-        body.append(el('div', 'anomalous-ai-user-text', t('aiRunStoppedByYou')),
-            el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
+        body.append(el('div', 'anomalous-ai-user-text', t('aiRunStoppedByYou')), deliveryState(step));
     } else if (step.kind === 'user') {
-        body.append(el('div', 'anomalous-ai-user-text', step.text),
-            el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
+        body.append(el('div', 'anomalous-ai-user-text', step.text), deliveryState(step));
     } else if (step.text) {
         body.append(noteNode(step.text));
     }
@@ -182,7 +181,7 @@ function userChange(step) {
         const note = el('span', 'anomalous-ai-link-note');
         box.append(canvasChanges(entry, { locate: change => locateNode(changeNodeId(change), note) }), note);
     }
-    box.append(el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiChangeSeen' : 'aiChangeWaiting')));
+    box.append(deliveryState(step, 'aiChangeSeen', 'aiChangeWaiting'));
     return box;
 }
 

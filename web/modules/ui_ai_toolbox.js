@@ -19,6 +19,7 @@ import { KINDS, keptCatalog, loadCatalog, nodeItems, nodeSources, prefetchToolbo
 import { card, coverUrl, detail, refreshCard } from './ui_ai_toolbox_cards.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture, sourceBadge } from './ui_ai_toolbox_icons.js';
+import { deliveryState } from './ui_ai_delivery.js';
 
 const MODES = ['prefer', 'only'];
 const CHUNK = 60;
@@ -476,6 +477,6 @@ export function toolboxStep(step) {
         }
         box.append(mode, chips);
     }
-    box.append(el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
+    box.append(deliveryState(step));
     return box;
 }

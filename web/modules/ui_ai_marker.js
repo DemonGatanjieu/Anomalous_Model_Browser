@@ -12,6 +12,7 @@
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { outputUrl } from './ai_task_view.js';
+import { deliveryState } from './ui_ai_delivery.js';
 
 const TOOLS = [['box', '□'], ['circle', '○'], ['arrow', '↗'], ['pen', '✎'], ['mask', '▧']];
 const MASK_COLOR = 'rgba(255, 64, 160, 0.45)';
@@ -367,6 +368,6 @@ export function marksStep(step, taskId, owner) {
     const words = box.lastChild;
     if (step.note) words.append(el('div', 'anomalous-ai-user-text', step.note));
     if (step.inpaint) words.append(el('div', 'anomalous-ai-marks-inpaint', t('aiMarkInpaintReady', { file: step.inpaint })));
-    words.append(notes, el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMarksSeen' : 'aiMarksWaiting')));
+    words.append(notes, deliveryState(step));
     return box;
 }

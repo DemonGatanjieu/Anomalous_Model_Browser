@@ -422,7 +422,6 @@
     white-space: pre-wrap;
 }
 
-.anomalous-ai-user-state,
 .anomalous-ai-message-hint {
     color: var(--amb-text-dim);
     font-size: 11.5px;

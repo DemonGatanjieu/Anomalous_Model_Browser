@@ -368,8 +368,8 @@ def update(panel_id, title=None, blocks=None, closed=None):
     return panel
 
 
-def answer(task_id, step_id, block_id, choice=None, text=None, now=None):
-    """The user's answer to one block of a panel (from the page). Returns the step's answers."""
+def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=False):
+    """The user's answer to one block of a panel (from the page), or `skip` it. Returns the step's answers."""
     with _answered:
         task = ai_tasks._load().get(task_id)
         step = next((item for item in (task or {}).get("steps") or [] if item.get("id") == step_id), None)
@@ -383,7 +383,9 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None):
         if block_id in step.setdefault("answers", {}):
             raise PanelError("Already answered")
         entry = {"at": time.time() if now is None else now, "delivered": False}
-        if block["type"] == "choices" and block.get("other") and not choice and isinstance(text, str) and text.strip():
+        if skip:
+            entry["skipped"] = True
+        elif block["type"] == "choices" and block.get("other") and not choice and isinstance(text, str) and text.strip():
             entry.update(choice=["other"], labels=["other"], text=_text(text, 2000, "text", True))
         elif block["type"] in ("choices", "picks"):
             picked = choice if isinstance(choice, list) else [choice]
@@ -445,7 +447,7 @@ def _collect(client, panel_id, task_id=None):
             continue
         for step in task.get("steps") or []:
             if step.get("kind") == "user" and not step.get("delivered") and (panel_id is None or task is panel_task):
-                step["delivered"] = True
+                step.update(delivered=True, delivered_at=time.time())
                 changed.add(task["id"])
                 message = {"id": step["id"], "task": task["id"], "text": step["text"], "at": step["at"]}
                 if step.get("tool") == "user_activity":
@@ -487,10 +489,10 @@ def _collect(client, panel_id, task_id=None):
                     continue
                 if given.get("delivered"):
                     continue
-                given["delivered"] = True
+                given.update(delivered=True, delivered_at=time.time())
                 changed.add(task["id"])
                 item = {"panel": panel["id"], "question": block["id"], "asked": block.get("question", "")}
-                item.update({key: given[key] for key in ("choice", "labels", "text") if key in given})
+                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped") if key in given})
                 out.append(item)
     for tid in changed:
         ai_tasks._save(tasks[tid])

@@ -3,7 +3,8 @@
  * text, pictures (a row, a grid or side by side to compare, with marks), the slider, picks and
  * the diagram (ui_ai_stage.js), the user's models as cards with their covers, tables, lists,
  * settings, a progress bar, and questions: buttons (one pick or several), picks and a line of
- * text, whose answers go back to the server for the AI to read. Only
+ * text, whose answers (or a skip) go back to the server for the AI to read, each with a pill
+ * saying whether the AI has it yet (ui_ai_delivery.js). Only
  * text is ever written into the page (textContent); the blocks were checked by the server and
  * are checked again by their shape here. Also the toast when the AI shows a panel while the
  * user is elsewhere.
@@ -14,6 +15,7 @@ import { outputUrl, isVideo } from './ai_task_view.js';
 import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
 import { runMapBox } from './ui_ai_run_map.js';
 import { decoratePicture } from './ui_ai_images.js';
+import { deliveryState } from './ui_ai_delivery.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -41,9 +43,27 @@ async function send(taskId, body) {
     return data;
 }
 
-/** What happens to an answer: waiting for the AI to read it, or read. */
+/** What became of an answer: skipped (said so), and whether the AI has it yet. */
 function answerNote(answer) {
-    return el('div', 'anomalous-ai-panel-answer-note', t(answer.delivered ? 'aiPanelSeen' : 'aiPanelHanded'));
+    const box = el('div', 'anomalous-ai-panel-answer');
+    if (answer.skipped) box.append(el('div', 'anomalous-ai-panel-typed is-skipped', t('aiPanelSkipped')));
+    box.append(deliveryState(answer, 'aiPanelSeen'));
+    return box;
+}
+
+/** Leaves a question unanswered on purpose; the AI hears that it was skipped. */
+function skipButton(ctx, block, note) {
+    const node = button('anomalous-ai-panel-skip', t('aiPanelSkip'), async () => {
+        node.disabled = true;
+        try {
+            await send(ctx.taskId, { step: ctx.stepId, block: block.id, skip: true });
+            ctx.changed();
+        } catch (error) {
+            note.textContent = error.message;
+            node.disabled = false;
+        }
+    });
+    return node;
 }
 
 function picture(item, ctx, className) {
@@ -174,6 +194,7 @@ function choices(block, ctx) {
     if (block.question) box.append(el('div', 'anomalous-ai-panel-question', block.question));
     const answer = ctx.answers[block.id];
     const options = el('div', 'anomalous-ai-panel-options');
+    const note = el('div', 'anomalous-ai-panel-error');
     const picked = new Set(answer?.choice || []);
     const submit = async (ids) => {
         options.querySelectorAll('button').forEach(node => { node.disabled = true; });
@@ -210,7 +231,7 @@ function choices(block, ctx) {
     if (block.multiple && !answer && !ctx.closed) box.append(confirm);
     if (answer?.text) box.append(el('div', 'anomalous-ai-panel-typed', answer.text));
     else if (block.other && !answer && !ctx.closed) box.append(otherLine(ctx, block, options));
-    const note = el('div', 'anomalous-ai-panel-error');
+    if (!answer && !ctx.closed) box.append(skipButton(ctx, block, note));
     box.append(note);
     if (answer) box.append(answerNote(answer));
     return box;
@@ -221,7 +242,8 @@ function input(block, ctx) {
     box.append(el('div', 'anomalous-ai-panel-question', block.question));
     const answer = ctx.answers[block.id];
     if (answer) {
-        box.append(el('div', 'anomalous-ai-panel-typed', answer.text), answerNote(answer));
+        if (!answer.skipped) box.append(el('div', 'anomalous-ai-panel-typed', answer.text));
+        box.append(answerNote(answer));
         return box;
     }
     const line = el('div', 'anomalous-ai-panel-input');
@@ -248,7 +270,9 @@ function input(block, ctx) {
         if (event.key === 'Enter') go.click();
     });
     line.append(field, go);
-    box.append(line, note);
+    box.append(line);
+    if (!ctx.closed) box.append(skipButton(ctx, block, note));
+    box.append(note);
     return box;
 }
 

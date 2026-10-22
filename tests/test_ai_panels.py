@@ -172,6 +172,22 @@ class AnswerTests(unittest.TestCase):
         self.assertEqual(ai_panels.get_answers("Claude")["answers"][0]["text"], "背景再亮一点")
         self.assertEqual(ai_panels.get_answers("Cursor")["answers"], [], "another app's panels are not its")
 
+    def test_a_skipped_question_and_when_the_ai_got_each_answer(self):
+        shown = ai_panels.show("A", "细节", [CHOICES, {"type": "input", "id": "more", "question": "补充细节（可选）"}])
+        task = ai_tasks.list_tasks()[0]["id"]
+        step = ai_tasks.get_task(task)["steps"][0]["id"]
+        ai_panels.answer(task, step, "pick", ["a"])
+        ai_panels.answer(task, step, "more", skip=True)
+        self.assertEqual(ai_tasks.list_tasks()[0]["asks"], 0, "a skipped question waits no more")
+        got = ai_panels.get_answers("A", shown["id"])
+        self.assertEqual(got["answers"][1], {"panel": shown["id"], "question": "more", "asked": "补充细节（可选）", "skipped": True})
+        answers = ai_tasks.get_task(task)["steps"][0]["answers"]
+        self.assertTrue(all(given["delivered"] and given["delivered_at"] >= given["at"] for given in answers.values()),
+                        "the page shows when the AI got each answer")
+        self.assertTrue(ai_panels.leave_message(task, "继续")["id"])
+        ai_panels.get_answers("A")
+        self.assertTrue(ai_tasks.get_task(task)["steps"][-1]["delivered_at"])
+
     def test_waiting_for_an_answer(self):
         shown = ai_panels.show("A", "等你", [CHOICES])
         task = ai_tasks.list_tasks()[0]
@@ -375,6 +391,12 @@ class AskUserTests(unittest.TestCase):
         block = step["panel"]["blocks"][0]
         self.assertEqual((step["panel"]["title"], block["options"][0].get("recommended"), block["other"]), ("先测哪种双人题材？", True, True))
         self.assertEqual(step["tool"], "ask_user", "the timeline says the AI asked")
+
+    def test_a_skipped_question_says_so(self):
+        self.answer_later(skip=True)
+        got = mcp_task_tools.ask_user(self.ctx, "要不要加光效？", ["要", "不要"], wait_seconds=5)
+        self.assertEqual((got["answered"], got["skipped"]), (True, True))
+        self.assertIn("own judgement", got["note"])
 
     def test_their_own_answer_when_no_option_fits(self):
         self.answer_later(text="冰与火，但要室内")

@@ -418,11 +418,45 @@
     white-space: pre-wrap;
 }
 
-.anomalous-ai-panel-answer-note,
 .anomalous-ai-panel-foot {
     color: var(--amb-text-dim);
     font-size: 11.5px;
 }
+
+.anomalous-ai-panel-answer { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.anomalous-ai-panel-typed.is-skipped { border-left-color: var(--amb-text-dim); background: rgba(var(--amb-ink-rgb), 0.05); color: var(--amb-text-soft); }
+
+.anomalous-ai-panel-skip {
+    align-self: flex-start;
+    padding: 2px 4px;
+    border: none;
+    background: none;
+    color: var(--amb-text-dim);
+    font: inherit;
+    font-size: 12px;
+    text-decoration: underline dotted;
+    cursor: pointer;
+}
+.anomalous-ai-panel-skip:hover { color: var(--amb-text-main); }
+
+/* Whether the AI has what the user gave it (ui_ai_delivery.js): sent and waiting, or the AI has it. */
+.anomalous-ai-delivery {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 5px;
+    width: fit-content;
+    padding: 2px 10px 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 20px;
+    animation: anomalous-ai-delivery-in 0.35s ease-out;
+}
+.anomalous-ai-delivery.is-waiting { background: color-mix(in srgb, var(--amb-warn) 16%, transparent); color: var(--amb-warn-text); cursor: help; }
+.anomalous-ai-delivery.is-seen { background: color-mix(in srgb, var(--amb-ok) 16%, transparent); color: var(--amb-ok-text, var(--amb-ok)); }
+@keyframes anomalous-ai-delivery-in { from { opacity: 0; transform: translateY(3px); } }
+@media (prefers-reduced-motion: reduce) { .anomalous-ai-delivery { animation: none; } }
 
 .anomalous-ai-panel-error {
     color: var(--amb-danger-text);

@@ -62,7 +62,7 @@ async def api_change(request):
 
 
 async def api_answer(request):
-    """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text} - the user's answer on a panel."""
+    """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text | skip: true} - the user's answer on a panel."""
     from . import ai_panels
 
     try:
@@ -73,7 +73,7 @@ async def api_answer(request):
         return web.json_response({"error": "Expected {step, block, choice | text}"}, status=400)
     try:
         answers = ai_panels.answer(request.match_info["task_id"], str(body.get("step")), str(body.get("block")),
-                                   body.get("choice"), body.get("text"))
+                                   body.get("choice"), body.get("text"), skip=body.get("skip") is True)
     except ai_panels.PanelError as error:
         return web.json_response({"error": str(error)}, status=400)
     return web.json_response({"answers": answers})
