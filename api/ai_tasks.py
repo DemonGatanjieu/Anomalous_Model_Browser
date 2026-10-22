@@ -494,8 +494,9 @@ def _output_media(path):
     return {"type": "image", "filename": filename, "subfolder": subfolder, "folder": "output"}
 
 
-def report(client, text, images=None, done=False, now=None, session="", task_id=None):
-    """A note from the AI, with pictures it made (in ComfyUI's output folder). Returns the step."""
+def report(client, text, images=None, done=False, now=None, session="", task_id=None, reply_to=None):
+    """A note from the AI, with pictures it made (in ComfyUI's output folder); `reply_to`: the user's
+    message or marks it answers (both steps then point at each other). Returns the step."""
     text = str(text or "").strip()
     if not text and not images:
         raise ValueError("text or images is needed")
@@ -508,6 +509,11 @@ def report(client, text, images=None, done=False, now=None, session="", task_id=
             "state": "done", "summary": "report", "text": _short(text, MAX_NOTE), "results": results}
     with _lock:
         task = current_task(client, now, session=session, task_id=task_id)
+        asked = next((item for item in task["steps"] if reply_to and item["id"] == reply_to and item.get("kind") == "user"), None)
+        if reply_to and not asked:
+            raise ValueError("reply_to is the id of the user's message or marks (user_messages[].id) in this task")
+        if asked:
+            step["reply_to"], asked["replied"] = asked["id"], step["id"]
         _add_step(task, step)
         if done:
             task["ended"] = now

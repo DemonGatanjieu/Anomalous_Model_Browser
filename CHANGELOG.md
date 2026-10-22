@@ -7,6 +7,8 @@
 - The AI can build workflows on the canvas the user sees: look up this ComfyUI's node types (custom nodes too) with their inputs, outputs and choices; open a new tab, blank or built and laid out from a workflow in API form (the open one is left alone); add, wire, set and remove nodes. Each is one Ctrl+Z step, logged as the AI's and shown under its AI workbench step, rewiring included. Wrong types, choices and settings are refused with what fits, before anything changes. Wiring that would loop is refused too, and a run ComfyUI rejects reports ComfyUI's own reason.
 
 ### AI 的问题在 AMB 里问 / The AI asks in Anomalous
+- 你在图上标注或给 AI 留言后，AI 的分析和修改方案也回在 AMB 里：它的留言会写明“回复第几步”，你那条标注下面出现“AI 已回复 · 第几步”，两边点一下就互相跳过去。AI 的留言现在有排版：小标题、列表、加粗、`代码` 都会正常显示（只认这几种写法，不会运行网页代码）。AMB 告诉 AI：收到标注和留言就在 AMB 里回复，要你选修法就用选择题问。
+- The AI replies in Anomalous: `report` takes `reply_to` (the user's message or marks), both steps link to each other; its notes are laid out (headings, lists, bold, code) with text only.
 - AI 接了 AMB 的任务以后，要你做选择（比如“先测哪种题材？”）不再弹在 AI 软件的对话框里，而是出现在 AI 工作台（展台上有提示，你不在工作台时右下角也会提醒）：几个选项按钮，AI 推荐的那个标着“推荐”，每个选项可以带一句说明；下面还有一行“都不是？写下你的想法”。你点了或写了，AI 在同一步里马上拿到答案，接着干活。AMB 告诉 AI 的说明里写明了：干 AMB 的活时，问题都这样问。
 - New `ask_user` tool: a question with options (one may be marked recommended) and a line for an answer of the user's own, shown in the AI workbench; the AI waits for the answer in the same call. The server instructions tell AIs to ask this way, not in their own chat.
 

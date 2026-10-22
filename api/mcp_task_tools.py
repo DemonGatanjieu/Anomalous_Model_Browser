@@ -32,11 +32,11 @@ def begin_task(ctx, title, new_task=False):
     return answer
 
 
-def report(ctx, text="", images=None, done=False, task=None):
+def report(ctx, text="", images=None, done=False, reply_to=None, task=None):
     try:
         step, missing = ai_tasks.report(
             ctx.get("client") or "AI", text, images or [], bool(done),
-            session=ctx.get("session") or "", task_id=task or ctx.get("task"),
+            session=ctx.get("session") or "", task_id=task or ctx.get("task"), reply_to=reply_to,
         )
     except ValueError as error:
         raise ToolError(str(error))
@@ -193,12 +193,17 @@ TASK_TOOLS = dict([
                             "new_task": {"type": "boolean", "default": False}},
                ["title"]),
     _task_tool("report", "Tell the user",
-               "Leaves a note in the AI workbench: why you chose something, what to look at, what is left. images: "
-               "pictures you made in ComfyUI's output folder (subfolder/name.png) that Anomalous's tools did not "
-               "make, so they are kept with the task. done=true ends the task.",
+               "Leaves a note in the AI workbench, where the user reads your work: why you chose something, what to "
+               "look at, what is left, and your answers to them. Write there what you would tell them in your chat; "
+               "headings (#), lists (- or 1.), **bold** and `code` are laid out. reply_to: the id of the user's message "
+               "or marks you answer (user_messages[].id), so your reply shows under it. images: pictures you made in "
+               "ComfyUI's output folder (subfolder/name.png) that Anomalous's tools did not make, so they are kept "
+               "with the task. done=true ends the task.",
                report, {"text": {"type": "string"},
                         "images": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_LIMIT},
-                        "done": {"type": "boolean", "default": False}, "task": _TASK_PROP}),
+                        "done": {"type": "boolean", "default": False},
+                        "reply_to": {"type": "string", "description": "user_messages[].id of what you answer."},
+                        "task": _TASK_PROP}),
     _task_tool("show_panel", "Show the user a panel",
                "Draws a panel in the AI workbench, in Anomalous's own style, from blocks: to compare pictures side by "
                "side, present models with their covers, lay out settings, a table, and to ask (buttons or a line of "

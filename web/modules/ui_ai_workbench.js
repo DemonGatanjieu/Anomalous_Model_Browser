@@ -28,6 +28,7 @@ import { focusPanel, openQuestions, panelLine, panelSteps, renderStage, stageNew
 import { connectHint, waitingCard } from './ui_ai_connect.js';
 import { gateCard } from './ui_ai_gate.js';
 import { iconButton } from './ui_ai_icons.js';
+import { noteNode } from './ai_text_format.js';
 import { renderTaskList, stateIcon } from './ui_ai_task_list.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
@@ -139,7 +140,12 @@ function stepRow(step, number) {
         body.append(el('div', 'anomalous-ai-user-text', step.text),
             el('div', 'anomalous-ai-user-state', t(step.delivered ? 'aiMessageSeen' : 'aiMessageWaiting')));
     } else if (step.text) {
-        body.append(el('div', 'anomalous-ai-note-text', step.text));
+        body.append(noteNode(step.text));
+    }
+    const other = step.reply_to || step.replied;
+    if (other) {
+        body.append(iconButton(`anomalous-ai-reply-link${step.replied ? ' is-replied' : ''}`, step.replied ? 'chat' : 'undo',
+            t(step.replied ? 'aiReplied' : 'aiReplyTo', { number: state.numbers.get(other) ?? '' }), () => showStep(state.view.timeline, other)));
     }
     if (step.kind === 'panel' && state.task) {
         body.append(panelLine(step, () => showOnStage(step.panel.id)));

@@ -16,6 +16,7 @@ sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 from PIL import Image  # noqa: E402
 
 from api import ai_marks, ai_panels, ai_tasks, mcp_task_tools  # noqa: E402
+from api.mcp_tools import ToolError  # noqa: E402
 from test_ai_tasks import isolate, ok  # noqa: E402
 
 OUTPUT = tempfile.mkdtemp(prefix="amb_ai_marks_output_")
@@ -65,6 +66,19 @@ class MarkTests(unittest.TestCase):
             answer, pictures = mcp_task_tools.get_answers({"client": "Claude", "task": self.task})
         self.assertEqual(answer["messages"][0]["kind"], "marks")
         self.assertEqual(len(pictures), 1)
+
+    def test_the_ai_replies_under_the_marks_in_anomalous(self):
+        marks = ai_marks.save(self.task, "a.png", png(), MARKS)
+        with mock.patch.object(ai_marks, "_image_content", return_value={"type": "image", "data": "x", "mimeType": "image/webp"}):
+            result = ai_panels.attach_pending(ok({}), "Claude", task_id=self.task)
+        self.assertIn("report(reply_to=", result["structuredContent"]["user_notice"])
+        reply = mcp_task_tools.report({"client": "Claude", "task": self.task}, "### 发现" + chr(10) + "- 多了一只手", reply_to=marks["id"])
+        self.assertTrue(reply["noted"])
+        steps = {step["id"]: step for step in ai_tasks.get_task(self.task)["steps"]}
+        note = next(step for step in steps.values() if step["tool"] == "report")
+        self.assertEqual((note["reply_to"], steps[marks["id"]]["replied"]), (marks["id"], note["id"]))
+        with self.assertRaises(ToolError):
+            mcp_task_tools.report({"client": "Claude", "task": self.task}, "x", reply_to=note["id"])  # not the user's
 
     def test_what_is_refused(self):
         for image, picture, marks in [("../a.png", png(), MARKS), ("nope.png", png(), MARKS), ("a.png", "data:image/jpeg;base64,AAAA", MARKS),

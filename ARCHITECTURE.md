@@ -243,6 +243,9 @@ covered by the `styles.css` manifest.
   forward). The task list can be folded; `ui_ai_task_list.js` draws it (New task, Connect an AI
   and the gates, which AI came last, quick filters by state, the tasks by day with a state
   icon each). `ui_ai_icons.js` is the AI pages' one set of line icons and the icon button.
+  `ai_text_format.js` lays out what the AI writes (its notes and replies: headings, lists, bold,
+  code) with textContent only. A note may answer the user's message or marks (`report`'s
+  `reply_to`): the two steps point at each other, and the timeline links them both ways.
   `ui_ai_connect.js` says how to connect an AI app (the address, a sentence to send the AI so
   it sets itself up and starts on a waiting task, each common app's way), in a window from the
   list's "Connect an AI", and as a card (`connectHint`) that opens the guide in place on the
