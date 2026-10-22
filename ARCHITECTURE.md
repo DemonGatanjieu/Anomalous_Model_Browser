@@ -134,6 +134,9 @@ covered by the `styles.css` manifest.
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
   side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's; the
   outcome carries the log entry's id as `_activity`, for the AI workbench's undo).
+  `web/modules/mcp_run.js` captures exact prompt IDs from one native queue request,
+  preserving native seed/widget callbacks and excluding later manual batches. Busy submissions
+  and unsupported host request IDs are refused before queueing; wrappers/listeners are released.
   `api/mcp_prompts.py` serves `prompts/list` / `prompts/get`: ready-made requests (the AI app's
   slash commands) that tell the AI how to do a common job so the user can follow it on the AI
   workbench. `api/mcp_apps.py` serves the MCP Apps extension (`io.modelcontextprotocol/ui`):

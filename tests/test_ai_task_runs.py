@@ -113,10 +113,9 @@ class ProgressTests(unittest.TestCase):
             queue = mock.Mock()
             queue.get_history.side_effect = OSError("unavailable")
             with mock.patch.object(ai_task_runs.threading, "Thread", side_effect=inline_thread), \
-                    mock.patch.object(ai_task_runs, "prompt_ids", return_value={"mine"}), \
                     mock.patch.object(ai_task_runs, "_queue", return_value=queue), \
                     mock.patch.object(ai_tasks, "RUN_WATCH_SECONDS", 60 if fail_history else 0):
-                ai_task_runs.watch(step, set())
+                ai_task_runs.watch(step, {"prompt_ids": ["mine"]})
             status = ai_task_runs.status("A")
             self.assertEqual(status["state"], "stopped")
             self.assertIn("history" if fail_history else "timed out", status["error"])
@@ -126,6 +125,24 @@ class ProgressTests(unittest.TestCase):
         queue = Queue(running=[(2, "two")])
         with mock.patch.object(ai_task_runs, "_queue", return_value=queue), mock.patch.object(ai_task_runs, "_registry", return_value=None):
             self.assertEqual(ai_task_runs.progress_of(["one", "two"]), {"state": "running", "prompt": 2, "prompts": 2})
+
+    def test_two_tasks_collect_only_their_receipts_and_keep_batch_order(self):
+        def record(filename):
+            return {"status": {"completed": True}, "outputs": {"1": {"images": [{"filename": filename, "type": "output"}]}}}
+        history = {pid: record(pid + ".png") for pid in ("z-first", "a-second", "other-ai", "manual")}
+        queue = mock.Mock()
+        queue.get_history.side_effect = lambda prompt_id: {prompt_id: history[prompt_id]}
+        with mock.patch.object(ai_task_runs.threading, "Thread", side_effect=lambda target, **kw: SimpleNamespace(start=target)), \
+                mock.patch.object(ai_task_runs, "_queue", return_value=queue):
+            task, step = self.run_step()
+            ai_task_runs.watch(step, {"prompt_ids": ["z-first", "a-second"]})
+            second = ai_tasks.begin_task("B", "other")["id"]
+            other = ai_tasks.record("B", "run_workflow", {}, ok({}), time.time())
+            ai_task_runs.watch(other["id"], {"prompt_ids": ["other-ai"], "submission_error": "Only 1 of 2 prompts accepted"})
+        self.assertEqual(ai_task_runs.status("A")["pictures"], ["z-first.png", "a-second.png"])
+        self.assertEqual(ai_task_runs.status("B")["pictures"], ["other-ai.png"])
+        self.assertEqual(ai_task_runs.status("B")["state"], "error")
+        self.assertNotIn(mock.call(prompt_id="manual"), queue.get_history.call_args_list)
 
 
 if __name__ == "__main__":

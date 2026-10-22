@@ -3,6 +3,8 @@
 ## v1.62.0 — unreleased
 
 ### AI 后端修复 / AI backend fixes
+- 出图结果按本次提交返回的准确运行 ID 归属，不再通过全局队列差集猜测；其他 AI、其他页面或后续手动排队不会混入。批次只提交成功一部分时，保留这些运行的进度和图片，并明确报告未全部提交；不会自动重跑整批。旧页面需刷新后才能接手出图，不支持请求 ID 的旧版 ComfyUI 前端会在提交前提示更新。同一页面正在提交时另一 AI 收到忙碌提示，待提交结束即可重试。
+- Workflow runs now follow exact submission IDs in batch order. Partial submissions keep accepted runs/results and report the missing portion; no automatic resubmission. Stale pages cannot claim runs until refreshed, unsupported host frontends fail before queueing, and a second AI waits while the same page is submitting. Native widget/seed behavior is preserved and later manual batches do not delay the AI receipt.
 - “允许一次”只用于一次调用，不会被相同参数的后续调用重复使用；无法建立确认记录时不会直接执行。修复确认超时后用户刚好回答、工具返回又覆盖答案的问题；重启后的待确认步骤仍能把后续答案交给 AI，回答也会唤醒正在等待的 AI。
 - 指定任务或会话读取留言时，不再取走同一 AI 客户端其他任务的留言、标记和回答。
 - 没找到排队记录、无法读取运行记录、跟踪超时均明确标为未完成，不再误报完成或永久显示运行中；批次内出错及时记录，批次进度保留总数。跟踪停止不会取消 ComfyUI 实际运行。

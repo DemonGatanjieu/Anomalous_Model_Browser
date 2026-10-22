@@ -123,10 +123,20 @@ def download_status(ctx):
 
 def run_workflow(ctx, batch=1):
     batch = max(1, min(8, int(batch)))
-    answer = _page("run_workflow", {"batch": batch})
-    if isinstance(answer, dict):
-        answer["note"] = ("Queued. A run takes a while: follow it with run_status (wait_seconds up to 55) until it "
-                          "says done; do not guess from the time passed. Its pictures come with run_status.")
+    try:
+        answer = ask_page("run_workflow", {"batch": batch}, required_capability="prompt_ids")
+    except (PageUnavailable, PageRefused) as error:
+        raise ToolError(str(error))
+    ids = answer.get("prompt_ids") if isinstance(answer, dict) else None
+    if (not isinstance(ids, list) or not ids or len(ids) > batch
+            or any(not isinstance(pid, str) or not pid or len(pid) > 128 for pid in ids) or len(set(ids)) != len(ids)):
+        raise ToolError((answer.get("submission_error") if isinstance(answer, dict) else None)
+                        or "No valid submission receipts. Check ComfyUI's queue before retrying; do not repeat automatically.")
+    answer = {"prompt_ids": ids, "queued": len(ids), "requested": batch,
+              "note": "Follow these runs with run_status (wait_seconds up to 55). Do not repeat the batch; accepted prompts are already queued."}
+    # Some prompts may have been accepted before validation or a transport failure stopped the batch.
+    if len(ids) < batch:
+        answer["submission_error"] = f"Only {len(ids)} of {batch} prompts were accepted."
     return answer
 
 

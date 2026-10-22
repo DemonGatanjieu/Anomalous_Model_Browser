@@ -157,13 +157,11 @@ async def _call(params, request):
     active_task = step_ref[0] if step_ref else task_id
     if active_task:
         ctx["task"] = active_task
-    before = None
     try:
         # The user's gate first (ai_gates.py): it may wait for their OK, or answer for them.
         result = await asyncio.to_thread(ai_gates.check, name, arguments, step_ref)
         if result is None:
             async with _slots:
-                before = await asyncio.to_thread(ai_task_runs.prompt_ids) if name == "run_workflow" else None
                 result = await asyncio.to_thread(call_tool, TOOLS, name, arguments, ctx)
     except BaseException as error:
         failed_result = {"content": [{"type": "text", "text": f"{name} failed: {error}"}], "isError": True}
@@ -177,7 +175,7 @@ async def _call(params, request):
         step_ref=step_ref, session=session, task_id=active_task,
     )
     if name == "run_workflow" and step and step.get("state") == "running":
-        ai_task_runs.watch(step["id"], before or set())
+        ai_task_runs.watch(step["id"], result.get("structuredContent") or {})
     # The user's news goes to the AI, never to the card's own calls (they do not reach the AI).
     if name != "get_answers" and name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)
@@ -260,7 +258,7 @@ async def api_mcp_bridge(request):
     if not isinstance(body, dict) or not isinstance(body.get("id"), str):
         return web.json_response({"error": "Expected {id, claim} or {id, outcome}"}, status=400)
     if body.get("claim") is True:
-        return web.json_response({"granted": mcp_bridge.claim(body["id"])})
+        return web.json_response({"granted": mcp_bridge.claim(body["id"], body.get("capabilities"))})
     return web.json_response({"accepted": mcp_bridge.resolve(body["id"], body.get("outcome"))})
 
 

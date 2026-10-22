@@ -8,6 +8,7 @@
 
 import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
+import { queueTracked } from './mcp_run.js';
 import { translate as t } from './locales.js';
 import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { postCanvasActivity } from './activity_log.js';
@@ -263,9 +264,9 @@ async function downloadModel(args, getOwner) {
 
 async function runWorkflow({ batch }) {
     currentGraph();
-    await app.queuePrompt(0, batch || 1);
-    showWorkbenchToast(t('mcpDidRun'));
-    return { queued: batch || 1, note: 'Results land in the output folder; search_images finds them when done.' };
+    const result = await queueTracked(app, api, batch || 1);
+    if (result.queued) showWorkbenchToast(t('mcpDidRun'));
+    return result;
 }
 
 async function openModel({ type, path_idx: pathIdx, rel }, getOwner) {
@@ -299,7 +300,7 @@ async function handle(detail, getOwner) {
     const run = ACTIONS[action];
     if (typeof id !== 'string' || !run) return;
     if (document.visibilityState !== 'visible') await new Promise(resolve => setTimeout(resolve, HIDDEN_PAGE_DELAY_MS));
-    const claim = await post({ id, claim: true }).catch(() => null);
+    const claim = await post({ id, claim: true, capabilities: ['prompt_ids'] }).catch(() => null);
     if (!claim?.granted) return; // another tab took it
     let outcome;
     try {

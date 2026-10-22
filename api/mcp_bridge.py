@@ -32,13 +32,13 @@ def _server():
     return PromptServer.instance
 
 
-def ask_page(action, args=None, timeout=TIMEOUT_SECONDS):
+def ask_page(action, args=None, timeout=TIMEOUT_SECONDS, required_capability=None):
     """Runs `action` in the open ComfyUI page; its result value. Call from a worker thread."""
     server = _server()
     if not getattr(server, "sockets", None):
         raise PageUnavailable("ComfyUI is not open in a browser on this computer. Open it, then try again.")
     request_id = uuid.uuid4().hex
-    entry = {"event": threading.Event(), "claimed": False, "outcome": None}
+    entry = {"event": threading.Event(), "claimed": False, "outcome": None, "required": required_capability}
     with _lock:
         if len(_waiting) >= MAX_WAITING:
             raise PageUnavailable("Too many canvas actions are waiting; try again in a moment.")
@@ -57,11 +57,15 @@ def ask_page(action, args=None, timeout=TIMEOUT_SECONDS):
     return outcome.get("value")
 
 
-def claim(request_id):
+def claim(request_id, capabilities=None):
     """True for the first page that asks to do request `request_id`."""
     with _lock:
         entry = _waiting.get(request_id)
-        if entry is None or entry["claimed"]:
+        if entry is None or entry["claimed"] or entry["outcome"] is not None:
+            return False
+        if entry.get("required") and (not isinstance(capabilities, list) or entry["required"] not in capabilities):
+            entry["outcome"] = {"ok": False, "error": "Refresh the ComfyUI browser page before running from AI. Nothing was queued."}
+            entry["event"].set()
             return False
         entry["claimed"] = True
         return True

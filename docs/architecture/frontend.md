@@ -5,6 +5,14 @@ localization, media, or explicit canvas mutations.
 
 ## Bootstrap and module ownership
 
+`mcp_run.js` follows one native `app.queuePrompt` request by its host request ID and
+`promptQueueing`/`promptQueued` events. A temporary `api.queuePrompt` wrapper preserves the
+original receiver/arguments and collects only that batch's submission responses, stopping
+on its first failure or completion. Cleanup restores the API and removes both listeners on
+all exits. The batch receipt can return before the native queue finishes later manual work;
+the native promise remains error-handled. Already-busy or unsupported host queues are refused
+before calling the native method. Seed changes, widgets and serialization remain host-owned.
+
 Share and import is the Workflows page's ⇅ (`ui_share.js`). Its share code
 (`share_code.js`, no DOM) is AMB2: the workflow's lean form — node id, type, widget values,
 position to 10 px, and only what differs from a fresh node of the type (`LiteGraph.createNode`

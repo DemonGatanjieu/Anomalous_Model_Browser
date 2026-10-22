@@ -263,6 +263,14 @@ prompt list, and partial errors are saved even before all prompts finish. Marked
 validation and persistence run in a worker thread; invalid cross-drive paths are validation
 errors rather than uncaught route failures.
 
+Run ownership is explicit: the page claims `run_workflow` with the `prompt_ids` capability,
+then returns `{prompt_ids, queued, requested, submission_error?}` from native submissions.
+An old page's claim fails with a refresh message before dispatch. The server validates the
+bounded, unique ID list and retains its order; `ai_task_runs.watch` queries only those IDs,
+never a global queue difference. A partial batch continues tracking accepted IDs but finishes
+as an error with its pictures retained. `run_status` includes these IDs. Missing receipts
+cannot trigger guessing or an automatic retry.
+
 `POST /anomalous/mcp` (`api/mcp_server.py`) answers one JSON-RPC message per POST with
 one JSON object; GET and DELETE get 405, and nothing is sent unasked. A request whose
 `params._meta` carries `io.modelcontextprotocol/protocolVersion` is served as 2026-07-28:

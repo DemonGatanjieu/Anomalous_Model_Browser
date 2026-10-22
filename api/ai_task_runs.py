@@ -21,18 +21,6 @@ def _queue():
     return PromptServer.instance.prompt_queue
 
 
-def prompt_ids():
-    """Prompts queued, running or recently done: before and after run_workflow, the new ones are its."""
-    try:
-        queue = _queue()
-        running, pending = queue.get_current_queue()
-        ids = {item[1] for item in [*running, *pending]}
-        ids.update(queue.get_history(max_items=64).keys())
-        return ids
-    except Exception:  # noqa: BLE001 - no server (tests): nothing to watch
-        return set()
-
-
 def outputs_of(record_):
     """Saved pictures and videos in one history record."""
     out = []
@@ -121,6 +109,7 @@ def _finish_run(task_id, step_id, prompts, history):
         step = next((item for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
         if not step:
             return True
+        failed = failed or bool(step.get("submission_error"))
         results = [item for item in step["results"] if item["type"] != "image"] + images[:ai_tasks.MAX_RESULTS]
         if (done < len(prompts) and results == step["results"] and step.get("prompts") == len(prompts)
                 and (not failed or step.get("ok") is False)):
@@ -130,7 +119,7 @@ def _finish_run(task_id, step_id, prompts, history):
         step["prompts"] = len(prompts)
         if failed:
             step["ok"] = False
-            step["error"] = "ComfyUI 运行出错 / The run failed"
+            step["error"] = step.get("submission_error") or "ComfyUI 运行出错 / The run failed"
         if done >= len(prompts):
             step.pop("progress", None)
             step["ms"] = int((time.time() - step["at"]) * 1000)
@@ -154,37 +143,43 @@ def _stop_run(task_id, step_id, reason):
     ai_tasks._notify(task_id)
 
 
-def watch(step_id, before):
-    """Follows the run of step `step_id` (prompts not in `before`) until it ends."""
+def watch(step_id, receipt):
+    """Follow only IDs returned by this submission, in batch order; never infer ownership from the queue."""
     with ai_tasks._lock:
         task_id = next((task["id"] for task in ai_tasks._load().values()
                         if any(step["id"] == step_id for step in task.get("steps") or [])), None)
     if not task_id:
         return
+    prompts = receipt.get("prompt_ids") or []
+    if not prompts:
+        _stop_run(task_id, step_id, "缺少运行 ID / Missing submission IDs; refresh ComfyUI before retrying")
+        return
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id)
+        step = next((item for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
+        if not step:
+            return  # The user may remove the task while its submission is returning.
+        step["prompt_ids"] = list(prompts)
+        if receipt.get("submission_error"):
+            step.update(submission_error=receipt["submission_error"], error=receipt["submission_error"], ok=False)
+        ai_tasks._save(task)
 
     def follow():
         start = time.monotonic()
-        prompts = []
         while time.monotonic() - start < ai_tasks.RUN_WATCH_SECONDS:
-            if not prompts:
-                prompts = sorted(prompt_ids() - before)
-                if not prompts and time.monotonic() - start > 10:
-                    _finish_run(task_id, step_id, [], {})
-                    return  # nothing was queued after all
-            if prompts:
-                try:
-                    history = {pid: _queue().get_history(prompt_id=pid).get(pid) for pid in prompts}
-                except Exception:  # noqa: BLE001 - stop the receipt, not the actual ComfyUI run
-                    _stop_run(task_id, step_id, "无法读取运行记录 / Run history could not be read; check ComfyUI's queue")
-                    return
-                if _finish_run(task_id, step_id, prompts, {k: v for k, v in history.items() if v}):
-                    return
-                try:
-                    progress = progress_of(prompts)
-                except (AttributeError, KeyError, TypeError, ValueError):
-                    progress = None  # progress is optional; keep watching the authoritative history
-                if progress:
-                    _show_progress(task_id, step_id, progress)
+            try:
+                history = {pid: _queue().get_history(prompt_id=pid).get(pid) for pid in prompts}
+            except Exception:  # noqa: BLE001 - stop the receipt, not the actual ComfyUI run
+                _stop_run(task_id, step_id, "无法读取运行记录 / Run history could not be read; check ComfyUI's queue")
+                return
+            if _finish_run(task_id, step_id, prompts, {k: v for k, v in history.items() if v}):
+                return
+            try:
+                progress = progress_of(prompts)
+            except (AttributeError, KeyError, TypeError, ValueError):
+                progress = None  # progress is optional; keep watching the authoritative history
+            if progress:
+                _show_progress(task_id, step_id, progress)
             time.sleep(RUN_POLL_SECONDS)
         _stop_run(task_id, step_id, "运行跟踪已超时，未停止出图 / Monitoring timed out; the workflow was not cancelled. Check ComfyUI's queue")
 
@@ -208,6 +203,8 @@ def status(client, session="", task_id=None, wait_seconds=0):
               else round(time.time() - run["at"])}
     if run.get("progress"):
         answer["progress"] = run["progress"]
+    if run.get("prompt_ids"):
+        answer["prompt_ids"] = run["prompt_ids"]
     pictures = ["/".join(part for part in (item.get("subfolder"), item["filename"]) if part)
                 for item in run.get("results") or [] if item.get("type") == "image"]
     if pictures:

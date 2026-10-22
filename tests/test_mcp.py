@@ -231,6 +231,24 @@ class ServerActionTests(unittest.TestCase):
     """Actions that go through this server's own routes."""
     CTX = {"base_url": "http://127.0.0.1:8188"}
 
+    def test_run_requires_exact_receipts_and_retains_partial_batches(self):
+        with mock.patch.object(mcp_actions, "ask_page", return_value={"prompt_ids": ["p1"], "queued": 99}) as ask:
+            got = mcp_actions.run_workflow(self.CTX, 2)
+        self.assertEqual(got["queued"], 1)
+        self.assertIn("submission_error", got)
+        self.assertEqual(ask.call_args.kwargs["required_capability"], "prompt_ids")
+        for reply in ({"queued": 1}, {"prompt_ids": []}, {"prompt_ids": ["a", "a"]}, {"prompt_ids": [{}]}):
+            with mock.patch.object(mcp_actions, "ask_page", return_value=reply), self.assertRaises(mcp_tools.ToolError):
+                mcp_actions.run_workflow(self.CTX, 2)
+
+    def test_old_page_cannot_claim_a_tracked_run(self):
+        server = mock.Mock(sockets={"test": object()})
+        server.send_sync.side_effect = lambda event, data: self.assertFalse(mcp_bridge.claim(data["id"]))
+        with mock.patch.object(mcp_bridge, "_server", return_value=server):
+            with self.assertRaisesRegex(mcp_bridge.PageRefused, "Refresh"):
+                mcp_bridge.ask_page("run_workflow", required_capability="prompt_ids", timeout=1)
+        self.assertEqual(mcp_bridge._waiting, {})
+
     def test_scanning_picked_models_groups_them_by_folder(self):
         calls = []
         models = {"loras:0:a/x.safetensors": ("loras", 0, "/m", "/m/a/x.safetensors"),
