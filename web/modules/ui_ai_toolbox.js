@@ -1,11 +1,12 @@
 /**
  * "给 AI 的素材": what the user hands the AI to work with in a task (api/ai_toolbox.py). A side
  * panel on the right of the screen that leaves the workbench and the canvas usable (the kinds as
- * tabs, the cards in two columns, a card's detail over them), or, expanded, a large window: a
+ * tabs, a line per item, a card's detail over them), or, expanded, a large window: a
  * search over everything, the kinds on the left (node types, combos, workflows,
  * prompts, models) with how many are picked, a second column to narrow by source (each custom
  * node pack with its badge, ComfyUI's own, paid API nodes), by where a prompt comes from or by
- * model type, a grid of cards (ui_ai_toolbox_cards.js) drawn as it scrolls, the card in focus
+ * model type (a custom node pack can be picked whole there: every node type in it), a grid of
+ * cards (ui_ai_toolbox_cards.js) drawn as it scrolls, the card in focus
  * in full on the right, and the picks below with how strictly the AI keeps to them. Node types
  * are the page's own (no waiting); the rest is read ahead and kept (ai_toolbox_data.js). The
  * user's last choice of the two is remembered on this browser. On the AI page the side panel is a
@@ -16,7 +17,7 @@
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
-import { KINDS, keptCatalog, loadCatalog, nodeItems, nodeSources, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
+import { KINDS, PICK_KINDS, keptCatalog, loadCatalog, nodeItems, nodeSources, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
 import { card, coverUrl, detail, refreshCard, rowCard } from './ui_ai_toolbox_cards.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture, sourceBadge } from './ui_ai_toolbox_icons.js';
@@ -52,9 +53,12 @@ async function postJson(url, body) {
     return data;
 }
 
-const empty = () => Object.fromEntries(KINDS.map(kind => [kind, []]));
-const total = box => KINDS.reduce((sum, kind) => sum + (box?.[kind]?.length || 0), 0);
+const empty = () => Object.fromEntries(PICK_KINDS.map(kind => [kind, []]));
+const total = box => PICK_KINDS.reduce((sum, kind) => sum + (box?.[kind]?.length || 0), 0);
 const keyOf = (kind, id) => `${kind}|${id}`;
+/** The custom node packs among `nodes`, as items to pick whole. */
+const packItems = nodes => nodeSources(nodes).filter(source => source.kind === 'pack')
+    .map(source => ({ kind: 'packs', id: source.key, title: t('aiTbPackName', { name: source.label || source.key }), source, count: source.count }));
 
 function savedLayout() {
     try { return localStorage.getItem(LAYOUT_KEY) === 'full' ? 'full' : 'side'; } catch (_) { return 'side'; }
@@ -126,14 +130,14 @@ export async function openToolbox(task, changed = () => {}) {
     const byKey = new Map();
     const index = () => {
         byKey.clear();
-        for (const item of [...state.nodes, ...(state.catalog || [])]) byKey.set(keyOf(item.kind, item.id), item);
+        for (const item of [...state.nodes, ...packItems(state.nodes), ...(state.catalog || [])]) byKey.set(keyOf(item.kind, item.id), item);
     };
     index();
     try {
         const response = await fetch('/anomalous/ai_toolbox/favorites');
         if (response.ok) state.favorites = { ...empty(), ...(await response.json()).favorites };
     } catch (_) { /* none yet; a star still saves */ }
-    for (const kind of KINDS) state.picks[kind] = [...((fromTask ? task.toolbox : state.favorites)[kind] || [])];
+    for (const kind of PICK_KINDS) state.picks[kind] = [...((fromTask ? task.toolbox : state.favorites)[kind] || [])];
 
     const body = el('div', 'anomalous-tb');
     const top = el('div', 'anomalous-tb-top');
@@ -152,7 +156,8 @@ export async function openToolbox(task, changed = () => {}) {
     const grid = el('div', 'anomalous-tb-grid');
     const sentinel = el('div', 'anomalous-tb-sentinel');
     scroller.append(grid, sentinel);
-    gridWrap.append(gridHead, scroller);
+    const packBar = el('div', 'anomalous-tb-pack');
+    gridWrap.append(gridHead, packBar, scroller);
     const pane = el('div', 'anomalous-tb-pane');
     const main = el('div', 'anomalous-tb-main');
     main.append(rail, side, gridWrap, pane);
@@ -187,10 +192,11 @@ export async function openToolbox(task, changed = () => {}) {
     };
 
     const picked = item => state.picks[item.kind].includes(item.id);
+    const inPack = item => item.kind === 'nodes' && state.picks.packs.includes(item.source?.key);
     const liked = item => state.favorites[item.kind].includes(item.id);
     const cards = new Map(); // key -> drawn card
     const ctx = {
-        picked, favorite: liked, focus: (item) => { state.focus = item; drawPane(); },
+        picked, inPack, favorite: liked, focus: (item) => { state.focus = item; drawPane(); },
         peek: (item) => { if (!body.classList.contains('is-side')) ctx.focus(item); }, // the side panel's detail would cover the cards
         toggle: item => setPick(item.kind, item.id, !picked(item)),
         star: item => setFavorite(item),
@@ -203,6 +209,11 @@ export async function openToolbox(task, changed = () => {}) {
         const item = byKey.get(keyOf(kind, id));
         const drawn = cards.get(keyOf(kind, id));
         if (drawn && item) refreshCard(drawn, item, ctx);
+        if (kind === 'packs') {
+            for (const [key, node] of cards) refreshCard(node, byKey.get(key), ctx);
+            drawFacets(shown().beforeFacet);
+            drawPackBar();
+        }
         drawRail();
         drawFilters();
         drawTray();
@@ -239,7 +250,7 @@ export async function openToolbox(task, changed = () => {}) {
 
     function drawRail() {
         rail.replaceChildren(...KINDS.map((kind) => {
-            const count = state.picks[kind].length;
+            const count = state.picks[kind].length + (kind === 'nodes' ? state.picks.packs.length : 0);
             const matches = state.query ? searchItems(itemsOf(kind), state.query).length : null;
             const node = button(`anomalous-tb-kind${state.kind === kind ? ' is-on' : ''}`, [icon(kind, 20), t(`aiToolboxKind_${kind}`)], () => {
                 state.kind = kind;
@@ -279,11 +290,25 @@ export async function openToolbox(task, changed = () => {}) {
             });
             node.title = label;
             node.append(el('span', 'anomalous-tb-facet-count', String(count)));
+            if (facet && state.picks.packs.includes(facet)) node.classList.add('has-pack');
             return node;
         };
         side.replaceChildren(el('div', 'anomalous-tb-facets-title', t(state.kind === 'nodes' ? 'aiTbSources' : 'aiTbNarrow')),
             row(null, t('aiTbEverything'), beforeFacet.length),
             ...list.map(facet => row(facet.key, facet.label, facet.count, facet.source ? sourceBadge(facet.source, 22) : null)));
+    }
+
+    /** While one custom node pack is shown: its name, how many node types, and picking it whole. */
+    function drawPackBar() {
+        const pack = state.kind === 'nodes' && state.facet ? byKey.get(keyOf('packs', state.facet)) : null;
+        packBar.hidden = !pack;
+        if (!pack) return;
+        const on = state.picks.packs.includes(pack.id);
+        const text = el('div', 'anomalous-tb-pack-text');
+        text.append(el('div', 'anomalous-tb-pack-name', pack.source.label || pack.id), el('div', 'anomalous-tb-pack-count', t('aiTbPackCount', { count: pack.count })));
+        packBar.replaceChildren(sourceBadge(pack.source, 26), text,
+            button(`anomalous-tb-pack-pick${on ? ' is-on' : ''}`, [icon(on ? 'check' : 'plus', 15), t(on ? 'aiTbPackPicked' : 'aiTbPackPick')],
+                () => setPick('packs', pack.id, !on), t('aiTbPackHint')));
     }
 
     let observer = null;
@@ -295,6 +320,7 @@ export async function openToolbox(task, changed = () => {}) {
         const facetLabel = state.facet ? (facets(beforeFacet, state.kind).find(facet => facet.key === state.facet)?.label || state.facet) : '';
         gridHead.replaceChildren(el('span', 'anomalous-tb-grid-title', facetLabel || t(`aiToolboxKind_${state.kind}`)),
             el('span', 'anomalous-tb-grid-count', t('aiTbCount', { count: items.length })));
+        drawPackBar();
         if (state.kind !== 'nodes' && !state.catalog) {
             grid.replaceChildren(...Array.from({ length: 8 }, () => el('div', 'anomalous-tb-card is-skeleton')));
             if (state.error) grid.replaceChildren(el('div', 'anomalous-tb-note is-error', state.error));
@@ -349,7 +375,7 @@ export async function openToolbox(task, changed = () => {}) {
             img.loading = 'lazy';
             img.onerror = () => img.replaceWith(icon(kind, 14));
             node.append(img);
-        } else if (kind === 'nodes' && item) {
+        } else if ((kind === 'nodes' || kind === 'packs') && item) {
             node.append(sourceBadge(item.source, 16));
         } else {
             node.append(icon(kind, 14));
@@ -362,7 +388,7 @@ export async function openToolbox(task, changed = () => {}) {
 
     function drawTray() {
         const chips = el('div', 'anomalous-tb-chips');
-        for (const kind of KINDS) for (const id of state.picks[kind]) chips.append(chip(kind, id));
+        for (const kind of PICK_KINDS) for (const id of state.picks[kind]) chips.append(chip(kind, id));
         if (!chips.children.length) chips.append(el('span', 'anomalous-tb-tray-empty', t('aiTbTrayEmpty')));
         const clear = button('anomalous-tb-clear', [icon('trash', 15)], () => {
             state.picks = empty();
@@ -470,8 +496,9 @@ export function toolboxStep(step) {
         const mode = el('div', `anomalous-tb-step-mode is-${picks.mode === 'only' ? 'only' : 'prefer'}`);
         mode.append(icon(picks.mode === 'only' ? 'lock' : 'target', 14), el('span', '', t(`aiToolboxStepMode_${picks.mode === 'only' ? 'only' : 'prefer'}`)));
         const chips = el('div', 'anomalous-tb-chips is-static');
-        const known = new Map([...(picks.nodes?.length ? pageNodes() : []), ...(keptCatalog() || [])].map(item => [keyOf(item.kind, item.id), item]));
-        for (const kind of KINDS) {
+        const nodes = picks.nodes?.length || picks.packs?.length ? pageNodes() : [];
+        const known = new Map([...nodes, ...packItems(nodes), ...(keptCatalog() || [])].map(item => [keyOf(item.kind, item.id), item]));
+        for (const kind of PICK_KINDS) {
             for (const id of picks[kind] || []) {
                 const item = known.get(keyOf(kind, id));
                 const node = el('span', `anomalous-tb-chip is-${kind}`);
@@ -484,7 +511,7 @@ export function toolboxStep(step) {
                     img.onerror = () => img.replaceWith(icon(kind, 14));
                     node.append(img);
                 } else {
-                    node.append(kind === 'nodes' && item ? sourceBadge(item.source, 16) : icon(kind, 14));
+                    node.append((kind === 'nodes' || kind === 'packs') && item ? sourceBadge(item.source, 16) : icon(kind === 'packs' ? 'nodes' : kind, 14));
                 }
                 const inner = kind === 'prompts' && /^(combo|workflow):/.test(id);
                 node.append(el('span', 'anomalous-tb-chip-name', inner ? t('aiTbPromptOf', { name: id.replace(/^(combo|workflow):/, '') }) : item?.title || String(id).split(/[\\/:]/).pop()));

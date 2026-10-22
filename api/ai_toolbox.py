@@ -1,5 +1,6 @@
 """What the user hands the AI to work with ("给 AI 的素材", web/modules/ui_ai_toolbox.js): node
-types, combos, workflows, saved prompts and models picked for a task, and how strictly: prefer
+types, whole custom node packs (by folder: every node type in it), combos, workflows, saved
+prompts and models picked for a task, and how strictly: prefer
 (the AI is told to use them first) or only (add_node and new_workflow refuse other node types,
 except ComfyUI's own built-in ones and the helpers that live only in the page). Favourites
 (user/anomalous/ai_toolbox.json) are what a task has until the user picks for it. A pick is a
@@ -17,7 +18,7 @@ import uuid
 from . import ai_tasks
 from .path_utils import atomic_write_json
 
-KINDS = ("nodes", "combos", "workflows", "prompts", "models")
+KINDS = ("nodes", "packs", "combos", "workflows", "prompts", "models")
 MODES = ("prefer", "only")
 MAX_ITEMS = 60
 MAX_NAME = 300
@@ -35,7 +36,7 @@ def _path():
 def clean(picks):
     """{kind: [names]} for KINDS: strings only, each kind once per name, at most MAX_ITEMS."""
     if not isinstance(picks, dict):
-        raise ToolboxError("Expected {nodes, combos, workflows, prompts, models}")
+        raise ToolboxError("Expected {nodes, packs, combos, workflows, prompts, models}")
     out = {}
     for kind in KINDS:
         items = picks.get(kind) or []
@@ -82,13 +83,14 @@ def effective(task):
 def words(box):
     """The picks in a sentence or two for the AI."""
     parts = []
-    labels = {"nodes": "node types", "combos": "combos (place_combo)", "workflows": "workflows (open_workflow opens one in a new tab)",
+    labels = {"nodes": "node types", "packs": "custom node packs (every node type in these folders; get_toolbox lists them)",
+              "combos": "combos (place_combo)", "workflows": "workflows (open_workflow opens one in a new tab)",
               "prompts": "prompts (combo:<name> / workflow:<name> are the prompts inside that combo or workflow)",
               "models": "models (model_id for set_model / add_lora / get_model)"}
     for kind in KINDS:
         if box.get(kind):
             parts.append(f"{labels[kind]}: {', '.join(box[kind])}")
-    how = ("Use ONLY these node types when you add nodes; ComfyUI's own built-in nodes stay allowed. "
+    how = ("Use ONLY these node types (and those of the picked packs) when you add nodes; ComfyUI's own built-in nodes stay allowed. "
            if box.get("mode") == "only" else "Use these first. ")
     return f"The user picked these for you to work with. {how}{'; '.join(parts)}. get_toolbox gives them in full."
 
@@ -123,13 +125,17 @@ def builtin(info):
     return module == "nodes" or module.startswith("comfy_extras")
 
 
+def chosen(box, name, info):
+    """Whether node type `name` (its /object_info entry) is among picks `box`: itself, or its pack."""
+    return bool(box) and (name in (box.get("nodes") or []) or source_of(info) in (box.get("packs") or []))
+
+
 def refused(task_id, types, info):
     """The node types among `types` the task's "only" picks do not allow (page-only helpers, unknown to /object_info, pass)."""
     box = effective(ai_tasks.get_task(task_id)) if task_id else None
     if not box or box.get("mode") != "only":
         return []
-    allowed = set(box.get("nodes") or [])
-    return sorted({name for name in types if name in info and name not in allowed and not builtin(info[name])})
+    return sorted({name for name in types if name in info and not chosen(box, name, info[name]) and not builtin(info[name])})
 
 
 def source_of(info):

@@ -72,6 +72,22 @@ class ToolboxTests(unittest.TestCase):
             mcp_canvas_edit.add_node(self.ctx, "KSampler")
             page.assert_called_once()
 
+    def test_a_whole_pack_allows_its_nodes_lists_them_first_and_in_full(self):
+        ai_toolbox.pick(self.task, {"packs": ["ComfyUI-Impact-Pack"]}, "only")
+        self.assertEqual(ai_toolbox.refused(self.task, ["FaceDetailer", "SAMLoader", "KSampler", "KlingTextToVideo"], INFO),
+                         ["KlingTextToVideo"], "every node of the pack, and the built-in ones")
+        with mock.patch.object(mcp_canvas_edit, "_page", return_value={}):
+            with self.assertRaisesRegex(ToolError, "built-in ones\): every node of the pack ComfyUI-Impact-Pack"):
+                mcp_canvas_edit.add_node(self.ctx, "KlingTextToVideo")
+        found = mcp_canvas_edit.find_nodes(self.ctx, query="e")
+        self.assertEqual({node["type"] for node in found["nodes"][:2]}, {"FaceDetailer", "SAMLoader"})
+        self.assertTrue(all(node["picked_by_user"] for node in found["nodes"][:2]))
+        box = mcp_task_tools.get_toolbox(self.ctx)
+        self.assertEqual(box["packs"], [{"pack": "ComfyUI-Impact-Pack", "count": 2, "node_types": [
+            {"type": "FaceDetailer", "display_name": "FaceDetailer", "category": ""},
+            {"type": "SAMLoader", "display_name": "SAMLoader", "category": ""}]}])
+        self.assertIn("custom node packs", box["note"])
+
     def test_prefer_refuses_nothing_and_find_nodes_lists_picks_first(self):
         ai_toolbox.pick(self.task, {"nodes": ["SAMLoader"]}, "prefer")
         self.assertEqual(ai_toolbox.refused(self.task, ["KlingTextToVideo"], INFO), [])

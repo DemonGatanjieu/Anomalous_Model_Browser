@@ -171,7 +171,8 @@ covered by the `styles.css` manifest.
   the page usable (kinds as tabs, one line per item (`rowCard`), a card's detail over them) or, expanded, a large
   window: search, kinds, a column by source / origin / type, a card grid drawn as it scrolls,
   a detail pane, the picks below; the last choice is kept in the browser),
-  by the names the AI's tools use, with a mode: prefer, or only (add_node / new_workflow then
+  by the names the AI's tools use (and whole custom node packs by folder, `packs`: get_toolbox
+  lists their node types, `chosen` counts them picked), with a mode: prefer, or only (add_node / new_workflow then
   refuse other custom or paid node types). Node types come from the page's own definitions
   (`web/modules/ai_toolbox_data.js`: LiteGraph's registered types and their `nodeData`, so no
   request; page-only helpers go with their pack when their name says which); the rest in one

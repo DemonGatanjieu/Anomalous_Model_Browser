@@ -9,6 +9,8 @@
  */
 
 export const KINDS = Object.freeze(['nodes', 'combos', 'workflows', 'prompts', 'models']);
+/** What can be picked: the kinds, and whole custom node packs (picked from the nodes' sources). */
+export const PICK_KINDS = Object.freeze(['nodes', 'packs', 'combos', 'workflows', 'prompts', 'models']);
 const SETTING_TYPES = new Set(['INT', 'FLOAT', 'STRING', 'BOOLEAN', 'COMBO']);
 const KEEP_MS = 60 * 1000;
 const lower = value => String(value ?? '').toLowerCase();

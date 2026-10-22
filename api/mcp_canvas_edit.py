@@ -60,9 +60,8 @@ def _input(name, conf, required, choices):
 
 
 def _picked(ctx):
-    """The node types the user picked for this task (ai_toolbox.py), first in every search."""
-    box = ai_toolbox.effective(ai_tasks.get_task(ctx["task"])) if ctx.get("task") else None
-    return set((box or {}).get("nodes") or [])
+    """What the user picked for this task (ai_toolbox.py): its node types and packs come first in every search."""
+    return ai_toolbox.effective(ai_tasks.get_task(ctx["task"])) if ctx.get("task") else None
 
 
 def _allowed(ctx, types):
@@ -73,8 +72,9 @@ def _allowed(ctx, types):
     refused = ai_toolbox.refused(ctx["task"], types, info)
     if refused:
         box = ai_toolbox.effective(ai_tasks.get_task(ctx["task"])) or {}
+        allowed = [*(box.get("nodes") or []), *(f"every node of the pack {pack}" for pack in box.get("packs") or [])]
         raise ToolError(f"For this task the user allowed only these node types (and ComfyUI's built-in ones): "
-                        f"{', '.join(box.get('nodes') or []) or 'none'}. Not allowed: {', '.join(refused)}. "
+                        f"{', '.join(allowed) or 'none'}. Not allowed: {', '.join(refused)}. "
                         "If you need one, ask the user in the AI workbench (show_panel) instead.")
 
 
@@ -107,12 +107,12 @@ def find_nodes(ctx, query="", types=None):
         haystack = " ".join(str(part or "") for part in (name, item.get("display_name"), item.get("category"), item.get("description"))).lower()
         if all(word in haystack for word in words):
             label = f"{name} {item.get('display_name') or ''}".lower()
-            scored.append((name not in picked, 0 if name.lower() == " ".join(words) else 1 if all(w in label for w in words) else 2,
+            scored.append((not ai_toolbox.chosen(picked, name, item), 0 if name.lower() == " ".join(words) else 1 if all(w in label for w in words) else 2,
                            bool(item.get("deprecated")), ai_toolbox.source_of(item) == "api", len(name), name))
     scored.sort()
     nodes = [_node(name, info[name], MAX_CHOICES) for *_rest, name in scored[:MAX_FOUND]]
     for node in nodes:
-        if node["type"] in picked:
+        if ai_toolbox.chosen(picked, node["type"], info[node["type"]]):
             node["picked_by_user"] = True
     return {"nodes": nodes, "total_matches": len(scored),
             "note": "Inputs of type choice take one of their choices; others are sockets fed by connect_nodes "

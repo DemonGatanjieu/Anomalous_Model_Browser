@@ -492,3 +492,13 @@ body.anomalous-tb-docked #anomalous-container.anomalous-maximized .anomalous-ai 
     .anomalous-tb-card, .anomalous-tb-card:hover .anomalous-tb-cover img, .anomalous-tb-send { transition: none; transform: none; }
     .anomalous-tb-card.is-skeleton { animation: none; }
 }
+/* A custom node pack shown in the second column: picked whole from its bar; its nodes say so. */
+.anomalous-tb-pack { display: flex; flex: none; align-items: center; gap: 10px; margin: 8px 10px 0; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--amb-link) 35%, transparent); border-radius: 10px; background: color-mix(in srgb, var(--amb-link) 8%, transparent); }
+.anomalous-tb-pack[hidden] { display: none; }
+.anomalous-tb-pack-text { flex: 1; min-width: 0; }
+.anomalous-tb-pack-name { overflow: hidden; color: var(--amb-text-main); font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-tb-pack-count { color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-tb-pack-pick { display: inline-flex; flex: none; align-items: center; gap: 5px; height: 30px; padding: 0 12px; border: 1px solid var(--amb-link); border-radius: 8px; background: var(--amb-link); color: var(--amb-btn-primary-text, #fff); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.anomalous-tb-pack-pick.is-on { background: transparent; color: var(--amb-link); }
+.anomalous-tb-facet.has-pack { box-shadow: inset 0 0 0 1px var(--amb-link); }
+.anomalous-tb-card.is-in-pack:not(.is-picked) .anomalous-tb-check { border-color: color-mix(in srgb, var(--amb-link) 60%, transparent); color: var(--amb-link); opacity: 1; transform: scale(1); }

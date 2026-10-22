@@ -11,6 +11,8 @@
 - 右边这一栏改成一张单独的卡片，不再用一条线硬隔开；默认窄一些，给中间的时间线留出地方。鼠标移到它左边缘会出现小竖条，拖动调宽窄（记得住，双击恢复）。
 - 左边的任务列表用窗口左上角的按钮收起 / 展开；收起后鼠标移到按钮上，列表会临时浮出来，点任务或移开就收回。
 - 素材在右边这一栏里时，鼠标移过卡片不再自动跳进详细说明（之前很难操作），点卡片上的 ⓘ 才看。
+- **整个自定义节点包交给 AI**：素材里点“节点”，再在来源那一排点某个自定义节点包，上面会出现“整包交给 AI”。不知道该选哪个节点时，把整个包给它，AI 自己从包里挑；选“只能用”时，这个包里的节点都允许，别的第三方和付费节点照样拦下。AI 用 `get_toolbox` 能看到包里有哪些节点，`find_nodes` 搜索时也把它们排在前面。
+- A whole custom node pack can be picked (from its source in the nodes' second column): the AI gets its node types in get_toolbox, finds them first, and with "only" every node of the pack is allowed.
 - 素材在右边这一栏（小窗）里时改成一行一个的列表：左边是图标或小封面，中间是名字和来源，右边是勾选；搜索框和“全部 / 已选 / 常用”并成一行。同样的高度能看到的条目多了好几倍；展开成大窗口还是原来的卡片。
 - In the side panel the materials picker lists one line per item (badge or small cover, name, where it is from, the tick) and puts the search and the filters on one line; the large window keeps the cards.
 - AI 工作台和素材窗口里的滚动条变细，平时看不见，鼠标移到能滚动的那一块上才显出来。

@@ -6,6 +6,8 @@ reads what the user picked or typed on it."""
 from . import ai_marks, ai_panels, ai_run_control, ai_run_tracking, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
+PACK_TYPES = 150  # node types listed per picked pack
+
 
 def begin_task(ctx, title, new_task=False):
     title = str(title or "").strip()
@@ -160,6 +162,17 @@ def get_toolbox(ctx, task=None):
         answer["nodes"] = found["nodes"]
         if found.get("not_found"):
             answer["page_only_nodes"] = found["not_found"]  # helpers that live only in the page: add_node takes them
+    if box.get("packs"):
+        from .mcp_canvas_edit import _object_info
+
+        info = _object_info(ctx)
+        answer["packs"] = []
+        for pack in box["packs"]:
+            types = sorted(name for name, item in info.items() if ai_toolbox.source_of(item) == pack)
+            answer["packs"].append({"pack": pack, "count": len(types), "node_types": [
+                {"type": name, "display_name": info[name].get("display_name") or name, "category": info[name].get("category") or ""}
+                for name in types[:PACK_TYPES]]})
+        answer["packs_note"] = "Every node type of a pack is the user's pick; find_nodes(types=[...]) gives one in full."
     for kind, lister, key in (("combos", mcp_tools.list_combos, "combos"), ("workflows", mcp_tools.list_workflows, "workflows")):
         if box.get(kind):
             answer[kind] = [item for name in box[kind] for item in lister(name, 5)[key] if item["name"] == name][:ai_toolbox.MAX_ITEMS]
@@ -304,10 +317,11 @@ TASK_TOOLS = dict([
                "or slow and the user agrees (ask_user), or when the user asks you to stop.",
                stop_run, {"task": _TASK_PROP}),
     _task_tool("get_toolbox", "What the user picked for you",
-               "The node types, combos, saved workflows, prompts and models the user picked in the AI workbench for "
-               "this task, in full (inputs and outputs of the nodes, the combos' models and prompts…), and how strictly: "
-               "prefer (use them first) or only (add_node and new_workflow accept only those node types besides "
-               "ComfyUI's built-in ones). begin_task says when there are any.",
+               "The node types, whole custom node packs, combos, saved workflows, prompts and models the user picked in "
+               "the AI workbench for this task, in full (inputs and outputs of the nodes, each pack's node types, the "
+               "combos' models and prompts…), and how strictly: prefer (use them first) or only (add_node and "
+               "new_workflow accept only those node types and the packs' besides ComfyUI's built-in ones). "
+               "begin_task says when there are any.",
                get_toolbox, {"task": _TASK_PROP}),
     _task_tool("get_answers", "Read the user's answers and messages",
                "What the user picked or typed on your panels, and what they wrote to you in the AI workbench "

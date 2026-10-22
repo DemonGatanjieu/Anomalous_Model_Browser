@@ -162,6 +162,7 @@ export function rowCard(item, ctx) {
 
 /** The tick, the star and ⓘ of a card, and what a press, a key and the pointer do. */
 function controls(node, item, ctx) {
+    node.classList.toggle('is-in-pack', Boolean(ctx.inPack?.(item))); // its whole pack is picked
     const check = el('span', 'anomalous-tb-check');
     check.append(icon('check', 14));
     const star = el('button', `anomalous-tb-star${ctx.favorite(item) ? ' is-on' : ''}`);
@@ -197,6 +198,7 @@ function controls(node, item, ctx) {
 export function refreshCard(node, item, ctx) {
     const on = ctx.picked(item);
     node.classList.toggle('is-picked', on);
+    node.classList.toggle('is-in-pack', Boolean(ctx.inPack?.(item)));
     node.setAttribute('aria-pressed', String(on));
     const star = node.querySelector('.anomalous-tb-star');
     if (star) {
