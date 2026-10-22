@@ -17,13 +17,15 @@ async def api_list(request):
 
 
 async def api_start(request):
-    """POST /anomalous/ai_tasks: {title} - the user starts a task for the next AI app that calls."""
+    """POST /anomalous/ai_tasks: {title, about?} - the user starts a task for the next AI app that
+    calls; `about` names what it is about ([{type: model | image | combo, model_id | image | name}])."""
     try:
         body = await request.json()
     except (ValueError, UnicodeDecodeError):
         body = {}
-    title = body.get("title") if isinstance(body, dict) else ""
-    return web.json_response({"task": ai_tasks.task_summary(ai_tasks.start_task(title if isinstance(title, str) else ""))})
+    body = body if isinstance(body, dict) else {}
+    title = body.get("title") if isinstance(body.get("title"), str) else ""
+    return web.json_response({"task": ai_tasks.task_summary(ai_tasks.start_task(title, about=body.get("about")))})
 
 
 async def api_get(request):

@@ -26,7 +26,7 @@ function button(className, label, onClick, title) {
 export const mcpAddress = () => `${location.origin}/anomalous/mcp`;
 
 /** A line to copy: the text and a Copy button that says when it is done. */
-function copyLine(text, { code = true, label = t('aiCopyAddress') } = {}) {
+export function copyLine(text, { code = true, label = t('aiCopyAddress') } = {}) {
     const line = el('div', `anomalous-ai-copy${code ? ' is-code' : ''}`);
     const body = el(code ? 'code' : 'span', 'anomalous-ai-copy-text', text);
     const copy = button('anomalous-ai-copy-button', label, async () => {

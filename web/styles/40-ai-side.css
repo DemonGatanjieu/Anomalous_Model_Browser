@@ -400,7 +400,7 @@
 .anomalous-ai-connect-overlay {
     position: fixed;
     inset: 0;
-    z-index: 10060;
+    z-index: 1000001; /* as ui_dialog.js's dialogs: above the image inspector it can open from (Hand to AI) */
     display: flex;
     align-items: center;
     justify-content: center;

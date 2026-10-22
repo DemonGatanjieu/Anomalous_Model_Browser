@@ -25,6 +25,7 @@ import {
 } from './ui_image_stage.js';
 import { renderImageInspectorContent } from './ui_image_inspector.js';
 import { openParamCompare } from './ui_param_compare.js';
+import { handImageToAi } from './ui_ai_handoff.js';
 import {
     fileBaseName,
     extractWorkflowDetails,
@@ -238,7 +239,7 @@ async function loadWorkbenchImage(index) {
             index,
             total,
             (newIdx) => loadWorkbenchImage(newIdx),
-            { workbench: wb, onDismiss: dismissWorkbench, onCompare: compareWithCanvas },
+            { workbench: wb, onDismiss: dismissWorkbench, onCompare: compareWithCanvas, onHandToAi: item => handImageToAi(wb.owner, item, dismissWorkbench) },
         );
         wb.headerEl.replaceWith(newHeader);
         wb.headerEl = newHeader;
@@ -461,7 +462,7 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
         currentIndex,
         items.length,
         (idx) => loadWorkbenchImage(idx),
-        { workbench: wb, onDismiss: dismissWorkbench, onCompare: compareWithCanvas },
+        { workbench: wb, onDismiss: dismissWorkbench, onCompare: compareWithCanvas, onHandToAi: item => handImageToAi(wb.owner, item, dismissWorkbench) },
     );
     wb.headerEl = headerEl;
     dialog.appendChild(headerEl);

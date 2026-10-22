@@ -203,6 +203,18 @@ class TaskTests(unittest.TestCase):
             got = mcp_task_tools.begin_task({"client": "Cursor"}, "整理 LoRA")
         self.assertEqual((got["task"], ai_tasks.get_task(unnamed["id"])["title"]), (unnamed["id"], "整理 LoRA"))
 
+    def test_a_task_handed_over_from_anomalous_tells_the_ai_what_it_is_about(self):
+        about = [{"type": "model", "model_id": "loras:0:a/b.safetensors", "label": "B"}, {"type": "image", "image": "x/1.png"},
+                 {"type": "combo", "name": "K"}, {"type": "file", "path": "C:/secret"}, {"type": "model", "model_id": 3}, "junk"]
+        started = ai_tasks.start_task("用这个模型出图：B", about=about)
+        self.assertEqual([item["type"] for item in ai_tasks.get_task(started["id"])["about"]], ["model", "image", "combo"],
+                         "only the known kinds, as plain strings")
+        got = mcp_task_tools.begin_task({"client": "Claude"}, "出图")
+        self.assertEqual(got["task"], started["id"])
+        self.assertEqual(got["about"][0]["model_id"], "loras:0:a/b.safetensors")
+        self.assertEqual(got["title"], "用这个模型出图：B", "the user's words stay the title")
+        self.assertNotIn("about", ai_tasks.start_task("plain"), "nothing handed over: no about")
+
     def test_begin_after_claim_keeps_user_task_and_repeated_begin_is_safe(self):
         for title in ("", "用户定的标题"):
             with self.subTest(title=title):

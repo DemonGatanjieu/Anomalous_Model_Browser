@@ -5,7 +5,7 @@
  * (a combo kept from an output image shows that image, its model's cover in a corner badge)
  * and Put on canvas (notebook_canvas.js: a new group of nodes that follows the pointer). A card
  * opens the combo in its editor (ui_notebook_editor.js), and dragged onto the canvas becomes a
- * new group of nodes where it is dropped. New names one and opens it.
+ * new group of nodes where it is dropped; ✦ hands it to an AI (ui_ai_handoff.js). New names one and opens it.
  */
 
 import { translate as t } from './locales.js';
@@ -15,6 +15,7 @@ import { bindMaterialDrag } from './material_drag.js';
 import { STRUCTURED } from './combo_slots.js';
 import { chooseNewCombo, structuredComboMeta } from './ui_combo_structure.js';
 import { outputThumbnail } from './ui_kept_toast.js';
+import { handComboToAi } from './ui_ai_handoff.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -90,7 +91,14 @@ function comboCard(owner, note) {
         owner.sendNotebookToCanvas();
     });
     use.title = t('comboUseHint');
-    body.append(use);
+    const hand = button('anomalous-combo-ai', `✦ ${t('aiHand')}`, (event) => {
+        event.stopPropagation();
+        void handComboToAi(owner, note);
+    });
+    hand.title = t('aiHandHint');
+    const buttons = el('div', 'anomalous-combo-buttons');
+    buttons.append(use, hand);
+    body.append(buttons);
     card.append(cover(structured ? { preview_url: structured.cover } : data.mainModel, data.source_image), body);
     bindMaterialDrag(card, owner, {
         payload: () => ({ type: 'combo', filename: note.filename, dragHint: t('comboDragHint'), dragTargetHint: t('comboDragCanvas') }),

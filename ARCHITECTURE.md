@@ -167,7 +167,10 @@ covered by the `styles.css` manifest.
   `gate`, and the same call made again after an Allow goes ahead without asking twice.
   `web/modules/ui_ai_gate.js` draws the card under a step that asks and the Gates window;
   `ui_ai_flow.js` the flow over a task (its stages in order, each done, running, waiting or
-  failed; a stage leads to its first step). It tells the page through the
+  failed; a stage leads to its first step). `ui_ai_handoff.js` is "Hand to AI" on a model's
+  page, an output image's inspector and a combo card: a task the user starts with `about`
+  (the model's `model_id`, the image, the combo's name; checked in `ai_tasks.start_task`),
+  which `begin_task` hands to the AI, and the sentence to paste into the AI app. It tells the page through the
   `anomalous.ai_task` event; `api/ai_tasks_routes.py` serves `/anomalous/ai_tasks` (list, one
   task, start, rename or remove, a panel's answer, a message). The user can start a task first
   (New task): it waits, and the next app that calls takes it over, so its work starts there

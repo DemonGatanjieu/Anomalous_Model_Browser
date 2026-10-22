@@ -220,9 +220,29 @@
     -webkit-box-orient: vertical;
 }
 
-.anomalous-combo-use {
-    align-self: flex-start;
+.anomalous-combo-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
     margin-top: auto;
+}
+
+/* Hand to AI (ui_ai_handoff.js): quieter than Put on canvas beside it. */
+.anomalous-combo-ai {
+    padding: 5px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-combo-ai:hover {
+    border-color: var(--amb-link);
+    color: var(--amb-text-main);
 }
 
 .anomalous-nb-editor {

@@ -15,10 +15,16 @@ def begin_task(ctx, title, new_task=False):
         ctx.get("client") or "AI", title, new_task=bool(new_task),
         session=ctx.get("session") or "", task_id=ctx.get("task"),
     )
-    return {"task": task["id"], "title": task["title"], "note": "Continue this task; do not begin another for its individual steps. "
-                                       "Every call from now on is a step of this task in Anomalous's AI workbench, "
-                                       "where the user sees, opens and undoes them. Call report to explain a choice "
-                                       "or to hand in pictures you made another way; report with done=true at the end."}
+    answer = {"task": task["id"], "title": task["title"], "note": "Continue this task; do not begin another for its individual steps. "
+                                         "Every call from now on is a step of this task in Anomalous's AI workbench, "
+                                         "where the user sees, opens and undoes them. Call report to explain a choice "
+                                         "or to hand in pictures you made another way; report with done=true at the end."}
+    if task.get("about"):
+        # Handed over from a model page, an image or a combo in Anomalous: the ids the tools take.
+        answer["about"] = task["about"]
+        answer["about_note"] = ("The user started this task from these in Anomalous; work with them: model_id goes to "
+                                "set_model / add_lora / get_model, image to get_image_info, name to place_combo.")
+    return answer
 
 
 def report(ctx, text="", images=None, done=False, task=None):

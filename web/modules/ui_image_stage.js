@@ -28,7 +28,7 @@ export function preloadAdjacentImages(items, currentIndex) {
  * Build Workbench Header
  */
 export function buildWorkbenchHeader(item, index, total, onNavigate, context = {}) {
-    const { workbench, onDismiss, onCompare } = context;
+    const { workbench, onDismiss, onCompare, onHandToAi } = context;
     const header = document.createElement('div');
     header.className = 'anomalous-workbench-header';
 
@@ -121,6 +121,16 @@ export function buildWorkbenchHeader(item, index, total, onNavigate, context = {
         compareBtn.title = t('compareWithCanvas');
         compareBtn.onclick = () => onCompare(item);
         rightWrap.appendChild(compareBtn);
+    }
+
+    if (onHandToAi) {
+        const handBtn = document.createElement('button');
+        handBtn.type = 'button';
+        handBtn.className = 'anomalous-workbench-tool-btn';
+        handBtn.textContent = '✦';
+        handBtn.title = t('aiHandHint');
+        handBtn.onclick = () => onHandToAi(item);
+        rightWrap.appendChild(handBtn);
     }
 
     // Close button

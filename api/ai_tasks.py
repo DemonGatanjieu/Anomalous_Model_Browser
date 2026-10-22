@@ -236,8 +236,23 @@ def _take_waiting(client, now, session=""):
     return task
 
 
-def start_task(title="", now=None):
-    """A task the user starts; it waits for the next AI app that calls. Returns the task."""
+ABOUT_TYPES = {"model": "model_id", "image": "image", "combo": "name"}  # what a task the user starts can be about
+
+
+def _about(items):
+    """What the user handed to the AI with a task (a model, an output image, a combo), checked: plain strings only."""
+    out = []
+    for item in items if isinstance(items, list) else []:
+        key = ABOUT_TYPES.get(item.get("type")) if isinstance(item, dict) else None
+        if key and isinstance(item.get(key), str) and item[key].strip():
+            out.append({"type": item["type"], key: _short(item[key].strip(), 300),
+                        **({"label": _short(item["label"], 120)} if isinstance(item.get("label"), str) else {})})
+    return out[:5]
+
+
+def start_task(title="", now=None, about=None):
+    """A task the user starts; it waits for the next AI app that calls. `about`: what the user
+    handed to the AI with it (from a model page, an image or a combo). Returns the task."""
     now = time.time() if now is None else now
     with _lock:
         before = _load().get(_waiting[0])
@@ -247,6 +262,8 @@ def start_task(title="", now=None):
                 "title_from": "user", "client": "", "started": now, "updated": now, "ended": None, "steps": [], "waiting": True}
         if not task["title"]:
             task["title_from"] = "auto"
+        if _about(about):
+            task["about"] = _about(about)
         _load()[task["id"]] = task
         _waiting[0] = task["id"]
         _drop_oldest()

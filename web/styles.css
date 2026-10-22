@@ -1,6 +1,6 @@
 @import url("./styles/00-foundation-models.css?v=20261017-roomy");
 @import url("./styles/01-shell-tools.css?v=20261020-tidy");
-@import url("./styles/02-notebooks.css?v=20261020-tidy");
+@import url("./styles/02-notebooks.css?v=20261022-hand");
 @import url("./styles/03-gallery-recipes.css?v=20261020-tidy");
 @import url("./styles/04-dialogs-materials.css?v=20261020-tidy");
 @import url("./styles/05-recipe-studio-overrides.css?v=20261011-wfd-3");
@@ -38,6 +38,6 @@
 @import url("./styles/37-ai-workbench.css?v=20261022-deep");
 @import url("./styles/38-ai-panels.css?v=20261021-panels");
 @import url("./styles/39-ai-stage.css?v=20261021-stage");
-@import url("./styles/40-ai-side.css?v=20261022-side");
+@import url("./styles/40-ai-side.css?v=20261022-hand");
 @import url("./styles/41-ai-results.css?v=20261022-deep");
-@import url("./styles/42-ai-flow.css?v=20261022-gates");
+@import url("./styles/42-ai-flow.css?v=20261022-hand");

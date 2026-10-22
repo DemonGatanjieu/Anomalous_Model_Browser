@@ -1,5 +1,5 @@
 /* The flow over an AI task (ui_ai_flow.js), the step that waits for the user's OK and the Gates
-   window (ui_ai_gate.js). */
+   window (ui_ai_gate.js), and the window after handing something to an AI (ui_ai_handoff.js). */
 .anomalous-ai-flow {
     display: flex;
     flex-wrap: wrap;
@@ -143,3 +143,8 @@
 .anomalous-ai-gates-option.is-on { background: color-mix(in srgb, var(--amb-link) 22%, transparent); color: var(--amb-text-main); }
 
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-flow-stage.is-running .anomalous-ai-flow-mark { animation: none; } }
+
+/* After "Hand to AI". */
+.anomalous-ai-handoff { display: flex; flex-direction: column; gap: 12px; max-width: 560px; }
+.anomalous-ai-handoff-text { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
+.anomalous-ai-handoff-actions { display: flex; flex-wrap: wrap; gap: 14px; }
