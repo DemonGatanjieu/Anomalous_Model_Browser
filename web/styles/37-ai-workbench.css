@@ -206,12 +206,14 @@
 }
 
 /* ---------- one task ---------- */
+/* A wide column keeps the task to about 880 px, in its middle, as chat apps do (the scrollbar stays
+   at the column's edge). */
 .anomalous-ai-task {
     display: flex;
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    padding: 24px 28px 28px;
+    padding: 24px max(28px, calc((100% - 880px) / 2)) 28px;
     overflow-y: auto;
 }
 

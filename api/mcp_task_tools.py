@@ -227,7 +227,9 @@ BLOCKS_HELP = (
     "models {items: [{model_id from search_models, note}]} (cards with their covers, a click opens them); "
     "table {columns: [...], rows: [[...]]}; list {items: [...], ordered}; params {items: [{label, value}]}; "
     "choices {id, question, options: [{id, label, detail}] (2-8), multiple} (buttons the user presses); "
-    "input {id, question, placeholder} (a line the user types); progress {label, value, max}; divider {}. "
+    "input {id, question, placeholder} (a line the user types); progress {label, value, max} (your own "
+    "numbers: they never move by themselves, so keep them current with update_panel; a run's real progress shows "
+    "in the workbench already, draw none for it); divider {}. "
     "Each block may have a stable id; the tool returns block ids in display order. "
     "Plain text only (no markup, no links); up to 30 blocks, 12 pictures or models a block."
 )
@@ -320,7 +322,7 @@ TASK_TOOLS = dict([
                               "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
                               "closed": {"type": "boolean"}, "task": _TASK_PROP}, ["panel"]),
     _task_tool("run_status", "How the run is going",
-               "Where your task's latest workflow run stands: queued (how many runs are ahead), running (which node, "
+               "Where your task's latest workflow run stands: none (no run yet), queued (how many runs are ahead), running (which node, "
                "its steps, percent, nodes done of all), done (with the pictures it saved) or failed; summary says it "
                "in one sentence. wait_seconds (up to 55) waits for it to end. Runs take a while: call this instead of "
                "guessing, looking in the output folder or at the screen. While a run goes, your other tools' answers "

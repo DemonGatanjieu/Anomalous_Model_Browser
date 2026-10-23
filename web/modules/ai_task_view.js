@@ -147,6 +147,18 @@ export function picturePreview(result) {
     return source ? `/anomalous/output_thumbnail?${new URLSearchParams({ filename: source.filename, subfolder: source.subfolder })}` : outputUrl(result);
 }
 
+/**
+ * When the AI last wrote the numbers of panel step `step` (its progress bars), if the task went on
+ * past them since: a run ended, the AI drew another panel or left a note, or the task ended. Else 0.
+ */
+export function panelPassed(task, step) {
+    const written = step.panel?.changed || step.at;
+    const later = (task.steps || []).some(other => other !== step && (
+        (['panel', 'note'].includes(other.kind) && other.at > written)
+        || (other.kind === 'run' && !['running', 'asking', 'allowed'].includes(other.state) && other.at + (other.ms || 0) / 1000 > written)));
+    return later || task.ended > written ? written : 0;
+}
+
 /** How long a step took, as `{ key, values }`, or null for quick ones. */
 export function duration(ms) {
     if (!(ms >= 1000)) return null;

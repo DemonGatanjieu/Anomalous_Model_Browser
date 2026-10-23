@@ -87,8 +87,7 @@ class ProgressTests(unittest.TestCase):
 
     def test_no_run_yet(self):
         ai_tasks.record("A", "describe_canvas", {}, ok({}), time.time(), True)
-        with self.assertRaises(ValueError):
-            ai_task_runs.status("A")
+        self.assertEqual(ai_task_runs.status("A")["state"], "none")  # an answer: the task shows no failed step
 
     def run_step(self):
         step = ai_tasks.record("A", "run_workflow", {}, ok({"queued": 1}), time.time())

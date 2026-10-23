@@ -344,7 +344,8 @@ def tell(result, task_id):
 
 def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
     """The AI's run_status: its task's latest run, where it stands, and what it made; with
-    `wait_seconds`, waits (up to MAX_STATUS_WAIT) until the run ends."""
+    `wait_seconds`, waits (up to MAX_STATUS_WAIT) until the run ends. No run yet is an answer, not
+    an error (an AI asks before it runs, and the task would show a failed step)."""
     task_id = ai_tasks.active_task_id(client, session, task_id)
     deadline = time.monotonic() + max(0.0, min(float(wait_seconds or 0), MAX_STATUS_WAIT))
     while True:
@@ -352,7 +353,7 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
         run = next((step for step in reversed((task or {}).get("steps", []))
                     if step.get("tool") == "run_workflow" and (not step_id or step["id"] == step_id)), None)
         if not run:
-            raise ValueError("No run in this task yet: run_workflow starts one.")
+            return {"state": "none", "summary": "No run in this task yet: run_workflow starts one."}
         if run.get("state") not in ("running", "asking", "allowed") or time.monotonic() >= deadline:
             break
         time.sleep(1)

@@ -11,6 +11,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { timeLabel } from './activity_log.js';
 import { outputUrl, isVideo } from './ai_task_view.js';
 import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
 import { runMapBox } from './ui_ai_run_map.js';
@@ -151,8 +152,9 @@ function params(block) {
     return box;
 }
 
-function progress(block) {
-    const box = el('div', 'anomalous-ai-panel-progress');
+/** A bar of the AI's numbers; grey, with when it wrote them, once the task went past them (`ctx.passed`). */
+function progress(block, ctx) {
+    const box = el('div', `anomalous-ai-panel-progress${ctx.passed ? ' is-passed' : ''}`);
     const top = Number(block.max) > 0 ? Number(block.max) : 100;
     const value = Math.max(0, Math.min(Number(block.value) || 0, top));
     const head = el('div', 'anomalous-ai-panel-progress-head');
@@ -162,6 +164,7 @@ function progress(block) {
     fill.style.width = `${(value / top) * 100}%`;
     bar.append(fill);
     box.append(head, bar);
+    if (ctx.passed) box.append(el('div', 'anomalous-ai-panel-progress-note', t('aiPanelProgressOld', { time: timeLabel(ctx.passed) })));
     return box;
 }
 
@@ -316,8 +319,9 @@ const DRAW = {
 
 /**
  * The panel of a panel step. `ctx`: `{ taskId, owner, openPicture(url, video), openModel(item),
- * locateNode(id), stepOf(id), changed() }` (changed: an answer went in, draw the task again; stepOf:
- * the task's step of that id, for a run_map block).
+ * locateNode(id), stepOf(id), changed(), passed }` (changed: an answer went in, draw the task again;
+ * stepOf: the task's step of that id, for a run_map block; passed: when the AI wrote its progress
+ * bars if the task went past them since, else 0).
  */
 export function renderPanel(step, ctx) {
     const panel = step.panel || {};

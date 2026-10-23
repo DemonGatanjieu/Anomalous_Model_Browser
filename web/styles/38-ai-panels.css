@@ -278,6 +278,11 @@
     transition: width 0.4s ease;
 }
 
+/* The AI's numbers the task went past (ui_ai_side.js): grey, with when they were written. */
+.anomalous-ai-panel-progress.is-passed .anomalous-ai-panel-progress-head { color: var(--amb-text-dim); }
+.anomalous-ai-panel-progress.is-passed .anomalous-ai-panel-progress-bar span { background: rgba(var(--amb-ink-rgb), 0.28); }
+.anomalous-ai-panel-progress-note { color: var(--amb-text-dim); font-size: 11.5px; }
+
 .anomalous-ai-panel-divider {
     width: 100%;
     margin: 2px 0;

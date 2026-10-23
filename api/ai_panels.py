@@ -362,6 +362,7 @@ def update(panel_id, title=None, blocks=None, closed=None):
             panel["title"] = _text(title, 120, "title", True)
         if blocks is not None:
             panel["blocks"] = _merge_blocks(panel["blocks"], blocks)
+            panel["changed"] = time.time()  # when its numbers were written: the page greys a progress bar the task went past
         if closed is not None:
             panel["closed"] = bool(closed)
         step["panel"] = panel

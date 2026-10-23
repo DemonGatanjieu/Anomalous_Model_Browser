@@ -230,6 +230,7 @@ class AnswerTests(unittest.TestCase):
         task_id = ai_tasks.list_tasks()[0]["id"]
         step = ai_tasks.get_task(task_id)["steps"][0]
         self.assertEqual(step["panel"]["blocks"][0]["value"], 3)
+        self.assertGreaterEqual(step["panel"]["changed"], step["at"])  # when its numbers were written
         ai_panels.update(shown["id"], closed=True)
         with self.assertRaises(ai_panels.PanelError):
             ai_panels.answer(task_id, step["id"], "pick", "a")

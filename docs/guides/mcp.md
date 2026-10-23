@@ -187,7 +187,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 
 展台右上角的 **× 关闭展台**只收起这一栏，不删除面板、不结束任务；当前任务继续更新时也不会强行重开。窗口右上角的“展台”，或时间线里的“在展台打开”可以恢复，未提交的输入会保留。“来自第 N 步”指创建这个面板的那一步；后续修改同一个面板不会改变它的来源编号。
 
-**按过程往下看**：建议 AI 把“搭配方案 → 节点说明 → 成图结果”作为不同阶段依次展示。更新同一个面板时，新内容也只接在底部，已有内容不会因为 AI 重排或省略而消失。`show_panel` / `update_panel` 会返回积木 ID；明确带上已有 ID 才是在原位置修正那块内容，进度条也可以按唯一的标签更新。单面板最多 30 块，满了就用 `show_panel` 展示下一阶段。旧记录只保留了最终排版，没有每次更新前的顺序，因此不会自动重排旧记录。
+**按过程往下看**：建议 AI 把“搭配方案 → 节点说明 → 成图结果”作为不同阶段依次展示。更新同一个面板时，新内容也只接在底部，已有内容不会因为 AI 重排或省略而消失。`show_panel` / `update_panel` 会返回积木 ID；明确带上已有 ID 才是在原位置修正那块内容，进度条也可以按唯一的标签更新。单面板最多 30 块，满了就用 `show_panel` 展示下一阶段。面板里的进度条是 AI 自己写的数，不会自己动：任务往前走了（那次出图结束、AI 又画了面板或留了言、任务结束）而它没有更新，展台就把它画成灰色，并写明是几点写下的；出图的真实进度在时间线那一步和标题栏的运行状态里。旧记录只保留了最终排版，没有每次更新前的顺序，因此不会自动重排旧记录。
 
 ## 6. 注意
 
@@ -207,6 +207,8 @@ The stage reads chronologically: use `show_panel` for successive phases. `update
 new blocks below existing content, keeps omitted blocks and deduplicates unchanged resubmissions.
 Tools return stable block ids for deliberate in-place corrections (including progress/questions);
 an id keeps its type and position. A uniquely labelled progress bar also updates without an id.
+A progress bar holds the AI's own numbers: once the task goes past it without an update (a run
+ends, a later panel or note, the task ends), the stage greys it and says when it was written.
 The total remains bounded to 30 blocks; use a new panel for the next phase. Old records retain
 their saved layout because earlier revisions were not recorded.
 
