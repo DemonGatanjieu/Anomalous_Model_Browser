@@ -534,6 +534,8 @@
     cursor: pointer;
 }
 
+.anomalous-ai-connect-apps > summary:hover { text-decoration: underline; }
+
 .anomalous-ai-connect-apps[open] {
     display: flex;
     flex-direction: column;
@@ -582,7 +584,7 @@
     transition: filter 0.15s, background 0.15s;
 }
 
-.anomalous-ai-copy-button:hover { filter: brightness(1.1); }
+.anomalous-ai-copy-button:hover { filter: brightness(1.15); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb-link) 28%, transparent); }
 .anomalous-ai-copy-button.is-done { background: var(--amb-ok); }
 
 .anomalous-ai-connect-overlay {

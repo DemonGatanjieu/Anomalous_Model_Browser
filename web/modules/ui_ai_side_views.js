@@ -85,15 +85,16 @@ export function pickView(side, view, shown, task, redraw, changed) {
         void openToolbox(task, changed);
         return;
     } else {
-        Object.assign(side, { view, hidden: false, tab: 'stage' });
+        Object.assign(side, { view, hidden: false, tab: 'stage', asked: view === 'stage' });
     }
     redraw();
 }
 
-/** Whether the column is on screen: not closed, and its view has something (the stage: panels; the picker: open). */
+/** Whether the column is on screen: not closed, and its view has something (the stage: panels, or
+ * the user asked for it, and sees it is empty; the picker: open). */
 export function sideShown(side, task) {
     if (side.view === 'toolbox' && !toolboxOpenFor(task.id)) side.view = 'stage';
-    return !side.hidden && (side.view !== 'stage' || panelSteps(task).length > 0);
+    return !side.hidden && (side.view !== 'stage' || panelSteps(task).length > 0 || Boolean(side.asked));
 }
 
 /** The grip on the column's left edge: drag to resize (the timeline keeps its room), double click for the usual width. */
@@ -214,7 +215,11 @@ export function drawSide(box, task, side, ctx, pickTab, arrived = null) {
     const asks = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
     box.querySelector(':scope > .anomalous-ai-tabs').replaceWith(tabBar(side, asks, pickTab, viewLabel(side.view)));
     if (panelSteps(task).length) renderStage(panes.stage, task, side, ctx, arrived);
-    else panes.stage.replaceChildren();
+    else {
+        const body = el('div', 'anomalous-ai-stage-body');
+        body.append(el('div', 'anomalous-ai-stage-empty', t('aiStageNone')));
+        panes.stage.replaceChildren(head(t('aiStage'), ctx.close), body);
+    }
     if (side.view === 'map') renderMapView(panes.map, task, side, ctx);
     if (side.view === 'decisions') renderDecisionsView(panes.decisions, task, ctx);
 }

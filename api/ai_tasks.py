@@ -362,7 +362,10 @@ def summary_of(tool, arguments):
     """A few words on what a call asked for: its main argument."""
     for key in ("title", "query", "text", "name", "character", "model_id", "url", "what", "names", "type", "types"):
         if arguments.get(key) not in (None, "", []):
-            return _short(f"{tool}: {_short(arguments[key], 120)}", 160)
+            value = arguments[key]
+            if key == "model_id":  # "type:0:folder/file.safetensors": the file, and where it moves to
+                value = str(value).split(":", 2)[-1].rsplit("/", 1)[-1] + (f" → {arguments['to_type']}" if arguments.get("to_type") else "")
+            return _short(f"{tool}: {_short(value, 120)}", 160)
     return tool
 
 

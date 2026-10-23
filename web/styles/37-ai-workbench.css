@@ -609,8 +609,13 @@
 }
 
 .anomalous-ai-looks {
-    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: -3px -8px;
+    padding: 3px 8px;
     border: none;
+    border-radius: 7px;
     background: none;
     color: var(--amb-text-soft);
     font: inherit;
@@ -619,7 +624,12 @@
     cursor: pointer;
 }
 
+/* A chevron says it opens; it turns while open. */
+.anomalous-ai-looks::after { content: "›"; font-size: 15px; line-height: 1; transition: transform 0.15s; }
+.anomalous-ai-looks[aria-expanded="true"]::after { transform: rotate(90deg); }
+
 .anomalous-ai-looks:hover {
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
     color: var(--amb-text-main);
 }
 

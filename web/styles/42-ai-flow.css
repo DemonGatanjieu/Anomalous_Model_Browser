@@ -140,6 +140,7 @@
     cursor: pointer;
 }
 .anomalous-ai-gates-option + .anomalous-ai-gates-option { border-left: 1px solid var(--amb-border); }
+.anomalous-ai-gates-option:hover:not(.is-on) { background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-text-main); }
 .anomalous-ai-gates-option.is-on { background: color-mix(in srgb, var(--amb-link) 22%, transparent); color: var(--amb-text-main); }
 
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-flow-stage.is-running .anomalous-ai-flow-mark { animation: none; } }

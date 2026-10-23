@@ -484,6 +484,7 @@ export async function openToolbox(task, changed = () => {}) {
             close();
             changed();
         });
+        send.disabled = !total(state.picks) && !toolboxCount(task); // nothing picked, nothing to take back either
         tray.replaceChildren(chips, clear, modes, send);
     }
 

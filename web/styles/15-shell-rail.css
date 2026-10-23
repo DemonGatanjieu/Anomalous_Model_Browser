@@ -521,6 +521,8 @@
     cursor: pointer;
 }
 
+.anomalous-first-run-go:hover:not(:disabled) { filter: brightness(1.12); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb-link) 30%, transparent); }
+
 .anomalous-first-run-go:disabled {
     opacity: 0.5;
     cursor: default;

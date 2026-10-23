@@ -125,10 +125,10 @@ export function pictureGrid({ picked, pick }) {
 }
 
 /**
- * The panel for message box `box`; `room()` says how many more pictures the message takes.
- * Returns {toggle(), close()}.
+ * The panel for message box `box`; `room()` says how many more pictures the message takes;
+ * `button`, the one that opens it, is lit while it is open. Returns {toggle(), close()}.
  */
-export function galleryPicker(box, room, onPick) {
+export function galleryPicker(box, room, onPick, button) {
     let panel = null;
     let stop = null; // ends the open panel's listeners and requests
 
@@ -137,6 +137,8 @@ export function galleryPicker(box, room, onPick) {
         stop = null;
         panel?.remove();
         panel = null;
+        button.classList.remove('is-on');
+        button.setAttribute('aria-expanded', 'false');
     }
 
     function open() {
@@ -179,6 +181,8 @@ export function galleryPicker(box, room, onPick) {
             document.removeEventListener('pointerdown', outside, true);
             document.removeEventListener('keydown', escape);
         };
+        button.classList.add('is-on');
+        button.setAttribute('aria-expanded', 'true');
         drawCount();
         pictures.search.focus();
     }

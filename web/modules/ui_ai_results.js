@@ -128,7 +128,8 @@ export function resultLinks(step, changed = () => {}) {
             const entry = shared.entries.get(result.activity);
             box.append(canvasChanges(entry, { locate: change => locateNode(changeNodeId(change), note) }));
             if (entry) {
-                links.append(button('anomalous-ai-link', t('activityLocate'), () => locate(entry, note)));
+                // One node changed: its own row above already finds it.
+                if ((entry.detail?.changes || []).length > 1) links.append(button('anomalous-ai-link', t('activityLocate'), () => locate(entry, note)));
                 if (canUndo(app, entry)) {
                     const undo = button('anomalous-ai-link', t('activityUndo'), () => {
                         let done = t('activityUndone');

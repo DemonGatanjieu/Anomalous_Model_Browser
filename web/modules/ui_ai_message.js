@@ -58,11 +58,23 @@ export function messageBox(onSend, source) {
     if (source) {
         at = mentions(field, box, source);
         const room = () => Math.min(MAX_PICTURES - at.pictures(), MAX_REFS - at.count());
+        const pics = iconButton('anomalous-ai-message-pics', 'image', t('aiPicsButton'), () => picker.toggle(), { iconOnly: true, size: 17 });
+        const count = el('span', 'anomalous-ai-message-pics-count');
+        pics.append(count);
+        pics.setAttribute('aria-expanded', 'false');
         const picker = galleryPicker(box, room, (items) => {
             for (const item of items) at.add(item);
             field.focus();
-        });
-        line.prepend(iconButton('anomalous-ai-message-pics', 'image', t('aiPicsButton'), () => picker.toggle(), { iconOnly: true, size: 17 }));
+        }, pics);
+        // How many pictures the message names, on the button.
+        const counted = () => {
+            const named = at.pictures();
+            count.textContent = named ? String(named) : '';
+            pics.classList.toggle('has-pictures', named > 0);
+        };
+        box.addEventListener('anomalous-refs', counted);
+        field.addEventListener('input', counted);
+        line.prepend(pics);
         box.refs = { add: item => at.add(item), remove: id => at.remove(id), has: id => at.has(id), room }; // for ui_ai_ready.js's gallery
     }
     box.note = note;

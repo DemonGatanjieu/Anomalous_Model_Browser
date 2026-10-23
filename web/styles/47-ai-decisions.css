@@ -90,7 +90,7 @@
     font: inherit;
     cursor: pointer;
 }
-.anomalous-ai-task-link.is-next, .anomalous-ai-task-link.is-add { border: 1px solid color-mix(in srgb, var(--amb-link) 40%, transparent); }
+.anomalous-ai-task-link.is-next, .anomalous-ai-task-link.is-add { border: 1px solid color-mix(in srgb, var(--amb-link) 40%, transparent); font-size: 12px; } /* they are the chips: not the header's size */
 .anomalous-ai-task-link.is-add { border-style: dashed; background: none; color: var(--amb-text-dim); }
 .anomalous-ai-task-link.is-add:hover { color: var(--amb-link); }
 .anomalous-ai-task-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -403,6 +403,8 @@
     cursor: pointer;
 }
 
+.anomalous-ai-panel-send:hover:not(:disabled) { filter: brightness(1.15); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb-link) 28%, transparent); }
+
 .anomalous-ai-panel-send:disabled {
     opacity: 0.45;
     cursor: default;

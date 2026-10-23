@@ -24,7 +24,7 @@
     cursor: pointer;
 }
 
-.anomalous-model-tab:hover { color: var(--amb-text-main); }
+.anomalous-model-tab:hover { border-bottom-color: color-mix(in srgb, var(--amb-link) 45%, transparent); color: var(--amb-text-main); }
 
 .anomalous-model-tab[aria-selected="true"] {
     border-bottom-color: var(--amb-link);

@@ -95,7 +95,7 @@
 }
 
 .anomalous-activity-head.is-expandable:hover {
-    background: rgba(var(--amb-ink-rgb), 0.04);
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
 }
 
 .anomalous-activity-time {
