@@ -66,10 +66,14 @@ class ProgressTests(unittest.TestCase):
         status = ai_task_runs.status("Claude")
         self.assertEqual((status["state"], status["progress"]["max"]), ("running", 20))
         self.assertIn("instead of guessing", status["note"])
-        history = {"p1": {"status": {"completed": True}, "outputs": {"9": {"images": [{"filename": "a.png", "subfolder": "x", "type": "output"}]}}}}
+        history = {"p1": {"status": {"completed": True}, "outputs": {
+            "9": {"images": [{"filename": "a.png", "subfolder": "x", "type": "output"}]},
+            "12": {"images": [{"filename": "pose_00001_.png", "type": "temp"}]}}}}  # a PreviewImage: the AI's to look at
         threading.Timer(0.3, ai_task_runs._finish_run, (task_id, step_id, ["p1"], history)).start()
         status = ai_task_runs.status("Claude", wait_seconds=5)
-        self.assertEqual((status["state"], status["pictures"]), ("done", ["x/a.png"]))
+        self.assertEqual((status["state"], status["pictures"], status["previews"]), ("done", ["x/a.png"], ["pose_00001_.png"]))
+        self.assertIn("folder='temp'", status["previews_note"])
+        self.assertEqual([item["filename"] for item in ai_tasks.get_task(task_id)["steps"][0]["results"]], ["a.png"], "previews are no results")
         self.assertNotIn("progress", ai_tasks.get_task(task_id)["steps"][0], "a finished run has no progress left")
 
     def test_a_run_saves_only_when_something_changes(self):

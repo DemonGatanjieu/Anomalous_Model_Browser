@@ -26,6 +26,7 @@ TOOLS = {
     "scan_report": Entry("look", "library", None),
     "search_images": Entry("look", "picture", None),
     "get_image_info": Entry("look", "picture", None),
+    "zoom_image": Entry("look", "picture", None),
     "list_combos": Entry("look", "combo", None),
     "list_workflows": Entry("look", "canvas", None),
     "list_saved_prompts": Entry("look", "prompt", None),

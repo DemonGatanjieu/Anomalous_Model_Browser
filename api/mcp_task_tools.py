@@ -29,8 +29,11 @@ def begin_task(ctx, title, new_task=False):
                                          "or to hand in pictures you made another way; report with done=true at the end. "
                                          "The user's models, pictures, node types, canvas and runs are all in AMB's tools (search_models "
                                          "says which node loads a model, move_model fixes a misfiled one, find_nodes lists node types, "
-                                         "search_images and get_image_info read pictures): do not read ComfyUI's folders or source, "
-                                         "or call its routes, yourself; each of those asks the user to allow it in your app."}
+                                         "search_images and get_image_info read pictures, zoom_image shows a part larger or "
+                                         "compares two, run_status lists a run's previews): do not read ComfyUI's folders or "
+                                         "source, run preprocessors or call its routes yourself; each of those asks the user to "
+                                         "allow it in your app. Change pictures only by running ComfyUI workflows (inpaint and "
+                                         "the like): never edit, paint over or overwrite picture files with code of your own."}
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)

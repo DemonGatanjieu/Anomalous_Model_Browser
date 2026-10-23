@@ -161,6 +161,9 @@ covered by the `styles.css` manifest.
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
   side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's; the
   outcome carries the log entry's id as `_activity`, for the AI workbench's undo).
+  `api/mcp_look.py` is zoom_image, the AI's closer look: part of a picture in the output, input
+  or temp folder shown larger, the same part of a second picture beside it, read only (so an AI
+  need not crop or compare pictures with code of its own).
   `api/mcp_model_use.py` offers search_models and get_model (mcp_tools.py finds the files)
   with what loads each model: the node types whose drop-down lists it (from `/object_info`),
   or, for a file whose header says it belongs in another folder (model_placement.py), where,

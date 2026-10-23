@@ -20,6 +20,7 @@ from .mcp_tools import tool_text
 
 RUN_POLL_SECONDS = 2.0
 MAX_STATUS_WAIT = 55
+MAX_PREVIEWS = 8  # the last PreviewImage pictures of a run the AI is told of
 
 
 def _queue():
@@ -27,15 +28,16 @@ def _queue():
     return PromptServer.instance.prompt_queue
 
 
-def outputs_of(record_):
-    """Saved pictures and videos in one history record."""
+def outputs_of(record_, folder="output"):
+    """Saved pictures and videos in one history record; with `folder` "temp", what PreviewImage
+    nodes showed (a pose skeleton, a mask): the AI's to look at, not the user's results."""
     out = []
     for output in (record_.get("outputs") or {}).values():
         for key in ("images", "gifs", "videos"):
             for item in output.get(key) or []:
-                if isinstance(item, dict) and item.get("type") == "output" and item.get("filename"):
+                if isinstance(item, dict) and item.get("type") == folder and item.get("filename"):
                     out.append({"type": "image", "filename": item["filename"], "subfolder": item.get("subfolder") or "",
-                                "folder": "output"})
+                                "folder": folder})
     return out
 
 
@@ -103,7 +105,7 @@ def _finish_run(task_id, step_id, prompts, history, queued=None):
     if not prompts:
         _stop_run(task_id, step_id, "没有找到已排队的运行 / No queued run was found; completion cannot be confirmed")
         return True
-    images, failed, done = [], False, 0
+    images, previews, failed, done = [], [], False, 0
     with ai_tasks._lock:
         task = ai_tasks._load().get(task_id)
         stopped = next((item.get("stop") for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
@@ -125,6 +127,7 @@ def _finish_run(task_id, step_id, prompts, history, queued=None):
         for image in outputs_of(record_):
             if image not in images:  # a prompt ComfyUI answers from its cache repeats the same file
                 images.append(image)
+        previews += [image for image in outputs_of(record_, "temp") if image not in previews]
     with ai_tasks._lock:
         task = ai_tasks._load().get(task_id)
         step = next((item for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
@@ -133,10 +136,13 @@ def _finish_run(task_id, step_id, prompts, history, queued=None):
         failed = failed or bool(step.get("submission_error"))
         stopped = step.get("stop")
         results = [item for item in step["results"] if item["type"] != "image"] + images[:ai_tasks.MAX_RESULTS]
+        previews = previews[-MAX_PREVIEWS:]
         if (done < len(prompts) and results == step["results"] and step.get("prompts") == len(prompts)
-                and (not failed or step.get("ok") is False)):
+                and previews == step.get("previews", []) and (not failed or step.get("ok") is False)):
             return False  # nothing new to keep: no write
         step["results"] = results
+        if previews:
+            step["previews"] = previews
         step["state"] = "running" if done < len(prompts) else ("cancelled" if stopped else "error" if failed else "done")
         step["prompts"] = len(prompts)
         if failed:
@@ -369,6 +375,12 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
                 for item in run.get("results") or [] if item.get("type") == "image"]
     if pictures:
         answer["pictures"] = pictures
+    previews = ["/".join(part for part in (item.get("subfolder"), item["filename"]) if part) for item in run.get("previews") or []]
+    if previews:
+        answer["previews"] = previews
+        answer["previews_note"] = ("What the run's PreviewImage nodes showed (pose skeletons, masks…), in ComfyUI's temp "
+                                   "folder: zoom_image(image, folder='temp') or get_image_info(image, folder='temp', "
+                                   "include_image=true) shows them; there is no need to run a preprocessor yourself.")
     if run.get("error"):
         answer["error"] = run["error"]
     answer["note"] = {

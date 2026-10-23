@@ -118,20 +118,25 @@ def _resolve_image(image):
     return rel, path
 
 
-def _resolve_input_image(image):
-    """The picture at `image` ('subfolder/file.png') in ComfyUI's input folder, where LoadImage reads."""
+def _resolve_folder_image(image, folder):
+    """(rel, path) of picture `image` ('subfolder/file.png') in ComfyUI's output, input (where
+    LoadImage reads) or temp folder (where PreviewImage writes), checked to stay inside it."""
+    if folder == "output":
+        return _resolve_image(image)
+    if folder not in ("input", "temp"):
+        raise ToolError("folder is output, input or temp.")
     rel = str(image or "").replace("\\", "/").strip("/")
     try:
-        path = resolve_within(folder_paths.get_input_directory(), rel)
+        path = resolve_within(getattr(folder_paths, f"get_{folder}_directory")(), rel)
     except ValueError:
-        raise ToolError("image is a path under ComfyUI's input folder, as LoadImage lists it.")
+        raise ToolError(f"image is a path under ComfyUI's {folder} folder.")
     if os.path.splitext(path)[1].lower() not in IMAGE_TYPES or not os.path.isfile(path):
-        raise ToolError(f"No picture at {image} in ComfyUI's input folder.")
+        raise ToolError(f"No picture at {image} in ComfyUI's {folder} folder.")
     return rel, path
 
 
 def _input_facts(path):
-    """Size of an input picture and, when it has an alpha, the area LoadImage gives as MASK (1 - alpha)."""
+    """Size of an input or preview picture and, when it has an alpha, the area LoadImage gives as MASK (1 - alpha)."""
     try:
         with Image.open(path) as picture:
             facts = {"width": picture.width, "height": picture.height}
@@ -323,9 +328,9 @@ def search_images(query="", limit=20, page=1, with_pictures=False):
 
 
 def get_image_info(image, include_image=False, folder="output"):
-    if folder == "input":
-        rel, path = _resolve_input_image(image)
-        info = {"image": rel, "folder": "input", "created": _when(os.path.getmtime(path)), **_input_facts(path)}
+    if folder != "output":
+        rel, path = _resolve_folder_image(image, folder)
+        info = {"image": rel, "folder": folder, "created": _when(os.path.getmtime(path)), **_input_facts(path)}
         extra = [item for item in [_image_content(path)] if include_image and item]
         if include_image:
             info["image_attached"] = bool(extra)
@@ -499,11 +504,12 @@ TOOLS = dict([
     _tool("get_image_info", "Image generation settings",
           "The nodes and settings that produced an output image (prompts, models, seed, sampler…) and whether the "
           "user kept it as a recipe, combo or prompt. With folder=input, a picture in ComfyUI's input folder (what "
-          "LoadImage reads, e.g. the inpaint_image Anomalous put there): its size and the area LoadImage gives as "
-          "MASK. include_image attaches a 512 px copy. No need to look at these files any other way.",
+          "LoadImage reads, e.g. the inpaint_image Anomalous put there), with folder=temp a run's preview (run_status "
+          "lists them): its size and the area LoadImage gives as MASK. include_image attaches a 512 px copy; "
+          "zoom_image shows a part larger. No need to look at these files any other way.",
           get_image_info, {"image": {"type": "string", "description": "From search_images, e.g. 'ComfyUI_00012_.png'; with folder=input, the name LoadImage takes."},
                            "include_image": {"type": "boolean", "default": False},
-                           "folder": {"type": "string", "enum": ["output", "input"], "default": "output"}}, ["image"]),
+                           "folder": {"type": "string", "enum": ["output", "input", "temp"], "default": "output"}}, ["image"]),
     _tool("list_combos", "Combos",
           "The user's combos (搭配): a main model, LoRAs and a prompt kept together, or (kind \"node "
           "structure\") model nodes and text nodes saved from the canvas with their links, listed by slot.", list_combos,

@@ -34,6 +34,8 @@
 - A model copied to another drive is checked at its start, middle and end (a megabyte each) besides its size before the original goes; no fingerprint needed, no felt cost.
 - 挪动、导入模型时，就算目标位置在最后一刻冒出一个同名文件，也绝不会被盖掉：这次挪动会失败，两边的文件都原样保留（之前在 Windows 上理论上有极小的机会覆盖）。
 - Moving or importing a model never replaces a file that took the name at the last moment: the move fails and both files stay (on Windows a rename could replace it before).
+- **AI 能放大看图、看预览，不用再自己写代码**：新工具 `zoom_image` 把一张图的某一块放大给 AI 看，还能把两张图的同一块并排比较（改之前和改之后）；输出、输入、临时预览的图都能看，只看不改。出图结果里会列出这次运行的预览图（比如 OpenPose 骨骼、遮罩的预览），AI 用它们就能检查中间结果，不必自己去跑预处理器。AI 开任务、收到遮罩时都会被明确告知：要改图就跑 ComfyUI 的工作流，绝不用自己的代码去画、去改、去覆盖图片文件。
+- zoom_image shows part of a picture larger (output, input or temp folder), with the same part of a second picture to compare, reading only; run_status lists a run's PreviewImage pictures; begin_task and the repaint note tell the AI to change pictures only by running workflows, never by editing picture files with its own code.
 - **AI 能直接看输入文件夹里的图**：`get_image_info` 加了 `folder=input`，能看 ComfyUI 输入文件夹里的图（你标注时 AMB 存的重绘遮罩图就在那里）：尺寸、要重画的区域在哪、占多大，也能附上图本身。交给 AI 遮罩图时也明说“它已经在输入文件夹里了，不用跑命令检查”，Gemini 不会再为这个弹窗问你。
 - get_image_info with folder=input reads a picture in ComfyUI's input folder (the inpaint picture Anomalous writes for a repaint): its size and the area LoadImage gives as MASK, optionally attached; the marks message says the inpaint picture is in place, so the AI need not check it with a command.
 - **AI 少去翻文件**：AMB 工具返回给 AI 的内容去掉了多余的空格、画布里 ComfyUI 自己的内部字段不再列出、操作记录默认只给最近 10 条，这样 Antigravity 不必把结果另存成文件再让 Gemini 去读。AI 开始任务时也会被告知：模型、图片、节点、画布和运行都有 AMB 的工具，不要自己去读 ComfyUI 的文件夹、源码或接口（那样每一步都要你点允许）。

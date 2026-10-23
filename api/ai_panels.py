@@ -40,7 +40,8 @@ INTERACTIVE = ("choices", "input", "picks")
 INPAINT_NOTE = (
     "The user painted where to repaint. LoadImage(image=inpaint_image) gives the picture and, as MASK, that area. "
     "inpaint_image is already in ComfyUI's input folder, ready: do not check it with a command; "
-    "get_image_info(image=inpaint_image, folder='input', include_image=true) shows it and the area. "
+    "get_image_info(image=inpaint_image, folder='input', include_image=true) shows it and the area, zoom_image a part "
+    "of it larger. Repaint with a workflow; do not paint the picture with code of your own. "
     "Use the picture's own model and prompt (get_image_info on image), e.g. new_workflow: CheckpointLoaderSimple, "
     "LoadImage, CLIPTextEncode x2, VAEEncode(pixels, vae) -> SetLatentNoiseMask(samples, mask) -> KSampler "
     "(denoise 0.5-0.8 keeps the look; 1.0 with VAEEncodeForInpaint(grow_mask_by 8) replaces it) -> VAEDecode -> "
