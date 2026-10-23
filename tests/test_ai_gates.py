@@ -54,6 +54,19 @@ class GateTests(unittest.TestCase):
             json.dump({"canvas": "never", "gpu": "nonsense"}, target)
         self.assertEqual((ai_gates.policies()["canvas"], ai_gates.policies()["gpu"]), ("never", "auto"))
 
+    def test_the_tools_offered(self):
+        ai_gates._tools_path = lambda: os.path.join(GATES, "ai_tools.json")
+        if os.path.exists(ai_gates._tools_path()):
+            os.remove(ai_gates._tools_path())
+        self.assertEqual(ai_gates.tool_set(), "full")
+        self.assertEqual(ai_gates.set_tool_set("daily"), "daily")
+        self.assertEqual(ai_gates.tool_set(), "daily")
+        with self.assertRaises(ValueError):
+            ai_gates.set_tool_set("tiny")
+        with open(ai_gates._tools_path(), "w", encoding="utf-8") as target:
+            target.write("[1]")
+        self.assertEqual(ai_gates.tool_set(), "full", "a broken file offers everything")
+
     def test_auto_and_never(self):
         self.assertIsNone(self.call("set_prompt", {"text": "x"})[1])
         self.assertIsNone(self.call("search_models", {})[1], "reads have no gate")

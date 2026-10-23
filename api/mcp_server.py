@@ -24,7 +24,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
+from . import action_catalog, ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
@@ -114,7 +114,9 @@ def _result(id_, result, modern):
 
 
 def _tool_list(modern):
-    result = {"tools": [mcp_apps.with_card(tool["spec"]) for tool in TOOLS.values()]}
+    daily = ai_gates.tool_set() == "daily"  # the user's choice in the AI workbench; calls are not limited by it
+    result = {"tools": [mcp_apps.with_card(tool["spec"]) for name, tool in TOOLS.items()
+                        if not daily or name in action_catalog.DAILY or name in mcp_apps.APP_TOOLS]}
     if modern:
         result.update(ttlMs=LIST_TTL_MS, cacheScope="public")
     return result

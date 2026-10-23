@@ -248,6 +248,7 @@ class TaskTests(unittest.TestCase):
     def test_every_tool_is_in_the_catalog(self):
         self.assertEqual(set(TOOLS) - set(action_catalog.TOOLS), set())
         self.assertEqual(set(action_catalog.TOOLS) - set(TOOLS), set(), "no entries for tools that are gone")
+        self.assertLessEqual(action_catalog.DAILY, set(TOOLS), "the daily set names tools that are there")
         for tool, what in action_catalog.TOOLS.items():
             self.assertIn(what.stage, (None, *action_catalog.STAGES), tool)
             self.assertIn(what.gate, (None, *action_catalog.GATES), tool)

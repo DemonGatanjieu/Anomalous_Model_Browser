@@ -18,6 +18,14 @@ Entry = namedtuple("Entry", "kind stage gate")
 STAGES = ("model", "combo", "prompt", "canvas", "run", "picture", "voice", "library")
 GATES = ("canvas", "gpu", "download", "network", "files")
 
+# The "daily" set the user can offer AI apps instead of all tools (ai_gates.tool_set): runs of saved
+# workflows with their blanks, pictures, models, the task's own; a small model reads half as much.
+DAILY = frozenset({
+    "begin_task", "get_situation", "report", "ask_user", "get_answers", "log_decision", "log_outside",
+    "list_workflows", "run_workflow", "run_status", "stop_run", "search_images", "get_image_info", "zoom_image",
+    "search_models", "set_model", "add_lora", "check_workflow_models", "fix_workflow_models",
+})
+
 # Arguments with which a call also changes the canvas: it then asks as the stricter of its own gate and "canvas".
 ALSO_CANVAS = {"run_workflow": ("workflow", "prompt", "negative", "seed", "width", "height", "image", "image_node")}
 

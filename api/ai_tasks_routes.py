@@ -129,19 +129,25 @@ async def api_gate(request):
 
 
 async def api_gates(request):
-    """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab}; POST {gate, policy} changes one,
-    POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py)."""
+    """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools}; POST {gate, policy} changes one,
+    POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py),
+    POST {tools: full | daily} which tools AI apps are offered (ai_gates.tool_set)."""
+    def settings():
+        return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "tools": ai_gates.tool_set()}
+
     if request.method == "GET":
-        return web.json_response({"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode()})
+        return web.json_response(settings())
     body = await _body(request)
     try:
         if "canvas_tab" in (body or {}):
             ai_task_canvas.set_default(body["canvas_tab"])
+        elif "tools" in (body or {}):
+            ai_gates.set_tool_set(body["tools"])
         else:
             ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
     except ValueError as error:
         return web.json_response({"error": str(error)}, status=400)
-    return web.json_response({"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode()})
+    return web.json_response(settings())
 
 
 async def api_marks(request):

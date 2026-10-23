@@ -9,6 +9,9 @@ the AI is told to wait (get_answers) and call the same tool again; the user's la
 reaches it as a message (ai_panels._collect), and an allowed call made again with the same
 arguments goes ahead without asking twice. Policies are kept in the ComfyUI user folder
 (anomalous/ai_gates.json); changing one is a write (local_guard.py keeps it to this computer).
+The same window sets which tools AI apps are offered (tool_set: all, or the "daily" set of
+action_catalog.DAILY for a small model's everyday runs; anomalous/ai_tools.json); an app sees a
+change in a new chat (they keep the list a chat began with).
 """
 
 import json
@@ -20,6 +23,7 @@ from . import action_catalog, ai_tasks
 from .path_utils import atomic_write_json
 
 POLICIES = ("auto", "ask", "never")
+TOOL_SETS = ("full", "daily")
 DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
 WAIT_SECONDS = 50  # below the minute many AI apps give a tool call
 ALLOWED_SECONDS = 30 * 60  # an Allow the AI did not wait for holds this long for the same call
@@ -50,6 +54,27 @@ def set_policy(gate, policy):
         current[gate] = policy
         atomic_write_json(_path(), current)
     return current
+
+
+def _tools_path():
+    return os.path.join(os.path.dirname(ai_tasks.tasks_dir()), "ai_tools.json")
+
+
+def tool_set():
+    """The tools AI apps are offered: "full" or "daily"."""
+    try:
+        with open(_tools_path(), encoding="utf-8") as source:
+            chosen = json.load(source).get("set")
+    except (OSError, ValueError, AttributeError):
+        chosen = None
+    return chosen if chosen in TOOL_SETS else "full"
+
+
+def set_tool_set(name):
+    if name not in TOOL_SETS:
+        raise ValueError("tools is full or daily")
+    atomic_write_json(_tools_path(), {"set": name})
+    return name
 
 
 def describe(tool, arguments):

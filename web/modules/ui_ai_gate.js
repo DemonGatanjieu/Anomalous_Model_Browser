@@ -2,8 +2,9 @@
  * Gates on the AI workbench (api/ai_gates.py): the card under a step that waits for the user's OK
  * (what the AI wants to do; Allow, No with a reason for the AI, and "from now on, go ahead"), what
  * the user answered, and the Gates window where each kind of action is set to go ahead, ask first
- * or never (changing the canvas, using the GPU, downloading, going online, moving model files), and whether a new
- * task works in a canvas tab of its own (api/ai_task_canvas.py).
+ * or never (changing the canvas, using the GPU, downloading, going online, moving model files), whether a new
+ * task works in a canvas tab of its own (api/ai_task_canvas.py), and which tools AI apps are offered
+ * (all, or the daily set for a small model).
  */
 
 import { translate as t } from './locales.js';
@@ -86,58 +87,50 @@ export function gateCard(step, taskId, changed) {
     return card;
 }
 
-/** The Gates window: each kind of action the AI may do, and whether it goes ahead, asks or never. */
-export async function openGates() {
-    const body = el('div', 'anomalous-ai-gates');
-    body.append(el('p', 'anomalous-ai-gates-intro', t('aiGatesIntro')));
-    let policies = {};
-    let canvasTab = 'new';
-    try {
-        const known = await (await fetch('/anomalous/ai_gates')).json();
-        policies = known.policies || {};
-        canvasTab = known.canvas_tab || 'new';
-    } catch (_) { /* drawn with nothing chosen; a change still saves */ }
-    for (const gate of GATES) {
-        const row = el('div', 'anomalous-ai-gates-row');
-        const words = el('div', 'anomalous-ai-gates-words');
-        words.append(el('div', 'anomalous-ai-gates-name', t(`aiGate_${gate}`)), el('div', 'anomalous-ai-gates-tools', t(`aiGateWhy_${gate}`)));
-        const choice = el('div', 'anomalous-ai-gates-choice');
-        choice.setAttribute('role', 'radiogroup');
-        for (const policy of POLICIES) {
-            const option = button(`anomalous-ai-gates-option${policies[gate] === policy ? ' is-on' : ''}`, t(`aiPolicy_${policy}`), async () => {
-                try {
-                    policies = (await post('/anomalous/ai_gates', { gate, policy })).policies;
-                } catch (error) {
-                    await anomalousAlert(error.message);
-                    return;
-                }
-                choice.querySelectorAll('button').forEach((item, at) => item.classList.toggle('is-on', POLICIES[at] === policies[gate]));
-            });
-            option.setAttribute('role', 'radio');
-            choice.append(option);
-        }
-        row.append(words, choice);
-        body.append(row);
-    }
+/** A row of the Gates window: a setting, its words and its choices; `save(choice)` posts it and gives what is kept. */
+function choiceRow(key, choices, current, labelOf, save) {
     const row = el('div', 'anomalous-ai-gates-row');
     const words = el('div', 'anomalous-ai-gates-words');
-    words.append(el('div', 'anomalous-ai-gates-name', t('aiGate_canvasTab')), el('div', 'anomalous-ai-gates-tools', t('aiGateWhy_canvasTab')));
+    words.append(el('div', 'anomalous-ai-gates-name', t(`aiGate_${key}`)), el('div', 'anomalous-ai-gates-tools', t(`aiGateWhy_${key}`)));
     const choice = el('div', 'anomalous-ai-gates-choice');
     choice.setAttribute('role', 'radiogroup');
-    for (const mode of ['new', 'current']) {
-        const option = button(`anomalous-ai-gates-option${canvasTab === mode ? ' is-on' : ''}`, t(`aiCanvasTab_${mode}`), async () => {
+    let kept = current;
+    const draw = () => choice.querySelectorAll('button').forEach((item, at) => item.classList.toggle('is-on', choices[at] === kept));
+    for (const value of choices) {
+        const option = button('anomalous-ai-gates-option', labelOf(value), async () => {
             try {
-                canvasTab = (await post('/anomalous/ai_gates', { canvas_tab: mode })).canvas_tab;
+                kept = await save(value);
             } catch (error) {
                 await anomalousAlert(error.message);
                 return;
             }
-            choice.querySelectorAll('button').forEach((item, at) => item.classList.toggle('is-on', ['new', 'current'][at] === canvasTab));
+            draw();
         });
         option.setAttribute('role', 'radio');
         choice.append(option);
     }
+    draw();
     row.append(words, choice);
-    body.append(row, el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
+    return row;
+}
+
+/** The Gates window: each kind of action the AI may do (goes ahead, asks or never), where it works, which tools it gets. */
+export async function openGates() {
+    const body = el('div', 'anomalous-ai-gates');
+    body.append(el('p', 'anomalous-ai-gates-intro', t('aiGatesIntro')));
+    let known = {};
+    try {
+        known = await (await fetch('/anomalous/ai_gates')).json();
+    } catch (_) { /* drawn with nothing chosen; a change still saves */ }
+    const save = async change => post('/anomalous/ai_gates', change);
+    for (const gate of GATES) {
+        body.append(choiceRow(gate, POLICIES, known.policies?.[gate], policy => t(`aiPolicy_${policy}`),
+            async policy => (await save({ gate, policy })).policies[gate]));
+    }
+    body.append(choiceRow('canvasTab', ['new', 'current'], known.canvas_tab || 'new', mode => t(`aiCanvasTab_${mode}`),
+        async mode => (await save({ canvas_tab: mode })).canvas_tab),
+    choiceRow('tools', ['daily', 'full'], known.tools || 'full', set => t(`aiToolSet_${set}`),
+        async set => (await save({ tools: set })).tools),
+    el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
     aiWindow(t('aiGates'), body);
 }

@@ -248,7 +248,8 @@ covered by the `styles.css` manifest.
   `change`); `activity_log.tag` names the task on the entry, and the activity page links to
   it. `api/ai_gates.py` holds the user's gates: each gate is `auto`, `ask` or `never`
   (`anomalous/ai_gates.json`, `/anomalous/ai_gates`); `mcp_server.py` asks it before running a
-  tool. With `ask` the step waits in state `asking` (what it would do listed) for up to 50 s;
+  tool. It also keeps which tools AI apps are offered (`tool_set`: all, or `action_catalog.DAILY`;
+  `anomalous/ai_tools.json`), which `tools/list` follows. With `ask` the step waits in state `asking` (what it would do listed) for up to 50 s;
   the user's Allow or No comes through `POST /anomalous/ai_tasks/{id}/gate`. Unanswered by
   then, the AI is told to wait and call again; the later answer reaches it as a message of kind
   `gate`, and the same call made again after an Allow goes ahead without asking twice.
