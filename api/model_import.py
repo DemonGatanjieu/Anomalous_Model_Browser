@@ -266,17 +266,37 @@ def _same_drive(first, second):
         return False
 
 
+def _rename_new(source, dest):
+    """Renames `source` to `dest` and never over a file there, even one that appeared since
+    free_path looked (FileExistsError). Windows' rename refuses a taken name by itself; elsewhere
+    a hard link does (of a link itself, not what it points to), with a last look for the file
+    systems that have none."""
+    if os.name == "nt":
+        os.rename(source, dest)
+        return
+    try:
+        os.link(source, dest, follow_symlinks=False)
+    except FileExistsError:
+        raise
+    except OSError:  # no hard links here (FAT, some network shares)
+        if os.path.lexists(dest):
+            raise FileExistsError(dest)
+        os.rename(source, dest)
+        return
+    os.remove(source)
+
+
 def move_into(source, dest, keep):
-    """Moves (or with `keep` copies) `source` to `dest`; a copy goes through "<dest>.part"."""
+    """Moves (or with `keep` copies) `source` to `dest`, never over a file; a copy goes through "<dest>.part"."""
     if not keep and _same_drive(source, dest):
-        os.replace(source, dest)
+        _rename_new(source, dest)
         return
     part = dest + ".part"
     try:
         shutil.copyfile(source, part)
         if os.path.getsize(part) != os.path.getsize(source):
             raise Refused("incomplete")
-        os.replace(part, dest)
+        _rename_new(part, dest)
     except BaseException:
         if os.path.exists(part):
             os.remove(part)  # our own unfinished copy

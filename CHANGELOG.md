@@ -26,6 +26,8 @@
 - Gallery pictures in the AI workbench: the message box's picture button picks them from the gallery (newest first, searchable), and "@" offers the gallery's newest pictures and searches it as you type; the AI gets each picture with what made it.
 - **等 AI 接手时先备好材料**：“等 AI 接手”的任务顶上有 **开始 / 备料** 两页切换。**备料** 是单独的一页：大的图库（可搜索，点一张就放到最下面的输入框上，再点一下拿掉）和“已经备好”的列表；切换按钮上显示备好了几样。AI 接手时一起收到。
 - A task waiting for an AI has two pages, Get started / Put ready: Put ready shows the gallery as a big searchable grid feeding the message box (click to add or drop a picture) and what is ready; the AI gets it all when it takes the task.
+- 挪动、导入模型时，就算目标位置在最后一刻冒出一个同名文件，也绝不会被盖掉：这次挪动会失败，两边的文件都原样保留（之前在 Windows 上理论上有极小的机会覆盖）。
+- Moving or importing a model never replaces a file that took the name at the last moment: the move fails and both files stay (on Windows a rename could replace it before).
 - **最下面就能看到 AI 在做什么、要你做什么**：输入框上方多了一条“现在”栏：AI 出图时显示进度（节点、步数、百分比、进度条）和停止按钮；AI 某一步还在进行时说在做什么；AI 想做要你点头的事（比如挪模型、下载）时，直接在这里 **允许 / 不要**；AI 问你问题时，问题和选项就在这里，点一下就回答（有推荐的带 ☆，也能自己写一句或跳过），多选和挑图会带你去展台。
 - A "now" strip over the message box: a run's progress with stop, the AI's step still going, a gate to allow or refuse right there, and the AI's open question with its options as buttons (one's own words or skip too; several picks and pictures to pick lead to the stage).
 - **拖进来、粘贴进来的图片也能发给 AI**：把电脑里的图片拖到输入框上，或者直接 Ctrl+V 粘贴截图，它会存进 ComfyUI 输出文件夹里的 `ai_inbox`（图库里也看得到，从不覆盖文件，只收 PNG、JPEG、WebP、GIF，最大 25 MB），并加到这条消息上。从 ComfyUI 页面里拖来的输出图片直接加上，不另存。

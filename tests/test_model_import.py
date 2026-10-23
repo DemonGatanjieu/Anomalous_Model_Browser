@@ -225,6 +225,17 @@ class ImportTests(unittest.TestCase):
         self.assertTrue(os.path.exists(path))
         self.assertFalse(os.path.exists(dest))
 
+    def test_a_file_that_appeared_meanwhile_is_never_replaced(self):
+        # free_path found the name free; a file took it before the move: the move fails, both stay.
+        path, _ = self.dropped("cool.safetensors")
+        dest = os.path.join(self.loras, "cool.safetensors")
+        Path(dest).write_bytes(b"theirs")
+        for keep in (False, True):
+            with self.assertRaises(FileExistsError):
+                model_import.move_into(path, dest, keep=keep)
+            self.assertEqual((Path(path).read_bytes(), Path(dest).read_bytes()), (self.data, b"theirs"))
+        self.assertFalse(os.path.exists(dest + ".part"))
+
     def test_destinations_stay_inside_the_models_folder(self):
         for data, code in (({"type": "checkpoints", "rel": "a.safetensors"}, "bad_type"),
                            ({"type": "loras", "root": 3, "rel": "a.safetensors"}, "bad_root"),
