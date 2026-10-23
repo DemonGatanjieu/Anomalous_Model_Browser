@@ -276,7 +276,12 @@ covered by the `styles.css` manifest.
   mode — `ai_task_canvas.set_mode` adds a `user_canvas` step — and stops); `GET` of a task adds
   `decisions` and `decisions_gap` (runs and canvas changes since the AI's last one), begin_task
   repeats them to an AI picking the task up. `ui_ai_decisions.js` draws the card and the side
-  column's Decisions view. `tests/test_ai_decisions.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
+  column's Decisions view. `tests/test_ai_decisions.py`. `api/ai_task_links.py` keeps which task
+  a task goes on from (`from`: set when an AI begins a new task while on another, or the user
+  starts one while looking at a task; changed or taken off by the user, never a loop); `GET` of a
+  task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
+  decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
+  one to link. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
   step made and where it leads (and the strip of a task's results). `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a line per
   panel that brings it there): like the timeline it reads from the top down, the task's panels in

@@ -8,7 +8,7 @@ import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_decisions, ai_gates, ai_marks, ai_run_control, ai_task_canvas, ai_task_changes, ai_tasks, ai_toolbox
+from . import activity_log, ai_decisions, ai_gates, ai_marks, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -20,15 +20,17 @@ async def api_list(request):
 
 
 async def api_start(request):
-    """POST /anomalous/ai_tasks: {title, about?} - the user starts a task for the next AI app that
-    calls; `about` names what it is about ([{type: model | image | combo, model_id | image | name}])."""
+    """POST /anomalous/ai_tasks: {title, about?, from?} - the user starts a task for the next AI app that
+    calls; `about` names what it is about ([{type: model | image | combo, model_id | image | name}]),
+    `from` the task it goes on from."""
     try:
         body = await request.json()
     except (ValueError, UnicodeDecodeError):
         body = {}
     body = body if isinstance(body, dict) else {}
     title = body.get("title") if isinstance(body.get("title"), str) else ""
-    return web.json_response({"task": ai_tasks.task_summary(ai_tasks.start_task(title, about=body.get("about")))})
+    parent = body.get("from") if isinstance(body.get("from"), str) else None
+    return web.json_response({"task": ai_tasks.task_summary(ai_tasks.start_task(title, about=body.get("about"), from_task=parent))})
 
 
 async def api_get(request):
@@ -36,12 +38,14 @@ async def api_get(request):
     if task:
         task["canvas_mode"] = ai_task_canvas.mode_of(task)  # the task's own choice, else the user's default
         task["decisions"], task["decisions_gap"] = ai_decisions.decisions(task), ai_decisions.gap(task)
+        task["links"] = ai_task_links.links(task["id"])  # the task it goes on from, those going on from it
     return web.json_response({"task": task}) if task else web.json_response({"error": "not_found"}, status=404)
 
 
 async def api_change(request):
     """POST /anomalous/ai_tasks/{id}: {"title": "…"} renames it, {"remove": true} takes it off the list,
-    {"canvas": "new" | "current"} sets whether the AI works in a tab of the task's own."""
+    {"canvas": "new" | "current"} sets whether the AI works in a tab of the task's own, {"from": id | null}
+    links it to the task it goes on from (or takes the link off)."""
     task_id = request.match_info["task_id"]
     try:
         body = await request.json()
@@ -55,6 +59,11 @@ async def api_change(request):
         try:
             return web.json_response({"canvas": ai_task_canvas.set_mode(task_id, body["canvas"])})
         except ValueError as error:
+            return web.json_response({"error": str(error)}, status=400)
+    if "from" in body:
+        try:
+            return web.json_response({"from": ai_task_links.set_from(task_id, body["from"] if isinstance(body["from"], str) else None)})
+        except ai_task_links.LinkError as error:
             return web.json_response({"error": str(error)}, status=400)
     if "title" in body:
         task = ai_tasks.rename_task(task_id, body["title"])

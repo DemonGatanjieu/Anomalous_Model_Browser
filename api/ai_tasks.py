@@ -265,9 +265,10 @@ def _about(items):
     return out[:5]
 
 
-def start_task(title="", now=None, about=None):
+def start_task(title="", now=None, about=None, from_task=None):
     """A task the user starts; it waits for the next AI app that calls. `about`: what the user
-    handed to the AI with it (from a model page, an image or a combo). Returns the task."""
+    handed to the AI with it (from a model page, an image or a combo); `from_task`: the task it
+    goes on from (ai_task_links.py). Returns the task."""
     now = time.time() if now is None else now
     with _lock:
         before = _load().get(_waiting[0])
@@ -279,6 +280,8 @@ def start_task(title="", now=None, about=None):
             task["title_from"] = "auto"
         if _about(about):
             task["about"] = _about(about)
+        if from_task in _load():
+            task["from"] = from_task
         _load()[task["id"]] = task
         _waiting[0] = task["id"]
         _drop_oldest()
@@ -335,6 +338,8 @@ def begin_task(client, title, now=None, new_task=False, session="", task_id=None
                 previous["ended"] = now
                 _save(previous)
             task = _new_task(client, title, now, session=session)
+            if new_task and previous:
+                task["from"] = previous["id"]  # begun from that one (ai_task_links.py)
         elif not task.get("title") or task.get("title_from") == "auto":
             task["title"] = _short(title, MAX_TITLE)
             task["title_from"] = "ai"
@@ -541,7 +546,7 @@ def task_summary(task, now=None):
         "waiting": bool(task.get("waiting")) and not task.get("ended"),
         "live": any(step.get("state") == "running" and now - step.get("at", 0) < RUN_WATCH_SECONDS for step in steps),
         "steps": len(steps), "kinds": kinds, "errors": sum(1 for step in steps if not step.get("ok")),
-        "images": len(images), "cover": images[-1] if images else None, "asks": asks,
+        "images": len(images), "cover": images[-1] if images else None, "asks": asks, "from": task.get("from"),
     }
 
 

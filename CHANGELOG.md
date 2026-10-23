@@ -11,6 +11,8 @@
 - 右边这一栏改成一张单独的卡片，不再用一条线硬隔开；默认窄一些，给中间的时间线留出地方。鼠标移到它左边缘会出现小竖条，拖动调宽窄（记得住，双击恢复）。
 - 左边的任务列表用窗口左上角的按钮收起 / 展开；收起后鼠标移到按钮上，列表会临时浮出来，点任务或移开就收回。
 - 素材在右边这一栏里时，鼠标移过卡片不再自动跳进详细说明（之前很难操作），点卡片上的 ⓘ 才看。
+- **关联任务**：从一个任务新开的任务会记住它“接着”哪个任务（AI 开的新任务、你看着某个任务时点的“新任务”都会）。标题下面显示“接着：…”“后续：…”，点一下跳过去；任务列表里后续任务带 ↳。可以解开，也可以自己选“接着哪个任务…”。AI 接手后续任务时会先收到上一个任务的决策。
+- Tasks remember the task they go on from (an AI's new task while on another, or one the user starts from a task): links under the title lead both ways, the list marks follow-ups, the user can link or unlink, and an AI beginning a follow-up hears what was decided before.
 - **决策记录**：聊天在哪里都行，结论留在 AMB。AI 用新工具 `log_decision` 把商量好的结论记成时间线上的 📌 卡片（定了什么、为什么、没选哪些、谁定的、跟哪几步有关）；你在 AMB 里的选择（面板回答、允许或不允许、交出去的素材、AI 改画布的地方、停止）自动算作决策。右上角新增 **决策**，按时间列出全部决策，点一下回到那一步；AI 很久没记录时会轻轻提醒。AI 重新接手任务时会先收到这些决策。
 - Key decisions stay in Anomalous: the AI records what was settled with `log_decision` (a card on the timeline: what, why, what was left out, who decided, the steps it is about); the user's own choices in Anomalous count as decisions too; a Decisions view in the side column lists them all with a link to each step, notes work done since the last one, and begin_task repeats them to an AI picking the task up.
 - **留言框里的 @ 和 /**：打 **@** 弹出能搜索的列表（这个任务的图、搭配、模型、工作流、提示词、节点包、节点），选中的写成“@名字”并在下面显示成小标签，AI 收到的是确切的那个东西（图片连同生成参数一起）。开头打 **/** 是快捷指令：停止、撤销、展台、结构、素材、专用标签页、当前画布、新任务马上生效；重跑、解释、继续帮你写好一句话。

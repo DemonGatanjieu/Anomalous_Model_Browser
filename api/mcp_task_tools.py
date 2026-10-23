@@ -3,7 +3,7 @@ work, report leaves a note for the user (with pictures made outside Anomalous's 
 show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
 reads what the user picked or typed on it."""
 
-from . import ai_decisions, ai_marks, ai_message_refs, ai_panels, ai_run_control, ai_run_tracking, ai_task_runs, ai_tasks, ai_toolbox
+from . import ai_decisions, ai_marks, ai_message_refs, ai_panels, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -30,6 +30,9 @@ def begin_task(ctx, title, new_task=False):
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
+    goes_on = ai_task_links.carried(task)
+    if goes_on:
+        answer["continues"] = goes_on  # the task this one goes on from, and what was decided there
     decided = ai_decisions.lines(ai_tasks.get_task(task["id"]))
     if decided:
         answer["decisions"] = decided  # what was settled so far, the user's own choices in Anomalous too

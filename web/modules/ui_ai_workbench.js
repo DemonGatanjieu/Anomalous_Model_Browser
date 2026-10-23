@@ -10,6 +10,7 @@
  * timeline brings it there, its questions are answered there, a toast says so while the user is
  * elsewhere), a run's shape at full size, or the materials picker. The header stays on top while
  * the timeline scrolls. The task list folds from the title bar's button and peeks from it.
+ * Under a task's title, the task it goes on from and those going on from it (ui_ai_task_links.js).
  * A step's words are ui_ai_step_body.js's; a decision the AI records shows as a card and the
  * side column's "Decisions" view lists all of the task's (ui_ai_decisions.js).
  * Under the timeline the user can write to the AI on that task; the message waits until the AI
@@ -40,6 +41,7 @@ import { compareBar, setMarker } from './ui_ai_images.js';
 import { openMarker } from './ui_ai_marker.js';
 import { toolboxCount } from './ui_ai_toolbox.js';
 import { stepBody } from './ui_ai_step_body.js';
+import { taskLinks } from './ui_ai_task_links.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewLabel } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
@@ -257,7 +259,8 @@ function renderTask() {
         view => pickView(state.stage, view, shown, task, renderTask, () => void refresh())));
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);
-    header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')));
+    header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')),
+        taskLinks(task, state.tasks, { open: (id) => { state.pinned = true; void select(id); }, changed: refresh }));
 
     const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
     view.flow.replaceChildren(...(flow ? [flow] : []));
@@ -341,7 +344,7 @@ async function newTask() {
     if (title === null || title === undefined) return;
     try {
         const response = await fetch('/anomalous/ai_tasks', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title }),
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, from: state.task?.id }), // goes on from the task shown
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);

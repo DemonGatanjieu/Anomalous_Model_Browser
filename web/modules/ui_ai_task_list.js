@@ -42,7 +42,7 @@ function taskRow(summary, view) {
     const top = el('div', 'anomalous-ai-task-row-top');
     top.append(stateIcon(status), el('span', 'anomalous-ai-task-row-title', summary.title || t('aiUntitled')));
     if (status === 'live') top.append(el('span', 'anomalous-ai-live-dot'));
-    const meta = [summary.client, timeLabel(summary.updated), t('aiStepCount', { count: summary.steps })].filter(Boolean);
+    const meta = [summary.from ? t('aiTaskFollows') : '', summary.client, timeLabel(summary.updated), t('aiStepCount', { count: summary.steps })].filter(Boolean);
     row.append(top, el('div', 'anomalous-ai-task-row-meta', meta.join(' · ')));
     const counts = taskCounts(summary);
     if (counts.length) row.append(el('div', 'anomalous-ai-task-row-counts', counts.map(item => t(item.key, item.values)).join(' · ')));
