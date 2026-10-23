@@ -7,7 +7,8 @@
  * Picking the view that is shown closes the column. Each view keeps its own pane, so going back
  * finds it as it was: a scrolled stage, materials picked but not handed over yet. The column is a
  * card of its own beside the timeline; its left edge drags it wider or narrower (kept on this
- * browser, the timeline keeps room), a double click there puts the usual width back.
+ * browser, the timeline keeps room; the whole gap beside the card catches the pointer, and the
+ * arrow keys move it when focused), a double click there puts the usual width back.
  *
  * `side` is the workbench's stage state (ui_ai_side.js): `view`, `mapStep`, `hidden`, `tab`.
  */
@@ -22,6 +23,7 @@ import { renderDecisionsView } from './ui_ai_decisions.js';
 
 const WIDTH_KEY = 'anomalous.aiSideWidth';
 const WIDTH = { min: 340, start: 440 };
+const KEY_STEP = 32; // px an arrow key moves the column's edge
 export const TIMELINE_MIN = 380; // what the timeline keeps beside the column
 
 /** The column's width: as the user dragged it, or the usual one. */
@@ -99,6 +101,7 @@ function grip(box) {
     const node = el('div', 'anomalous-ai-side-grip');
     node.setAttribute('role', 'separator');
     node.setAttribute('aria-orientation', 'vertical');
+    node.tabIndex = 0;
     node.title = t('aiSideResize');
     const page = box.closest('.anomalous-ai');
     const set = (width, keep) => {
@@ -129,6 +132,13 @@ function grip(box) {
         node.addEventListener('pointermove', move);
         node.addEventListener('pointerup', stop, { once: true });
         node.addEventListener('pointercancel', stop, { once: true });
+    });
+    node.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        event.stopPropagation(); // not the browser's own arrow keys
+        const now = parseFloat(page.style.getPropertyValue('--ai-side-w')) || sideWidth();
+        set(now + (event.key === 'ArrowLeft' ? KEY_STEP : -KEY_STEP), true);
     });
     node.addEventListener('dblclick', () => {
         try { localStorage.removeItem(WIDTH_KEY); } catch (_) { /* nothing kept */ }
