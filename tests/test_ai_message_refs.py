@@ -53,6 +53,9 @@ class RefsTests(unittest.TestCase):
 
     def test_a_plain_message_has_no_refs_and_bad_refs_are_refused(self):
         self.assertNotIn("refs", ai_panels.leave_message(self.task, "继续"))
+        # Pictures alone, no words: still a message.
+        alone = ai_panels.leave_message(self.task, "", [{"kind": "pictures", "id": "ref.png", "label": "ref.png"}])
+        self.assertEqual((alone["text"], [ref["id"] for ref in alone["refs"]]), ("", ["ref.png"]))
         for refs in ("x", [{"kind": "files", "id": "a"}], [{"kind": "models", "id": ""}], [{"kind": "nodes", "id": str(n)} for n in range(13)]):
             with self.assertRaises(ai_panels.PanelError, msg=refs):
                 ai_panels.leave_message(self.task, "看这个", refs)

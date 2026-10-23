@@ -411,15 +411,16 @@ MAX_MESSAGE = 2000
 
 
 def leave_message(task_id, text, refs=None, now=None):
-    """A message from the user to the AI working on task `task_id`, with what its "@" point at
-    (ai_message_refs.py). Returns the step."""
+    """A message from the user to the AI working on task `task_id`, with what its "@" point at and
+    the pictures attached (ai_message_refs.py); words may be left out when something is attached.
+    Returns the step."""
     from . import ai_message_refs
 
-    text = _text(text, MAX_MESSAGE, "text", True)
     try:
         refs = ai_message_refs.clean(refs)
     except ai_message_refs.RefsError as error:
         raise PanelError(str(error))
+    text = _text(text, MAX_MESSAGE, "text", not refs)
     now = time.time() if now is None else now
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "user_message", "kind": "user", "ok": True,
             "summary": "user_message", "text": text, "delivered": False, "results": [], **({"refs": refs} if refs else {})}

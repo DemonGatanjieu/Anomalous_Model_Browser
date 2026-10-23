@@ -82,7 +82,7 @@ def message_of(step):
             else:
                 item["details"] = found
         items.append(item)
-    out = {"refs": items, "refs_note": "What the user's @ names in their text point at, exactly."}
+    out = {"refs": items, "refs_note": "What the user's @ names in their text point at, and the pictures they attached, exactly."}
     if files:
         out["_pictures"] = files
     return out

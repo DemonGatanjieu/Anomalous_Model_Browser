@@ -1,5 +1,5 @@
-/* "@" and "/" in the AI workbench's message box (ui_ai_mention.js): the list over the box, and the
-   chips of what the message names. */
+/* "@" and "/" in the AI workbench's message box (ui_ai_mention.js): the list over the box; what the
+   message carries over its input (ui_ai_tray.js); the gallery and materials buttons beside it. */
 
 .anomalous-ai-message { position: relative; }
 .anomalous-ai-message.is-quiet:focus-within { opacity: 1; } /* typing in it: not faded, nor the list over it */
@@ -51,8 +51,51 @@
 .anomalous-ai-mention-name { flex: 1; min-width: 0; overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-mention-kind { flex: none; max-width: 45%; overflow: hidden; color: var(--amb-text-dim); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
 
-.anomalous-ai-mention-refs { display: flex; flex-wrap: wrap; gap: 6px; }
-.anomalous-ai-mention-refs[hidden] { display: none; }
+/* What the message carries: pictures with ✎ and ×, then chips. */
+.anomalous-ai-tray { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.anomalous-ai-tray[hidden] { display: none; }
+.anomalous-ai-tray-picture {
+    position: relative;
+    width: 76px;
+    height: 76px;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+}
+.anomalous-ai-tray-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.anomalous-ai-tray-picture.is-gone img { visibility: hidden; }
+.anomalous-ai-tray-x {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: inline-flex;
+    padding: 4px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.62);
+    color: #fff;
+    cursor: pointer;
+}
+.anomalous-ai-tray-x:hover { background: var(--amb-danger, #d9534f); }
+.anomalous-ai-tray-mark {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 24px;
+    border: 0;
+    background: rgba(0, 0, 0, 0.62);
+    color: #fff;
+    font: inherit;
+    font-size: 11.5px;
+    cursor: pointer;
+}
+.anomalous-ai-tray-mark:hover { background: var(--amb-link); }
 .anomalous-ai-mention-chip {
     display: inline-flex;
     align-items: center;
@@ -69,24 +112,26 @@
 .anomalous-ai-mention-chip-x { display: inline-flex; padding: 3px; border: 0; border-radius: 5px; background: none; color: var(--amb-text-soft); cursor: pointer; }
 .anomalous-ai-mention-chip-x:hover { background: rgba(var(--amb-ink-rgb), 0.1); color: var(--amb-text-main); }
 
-/* The picture button and its panel of gallery pictures (ui_ai_gallery_pick.js), over the box like the list. */
-.anomalous-ai-message-pics {
+/* The gallery and materials buttons beside the input, and the gallery's panel over the box like the list. */
+.anomalous-ai-message-tool {
+    position: relative;
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: 36px;
+    align-self: flex-end;
+    width: 38px;
+    height: 38px;
     border: 1px solid var(--amb-border);
-    border-radius: 8px;
+    border-radius: 9px;
     background: none;
     color: var(--amb-text-soft);
     cursor: pointer;
 }
-.anomalous-ai-message-pics { position: relative; }
-.anomalous-ai-message-pics:hover, .anomalous-ai-message-pics:focus-visible { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-text-main); outline: none; }
-/* Its panel open, or pictures named in the message: lit, with their number. */
-.anomalous-ai-message-pics.is-on, .anomalous-ai-message-pics.has-pictures { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 24%, transparent); color: var(--amb-text-main); }
-.anomalous-ai-message-pics-count {
+.anomalous-ai-message-tool:hover, .anomalous-ai-message-tool:focus-visible { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-text-main); outline: none; }
+/* Its panel open, or what it gave in the message: lit, with their number. */
+.anomalous-ai-message-tool.is-on, .anomalous-ai-message-tool.has-items { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 24%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-message-tool-count {
     position: absolute;
     top: -7px;
     right: -7px;
@@ -102,7 +147,7 @@
     line-height: 18px;
     text-align: center;
 }
-.anomalous-ai-message-pics-count:empty { display: none; }
+.anomalous-ai-message-tool-count:empty { display: none; }
 .anomalous-ai-pics {
     position: absolute;
     z-index: 6;
@@ -177,6 +222,25 @@
 .anomalous-ai-pics-foot { display: flex; flex: none; align-items: center; gap: 10px; }
 .anomalous-ai-pics-count { flex: 1; min-width: 0; color: var(--amb-text-dim); font-size: 12px; }
 
-/* A message's named pictures on the timeline (ui_ai_step_body.js). */
-.anomalous-ai-user-pictures { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.anomalous-ai-user-pictures img { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; background: rgba(var(--amb-ink-rgb), 0.05); }
+/* "New steps below" over the message box (ui_ai_message.js newStepsPill). */
+.anomalous-ai-new-steps {
+    position: absolute;
+    z-index: 4;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 60%, transparent);
+    border-radius: 999px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transform: translateX(-50%);
+}
+.anomalous-ai-new-steps[hidden] { display: none; }
+.anomalous-ai-new-steps:hover { background: color-mix(in srgb, var(--amb-link) 22%, var(--amb-bg-panel)); }

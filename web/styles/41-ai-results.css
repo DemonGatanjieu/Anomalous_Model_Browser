@@ -69,6 +69,11 @@
 .anomalous-ai-action[hidden] { display: none; }
 .anomalous-ai-image-results > .anomalous-ai-action { margin-top: 10px; }
 
+/* Pictures the user's message carries: a row of small cards, with the same tools. */
+.anomalous-ai-image-results.is-said { margin-top: 6px; }
+.anomalous-ai-image-results.is-said .anomalous-ai-image-grid { grid-template-columns: repeat(auto-fill, 168px); gap: 8px; }
+.anomalous-ai-image-results.is-said .anomalous-ai-image-preview img { height: 150px; object-fit: cover; }
+
 /* The results strip: small pictures in a row that wraps. */
 .anomalous-ai-image-results.is-compact .anomalous-ai-image-grid {
     grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));

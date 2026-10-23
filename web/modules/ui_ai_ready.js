@@ -1,14 +1,13 @@
 /**
  * A task waiting for an AI (ui_ai_workbench.js), on two pages switched at the top: "Get started"
  * (ui_ai_connect.js waitingCard: what to do, the sentence for the AI, connecting) and "Put ready":
- * the gallery as a big grid whose pictures go into the message box (named as "@" does), the
- * message box itself (words, "@", send), the materials button, and what is ready so far (the
- * user's own steps, drawn by the workbench). The AI gets what is ready when it takes the task.
- * Which page shows is kept per task while the page is open.
+ * the gallery as a big grid whose pictures go onto the message box at the foot of the column
+ * (attached: to mark up, write about and send there), and what is ready so far (the user's own
+ * steps, drawn by the workbench). The AI gets what is ready when it takes the task. Which page
+ * shows is kept per task while the page is open.
  */
 
 import { translate as t } from './locales.js';
-import { iconButton } from './ui_ai_icons.js';
 import { waitingCard } from './ui_ai_connect.js';
 import { pictureGrid } from './ui_ai_gallery_pick.js';
 
@@ -47,11 +46,7 @@ function readyPage(ctx) {
         pictures.stop();
     };
     box.addEventListener('anomalous-refs', follow);
-    const materials = el('div', 'anomalous-ai-ready-row');
-    materials.append(el('span', 'anomalous-ai-ready-note', t('aiReadyMaterialsBody')),
-        iconButton('anomalous-ai-link', 'sparkle', ctx.materials ? t('aiWaitingMaterialsCount', { count: ctx.materials }) : t('aiWaitingMaterials'), ctx.openMaterials));
-    page.append(head, section(t('aiReadyPictures'), pictures.search, pictures.grid), section(t('aiReadyWords'), box),
-        section(t('aiReadyMaterials'), materials));
+    page.append(head, section(t('aiReadyPictures'), pictures.search, pictures.grid));
     if (ctx.ready.length) page.append(section(t('aiWaitingReadyDone', { count: ctx.ready.length }), ...ctx.ready));
     page.mark = pictures.mark;
     return page;
@@ -59,7 +54,7 @@ function readyPage(ctx) {
 
 /**
  * The waiting task's two pages. `ctx`: {rename(title), message (the task's message box), materials
- * (how many are picked), openMaterials(), ready (the user's steps so far, drawn)}.
+ * (how many are picked), ready (the user's steps so far, drawn)}.
  */
 export function waitingView(task, ctx) {
     const view = el('div', 'anomalous-ai-waiting-view');

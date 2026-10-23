@@ -26,7 +26,7 @@ import { translate as t } from './locales.js';
 import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
-import { messageBox, updateMessageBox } from './ui_ai_message.js';
+import { messageBox, newStepsPill, updateMessageBox } from './ui_ai_message.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { focusPanel, openQuestions, panelLine, panelSteps, stageNews, tabBar } from './ui_ai_side.js';
@@ -219,11 +219,16 @@ function renderTask() {
             message: messageBox(async (text, refs) => {
                 await postTask(task.id, { text, refs }, 'message');
                 await refresh();
+                box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' }); // what one sent, in view
             }, { task: () => state.task, commands: () => taskCommands({ task: () => state.task, undo: () => undoAll(state.task), newTask,
-                side: view => pickView(state.stage, view, false, state.task, renderTask, refresh), changed: refresh }) }),
+                side: view => pickView(state.stage, view, false, state.task, renderTask, refresh), changed: refresh }),
+            mark: (image, sent) => openMarker(image, task.id, () => { sent(); void refresh(); }),
+            openMaterials: () => pickView(state.stage, 'toolbox', false, state.task, renderTask, () => void refresh()) }),
+            seen: (task.steps || []).length, pill: newStepsPill(box), dock: el('div', 'anomalous-ai-dock'),
         };
         view.tabs = el('div', 'anomalous-ai-tabs');
-        box.replaceChildren(view.tabs, view.header, view.flow, view.made, view.timeline, view.message);
+        view.dock.append(view.pill, view.message); // at the foot of the column, in view while the timeline scrolls
+        box.replaceChildren(view.tabs, view.header, view.flow, view.made, view.timeline, view.dock);
     }
     // A new panel that asks something brings the stage forward when the window is narrow.
     const news = stageNews(task, state.stage);
@@ -280,7 +285,7 @@ function renderTask() {
         : { key: JSON.stringify(['step', at, item.step, undoable(item.step)]), make: () => stepRow(item.step, at + 1) }));
     state.numbers = new Map(items.flatMap((item, at) => (item.type === 'looks' ? item.steps : [item.step]).map(step => [step.id, at + 1])));
     // A task the user started waits for an AI: how to get one on it, and a page to put things
-    // ready for it meanwhile (their own steps are drawn there; the message box moves in too).
+    // ready for it meanwhile (their own steps are drawn there; its gallery feeds the message box).
     const preparing = Boolean(task.waiting) && items.every(item => item.type === 'step' && item.step.kind === 'user');
     if (preparing) {
         const materials = toolboxCount(task);
@@ -290,14 +295,14 @@ function renderTask() {
                 await refresh();
             },
             message: view.message, materials, ready: items.map((item, at) => stepRow(item.step, at + 1)),
-            openMaterials: () => pickView(state.stage, 'toolbox', false, task, renderTask, () => void refresh()),
         }) });
     } else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     syncRows(view.timeline, rows);
-    if (!preparing && view.message.parentNode !== box) box.append(view.message); // back under the timeline once an AI took it
-    updateMessageBox(view.message, Boolean(task.ended), preparing ? 'waiting' : status);
+    updateMessageBox(view.message, Boolean(task.ended), preparing ? 'waiting' : status, toolboxCount(task));
     view.timeline.classList.toggle('is-waiting', preparing);
     box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
+    if ((task.steps || []).slice(view.seen).some(step => step.kind !== 'user') && !keepBottom) view.pill.show(); // the AI's, while the user read further up
+    view.seen = (task.steps || []).length;
     drawStage(task, news.arrived);
 }
 

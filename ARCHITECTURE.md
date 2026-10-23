@@ -270,12 +270,16 @@ covered by the `styles.css` manifest.
   undo, scan page, ▶ for audio), updated live; also the home page's "What the AI did lately"
   and the rail's dot (`owner.railNews`). A task's parts stay in the page between redraws: a
   step is drawn again only when it changed (`syncRows`), so a scrolled diagram or strip and
-  half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box under
-  a task (made once per task); `ui_ai_mention.js` gives it "@" (the task's pictures, the
-  gallery's newest and those its search finds, combos, models, workflows, prompts, node packs
-  and node types from the materials picker's data, chips of what is named), and
-  `ui_ai_gallery_pick.js` its picture button (gallery pictures picked into the message) and "/" (`ui_ai_commands.js`: stop, undo, side views, new task, canvas mode,
-  words to fill in); `api/ai_message_refs.py` checks what the "@" name and gives each to the AI
+  half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box, made
+  once per task and docked at the foot of its column (in view while the timeline scrolls, with a
+  "new steps below" button): a growing input, the gallery and materials buttons beside it, and
+  over it what the message carries (`ui_ai_tray.js`: pictures to mark up with
+  `ui_ai_marker.js` or leave out, chips of what "@" names). `ui_ai_mention.js` holds those refs
+  and gives it "@" (the task's pictures, the gallery's newest and those its search finds,
+  combos, models, workflows, prompts, node packs and node types from the materials picker's
+  data) and "/" (`ui_ai_commands.js`: stop, undo, side views, new task, canvas mode, words to
+  fill in); `ui_ai_gallery_pick.js` is the gallery grid pictures are attached from.
+  `api/ai_message_refs.py` checks what the message names and gives each to the AI
   with the message (in full, pictures attached; get_toolbox shares its `lookup`),
   `tests/test_ai_message_refs.py`. `ui_ai_step_body.js` is what a timeline step says under its
   title (the user's own steps with whether the AI has them, a decision's card, the AI's note).

@@ -3,11 +3,12 @@
  * "@" lists what the user can point the AI at: this task's pictures, the gallery's newest ones
  * (and, for what is typed, those the gallery's search finds: prompt words, models, seed), combos,
  * models, workflows, prompts, custom node packs and node types (the materials picker's data,
- * ai_toolbox_data.js). The picture button's panel (ui_ai_gallery_pick.js) adds pictures as well.
- * Taking one writes "@name" into the text and keeps what it is; the message then carries exactly
- * what each "@" points at (api/ai_message_refs.py), shown as chips under the box until it is
- * sent. "/" at the start lists the commands (ui_ai_commands.js): some act at once, some fill in
- * words to send. ↑↓ move, Enter or Tab take, Esc closes; the pointer works as well.
+ * ai_toolbox_data.js). Taking one writes "@name" into the text and keeps what it is; pictures
+ * picked from the gallery (ui_ai_gallery_pick.js, the "Put ready" page) are attached without a
+ * name in the text. The message carries exactly what each "@" points at and what is attached
+ * (api/ai_message_refs.py), shown over the input until it is sent (ui_ai_tray.js). "/" at the
+ * start lists the commands (ui_ai_commands.js): some act at once, some fill in words to send.
+ * ↑↓ move, Enter or Tab take, Esc closes; the pointer works as well.
  */
 
 import { translate as t } from './locales.js';
@@ -17,6 +18,7 @@ import { sourceBadge } from './ui_ai_toolbox_icons.js';
 import { packItems, pageNodes } from './ui_ai_toolbox.js';
 import { icon } from './ui_ai_icons.js';
 import { galleryPictures, pictureItem, thumbUrl } from './ui_ai_gallery_pick.js';
+import { drawTray } from './ui_ai_tray.js';
 
 const SHOWN = 8;
 const RECENT = 30; // the gallery's newest pictures "@" offers
@@ -79,20 +81,19 @@ const kindWords = item => [item.kind === 'pictures' ? t(item.gallery ? 'aiMentio
     item.kind === 'models' ? item.type : item.kind === 'prompts' && item.source ? t(`aiTbPromptFrom_${item.source}`) : ''].filter(Boolean).join(' · ');
 
 /**
- * "@" and "/" for `field` in the message box `box`. `source`: {task(), commands()}. Returns
- * {keydown(event) (true when the list took the key), refs(text) (what the "@" still in `text`
- * point at), add(item) (names it at the end of the text), remove(id), has(id), pictures() and
- * count() (how many pictures, and things, the text names), clear()}. `box` hears
- * "anomalous-refs" whenever what is named changes.
+ * "@" and "/" for `field` in the message box `box`, what they name drawn into `tray`. `source`:
+ * {task(), commands(), mark(image, sent)? (marks a picture up for the AI)}. Returns {keydown(event)
+ * (true when the list took the key), refs() (what the message carries), add(item) (attaches it),
+ * remove(id), has(id), pictures() and count() (how many pictures, and things, it carries),
+ * clear()}. `box` hears "anomalous-refs" whenever that changes.
  */
-export function mentions(field, box, source) {
+export function mentions(field, box, source, tray) {
     const list = el('div', 'anomalous-ai-mention');
     list.setAttribute('role', 'listbox');
     list.hidden = true;
-    const chips = el('div', 'anomalous-ai-mention-refs');
-    chips.hidden = true;
-    box.append(list, chips);
-    let refs = [];
+    box.append(list);
+    let refs = []; // {kind, id, label, item, attached}: attached ones need no "@name" in the text
+    const live = () => refs.filter(ref => ref.attached || field.value.includes(`@${ref.label}`));
     let open = null; // {mode: 'at' | 'slash', start, items, at}
     let recent = null; // the gallery's newest pictures, read when "@" first opens
     let found = { query: null, items: [] }; // what the gallery's search found for a query
@@ -128,26 +129,20 @@ export function mentions(field, box, source) {
 
     function drawChips() {
         box.dispatchEvent(new Event('anomalous-refs'));
-        chips.hidden = !refs.length;
-        chips.replaceChildren(...refs.map((ref) => {
-            const chip = el('span', 'anomalous-ai-mention-chip');
-            chip.append(lead(ref.item), el('span', 'anomalous-ai-mention-chip-name', ref.label));
-            const x = el('button', 'anomalous-ai-mention-chip-x');
-            x.type = 'button';
-            x.title = t('aiMentionRemove');
-            x.append(icon('close', 11));
-            x.onclick = () => {
+        drawTray(tray, live(), {
+            lead,
+            remove: (ref) => {
                 drop(ref);
                 field.focus();
-            };
-            chip.append(x);
-            return chip;
-        }));
+            },
+            // Marked up, the picture goes to the AI with its marks: not with this message too.
+            mark: source.mark ? ref => source.mark(ref.item.image, () => drop(ref)) : null,
+        });
     }
 
     function drop(ref) {
         refs = refs.filter(other => other !== ref);
-        field.value = field.value.replace(`@${ref.label} `, '').replace(`@${ref.label}`, '');
+        if (!ref.attached) field.value = field.value.replace(`@${ref.label} `, '').replace(`@${ref.label}`, '');
         drawChips();
     }
 
@@ -221,7 +216,12 @@ export function mentions(field, box, source) {
         draw();
     }
 
-    field.addEventListener('input', update);
+    field.addEventListener('input', () => {
+        const before = refs.length;
+        refs = live(); // an "@name" deleted from the text leaves the message too
+        if (refs.length !== before) drawChips();
+        update();
+    });
     field.addEventListener('click', update);
     field.addEventListener('blur', () => setTimeout(close, 120));
 
@@ -245,21 +245,19 @@ export function mentions(field, box, source) {
             }
             return false;
         },
-        refs: text => refs.filter(ref => text.includes(`@${ref.label}`)).map(({ kind, id, label }) => ({ kind, id, label })),
+        refs: () => live().map(({ kind, id, label }) => ({ kind, id, label })),
         add(item) {
             if (refs.some(ref => ref.kind === item.kind && ref.id === item.id)) return;
-            const text = field.value.replace(/\s+$/, '');
-            field.value = `${text}${text ? ' ' : ''}@${item.title} `;
-            refs.push({ kind: item.kind, id: item.id, label: item.title, item });
+            refs.push({ kind: item.kind, id: item.id, label: item.title, item, attached: true });
             drawChips();
         },
         remove(id) {
             const ref = refs.find(item => item.id === id);
             if (ref) drop(ref);
         },
-        has: id => refs.some(ref => ref.id === id && field.value.includes(`@${ref.label}`)),
-        pictures: () => refs.filter(ref => ref.kind === 'pictures' && field.value.includes(`@${ref.label}`)).length,
-        count: () => refs.filter(ref => field.value.includes(`@${ref.label}`)).length,
+        has: id => live().some(ref => ref.id === id),
+        pictures: () => live().filter(ref => ref.kind === 'pictures').length,
+        count: () => live().length,
         clear() {
             refs = [];
             close();

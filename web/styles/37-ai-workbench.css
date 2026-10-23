@@ -207,10 +207,25 @@
 
 /* ---------- one task ---------- */
 .anomalous-ai-task {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     min-height: 0;
     padding: 24px 28px 28px;
     overflow-y: auto;
+}
+
+.anomalous-ai-task > * { flex-shrink: 0; }
+
+/* The message box's dock: at the foot of the column however short the timeline, and in view while
+   it scrolls (the column's bottom padding is its own), the timeline fading out behind it. */
+.anomalous-ai-dock {
+    position: sticky;
+    bottom: -28px;
+    z-index: 3;
+    margin: auto 0 -28px;
+    padding: 16px 0 28px;
+    background: linear-gradient(to bottom, transparent, var(--amb-bg-page) 16px);
 }
 
 .anomalous-ai-task-head {
@@ -430,13 +445,15 @@
 .anomalous-ai-message {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-top: 14px;
-    padding: 12px;
-    border: 1px solid var(--amb-border);
-    border-radius: 12px;
-    background: rgba(var(--amb-ink-rgb), 0.03);
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border-strong, var(--amb-border));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--amb-bg-page), rgb(var(--amb-ink-rgb)) 4%);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
+
+.anomalous-ai-message:focus-within { border-color: color-mix(in srgb, var(--amb-link) 55%, transparent); }
 
 .anomalous-ai-message[hidden] { display: none; }
 
@@ -446,25 +463,33 @@
 
 .anomalous-ai-message-line {
     display: flex;
+    align-items: flex-end;
     gap: 8px;
 }
 
 .anomalous-ai-message-input {
     flex: 1;
     min-width: 0;
-    padding: 8px 12px;
+    height: 38px;
+    max-height: 168px;
+    box-sizing: border-box;
+    padding: 9px 12px;
     border: 1px solid var(--amb-border);
-    border-radius: 8px;
+    border-radius: 9px;
     background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
     color: var(--amb-text-main);
     font: inherit;
     font-size: 13px;
+    line-height: 1.45;
+    resize: none;
 }
 
 .anomalous-ai-message-input:focus {
     border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
     outline: none;
 }
+
+.anomalous-ai-message-line .anomalous-ai-panel-send { align-self: flex-end; height: 38px; }
 
 /* The step's number in a dot of its kind's colour; the line through the dots is the order. */
 .anomalous-ai-step-dot {
