@@ -12,11 +12,11 @@ its warnings is the step's "estimate" (ai_run_watch.py), the run's shape in boxe
 what changed since the task's run before it (ai_run_map.py); a run the user or the AI stopped
 (ai_run_control.py) ends "cancelled"."""
 
-import json
 import threading
 import time
 
 from . import ai_run_map, ai_run_watch, ai_tasks
+from .mcp_tools import tool_text
 
 RUN_POLL_SECONDS = 2.0
 MAX_STATUS_WAIT = 55
@@ -327,7 +327,7 @@ def tell(result, task_id):
     data["your_run"] = run
     result["structuredContent"] = data
     content = list(result.get("content") or [])
-    text = {"type": "text", "text": json.dumps(data, ensure_ascii=False)}
+    text = {"type": "text", "text": tool_text(data)}
     if content and isinstance(content[0], dict) and content[0].get("type") == "text":
         content[0] = text
     else:

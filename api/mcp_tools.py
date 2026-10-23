@@ -413,7 +413,7 @@ def list_saved_prompts(query="", limit=20):
     return {"total_matches": len(found), "prompts": found[:_limit(limit)]}
 
 
-def recent_activity(limit=20, source=""):
+def recent_activity(limit=10, source=""):
     entries = list_entries(_limit(limit), source if source in ("canvas", "file") else None)
     return {"entries": [{"time": _when(entry.get("time")), "source": entry.get("source"), "action": entry.get("action"),
                          "target": entry.get("target") or "", "detail": entry.get("detail") or {}} for entry in entries]}
@@ -474,8 +474,14 @@ TOOLS = dict([
           {"query": _QUERY, "limit": _LIMIT}),
     _tool("recent_activity", "Activity log",
           "What Anomalous changed recently, newest first: canvas edits it made and files it saved, scanned or deleted.",
-          recent_activity, {"limit": _LIMIT, "source": {"type": "string", "enum": ["canvas", "file"]}}),
+          recent_activity, {"limit": {**_LIMIT, "default": 10}, "source": {"type": "string", "enum": ["canvas", "file"]}}),
 ])
+
+
+def tool_text(data):
+    """A result as the AI reads it: JSON without spaces. Apps keep a long one out of the chat and
+    have the AI open it as a file (Antigravity past about 4,000 characters), so every character counts."""
+    return json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 
 
 def call_tool(tools, name, arguments, ctx=None):
@@ -495,7 +501,7 @@ def call_tool(tools, name, arguments, ctx=None):
         logging.getLogger(__name__).warning("Anomalous MCP tool %s failed", name, exc_info=True)
         return _failure(f"{name} failed: {error}")
     data, extra = value if isinstance(value, tuple) else (value, [])
-    return {"content": [{"type": "text", "text": json.dumps(data, ensure_ascii=False)}, *extra],
+    return {"content": [{"type": "text", "text": tool_text(data)}, *extra],
             "structuredContent": data, "isError": False}
 
 

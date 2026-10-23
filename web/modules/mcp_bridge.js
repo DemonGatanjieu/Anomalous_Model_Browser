@@ -98,7 +98,7 @@ function describeNode(g, node) {
     const settings = {};
     for (const widget of node.widgets || []) {
         const value = widget.value;
-        if (!widget.name || widget.type === 'button') continue;
+        if (!widget.name || widget.type === 'button' || widget.name.startsWith('$$')) continue; // "$$…": the page's own, not settings
         if (typeof value === 'string') settings[widget.name] = short(value);
         else if (typeof value === 'number' || typeof value === 'boolean') settings[widget.name] = value;
     }

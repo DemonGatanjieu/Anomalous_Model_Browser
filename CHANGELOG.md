@@ -34,6 +34,8 @@
 - A model copied to another drive is checked at its start, middle and end (a megabyte each) besides its size before the original goes; no fingerprint needed, no felt cost.
 - 挪动、导入模型时，就算目标位置在最后一刻冒出一个同名文件，也绝不会被盖掉：这次挪动会失败，两边的文件都原样保留（之前在 Windows 上理论上有极小的机会覆盖）。
 - Moving or importing a model never replaces a file that took the name at the last moment: the move fails and both files stay (on Windows a rename could replace it before).
+- **AI 少去翻文件**：AMB 工具返回给 AI 的内容去掉了多余的空格、画布里 ComfyUI 自己的内部字段不再列出、操作记录默认只给最近 10 条，这样 Antigravity 不必把结果另存成文件再让 Gemini 去读。AI 开始任务时也会被告知：模型、图片、节点、画布和运行都有 AMB 的工具，不要自己去读 ComfyUI 的文件夹、源码或接口（那样每一步都要你点允许）。
+- Tool results reach the AI as compact JSON, without the canvas's internal "$$" widgets, and recent_activity gives the last 10 by default, so apps such as Antigravity keep more of them in the chat instead of a file the AI must open; begin_task tells the AI that AMB's tools cover models, pictures, nodes, canvas and runs, so it need not read ComfyUI's folders, source or routes.
 - 修复输入框上方的出图进度停在“节点 0/29 0%”不动的问题：现在它和时间线里那一步、标题栏的进度按钮一起更新。
 - The run line over the message box now follows the run's progress with the timeline's bar and the header's button, instead of staying at the start.
 - **最下面就能看到 AI 在做什么、要你做什么**：输入框上方多了一条“现在”栏：AI 出图时显示进度（节点、步数、百分比、进度条）和停止按钮；AI 某一步还在进行时说在做什么；AI 想做要你点头的事（比如挪模型、下载）时，直接在这里 **允许 / 不要**；AI 问你问题时，问题和选项就在这里，点一下就回答（有推荐的带 ☆，也能自己写一句或跳过），多选和挑图会带你去展台。

@@ -26,7 +26,11 @@ def begin_task(ctx, title, new_task=False):
                                          "(it copies their open workflow there before your first change); do not switch tabs yourself. "
                                          "Every AMB tool call from now on is a step of this task in Anomalous's AI workbench, "
                                          "where the user sees, opens and undoes them. Call report to explain a choice "
-                                         "or to hand in pictures you made another way; report with done=true at the end."}
+                                         "or to hand in pictures you made another way; report with done=true at the end. "
+                                         "The user's models, pictures, node types, canvas and runs are all in AMB's tools (search_models "
+                                         "says which node loads a model, move_model fixes a misfiled one, find_nodes lists node types, "
+                                         "search_images and get_image_info read pictures): do not read ComfyUI's folders or source, "
+                                         "or call its routes, yourself; each of those asks the user to allow it in your app."}
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)

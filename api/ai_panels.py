@@ -19,7 +19,6 @@ successful MCP tool call (attach_pending). The user can also write to the AI in 
 the same way.
 """
 
-import json
 import os
 import threading
 import time
@@ -28,6 +27,7 @@ import uuid
 import folder_paths
 
 from . import ai_marks, ai_tasks
+from .mcp_tools import tool_text
 
 MAX_BLOCKS = 30
 MAX_ITEMS = 12
@@ -576,8 +576,8 @@ def attach_pending(result, client, task_id=None):
     result["structuredContent"] = data
     content = list(result.get("content") or [])
     if content and isinstance(content[0], dict) and content[0].get("type") == "text":
-        content[0] = {"type": "text", "text": json.dumps(data, ensure_ascii=False)}
+        content[0] = {"type": "text", "text": tool_text(data)}
     else:
-        content.insert(0, {"type": "text", "text": json.dumps(data, ensure_ascii=False)})
+        content.insert(0, {"type": "text", "text": tool_text(data)})
     result["content"] = content + pictures
     return result
