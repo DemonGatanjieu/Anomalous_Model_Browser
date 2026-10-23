@@ -76,6 +76,7 @@ export function messageBox(onSend, source) {
             at?.clear();
         } catch (error) {
             note.textContent = error.message;
+            note.classList.add('is-error');
         } finally {
             send.disabled = false;
         }
@@ -105,19 +106,26 @@ export function messageBox(onSend, source) {
         box.addEventListener('anomalous-refs', counted);
         field.addEventListener('input', counted);
         line.prepend(pics, materials);
-        takePictures(box, field, { add: item => at.add(item), room, say: (text) => { note.textContent = text; } });
+        takePictures(box, field, { add: item => at.add(item), room, say: (text) => {
+            note.textContent = text;
+            note.classList.add('is-error');
+        } });
         box.refs = { add: item => at.add(item), remove: id => at.remove(id), has: id => at.has(id), room }; // for ui_ai_ready.js's gallery
         box.setMaterials = count => materials.setCount(count);
     }
     box.note = note;
+    box.field = field;
     return box;
 }
 
-/** The hint for where the task stands; quieter while the AI is not working on it. While a task
- * waits for an AI (`status` "waiting"), what is sent waits with it. */
+/** The hint for where the task stands (the input's tooltip too: a short window shows the hint only
+ * for a failure); quieter while the AI is not working on it. While a task waits for an AI
+ * (`status` "waiting"), what is sent waits with it. */
 export function updateMessageBox(box, ended, status, materials = 0) {
     box.classList.toggle('is-quiet', !['live', 'asks', 'waiting'].includes(status));
     box.note.textContent = t(ended ? 'aiMessageEnded' : status === 'waiting' ? 'aiMessageWaiting' : 'aiMessageHint');
+    box.note.classList.remove('is-error');
+    box.field.title = box.note.textContent;
     box.setMaterials?.(materials);
 }
 

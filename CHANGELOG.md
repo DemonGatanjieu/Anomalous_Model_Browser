@@ -26,6 +26,8 @@
 - Gallery pictures in the AI workbench: the message box's picture button picks them from the gallery (newest first, searchable), and "@" offers the gallery's newest pictures and searches it as you type; the AI gets each picture with what made it.
 - **等 AI 接手时先备好材料**：“等 AI 接手”的任务顶上有 **开始 / 备料** 两页切换。**备料** 是单独的一页：大的图库（可搜索，点一张就放到最下面的输入框上，再点一下拿掉）和“已经备好”的列表；切换按钮上显示备好了几样。AI 接手时一起收到。
 - A task waiting for an AI has two pages, Get started / Put ready: Put ready shows the gallery as a big searchable grid feeding the message box (click to add or drop a picture) and what is ready; the AI gets it all when it takes the task.
+- **不全屏时中间更宽敞**：AI 工作台的窗口不够高时（没有最大化），任务标题、状态、时间步数、“接着”和右边的工具并成一行，上下留白也收紧；输入框下面的提示只在出错时显示（平时鼠标停在输入框上能看到）；等 AI 接手的页面图片变小、步骤靠紧。同样的窗口里，中间能多显示约两成内容；最大化时样子不变。
+- In a low window (not maximised) the AI workbench keeps the task's head to one line, tightens the room around it, shows the message box's hint only for a failure (its words are the input's tooltip) and shrinks the waiting page's picture: about a fifth more room for the timeline.
 - **换类型**：模型详情页多了 **换类型** 按钮，给“导入时类型选错了 / 代码认不出、放错了文件夹”的模型用。窗口里写明现在放在哪一类、文件头看起来像什么（看得出就替你选好并标“推荐”，不确定标“可能是”，看不出就不猜），每一类都写着用哪个节点加载；可以改挪到的根目录和子文件夹，下面显示完整路径。挪动和“整理”用的是同一套：封面、信息、备注一起走，从不覆盖文件，挪完 ComfyUI 的模型列表马上更新。导入单个模型后，提示里也有 **类型选错了？**，点一下直接改。
 - "Change type" on a model's page, and "Wrong type?" in the toast after importing one model: the window says where it is and what its header suggests (picked and marked when it can tell, nothing guessed when it cannot), offers every type with its loader and where it goes, and moves it as Tidy does.
 - 跨盘挪动、复制模型时，除了比大小，还会比对文件开头、中间、结尾各 1 MB 是否一模一样，对不上就不删原文件（只多花几毫秒，不需要事先有指纹）。

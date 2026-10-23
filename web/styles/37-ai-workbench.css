@@ -882,3 +882,28 @@
 .anomalous-ai-fold.is-folded > :first-child { max-height: 10.5em; overflow: hidden; -webkit-mask-image: linear-gradient(black 55%, transparent); mask-image: linear-gradient(black 55%, transparent); }
 .anomalous-ai-fold-toggle { padding: 2px 0; border: 0; background: none; color: var(--amb-link); font: inherit; font-size: 12px; cursor: pointer; }
 .anomalous-ai-fold-toggle:hover { text-decoration: underline; }
+
+/* A short window (ui_ai_workbench.js layout: the page under SHORT_PX, not maximised): the task's
+   head on one line (title, state, when and steps, the task it goes on from; the tools at its end),
+   less room around it, the message box's hint only for a failure (its words are the input's
+   tooltip), a waiting task's picture smaller and its steps closer. */
+.anomalous-ai.is-short .anomalous-ai-task { padding-top: 12px; }
+.anomalous-ai.is-short .anomalous-ai-task-head {
+    top: -12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    margin: -12px 0 12px;
+    padding: 12px 0 10px;
+}
+.anomalous-ai.is-short .anomalous-ai-task-title-line { display: contents; }
+.anomalous-ai.is-short .anomalous-ai-task-title { font-size: 16px; }
+.anomalous-ai.is-short .anomalous-ai-task-meta { order: 1; font-size: 11.5px; }
+.anomalous-ai.is-short .anomalous-ai-task-links { order: 2; }
+.anomalous-ai.is-short .anomalous-ai-task-tools { order: 3; }
+.anomalous-ai.is-short .anomalous-ai-dock { padding-top: 10px; }
+.anomalous-ai.is-short .anomalous-ai-message-hint:not(.is-error) { display: none; }
+.anomalous-ai.is-short .anomalous-ai-waiting { gap: 14px; }
+.anomalous-ai.is-short .anomalous-ai-waiting-art { width: 88px; height: 88px; }
+.anomalous-ai.is-short .anomalous-ai-waiting-steps { gap: 12px; }

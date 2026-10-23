@@ -52,6 +52,7 @@ import {
 } from './ai_task_view.js';
 
 const NARROW_PX = 720;
+const SHORT_PX = 880; // a window this low (not maximised) keeps the task's head to one line
 const COLLAPSED_KEY = 'anomalous_ai_tasks_collapsed';
 const RECENT_COUNT = 3;
 
@@ -454,6 +455,7 @@ function layout() {
     const narrow = width > 0 && width < NARROW_PX;
     const folded = state.tasksCollapsed && !narrow;
     page.classList.toggle('is-narrow', narrow);
+    page.classList.toggle('is-short', page.clientHeight > 0 && page.clientHeight < SHORT_PX);
     page.classList.toggle('shows-task', narrow && state.narrowView === 'task' && Boolean(state.selected));
     page.classList.toggle('tasks-collapsed', folded);
     // Three columns when there is room; else the timeline and the stage take turns behind tabs.
