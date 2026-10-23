@@ -22,7 +22,7 @@ function el(tag, className, text) {
     return node;
 }
 
-/** The box; `source`: {task(), commands()} for "@" and "/". */
+/** The box; `source`: {task(), commands()} for "@" and "/". With them, `box.refs` names things from outside. */
 export function messageBox(onSend, source) {
     const box = el('div', 'anomalous-ai-message');
     const line = el('div', 'anomalous-ai-message-line');
@@ -63,6 +63,7 @@ export function messageBox(onSend, source) {
             field.focus();
         });
         line.prepend(iconButton('anomalous-ai-message-pics', 'image', t('aiPicsButton'), () => picker.toggle(), { iconOnly: true, size: 17 }));
+        box.refs = { add: item => at.add(item), remove: id => at.remove(id), has: id => at.has(id), room }; // for ui_ai_ready.js's gallery
     }
     box.note = note;
     return box;

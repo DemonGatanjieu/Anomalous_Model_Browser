@@ -81,8 +81,9 @@ const kindWords = item => [item.kind === 'pictures' ? t(item.gallery ? 'aiMentio
 /**
  * "@" and "/" for `field` in the message box `box`. `source`: {task(), commands()}. Returns
  * {keydown(event) (true when the list took the key), refs(text) (what the "@" still in `text`
- * point at), add(item) (names it at the end of the text), pictures() and count() (how many
- * pictures, and things, the text names), clear()}.
+ * point at), add(item) (names it at the end of the text), remove(id), has(id), pictures() and
+ * count() (how many pictures, and things, the text names), clear()}. `box` hears
+ * "anomalous-refs" whenever what is named changes.
  */
 export function mentions(field, box, source) {
     const list = el('div', 'anomalous-ai-mention');
@@ -126,6 +127,7 @@ export function mentions(field, box, source) {
     };
 
     function drawChips() {
+        box.dispatchEvent(new Event('anomalous-refs'));
         chips.hidden = !refs.length;
         chips.replaceChildren(...refs.map((ref) => {
             const chip = el('span', 'anomalous-ai-mention-chip');
@@ -135,14 +137,18 @@ export function mentions(field, box, source) {
             x.title = t('aiMentionRemove');
             x.append(icon('close', 11));
             x.onclick = () => {
-                refs = refs.filter(other => other !== ref);
-                field.value = field.value.replace(`@${ref.label} `, '').replace(`@${ref.label}`, '');
-                drawChips();
+                drop(ref);
                 field.focus();
             };
             chip.append(x);
             return chip;
         }));
+    }
+
+    function drop(ref) {
+        refs = refs.filter(other => other !== ref);
+        field.value = field.value.replace(`@${ref.label} `, '').replace(`@${ref.label}`, '');
+        drawChips();
     }
 
     function take(index) {
@@ -247,6 +253,11 @@ export function mentions(field, box, source) {
             refs.push({ kind: item.kind, id: item.id, label: item.title, item });
             drawChips();
         },
+        remove(id) {
+            const ref = refs.find(item => item.id === id);
+            if (ref) drop(ref);
+        },
+        has: id => refs.some(ref => ref.id === id && field.value.includes(`@${ref.label}`)),
         pictures: () => refs.filter(ref => ref.kind === 'pictures' && field.value.includes(`@${ref.label}`)).length,
         count: () => refs.filter(ref => field.value.includes(`@${ref.label}`)).length,
         clear() {

@@ -24,8 +24,8 @@
 - The AI switching to its task tab is no longer reported to it as a canvas change of the user's.
 - **工作台里直接用图库的图**：留言框左边新增图片按钮，打开图库（最新的在前，可按提示词、模型、seed 搜索），点选几张后 **加进消息**；打 **@** 时也能看到图库最新的图，打字会顺带在图库里搜。AI 收到的是图片本身和它的生成参数。
 - Gallery pictures in the AI workbench: the message box's picture button picks them from the gallery (newest first, searchable), and "@" offers the gallery's newest pictures and searches it as you type; the AI gets each picture with what made it.
-- **等 AI 接手时先备好材料**：新任务的“等 AI 接手”页面多了第 2 步“先备好材料”：留言框就在这里（图片按钮从图库选图、@ 提到模型和搭配），旁边是 **选模型和节点**；备好的东西列在“已经备好”里，AI 接手时一起收到。留言里 @ 的图片在时间线上也显示成小图。
-- A task waiting for an AI has a "Put things ready" step: the message box (gallery pictures, "@") and the materials button sit there, what is ready is listed, and the AI gets it all when it takes the task. Pictures a message names show as thumbnails on the timeline.
+- **等 AI 接手时先备好材料**：“等 AI 接手”的任务顶上有 **开始 / 备料** 两页切换。**备料** 是单独的一页：上面是大的图库（可搜索，点一张就放进下面的说明里，再点一下拿掉），下面是说明（打 @ 提到模型和搭配，写好点发送）、**选模型和节点**，以及“已经备好”的列表；切换按钮上显示备好了几样。AI 接手时一起收到。留言里 @ 的图片在时间线上也显示成小图。
+- A task waiting for an AI has two pages, Get started / Put ready: Put ready shows the gallery as a big searchable grid feeding the note below (click to add or drop a picture), the note itself ("@", send), the materials button and what is ready; the AI gets it all when it takes the task. Pictures a message names show as thumbnails on the timeline.
 - 右边那一栏的宽度把手更好抓了：卡片左边整条空隙（从上到下）都能拖，把手平时就淡淡地显示，鼠标靠近时整条边亮起；点一下后也能用 ← → 调宽窄。
 - The side column's grip catches the pointer across the whole gap left of the card, top to bottom, shows faintly at rest and lights the edge when pointed at; focused, ← → resize it.
 - **节点结构的简单看法**：除了完整的方块图，现在默认是一张一眼能看懂的说明：每一段采样用哪个模型加哪些 LoRA（带权重）、正负提示词、从空白画布还是从上一段的结果开始（用哪个放大模型、缩放多少），最后保存在哪；和上一段一样的就写“和第 1 段一样”。点任意一项定位到画布上的节点；“简单 / 完整”随时切换，AMB 记得你的选择。

@@ -3,8 +3,8 @@
  * task waiting for an AI): the address, a sentence to paste to the AI so it sets itself up (and
  * starts on the task, when one waits), and the way for each common app. Only this computer can
  * connect; the address is this page's own. A task waiting for an AI (waitingCard) leads with
- * what the user wants, what they put ready for it (pictures, notes, materials: the AI gets them
- * when it takes the task) and the one sentence to send, in numbered steps under a picture;
+ * what the user wants, a way to the page where they put things ready for it (ui_ai_ready.js)
+ * and the one sentence to send, in numbered steps under a picture;
  * connecting (connectHint) is a card under it that opens the guide in place.
  */
 
@@ -125,26 +125,18 @@ function preview() {
     return box;
 }
 
-/** Step 2 of a waiting task: the message box (`prep.message`, with its picture button and "@"), the
- * materials button, and what was put ready so far (`prep.ready`: the user's steps, drawn). */
+/** Step 2 of a waiting task: what is ready so far and the way to the page for it (`prep.open()`). */
 function readyStep(prep) {
     const body = el('div', 'anomalous-ai-waiting-ready');
-    const tools = el('div', 'anomalous-ai-waiting-ready-tools');
-    tools.append(el('span', 'anomalous-ai-waiting-ready-text', t('aiWaitingReadyBody')),
-        iconButton('anomalous-ai-link', 'sparkle', prep.materials ? t('aiWaitingMaterialsCount', { count: prep.materials }) : t('aiWaitingMaterials'), prep.openMaterials));
-    body.append(tools);
-    if (prep.ready.length) {
-        const done = el('div', 'anomalous-ai-waiting-ready-done');
-        done.append(el('div', 'anomalous-ai-waiting-ready-label', t('aiWaitingReadyDone', { count: prep.ready.length })), ...prep.ready);
-        body.append(done);
-    }
-    body.append(prep.message);
+    const done = [prep.ready && t('aiWaitingReadySome', { count: prep.ready }), prep.materials && t('aiWaitingMaterialsCount', { count: prep.materials })].filter(Boolean);
+    body.append(el('span', 'anomalous-ai-waiting-ready-text', done.length ? done.join(' · ') : t('aiWaitingReadyBody')),
+        iconButton('anomalous-ai-waiting-ready-go', 'arrowRight', t('aiWaitingReadyGo'), prep.open));
     return body;
 }
 
 /**
  * A task the user started, waiting for an AI: a picture, then numbered steps (what they want, in
- * a line that renames the task: `rename(title)`; what to put ready, `prep` for readyStep; the
+ * a line that renames the task: `rename(title)`; what is ready, `prep` for readyStep; the
  * sentence that has the AI take it; where its steps will show), and the card for an AI not
  * connected yet.
  */

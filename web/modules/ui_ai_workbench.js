@@ -30,7 +30,8 @@ import { messageBox, updateMessageBox } from './ui_ai_message.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { focusPanel, openQuestions, panelLine, panelSteps, stageNews, tabBar } from './ui_ai_side.js';
-import { connectHint, waitingCard } from './ui_ai_connect.js';
+import { connectHint } from './ui_ai_connect.js';
+import { waitingView } from './ui_ai_ready.js';
 import { gateCard } from './ui_ai_gate.js';
 import { iconButton } from './ui_ai_icons.js';
 import { listToggle, renderTaskList, stateIcon } from './ui_ai_task_list.js';
@@ -278,15 +279,16 @@ function renderTask() {
         ? { key: JSON.stringify(['looks', at, item.steps]), make: () => looksRow(item.steps, at + 1) }
         : { key: JSON.stringify(['step', at, item.step, undoable(item.step)]), make: () => stepRow(item.step, at + 1) }));
     state.numbers = new Map(items.flatMap((item, at) => (item.type === 'looks' ? item.steps : [item.step]).map(step => [step.id, at + 1])));
-    // A task the user started waits for an AI: how to get one on it, and what the user put ready
-    // for it meanwhile (their own steps, drawn inside; the message box moves in there too).
+    // A task the user started waits for an AI: how to get one on it, and a page to put things
+    // ready for it meanwhile (their own steps are drawn there; the message box moves in too).
     const preparing = Boolean(task.waiting) && items.every(item => item.type === 'step' && item.step.kind === 'user');
     if (preparing) {
         const materials = toolboxCount(task);
-        rows.splice(0, rows.length, { key: JSON.stringify(['waiting', task.title, task.steps, materials]), make: () => waitingCard(task, async (title) => {
-            await postTask(task.id, { title }).catch(error => anomalousAlert(error.message));
-            await refresh();
-        }, {
+        rows.splice(0, rows.length, { key: JSON.stringify(['waiting', task.title, task.steps, materials]), make: () => waitingView(task, {
+            rename: async (title) => {
+                await postTask(task.id, { title }).catch(error => anomalousAlert(error.message));
+                await refresh();
+            },
             message: view.message, materials, ready: items.map((item, at) => stepRow(item.step, at + 1)),
             openMaterials: () => pickView(state.stage, 'toolbox', false, task, renderTask, () => void refresh()),
         }) });
