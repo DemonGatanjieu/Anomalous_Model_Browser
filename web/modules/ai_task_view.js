@@ -5,7 +5,7 @@
  */
 
 /** The kinds of step, in the order a task's counts name them. */
-export const KINDS = ['panel', 'user', 'decision', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'look'];
+export const KINDS = ['panel', 'user', 'decision', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'outside', 'look'];
 
 /**
  * The timeline: each step, but completed reads that follow each other fold into one row (`looks`),
@@ -81,7 +81,7 @@ export function taskCounts(summary) {
     const kinds = summary?.kinds || {};
     const counts = [
         ['aiCountAsks', summary?.asks], ['aiCountCanvas', kinds.canvas], ['aiCountImages', summary?.images], ['aiCountSpeech', kinds.speech],
-        ['aiCountDownload', kinds.download], ['aiCountScan', kinds.scan], ['aiCountErrors', summary?.errors],
+        ['aiCountDownload', kinds.download], ['aiCountScan', kinds.scan], ['aiCountOutside', kinds.outside], ['aiCountErrors', summary?.errors],
     ];
     return counts.filter(([, count]) => count > 0).map(([key, count]) => ({ key, values: { count } }));
 }

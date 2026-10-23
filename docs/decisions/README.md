@@ -192,3 +192,15 @@ sampler's model and prompts as a node structure, values untouched (a workflow wi
 sampler falls back to the older main model, LoRAs and positive prompt). Placing a combo
 only adds a new group; nodes already on the canvas are never changed (their values are
 changed in Current node). This is one of the feature principles in AGENTS.md.
+
+## AD-022 — What an AI does outside Anomalous is seen, not prevented
+
+An AI app may run commands and scripts of its own next to Anomalous's tools; MCP shows a
+server only the calls made to it, and Anomalous does not read another app's logs or
+history. So it makes its own tools the easy way (the AI is told what each one covers),
+asks the AI to say what it did elsewhere (`log_outside`, and rules the user pastes into
+the AI app), and sees for itself what matters most: when the AI calls, it looks at the
+top of ComfyUI's output and input folders for pictures no run saved and pictures
+rewritten in place since its previous call, shows them in the task and tells the AI.
+It never looks in the background, never blocks or undoes anything, and words it as
+something the user may have done. Anomalous itself never overwrites a file.

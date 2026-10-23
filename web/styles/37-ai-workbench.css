@@ -423,6 +423,14 @@
 .anomalous-ai-step.is-scan { --kind: var(--ai-scan); }
 .anomalous-ai-step.is-note { --kind: var(--ai-note); }
 .anomalous-ai-step.is-act { --kind: var(--amb-text-soft); }
+.anomalous-ai-step.is-outside { --kind: var(--amb-warn); }
+
+/* What happened outside Anomalous (ui_ai_step_body.js): the pictures changed, or the AI's own word. */
+.anomalous-ai-outside-list { margin: 4px 0 0; padding-left: 18px; color: var(--amb-text-main); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.anomalous-ai-outside-who { margin-top: 6px; color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-outside-log { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; margin: 4px 0 0; font-size: 13px; line-height: 1.5; }
+.anomalous-ai-outside-log dt { color: var(--amb-text-dim); }
+.anomalous-ai-outside-log dd { margin: 0; color: var(--amb-text-main); white-space: pre-wrap; overflow-wrap: anywhere; }
 .anomalous-ai-step.is-failed { --kind: var(--amb-danger); }
 .anomalous-ai-step.is-user { --kind: var(--amb-link); }
 

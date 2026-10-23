@@ -288,7 +288,13 @@ covered by the `styles.css` manifest.
   `api/ai_message_refs.py` checks what the message names and gives each to the AI
   with the message (in full, pictures attached; get_toolbox shares its `lookup`),
   `tests/test_ai_message_refs.py`. `ui_ai_step_body.js` is what a timeline step says under its
-  title (the user's own steps with whether the AI has them, a decision's card, the AI's note).
+  title (the user's own steps with whether the AI has them, a decision's card, the AI's note, what
+  happened outside Anomalous). `api/ai_outside.py` is that last: when the AI calls (never in the
+  background) it looks at the top of the output and input folders, by the files' own times, for
+  pictures no ComfyUI run saved and pictures rewritten in place since the AI's previous call
+  (an `outside_files` step; the AI is told with its answer), and keeps `log_outside`, the AI's
+  own word on a command or script it ran; both are steps of kind `outside`.
+  `tests/test_ai_outside.py`.
   `api/ai_decisions.py` keeps a task's key decisions: `log_decision` (the AI records what was
   settled, why, what was left out, who decided, the steps it is about; a `decision` step), and
   the user's own choices read from the task's steps (panel answers, gates, materials, the canvas

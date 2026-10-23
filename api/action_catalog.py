@@ -59,6 +59,7 @@ TOOLS = {
     # the AI's own: notes and panels are steps; the rest only steer the task
     "report": Entry("note", None, None),
     "log_decision": Entry("decision", None, None),
+    "log_outside": Entry("outside", None, None),  # what it did with other tools (ai_outside.py, which also notes what changed)
     "show_panel": Entry("panel", None, None),
     "ask_user": Entry("panel", None, None),
     "show_run_map": Entry("panel", None, None),

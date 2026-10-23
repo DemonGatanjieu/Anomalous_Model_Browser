@@ -11,7 +11,8 @@ Answers are always one JSON object; there are no server-initiated messages. The 
 in mcp_tools.py (reading), mcp_actions.py (acting) and mcp_task_tools.py (the AI workbench's
 begin_task and report); every call is kept as a step of a task (ai_tasks.py) for the AI
 workbench page, starting in state "running" and updated on completion, with unread user
-messages and panel answers attached to the next successful tool response. POST
+messages and panel answers attached to the next successful tool response, and pictures changed
+outside Anomalous since the AI's previous call shown and told (ai_outside.py). POST
 /anomalous/mcp/bridge is where the open ComfyUI page claims and answers canvas actions
 (mcp_bridge.py).
 """
@@ -23,7 +24,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_gates, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
+from . import ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
@@ -65,7 +66,9 @@ INSTRUCTIONS = (
     "the user already saw. Use run_workflow for execution: it returns real state/results after a bounded wait. "
     "If you submit through /prompt or another tool, immediately call track_run with YOUR returned prompt_ids "
     "and task ID, or the workbench cannot observe it. For running results use run_status(wait_seconds=55); "
-    "do not inspect output directories or resubmit to find out whether it finished."
+    "do not inspect output directories or resubmit to find out whether it finished. Change pictures only by "
+    "running workflows, never with code of your own; if you do use another tool (a command, a script, files), "
+    "say what you ran with log_outside."
 )
 LIST_TTL_MS = 300000
 # Requests run tools in threads; a few at a time is plenty for one person's AI app.
@@ -168,6 +171,9 @@ async def _call(params, request):
     active_task = step_ref[0] if step_ref else task_id
     if active_task:
         ctx["task"] = active_task
+    outside = None
+    if name not in mcp_apps.APP_TOOLS:  # the card's own calls do not reach the AI
+        outside = await asyncio.to_thread(ai_outside.check, active_task or ai_tasks.active_task_id(client, session))
     canvas_call = ai_task_canvas.begin_call(active_task)  # the page works on the task's own tab
     try:
         # The user's gate first (ai_gates.py): it may wait for their OK, or answer for them.
@@ -198,7 +204,7 @@ async def _call(params, request):
             await asyncio.to_thread(ai_task_runs.tell, result, resolved_task)
     if name != "get_answers" and name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task or ("" if session else None))
-    return result
+    return ai_outside.tell(result, outside)
 
 
 async def api_mcp(request):

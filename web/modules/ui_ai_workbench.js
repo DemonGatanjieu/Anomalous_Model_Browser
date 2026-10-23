@@ -136,7 +136,7 @@ function stepRow(step, number) {
     const body = el('div', 'anomalous-ai-step-body');
     const line = el('div', 'anomalous-ai-step-line');
     line.append(el('span', 'anomalous-ai-kind', t(`aiKind_${step.kind}`)), el('span', 'anomalous-ai-step-title', t(toolKey(step.tool))));
-    const detail = step.kind === 'panel' || step.tool === 'user_activity' ? '' : stepDetail(step);
+    const detail = ['panel', 'outside'].includes(step.kind) || step.tool === 'user_activity' ? '' : stepDetail(step); // their body says it
     if (detail) {
         const text = el('span', 'anomalous-ai-step-detail', detail);
         text.title = detail;

@@ -1,7 +1,8 @@
 /**
  * How to connect an AI app to Anomalous (the AI workbench's "Connect an AI", its empty page and a
  * task waiting for an AI): the address, a sentence to paste to the AI so it sets itself up (and
- * starts on the task, when one waits), and the way for each common app. Only this computer can
+ * starts on the task, when one waits), the way for each common app, and rules for the AI app to
+ * keep (use Anomalous's tools, never edit pictures with code, say what it did outside). Only this computer can
  * connect; the address is this page's own. A task waiting for an AI (waitingCard) leads with
  * what the user wants, a way to the page where they put things ready for it (ui_ai_ready.js)
  * and the one sentence to send, in numbered steps under a picture;
@@ -83,7 +84,10 @@ export function connectGuide(title = '') {
     ];
     for (const [name, text] of ways) apps.append(el('div', 'anomalous-ai-connect-app', name), copyLine(text));
     apps.append(el('div', 'anomalous-ai-connect-app', 'Cherry Studio'), el('div', 'anomalous-ai-connect-note', t('aiConnectCherry', { url })));
-    box.append(apps, el('div', 'anomalous-ai-connect-note', t('aiConnectLocal')));
+    const rules = copyLine(t('aiConnectRules'), { code: false, label: t('aiConnectCopyRules') });
+    rules.classList.add('is-rules');
+    box.append(apps, el('div', 'anomalous-ai-connect-step', t('aiConnectStepRules')), rules,
+        el('div', 'anomalous-ai-connect-note', t('aiConnectLocal')));
     return box;
 }
 

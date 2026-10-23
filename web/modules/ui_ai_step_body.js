@@ -2,7 +2,8 @@
  * What a step of the AI workbench's timeline says under its title, by what it is (ui_ai_workbench.js
  * draws the row around it): the user's own steps (marks on a picture, materials, a change made in
  * Anomalous, pictures handed over, a stop, the canvas mode, a message with the pictures it
- * carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js), or
+ * carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js),
+ * what happened outside Anomalous (pictures changed, the AI's own word: api/ai_outside.py), or
  * the AI's note laid out (a long one folded until asked).
  */
 
@@ -56,6 +57,27 @@ function namedPictures(step, owner) {
     return [box];
 }
 
+/** Pictures changed outside Anomalous since the AI's previous call: each named, those in the output folder shown. */
+function outsideFiles(step, owner) {
+    const list = el('ul', 'anomalous-ai-outside-list');
+    for (const item of step.files || []) list.append(el('li', '', t(`aiOutside_${item.change}`, { name: `${item.folder}/${item.name}` })));
+    if (step.more) list.append(el('li', '', t('aiOutsideMore', { count: step.more })));
+    const pictures = (step.files || []).filter(item => item.folder === 'output')
+        .map(item => ({ type: 'image', folder: 'output', filename: item.name, subfolder: '' }));
+    const shown = pictures.length ? imageResults(pictures, owner) : null;
+    shown?.classList.add('is-said');
+    return [list, ...(shown ? [shown] : []), el('div', 'anomalous-ai-outside-who', t('aiOutsideWho'))];
+}
+
+/** The AI's own word on what it did with other tools. */
+function outsideLog(step) {
+    const box = el('dl', 'anomalous-ai-outside-log');
+    for (const [key, value] of [['aiOutsideWhat', step.what], ['aiOutsideWhy', step.why], ['aiOutsideFiles', (step.files || []).join('\n')]]) {
+        if (value) box.append(el('dt', '', t(key)), el('dd', '', value));
+    }
+    return [box];
+}
+
 /** A change the user made in Anomalous while the AI worked (an activity entry), and whether the AI knows. */
 function userChange(step, entries) {
     const box = el('div', 'anomalous-ai-user-change');
@@ -78,6 +100,8 @@ export function stepBody(step, ctx) {
     case 'user_pictures': return [said(step.text || t('aiPicturesStep', { count: (step.results || []).length })), deliveryState(step, 'aiPicturesSeen')];
     case 'user_stop': return [said(t('aiRunStoppedByYou')), deliveryState(step)];
     case 'user_canvas': return [said(t(step.canvas === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')), deliveryState(step)];
+    case 'outside_files': return outsideFiles(step, ctx.owner);
+    case 'log_outside': return outsideLog(step);
     default:
         if (step.kind === 'decision') return [decisionCard(step.decision || {}, ctx.numberOf)];
         if (step.kind === 'user') return [...(step.text ? [said(step.text)] : []), ...namedPictures(step, ctx.owner), deliveryState(step)];

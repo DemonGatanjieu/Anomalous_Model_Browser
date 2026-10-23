@@ -558,6 +558,9 @@
     word-break: break-all;
 }
 
+.anomalous-ai-copy.is-rules { align-items: flex-start; }
+.anomalous-ai-copy.is-rules .anomalous-ai-copy-text { white-space: pre-line; word-break: normal; overflow-wrap: anywhere; }
+
 .anomalous-ai-copy.is-code .anomalous-ai-copy-text {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 12px;

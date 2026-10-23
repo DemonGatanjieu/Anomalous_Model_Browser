@@ -1,9 +1,10 @@
 """MCP tools that shape the AI workbench's record (ai_tasks.py): begin_task names a piece of
 work, report leaves a note for the user (with pictures made outside Anomalous's tools),
 show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
-reads what the user picked or typed on it."""
+reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
+(ai_outside.py)."""
 
-from . import ai_decisions, ai_marks, ai_message_refs, ai_panels, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox
+from . import ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -33,7 +34,9 @@ def begin_task(ctx, title, new_task=False):
                                          "compares two, run_status lists a run's previews): do not read ComfyUI's folders or "
                                          "source, run preprocessors or call its routes yourself; each of those asks the user to "
                                          "allow it in your app. Change pictures only by running ComfyUI workflows (inpaint and "
-                                         "the like): never edit, paint over or overwrite picture files with code of your own."}
+                                         "the like): never edit, paint over or overwrite picture files with code of your own. "
+                                         "If you still use another tool (a command, a script, reading or writing files), "
+                                         "call log_outside right after with what you ran and why."}
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
@@ -65,6 +68,15 @@ def report(ctx, text="", images=None, done=False, reply_to=None, task=None):
         answer["not_found"] = missing
         answer["note"] = "Pictures are paths inside ComfyUI's output folder (subfolder/name.png), as search_images gives them."
     return answer
+
+
+def log_outside(ctx, what, why="", files=None, task=None):
+    try:
+        step = ai_outside.log(ctx.get("client") or "AI", what, why, files, session=ctx.get("session") or "",
+                              task_id=task or ctx.get("task"))
+    except ValueError as error:
+        raise ToolError(str(error))
+    return {"logged": True, "step": step["id"]}
 
 
 def log_decision(ctx, title, decision, reason="", rejected=None, by="user", related=None, task=None):
@@ -275,6 +287,15 @@ TASK_TOOLS = dict([
                         "done": {"type": "boolean", "default": False},
                         "reply_to": {"type": "string", "description": "user_messages[].id of what you answer."},
                         "task": _TASK_PROP}),
+    _task_tool("log_outside", "Say what you did outside Anomalous",
+               "Right after you used a tool that is not Anomalous's (a shell command, a script, reading or writing "
+               "files, another server), say so here: what (the command or change, in a line), why (what Anomalous's "
+               "tools did not do for it), files (what it read, wrote or changed). The user sees it in the task's "
+               "timeline; Anomalous sees only the calls made to it. Prefer Anomalous's tools where they do the job.",
+               log_outside, {"what": {"type": "string"}, "why": {"type": "string"},
+                             "files": {"type": "array", "items": {"type": "string"}, "maxItems": ai_outside.MAX_FILES},
+                             "task": _TASK_PROP},
+               ["what"]),
     _task_tool("log_decision", "Record a decision",
                "Keeps a key decision of the task in Anomalous's AI workbench, where the user looks back on how the "
                "task went. Talk it over wherever you like, your own chat too; once you and the user settle something "
