@@ -113,16 +113,16 @@
 }
 #anomalous-header .anomalous-ai-side-btn svg { width: 15px !important; height: 15px !important; }
 
-/* The side column's grip: the whole gap left of the card, top to bottom (easy to catch), with a
-   handle always faintly there and a full-height line while it is pointed at or dragged; dragging
-   sets --ai-side-w. Focused, the arrow keys resize too. */
+/* The side column's grip: the gap left of the card, top to bottom, beside the timeline's scrollbar
+   (never over it), with three dots always faintly there and a full-height line instead while it is
+   pointed at or dragged; dragging sets --ai-side-w. Focused, the arrow keys resize too. */
 .anomalous-ai-side-grip {
     position: absolute;
     z-index: 3;
     top: 0;
     bottom: 0;
-    left: -22px;
-    width: 22px;
+    left: -14px;
+    width: 14px;
     cursor: col-resize;
     touch-action: none;
 }
@@ -131,7 +131,7 @@
     position: absolute;
     top: 8px;
     bottom: 8px;
-    left: 10px;
+    left: 6px;
     width: 2px;
     border-radius: 1px;
     background: var(--amb-link);
@@ -142,17 +142,16 @@
     content: '';
     position: absolute;
     top: 50%;
-    left: 8px;
-    width: 6px;
-    height: 56px;
-    margin-top: -28px;
-    border-radius: 3px;
-    background: var(--amb-border-strong, var(--amb-border));
-    opacity: 0.55;
-    transition: opacity 0.15s, background 0.15s;
+    left: 5px;
+    width: 4px;
+    height: 24px;
+    margin-top: -12px;
+    background: radial-gradient(circle, var(--amb-text-dim) 1.5px, transparent 2px) 0 0 / 4px 8px repeat-y;
+    opacity: 0.8;
+    transition: opacity 0.15s;
 }
-.anomalous-ai-side-grip:hover::before, .anomalous-ai-side-grip.is-dragging::before, .anomalous-ai-side-grip:focus-visible::before { opacity: 0.6; }
-.anomalous-ai-side-grip:hover::after, .anomalous-ai-side-grip.is-dragging::after, .anomalous-ai-side-grip:focus-visible::after { background: var(--amb-link); opacity: 1; }
+.anomalous-ai-side-grip:hover::before, .anomalous-ai-side-grip.is-dragging::before, .anomalous-ai-side-grip:focus-visible::before { opacity: 0.8; }
+.anomalous-ai-side-grip:hover::after, .anomalous-ai-side-grip.is-dragging::after, .anomalous-ai-side-grip:focus-visible::after { opacity: 0; }
 .anomalous-ai-side-grip:focus-visible { outline: none; }
 .anomalous-ai.is-tabbed .anomalous-ai-side-grip { display: none; }
 body.anomalous-ai-resizing, body.anomalous-ai-resizing * { cursor: col-resize !important; user-select: none !important; }

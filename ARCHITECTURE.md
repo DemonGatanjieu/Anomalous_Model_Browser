@@ -274,8 +274,8 @@ covered by the `styles.css` manifest.
   and the rail's dot (`owner.railNews`). A task's parts stay in the page between redraws: a
   step is drawn again only when it changed (`syncRows`), so a scrolled diagram or strip and
   half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box, made
-  once per task and docked at the foot of its column (in view while the timeline scrolls, with a
-  "new steps below" button): a growing input, the gallery and materials buttons beside it, and
+  once per task and docked at the foot of its column (in view while the timeline scrolls; a task
+  opens at its newest step, and `ui_ai_newest.js` is the button back to it over the box): a growing input, the gallery and materials buttons beside it, and
   over it what the message carries (`ui_ai_tray.js`: pictures to mark up with
   `ui_ai_marker.js` or leave out, chips of what "@" names), and over that what the task needs or
   does now (`ui_ai_now.js`: a gate to allow, a run's progress with stop, the AI's open question

@@ -8,20 +8,18 @@
  * (ui_ai_mention.js). The words and what is attached
  * go to `onSend(text, refs)`, words optional when something is attached; the AI gets them the
  * next time it asks (get_answers), which the hint says, and says to ask in the AI app once the
- * task ended. Made once per task, so half-typed text survives the task's redraws. newStepsPill
- * is the "new steps below" button over it.
+ * task ended. Made once per task, so half-typed text survives the task's redraws.
  */
 
 import { translate as t } from './locales.js';
 import { mentions } from './ui_ai_mention.js';
 import { galleryPicker } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
-import { icon, iconButton } from './ui_ai_icons.js';
+import { iconButton } from './ui_ai_icons.js';
 
 const MAX_REFS = 12; // api/ai_message_refs.py
 const MAX_PICTURES = 8; // a message's pictures, as ai_pictures.py hands them
 const MAX_HEIGHT = 168; // the input grows up to about seven lines, then scrolls
-const NEAR_BOTTOM = 60;
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -127,25 +125,4 @@ export function updateMessageBox(box, ended, status, materials = 0) {
     box.note.classList.remove('is-error');
     box.field.title = box.note.textContent;
     box.setMaterials?.(materials);
-}
-
-/**
- * "New steps below" over the message box, for a timeline in `scroller`: shown by `show()` when
- * steps came in while the user read further up, gone once they are at the bottom; a click takes
- * them there.
- */
-export function newStepsPill(scroller) {
-    const pill = el('button', 'anomalous-ai-new-steps');
-    pill.type = 'button';
-    pill.hidden = true;
-    pill.append(icon('chevronDown', 14), el('span', '', t('aiNewSteps')));
-    pill.onclick = () => scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
-    const atBottom = () => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < NEAR_BOTTOM;
-    const seen = () => {
-        if (!pill.isConnected) scroller.removeEventListener('scroll', seen); // another task's view by now
-        else if (atBottom()) pill.hidden = true;
-    };
-    scroller.addEventListener('scroll', seen, { passive: true });
-    pill.show = () => { if (!atBottom()) pill.hidden = false; };
-    return pill;
 }

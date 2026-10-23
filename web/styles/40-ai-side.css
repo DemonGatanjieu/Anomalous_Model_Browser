@@ -90,7 +90,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    margin: 10px 10px 10px 0;
+    margin: 10px 10px 10px 14px; /* the gap on the left is the grip's (45-ai-side-views.css) */
     padding: 16px 18px 18px;
     border: 1px solid var(--amb-border);
     border-radius: 14px;

@@ -13,6 +13,8 @@
  * Under a task's title, the task it goes on from and those going on from it (ui_ai_task_links.js).
  * A step's words are ui_ai_step_body.js's; a decision the AI records shows as a card and the
  * side column's "Decisions" view lists all of the task's (ui_ai_decisions.js).
+ * A task opens at its newest step and stays there as steps come in while the user reads at the
+ * foot; read further up, it stays put and a button over the message box leads down (ui_ai_newest.js).
  * Under the timeline the user can write to the AI on that task; the message waits until the AI
  * asks (get_answers) or runs its next step, and says whether it has. The list groups the tasks
  * by day, each with an icon for where it stands.
@@ -26,7 +28,8 @@ import { translate as t } from './locales.js';
 import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
-import { messageBox, newStepsPill, updateMessageBox } from './ui_ai_message.js';
+import { messageBox, updateMessageBox } from './ui_ai_message.js';
+import { atFoot, newestButton } from './ui_ai_newest.js';
 import { nowStrip } from './ui_ai_now.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
@@ -206,14 +209,15 @@ function renderTask() {
         state.owner?.headerTools?.replaceChildren();
         return;
     }
-    const keepBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+    const keepBottom = atFoot(box);
     const keepTop = box.scrollTop;
     const summary = state.tasks.find(item => item.id === task.id) || {};
     const status = taskState(summary);
     // The task's parts stay in the page between redraws (the AI's steps come in all the time):
     // only what changed is drawn again, so a scrolled strip or diagram and half-typed text stay.
     let view = state.view;
-    if (!view || view.taskId !== task.id || !box.contains(view.timeline)) {
+    const fresh = !view || view.taskId !== task.id || !box.contains(view.timeline);
+    if (fresh) {
         view = state.view = {
             taskId: task.id, header: el('div', 'anomalous-ai-task-head'), flow: el('div', 'anomalous-ai-flow-holder'),
             made: el('div', 'anomalous-ai-made-holder'),
@@ -226,10 +230,10 @@ function renderTask() {
                 side: view => pickView(state.stage, view, false, state.task, renderTask, refresh), changed: refresh }),
             mark: (image, sent) => openMarker(image, task.id, () => { sent(); void refresh(); }),
             openMaterials: () => pickView(state.stage, 'toolbox', false, state.task, renderTask, () => void refresh()) }),
-            seen: (task.steps || []).length, pill: newStepsPill(box), now: nowStrip(), dock: el('div', 'anomalous-ai-dock'),
+            seen: (task.steps || []).length, newest: newestButton(box), now: nowStrip(), dock: el('div', 'anomalous-ai-dock'),
         };
         view.tabs = el('div', 'anomalous-ai-tabs');
-        view.dock.append(view.pill, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
+        view.dock.append(view.newest, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
         box.replaceChildren(view.tabs, view.header, view.flow, view.made, view.timeline, view.dock);
     }
     // A new panel that asks something brings the stage forward when the window is narrow.
@@ -304,8 +308,9 @@ function renderTask() {
     view.now.update(task, { refresh: () => void refresh(), showStep: id => showStep(view.timeline, id),
         openStage: () => pickView(state.stage, 'stage', false, task, renderTask, () => void refresh()) });
     view.timeline.classList.toggle('is-waiting', preparing);
-    box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
-    if ((task.steps || []).slice(view.seen).some(step => step.kind !== 'user') && !keepBottom) view.pill.show(); // the AI's, while the user read further up
+    // Opened, at its newest step (a page being prepared, at its top); read at the foot, kept there.
+    box.scrollTop = fresh && preparing ? 0 : fresh || keepBottom ? box.scrollHeight : keepTop;
+    view.newest.arrived((task.steps || []).slice(view.seen).filter(step => step.kind !== 'user').length);
     view.seen = (task.steps || []).length;
     drawStage(task, news.arrived);
 }
