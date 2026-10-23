@@ -68,7 +68,7 @@ class BuildToolTests(unittest.TestCase):
         self.addCleanup(patcher.stop)
 
     def test_the_page_gets_what_it_needs(self):
-        mcp_canvas_edit.add_node({}, "KSampler", {"steps": 28}, near_node_id=4)
+        self.assertIn("run_workflow", mcp_canvas_edit.add_node({}, "KSampler", {"steps": 28}, near_node_id=4)["next"])
         self.assertEqual(self.page.call_args[0], ("add_node", {"type": "KSampler", "values": {"steps": 28}, "title": "", "near_node_id": 4}))
         mcp_canvas_edit.connect_nodes({}, 4, 3, "model", output="0")
         self.assertEqual(self.page.call_args[0][1]["output"], 0, "a slot number given as text")

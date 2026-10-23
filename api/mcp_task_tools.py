@@ -38,6 +38,8 @@ def begin_task(ctx, title, new_task=False):
                                          "If you still use another tool (a command, a script, reading or writing files), "
                                          "call log_outside right after with what you ran and why. Unsure where things stand "
                                          "(a new chat, many changes): get_situation gives the task, the canvas in brief and the next step."}
+    answer["next"] = ("get_situation shows where things stand; a daily run is one call: run_workflow(workflow: a saved "
+                      "one, with the prompt, seed or size to change).")
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
@@ -123,7 +125,7 @@ def ask_user(ctx, question, options=None, multiple=False, other=True, wait_secon
         return {"answered": False, "panel": panel["id"],
                 "note": "The user has not answered yet. Keep waiting with get_answers(panel, wait_seconds=55); "
                         "do not ask the same in your own chat, they answer in Anomalous."}
-    out = {"answered": True, "panel": panel["id"]}
+    out = {"answered": True, "panel": panel["id"], "next": "Go on with the user's answer; log_decision it when it settles a choice."}
     if given.get("skipped"):
         out.update(skipped=True, note="The user skipped this question: go on with your own judgement.")
     elif given.get("text"):

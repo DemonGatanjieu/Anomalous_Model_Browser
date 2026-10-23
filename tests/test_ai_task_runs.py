@@ -65,7 +65,7 @@ class ProgressTests(unittest.TestCase):
         self.assertEqual(told.call_args[0][1]["progress"]["value"], 3)
         status = ai_task_runs.status("Claude")
         self.assertEqual((status["state"], status["progress"]["max"]), ("running", 20))
-        self.assertIn("instead of guessing", status["note"])
+        self.assertIn("do not guess", status["next"])
         history = {"p1": {"status": {"completed": True}, "outputs": {
             "9": {"images": [{"filename": "a.png", "subfolder": "x", "type": "output"}]},
             "12": {"images": [{"filename": "pose_00001_.png", "type": "temp"}]}}}}  # a PreviewImage: the AI's to look at

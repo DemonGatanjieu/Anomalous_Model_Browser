@@ -353,7 +353,8 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
         run = next((step for step in reversed((task or {}).get("steps", []))
                     if step.get("tool") == "run_workflow" and (not step_id or step["id"] == step_id)), None)
         if not run:
-            return {"state": "none", "summary": "No run in this task yet: run_workflow starts one."}
+            return {"state": "none", "summary": "No run in this task yet.",
+                    "next": "run_workflow starts one (workflow: a saved one, with the prompt, seed or size to change)."}
         if run.get("state") not in ("running", "asking", "allowed") or time.monotonic() >= deadline:
             break
         time.sleep(1)
@@ -384,10 +385,12 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
                                    "include_image=true) shows them; there is no need to run a preprocessor yourself.")
     if run.get("error"):
         answer["error"] = run["error"]
-    answer["note"] = {
-        "running": "Still running: call run_status again (wait_seconds up to 55) instead of guessing it is done.",
-        "done": "Finished: the pictures are in the output folder (search_images / get_image_info show them).",
-        "asking": "Waiting for the user's OK in Anomalous before it runs.",
-        "cancelled": "Stopped before it finished; nothing more will come of it.",
-    }.get(run.get("state"), "The run did not finish; see error.")
+    # What to do now, in one line a small model can follow (get_situation and the canvas tools say theirs too).
+    answer["next"] = {
+        "running": "run_status(wait_seconds=55): it is still running; do not guess it is done or run it again.",
+        "allowed": "run_status(wait_seconds=55): it is about to run.",
+        "done": "Look at pictures with zoom_image (or get_image_info), then report what came out.",
+        "asking": "get_answers(wait_seconds=55): the run waits for the user's OK in Anomalous.",
+        "cancelled": "It was stopped and nothing more comes of it: ask_user what to change before running again.",
+    }.get(run.get("state"), "get_situation shows what went wrong (a missing model: check_workflow_models); fix it, then run again.")
     return answer

@@ -149,10 +149,18 @@ def _type(value):
     return value.strip()
 
 
+def _next(answer):
+    """The checklist's next step after a change (the page answers with what is still unwired)."""
+    if isinstance(answer, dict):
+        answer["next"] = ("connect_nodes: wire each of unwired (fits lists the outputs on the canvas that fit it)."
+                          if answer.get("unwired") else "Nothing a run needs is unwired: run_workflow runs it.")
+    return answer
+
+
 def add_node(ctx, type, values=None, title="", near_node_id=None):
     _allowed(ctx, [_type(type)])
-    return _page("add_node", {"type": _type(type), "values": _values(values), "title": str(title or "")[:120],
-                              "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")})
+    return _next(_page("add_node", {"type": _type(type), "values": _values(values), "title": str(title or "")[:120],
+                                    "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")}))
 
 
 def connect_nodes(ctx, from_node_id, to_node_id, input, output=0):
@@ -161,8 +169,8 @@ def connect_nodes(ctx, from_node_id, to_node_id, input, output=0):
     output = int(output) if isinstance(output, str) and output.strip().isdigit() else output
     if not isinstance(input, str) or not input or len(input) > 100:
         raise ToolError("input is the input's name, as add_node, find_nodes or describe_canvas give it.")
-    return _page("connect_nodes", {"from_node_id": _id(from_node_id, "from_node_id"), "output": output,
-                                   "to_node_id": _id(to_node_id, "to_node_id"), "input": input})
+    return _next(_page("connect_nodes", {"from_node_id": _id(from_node_id, "from_node_id"), "output": output,
+                                         "to_node_id": _id(to_node_id, "to_node_id"), "input": input}))
 
 
 def set_values(ctx, node_id, values):
@@ -174,7 +182,7 @@ def set_values(ctx, node_id, values):
 def remove_nodes(ctx, node_ids):
     if not isinstance(node_ids, list) or not 0 < len(node_ids) <= MAX_REMOVE:
         raise ToolError(f"node_ids lists 1 to {MAX_REMOVE} node ids.")
-    return _page("remove_nodes", {"node_ids": [_id(item, "node_ids") for item in node_ids]})
+    return _next(_page("remove_nodes", {"node_ids": [_id(item, "node_ids") for item in node_ids]}))
 
 
 def new_workflow(ctx, name="", nodes=None):
