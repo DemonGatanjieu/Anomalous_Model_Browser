@@ -14,7 +14,10 @@ with its warnings (also kept after the run). `web/modules/ui_ai_run_map.js` draw
 (one line, the changes as chips, the boxes in a `<details>`, scaled to the column) and for a `run_map` stage block
 (the panel ctx's `stepOf`). `web/modules/mcp_task_tab.js` wraps each page action in `mcp_bridge.js`: with the task's
 mode "new", it clicks the task tab's button in `.workflow-tabs` (falling back to `Workspace.NextOpenedWorkflow`)
-and waits for `activeWorkflow` to be it, or copies `app.graph.serialize()` into a new tab before a change; the outcome
+and waits for `activeWorkflow` to be it. A missing or unactivatable recorded tab fails the action;
+it never substitutes the current workflow. Only a task without a recorded tab copies
+`app.graph.serialize()` into a new tab before its first change. Missing-model downloads follow
+the same task tab as reads and runs. Explicit `new_workflow` / `open_workflow` can replace the tab; the outcome
 reports `tab`. `ui_ai_task_canvas.js` is the header's mode switch and tab chip.
 The header shares progress with the timeline. Websocket updates also update the in-memory
 step; a five-second visible-page refresh recovers missed events. The loop stops when the

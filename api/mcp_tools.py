@@ -364,22 +364,26 @@ def combo_view(note):
             "loras": loras, "prompt": _text(data.get("promptEn"), 800)}, loras
 
 
-def list_combos(query="", limit=20):
+def list_combos(query="", limit=20, *, exact_name=False):
     terms, found = _terms(query), []
     for note in _list_notebooks():
         combo, loras = combo_view(note)
-        if not _matches(terms, combo["name"], combo["main_model"], combo["prompt"], " ".join(loras)):
+        if exact_name and combo["name"] != query:
+            continue
+        if not exact_name and not _matches(terms, combo["name"], combo["main_model"], combo["prompt"], " ".join(loras)):
             continue
         found.append(combo)
     return {"total_matches": len(found), "combos": found[:_limit(limit)]}
 
 
-def list_workflows(query="", limit=20):
+def list_workflows(query="", limit=20, *, exact_name=False):
     terms, found = _terms(query), []
     for recipe in _list_recipes(get_recipes_dir()):
         data = recipe.get("data") or {}
         params = json.dumps(data.get("params") or {}, ensure_ascii=False)
-        if not _matches(terms, data.get("name"), " ".join(data.get("tags") or []), data.get("notes"), params):
+        if exact_name and (data.get("name") or recipe["filename"]) != query:
+            continue
+        if not exact_name and not _matches(terms, data.get("name"), " ".join(data.get("tags") or []), data.get("notes"), params):
             continue
         found.append({"name": data.get("name") or recipe["filename"], "tags": data.get("tags") or [],
                       "notes": _text(data.get("notes"), 500), "saved": _when((data.get("timestamp") or 0) / 1000),

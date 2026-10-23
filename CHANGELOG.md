@@ -2,6 +2,9 @@
 
 ## v1.62.0 — unreleased
 
+- 修复任务画布标签关闭或切换失败后误用当前工作流的问题：操作会明确报错，重新打开或明确指定新画布后才能继续。下载缺失模型现在也跟随任务画布；留言里的 `@` 搭配和工作流按完整名称查找，不再因模糊搜索前几项占满而误报缺失。
+- Task canvas actions now fail when their recorded tab is closed or cannot be activated instead of using another workflow. Missing-model downloads follow the task tab, and message references resolve exact combo/workflow names before search limits.
+
 - AI 工作台任务工具栏新增小巧的“运行状态”按钮与浮窗（移除遮挡时间线的常驻大横条）：点开即可查看真实运行状态、排队、节点进度、用时和结果，运行中直接在按钮上显示进度百分比；没有收到运行信息时明确提示，不再空转显示“AI 正在工作”或把沉默当成完成。页面可见时自动补查状态。运行工具默认等待 15 秒并返回实际结果；外部提交可用 `track_run` 接入准确的运行 ID，不会重新出图。
 - The AI workbench now places confirmed execution state, queue/node progress, elapsed time and results inside a compact toolbar button and popover (instead of a tall sticky banner), with visible-page refresh. Untracked work and silence are explicit. Run calls wait briefly for real results; `track_run` attaches external submission IDs without resubmitting.
 

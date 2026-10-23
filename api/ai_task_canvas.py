@@ -23,7 +23,7 @@ MODES = ("new", "current")
 DEFAULT = "new"
 # Page actions (web/modules/mcp_bridge.js) that work on the canvas, so on the task's tab.
 TAB_ACTIONS = {"describe_canvas", "set_prompt", "set_model", "add_lora", "place_combo", "check_models", "fix_models",
-               "run_workflow", "add_node", "connect_nodes", "set_values", "remove_nodes", "new_workflow", "open_workflow"}
+               "run_workflow", "download_missing", "add_node", "connect_nodes", "set_values", "remove_nodes", "new_workflow", "open_workflow"}
 _call = contextvars.ContextVar("anomalous_task_canvas", default=None)
 
 
@@ -92,7 +92,7 @@ def spec(action):
 
 
 def remember(tab):
-    """Keeps the tab the page made or opened for the call's task ({path, name, made?, again?})."""
+    """Keeps the tab the page made or opened for the call's task ({path, name, made?})."""
     holder = _call.get()
     if not holder or not holder.get("task") or not isinstance(tab, dict) or not isinstance(tab.get("path"), str):
         return
@@ -104,7 +104,7 @@ def remember(tab):
         task["canvas"] = {**(task.get("canvas") or {}), "tab": kept}
         ai_tasks._save(task)
     ai_tasks._notify(holder["task"])
-    holder["opened"] = {**kept, "made": bool(tab.get("made")), "again": bool(tab.get("again"))}
+    holder["opened"] = {**kept, "made": bool(tab.get("made"))}
 
 
 def tell(result, holder):
@@ -114,8 +114,7 @@ def tell(result, holder):
         return result
     data = dict(result.get("structuredContent") or {})
     data["canvas_tab"] = {"name": opened["name"], "note": (
-        ("The task's earlier tab was closed, so " if opened["again"] else "")
-        + f"Anomalous copied the user's open workflow to a new tab \"{opened['name']}\" for this task (the user's "
+        f"Anomalous copied the user's open workflow to a new tab \"{opened['name']}\" for this task (the user's "
         "setting): your canvas changes, reads and runs go there; the user's own tab stays as it was. Do not switch "
         "tabs yourself.")}
     result["structuredContent"] = data

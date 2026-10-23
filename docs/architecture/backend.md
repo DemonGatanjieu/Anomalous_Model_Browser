@@ -298,6 +298,10 @@ Canvas actions carry the task's own tab: `mcp_server._call` marks the call with 
 (`ai_task_canvas.begin_call`, a context variable that `asyncio.to_thread` copies), `ask_page`
 adds `_task_canvas: {mode, tab, title}` to the page actions in `TAB_ACTIONS` and keeps the tab
 an outcome reports (`remember`); `tell` adds `canvas_tab` to the answer once when a tab was made.
+`download_missing` carries this context too. A recorded tab that is missing or cannot be
+activated fails on the page before executing the action, rather than using another workflow.
+Message `@` references resolve combo/workflow names with the internal `exact_name` filter
+in `mcp_tools` before limiting results; public list-tool searches remain fuzzy.
 The default mode is in `anomalous/ai_canvas.json` (GET/POST `/anomalous/ai_gates` `canvas_tab`),
 a task's own in its `canvas` record (POST `/anomalous/ai_tasks/{id}` `{canvas}`).
 

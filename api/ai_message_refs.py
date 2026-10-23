@@ -43,7 +43,7 @@ def lookup(kind, name):
 
     if kind in ("combos", "workflows"):
         lister = mcp_tools.list_combos if kind == "combos" else mcp_tools.list_workflows
-        return next((item for item in lister(name, 5)[kind] if item["name"] == name), None)
+        return next(iter(lister(name, 1, exact_name=True)[kind]), None)
     if kind == "prompts":
         from .ai_toolbox_catalog import everything
 

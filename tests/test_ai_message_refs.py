@@ -58,6 +58,22 @@ class RefsTests(unittest.TestCase):
                 ai_panels.leave_message(self.task, "看这个", refs)
         self.assertEqual(ai_message_refs.clean(None), [])
 
+    def test_exact_names_are_resolved_before_search_limits(self):
+        from api import mcp_tools
+
+        names = [f'cat {i}' for i in range(60)] + ['cat']
+        combos = [{'name': name, 'data': {'promptEn': 'watercolor'}} for name in names]
+        recipes = [{'filename': f'{i}.json', 'data': {'name': name}} for i, name in enumerate(names)]
+        recipes.append({'filename': 'unnamed.json', 'data': {}})
+        with mock.patch.object(mcp_tools, '_list_notebooks', return_value=combos), \
+                mock.patch.object(mcp_tools, '_list_recipes', return_value=recipes):
+            for kind, lister in [('combos', mcp_tools.list_combos), ('workflows', mcp_tools.list_workflows)]:
+                self.assertNotIn('cat', [item['name'] for item in lister('cat', 5)[kind]])
+                result = ai_message_refs.message_of({'refs': [{'kind': kind, 'id': 'cat', 'label': 'cat'}]})
+                self.assertEqual(result['refs'][0]['details']['name'], 'cat')
+                self.assertIsNone(ai_message_refs.lookup(kind, 'missing'))
+            self.assertEqual(ai_message_refs.lookup('workflows', 'unnamed.json')['name'], 'unnamed.json')
+
 
 if __name__ == "__main__":
     unittest.main()
