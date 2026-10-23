@@ -87,7 +87,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | library_overview | 各类模型的数量、底模分布、扫描情况，存了多少搭配、工作流和提示词 |
 | search_models / get_model | 按名字、触发词、底模、来源找模型；看某个模型的 C 站信息、描述、你写的备注，可以附上封面。每个模型都写明哪些节点能加载它；放错文件夹的（比如名字叫 ControlNet、其实是模型补丁的 Anima LLLite）会说明该放哪、放在这里加载不了 |
 | scan_report | 哪些模型匹配上了 C 站，哪些没有、原因是什么，哪些还没扫，上次扫描做了什么 |
-| search_images / get_image_info | 按提示词、模型、参数找出图；看某张图的全部生成参数，可以附上缩略图 |
+| search_images / get_image_info | 按提示词、模型、参数找出图；看某张图的全部生成参数，可以附上缩略图。`folder=input` 时看 ComfyUI 输入文件夹里的图（比如你标注时 AMB 存的重绘遮罩图）：尺寸、要重画的区域在哪、占多大，也能附上图，不用 AI 自己跑命令去看 |
 | list_combos | 你的搭配（主模型 + LoRA + 提示词） |
 | list_workflows | 你的工作流配方，带标签、备注和主要设置 |
 | list_saved_prompts | 提示词工坊里存的提示词 |

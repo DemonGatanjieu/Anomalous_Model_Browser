@@ -175,6 +175,23 @@ class ToolTests(unittest.TestCase):
             self.assertEqual(data["kept_as"], {"combo": "C"})
             self.assertTrue(mcp_tools.call_tool(mcp_tools.TOOLS, "get_image_info", {"image": "../out.png"})["isError"])
 
+    def test_a_picture_in_the_input_folder_and_its_mask(self):
+        from PIL import Image
+        picture = Image.new("RGBA", (100, 50), (200, 100, 50, 255))
+        picture.paste((200, 100, 50, 0), (10, 5, 30, 25))  # transparent: LoadImage's MASK, what to repaint
+        picture.save(self.root / "anomalous_inpaint_x.png")
+        Image.new("RGB", (8, 8)).save(self.root / "plain.png")
+        with mock.patch.object(mcp_tools.folder_paths, "get_input_directory", return_value=str(self.root)):
+            data = mcp_tools.call_tool(mcp_tools.TOOLS, "get_image_info", {"image": "anomalous_inpaint_x.png", "folder": "input", "include_image": True})
+            info = data["structuredContent"]
+            self.assertEqual((info["folder"], info["width"], info["height"]), ("input", 100, 50))
+            self.assertEqual((info["mask"]["share"], info["mask"]["area"]), ("8.0%", "x 10-30%, y 10-50% of the picture"))
+            self.assertTrue(info["image_attached"])
+            plain = mcp_tools.call_tool(mcp_tools.TOOLS, "get_image_info", {"image": "plain.png", "folder": "input"})["structuredContent"]
+            self.assertTrue(plain["mask"].startswith("none"))
+            for bad in ("../plain.png", "missing.png"):
+                self.assertTrue(mcp_tools.call_tool(mcp_tools.TOOLS, "get_image_info", {"image": bad, "folder": "input"})["isError"], bad)
+
     def test_bad_arguments_are_tool_errors(self):
         self.assertTrue(mcp_tools.call_tool(mcp_model_use.MODEL_TOOLS, "get_model", {}, CTX)["isError"])
         self.assertTrue(mcp_tools.call_tool(mcp_model_use.MODEL_TOOLS, "search_models", {"delete": True}, CTX)["isError"])
