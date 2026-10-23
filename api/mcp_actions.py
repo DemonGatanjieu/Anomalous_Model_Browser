@@ -248,7 +248,8 @@ def _action(name, title, description, run, properties=None, required=(), destruc
 ACTIONS = dict([
     _action("describe_canvas", "Read the canvas",
             "The workflow open in ComfyUI now: each node's id, type, title, settings, which prompt box is "
-            "positive or negative, and where its inputs come from. Call it before changing the canvas.",
+            "positive or negative, and where its inputs come from. Call it before changing settings; "
+            "get_situation gives the canvas in brief (a line a node, what is still unwired and what fits it).",
             describe_canvas, read_only=True),
     _action("set_prompt", "Write a prompt",
             "Writes text into the workflow's positive or negative prompt box (or the one on node_id). "

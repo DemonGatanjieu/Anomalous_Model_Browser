@@ -57,6 +57,10 @@
 - **还没出图就问进度不再算“出错”**：AI 在出图前调用 `run_status`，现在得到“这个任务还没有出图”的回答，任务不会因此标上“有一步出错”。
 - run_status before any run answers state "none" instead of failing, so the task no longer shows a failed step for it.
 - **宽窗口里时间线收在中间**：右边一栏关着、窗口又很宽时，时间线、标题和输入框不再横跨整个窗口，而是收成中间约 880 像素宽的一列（像聊天软件那样），滚动条仍在最右边。时间线里的图片按自己的大小从左排开，一张图不再被撑成横跨整行的大灰框。
+- **现状一览，AI 一次就知道到哪一步了**：新工具 `get_situation`，AI 调一次就拿到：任务（你最后说了什么、有几个问题在等你、定了哪些决策、出过哪些图、“AMB 之外”几次）、画布简报（每个节点一行：谁接到谁；**还缺哪几根线、各要什么类型、画布上哪些现有输出能接上**；ComfyUI 报错的节点）、最近一次出图，以及**下一步该做什么**。回复控制在约 3600 字以内，Antigravity 不会把它存成文件再让 AI 去读。新开对话或拿不准时先调它；连接说明里的那句话和规则也写上了。小模型（比如 Gemini Flash）不用再把整张图记在脑子里。
+- `get_situation`: the task, the canvas in brief (a line per node, the inputs still unwired with the outputs that fit, ComfyUI's errors), the latest run and the next step in one answer under about 3,600 characters, for a new chat or an AI that lost track.
+- **AI 每连一根线都知道还缺什么**：`add_node`、`connect_nodes`、`remove_nodes` 的回复里附上画布上还没接的输入，以及哪些现有输出能接上，像一张清单，照着补完就能跑。
+- add_node, connect_nodes and remove_nodes answer with the inputs still unwired and what fits them.
 - **AMB 之外做的事也看得见**：AMB 只看得到 AI 发给它的调用，AI 软件自己跑的命令和脚本它看不到。现在 AI 每调用一次 AMB，AMB 就看一眼输出和输入文件夹：上次调用以来有没有不是出图产生的新图片、有没有图片被原地改写（比如之前那张被覆盖了 6 次的图）。有的话，时间线上多一行橙色的 **AMB 之外**，列出是哪些文件，输出文件夹里的图直接显示；AI 同时收到提醒：可能是你自己做的，如果是它做的，改图只能跑工作流。只在 AI 调用时看，不在后台扫描；ComfyUI 正在出图时，新图等出图结束再判断，不会把正常出的图当成外面来的。AI 也多了一个工具 `log_outside`：用了别的工具（命令、脚本、读写文件）后说清做了什么、为什么、动了哪些文件，同样显示为一行 **AMB 之外**；任务的统计里会写“AMB 之外 N 次”。
 - Pictures changed outside Anomalous show in the timeline: when the AI calls, Anomalous looks at the top of the output and input folders for pictures no run saved and pictures rewritten in place since its previous call, and tells the AI with its answer; new pictures wait while ComfyUI runs a prompt. `log_outside` is the AI's own word on a command or script it ran. Both are "Outside AMB" steps, counted on the task.
 - **连接说明里多了一段给 AI 的规则**：第 ④ 步可以复制一段规则（先用 AMB 的工具、只通过跑工作流改图、在 AMB 里问和说明、用了别的工具就说一声），放进 AI 软件的“规则”里（Antigravity：Customizations → Rules → + Global），它每次对话都会读到。

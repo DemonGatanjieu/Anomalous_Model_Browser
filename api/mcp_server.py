@@ -30,10 +30,11 @@ from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
 from .mcp_model_use import MODEL_TOOLS
 from .mcp_look import LOOK_TOOLS
+from .mcp_situation import SITUATION_TOOLS
 from .mcp_task_tools import TASK_TOOLS
 from .mcp_tools import TOOLS as READ_TOOLS, call_tool
 
-TOOLS = {**READ_TOOLS, **MODEL_TOOLS, **LOOK_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **mcp_apps.APP_TOOLS}
+TOOLS = {**READ_TOOLS, **MODEL_TOOLS, **LOOK_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **SITUATION_TOOLS, **mcp_apps.APP_TOOLS}
 CAPABILITIES = {
     "tools": {"listChanged": False}, "prompts": {"listChanged": False}, "resources": {"listChanged": False},
     "extensions": {mcp_apps.EXTENSION: {"mimeTypes": [mcp_apps.MIME]}},  # the card in the conversation (mcp_apps.py)
@@ -53,7 +54,9 @@ INSTRUCTIONS = (
     "are single Ctrl+Z steps and are logged as the AI's; nothing deletes files. Ids returned by "
     "one tool (model_id, image, node ids) are what the others take. For what no tool does, tell "
     "the user where in Anomalous to do it (the rail on the left: Models, Gallery, Workflows, "
-    "Combos, Prompts, Voices). The user watches your work in Anomalous's AI workbench: call begin_task "
+    "Combos, Prompts, Voices). In a new chat on a task, or when unsure where things stand, call get_situation "
+    "first: the task, the canvas in brief (what is still unwired) and the next step in one answer. "
+    "The user watches your work in Anomalous's AI workbench: call begin_task "
     "with a short title when you start what they asked for (it continues the waiting or active task; "
     "new_task=true is only for a separate user request), and report to explain a choice, hand in "
     "pictures made another way, or end the task (done=true). The user can write to you or answer "

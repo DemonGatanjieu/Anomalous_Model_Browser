@@ -176,6 +176,12 @@ covered by the `styles.css` manifest.
   `recorded`, after checking types, settings and choices against the nodes themselves;
   `web/modules/canvas_build.js` is its pure part (type fit, value checks, a free spot, the
   layered layout). `open_workflow` opens one of the user's saved workflows in a new tab.
+  `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): a line per node,
+  the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
+  errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is
+  get_situation: the task, that brief (describe_canvas with `brief`), the latest run and the
+  next step in one answer kept under Antigravity's size for answers it files away, for an AI
+  starting a new chat or lost (`tests/test_mcp_situation.py`, `tests/mcp_canvas_brief.mjs`).
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
   `web/modules/ui_ai_toolbox.js`, from the task header a side panel (on the AI page a view of
   its side column, `setToolboxHost`; elsewhere docked on the right) that leaves

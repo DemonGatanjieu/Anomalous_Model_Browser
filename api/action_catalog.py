@@ -33,6 +33,7 @@ TOOLS = {
     "search_audio": Entry("look", "voice", None),
     "recent_activity": Entry("look", "library", None),
     "describe_canvas": Entry("look", "canvas", None),
+    "get_situation": Entry("look", None, None),  # the task, the canvas in brief and the next step (mcp_situation.py)
     "check_workflow_models": Entry("look", "model", None),
     "download_status": Entry("look", "model", None),
     "list_voices": Entry("look", "voice", None),

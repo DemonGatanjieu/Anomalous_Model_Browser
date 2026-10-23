@@ -4,20 +4,19 @@
  * blank or built from a workflow in ComfyUI's API form. Each runs through mcp_bridge.js's
  * `recorded`, so it is one Ctrl+Z step, lands in the activity log as the AI's and shows under
  * its step in the AI workbench. Everything is checked before the canvas changes; answers give
- * the node ids, inputs and outputs the next call needs. canvas_build.js does the arithmetic.
+ * the node ids, inputs and outputs the next call needs, and the inputs still unwired with what
+ * fits them (mcp_canvas_brief.js). canvas_build.js does the arithmetic.
  */
 
 import { app } from '../../../scripts/app.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { apiLinks, freeSpot, layered, typesFit, valuePlan } from './canvas_build.js';
+import { fedBy, linkOf, sockets, unwired } from './mcp_canvas_brief.js';
 import { translate as t } from './locales.js';
 import { setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const BLANK = { last_node_id: 0, last_link_id: 0, nodes: [], links: [], groups: [], config: {}, extra: {}, version: 0.4 };
-
-const linkOf = (g, id) => g.getLink?.(id) ?? g.links?.get?.(id) ?? g.links?.[id] ?? null;
-const sockets = node => (node.inputs || []).filter(input => !input.widget);
 
 /** A node as the AI wires it: its inputs (with what feeds them), outputs and settings. */
 function shape(g, node) {
@@ -70,19 +69,6 @@ function inputSlot(node, input) {
     const slot = (node.inputs || []).findIndex(item => item.name === input);
     if (slot < 0) throw new Error(`Node ${node.id} (${node.type}) has no input ${input}; it has: ${sockets(node).map(item => item.name).join(', ') || 'none'}.`);
     return slot;
-}
-
-/** Whether `node` is fed, through any number of nodes, by node `id`. */
-function fedBy(g, node, id, seen = new Set()) {
-    for (const input of node.inputs || []) {
-        const origin = input.link != null ? linkOf(g, input.link)?.origin_id : null;
-        if (origin == null || seen.has(String(origin))) continue;
-        if (String(origin) === String(id)) return true;
-        seen.add(String(origin));
-        const upstream = g.getNodeById?.(origin);
-        if (upstream && fedBy(g, upstream, id, seen)) return true;
-    }
-    return false;
 }
 
 function wire(g, from, slot, to, target) {
@@ -164,7 +150,7 @@ export function canvasEditActions({ recorded, nodeById }) {
             g.afterChange?.();
             g.setDirtyCanvas?.(true, true);
             recordCanvasStep(app);
-            return { ...shape(g, node), toast: { name: node.title || node.type } };
+            return { ...shape(g, node), ...unwired(g), toast: { name: node.title || node.type } };
         });
     }
 
@@ -186,7 +172,7 @@ export function canvasEditActions({ recorded, nodeById }) {
             return {
                 from_node: from.id, output: from.outputs[slot].name, to_node: to.id, input: to.inputs[target].name,
                 ...(was != null && was !== from.id ? { replaced_link_from: was } : {}),
-                toast: { from: from.title || from.type, to: to.title || to.type },
+                ...unwired(g), toast: { from: from.title || from.type, to: to.title || to.type },
             };
         });
     }
@@ -214,7 +200,7 @@ export function canvasEditActions({ recorded, nodeById }) {
             g.afterChange?.();
             g.setDirtyCanvas?.(true, true);
             recordCanvasStep(app);
-            return { removed: nodes.map(node => ({ node_id: node.id, type: node.type })), toast: { count: nodes.length } };
+            return { removed: nodes.map(node => ({ node_id: node.id, type: node.type })), ...unwired(g), toast: { count: nodes.length } };
         });
     }
 

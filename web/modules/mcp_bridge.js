@@ -14,6 +14,7 @@ import { translate as t } from './locales.js';
 import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { postCanvasActivity } from './activity_log.js';
 import { keepUndo, workflowKey } from './canvas_undo.js';
+import { canvasBrief } from './mcp_canvas_brief.js';
 import { canvasEditActions } from './mcp_canvas_edit.js';
 import { onTaskTab } from './mcp_task_tab.js';
 import { recordCanvasStep } from './canvas_history.js';
@@ -121,8 +122,10 @@ function describeNode(g, node) {
     };
 }
 
-function describeCanvas() {
+/** The open workflow's nodes with their settings; `brief`: a line a node and what is unwired (get_situation). */
+function describeCanvas({ brief } = {}) {
     const g = currentGraph();
+    if (brief) return { workflow: workflowName(), ...canvasBrief(g, app.lastNodeErrors) };
     const nodes = g._nodes || [];
     return {
         workflow: workflowName(),

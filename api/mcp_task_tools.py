@@ -36,7 +36,8 @@ def begin_task(ctx, title, new_task=False):
                                          "allow it in your app. Change pictures only by running ComfyUI workflows (inpaint and "
                                          "the like): never edit, paint over or overwrite picture files with code of your own. "
                                          "If you still use another tool (a command, a script, reading or writing files), "
-                                         "call log_outside right after with what you ran and why."}
+                                         "call log_outside right after with what you ran and why. Unsure where things stand "
+                                         "(a new chat, many changes): get_situation gives the task, the canvas in brief and the next step."}
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
