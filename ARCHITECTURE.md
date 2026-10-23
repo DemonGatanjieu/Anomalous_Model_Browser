@@ -182,6 +182,12 @@ covered by the `styles.css` manifest.
   get_situation: the task, that brief (describe_canvas with `brief`), the latest run and the
   next step in one answer kept under Antigravity's size for answers it files away, for an AI
   starting a new chat or lost (`tests/test_mcp_situation.py`, `tests/mcp_canvas_brief.mjs`).
+  `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow
+  opened in the task's tab once and reused (the page marks the tab with the workflow's file),
+  then the prompts, seed, size and the picture a LoadImage reads filled in by the page's
+  `fill_slots`, planned by `web/modules/mcp_fill.js` (pure); with them a run asks as the stricter
+  of its gate and the canvas's (`action_catalog.ALSO_CANVAS`). `tests/test_mcp_fill.py`,
+  `tests/mcp_fill.mjs`.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
   `web/modules/ui_ai_toolbox.js`, from the task header a side panel (on the AI page a view of
   its side column, `setToolboxHost`; elsewhere docked on the right) that leaves

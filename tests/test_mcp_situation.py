@@ -48,6 +48,8 @@ class SituationTests(unittest.TestCase):
         nothing = {"asks": 0}
         self.assertIn("run_status", mcp_situation._next(nothing, {"state": "running"}, BRIEF))
         self.assertIn("canvas.errors", mcp_situation._next(nothing, {"state": "error"}, {"errors": [{"node": 3}]}))
+        missing = {"errors": [{"node": 66, "error": "Value not in list: unet_name: 'z.safetensors' not in []"}]}
+        self.assertIn("check_workflow_models", mcp_situation._next(nothing, {"state": "error"}, missing))
         self.assertIn("zoom_image", mcp_situation._next(nothing, {"state": "done", "pictures": ["a.png"]}, {"unwired": []}))
         self.assertIn("task.asked", mcp_situation._next(nothing, {"state": "none"}, {"unwired": []}))
         with mock.patch.object(ai_task_runs, "status", return_value={"state": "done", "summary": "finished", "pictures": ["a.png"], "seconds": 3}):

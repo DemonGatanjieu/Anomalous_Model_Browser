@@ -18,6 +18,9 @@ Entry = namedtuple("Entry", "kind stage gate")
 STAGES = ("model", "combo", "prompt", "canvas", "run", "picture", "voice", "library")
 GATES = ("canvas", "gpu", "download", "network", "files")
 
+# Arguments with which a call also changes the canvas: it then asks as the stricter of its own gate and "canvas".
+ALSO_CANVAS = {"run_workflow": ("workflow", "prompt", "negative", "seed", "width", "height", "image", "image_node")}
+
 TOOLS = {
     # reading
     "library_overview": Entry("look", "library", None),

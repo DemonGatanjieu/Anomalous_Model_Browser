@@ -81,6 +81,9 @@ def _step(step_ref):
 def check(tool, arguments, step_ref, now=None):
     """None when the call may go ahead; else the result to give the AI instead of running it."""
     gate = action_catalog.entry(tool).gate
+    if gate and set(arguments or {}) & set(action_catalog.ALSO_CANVAS.get(tool, ())):
+        strict = {"auto": 0, "ask": 1, "never": 2}
+        gate = max((gate, "canvas"), key=lambda name: strict.get(policies().get(name, "auto"), 0))
     policy = policies().get(gate, "auto") if gate else "auto"
     if policy == "auto":
         return None

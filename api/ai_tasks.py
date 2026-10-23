@@ -360,7 +360,7 @@ def _add_step(task, step):
 
 def summary_of(tool, arguments):
     """A few words on what a call asked for: its main argument."""
-    for key in ("title", "query", "text", "name", "character", "model_id", "url", "what", "names", "type", "types"):
+    for key in ("title", "query", "text", "name", "workflow", "character", "model_id", "url", "what", "names", "type", "types"):
         if arguments.get(key) not in (None, "", []):
             value = arguments[key]
             if key == "model_id":  # "type:0:folder/file.safetensors": the file, and where it moves to

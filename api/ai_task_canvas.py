@@ -23,7 +23,8 @@ MODES = ("new", "current")
 DEFAULT = "new"
 # Page actions (web/modules/mcp_bridge.js) that work on the canvas, so on the task's tab.
 TAB_ACTIONS = {"describe_canvas", "set_prompt", "set_model", "add_lora", "place_combo", "check_models", "fix_models",
-               "run_workflow", "download_missing", "add_node", "connect_nodes", "set_values", "remove_nodes", "new_workflow", "open_workflow"}
+               "run_workflow", "download_missing", "add_node", "connect_nodes", "set_values", "remove_nodes", "new_workflow", "open_workflow",
+               "fill_slots"}
 _call = contextvars.ContextVar("anomalous_task_canvas", default=None)
 
 

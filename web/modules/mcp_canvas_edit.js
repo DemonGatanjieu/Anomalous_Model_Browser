@@ -5,13 +5,15 @@
  * `recorded`, so it is one Ctrl+Z step, lands in the activity log as the AI's and shows under
  * its step in the AI workbench. Everything is checked before the canvas changes; answers give
  * the node ids, inputs and outputs the next call needs, and the inputs still unwired with what
- * fits them (mcp_canvas_brief.js). canvas_build.js does the arithmetic.
+ * fits them (mcp_canvas_brief.js). canvas_build.js does the arithmetic. fill_slots puts
+ * run_workflow's blanks in (mcp_fill.js), on a tab open_workflow opened from that saved workflow.
  */
 
 import { app } from '../../../scripts/app.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { apiLinks, freeSpot, layered, typesFit, valuePlan } from './canvas_build.js';
 import { fedBy, linkOf, sockets, unwired } from './mcp_canvas_brief.js';
+import { fillPlan } from './mcp_fill.js';
 import { translate as t } from './locales.js';
 import { setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
@@ -242,11 +244,29 @@ export function canvasEditActions({ recorded, nodeById }) {
         await app.loadGraphData(structuredClone(payload.data.workflow), true, true, tab);
         showWorkbenchToast(t('mcpDidOpenWorkflow', { name }));
         const g = app.canvas?.graph || app.graph;
+        if (g) g.extra = { ...(g.extra || {}), anomalous_saved: filename }; // run_workflow with this workflow reuses the tab
         return { opened: tab, node_count: (g?._nodes || []).length, note: 'describe_canvas shows its nodes; add_node, connect_nodes and set_values change it.' };
+    }
+
+    /** run_workflow's blanks (api/mcp_fill.py); `needs_open` when the canvas is not saved workflow `filename`. */
+    async function fillSlots({ filename, ...wanted }, getOwner) {
+        const g = app.canvas?.graph || app.graph;
+        if (!g) throw new Error('No workflow is open in ComfyUI.');
+        if (filename && g.extra?.anomalous_saved !== filename) return { needs_open: true };
+        const { plans, set } = await withFreshChoices(() => fillPlan(g, wanted));
+        if (!plans.length) return { set };
+        return recorded(getOwner, 'mcpDidFill', (graph) => {
+            graph.beforeChange?.();
+            for (const { node, plan } of plans) apply(node, plan);
+            graph.afterChange?.();
+            graph.setDirtyCanvas?.(true, true);
+            recordCanvasStep(app);
+            return { set, toast: { count: plans.length } };
+        });
     }
 
     return {
         add_node: addNode, connect_nodes: connectNodes, set_values: setValues, remove_nodes: removeNodes,
-        new_workflow: newWorkflow, open_workflow: openWorkflow,
+        new_workflow: newWorkflow, open_workflow: openWorkflow, fill_slots: fillSlots,
     };
 }

@@ -15,6 +15,7 @@ import time
 import urllib.error
 import urllib.request
 
+from . import mcp_fill
 from .lora_info import trains_text_encoder
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import MAX_LIMIT, ToolError, _resolve_model, _schema
@@ -121,10 +122,11 @@ def download_status(ctx):
                                           "failed (error says why; starting it again continues it), cancelled."}
 
 
-def run_workflow(ctx, batch=1, wait_seconds=15):
+def run_workflow(ctx, batch=1, wait_seconds=15, workflow=None, **slots):
     from .ai_run_tracking import checked_wait
     checked_wait(wait_seconds)  # Reject malformed waits before anything can be submitted.
     batch = max(1, min(8, int(batch)))
+    filled = mcp_fill.fill(ctx, workflow, **slots)  # a saved workflow and its blanks first (mcp_fill.py)
     try:
         answer = ask_page("run_workflow", {"batch": batch}, required_capability="prompt_ids")
     except (PageUnavailable, PageRefused) as error:
@@ -136,6 +138,8 @@ def run_workflow(ctx, batch=1, wait_seconds=15):
                         or "No valid submission receipts. Check ComfyUI's queue before retrying; do not repeat automatically.")
     answer = {"prompt_ids": ids, "queued": len(ids), "requested": batch,
               "note": "Follow these runs with run_status (wait_seconds up to 55). Do not repeat the batch; accepted prompts are already queued."}
+    if filled:
+        answer["filled"] = filled
     # Some prompts may have been accepted before validation or a transport failure stopped the batch.
     if len(ids) < batch:
         answer["submission_error"] = f"Only {len(ids)} of {batch} prompts were accepted."
@@ -300,10 +304,22 @@ ACTIONS = dict([
             read_only=True),
     _action("run_workflow", "Run the workflow",
             "Queues the open workflow in ComfyUI, like pressing Run. Uses the GPU. Follow it with run_status, which "
-            "says where it stands and gives its pictures when done; do not look in the output folder for them.",
+            "says where it stands and gives its pictures when done; do not look in the output folder for them. "
+            "A daily run in one call: workflow (a saved one, list_workflows names them) opens it in the task's tab "
+            "the first time and reuses it after; prompt and negative fill its prompt boxes, seed every sampler's "
+            "seed, width and height its empty latent, image (a picture from search_images, or in the input folder, "
+            "like an inpaint_image) its LoadImage; the rest stays as saved. Without workflow they fill the open "
+            "canvas. No describe_canvas, set_prompt or set_values needed for these.",
             run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1},
                            "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 15,
-                                            "description": "Wait for execution after submission; returns actual state/results. Never resubmit while running."}}),
+                                            "description": "Wait for execution after submission; returns actual state/results. Never resubmit while running."},
+                           "workflow": {"type": "string", "description": "A saved workflow's name (list_workflows)."},
+                           "prompt": {"type": "string"}, "negative": {"type": "string"},
+                           "seed": {"type": "integer", "minimum": 0},
+                           "width": {"type": "integer", "minimum": 16, "maximum": 16384},
+                           "height": {"type": "integer", "minimum": 16, "maximum": 16384},
+                           "image": {"type": "string", "description": "subfolder/name.png in the output or input folder."},
+                           "image_node": {"type": "integer", "description": "The LoadImage to fill when the workflow has several."}}),
     _action("open_in_anomalous", "Show a model",
             "Opens Anomalous Model Browser on this model's page, so the user sees its cover and details.",
             open_in_anomalous, {"model_id": _MODEL}, ["model_id"]),

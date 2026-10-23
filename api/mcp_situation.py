@@ -39,6 +39,9 @@ def _next(summary, run, canvas):
         return f"{summary['asks']} question(s) or gate(s) wait for the user: get_answers waits for their answer."
     if run.get("state") in ("queued", "running", "asking", "allowed"):
         return "A run is going: run_status(wait_seconds=55) waits for it; do not run again."
+    if any("not in list" in str(item.get("error")) for item in canvas.get("errors") or ()):
+        return ("A model or file the workflow names is not on this computer: check_workflow_models says which and what "
+                "can stand in (fix_workflow_models, download_missing_models); do not guess other choices.")
     if canvas.get("errors"):
         return "ComfyUI refused the last run: fix the nodes in canvas.errors (set_values, connect_nodes), then run_workflow."
     if canvas.get("unwired"):

@@ -57,6 +57,8 @@
 - **还没出图就问进度不再算“出错”**：AI 在出图前调用 `run_status`，现在得到“这个任务还没有出图”的回答，任务不会因此标上“有一步出错”。
 - run_status before any run answers state "none" instead of failing, so the task no longer shows a failed step for it.
 - **宽窗口里时间线收在中间**：右边一栏关着、窗口又很宽时，时间线、标题和输入框不再横跨整个窗口，而是收成中间约 880 像素宽的一列（像聊天软件那样），滚动条仍在最右边。时间线里的图片按自己的大小从左排开，一张图不再被撑成横跨整行的大灰框。
+- **照着跑：日常出图一步完成**：AI 出图时可以直接说“用哪个存好的工作流、改什么”：`run_workflow` 带上工作流名，再带上要改的提示词、反向提示词、种子、尺寸或一张图（比如你标注过的重绘图），AMB 就在任务专用标签页里打开它（第一次打开，之后接着用同一个标签页），填好这几处，其余照存好的样子不动，然后出图、等结果。原来要 6、7 步（找工作流、打开、看画布、改提示词、改种子……），现在一步，小模型也不容易绕晕。填的内容和出图一起算一步，改画布那部分同样能 Ctrl+Z；如果你给“改画布”设的关卡比“用显卡”严，这一步按改画布的关卡来问你。画布报错是因为缺模型时，“现状一览”会让 AI 先查缺哪个模型，而不是乱换选项。
+- run_workflow takes blanks for a daily run in one call: workflow (a saved one, opened in the task's tab once and reused), prompt, negative, seed, width, height and image (image_node for several LoadImage nodes); the rest stays as saved. With blanks a run asks as the stricter of the GPU's and the canvas's gate.
 - **现状一览，AI 一次就知道到哪一步了**：新工具 `get_situation`，AI 调一次就拿到：任务（你最后说了什么、有几个问题在等你、定了哪些决策、出过哪些图、“AMB 之外”几次）、画布简报（每个节点一行：谁接到谁；**还缺哪几根线、各要什么类型、画布上哪些现有输出能接上**；ComfyUI 报错的节点）、最近一次出图，以及**下一步该做什么**。回复控制在约 3600 字以内，Antigravity 不会把它存成文件再让 AI 去读。新开对话或拿不准时先调它；连接说明里的那句话和规则也写上了。小模型（比如 Gemini Flash）不用再把整张图记在脑子里。
 - `get_situation`: the task, the canvas in brief (a line per node, the inputs still unwired with the outputs that fit, ComfyUI's errors), the latest run and the next step in one answer under about 3,600 characters, for a new chat or an AI that lost track.
 - **AI 每连一根线都知道还缺什么**：`add_node`、`connect_nodes`、`remove_nodes` 的回复里附上画布上还没接的输入，以及哪些现有输出能接上，像一张清单，照着补完就能跑。

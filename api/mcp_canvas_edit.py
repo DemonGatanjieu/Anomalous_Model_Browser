@@ -10,9 +10,9 @@ import json
 import threading
 import time
 
-from . import ai_tasks, ai_toolbox
+from . import ai_tasks, ai_toolbox, mcp_fill
 from .mcp_actions import _action, _local, _page
-from .mcp_tools import ToolError, _limit
+from .mcp_tools import ToolError
 
 MAX_FOUND = 20
 MAX_CHOICES = 12
@@ -194,15 +194,7 @@ def new_workflow(ctx, name="", nodes=None):
 
 
 def open_workflow(ctx, name):
-    from .mcp_tools import list_workflows
-
-    name = str(name or "").strip()
-    found = [item for item in list_workflows(name, _limit(50))["workflows"] if item["name"] == name] if name else []
-    if not found:
-        raise ToolError(f"No saved workflow called {name}; list_workflows names them.")
-    from .recipe_store import _list_recipes, get_recipes_dir
-    filename = next((recipe["filename"] for recipe in _list_recipes(get_recipes_dir())
-                     if (recipe["data"].get("name") or recipe["filename"]) == name), None)
+    filename, name = mcp_fill.saved_workflow(name)
     return _page("open_workflow", {"filename": filename, "name": name}, timeout=60)
 
 
