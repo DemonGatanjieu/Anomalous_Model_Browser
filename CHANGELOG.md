@@ -198,7 +198,7 @@
 - Generating, ▶ on a line, pushing, dragging and copying all follow who reads each line: the script carries `[name]` where the speaker changes (Anomalous_TTS reads it already), and in Auto mode each character uses its own generation settings. A file voiced again from the audio gallery comes back with its speakers.
 - The character cards' **Voice-over** button is gone: the switch at the top of the page and the cast do its job.
 
-## v1.60.1 — unreleased
+## v1.60.1 (Cloud Servers, Generation Presets, Full Window, Faster Scan Page) — 2026-10-22
 
 ### 🎚️ Reference audio: every clip in a list, main and auxiliary references (参考音频：全部列出，主参考和副参考)
 - **Reference audio and emotions** (the character card's button, formerly *Edit emotions*) is now a large window. On top, the **voices**: the main voice, each emotion with how many references it has (*1 main, 2 aux*), and **+ New emotion**. Below, **every clip** of the character, one row each: ▶ to hear it, its file and length, its line, and where else it is used (*Main voice · aux*). For the voice picked, a row is its **Main** reference or one of its **Aux** references, or nothing; unused clips just stay in the list. Filters (*All*, *This voice*, *In use*, *No line*) and a search by line or file name; the first 60 rows, then more.
@@ -237,7 +237,7 @@
 - **Models that are links (模型是快捷方式/链接时)**: on a cloud server such as AutoDL every model in the models folder is a link into the platform's shared model disk. Scans wrote the info beside the link, but the cards read it from the disk behind it: a scanned model showed as not scanned, under the disk's file name (`6b4679…`) instead of its own, and editing, deleting, opening its folder or finding it from a saved workflow could be refused as "outside the models folder". A linked model is now taken as named, with its covers and info beside the link; edits, renames and deletes act on the link, never on the shared disk; moving one in Tidy moves the link instead of copying the model disk's file onto the server. Names leaving the folder (`..`) are refused as before.
 - **Models linked from another tool keep their info**: a model that is a link with no info beside it shows the info beside the file it links to (A1111's Civitai Helper leaves `.civitai.info` there). Only read there; covers, edits and scans stay beside the link.
 
-## v1.60.0 (Model Import, Tidy, Parameter Compare, Workflows Rebuilt, Base Model Filter, Settings Tabs) — unreleased
+## v1.60.0 (Model Import, Tidy, Parameter Compare, Workflows Rebuilt, Base Model Filter, Settings Tabs) — 2026-10-22
 
 ### 📥 Drop a model in, it goes to the right folder (拖进来自动归位)
 - **Models page → + Import**, or drop model files anywhere on the models page: each file gets a card saying what it is — Checkpoint, LoRA, VAE, text encoder, diffusion model, ControlNet, Embedding, CLIP Vision, upscale model — with its base model, how sure that is, and one line on what such a model is for. It is read from the file's header only; .ckpt/.pt files, which can carry code, are never opened (you pick their type).
