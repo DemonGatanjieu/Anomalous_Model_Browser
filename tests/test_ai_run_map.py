@@ -1,5 +1,6 @@
 """A run's shape and what changed (ai_run_map.py), the task's own canvas tab (ai_task_canvas.py),
 pictures handed to the AI (ai_pictures.py) and show_run_map."""
+import io
 import json
 import os
 import time
@@ -137,6 +138,19 @@ class PictureTests(unittest.TestCase):
                 ai_pictures.hand(self.task, images)
         with self.assertRaises(ai_pictures.PicturesError):
             ai_pictures.hand("nope", [picture("y.png")])
+
+    def test_a_dropped_picture_is_kept_in_the_inbox_never_over_a_file(self):
+        data = io.BytesIO()
+        Image.new("RGB", (8, 8), "red").save(data, "JPEG")
+        first = ai_pictures.save_upload(data.getvalue(), "../../草稿 参考.png", now=1000)
+        second = ai_pictures.save_upload(data.getvalue(), "../../草稿 参考.png", now=1000)
+        self.addCleanup(lambda: [os.remove(os.path.join(OUTPUT, rel)) for rel in (first, second)])
+        self.assertTrue(first.startswith("ai_inbox/草稿 参考_") and first.endswith(".jpg"), first)  # its stem, its real type
+        self.assertNotEqual(first, second)
+        ai_pictures.hand(self.task, [first])  # an output picture like any other
+        for bad in (b"", b"not a picture", b"x" * (ai_pictures.MAX_UPLOAD + 1)):
+            with self.assertRaises(ai_pictures.PicturesError):
+                ai_pictures.save_upload(bad, "x.png")
 
 
 class ShowRunMapTests(unittest.TestCase):

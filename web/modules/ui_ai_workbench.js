@@ -27,6 +27,7 @@ import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { messageBox, newStepsPill, updateMessageBox } from './ui_ai_message.js';
+import { nowStrip } from './ui_ai_now.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { focusPanel, openQuestions, panelLine, panelSteps, stageNews, tabBar } from './ui_ai_side.js';
@@ -224,10 +225,10 @@ function renderTask() {
                 side: view => pickView(state.stage, view, false, state.task, renderTask, refresh), changed: refresh }),
             mark: (image, sent) => openMarker(image, task.id, () => { sent(); void refresh(); }),
             openMaterials: () => pickView(state.stage, 'toolbox', false, state.task, renderTask, () => void refresh()) }),
-            seen: (task.steps || []).length, pill: newStepsPill(box), dock: el('div', 'anomalous-ai-dock'),
+            seen: (task.steps || []).length, pill: newStepsPill(box), now: nowStrip(), dock: el('div', 'anomalous-ai-dock'),
         };
         view.tabs = el('div', 'anomalous-ai-tabs');
-        view.dock.append(view.pill, view.message); // at the foot of the column, in view while the timeline scrolls
+        view.dock.append(view.pill, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
         box.replaceChildren(view.tabs, view.header, view.flow, view.made, view.timeline, view.dock);
     }
     // A new panel that asks something brings the stage forward when the window is narrow.
@@ -299,6 +300,8 @@ function renderTask() {
     } else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     syncRows(view.timeline, rows);
     updateMessageBox(view.message, Boolean(task.ended), preparing ? 'waiting' : status, toolboxCount(task));
+    view.now.update(task, { refresh: () => void refresh(), showStep: id => showStep(view.timeline, id),
+        openStage: () => pickView(state.stage, 'stage', false, task, renderTask, () => void refresh()) });
     view.timeline.classList.toggle('is-waiting', preparing);
     box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
     if ((task.steps || []).slice(view.seen).some(step => step.kind !== 'user') && !keepBottom) view.pill.show(); // the AI's, while the user read further up

@@ -875,3 +875,10 @@
     background: var(--amb-ok);
     box-shadow: 0 0 0 2px var(--amb-bg-panel, #16161a);
 }
+
+/* A long note of the AI's, folded to its first lines (ui_ai_step_body.js). */
+.anomalous-ai-fold { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.anomalous-ai-fold > :first-child { max-width: 100%; }
+.anomalous-ai-fold.is-folded > :first-child { max-height: 10.5em; overflow: hidden; -webkit-mask-image: linear-gradient(black 55%, transparent); mask-image: linear-gradient(black 55%, transparent); }
+.anomalous-ai-fold-toggle { padding: 2px 0; border: 0; background: none; color: var(--amb-link); font: inherit; font-size: 12px; cursor: pointer; }
+.anomalous-ai-fold-toggle:hover { text-decoration: underline; }

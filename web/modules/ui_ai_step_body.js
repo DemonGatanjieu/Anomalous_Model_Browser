@@ -3,7 +3,7 @@
  * draws the row around it): the user's own steps (marks on a picture, materials, a change made in
  * Anomalous, pictures handed over, a stop, the canvas mode, a message with the pictures it
  * carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js), or
- * the AI's note laid out.
+ * the AI's note laid out (a long one folded until asked).
  */
 
 import { translate as t } from './locales.js';
@@ -26,6 +26,23 @@ function el(tag, className, text) {
 }
 
 const said = text => el('div', 'anomalous-ai-user-text', text);
+const FOLD_CHARS = 420;
+const FOLD_LINES = 8;
+
+/** The AI's note; a long one folded to its first lines, with "show all" / "show less". */
+function note(text) {
+    const node = noteNode(text);
+    if (text.length <= FOLD_CHARS && text.split('\n').length <= FOLD_LINES) return node;
+    const box = el('div', 'anomalous-ai-fold is-folded');
+    const toggle = el('button', 'anomalous-ai-fold-toggle', t('aiFoldMore'));
+    toggle.type = 'button';
+    toggle.onclick = () => {
+        const folded = box.classList.toggle('is-folded');
+        toggle.textContent = t(folded ? 'aiFoldMore' : 'aiFoldLess');
+    };
+    box.append(node, toggle);
+    return box;
+}
 
 /** The pictures a message carries ("subfolder/name.png"), as the AI's own are shown: to open, compare, keep or mark up. */
 function namedPictures(step, owner) {
@@ -64,6 +81,6 @@ export function stepBody(step, ctx) {
     default:
         if (step.kind === 'decision') return [decisionCard(step.decision || {}, ctx.numberOf)];
         if (step.kind === 'user') return [...(step.text ? [said(step.text)] : []), ...namedPictures(step, ctx.owner), deliveryState(step)];
-        return step.text ? [noteNode(step.text)] : [];
+        return step.text ? [note(step.text)] : [];
     }
 }

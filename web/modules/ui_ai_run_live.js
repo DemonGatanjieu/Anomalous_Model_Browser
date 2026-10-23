@@ -4,7 +4,8 @@
  * step, the graphics card's memory, the console's own note and last lines (what the console
  * window shows), and a stop button (api/ai_run_control.py); estimateBox the size each sampler
  * works at and the warnings for a run too big for the card. Used on the run's step in the
- * timeline (ui_ai_results.js) and in the run-status card (ui_ai_status.js).
+ * timeline (ui_ai_results.js) and in the run-status card (ui_ai_status.js); progressWords is the
+ * line the message box's strip shows too (ui_ai_now.js).
  */
 
 import { translate as t } from './locales.js';
@@ -62,31 +63,31 @@ export function stopButton(taskId, stepId, stopped = () => {}, compact = false, 
     return node;
 }
 
+/** Where a run stands in words, and how far it is (0…1, or null while that is not known). */
+export function progressWords(progress) {
+    if (progress.state === 'submitting') return { words: t('aiExecution_submitting'), share: null };
+    if (progress.state === 'queued') return { words: t('aiRunQueued', { ahead: progress.ahead }), share: null };
+    const parts = [];
+    if (progress.prompts > 1) parts.push(t('aiRunPrompt', { at: progress.prompt, count: progress.prompts }));
+    if (progress.node) parts.push(progress.max > 1 ? `${progress.node} ${progress.value}/${progress.max}` : progress.node);
+    if (progress.nodes) parts.push(t('aiRunNodes', { done: progress.nodes_done, count: progress.nodes }));
+    let share = null;
+    if (Number.isFinite(progress.percent)) share = progress.percent / 100;
+    else if (progress.max > 1) share = progress.value / progress.max;
+    else if (progress.nodes) share = progress.nodes_done / progress.nodes;
+    return { words: parts.join(' · ') || t('aiRunRunning'), share: share === null ? null : Math.min(1, Math.max(0, share)) };
+}
+
 /** Where a run stands; with `stop` ({task, step, stopped}) a stop button beside the bar. */
 export function runProgress(progress, stop = null) {
     const box = el('div', 'anomalous-ai-run-progress');
-    let words;
-    let share = null;
-    if (progress.state === 'submitting') {
-        words = t('aiExecution_submitting');
-    } else if (progress.state === 'queued') {
-        words = t('aiRunQueued', { ahead: progress.ahead });
-    } else {
-        const parts = [];
-        if (progress.prompts > 1) parts.push(t('aiRunPrompt', { at: progress.prompt, count: progress.prompts }));
-        if (progress.node) parts.push(progress.max > 1 ? `${progress.node} ${progress.value}/${progress.max}` : progress.node);
-        if (progress.nodes) parts.push(t('aiRunNodes', { done: progress.nodes_done, count: progress.nodes }));
-        words = parts.join(' · ') || t('aiRunRunning');
-        if (Number.isFinite(progress.percent)) share = progress.percent / 100;
-        else if (progress.max > 1) share = progress.value / progress.max;
-        else if (progress.nodes) share = progress.nodes_done / progress.nodes;
-    }
+    const { words, share } = progressWords(progress);
     const line = el('div', 'anomalous-ai-run-line');
     line.append(el('span', 'anomalous-ai-run-words', words));
-    if (share !== null) line.append(el('b', 'anomalous-ai-run-percent', `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%`));
+    if (share !== null) line.append(el('b', 'anomalous-ai-run-percent', `${Math.round(share * 100)}%`));
     const bar = el('div', `anomalous-ai-run-bar${share === null ? ' is-waiting' : ''}`);
     const fill = el('span', 'anomalous-ai-run-fill');
-    if (share !== null) fill.style.width = `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%`;
+    if (share !== null) fill.style.width = `${Math.round(share * 100)}%`;
     bar.append(fill);
     const row = el('div', 'anomalous-ai-run-row');
     row.append(bar);

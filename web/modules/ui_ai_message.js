@@ -3,8 +3,9 @@
  * view as the timeline scrolls): where the user writes to the AI on that task. Over the input
  * what the message carries (ui_ai_tray.js: pictures to mark up or leave out, what "@" names);
  * beside it the gallery (ui_ai_gallery_pick.js) and the materials picker, each lit with how many
- * it gave; the input grows with what is typed (Enter sends, Shift+Enter breaks the line), with
- * "@" to point at things and "/" for commands (ui_ai_mention.js). The words and what is attached
+ * it gave; pictures dropped on it or pasted (ui_ai_drop.js); the input grows with what is typed
+ * (Enter sends, Shift+Enter breaks the line), with "@" to point at things and "/" for commands
+ * (ui_ai_mention.js). The words and what is attached
  * go to `onSend(text, refs)`, words optional when something is attached; the AI gets them the
  * next time it asks (get_answers), which the hint says, and says to ask in the AI app once the
  * task ended. Made once per task, so half-typed text survives the task's redraws. newStepsPill
@@ -14,6 +15,7 @@
 import { translate as t } from './locales.js';
 import { mentions } from './ui_ai_mention.js';
 import { galleryPicker } from './ui_ai_gallery_pick.js';
+import { takePictures } from './ui_ai_drop.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 
 const MAX_REFS = 12; // api/ai_message_refs.py
@@ -103,6 +105,7 @@ export function messageBox(onSend, source) {
         box.addEventListener('anomalous-refs', counted);
         field.addEventListener('input', counted);
         line.prepend(pics, materials);
+        takePictures(box, field, { add: item => at.add(item), room, say: (text) => { note.textContent = text; } });
         box.refs = { add: item => at.add(item), remove: id => at.remove(id), has: id => at.has(id), room }; // for ui_ai_ready.js's gallery
         box.setMaterials = count => materials.setCount(count);
     }

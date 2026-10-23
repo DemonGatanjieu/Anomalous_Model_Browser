@@ -4,19 +4,28 @@ a message (kind "pictures", ai_panels._collect) with each picture attached as a 
 what made it in a few words (brief(): models, LoRAs, prompts, size, sampler; read from the
 picture's own workflow by ai_run_map.py), so nothing needs describing. Pictures handed one after
 another before the AI looked join one step. mark_gone() tells the page which of a task's
-pictures were deleted since.
+pictures were deleted since. save_upload() keeps a picture the user dropped or pasted into a
+message in the output folder's ai_inbox, so the gallery has it and the message carries it like
+any other: read as a picture first, size-capped, never over a file.
 """
 
+import io
 import json
 import os
+import re
 import time
 import uuid
+
+from PIL import Image
 
 from . import ai_run_map, ai_tasks
 from .image_search import read_png_text
 from .mcp_tools import ToolError, _resolve_image
 
 MAX_PICTURES = 8
+INBOX = "ai_inbox"  # under the output folder
+MAX_UPLOAD = 25 * 1024 * 1024
+UPLOAD_TYPES = {"PNG": ".png", "JPEG": ".jpg", "WEBP": ".webp", "GIF": ".gif"}
 
 
 class PicturesError(ValueError):
@@ -66,6 +75,34 @@ def mark_gone(task):
 
     walk((task or {}).get("steps"))
     return task
+
+
+def save_upload(data, name="", now=None):
+    """Keeps picture bytes `data` (the file's own name `name`, for its stem) in output/ai_inbox.
+    Returns its "ai_inbox/name.ext"."""
+    if not data or len(data) > MAX_UPLOAD:
+        raise PicturesError(f"A picture up to {MAX_UPLOAD // (1024 * 1024)} MB")
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            kind = image.format
+            image.verify()
+    except (OSError, ValueError, SyntaxError, Image.DecompressionBombError):
+        raise PicturesError("Not a picture Anomalous can read (PNG, JPEG, WebP or GIF)")
+    if kind not in UPLOAD_TYPES:
+        raise PicturesError("Not a picture Anomalous can read (PNG, JPEG, WebP or GIF)")
+    stem = re.sub(r"[^\w\- ]+", "", os.path.splitext(os.path.basename(str(name or "")))[0]).strip()[:60] or "pasted"
+    folder = os.path.join(ai_tasks.folder_paths.get_output_directory(), INBOX)
+    os.makedirs(folder, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S", time.localtime(time.time() if now is None else now))
+    for count in range(1, 100):
+        filename = f"{stem}_{stamp}{'' if count == 1 else f' ({count})'}{UPLOAD_TYPES[kind]}"
+        try:
+            with open(os.path.join(folder, filename), "xb") as out:  # never over a file
+                out.write(data)
+        except FileExistsError:
+            continue
+        return f"{INBOX}/{filename}"
+    raise PicturesError("No free name for the picture")
 
 
 def hand(task_id, images, text="", now=None):

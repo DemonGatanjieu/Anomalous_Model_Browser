@@ -35,6 +35,11 @@ async function post(url, body) {
     return data;
 }
 
+/** The user's answer to a step waiting at a gate: {decision: allow | deny, text?, remember?}. */
+export function decideGate(taskId, stepId, answer) {
+    return post(`/anomalous/ai_tasks/${encodeURIComponent(taskId)}/gate`, { step: stepId, ...answer });
+}
+
 /** What the user answered, or the card to answer with, under a step that has a gate; null otherwise. */
 export function gateCard(step, taskId, changed) {
     const asked = step.gate;
@@ -67,8 +72,7 @@ export function gateCard(step, taskId, changed) {
     const answer = async (decision) => {
         card.querySelectorAll('button').forEach((item) => { item.disabled = true; });
         try {
-            await post(`/anomalous/ai_tasks/${encodeURIComponent(taskId)}/gate`,
-                { step: step.id, decision, text: reason.value.trim(), remember: box.checked });
+            await decideGate(taskId, step.id, { decision, text: reason.value.trim(), remember: box.checked });
         } catch (error) {
             await anomalousAlert(error.message);
         }

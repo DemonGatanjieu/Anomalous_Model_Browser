@@ -34,7 +34,8 @@ function button(className, label, onClick, title) {
 
 const list = value => (Array.isArray(value) ? value : []);
 
-async function send(taskId, body) {
+/** An answer to one of a panel's questions ({step, block, choice | text | skip}), as the AI will read it. */
+export async function sendAnswer(taskId, body) {
     const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(taskId)}/answer`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
@@ -56,7 +57,7 @@ function skipButton(ctx, block, note) {
     const node = button('anomalous-ai-panel-skip', t('aiPanelSkip'), async () => {
         node.disabled = true;
         try {
-            await send(ctx.taskId, { step: ctx.stepId, block: block.id, skip: true });
+            await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, skip: true });
             ctx.changed();
         } catch (error) {
             note.textContent = error.message;
@@ -176,7 +177,7 @@ function otherLine(ctx, block, options) {
         go.disabled = true;
         options.querySelectorAll('button').forEach(node => { node.disabled = true; });
         try {
-            await send(ctx.taskId, { step: ctx.stepId, block: block.id, text: field.value });
+            await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, text: field.value });
             ctx.changed();
         } catch (error) {
             go.disabled = false;
@@ -204,7 +205,7 @@ function choices(block, ctx) {
     const submit = async (ids) => {
         options.querySelectorAll('button').forEach(node => { node.disabled = true; });
         try {
-            await send(ctx.taskId, { step: ctx.stepId, block: block.id, choice: ids });
+            await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, choice: ids });
         } catch (error) {
             note.textContent = error.message;
             options.querySelectorAll('button').forEach(node => { node.disabled = false; });
@@ -262,7 +263,7 @@ function input(block, ctx) {
         if (!field.value.trim()) return;
         go.disabled = true;
         try {
-            await send(ctx.taskId, { step: ctx.stepId, block: block.id, text: field.value });
+            await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, text: field.value });
             ctx.changed();
         } catch (error) {
             note.textContent = error.message;
@@ -304,7 +305,7 @@ const DRAW = {
         ...ctx,
         send: async (ids, note) => {
             try {
-                await send(ctx.taskId, { step: ctx.stepId, block: block.id, choice: ids });
+                await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, choice: ids });
                 ctx.changed();
             } catch (error) {
                 note.textContent = error.message;

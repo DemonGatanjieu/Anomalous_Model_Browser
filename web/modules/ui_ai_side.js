@@ -14,7 +14,7 @@
 import { translate as t } from './locales.js';
 import { renderPanel } from './ui_ai_panel.js';
 
-const QUESTIONS = ['choices', 'input', 'picks'];
+export const QUESTIONS = ['choices', 'input', 'picks'];
 const BOTTOM_PX = 60;
 
 function el(tag, className, text) {

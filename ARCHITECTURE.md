@@ -274,7 +274,10 @@ covered by the `styles.css` manifest.
   once per task and docked at the foot of its column (in view while the timeline scrolls, with a
   "new steps below" button): a growing input, the gallery and materials buttons beside it, and
   over it what the message carries (`ui_ai_tray.js`: pictures to mark up with
-  `ui_ai_marker.js` or leave out, chips of what "@" names). `ui_ai_mention.js` holds those refs
+  `ui_ai_marker.js` or leave out, chips of what "@" names), and over that what the task needs or
+  does now (`ui_ai_now.js`: a gate to allow, a run's progress with stop, the AI's open question
+  to answer there). `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
+  output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `ui_ai_mention.js` holds those refs
   and gives it "@" (the task's pictures, the gallery's newest and those its search finds,
   combos, models, workflows, prompts, node packs and node types from the materials picker's
   data) and "/" (`ui_ai_commands.js`: stop, undo, side views, new task, canvas mode, words to

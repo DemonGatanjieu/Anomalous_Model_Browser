@@ -194,6 +194,22 @@ async def api_pictures(request):
     return web.json_response({"step": step})
 
 
+async def api_upload(request):
+    """POST /anomalous/ai_pictures/upload?name= with a picture's bytes - one the user dropped or pasted
+    into a message, kept in the output folder (ai_pictures.save_upload): {image, filename, subfolder}."""
+    from . import ai_pictures
+
+    data = await request.read()
+    try:
+        image = await asyncio.to_thread(ai_pictures.save_upload, data, request.query.get("name", ""))
+    except ai_pictures.PicturesError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    except OSError as error:
+        return web.json_response({"error": f"Could not keep the picture: {error}"}, status=500)
+    subfolder, _, filename = image.rpartition("/")
+    return web.json_response({"image": image, "filename": filename, "subfolder": subfolder})
+
+
 async def api_stop(request):
     """POST /anomalous/ai_tasks/{id}/runs/{step}/stop - the user stops a run the AI started."""
     from . import ai_panels
@@ -238,6 +254,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}/toolbox", api_toolbox_pick)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/runs/{step_id}/stop", api_stop)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/pictures", api_pictures)
+    app.router.add_post("/anomalous/ai_pictures/upload", api_upload)
     app.router.add_get("/anomalous/ai_toolbox", api_toolbox)
     app.router.add_get("/anomalous/ai_toolbox/favorites", api_toolbox)
     app.router.add_post("/anomalous/ai_toolbox/favorites", api_toolbox)
