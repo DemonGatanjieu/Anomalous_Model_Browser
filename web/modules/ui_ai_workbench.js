@@ -559,6 +559,7 @@ export function watchAiTasks(owner) {
             if (onPage() && step) {
                 updateRunProgress(state.page, detail.progress);
                 state.view?.header.querySelector('.anomalous-ai-execution')?.replaceWith(executionStatus(state.task, refresh));
+                state.view?.now.update(state.task); // the strip over the message box says the same
             }
             return;
         }

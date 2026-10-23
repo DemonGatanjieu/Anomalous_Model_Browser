@@ -135,13 +135,19 @@ function askCard(task, { step, block }, more, ctx) {
     return card;
 }
 
-/** The strip, made once per task view; `update(task, ctx)` with ctx {refresh(), openStage(), showStep(id)}. */
+/**
+ * The strip, made once per task view; `update(task, ctx)` with ctx {refresh(), openStage(),
+ * showStep(id)}, kept for the next update: a run's progress coming in alone updates it with
+ * `update(task)`, as it moves the run's bar on the timeline.
+ */
 export function nowStrip() {
     const strip = el('div', 'anomalous-ai-now');
     const line = el('div', 'anomalous-ai-now-status');
     const ask = el('div', 'anomalous-ai-now-asks');
     strip.append(ask, line);
-    strip.update = (task, ctx) => {
+    let kept = null;
+    strip.update = (task, ctx = kept) => {
+        kept = ctx;
         line.replaceChildren(...[statusLine(task, ctx)].filter(Boolean));
         const asks = task.ended ? [] : openAsks(task);
         const key = asks.length ? JSON.stringify([asks[0].step.id, asks[0].block.id, asks.length]) : '';
