@@ -11,6 +11,7 @@ import { isVideo, outputPicture, outputUrl, pictureKey, picturePreview, uniquePi
 import { openParamCompare } from './ui_param_compare.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openKeepMenu } from './ui_keep_menu.js';
+import { icon } from './ui_ai_icons.js';
 
 const ticked = new Map(); // picture key → output picture, oldest first
 const listeners = new Set();
@@ -105,8 +106,21 @@ export function compareBar() {
     return bar;
 }
 
+/** A picture that is no longer in the output folder (deleted or moved): said so, nothing to open. */
+export function gonePicture(image) {
+    const box = el('div', 'anomalous-ai-gone');
+    box.title = t('aiPictureGoneHint', { name: [image.subfolder, image.filename].filter(Boolean).join('/') });
+    box.append(icon('image', 22), el('span', 'anomalous-ai-gone-words', t('aiPictureGone')));
+    return box;
+}
+
 export function imageCard(image, owner, { compact = false } = {}) {
-    const card = el('figure', `anomalous-ai-image-card${compact ? ' is-compact' : ''}`);
+    const card = el('figure', `anomalous-ai-image-card${compact ? ' is-compact' : ''}${image.gone ? ' is-gone' : ''}`);
+    if (image.gone) {
+        card.append(gonePicture(image));
+        if (!compact) card.append(el('figcaption', 'anomalous-ai-image-caption', image.filename));
+        return card;
+    }
     const open = button('anomalous-ai-image-preview', '', () => owner?.showGalleryViewer?.(outputUrl(image), isVideo(image)),
         `${t('aiOpenPicture')} · ${image.filename}`);
     const media = el(isVideo(image) ? 'video' : 'img', '');
@@ -118,6 +132,10 @@ export function imageCard(image, owner, { compact = false } = {}) {
         media.src = picturePreview(image);
         media.loading = 'lazy';
         media.alt = image.filename;
+        media.onerror = () => { // deleted while the page was open
+            card.classList.add('is-gone');
+            card.querySelector('.anomalous-ai-image-frame')?.replaceWith(gonePicture(image));
+        };
     }
     open.append(media);
     if (isVideo(image)) open.append(el('span', 'anomalous-ai-video-label', t('aiVideoResult')));

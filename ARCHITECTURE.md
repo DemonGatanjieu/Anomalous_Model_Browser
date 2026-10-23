@@ -87,6 +87,8 @@ covered by the `styles.css` manifest.
   `web/modules/mcp_task_tab.js` brings it to the front by clicking ComfyUI's tab (the store
   alone would not load its graph) or copies the open workflow into a new one before the first
   change; `web/modules/ui_ai_task_canvas.js` is the header's switch and the tab's chip.
+  `ai_pictures.mark_gone` marks a task's pictures no longer in the output folder (`gone`) on its
+  `GET`, which `ui_ai_images.gonePicture` shows instead of a broken picture.
   `api/ai_pictures.py` hands the AI output pictures (gallery card menu, the inspector's ✦): a
   `user_pictures` step, delivered as a `pictures` message with the pictures attached and
   what made each (read with ai_run_map); `search_images(with_pictures)` attaches the first

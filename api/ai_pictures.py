@@ -3,10 +3,12 @@
 a message (kind "pictures", ai_panels._collect) with each picture attached as a 512 px copy and
 what made it in a few words (brief(): models, LoRAs, prompts, size, sampler; read from the
 picture's own workflow by ai_run_map.py), so nothing needs describing. Pictures handed one after
-another before the AI looked join one step.
+another before the AI looked join one step. mark_gone() tells the page which of a task's
+pictures were deleted since.
 """
 
 import json
+import os
 import time
 import uuid
 
@@ -44,6 +46,26 @@ def brief(path):
         if facts.get("width") and "size" not in out:
             out["size"] = f"{facts['width']}x{facts['height']}"
     return out
+
+
+def mark_gone(task):
+    """Marks each output picture `task` shows (results, panels, marks) that is no longer in the output
+    folder, deleted or moved: "gone": true, so the page says so instead of a broken picture."""
+    root = ai_tasks.folder_paths.get_output_directory()
+
+    def walk(value):
+        if isinstance(value, dict):
+            if value.get("folder") == "output" and value.get("filename") and \
+                    not os.path.isfile(os.path.join(root, value.get("subfolder") or "", value["filename"])):
+                value["gone"] = True
+            for item in value.values():
+                walk(item)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+
+    walk((task or {}).get("steps"))
+    return task
 
 
 def hand(task_id, images, text="", now=None):

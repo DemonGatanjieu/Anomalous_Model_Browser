@@ -11,6 +11,8 @@
 - 右边这一栏改成一张单独的卡片，不再用一条线硬隔开；默认窄一些，给中间的时间线留出地方。鼠标移到它左边缘会出现小竖条，拖动调宽窄（记得住，双击恢复）。
 - 左边的任务列表用窗口左上角的按钮收起 / 展开；收起后鼠标移到按钮上，列表会临时浮出来，点任务或移开就收回。
 - 素材在右边这一栏里时，鼠标移过卡片不再自动跳进详细说明（之前很难操作），点卡片上的 ⓘ 才看。
+- **删掉任务里的图以后**：时间线、本次成果、展台上的那张图显示成“图片已删除”的占位（鼠标停上去说明可在回收站找回），不再是破图，也点不开；@ 列表里不再出现它。AI 那边会收到“你删除了这张图，别再用它”；它要是还去读，会被告知“可能已被用户删除”。
+- A task's pictures deleted since show as "Picture deleted" instead of a broken picture, and "@" no longer offers them; the AI hears plainly that the user deleted one, and a tool reading a gone picture says it may have been deleted.
 - **关联任务**：从一个任务新开的任务会记住它“接着”哪个任务（AI 开的新任务、你看着某个任务时点的“新任务”都会）。标题下面显示“接着：…”“后续：…”，点一下跳过去；任务列表里后续任务带 ↳。可以解开，也可以自己选“接着哪个任务…”。AI 接手后续任务时会先收到上一个任务的决策。
 - Tasks remember the task they go on from (an AI's new task while on another, or one the user starts from a task): links under the title lead both ways, the list marks follow-ups, the user can link or unlink, and an AI beginning a follow-up hears what was decided before.
 - **决策记录**：聊天在哪里都行，结论留在 AMB。AI 用新工具 `log_decision` 把商量好的结论记成时间线上的 📌 卡片（定了什么、为什么、没选哪些、谁定的、跟哪几步有关）；你在 AMB 里的选择（面板回答、允许或不允许、交出去的素材、AI 改画布的地方、停止）自动算作决策。右上角新增 **决策**，按时间列出全部决策，点一下回到那一步；AI 很久没记录时会轻轻提醒。AI 重新接手任务时会先收到这些决策。

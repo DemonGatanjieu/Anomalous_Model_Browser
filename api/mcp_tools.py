@@ -111,7 +111,8 @@ def _resolve_image(image):
     except ValueError:
         raise ToolError("image is a path under ComfyUI's output folder, as search_images returns it.")
     if os.path.splitext(path)[1].lower() not in IMAGE_TYPES or not os.path.isfile(path):
-        raise ToolError(f"No output image at {image}.")
+        raise ToolError(f"No output image at {image}: it is not (or no longer) in ComfyUI's output folder; "
+                        "the user may have deleted it. search_images lists the pictures there.")
     return rel, path
 
 

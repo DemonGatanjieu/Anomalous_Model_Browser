@@ -8,7 +8,7 @@ import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_decisions, ai_gates, ai_marks, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
+from . import activity_log, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -39,6 +39,7 @@ async def api_get(request):
         task["canvas_mode"] = ai_task_canvas.mode_of(task)  # the task's own choice, else the user's default
         task["decisions"], task["decisions_gap"] = ai_decisions.decisions(task), ai_decisions.gap(task)
         task["links"] = ai_task_links.links(task["id"])  # the task it goes on from, those going on from it
+        ai_pictures.mark_gone(task)  # pictures deleted since: the page says so
     return web.json_response({"task": task}) if task else web.json_response({"error": "not_found"}, status=404)
 
 

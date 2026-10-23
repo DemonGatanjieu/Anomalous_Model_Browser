@@ -14,7 +14,7 @@ import { translate as t } from './locales.js';
 import { outputUrl, isVideo } from './ai_task_view.js';
 import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
 import { runMapBox } from './ui_ai_run_map.js';
-import { decoratePicture } from './ui_ai_images.js';
+import { decoratePicture, gonePicture } from './ui_ai_images.js';
 import { deliveryState } from './ui_ai_delivery.js';
 
 function el(tag, className, text) {
@@ -68,6 +68,11 @@ function skipButton(ctx, block, note) {
 
 function picture(item, ctx, className) {
     const box = el('figure', className);
+    if (item.gone) {
+        box.append(gonePicture(item));
+        if (item.caption) box.append(el('figcaption', '', item.caption));
+        return box;
+    }
     const open = button('anomalous-ai-panel-picture', '', () => ctx.openPicture(outputUrl(item), isVideo(item)), t('aiOpenPicture'));
     const media = el(isVideo(item) ? 'video' : 'img');
     media.src = outputUrl(item);

@@ -38,6 +38,19 @@ class RefsTests(unittest.TestCase):
         self.assertEqual(sum(1 for item in result["content"] if item.get("type") == "image"), 1, "the picture itself goes along")
         self.assertNotIn("_pictures", message)
 
+    def test_a_deleted_picture_is_marked_gone_and_the_ai_told_plainly(self):
+        import os
+        from api import ai_pictures, ai_task_changes
+        name = picture("bye.png")
+        ai_pictures.hand(self.task, [name, picture("stay.png")])
+        os.remove(os.path.join(OUTPUT, name))
+        marked = ai_pictures.mark_gone(ai_tasks.get_task(self.task))
+        results = marked["steps"][-1]["results"]
+        self.assertEqual([item.get("gone", False) for item in results], [True, False])
+        self.assertNotIn("gone", ai_tasks.get_task(self.task)["steps"][-1]["results"][0], "only the page's copy is marked")
+        words = ai_task_changes._change_text({"action": "image_delete", "target": "bye.png", "source": "gallery"})
+        self.assertIn("do not use, show or hand it in again", words)
+
     def test_a_plain_message_has_no_refs_and_bad_refs_are_refused(self):
         self.assertNotIn("refs", ai_panels.leave_message(self.task, "继续"))
         for refs in ("x", [{"kind": "files", "id": "a"}], [{"kind": "models", "id": ""}], [{"kind": "nodes", "id": str(n)} for n in range(13)]):

@@ -22,6 +22,9 @@ def _live_task(now):
 
 def _change_text(entry):
     """What the user changed, in words for the AI."""
+    if entry.get("action") == "image_delete" and entry.get("target"):
+        return (f"Deleted the picture {entry['target']} (to the Recycle Bin): it is gone from the output folder, "
+                "so do not use, show or hand it in again; another picture is needed for what it was for.")
     if entry.get("source") != "canvas":
         words = str(entry.get("action", "")).replace("_", " ")
         return f"{words}: {entry['target']}" if entry.get("target") else words

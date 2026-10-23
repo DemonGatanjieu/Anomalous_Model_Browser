@@ -32,7 +32,7 @@ function pictures(task) {
     const out = [];
     for (const step of [...(task?.steps || [])].reverse()) {
         for (const item of step.results || []) {
-            if (item.type !== 'image' || (item.folder && item.folder !== 'output')) continue;
+            if (item.type !== 'image' || item.gone || (item.folder && item.folder !== 'output')) continue; // deleted ones cannot be named
             const id = [item.subfolder, item.filename].filter(Boolean).join('/');
             if (seen.has(id)) continue;
             seen.add(id);
