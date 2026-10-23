@@ -81,7 +81,9 @@ covered by the `styles.css` manifest.
 - `api/ai_run_map.py` reads a run's shape from the prompt ComfyUI queued (plumbing wired
   through; boxes with a role and facts, links with ComfyUI's types) and what changed since the
   task's run before; `ai_task_runs.py` keeps both on the run step, `show_run_map` puts it on the
-  stage (a `run_map` block), `web/modules/ui_ai_run_map.js` words and draws it (top down, shrunk
+  stage (a `run_map` block), `web/modules/ui_ai_run_map.js` words and draws it (Simple: told by
+  `web/modules/ui_ai_run_story.js`, one part per sampler with the model and LoRAs feeding it, its
+  prompts, where it starts and where it ends up; Full: top down, shrunk
   to its column). `api/ai_task_canvas.py` keeps each task's own canvas tab (default "new", set in
   the Gates window or per task): `mcp_bridge.ask_page` gives canvas actions the task's tab,
   `web/modules/mcp_task_tab.js` brings it to the front by clicking ComfyUI's tab (the store

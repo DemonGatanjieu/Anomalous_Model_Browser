@@ -346,3 +346,45 @@
 .anomalous-ai-marks-sent-notes { margin: 0; padding-left: 20px; color: var(--amb-text-main); font-size: 12.5px; line-height: 1.7; }
 .anomalous-ai-pic-tool.is-mark { border-color: color-mix(in srgb, var(--amb-warn) 70%, transparent); }
 .anomalous-ai-marker-whole { flex: none; }
+
+/* The run map's two views: told simply (ui_ai_run_story.js) or drawn in full. */
+.anomalous-ai-run-map-views { display: inline-flex; gap: 2px; margin: 0 11px 8px; padding: 2px; border: 1px solid var(--amb-border); border-radius: 8px; }
+.anomalous-ai-run-map-tab { padding: 3px 12px; border: 0; border-radius: 6px; background: none; color: var(--amb-text-soft); font: inherit; font-size: 12px; cursor: pointer; }
+.anomalous-ai-run-map-tab.is-on { background: color-mix(in srgb, var(--amb-link) 20%, transparent); color: var(--amb-text-main); font-weight: 600; }
+.anomalous-ai-run-map-view > .anomalous-ai-diagram-wrap { margin: 0 10px; }
+.anomalous-ai-story { display: flex; flex-direction: column; gap: 4px; padding: 0 11px 4px; }
+.anomalous-ai-story-part { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--amb-border); border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.025); }
+.anomalous-ai-story-part.is-end { background: none; border-style: dashed; }
+.anomalous-ai-story-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.anomalous-ai-story-number { color: var(--amb-text-main); font-size: 13px; font-weight: 700; }
+.anomalous-ai-story-line { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: start; gap: 8px; }
+.anomalous-ai-story-label { padding-top: 3px; color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-ai-story-what { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-width: 0; }
+.anomalous-ai-story-chip {
+    max-width: 100%;
+    padding: 2px 9px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    line-height: 20px;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.anomalous-ai-story-chip:hover { border-color: var(--amb-link); }
+.anomalous-ai-story-chip.is-model, .anomalous-ai-story-chip.is-lora { background: color-mix(in srgb, #a487f5 18%, transparent); }
+.anomalous-ai-story-chip.is-model { font-weight: 650; }
+.anomalous-ai-story-chip.is-prompt { background: color-mix(in srgb, var(--amb-ok) 14%, transparent); }
+.anomalous-ai-story-chip.is-negative { background: color-mix(in srgb, var(--amb-danger, #e0645c) 12%, transparent); }
+.anomalous-ai-story-chip.is-sampler { background: color-mix(in srgb, var(--amb-link) 16%, transparent); }
+.anomalous-ai-story-chip.is-size, .anomalous-ai-story-chip.is-image, .anomalous-ai-story-chip.is-upscale { background: color-mix(in srgb, var(--amb-warn) 16%, transparent); }
+.anomalous-ai-story-chip.is-save { background: rgba(var(--amb-ink-rgb), 0.1); }
+.anomalous-ai-story-plus, .anomalous-ai-story-arrow { color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-story-none { color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-story-down { color: var(--amb-text-dim); font-size: 13px; line-height: 1; text-align: center; }
+.anomalous-ai-story-hint { display: flex; align-items: center; gap: 5px; padding-top: 2px; color: var(--amb-text-dim); font-size: 11px; }

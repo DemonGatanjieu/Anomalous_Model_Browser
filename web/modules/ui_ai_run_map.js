@@ -4,15 +4,23 @@
  * opened, its nodes as boxes and links drawn by the stage's diagram (ui_ai_stage.js), each box
  * locating its node on the canvas. The words are the user's language, made here from the facts
  * the server read; show_run_map puts the same on the stage (a "run_map" block), and the step's
- * "see it large" shows it in the side column (ui_ai_side_views.js).
+ * "see it large" shows it in the side column (ui_ai_side_views.js). Opened, it is told simply
+ * (ui_ai_run_story.js: which model and LoRAs feed which sampler, from where, to where) or drawn
+ * in full; the user's choice of the two is kept on this browser.
  */
 
 import { translate as t } from './locales.js';
 import { diagram } from './ui_ai_stage.js';
+import { runStory } from './ui_ai_run_story.js';
 
 const LABELLED = new Set(['MODEL', 'LATENT', 'IMAGE', 'CONDITIONING', 'UPSCALE_MODEL', 'MASK', 'CONTROL_NET']);
 const COLOR = { model: 'purple', lora: 'purple', prompt: 'green', sampler: 'blue', size: 'yellow', image: 'yellow', upscale: 'yellow' };
 const MIN_SCALE = 0.6;
+const VIEW_KEY = 'anomalous.aiRunMapView';
+
+function keptView() {
+    try { return localStorage.getItem(VIEW_KEY) === 'full' ? 'full' : 'simple'; } catch (_) { return 'simple'; }
+}
 const KEYS = ['steps', 'cfg', 'denoise', 'sampler_name', 'scheduler', 'width', 'height', 'batch_size', 'strength_model', 'strength_clip', 'text'];
 
 function el(tag, className, text) {
@@ -122,9 +130,30 @@ export function runMapBox(step, ctx, open = false) {
     const draw = () => {
         if (drawn || !more.open) return;
         drawn = true;
-        const drawing = diagram(mapBlock(step.map), ctx);
-        more.append(drawing, el('div', 'anomalous-ai-run-map-note', t('aiMapNote')));
-        fitDiagram(drawing);
+        const views = el('div', 'anomalous-ai-run-map-views');
+        views.setAttribute('role', 'tablist');
+        const holder = el('div', 'anomalous-ai-run-map-view');
+        const show = (view) => {
+            try { localStorage.setItem(VIEW_KEY, view); } catch (_) { /* only not kept */ }
+            for (const node of views.children) node.classList.toggle('is-on', node.dataset.view === view);
+            if (view === 'simple') {
+                holder.replaceChildren(runStory(step.map, ctx) || el('div', 'anomalous-ai-run-map-note', t('aiStoryNone')));
+                return;
+            }
+            const drawing = diagram(mapBlock(step.map), ctx);
+            holder.replaceChildren(drawing);
+            fitDiagram(drawing);
+        };
+        for (const view of ['simple', 'full']) {
+            const tab = el('button', 'anomalous-ai-run-map-tab', t(view === 'simple' ? 'aiStorySimple' : 'aiStoryFull'));
+            tab.type = 'button';
+            tab.dataset.view = view;
+            tab.setAttribute('role', 'tab');
+            tab.onclick = () => show(view);
+            views.append(tab);
+        }
+        more.append(views, holder, el('div', 'anomalous-ai-run-map-note', t('aiMapNote')));
+        show(keptView());
     };
     more.addEventListener('toggle', draw);
     draw();
