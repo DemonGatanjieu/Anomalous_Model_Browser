@@ -3,7 +3,8 @@
  * task waiting for an AI): the address, a sentence to paste to the AI so it sets itself up (and
  * starts on the task, when one waits), and the way for each common app. Only this computer can
  * connect; the address is this page's own. A task waiting for an AI (waitingCard) leads with
- * what the user wants and the one sentence to send, in three numbered steps under a picture;
+ * what the user wants, what they put ready for it (pictures, notes, materials: the AI gets them
+ * when it takes the task) and the one sentence to send, in numbered steps under a picture;
  * connecting (connectHint) is a card under it that opens the guide in place.
  */
 
@@ -124,12 +125,30 @@ function preview() {
     return box;
 }
 
+/** Step 2 of a waiting task: the message box (`prep.message`, with its picture button and "@"), the
+ * materials button, and what was put ready so far (`prep.ready`: the user's steps, drawn). */
+function readyStep(prep) {
+    const body = el('div', 'anomalous-ai-waiting-ready');
+    const tools = el('div', 'anomalous-ai-waiting-ready-tools');
+    tools.append(el('span', 'anomalous-ai-waiting-ready-text', t('aiWaitingReadyBody')),
+        iconButton('anomalous-ai-link', 'sparkle', prep.materials ? t('aiWaitingMaterialsCount', { count: prep.materials }) : t('aiWaitingMaterials'), prep.openMaterials));
+    body.append(tools);
+    if (prep.ready.length) {
+        const done = el('div', 'anomalous-ai-waiting-ready-done');
+        done.append(el('div', 'anomalous-ai-waiting-ready-label', t('aiWaitingReadyDone', { count: prep.ready.length })), ...prep.ready);
+        body.append(done);
+    }
+    body.append(prep.message);
+    return body;
+}
+
 /**
- * A task the user started, waiting for an AI: a picture, then three numbered steps (what they
- * want, in a line that renames the task: `rename(title)`; the sentence that has the AI take it;
- * where its steps will show), and the card for an AI not connected yet.
+ * A task the user started, waiting for an AI: a picture, then numbered steps (what they want, in
+ * a line that renames the task: `rename(title)`; what to put ready, `prep` for readyStep; the
+ * sentence that has the AI take it; where its steps will show), and the card for an AI not
+ * connected yet.
  */
-export function waitingCard(task, rename) {
+export function waitingCard(task, rename, prep) {
     const card = el('div', 'anomalous-ai-waiting');
     const hero = el('div', 'anomalous-ai-waiting-hero');
     const words = el('div', 'anomalous-ai-waiting-words');
@@ -150,9 +169,9 @@ export function waitingCard(task, rename) {
     field.append(icon('pencil', 16), wish);
     const sentence = task.title ? t('aiHandSentence', { task: task.title }) : t('aiWaitingSentence');
     const steps = el('ol', 'anomalous-ai-waiting-steps');
-    steps.append(step(1, t('aiWaitingStepWish'), field),
-        step(2, t('aiWaitingSay'), copyLine(sentence, { code: false, label: t('aiConnectCopySentence') })),
-        step(3, t('aiWaitingStep3'), preview()));
+    steps.append(step(1, t('aiWaitingStepWish'), field), step(2, t('aiWaitingReady'), readyStep(prep)),
+        step(3, t('aiWaitingSay'), copyLine(sentence, { code: false, label: t('aiConnectCopySentence') })),
+        step(4, t('aiWaitingStep3'), preview()));
     card.append(hero, steps, connectHint(task.title));
     return card;
 }

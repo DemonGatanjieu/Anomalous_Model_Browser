@@ -68,8 +68,9 @@ export function messageBox(onSend, source) {
     return box;
 }
 
-/** The hint for where the task stands; quieter while the AI is not working on it. */
+/** The hint for where the task stands; quieter while the AI is not working on it. While a task
+ * waits for an AI (`status` "waiting"), what is sent waits with it. */
 export function updateMessageBox(box, ended, status) {
-    box.classList.toggle('is-quiet', status !== 'live' && status !== 'asks');
-    box.note.textContent = t(ended ? 'aiMessageEnded' : 'aiMessageHint');
+    box.classList.toggle('is-quiet', !['live', 'asks', 'waiting'].includes(status));
+    box.note.textContent = t(ended ? 'aiMessageEnded' : status === 'waiting' ? 'aiMessageWaiting' : 'aiMessageHint');
 }

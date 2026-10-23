@@ -423,6 +423,15 @@
 .anomalous-ai-waiting-ghost-row:nth-child(2) { opacity: 0.7; }
 .anomalous-ai-waiting-ghost-row:nth-child(3) { opacity: 0.45; }
 
+/* Step 2: what the user puts ready for the AI (ui_ai_connect.js readyStep): the message box, the
+   materials button and what is ready so far, the user's own steps. */
+.anomalous-ai-waiting-ready { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.anomalous-ai-waiting-ready-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.anomalous-ai-waiting-ready-text { flex: 1 1 240px; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
+.anomalous-ai-waiting-ready-done { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--amb-border); border-radius: 10px; }
+.anomalous-ai-waiting-ready-label { color: var(--amb-text-dim); font-size: 11.5px; font-weight: 600; }
+.anomalous-ai-waiting-ready .anomalous-ai-message { margin-top: 0; }
+
 /* The card for an AI not connected yet (ui_ai_connect.js connectHint). */
 .anomalous-ai-hint {
     display: flex;

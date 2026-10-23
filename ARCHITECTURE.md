@@ -316,8 +316,9 @@ covered by the `styles.css` manifest.
   `ui_ai_connect.js` says how to connect an AI app (the address, a sentence to send the AI so
   it sets itself up and starts on a waiting task, each common app's way), in a window from the
   list's "Connect an AI", and as a card (`connectHint`) that opens the guide in place on the
-  empty page and under a task waiting for an AI (three numbered steps under a picture: what to
-  do, the sentence to send, where the steps will show). The pictures (`web/assets/ai_*.webp`)
+  empty page and under a task waiting for an AI (numbered steps under a picture: what to do,
+  what to put ready for it, with the message box moved in and the user's own steps drawn there,
+  the sentence to send, where the steps will show). The pictures (`web/assets/ai_*.webp`)
   were made with ChatGPT. `ai_task_view.js` holds
   its rules without DOM (folding reads, tool words, counts, result addresses).
   `ask_user` (`api/mcp_task_tools.py`) is the AI's question in the workbench: a one-block panel

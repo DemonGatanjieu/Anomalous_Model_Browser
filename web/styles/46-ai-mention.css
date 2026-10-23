@@ -149,3 +149,7 @@
 .anomalous-ai-pics-none { grid-column: 1 / -1; padding: 18px 6px; color: var(--amb-text-soft); font-size: 12.5px; text-align: center; }
 .anomalous-ai-pics-foot { display: flex; flex: none; align-items: center; gap: 10px; }
 .anomalous-ai-pics-count { flex: 1; min-width: 0; color: var(--amb-text-dim); font-size: 12px; }
+
+/* A message's named pictures on the timeline (ui_ai_step_body.js). */
+.anomalous-ai-user-pictures { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.anomalous-ai-user-pictures img { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; background: rgba(var(--amb-ink-rgb), 0.05); }

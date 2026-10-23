@@ -278,18 +278,23 @@ function renderTask() {
         ? { key: JSON.stringify(['looks', at, item.steps]), make: () => looksRow(item.steps, at + 1) }
         : { key: JSON.stringify(['step', at, item.step, undoable(item.step)]), make: () => stepRow(item.step, at + 1) }));
     state.numbers = new Map(items.flatMap((item, at) => (item.type === 'looks' ? item.steps : [item.step]).map(step => [step.id, at + 1])));
-    // A task the user started waits for an AI: how to get one on it.
-    if (!items.length && task.waiting) {
-        rows.push({ key: `waiting:${task.title}`, make: () => waitingCard(task, async (title) => {
+    // A task the user started waits for an AI: how to get one on it, and what the user put ready
+    // for it meanwhile (their own steps, drawn inside; the message box moves in there too).
+    const preparing = Boolean(task.waiting) && items.every(item => item.type === 'step' && item.step.kind === 'user');
+    if (preparing) {
+        const materials = toolboxCount(task);
+        rows.splice(0, rows.length, { key: JSON.stringify(['waiting', task.title, task.steps, materials]), make: () => waitingCard(task, async (title) => {
             await postTask(task.id, { title }).catch(error => anomalousAlert(error.message));
             await refresh();
+        }, {
+            message: view.message, materials, ready: items.map((item, at) => stepRow(item.step, at + 1)),
+            openMaterials: () => pickView(state.stage, 'toolbox', false, task, renderTask, () => void refresh()),
         }) });
-    }
-    else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
+    } else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     syncRows(view.timeline, rows);
-    updateMessageBox(view.message, Boolean(task.ended), status);
-    view.message.hidden = Boolean(task.waiting && !items.length); // nobody to write to yet: the card says what to do
-    view.timeline.classList.toggle('is-waiting', Boolean(task.waiting && !items.length));
+    if (!preparing && view.message.parentNode !== box) box.append(view.message); // back under the timeline once an AI took it
+    updateMessageBox(view.message, Boolean(task.ended), preparing ? 'waiting' : status);
+    view.timeline.classList.toggle('is-waiting', preparing);
     box.scrollTop = keepBottom && status === 'live' ? box.scrollHeight : keepTop;
     drawStage(task, news.arrived);
 }
