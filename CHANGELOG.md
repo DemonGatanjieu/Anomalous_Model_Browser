@@ -56,8 +56,8 @@
 - A panel's progress bar is the AI's own numbers: once the task goes past it without an update (a run ends, a later panel or note), the stage greys it and says when it was written. The AI is told a run's real progress shows already and to keep its own bars current.
 - **还没出图就问进度不再算“出错”**：AI 在出图前调用 `run_status`，现在得到“这个任务还没有出图”的回答，任务不会因此标上“有一步出错”。
 - run_status before any run answers state "none" instead of failing, so the task no longer shows a failed step for it.
-- **宽窗口里时间线收在中间**：右边一栏关着、窗口又很宽时，时间线、标题和输入框不再横跨整个窗口，而是收成中间约 880 像素宽的一列（像聊天软件那样），滚动条仍在最右边。
-- In a wide window the task (its head, timeline and message box) keeps to a centred column of about 880 px, as chat apps do; the scrollbar stays at the edge.
+- **宽窗口里时间线收在中间**：右边一栏关着、窗口又很宽时，时间线、标题和输入框不再横跨整个窗口，而是收成中间约 880 像素宽的一列（像聊天软件那样），滚动条仍在最右边。时间线里的图片按自己的大小从左排开，一张图不再被撑成横跨整行的大灰框。
+- In a wide window the task (its head, timeline and message box) keeps to a centred column of about 880 px, as chat apps do; the scrollbar stays at the edge. A step's pictures are cards of about their own size from the left, no longer one stretched across the row.
 - **点得到、看得见**：选中的图片有粗框、发光和大对勾，图片罩上一层颜色，和鼠标停留一眼分得开；留言框左边的图片按钮在图库面板打开时亮起，留言里有图时显示张数。素材列表、AI“看了资料”那一行（带 › 可展开）、关卡选项、优先用 / 只能用、来源下拉、发送和复制按钮、模型页的标签、首页的“一键准备”、记录里可展开的一行，鼠标移上去都有明显的变化。点 **展台** 时即使还没有内容，也会打开并说明会放什么，不再没反应。“交给 AI · 0”在什么都没选时不能点。挪模型那一步的标题写文件名和挪到哪，不再是一串编号；只改了一个节点时不再出现两个“在画布上找到”；“接着哪个任务…”的字号和旁边一致。
 - Clearer feedback: picked pictures get a thick glowing frame, a tint and a big tick; the picture button lights while its panel is open and counts the message's pictures; materials rows, the folded reads row (now with a ›), gate options, the mode switch, the source menu, send and copy buttons, the models page's tabs, the home page's set-up button and expandable activity rows all react clearly to the pointer. The Stage button opens an empty stage that says what will appear there; "Hand to AI · 0" is disabled with nothing picked; move_model's step names the file and where it goes; a one-node canvas change shows one "find on canvas"; the "Goes on from…" chip matches the size around it.
 - 右边那一栏的宽度把手更好抓了：卡片左边整条空隙（从上到下）都能拖，把手平时就淡淡地显示，鼠标靠近时整条边亮起；点一下后也能用 ← → 调宽窄。
