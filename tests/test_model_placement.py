@@ -89,6 +89,18 @@ class PlacementTests(unittest.TestCase):
         moved = self.put("model_patches", "ok.safetensors", LLLITE)
         self.assertIsNone(model_placement.belongs(model_placement.one("model_patches", 0, "ok.safetensors", moved)))
 
+    def test_what_one_model_looks_like(self):
+        self.put("controlnet", "Anima/depth.safetensors", LLLITE)
+        self.put("loras", "plain.safetensors", safetensors("something.weight"))
+        self.assertEqual(model_placement.look("controlnet", 0, "Anima/depth.safetensors"),
+                         {"type": "controlnet", "root": 0, "rel": "Anima/depth.safetensors", "kind": "model_patches", "sure": True, "base": ""})
+        self.assertEqual(model_placement.look("loras", "0", "plain.safetensors")["kind"], "")  # nothing to tell: no guess
+        for args, code in ((("loras", 0, "../x.safetensors"), "bad_path"), (("loras", -1, "plain.safetensors"), "bad_path"),
+                           (("loras", 0, "none.safetensors"), "gone"), (("nope", 0, "plain.safetensors"), "bad_type")):
+            with self.assertRaises(model_placement.Refused) as refused:
+                model_placement.look(*args)
+            self.assertEqual(refused.exception.code, code, args)
+
     def test_identical_copies(self):
         first = self.put("loras", "a.safetensors", LORA)
         self.put("vae", "copy.safetensors", LORA)

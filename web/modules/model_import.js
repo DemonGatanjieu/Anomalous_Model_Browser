@@ -15,6 +15,9 @@ import { startScan, targetsForItems } from './scan_runner.js';
 import { forgetTidyCount } from './model_placement.js';
 
 export const MODEL_FILE = /\.(safetensors|sft|gguf|ckpt|pt|pth|bin)$/i;
+/** The model types a file can be put in, in the order they are offered (api/model_import.py KINDS). */
+export const IMPORT_KINDS = ['checkpoints', 'loras', 'vae', 'text_encoders', 'diffusion_models', 'controlnet', 'embeddings',
+    'clip_vision', 'upscale_models', 'ipadapter', 'model_patches'];
 const MAX_HEADER = 100 * 1024 * 1024;
 const GGUF_READ = 16 * 1024 * 1024;
 

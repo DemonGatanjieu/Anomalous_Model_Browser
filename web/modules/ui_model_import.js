@@ -10,15 +10,14 @@ import { translate as t } from './locales.js';
 import { unsafeFormat } from './download_places.js';
 import { defaultRoot, rememberRoot } from './model_download.js';
 import {
-    afterImport, fetchImportFolders, identifyFile, importDestination, inspectFile, modelFiles, placeFile, uploadFile,
+    IMPORT_KINDS, afterImport, fetchImportFolders, identifyFile, importDestination, inspectFile, modelFiles, placeFile, uploadFile,
 } from './model_import.js';
 import { formatSize, joinPath } from './ui_model_download.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openSettingsPage } from './ui_settings_page.js';
+import { openRetype } from './ui_model_retype.js';
 
-const KINDS = ['checkpoints', 'loras', 'vae', 'text_encoders', 'diffusion_models', 'controlnet', 'embeddings',
-    'clip_vision', 'upscale_models', 'ipadapter', 'model_patches'];
 const LEVELS = { sure: ['●●●', 'doctorLevelSure'], likely: ['●●○', 'doctorLevelLikely'] };
 const ACCEPT = '.safetensors,.sft,.gguf,.ckpt,.pt,.pth,.bin';
 // Types whose files serve several base models: no base model folder.
@@ -142,7 +141,7 @@ function makeCard(file, view) {
         const empty = el('option', '', t('importKindPick'));
         empty.value = '';
         select.append(empty);
-        for (const kind of KINDS) {
+        for (const kind of IMPORT_KINDS) {
             if (!view.folders?.types?.[kind]) continue;
             const option = el('option', '', t(`importKind_${kind}`));
             option.value = kind;
@@ -398,7 +397,13 @@ export function openImportDialog(owner, files) {
         busy = false;
         placedAny.push(...placed);
         view.update();
-        if (placed.length) showWorkbenchToast(t('importDone', { count: placed.length }));
+        // One file put in place: a wrong type is easiest to fix now.
+        if (placed.length === 1) {
+            const [one] = placed;
+            showWorkbenchToast(t('importDone', { count: 1 }), { label: t('retypeWrong'), run: () => openRetype(owner, { type: one.type, root: one.root, rel: one.rel, name: one.file }) });
+        } else if (placed.length) {
+            showWorkbenchToast(t('importDone', { count: placed.length }));
+        }
         // Open while something is left to do: a failure, or a file still without a type.
         if (view.cards.every(card => card.state === 'done' || (card.state === 'ready' && !card.include))) close();
     }

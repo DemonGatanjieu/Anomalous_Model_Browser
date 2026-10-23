@@ -8,6 +8,8 @@ GET  /anomalous/placement/check[?deep=1] -> {misplaced, duplicates, unchecked}
     duplicates: files with the same SHA-256 — known from scans, else read now for files of
     the same size (small ones always, large ones with deep). unchecked: the same-size large
     files a deep check would still read.
+GET  /anomalous/placement/look?type&root&rel -> {kind, sure, base}: what one model's header says
+    it is, even when unsure (the models page's "Change type", ui_model_retype.js).
 POST /anomalous/placement/move {type, root, rel, to_type, to_root, to_rel} -> moves a model
     and its sidecars (covers, info, the user's notes); never over a file (" (2)"). Only for
     the computer ComfyUI runs on, unless remote changes are allowed (local_guard.may_change).
@@ -219,20 +221,36 @@ def _sidecars(path):
     return existing(os.path.join(folder, stem), SIDECAR_SUFFIXES)
 
 
-def move(data):
-    folder_type = data.get("type")
+def _source(folder_type, root, rel):
+    """(root index, clean rel, file) of the model at type `folder_type`, root index `root`, `rel`."""
     if folder_type not in import_types():
         raise Refused("bad_type")
     paths = folder_paths.get_folder_paths(folder_type) or []
     try:
-        index = int(data.get("root", 0))
+        index = int(root)
+        if index < 0:
+            raise IndexError(index)
         base = os.path.realpath(paths[index])
-        rel = clean_folder(data.get("rel"))
+        rel = clean_folder(rel)
         source = model_reference_within(base, rel.replace("/", os.sep))
     except (ValueError, TypeError, IndexError):
         raise Refused("bad_path")
     if not os.path.isfile(source) or not rel.lower().endswith(MODEL_EXTENSIONS):
         raise Refused("gone")
+    return index, rel, source
+
+
+def look(folder_type, root, rel):
+    """What the header of one model says it is: {type, root, rel, kind, sure, base}."""
+    index, rel, source = _source(folder_type, root, rel)
+    found = _cached(_heads, source, os.stat(source), inspect_file)
+    return {"type": folder_type, "root": index, "rel": rel, "kind": found.get("kind") or "",
+            "sure": bool(found.get("sure")), "base": found.get("base") or ""}
+
+
+def move(data):
+    folder_type = data.get("type")
+    index, rel, source = _source(folder_type, data.get("root", 0), data.get("rel"))
     to_type, to_root, root_path, dest = destination(
         {"type": data.get("to_type"), "root": data.get("to_root", 0), "rel": data.get("to_rel")}, os.path.getsize(source))
     sidecars = _sidecars(source)
@@ -264,6 +282,14 @@ async def api_check(request):
     return web.json_response(await asyncio.to_thread(check, deep))
 
 
+async def api_look(request):
+    query = request.query
+    try:
+        return web.json_response(await asyncio.to_thread(look, query.get("type"), query.get("root", "0"), query.get("rel")))
+    except Refused as error:
+        return web.json_response({"error": error.code}, status=404 if error.code == "gone" else 400)
+
+
 async def api_move(request):
     if not may_change(request):
         return web.json_response({"error": "not_local"}, status=403)
@@ -283,4 +309,5 @@ async def api_move(request):
 
 def register_routes(app):
     app.router.add_get("/anomalous/placement/check", api_check)
+    app.router.add_get("/anomalous/placement/look", api_look)
     app.router.add_post("/anomalous/placement/move", api_move)

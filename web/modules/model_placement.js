@@ -1,8 +1,12 @@
 /**
  * The models page's Tidy check (api/model_placement.py): models in the wrong folder and
- * identical copies; moving a model to where it belongs, a copy to the Recycle Bin. No DOM.
- * The type bar's count is asked once and kept until something changes the folders.
+ * identical copies; what one model's header says it is; moving a model to where it belongs (or
+ * to another type, ui_model_retype.js), a copy to the Recycle Bin, and the words for a move
+ * that failed. No DOM. The type bar's count is asked once and kept until something changes
+ * the folders.
  */
+
+import { translate as t } from './locales.js';
 
 let counted = null;
 
@@ -48,6 +52,18 @@ export function tidyCount() {
 /** The folders changed (an import, a move, a deletion): count again next time. */
 export function forgetTidyCount() {
     counted = null;
+}
+
+/** What the header of `item` ({type, root, rel}) says it is: {kind ('' when it cannot tell), sure, base}. */
+export const lookModel = item => json(`/anomalous/placement/look?${new URLSearchParams({ type: item.type, root: String(item.root), rel: item.rel })}`);
+
+/** Why a move or a removal failed, in words. */
+export function moveErrorText(error) {
+    for (const key of [`importError_${error.code}`, `downloadError_${error.code}`]) {
+        const text = t(key);
+        if (text !== key) return text;
+    }
+    return error.message && error.code === 'unknown' ? error.message : t('importError_unknown');
 }
 
 /** Moves `item` ({type, root, rel}) to `to` ({type, root, rel}); resolves to where it went. */

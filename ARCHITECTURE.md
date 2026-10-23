@@ -395,7 +395,10 @@ covered by the `styles.css` manifest.
   and the scanned models, never replaces a file (" (2)").
 - `api/model_placement.py` is the models page's Tidy check (`/anomalous/placement/*`): models
   whose header names another type than their folder, identical files (by SHA-256), and moving
-  a model with its sidecars to where it belongs; `belongs()` checks one file for the AI.
+  a model with its sidecars to where it belongs; `belongs()` checks one file for the AI, `look()`
+  says what one file's header suggests even when unsure. `web/modules/ui_model_retype.js` is
+  "Change type" for one model (its page's actions, the toast after an import): the types with
+  their loaders, the header's guess marked, where it goes, moved as Tidy moves.
 - `api/model_usage.py` is Tidy's "not used lately" (`GET /anomalous/usage/check`, this computer
   only, on a press): when each model and node pack was last used, from the run record, the
   PNG outputs' prompts (image_search's cached records, which keep the node types too), FLAC /

@@ -12,7 +12,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
-import { checkPlacement, moveModel, recycleModel, tidyMisplaced } from './model_placement.js';
+import { checkPlacement, moveErrorText, moveModel, recycleModel, tidyMisplaced } from './model_placement.js';
 import { fetchImportFolders } from './model_import.js';
 import { formatSize, joinPath } from './ui_model_download.js';
 import { renderUsageSection } from './ui_model_usage.js';
@@ -36,14 +36,6 @@ const folderOf = (rel) => String(rel).split('/').slice(0, -1).join('/');
 const kindName = (kind) => t(`importKind_${kind}`);
 const loaderName = (kind) => t(`tidyLoader_${kind}`);
 const place = (kind, rel) => [kindName(kind), folderOf(rel)].filter(Boolean).join(' / ');
-
-function errorText(error) {
-    for (const key of [`importError_${error.code}`, `downloadError_${error.code}`]) {
-        const text = t(key);
-        if (text !== key) return text;
-    }
-    return error.message && error.code === 'unknown' ? error.message : t('importError_unknown');
-}
 
 function state(owner) {
     owner.modelTidy ||= { notes: [], deep: false, controller: null };
@@ -151,7 +143,7 @@ function misplacedCard(owner, item, folders) {
             await changed(owner, notes.join(' '));
         } catch (error) {
             go.disabled = false;
-            failure.textContent = errorText(error);
+            failure.textContent = moveErrorText(error);
             failure.hidden = false;
         }
     });
@@ -198,7 +190,7 @@ function duplicateCard(owner, group) {
             await changed(owner, t('tidyRecycled', { count: extra.length, size: formatSize(group.size * extra.length) }));
         } catch (error) {
             go.disabled = false;
-            failure.textContent = errorText(error);
+            failure.textContent = moveErrorText(error);
             failure.hidden = false;
         }
     });

@@ -2,7 +2,8 @@
  * The top of a model's details, beside its cover: back (a crumb, "Models / LoRA", or back to
  * Model Check, the assistant or the model before; Esc presses it), the name, the size / base /
  * source line with the source links, and one row of actions: Add node (the one blue button),
- * Edit, Folder (its tooltip shows the path), Outputs and Hand to AI (ui_ai_handoff.js). The path, Copy and Delete are at the
+ * Edit, Folder (its tooltip shows the path), Outputs, Change type (ui_model_retype.js: filed under
+ * the wrong type, it moves to another) and Hand to AI (ui_ai_handoff.js). The path, Copy and Delete are at the
  * foot of the details (model_location.js). Where the page is too narrow for the cover column,
  * a small cover sits beside the name instead.
  */
@@ -13,6 +14,7 @@ import { showInFolder } from './model_location.js';
 import { cardPosterUrl, cardPreviewUrl } from './ui_grid.js';
 import { typeLabel } from './ui_model_types.js';
 import { handModelToAi } from './ui_ai_handoff.js';
+import { openRetype } from './ui_model_retype.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -79,6 +81,10 @@ export function createDetailHead(owner, model, onBack) {
         button('anomalous-detail-action', t('detailFolder'), () => showInFolder(model, where),
             `${t('detailOpenFolder')}\n${model.file_path || model.filename}`),
         button('anomalous-detail-action', t('detailOutputs'), () => owner.showGeneratedGallery(model), t('detailGeneratedGallery')),
+        button('anomalous-detail-action', t('retypeAction'), () => openRetype(owner, {
+            type: where.type, root: where.path_idx, name: name.textContent,
+            rel: [String(where.subfolder || '').replace(/^\/+|\/+$/g, ''), model.filename].filter(Boolean).join('/'),
+        }, onBack), t('retypeHint')),
         button('anomalous-detail-action', `✦ ${t('aiHand')}`, () => handModelToAi(owner, model, where), t('aiHandHint')),
     );
 

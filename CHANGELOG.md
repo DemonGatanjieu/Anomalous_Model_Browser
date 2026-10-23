@@ -26,6 +26,10 @@
 - Gallery pictures in the AI workbench: the message box's picture button picks them from the gallery (newest first, searchable), and "@" offers the gallery's newest pictures and searches it as you type; the AI gets each picture with what made it.
 - **等 AI 接手时先备好材料**：“等 AI 接手”的任务顶上有 **开始 / 备料** 两页切换。**备料** 是单独的一页：大的图库（可搜索，点一张就放到最下面的输入框上，再点一下拿掉）和“已经备好”的列表；切换按钮上显示备好了几样。AI 接手时一起收到。
 - A task waiting for an AI has two pages, Get started / Put ready: Put ready shows the gallery as a big searchable grid feeding the message box (click to add or drop a picture) and what is ready; the AI gets it all when it takes the task.
+- **换类型**：模型详情页多了 **换类型** 按钮，给“导入时类型选错了 / 代码认不出、放错了文件夹”的模型用。窗口里写明现在放在哪一类、文件头看起来像什么（看得出就替你选好并标“推荐”，不确定标“可能是”，看不出就不猜），每一类都写着用哪个节点加载；可以改挪到的根目录和子文件夹，下面显示完整路径。挪动和“整理”用的是同一套：封面、信息、备注一起走，从不覆盖文件，挪完 ComfyUI 的模型列表马上更新。导入单个模型后，提示里也有 **类型选错了？**，点一下直接改。
+- "Change type" on a model's page, and "Wrong type?" in the toast after importing one model: the window says where it is and what its header suggests (picked and marked when it can tell, nothing guessed when it cannot), offers every type with its loader and where it goes, and moves it as Tidy does.
+- 跨盘挪动、复制模型时，除了比大小，还会比对文件开头、中间、结尾各 1 MB 是否一模一样，对不上就不删原文件（只多花几毫秒，不需要事先有指纹）。
+- A model copied to another drive is checked at its start, middle and end (a megabyte each) besides its size before the original goes; no fingerprint needed, no felt cost.
 - 挪动、导入模型时，就算目标位置在最后一刻冒出一个同名文件，也绝不会被盖掉：这次挪动会失败，两边的文件都原样保留（之前在 Windows 上理论上有极小的机会覆盖）。
 - Moving or importing a model never replaces a file that took the name at the last moment: the move fails and both files stay (on Windows a rename could replace it before).
 - **最下面就能看到 AI 在做什么、要你做什么**：输入框上方多了一条“现在”栏：AI 出图时显示进度（节点、步数、百分比、进度条）和停止按钮；AI 某一步还在进行时说在做什么；AI 想做要你点头的事（比如挪模型、下载）时，直接在这里 **允许 / 不要**；AI 问你问题时，问题和选项就在这里，点一下就回答（有推荐的带 ☆，也能自己写一句或跳过），多选和挑图会带你去展台。

@@ -286,15 +286,31 @@ def _rename_new(source, dest):
     os.remove(source)
 
 
+def _looks_whole(source, copy):
+    """Whether `copy` has `source`'s size and its very bytes at the start, the middle and the end
+    (a megabyte each): a cut or garbled copy shows, at no felt cost, with no fingerprint needed."""
+    size = os.path.getsize(source)
+    if os.path.getsize(copy) != size:
+        return False
+    with open(source, "rb") as first, open(copy, "rb") as second:
+        for at in sorted({0, max(0, size // 2 - CHUNK // 2), max(0, size - CHUNK)}):
+            first.seek(at)
+            second.seek(at)
+            if first.read(CHUNK) != second.read(CHUNK):
+                return False
+    return True
+
+
 def move_into(source, dest, keep):
-    """Moves (or with `keep` copies) `source` to `dest`, never over a file; a copy goes through "<dest>.part"."""
+    """Moves (or with `keep` copies) `source` to `dest`, never over a file; a copy goes through
+    "<dest>.part" and is checked (_looks_whole) before the original goes."""
     if not keep and _same_drive(source, dest):
         _rename_new(source, dest)
         return
     part = dest + ".part"
     try:
         shutil.copyfile(source, part)
-        if os.path.getsize(part) != os.path.getsize(source):
+        if not _looks_whole(source, part):
             raise Refused("incomplete")
         _rename_new(part, dest)
     except BaseException:

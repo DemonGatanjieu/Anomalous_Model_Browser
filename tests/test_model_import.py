@@ -225,6 +225,18 @@ class ImportTests(unittest.TestCase):
         self.assertTrue(os.path.exists(path))
         self.assertFalse(os.path.exists(dest))
 
+    def test_a_garbled_copy_is_caught_and_the_original_stays(self):
+        path, _ = self.dropped("cool.safetensors")
+        dest = os.path.join(self.loras, "cool.safetensors")
+        garble = lambda source, target: Path(target).write_bytes(b"x" * len(Path(source).read_bytes()))  # right size, wrong bytes
+        with mock.patch.object(model_import, "_same_drive", return_value=False), \
+                mock.patch.object(model_import.shutil, "copyfile", side_effect=garble):
+            with self.assertRaises(model_import.Refused) as refused:
+                model_import.move_into(path, dest, keep=False)
+        self.assertEqual(refused.exception.code, "incomplete")
+        self.assertEqual(Path(path).read_bytes(), self.data)
+        self.assertFalse(os.path.exists(dest) or os.path.exists(dest + ".part"))
+
     def test_a_file_that_appeared_meanwhile_is_never_replaced(self):
         # free_path found the name free; a file took it before the move: the move fails, both stay.
         path, _ = self.dropped("cool.safetensors")
