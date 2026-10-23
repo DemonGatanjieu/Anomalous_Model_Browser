@@ -2,7 +2,8 @@
  * The AI workbench's side column shows one view at a time, picked by the switch at the top right
  * of the window (its title bar, on the AI page only), as an app's side panel is: the stage (the AI's panels, ui_ai_side.js), the
  * shape of a run at full size (ui_ai_run_map.js; the newest run, or one picked from the list or
- * from its step in the timeline), or the materials picker (ui_ai_toolbox.js) docked there.
+ * from its step in the timeline), the task's decisions (ui_ai_decisions.js), or the materials
+ * picker (ui_ai_toolbox.js) docked there.
  * Picking the view that is shown closes the column. Each view keeps its own pane, so going back
  * finds it as it was: a scrolled stage, materials picked but not handed over yet. The column is a
  * card of its own beside the timeline; its left edge drags it wider or narrower (kept on this
@@ -17,6 +18,7 @@ import { icon, iconButton } from './ui_ai_icons.js';
 import { runMapBox } from './ui_ai_run_map.js';
 import { closeToolbox, openToolbox, setToolboxHost, toolboxOpenFor } from './ui_ai_toolbox.js';
 import { openQuestions, panelSteps, renderStage, tabBar } from './ui_ai_side.js';
+import { renderDecisionsView } from './ui_ai_decisions.js';
 
 const WIDTH_KEY = 'anomalous.aiSideWidth';
 const WIDTH = { min: 340, start: 440 };
@@ -32,7 +34,7 @@ export function sideWidth() {
     }
 }
 
-export const VIEWS = { stage: ['panel', 'aiStage'], map: ['nodes', 'aiSideMap'], toolbox: ['sparkle', 'aiToolbox'] };
+export const VIEWS = { stage: ['panel', 'aiStage'], map: ['nodes', 'aiSideMap'], decisions: ['pin', 'aiSideDecisions'], toolbox: ['sparkle', 'aiToolbox'] };
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -204,6 +206,7 @@ export function drawSide(box, task, side, ctx, pickTab, arrived = null) {
     if (panelSteps(task).length) renderStage(panes.stage, task, side, ctx, arrived);
     else panes.stage.replaceChildren();
     if (side.view === 'map') renderMapView(panes.map, task, side, ctx);
+    if (side.view === 'decisions') renderDecisionsView(panes.decisions, task, ctx);
 }
 
 /**

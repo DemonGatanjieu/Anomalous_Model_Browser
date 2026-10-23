@@ -10,6 +10,8 @@
  * timeline brings it there, its questions are answered there, a toast says so while the user is
  * elsewhere), a run's shape at full size, or the materials picker. The header stays on top while
  * the timeline scrolls. The task list folds from the title bar's button and peeks from it.
+ * A step's words are ui_ai_step_body.js's; a decision the AI records shows as a card and the
+ * side column's "Decisions" view lists all of the task's (ui_ai_decisions.js).
  * Under the timeline the user can write to the AI on that task; the message waits until the AI
  * asks (get_answers) or runs its next step, and says whether it has. The list groups the tasks
  * by day, each with an icon for where it stands.
@@ -20,8 +22,7 @@
 import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { translate as t } from './locales.js';
-import { dayLabel, entrySummary, fetchActivity, timeLabel } from './activity_log.js';
-import { changeNodeId } from './activity_diff.js';
+import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
@@ -31,19 +32,17 @@ import { focusPanel, openQuestions, panelLine, panelSteps, stageNews, tabBar } f
 import { connectHint, waitingCard } from './ui_ai_connect.js';
 import { gateCard } from './ui_ai_gate.js';
 import { iconButton } from './ui_ai_icons.js';
-import { noteNode } from './ai_text_format.js';
 import { listToggle, renderTaskList, stateIcon } from './ui_ai_task_list.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
 import { locateNode, openModel, resultLinks, shared, strip, updateRunProgress } from './ui_ai_results.js';
 import { compareBar, setMarker } from './ui_ai_images.js';
-import { marksStep, openMarker } from './ui_ai_marker.js';
-import { toolboxCount, toolboxStep } from './ui_ai_toolbox.js';
+import { openMarker } from './ui_ai_marker.js';
+import { toolboxCount } from './ui_ai_toolbox.js';
+import { stepBody } from './ui_ai_step_body.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewLabel } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
-import { canvasChanges } from './ui_canvas_changes.js';
-import { deliveryState } from './ui_ai_delivery.js';
 import {
     activityIds, duration, groupSteps, lookTools, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
@@ -135,23 +134,7 @@ function stepRow(step, number) {
         text.title = detail;
         line.append(text);
     }
-    body.append(line);
-    if (step.tool === 'user_marks') {
-        body.append(marksStep(step, state.task.id, state.owner));
-    } else if (step.tool === 'user_toolbox') {
-        body.append(toolboxStep(step));
-    } else if (step.tool === 'user_activity') {
-        body.append(userChange(step));
-    } else if (step.tool === 'user_pictures') {
-        body.append(el('div', 'anomalous-ai-user-text', step.text || t('aiPicturesStep', { count: (step.results || []).length })),
-            deliveryState(step, 'aiPicturesSeen'));
-    } else if (step.tool === 'user_stop') {
-        body.append(el('div', 'anomalous-ai-user-text', t('aiRunStoppedByYou')), deliveryState(step));
-    } else if (step.kind === 'user') {
-        body.append(el('div', 'anomalous-ai-user-text', step.text), deliveryState(step));
-    } else if (step.text) {
-        body.append(noteNode(step.text));
-    }
+    body.append(line, ...stepBody(step, { taskId: state.task?.id, owner: state.owner, entries: state.entries, numberOf: id => state.numbers.get(id) }));
     const other = step.reply_to || step.replied;
     if (other) {
         body.append(iconButton(`anomalous-ai-reply-link${step.replied ? ' is-replied' : ''}`, step.replied ? 'chat' : 'undo',
@@ -173,19 +156,6 @@ function stepRow(step, number) {
     if (took) when.append(el('span', '', say(took)));
     row.append(body, when);
     return row;
-}
-
-/** A change the user made in Anomalous while the AI worked (an activity entry), and whether the AI knows. */
-function userChange(step) {
-    const box = el('div', 'anomalous-ai-user-change');
-    const entry = state.entries.get(step.activity);
-    box.append(el('div', 'anomalous-ai-user-text', entry ? entrySummary(entry) : step.text));
-    if (entry?.source === 'canvas') {
-        const note = el('span', 'anomalous-ai-link-note');
-        box.append(canvasChanges(entry, { locate: change => locateNode(changeNodeId(change), note) }), note);
-    }
-    box.append(deliveryState(step, 'aiChangeSeen', 'aiChangeWaiting'));
-    return box;
 }
 
 function looksRow(steps, number) {

@@ -8,7 +8,7 @@ import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_gates, ai_marks, ai_run_control, ai_task_canvas, ai_task_changes, ai_tasks, ai_toolbox
+from . import activity_log, ai_decisions, ai_gates, ai_marks, ai_run_control, ai_task_canvas, ai_task_changes, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -35,6 +35,7 @@ async def api_get(request):
     task = ai_tasks.get_task(request.match_info["task_id"])
     if task:
         task["canvas_mode"] = ai_task_canvas.mode_of(task)  # the task's own choice, else the user's default
+        task["decisions"], task["decisions_gap"] = ai_decisions.decisions(task), ai_decisions.gap(task)
     return web.json_response({"task": task}) if task else web.json_response({"error": "not_found"}, status=404)
 
 

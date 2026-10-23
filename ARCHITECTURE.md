@@ -268,7 +268,15 @@ covered by the `styles.css` manifest.
   of what is named) and "/" (`ui_ai_commands.js`: stop, undo, side views, new task, canvas mode,
   words to fill in); `api/ai_message_refs.py` checks what the "@" name and gives each to the AI
   with the message (in full, pictures attached; get_toolbox shares its `lookup`),
-  `tests/test_ai_message_refs.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
+  `tests/test_ai_message_refs.py`. `ui_ai_step_body.js` is what a timeline step says under its
+  title (the user's own steps with whether the AI has them, a decision's card, the AI's note).
+  `api/ai_decisions.py` keeps a task's key decisions: `log_decision` (the AI records what was
+  settled, why, what was left out, who decided, the steps it is about; a `decision` step), and
+  the user's own choices read from the task's steps (panel answers, gates, materials, the canvas
+  mode — `ai_task_canvas.set_mode` adds a `user_canvas` step — and stops); `GET` of a task adds
+  `decisions` and `decisions_gap` (runs and canvas changes since the AI's last one), begin_task
+  repeats them to an AI picking the task up. `ui_ai_decisions.js` draws the card and the side
+  column's Decisions view. `tests/test_ai_decisions.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
   step made and where it leads (and the strip of a task's results). `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a line per
   panel that brings it there): like the timeline it reads from the top down, the task's panels in

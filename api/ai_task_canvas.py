@@ -14,6 +14,7 @@ import contextvars
 import json
 import os
 import time
+import uuid
 
 from . import ai_tasks
 from .path_utils import atomic_write_json
@@ -59,6 +60,12 @@ def set_mode(task_id, mode):
         task = ai_tasks._load().get(task_id)
         if not task:
             raise ValueError("No such task")
+        if (task.get("canvas") or {}).get("mode", default_mode()) != mode:
+            # The user's choice: the AI hears of it, and it is one of the task's decisions (ai_decisions.py).
+            now = time.time()
+            ai_tasks._add_step(task, {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "user_canvas", "kind": "user", "ok": True,
+                                      "state": "done", "summary": "user_canvas", "canvas": mode, "delivered": False, "results": [],
+                                      "text": "The user chose that you work " + ("in a tab of the task's own." if mode == "new" else "on the canvas they have open.")})
         task["canvas"] = {**(task.get("canvas") or {}), "mode": mode}
         ai_tasks._save(task)
         canvas = dict(task["canvas"])

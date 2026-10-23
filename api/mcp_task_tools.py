@@ -3,7 +3,7 @@ work, report leaves a note for the user (with pictures made outside Anomalous's 
 show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
 reads what the user picked or typed on it."""
 
-from . import ai_marks, ai_message_refs, ai_panels, ai_run_control, ai_run_tracking, ai_task_runs, ai_tasks, ai_toolbox
+from . import ai_decisions, ai_marks, ai_message_refs, ai_panels, ai_run_control, ai_run_tracking, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -30,6 +30,9 @@ def begin_task(ctx, title, new_task=False):
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
+    decided = ai_decisions.lines(ai_tasks.get_task(task["id"]))
+    if decided:
+        answer["decisions"] = decided  # what was settled so far, the user's own choices in Anomalous too
     if task.get("about"):
         # Handed over from a model page, an image or a combo in Anomalous: the ids the tools take.
         answer["about"] = task["about"]
@@ -52,6 +55,15 @@ def report(ctx, text="", images=None, done=False, reply_to=None, task=None):
         answer["not_found"] = missing
         answer["note"] = "Pictures are paths inside ComfyUI's output folder (subfolder/name.png), as search_images gives them."
     return answer
+
+
+def log_decision(ctx, title, decision, reason="", rejected=None, by="user", related=None, task=None):
+    try:
+        step = ai_decisions.log(ctx.get("client") or "AI", title, decision, reason, rejected, by, related,
+                                session=ctx.get("session") or "", task_id=task or ctx.get("task"))
+    except ValueError as error:
+        raise ToolError(str(error))
+    return {"recorded": True, "step": step["id"], "related": step["decision"]["related"]}
 
 
 def show_panel(ctx, title, blocks, task=None):
@@ -251,6 +263,19 @@ TASK_TOOLS = dict([
                         "done": {"type": "boolean", "default": False},
                         "reply_to": {"type": "string", "description": "user_messages[].id of what you answer."},
                         "task": _TASK_PROP}),
+    _task_tool("log_decision", "Record a decision",
+               "Keeps a key decision of the task in Anomalous's AI workbench, where the user looks back on how the "
+               "task went. Talk it over wherever you like, your own chat too; once you and the user settle something "
+               "(a style, a model, a fix, what to drop), record it here: title (what it is about), decision (what was "
+               "settled), reason, rejected (the options left out), by (user: they chose; ai: your own call; "
+               "together), related (ids of this task's steps it is about: a run, the marks, a panel). The user's own "
+               "choices in Anomalous (panel answers, allowing a step, materials) are kept already; record the rest.",
+               log_decision, {"title": {"type": "string"}, "decision": {"type": "string"}, "reason": {"type": "string"},
+                              "rejected": {"type": "array", "items": {"type": "string"}, "maxItems": ai_decisions.MAX_REJECTED},
+                              "by": {"type": "string", "enum": list(ai_decisions.BY), "default": "user"},
+                              "related": {"type": "array", "items": {"type": "string"}, "maxItems": ai_decisions.MAX_RELATED},
+                              "task": _TASK_PROP},
+               ["title", "decision"]),
     _task_tool("show_panel", "Show the user a panel",
                "Draws a panel in the AI workbench, in Anomalous's own style, from blocks: to compare pictures side by "
                "side, present models with their covers, lay out settings, a table, and to ask (buttons or a line of "

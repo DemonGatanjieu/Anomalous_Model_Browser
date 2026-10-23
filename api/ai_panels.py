@@ -560,12 +560,13 @@ def attach_pending(result, client, task_id=None):
     if waiting:
         data["still_waiting"] = waiting
     data["user_notice"] = (
-        "The user sent new input in the AI workbench. Read user_messages / user_answers and follow them; reply to a "
-        "message in Anomalous with report(reply_to=<its id>), where the user reads, not only in your chat; "
+        "The user sent new input in the AI workbench. Read user_messages / user_answers and follow them; you may "
+        "reply in your chat or in Anomalous (report(reply_to=<its id>)), but once you and the user settle what to do, "
+        "record it with log_decision so the decision stays in Anomalous; "
         "kind=change messages are changes the user made themselves while you worked: keep them, do not undo them; "
         "kind=marks messages are places the user marked on a picture to change (the marked picture is attached): "
-        "answer them in Anomalous, not in your chat: report(reply_to=<its id>) with what you see and how you would "
-        "fix it (show_panel can show the picture with your own marks), and ask_user which fix to do; "
+        "say what you see and how you would fix it (show_panel can show the picture with your own marks), "
+        "ask_user which fix to do, and log_decision the fix chosen (related: the marks' id); "
         "kind=toolbox messages are the nodes, combos, workflows, prompts and models the user picked for you to use; "
         "kind=stop: the user stopped your run, so do not run it again until they say what to change; "
         "kind=pictures: pictures the user handed you (attached), with made_with read from each picture's own workflow."

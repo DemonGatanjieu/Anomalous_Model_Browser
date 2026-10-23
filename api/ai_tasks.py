@@ -51,7 +51,7 @@ RUN_WATCH_SECONDS = 30 * 60
 MEDIA_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".mp4", ".webm"}
 
 # What each tool is (its kind, stage and gate) is action_catalog.py's.
-OWN_STEPS = {"report", "show_panel", "ask_user", "show_run_map"}  # make their step themselves (with its text or panel)
+OWN_STEPS = {"report", "log_decision", "show_panel", "ask_user", "show_run_map"}  # make their step themselves (with its text or panel)
 
 _lock = threading.RLock()
 _tasks = None  # id -> task
