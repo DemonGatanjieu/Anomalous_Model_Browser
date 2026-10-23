@@ -27,7 +27,7 @@ INFO = {
 
 class FindNodesTests(unittest.TestCase):
     def setUp(self):
-        patcher = mock.patch.object(mcp_canvas_edit, "_object_info", return_value=INFO)
+        patcher = mock.patch.object(mcp_canvas_edit, "object_info", return_value=INFO)
         patcher.start()
         self.addCleanup(patcher.stop)
 

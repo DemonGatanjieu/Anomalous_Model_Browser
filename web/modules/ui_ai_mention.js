@@ -1,7 +1,9 @@
 /**
  * "@" and "/" in the AI workbench's message box (ui_ai_message.js), as chat apps have them.
- * "@" lists what the user can point the AI at: this task's pictures, combos, models, workflows,
- * prompts, custom node packs and node types (the materials picker's data, ai_toolbox_data.js).
+ * "@" lists what the user can point the AI at: this task's pictures, the gallery's newest ones
+ * (and, for what is typed, those the gallery's search finds: prompt words, models, seed), combos,
+ * models, workflows, prompts, custom node packs and node types (the materials picker's data,
+ * ai_toolbox_data.js). The picture button's panel (ui_ai_gallery_pick.js) adds pictures as well.
  * Taking one writes "@name" into the text and keeps what it is; the message then carries exactly
  * what each "@" points at (api/ai_message_refs.py), shown as chips under the box until it is
  * sent. "/" at the start lists the commands (ui_ai_commands.js): some act at once, some fill in
@@ -13,10 +15,12 @@ import { keptCatalog, prefetchToolbox, searchItems } from './ai_toolbox_data.js'
 import { coverUrl } from './ui_ai_toolbox_cards.js';
 import { sourceBadge } from './ui_ai_toolbox_icons.js';
 import { packItems, pageNodes } from './ui_ai_toolbox.js';
-import { outputUrl } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
+import { galleryPictures, pictureItem, thumbUrl } from './ui_ai_gallery_pick.js';
 
 const SHOWN = 8;
+const RECENT = 30; // the gallery's newest pictures "@" offers
+const SEARCH_MS = 250;
 const ORDER = ['pictures', 'combos', 'models', 'workflows', 'prompts', 'packs', 'nodes'];
 
 function el(tag, className, text) {
@@ -36,7 +40,7 @@ function pictures(task) {
             const id = [item.subfolder, item.filename].filter(Boolean).join('/');
             if (seen.has(id)) continue;
             seen.add(id);
-            out.push({ kind: 'pictures', id, title: item.filename, image: item, haystack: id.toLowerCase() });
+            out.push(pictureItem(item));
         }
     }
     return out;
@@ -55,7 +59,7 @@ function everything(task) {
 
 function lead(item) {
     const box = el('span', 'anomalous-ai-mention-lead');
-    const url = item.kind === 'pictures' ? outputUrl(item.image) : ['combos', 'workflows', 'models'].includes(item.kind) ? coverUrl(item) : '';
+    const url = item.kind === 'pictures' ? thumbUrl(item.image) : ['combos', 'workflows', 'models'].includes(item.kind) ? coverUrl(item) : '';
     if (url) {
         const img = el('img');
         img.src = url;
@@ -71,13 +75,14 @@ function lead(item) {
     return box;
 }
 
-const kindWords = item => [item.kind === 'pictures' ? t('aiMentionPicture') : t(`aiToolboxKind_${item.kind}`),
+const kindWords = item => [item.kind === 'pictures' ? t(item.gallery ? 'aiMentionGallery' : 'aiMentionPicture') : t(`aiToolboxKind_${item.kind}`),
     item.kind === 'models' ? item.type : item.kind === 'prompts' && item.source ? t(`aiTbPromptFrom_${item.source}`) : ''].filter(Boolean).join(' · ');
 
 /**
  * "@" and "/" for `field` in the message box `box`. `source`: {task(), commands()}. Returns
  * {keydown(event) (true when the list took the key), refs(text) (what the "@" still in `text`
- * point at), clear()}.
+ * point at), add(item) (names it at the end of the text), pictures() and count() (how many
+ * pictures, and things, the text names), clear()}.
  */
 export function mentions(field, box, source) {
     const list = el('div', 'anomalous-ai-mention');
@@ -88,6 +93,31 @@ export function mentions(field, box, source) {
     box.append(list, chips);
     let refs = [];
     let open = null; // {mode: 'at' | 'slash', start, items, at}
+    let recent = null; // the gallery's newest pictures, read when "@" first opens
+    let found = { query: null, items: [] }; // what the gallery's search found for a query
+    let timer = null;
+
+    /** The gallery's pictures for `query`: the newest at once, what its search finds once it answers. */
+    function gallery(query) {
+        const keep = images => images.filter(image => image.media_type !== 'video').map(image => pictureItem(image, true));
+        if (!recent) {
+            recent = [];
+            galleryPictures(1, RECENT).then(({ images }) => {
+                recent = keep(images);
+                if (open?.mode === 'at') update();
+            }).catch(() => {});
+        }
+        clearTimeout(timer);
+        if (query.length >= 2 && found.query !== query) {
+            timer = setTimeout(() => {
+                galleryPictures(1, SHOWN, query).then(({ images }) => {
+                    found = { query, items: keep(images) };
+                    if (open?.mode === 'at') update();
+                }).catch(() => {});
+            }, SEARCH_MS);
+        }
+        return { newest: recent, searched: found.query === query ? found.items : [] };
+    }
 
     const close = () => {
         open = null;
@@ -174,7 +204,12 @@ export function mentions(field, box, source) {
             const words = query.toLowerCase();
             items = source.commands().filter(command => !words || command.name.toLowerCase().includes(words) || command.id.includes(words));
         } else {
-            items = searchItems(everything(source.task()), query).slice(0, SHOWN);
+            const all = everything(source.task());
+            const { newest, searched } = gallery(query);
+            const known = new Set(all.filter(item => item.kind === 'pictures').map(item => item.id));
+            const matched = searchItems([...all, ...newest.filter(item => !known.has(item.id))], query);
+            const shown = new Set(matched.filter(item => item.kind === 'pictures').map(item => item.id));
+            items = [...matched, ...searched.filter(item => !shown.has(item.id))].slice(0, SHOWN);
         }
         open = { mode: slash ? 'slash' : 'at', start: caret - query.length - 1, items, at: 0 };
         draw();
@@ -205,6 +240,15 @@ export function mentions(field, box, source) {
             return false;
         },
         refs: text => refs.filter(ref => text.includes(`@${ref.label}`)).map(({ kind, id, label }) => ({ kind, id, label })),
+        add(item) {
+            if (refs.some(ref => ref.kind === item.kind && ref.id === item.id)) return;
+            const text = field.value.replace(/\s+$/, '');
+            field.value = `${text}${text ? ' ' : ''}@${item.title} `;
+            refs.push({ kind: item.kind, id: item.id, label: item.title, item });
+            drawChips();
+        },
+        pictures: () => refs.filter(ref => ref.kind === 'pictures' && field.value.includes(`@${ref.label}`)).length,
+        count: () => refs.filter(ref => field.value.includes(`@${ref.label}`)).length,
         clear() {
             refs = [];
             close();

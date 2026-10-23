@@ -1,6 +1,6 @@
 """Gates: what the user lets AI apps do through Anomalous's MCP endpoint without asking first.
 
-Each acting tool has a gate in action_catalog.py (canvas, gpu, download, network) and each gate
+Each acting tool has a gate in action_catalog.py (canvas, gpu, download, network, files) and each gate
 a policy the user sets on the AI workbench: "auto" (go ahead), "ask" (wait for the user's OK)
 or "never". mcp_server.py asks check() before running a tool. With "ask" the tool's step waits
 in state "asking", showing what it would do, for up to WAIT_SECONDS: the user's Allow lets the
@@ -20,7 +20,7 @@ from . import action_catalog, ai_tasks
 from .path_utils import atomic_write_json
 
 POLICIES = ("auto", "ask", "never")
-DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto"}
+DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
 WAIT_SECONDS = 50  # below the minute many AI apps give a tool call
 ALLOWED_SECONDS = 30 * 60  # an Allow the AI did not wait for holds this long for the same call
 MAX_ARGS = 8
@@ -58,8 +58,8 @@ def describe(tool, arguments):
     for key, value in list((arguments or {}).items())[:MAX_ARGS]:
         if key == "task":
             continue
-        if key == "model_id":
-            value = ai_tasks._model_result(value).get("name") or value
+        if key == "model_id":  # its name, and the folder it is in
+            value = " · ".join(filter(None, (ai_tasks._model_result(value).get("name") or value, str(value).split(":")[0])))
         out.append({"label": key, "value": ai_tasks._short(value, 400)})
     return out
 

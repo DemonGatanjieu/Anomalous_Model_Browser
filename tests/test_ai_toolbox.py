@@ -31,7 +31,7 @@ class ToolboxTests(unittest.TestCase):
         isolate()
         if os.path.exists(FAVOURITES):
             os.remove(FAVOURITES)
-        for target, value in ((ai_toolbox, "_path"), (mcp_canvas_edit, "_object_info")):
+        for target, value in ((ai_toolbox, "_path"), (mcp_canvas_edit, "object_info")):
             patcher = mock.patch.object(target, value, (lambda: FAVOURITES) if value == "_path" else (lambda ctx: INFO))
             patcher.start()
             self.addCleanup(patcher.stop)

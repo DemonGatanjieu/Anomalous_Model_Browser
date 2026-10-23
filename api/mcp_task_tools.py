@@ -177,9 +177,9 @@ def get_toolbox(ctx, task=None):
         if found.get("not_found"):
             answer["page_only_nodes"] = found["not_found"]  # helpers that live only in the page: add_node takes them
     if box.get("packs"):
-        from .mcp_canvas_edit import _object_info
+        from .mcp_canvas_edit import object_info
 
-        info = _object_info(ctx)
+        info = object_info(ctx)
         answer["packs"] = []
         for pack in box["packs"]:
             types = sorted(name for name, item in info.items() if ai_toolbox.source_of(item) == pack)

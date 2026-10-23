@@ -28,7 +28,7 @@ _info = {"at": 0.0, "data": None}
 _info_lock = threading.Lock()
 
 
-def _object_info(ctx):
+def object_info(ctx):
     """ComfyUI's node definitions, as its own page reads them (kept a little while)."""
     with _info_lock:
         if _info["data"] is None or time.monotonic() - _info["at"] > INFO_SECONDS:
@@ -37,6 +37,12 @@ def _object_info(ctx):
                 raise ToolError(f"ComfyUI's node list is unavailable ({status}).")
             _info.update(at=time.monotonic(), data=data)
         return _info["data"]
+
+
+def forget_object_info():
+    """After a model moved: the next look reads ComfyUI's lists anew."""
+    with _info_lock:
+        _info["data"] = None
 
 
 def _input(name, conf, required, choices):
@@ -68,7 +74,7 @@ def _allowed(ctx, types):
     """Refuses node types the user's "only" picks leave out, before the page is asked."""
     if not ctx.get("task"):
         return
-    info = _object_info(ctx)
+    info = object_info(ctx)
     refused = ai_toolbox.refused(ctx["task"], types, info)
     if refused:
         box = ai_toolbox.effective(ai_tasks.get_task(ctx["task"])) or {}
@@ -93,7 +99,7 @@ def _node(type_name, info, choices):
 
 
 def find_nodes(ctx, query="", types=None):
-    info = _object_info(ctx)
+    info = object_info(ctx)
     if types:
         missing = [name for name in types if name not in info]
         found = [_node(name, info[name], MAX_CHOICES_NAMED) for name in types if name in info][:MAX_FOUND]

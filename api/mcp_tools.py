@@ -1,6 +1,7 @@
 """The MCP endpoint's (mcp_server.py) reading tools: views of the library (mcp_actions.py acts).
 
-`call_tool` runs any tool of a registry, these and mcp_actions.py's.
+`call_tool` runs any tool of a registry, these and mcp_actions.py's. search_models and get_model
+are offered through mcp_model_use.py, which adds what loads each model.
 
 Each tool is a plain function over the same stores the browser's pages use (model catalog
 and sidecars, output gallery, combos, workflow recipes, saved prompts, generated audio, scan
@@ -444,20 +445,6 @@ TOOLS = dict([
     _tool("library_overview", "Library overview",
           "How many models of each type and base model the user has, how many are scanned, and how many "
           "combos, workflow recipes and saved prompts they kept. A good first call.", library_overview),
-    _tool("search_models", "Search models",
-          "Find model files (checkpoints, LoRAs, VAEs…) by name, trigger word or base model. Returns model_id for get_model.",
-          search_models, {
-              "query": _QUERY,
-              "type": {"type": "string", "description": "ComfyUI models folder, e.g. checkpoints, loras, vae, diffusion_models."},
-              "base_model": {"type": "string", "description": "Part of the base model name, e.g. SDXL, Pony, Flux, SD 1.5."},
-              "source": {"type": "string", "enum": ["civitai", "inferred_from_file", "not_scanned"],
-                         "description": "Where the model's information came from."},
-              "limit": _LIMIT}),
-    _tool("get_model", "Model details",
-          "Everything known about one model: Civitai name and link, trigger words, base model, description, "
-          "the user's own name and notes. include_cover attaches its cover picture.",
-          get_model, {"model_id": {"type": "string", "description": "From search_models."},
-                      "include_cover": {"type": "boolean", "default": False}}, ["model_id"]),
     _tool("scan_report", "Scan status",
           "Which models are matched on Civitai, which are not and why, which were never scanned, and what the last scan did.",
           scan_report),

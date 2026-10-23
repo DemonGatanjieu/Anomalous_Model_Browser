@@ -30,6 +30,11 @@ LORA_MARKS = ("lora_up.", "lora_down.", "lora_a.", "lora_b.", "lora.up.", "lora.
               "lokr_w1", ".lora_linear_layer.", "dora_scale")
 CONTROL_MARKS = ("control_model_", "input_hint_block", "controlnet_cond_embedding", "controlnet_blocks",
                  "controlnet_x_embedder", "zero_convs", "controlnet_mid_block")
+# Tensors only a model patch has (ComfyUI's "Load Model Patch" node, models/model_patches): Anima
+# LLLite, the Qwen-Image block-wise and Z-Image Fun ControlNets, SigLIP features, Wan's Uni3C. Some
+# are called ControlNets, but the ControlNet loader cannot read them.
+PATCH_KEYS = {"lllite_conditioning1.conv1.weight", "controlnet_blocks.0.y_rms.weight", "feature_embedder.mid_layer_norm.bias",
+              "control_all_x_embedder.2-1.weight", "controlnet_patch_embedding.weight"}
 DIFFUSION_STARTS = ("double_blocks.", "single_blocks.", "joint_blocks.", "transformer_blocks.",
                     "single_transformer_blocks.", "input_blocks.", "blocks.0.self_attn", "net.blocks.", "net.x_embedder.")
 
@@ -210,6 +215,8 @@ def _kind(keys, raw, text):
     names = set(keys)
     if names and names <= EMBEDDING_KEYS and names & {"emb_params", "clip_l", "clip_g", "string_to_param"}:
         return "embeddings", True
+    if names & PATCH_KEYS:
+        return "model_patches", True
     if any(mark in text for mark in CONTROL_MARKS):
         return "controlnet", True
     diffusion = any(key.startswith(("model.diffusion_model.", "diffusion_model.") + DIFFUSION_STARTS) for key in keys)
@@ -252,7 +259,7 @@ def classify(fmt, header):
     raw = "\n".join(keys).lower()
     text = raw.replace(".", "_")
     kind, sure = _kind(keys, raw, text)
-    if kind in ("vae", "text_encoders", "clip_vision", "upscale_models", "ipadapter"):
+    if kind in ("vae", "text_encoders", "clip_vision", "upscale_models", "ipadapter", "model_patches"):
         base, base_sure = "", True  # shared by several base models: the type's own folder
     elif kind == "embeddings":
         base, base_sure = _embedding_base(header), True

@@ -85,7 +85,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | 工具 | 查什么 |
 |---|---|
 | library_overview | 各类模型的数量、底模分布、扫描情况，存了多少搭配、工作流和提示词 |
-| search_models / get_model | 按名字、触发词、底模、来源找模型；看某个模型的 C 站信息、描述、你写的备注，可以附上封面 |
+| search_models / get_model | 按名字、触发词、底模、来源找模型；看某个模型的 C 站信息、描述、你写的备注，可以附上封面。每个模型都写明哪些节点能加载它；放错文件夹的（比如名字叫 ControlNet、其实是模型补丁的 Anima LLLite）会说明该放哪、放在这里加载不了 |
 | scan_report | 哪些模型匹配上了 C 站，哪些没有、原因是什么，哪些还没扫，上次扫描做了什么 |
 | search_images / get_image_info | 按提示词、模型、参数找出图；看某张图的全部生成参数，可以附上缩略图 |
 | list_combos | 你的搭配（主模型 + LoRA + 提示词） |
@@ -110,6 +110,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | download_missing_models | 下载当前工作流缺的模型：只下能确定来源的（C 站按指纹找到、或工作流带着文件链接），放在设置里“模型下载”说的位置，核对指纹后自动换上 |
 | download_model | 按链接（C 站模型版本、Hugging Face / GitHub 文件）或 C 站指纹下载一个模型到指定类型的文件夹，不覆盖已有文件 |
 | download_status | 看下载进度和结果 |
+| move_model | 把放错文件夹的模型挪到它该在的文件夹（封面、备注跟着走），和模型页“整理”里的“挪过去”一样；不会盖掉同名文件。默认先问你 |
 | list_voices / speak | 列出 Anomalous TTS 的角色；让某个角色读一段台词并保存（最多等两分钟） |
 | begin_task / report | 在 AI 工作台里起一个任务的标题；给你留言、交上它用别的方式做出来的图、结束任务（见第 5 节） |
 | ask_user | 在 AI 工作台里问你一个问题：几个选项（AI 推荐的那个标着“推荐”），加一行“都不是？写下你的想法”；AI 在同一步里等你回答 |
@@ -151,7 +152,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 
 **运行进度**：AI 运行工作流后，时间线上那一步下面有进度条（排队时前面还有几个；运行时哪个节点、第几步、节点做完几个）。进度条右边是百分比，旁边是红色的 **■ 停止**：一点就停这一次运行（还在排队的移出队列，正在跑的立刻中断，只动这次运行），AI 也会收到“你停止了运行”，不会自己再跑一遍。任务工具栏的运行状态按钮旁边也有一个小 ■。进度条下面写着当前节点 **约剩多久**、每步几秒、**显存剩多少**，再下面一行是 ComfyUI **控制台**最新的那一行（比如 `Model Initializing ...`、`Requested to load …`），点开能看最近几行；这些 AI 也同样看得到。出图刚排上队，AMB 会读这次的工作流算出每个采样器要在多大的图上采样：如果是放大模型放大后又整张重新采样、尺寸超过这张显卡的舒适范围、或者要解码特别大的图，会出现黄色提醒，告诉你可能很慢或爆显存，以及怎么改（只想放大就用纯模型超分，或者先缩小、减步数、分块解码）；AI 收到同样的提醒，会被要求先问你要不要停（它也能用 `stop_run` 停自己的运行）。AI 用 `run_status` 问同样的进度，或者等到跑完再继续，不会凭时间猜；运行期间 AI 调用别的工具时，回复里的 `your_run` 也带着一句当前进度，跑完后告诉它一次结果，所以它不用自己去翻输出文件夹或者看屏幕。
 
-**流程图和关卡**：任务标题下面的一排流程按 AI 做事的先后列出它经过的阶段（模型、搭配、提示词、运行、挑图……），点一下跳到那一步。任务列表上方的 **关卡** 里，改画布、用显卡出图配音、下载模型、联网扫描四类事各自可以选 **直接做 / 先问我 / 不许做**（默认只有下载先问）。选了“先问我”，AI 的那一步会停在时间线上列出它要做什么，你点 **允许** 才做；点 **不要** 时可以写原因或想怎么改，AI 会收到。AI 最多等 50 秒，等不及的话会先去问你的回答（`get_answers`），你允许后它再做一次，不会问第二遍。
+**流程图和关卡**：任务标题下面的一排流程按 AI 做事的先后列出它经过的阶段（模型、搭配、提示词、运行、挑图……），点一下跳到那一步。任务列表上方的 **关卡** 里，改画布、用显卡出图配音、下载模型、联网扫描、挪动模型文件五类事各自可以选 **直接做 / 先问我 / 不许做**（默认下载和挪文件先问）。选了“先问我”，AI 的那一步会停在时间线上列出它要做什么，你点 **允许** 才做；点 **不要** 时可以写原因或想怎么改，AI 会收到。AI 最多等 50 秒，等不及的话会先去问你的回答（`get_answers`），你允许后它再做一次，不会问第二遍。
 
 **AI 干活时你自己改的东西**：AI 在做一个任务时（10 分钟内调用过），你在 AMB 里做的改动，比如画布上的改动、改模型信息、存搭配或提示词，会以“你在 AMB 里改了”出现在这个任务的时间线上，画布改动带修改前后。AI 下一次调用任何工具时会收到它（并被告知保留你的改动，不要改回去），时间线上写着它是否已经知道。操作记录页里，AI 做的和 AI 干活时你做的记录旁边有 **AI 任务 →**。
 
@@ -175,7 +176,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 
 **决策记录**：讨论在哪里都行，在 AI 自己的对话框里聊也可以，但商量出的结论会留在 AMB。AI 用 `log_decision` 把“定了什么、为什么、没选哪些、谁定的、跟哪几步有关”记成时间线上一张带 📌 的卡片；你在 AMB 里自己做的选择（面板上的回答、允许或不允许、交出去的素材、AI 改画布的地方、停止运行）会自动算进去。窗口右上角的 **决策** 按时间列出这个任务的所有决策，每条都能跳回时间线上的那一步；AI 跑了图或改了画布却很久没记录决策时，这里会轻轻提一句。AI 下次接手这个任务时，也会先收到这些决策。
 
-**留言框里的 @ 和 /**：在任务下面的留言框里打 **@**，会弹出一张能搜索的列表：这个任务出过的图、搭配、模型、工作流、提示词、节点包、节点。选中的会写成“@名字”，留言框下面显示成小标签；发出去时 AI 收到的是你指的那个东西本身（模型的准确 ID、搭配的参数、图片和它的生成参数），不用它去猜。在开头打 **/** 是快捷指令：/停止、/撤销、/展台、/结构、/素材、/专用标签页、/当前画布、/新任务 马上生效，不用等 AI；/重跑、/解释、/继续 帮你写好一句话，改一改再发。↑↓ 选，回车或 Tab 确认，Esc 关掉。
+**留言框里的 @ 和 /**：在任务下面的留言框里打 **@**，会弹出一张能搜索的列表：这个任务出过的图、图库里最新的图（打字时也按提示词、模型、seed 在图库里搜）、搭配、模型、工作流、提示词、节点包、节点。留言框左边的 **图片按钮** 打开图库：点选几张（一次最多 8 张），点 **加进消息**，它们就像 @ 一样写进留言。选中的会写成“@名字”，留言框下面显示成小标签；发出去时 AI 收到的是你指的那个东西本身（模型的准确 ID、搭配的参数、图片和它的生成参数），不用它去猜。在开头打 **/** 是快捷指令：/停止、/撤销、/展台、/结构、/素材、/专用标签页、/当前画布、/新任务 马上生效，不用等 AI；/重跑、/解释、/继续 帮你写好一句话，改一改再发。↑↓ 选，回车或 Tab 确认，Esc 关掉。
 
 **AI 画的面板**（`show_panel`）显示在工作台右边的**展台**上，后面再多步骤也不会被顶走。右边这一栏一次只显示一样东西，用窗口右上角的三个按钮切换：**展台**（有问题等你回答时带个小黄点）、**节点结构**（AI 跑过的节点结构图，大图；上面可以选看哪一次运行，时间线里运行那一步的“在右侧看大图”也会打开它）、**素材**。再点一下正亮着的那个就收起这一栏；切走再切回来，展台的位置和挑了一半的素材都还在。任务标题和那一排按钮在时间线往下翻时一直停在顶上。时间线上只留一行“在展台打开 ▸”。展台默认跟着最新的面板，你翻回旧面板就停在你看的那张；窗口窄的时候，时间线和展台变成两个标签页切换。右边这一栏是一张单独的卡片，它左边的整条空隙都能拖着调宽窄（鼠标靠近时整条边会亮起；点一下后也能按 ← → 调；AMB 记得你调的宽度，双击恢复默认），时间线总会留够地方。窗口左上角的按钮收起 / 展开左边的任务列表；收起以后，鼠标移到这个按钮上，任务列表会临时浮出来，点一个任务或者鼠标移开就自动收回。素材在右边这一栏里时，鼠标移过卡片不会再跳进详细说明，点右边的 ⓘ 才看。小窗里素材是一行一个的列表（图标、名字、来源、勾选），搜索框旁边三个小图标是“全部 / 已选 / 常用”；展开成大窗口就是带预览的卡片。这些地方的滚动条平时是隐藏的，鼠标移到能滚动的那一块上才显出来。AI 可以用插件提供的“积木”拼面板：标题和文字（也可以是提示、警告）、图片（一排、网格，或者两张并排对比）、你的模型（带封面的卡片，点了打开）、表格、列表、参数、进度条。它还能**问你**：几个按钮（单选或多选）、一行输入框。你的回答会交出去，等 AI 用 `get_answers` 来取（它可以等你最多一分钟）；每个问题下面有一个状态标签：琥珀色的 **已发送 · 等 AI 来取**，AI 拿到后变成绿色的 **AI 已收到 · 时间**。你的留言、批注、发给它的图片也是一样。不想答的题点 **这题跳过**，AI 会知道你跳过了，自己拿主意。AMB 没法主动叫醒 AI，所以回答之后要等它下一次来问。
 
@@ -212,4 +213,4 @@ While ComfyUI runs, Anomalous serves an MCP endpoint at `http://127.0.0.1:8188/a
 
 Since 1.62 the **AI workbench** page keeps every step an AI app takes through this endpoint, grouped into tasks (named with `begin_task`, else one app's calls without a 20-minute pause): what it is currently running (`running` in real time) and what it looked up, changed, ran, downloaded, scanned or spoke, its notes (`report`, which also hands in pictures made another way), and what each step made, with links to the picture, the model, the combo, the canvas change (find or undo) and the audio. It updates live; the rail gets a dot while you are elsewhere. With `show_panel` the AI draws a panel there from fixed blocks (text, pictures to compare, your models as cards, tables, settings, progress, buttons and a text line); the user's answers and task messages are returned on `get_answers` (which can wait up to 55 s) and are also automatically attached once to the AI's next successful tool call. Blocks are checked on the server and drawn as text; nothing the AI sends runs.
 
-Reading tools: library overview, model search and details (optionally with the cover), scan status, output-image search and generation settings (optionally with a thumbnail), combos, workflow recipes, saved prompts, generated audio and the activity log. Acting tools: read the open workflow, write prompts, swap a node's model, add a LoRA, place a combo, check and fix missing models, run the workflow, open a model in Anomalous, start scans, list Anomalous TTS voices and have one speak. Canvas actions need ComfyUI open in a browser on this computer; each is one Ctrl+Z step and is logged as the AI's. Nothing deletes or renames files. Only this computer may connect; requests through a proxy, from other hosts or from web pages are refused. When your AI app uses a cloud model, what the tools return (and any attached picture) is sent to that provider.
+Reading tools: library overview, model search and details (optionally with the cover; each model says which node types load it, and a model in the wrong folder for what it is says where it belongs), scan status, output-image search and generation settings (optionally with a thumbnail), combos, workflow recipes, saved prompts, generated audio and the activity log. Acting tools: read the open workflow, write prompts, swap a node's model, add a LoRA, place a combo, check and fix missing models, run the workflow, open a model in Anomalous, start scans, list Anomalous TTS voices and have one speak. Canvas actions need ComfyUI open in a browser on this computer; each is one Ctrl+Z step and is logged as the AI's. Nothing deletes or renames files; `move_model` moves a misfiled model (with its covers and notes) to its folder, after the user says yes unless the "files" gate lets it go ahead. Only this computer may connect; requests through a proxy, from other hosts or from web pages are refused. When your AI app uses a cloud model, what the tools return (and any attached picture) is sent to that provider.

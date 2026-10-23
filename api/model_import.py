@@ -44,7 +44,7 @@ from .model_download import (
 from .path_utils import resolve_within
 
 KINDS = ("checkpoints", "loras", "vae", "text_encoders", "diffusion_models", "controlnet", "embeddings",
-         "clip_vision", "upscale_models", "ipadapter")
+         "clip_vision", "upscale_models", "ipadapter", "model_patches")
 SEARCH_DEPTH = 2
 SEARCH_LIMIT = 20000
 TIME_SLACK_MS = 2000

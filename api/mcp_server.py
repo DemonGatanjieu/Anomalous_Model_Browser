@@ -27,10 +27,11 @@ from . import ai_gates, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
+from .mcp_model_use import MODEL_TOOLS
 from .mcp_task_tools import TASK_TOOLS
 from .mcp_tools import TOOLS as READ_TOOLS, call_tool
 
-TOOLS = {**READ_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **mcp_apps.APP_TOOLS}
+TOOLS = {**READ_TOOLS, **MODEL_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **mcp_apps.APP_TOOLS}
 CAPABILITIES = {
     "tools": {"listChanged": False}, "prompts": {"listChanged": False}, "resources": {"listChanged": False},
     "extensions": {mcp_apps.EXTENSION: {"mimeTypes": [mcp_apps.MIME]}},  # the card in the conversation (mcp_apps.py)

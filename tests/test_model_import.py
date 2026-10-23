@@ -99,6 +99,11 @@ class KindTests(unittest.TestCase):
         self.assertEqual(vision["kind"], "clip_vision")
         control = kind_of(tensors("control_model.input_hint_block.0.weight", "control_model.zero_convs.0.0.weight"))
         self.assertEqual(control["kind"], "controlnet")
+        # Model patches: ControlNets by name, but only "Load Model Patch" reads them (models/model_patches).
+        lllite = kind_of(tensors("lllite_conditioning1.conv1.weight", "lllite_modules.0.down.weight"))
+        self.assertEqual(lllite, {"kind": "model_patches", "base": "", "sure": True})
+        blockwise = kind_of(tensors("controlnet_blocks.0.y_rms.weight", "controlnet_blocks.0.img_mod.weight", "img_in.weight"))
+        self.assertEqual(blockwise["kind"], "model_patches")
 
     def test_embeddings(self):
         self.assertEqual(kind_of(tensors("clip_l", "clip_g")), {"kind": "embeddings", "base": "SDXL", "sure": True})

@@ -101,31 +101,54 @@ export function renderTaskList(box, view) {
     box.replaceChildren(head, actions, ...(filters.children.length > 1 ? [filters] : []), list);
 }
 
-const PEEK_LEAVE_MS = 280;
+const PEEK_LEAVE_MS = 350;
+const PEEK_SLACK = 12;
 
 /**
  * The button that shows or folds the column (`onToggle()`), for the window's title bar. While
- * the column is folded, the pointer on it, or on the column it brings, shows the column over
- * the page; leaving both, or picking a task, puts it away again.
+ * the column is folded, the pointer on it brings the column over the page; it stays while the
+ * pointer is anywhere in the box around the button and the column (the way down between them
+ * too, however slowly it is crossed), and goes a moment after the pointer leaves that box, or
+ * at once when a task is picked.
  */
 export function listToggle(page, onToggle) {
-    const node = iconButton('anomalous-ai-list-toggle', 'sidebar', t('aiTasksToggle'), () => {
+    let timer = null;
+    const stop = () => {
+        clearTimeout(timer);
+        timer = null;
         page.classList.remove('is-peeking');
+        document.removeEventListener('pointermove', follow);
+    };
+    const node = iconButton('anomalous-ai-list-toggle', 'sidebar', t('aiTasksToggle'), () => {
+        stop();
         onToggle();
     }, { iconOnly: true });
-    let timer = null;
-    const peek = (on) => {
+    // The box around the button and the column it brings: the pointer inside keeps it shown.
+    function inside(x, y) {
+        const list = page.querySelector('.anomalous-ai-tasks')?.getBoundingClientRect();
+        const button = node.getBoundingClientRect();
+        if (!list?.width) return false;
+        return x >= Math.min(list.left, button.left) - PEEK_SLACK && x <= Math.max(list.right, button.right) + PEEK_SLACK
+            && y >= Math.min(list.top, button.top) - PEEK_SLACK && y <= Math.max(list.bottom, button.bottom) + PEEK_SLACK;
+    }
+    function follow(event) {
+        if (!page.isConnected || !node.isConnected || !page.classList.contains('is-peeking')) return stop();
+        if (inside(event.clientX, event.clientY)) {
+            clearTimeout(timer);
+            timer = null;
+        } else if (!timer) {
+            timer = setTimeout(stop, PEEK_LEAVE_MS);
+        }
+    }
+    node.addEventListener('pointerenter', () => {
+        if (!page.classList.contains('tasks-collapsed')) return;
         clearTimeout(timer);
-        if (on) page.classList.toggle('is-peeking', page.classList.contains('tasks-collapsed'));
-        else timer = setTimeout(() => page.classList.remove('is-peeking'), PEEK_LEAVE_MS);
-    };
-    node.addEventListener('pointerenter', () => peek(true));
-    node.addEventListener('pointerleave', () => peek(false));
+        timer = null;
+        page.classList.add('is-peeking');
+        document.addEventListener('pointermove', follow);
+    });
     if (!page.dataset.peeks) {
         page.dataset.peeks = '1';
-        const inList = target => Boolean(target?.closest?.('.anomalous-ai-tasks'));
-        page.addEventListener('pointerover', (event) => { if (page.classList.contains('is-peeking') && inList(event.target)) peek(true); });
-        page.addEventListener('pointerout', (event) => { if (inList(event.target) && !inList(event.relatedTarget)) peek(false); });
         page.addEventListener('click', (event) => { if (event.target.closest('.anomalous-ai-task-row')) page.classList.remove('is-peeking'); });
     }
     return node;

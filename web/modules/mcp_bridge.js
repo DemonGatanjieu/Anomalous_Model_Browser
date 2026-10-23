@@ -309,6 +309,7 @@ async function handle(detail, getOwner) {
     const { _task_canvas: taskCanvas, ...given } = args || {};
     let outcome;
     let tab = null; // a tab made or opened for the task is kept even when the action then fails
+    getOwner()?.flushCanvasActivity?.(); // the user's own changes so far, before the task's tab may come to the front
     try {
         outcome = { ok: true, value: (await onTaskTab(action, taskCanvas, () => run(given, getOwner), (made) => { tab = made; })) ?? null };
     } catch (error) {

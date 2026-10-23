@@ -161,6 +161,10 @@ covered by the `styles.css` manifest.
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
   side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's; the
   outcome carries the log entry's id as `_activity`, for the AI workbench's undo).
+  `api/mcp_model_use.py` offers search_models and get_model (mcp_tools.py finds the files)
+  with what loads each model: the node types whose drop-down lists it (from `/object_info`),
+  or, for a file whose header says it belongs in another folder (model_placement.py), where,
+  and `move_model` (behind the "files" gate) moves it there as Tidy does.
   `api/mcp_canvas_edit.py` holds the tools that build a workflow where the user watches:
   `find_nodes` reads this ComfyUI's node types from its own `/object_info` (kept two
   minutes); `add_node`, `connect_nodes`, `set_values`, `remove_nodes` and `new_workflow` (a
@@ -267,9 +271,10 @@ covered by the `styles.css` manifest.
   and the rail's dot (`owner.railNews`). A task's parts stay in the page between redraws: a
   step is drawn again only when it changed (`syncRows`), so a scrolled diagram or strip and
   half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box under
-  a task (made once per task); `ui_ai_mention.js` gives it "@" (the task's pictures, combos,
-  models, workflows, prompts, node packs and node types from the materials picker's data, chips
-  of what is named) and "/" (`ui_ai_commands.js`: stop, undo, side views, new task, canvas mode,
+  a task (made once per task); `ui_ai_mention.js` gives it "@" (the task's pictures, the
+  gallery's newest and those its search finds, combos, models, workflows, prompts, node packs
+  and node types from the materials picker's data, chips of what is named), and
+  `ui_ai_gallery_pick.js` its picture button (gallery pictures picked into the message) and "/" (`ui_ai_commands.js`: stop, undo, side views, new task, canvas mode,
   words to fill in); `api/ai_message_refs.py` checks what the "@" name and gives each to the AI
   with the message (in full, pictures attached; get_toolbox shares its `lookup`),
   `tests/test_ai_message_refs.py`. `ui_ai_step_body.js` is what a timeline step says under its
@@ -380,7 +385,7 @@ covered by the `styles.css` manifest.
   and the scanned models, never replaces a file (" (2)").
 - `api/model_placement.py` is the models page's Tidy check (`/anomalous/placement/*`): models
   whose header names another type than their folder, identical files (by SHA-256), and moving
-  a model with its sidecars to where it belongs.
+  a model with its sidecars to where it belongs; `belongs()` checks one file for the AI.
 - `api/model_usage.py` is Tidy's "not used lately" (`GET /anomalous/usage/check`, this computer
   only, on a press): when each model and node pack was last used, from the run record, the
   PNG outputs' prompts (image_search's cached records, which keep the node types too), FLAC /
@@ -424,7 +429,8 @@ covered by the `styles.css` manifest.
   tells, shared with the standalone scanner (which runs as its own process, so the API
   never imports `scraper.py`). `model_kind.py` reads a .safetensors / .gguf header (never
   formats that can carry code) and says which models folder the file belongs in and its base
-  model; model import and the scanner's offline base model use it.
+  model (model patches such as Anima LLLite go to `model_patches`, not `controlnet`); model
+  import and the scanner's offline base model use it.
 - `recycle_bin.py` is the only way the plugin deletes the user's files (models, covers,
   outputs, recipes, materials, notes, audio): to the system Recycle Bin, together, or not
   at all (`TrashUnavailable` on drives without one). `api/trash.py` is the API's import of it

@@ -13,9 +13,12 @@ from aiohttp.test_utils import make_mocked_request
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_gates, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_server, mcp_tools  # noqa: E402
+from api import (  # noqa: E402
+    ai_gates, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_canvas_edit, mcp_model_use, mcp_server, mcp_tools,
+)
 
 MODERN = "2026-07-28"
+CTX = {"base_url": "http://127.0.0.1:1"}
 # Every call is kept as an AI workbench step: keep them in a temporary folder, never the user's.
 _AI_TASKS = tempfile.mkdtemp(prefix="amb_mcp_ai_tasks_")
 ai_tasks.tasks_dir = lambda: _AI_TASKS
@@ -135,18 +138,24 @@ class ToolTests(unittest.TestCase):
         metas = {str(lora): {"name": "Neon City", "baseModel": "SDXL 1.0", "trainedWords": ["neon"], "info_source": "civitai",
                              "description": "<p>Bright <b>lights</b></p>", "custom_notes": "mine"},
                  str(self.root / "plain.ckpt"): {"info_source": ""}}
+        # ComfyUI's LoRA loader lists the whole loras folder (with its own separators).
+        listed = ["plain.ckpt", "sub\\neon_city.safetensors"]
+        info = {"LoraLoader": {"input": {"required": {"lora_name": [listed]}}}}
+        tools = mcp_model_use.MODEL_TOOLS
         with mock.patch.object(mcp_tools, "_iter_search_models", return_value=files), \
                 mock.patch.object(mcp_tools, "get_metadata", side_effect=lambda path: metas[path]), \
-                mock.patch.object(mcp_tools, "resolve_folder_subdir", side_effect=lambda t, i, s: (str(self.root), str(self.root / s.strip("/")))):
-            found = mcp_tools.call_tool(mcp_tools.TOOLS, "search_models", {"query": "neon sdxl"})["structuredContent"]
+                mock.patch.object(mcp_tools, "resolve_folder_subdir", side_effect=lambda t, i, s: (str(self.root), str(self.root / s.strip("/")))), \
+                mock.patch.object(mcp_canvas_edit, "object_info", return_value=info), \
+                mock.patch.object(mcp_model_use.folder_paths, "get_filename_list", return_value=listed):
+            found = mcp_tools.call_tool(tools, "search_models", {"query": "neon sdxl"}, CTX)["structuredContent"]
             self.assertEqual(found["total_matches"], 1)
             model = found["models"][0]
-            self.assertEqual((model["model_id"], model["source"]), ("loras:0:sub/neon_city.safetensors", "civitai"))
-            self.assertEqual(mcp_tools.call_tool(mcp_tools.TOOLS, "search_models", {"source": "not_scanned"})["structuredContent"]["total_matches"], 1)
-            detail = mcp_tools.call_tool(mcp_tools.TOOLS, "get_model", {"model_id": model["model_id"]})["structuredContent"]
-            self.assertEqual((detail["description"], detail["user_notes"]), ("Bright lights", "mine"))
+            self.assertEqual((model["model_id"], model["source"], model["loaded_by"]), ("loras:0:sub/neon_city.safetensors", "civitai", ["LoraLoader"]))
+            self.assertEqual(mcp_tools.call_tool(tools, "search_models", {"source": "not_scanned"}, CTX)["structuredContent"]["total_matches"], 1)
+            detail = mcp_tools.call_tool(tools, "get_model", {"model_id": model["model_id"]}, CTX)["structuredContent"]
+            self.assertEqual((detail["description"], detail["user_notes"], detail["loaded_by"]), ("Bright lights", "mine", ["LoraLoader"]))
             for bad in ("loras:0:../../secret.safetensors", "loras:0:sub/missing.safetensors", "nonsense"):
-                result = mcp_tools.call_tool(mcp_tools.TOOLS, "get_model", {"model_id": bad})
+                result = mcp_tools.call_tool(tools, "get_model", {"model_id": bad}, CTX)
                 self.assertTrue(result["isError"], bad)
 
     def test_image_settings_come_from_the_png_and_stay_inside_output(self):
@@ -167,8 +176,8 @@ class ToolTests(unittest.TestCase):
             self.assertTrue(mcp_tools.call_tool(mcp_tools.TOOLS, "get_image_info", {"image": "../out.png"})["isError"])
 
     def test_bad_arguments_are_tool_errors(self):
-        self.assertTrue(mcp_tools.call_tool(mcp_tools.TOOLS, "get_model", {})["isError"])
-        self.assertTrue(mcp_tools.call_tool(mcp_tools.TOOLS, "search_models", {"delete": True})["isError"])
+        self.assertTrue(mcp_tools.call_tool(mcp_model_use.MODEL_TOOLS, "get_model", {}, CTX)["isError"])
+        self.assertTrue(mcp_tools.call_tool(mcp_model_use.MODEL_TOOLS, "search_models", {"delete": True}, CTX)["isError"])
 
 
 class BridgeTests(unittest.TestCase):

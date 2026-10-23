@@ -14,6 +14,16 @@
 - 右边这一栏改成一张单独的卡片，不再用一条线硬隔开；默认窄一些，给中间的时间线留出地方。鼠标移到它左边缘会出现小竖条，拖动调宽窄（记得住，双击恢复）。
 - 左边的任务列表用窗口左上角的按钮收起 / 展开；收起后鼠标移到按钮上，列表会临时浮出来，点任务或移开就收回。
 - 素材在右边这一栏里时，鼠标移过卡片不再自动跳进详细说明（之前很难操作），点卡片上的 ⓘ 才看。
+- 左边任务列表收起后，鼠标从按钮往下移去点任务时列表不会再中途消失（之前移得慢一点就会收回）：鼠标在按钮和列表围成的范围里都算还在用，离开后才收回。
+- The folded task list no longer vanishes on the way down from its button: it stays while the pointer is anywhere in the box around the button and the list, however slowly it moves.
+- **模型补丁不再被当成 ControlNet**：Anima LLLite、Qwen-Image 分块 ControlNet、Z-Image Fun ControlNet 这类文件名字里常带 ControlNet，但只有「加载模型补丁」节点能读，它只看 `model_patches` 文件夹。现在拖进模型页会自动放进 `model_patches`；已经放在 `controlnet` 里的，模型页的“整理”会提示挪过去。
+- Model patches (Anima LLLite, the Qwen-Image block-wise and Z-Image Fun ControlNets) are told from ControlNets by their header: imported into `model_patches`, and Tidy offers to move those already in `controlnet`.
+- **AI 找模型时直接知道该用哪个节点**：`search_models` / `get_model` 给每个模型写上能加载它的节点；放错文件夹的会说该放哪、放在这里加载不了，同名文件已经在对的地方时会直接指给 AI。新工具 `move_model` 把放错的模型挪过去（新关卡“挪动模型文件”，默认先问你；从不覆盖文件）。AI 不必再去命令行翻 ComfyUI 的源码。AI 加节点时如果下拉列表是空的，会被告知“ComfyUI 没找到文件，可能放错了文件夹”。
+- search_models and get_model say which node types load each model, and where a misfiled one belongs; `move_model` moves it there behind a new "files" gate (asks by default, never overwrites). An empty drop-down in add_node now says ComfyUI found no file for it.
+- AI 第一次在任务专用标签页上动手时，切换标签页不再被记成“你在画布上的改动”告诉 AI。
+- The AI switching to its task tab is no longer reported to it as a canvas change of the user's.
+- **工作台里直接用图库的图**：留言框左边新增图片按钮，打开图库（最新的在前，可按提示词、模型、seed 搜索），点选几张后 **加进消息**；打 **@** 时也能看到图库最新的图，打字会顺带在图库里搜。AI 收到的是图片本身和它的生成参数。
+- Gallery pictures in the AI workbench: the message box's picture button picks them from the gallery (newest first, searchable), and "@" offers the gallery's newest pictures and searches it as you type; the AI gets each picture with what made it.
 - 右边那一栏的宽度把手更好抓了：卡片左边整条空隙（从上到下）都能拖，把手平时就淡淡地显示，鼠标靠近时整条边亮起；点一下后也能用 ← → 调宽窄。
 - The side column's grip catches the pointer across the whole gap left of the card, top to bottom, shows faintly at rest and lights the edge when pointed at; focused, ← → resize it.
 - **节点结构的简单看法**：除了完整的方块图，现在默认是一张一眼能看懂的说明：每一段采样用哪个模型加哪些 LoRA（带权重）、正负提示词、从空白画布还是从上一段的结果开始（用哪个放大模型、缩放多少），最后保存在哪；和上一段一样的就写“和第 1 段一样”。点任意一项定位到画布上的节点；“简单 / 完整”随时切换，AMB 记得你的选择。

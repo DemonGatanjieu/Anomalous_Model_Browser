@@ -39,6 +39,7 @@ export function checkedValue(nodeId, widget, value) {
         const name = text => plain(text).split('/').pop().replace(/\.[^.]+$/, '');
         const stem = name(value);
         const close = stem ? choices.filter(item => name(item).includes(stem) || (name(item).length > 2 && stem.includes(name(item)))) : [];
+        if (!choices.length) throw new Error(`${where} has no choices at all: ComfyUI found no file for it. If the file is in another models folder, search_models says where it belongs (move_model moves it).`);
         throw new Error(`${where} has no choice "${value}"; ${close.length ? `close: ${shown(close)}` : `choices: ${shown(choices)}`}`);
     }
     if (typeof widget.value === 'number') {

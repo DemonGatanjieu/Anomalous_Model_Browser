@@ -4,7 +4,7 @@ Every tool (mcp_tools.py reads, mcp_actions.py acts, mcp_task_tools.py the AI's 
 entry here: its kind (the AI workbench's colour, words and counts; None = not a step of its
 own), the stage of the work it belongs to (the flow over a task: models, combo, prompt,
 canvas, run, pictures, voice, library) and its gate (what it touches or costs, for the user's
-rules on what needs their OK: canvas, gpu, download, network; None = nothing to guard).
+rules on what needs their OK: canvas, gpu, download, network, files; None = nothing to guard).
 tests/test_action_catalog.py keeps this catalog and the tools in step.
 
 The user's own changes in Anomalous (activity log actions) get stages too, so the ones made
@@ -16,7 +16,7 @@ from collections import namedtuple
 Entry = namedtuple("Entry", "kind stage gate")
 
 STAGES = ("model", "combo", "prompt", "canvas", "run", "picture", "voice", "library")
-GATES = ("canvas", "gpu", "download", "network")
+GATES = ("canvas", "gpu", "download", "network", "files")
 
 TOOLS = {
     # reading
@@ -51,6 +51,7 @@ TOOLS = {
     "run_workflow": Entry("run", "run", "gpu"),
     "download_missing_models": Entry("download", "model", "download"),
     "download_model": Entry("download", "model", "download"),
+    "move_model": Entry("act", "model", "files"),
     "scan_models": Entry("scan", "library", "network"),
     "speak": Entry("speech", "voice", "gpu"),
     "open_in_anomalous": Entry("show", "model", None),

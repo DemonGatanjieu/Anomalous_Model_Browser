@@ -25,6 +25,7 @@ export function inferModelFolderTypes(node, widget) {
     const nodeType = String(node?.type || '').toLowerCase();
     const key = `${widgetName} ${nodeType}`;
 
+    if (nodeType === 'modelpatchloader') return ['model_patches'];
     if (key.includes('clip_vision') || key.includes('clip vision') || nodeType.includes('clipvision')) return ['clip_vision'];
     if (key.includes('vae_approx') || key.includes('vae approx')) return ['vae_approx'];
     if (widgetName.includes('vae') || nodeType === 'vaeloader' || key.includes('vae loader')) return ['vae'];

@@ -28,13 +28,14 @@ def safetensors(*names):
 ANIMA = safetensors("net.blocks.0.self_attn.q_proj.weight", "net.llm_adapter.blocks.0.mlp.0.weight")
 FLUX_WHOLE = safetensors("model.diffusion_model.double_blocks.0.img_attn.qkv.weight", "first_stage_model.encoder.down.0.block.0.conv1.weight")
 LORA = safetensors("lora_unet_double_blocks_0_img_attn_proj.lora_up.weight")
+LLLITE = safetensors("lllite_conditioning1.conv1.weight", "lllite_modules.0.down.weight")
 
 
 class PlacementTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         base = os.path.realpath(self.temp.name)
-        self.roots = {kind: [os.path.join(base, kind)] for kind in ("checkpoints", "loras", "vae")}
+        self.roots = {kind: [os.path.join(base, kind)] for kind in ("checkpoints", "loras", "vae", "controlnet", "model_patches")}
         self.roots["diffusion_models"] = [os.path.join(base, "unet"), os.path.join(base, "diffusion_models")]
         for paths in self.roots.values():
             for path in paths:
@@ -79,6 +80,14 @@ class PlacementTests(unittest.TestCase):
         self.assertEqual((anima["name"], anima["version"], anima["preview_url"]), ("realskin", "", ""))
         # A whole checkpoint in the diffusion models folder still loads there.
         self.assertTrue(found["Flux/flux-fp8.safetensors"]["works"])
+
+    def test_a_model_patch_in_the_controlnet_folder(self):
+        path = self.put("controlnet", "anima-lllite-depth.safetensors", LLLITE)
+        home = model_placement.belongs(model_placement.one("controlnet", 0, "anima-lllite-depth.safetensors", path))
+        self.assertEqual(home["to"], {"type": "model_patches", "root": 0, "rel": "anima-lllite-depth.safetensors"})
+        self.assertFalse(home["works"])
+        moved = self.put("model_patches", "ok.safetensors", LLLITE)
+        self.assertIsNone(model_placement.belongs(model_placement.one("model_patches", 0, "ok.safetensors", moved)))
 
     def test_identical_copies(self):
         first = self.put("loras", "a.safetensors", LORA)

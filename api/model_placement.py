@@ -12,7 +12,8 @@ POST /anomalous/placement/move {type, root, rel, to_type, to_root, to_rel} -> mo
     and its sidecars (covers, info, the user's notes); never over a file (" (2)"). Only for
     the computer ComfyUI runs on, unless remote changes are allowed (local_guard.may_change).
 
-Removing a copy goes through /anomalous/delete_model (Recycle Bin). Headers and computed
+belongs() is the same check for one file (the AI's search_models and move_model,
+api/mcp_model_use.py). Removing a copy goes through /anomalous/delete_model (Recycle Bin). Headers and computed
 SHA-256s are kept in memory per file (path, size, time).
 """
 
@@ -116,7 +117,7 @@ def _card(item):
     return {"name": name or stem, "version": version, "preview_url": url}
 
 
-def _home_for(item, kind):
+def home_for(item, kind):
     """Where a file of `kind` goes: its own subfolder and name, in a folder of that type,
     preferably on its drive (a move is then a rename)."""
     roots = []
@@ -136,12 +137,24 @@ def misplaced(files):
         kind = result.get("kind")
         if not kind or not result.get("sure") or kind == item["type"] or kind not in import_types():
             continue
-        home = _home_for(item, kind)
+        home = home_for(item, kind)
         if home:
             found.append({"type": item["type"], "root": item["root"], "rel": item["rel"], "size": item["size"],
                           "kind": kind, "base": result.get("base", ""), "works": (item["type"], kind) in WORKS_ANYWAY,
                           "to": home, **_card(item)})
     return found
+
+
+def one(folder_type, root, rel, path):
+    """One model file as library() lists it."""
+    stat = os.stat(path)
+    return {"type": folder_type, "root": root, "rel": rel, "path": path, "size": stat.st_size, "dev": stat.st_dev, "stat": stat}
+
+
+def belongs(item):
+    """misplaced() of one file (from one()): where it belongs, or None when it is where it goes or its kind is unsure."""
+    found = misplaced([item])
+    return found[0] if found else None
 
 
 def _known_hash(item):

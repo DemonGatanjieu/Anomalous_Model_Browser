@@ -2,7 +2,7 @@
  * Gates on the AI workbench (api/ai_gates.py): the card under a step that waits for the user's OK
  * (what the AI wants to do; Allow, No with a reason for the AI, and "from now on, go ahead"), what
  * the user answered, and the Gates window where each kind of action is set to go ahead, ask first
- * or never (changing the canvas, using the GPU, downloading, going online), and whether a new
+ * or never (changing the canvas, using the GPU, downloading, going online, moving model files), and whether a new
  * task works in a canvas tab of its own (api/ai_task_canvas.py).
  */
 
@@ -10,7 +10,7 @@ import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
 
-export const GATES = ['canvas', 'gpu', 'download', 'network'];
+export const GATES = ['canvas', 'gpu', 'download', 'network', 'files'];
 const POLICIES = ['auto', 'ask', 'never'];
 
 function el(tag, className, text) {
@@ -51,7 +51,10 @@ export function gateCard(step, taskId, changed) {
         el('div', 'anomalous-ai-gate-why', t(`aiGateWhy_${asked.gate}`)));
     if (asked.lines?.length) {
         const lines = el('dl', 'anomalous-ai-gate-lines');
-        for (const line of asked.lines) lines.append(el('dt', '', line.label), el('dd', '', line.value));
+        for (const line of asked.lines) {
+            const label = t(`aiGateArg_${line.label}`);
+            lines.append(el('dt', '', label === `aiGateArg_${line.label}` ? line.label : label), el('dd', '', line.value));
+        }
         card.append(lines);
     }
     const reason = el('input', 'anomalous-ai-gate-reason');

@@ -18,11 +18,11 @@ import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openSettingsPage } from './ui_settings_page.js';
 
 const KINDS = ['checkpoints', 'loras', 'vae', 'text_encoders', 'diffusion_models', 'controlnet', 'embeddings',
-    'clip_vision', 'upscale_models', 'ipadapter'];
+    'clip_vision', 'upscale_models', 'ipadapter', 'model_patches'];
 const LEVELS = { sure: ['●●●', 'doctorLevelSure'], likely: ['●●○', 'doctorLevelLikely'] };
 const ACCEPT = '.safetensors,.sft,.gguf,.ckpt,.pt,.pth,.bin';
 // Types whose files serve several base models: no base model folder.
-const SHARED = ['vae', 'text_encoders', 'clip_vision', 'upscale_models', 'ipadapter'];
+const SHARED = ['vae', 'text_encoders', 'clip_vision', 'upscale_models', 'ipadapter', 'model_patches'];
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
