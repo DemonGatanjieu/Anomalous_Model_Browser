@@ -80,7 +80,7 @@ async def api_answer(request):
 
 
 async def api_message(request):
-    """POST /anomalous/ai_tasks/{id}/message: {text} - the user writes to the AI on that task."""
+    """POST /anomalous/ai_tasks/{id}/message: {text, refs?} - the user writes to the AI on that task (refs: its "@")."""
     from . import ai_panels
 
     try:
@@ -90,7 +90,7 @@ async def api_message(request):
     if not isinstance(body, dict):
         return web.json_response({"error": "Expected {text}"}, status=400)
     try:
-        step = ai_panels.leave_message(request.match_info["task_id"], body.get("text"))
+        step = ai_panels.leave_message(request.match_info["task_id"], body.get("text"), body.get("refs"))
     except ai_panels.PanelError as error:
         return web.json_response({"error": str(error)}, status=400)
     return web.json_response({"step": step})

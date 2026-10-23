@@ -57,8 +57,8 @@ async function postJson(url, body) {
 const empty = () => Object.fromEntries(PICK_KINDS.map(kind => [kind, []]));
 const total = box => PICK_KINDS.reduce((sum, kind) => sum + (box?.[kind]?.length || 0), 0);
 const keyOf = (kind, id) => `${kind}|${id}`;
-/** The custom node packs among `nodes`, as items to pick whole. */
-const packItems = nodes => nodeSources(nodes).filter(source => source.kind === 'pack')
+/** The custom node packs among `nodes`, as items to pick whole (and to name with "@", ui_ai_mention.js). */
+export const packItems = nodes => nodeSources(nodes).filter(source => source.kind === 'pack')
     .map(source => ({ kind: 'packs', id: source.key, title: t('aiTbPackName', { name: source.label || source.key }), source, count: source.count }));
 
 function savedLayout() {
@@ -89,7 +89,7 @@ function dockPanel(title, body, expand) {
 }
 
 let nodesKept = null; // the page's node types do not change while it is open
-const pageNodes = () => (nodesKept ||= nodeItems(globalThis.LiteGraph?.registered_node_types));
+export const pageNodes = () => (nodesKept ||= nodeItems(globalThis.LiteGraph?.registered_node_types));
 
 /** What narrows a kind in the second column: a node's source, a prompt's origin, a model's type. */
 function facetOf(item) {

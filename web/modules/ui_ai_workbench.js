@@ -25,6 +25,7 @@ import { changeNodeId } from './activity_diff.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
+import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { focusPanel, openQuestions, panelLine, panelSteps, stageNews, tabBar } from './ui_ai_side.js';
 import { connectHint, waitingCard } from './ui_ai_connect.js';
@@ -242,10 +243,11 @@ function renderTask() {
             taskId: task.id, header: el('div', 'anomalous-ai-task-head'), flow: el('div', 'anomalous-ai-flow-holder'),
             made: el('div', 'anomalous-ai-made-holder'),
             timeline: el('div', 'anomalous-ai-timeline'), madeKey: null,
-            message: messageBox(async (text) => {
-                await postTask(task.id, { text }, 'message');
+            message: messageBox(async (text, refs) => {
+                await postTask(task.id, { text, refs }, 'message');
                 await refresh();
-            }),
+            }, { task: () => state.task, commands: () => taskCommands({ task: () => state.task, undo: () => undoAll(state.task), newTask,
+                side: view => pickView(state.stage, view, false, state.task, renderTask, refresh), changed: refresh }) }),
         };
         view.tabs = el('div', 'anomalous-ai-tabs');
         box.replaceChildren(view.tabs, view.header, view.flow, view.made, view.timeline, view.message);

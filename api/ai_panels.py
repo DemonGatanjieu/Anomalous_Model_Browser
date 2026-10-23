@@ -410,12 +410,19 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
 MAX_MESSAGE = 2000
 
 
-def leave_message(task_id, text, now=None):
-    """A message from the user to the AI working on task `task_id`. Returns the step."""
+def leave_message(task_id, text, refs=None, now=None):
+    """A message from the user to the AI working on task `task_id`, with what its "@" point at
+    (ai_message_refs.py). Returns the step."""
+    from . import ai_message_refs
+
     text = _text(text, MAX_MESSAGE, "text", True)
+    try:
+        refs = ai_message_refs.clean(refs)
+    except ai_message_refs.RefsError as error:
+        raise PanelError(str(error))
     now = time.time() if now is None else now
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "user_message", "kind": "user", "ok": True,
-            "summary": "user_message", "text": text, "delivered": False, "results": []}
+            "summary": "user_message", "text": text, "delivered": False, "results": [], **({"refs": refs} if refs else {})}
     with _answered:
         task = ai_tasks._load().get(task_id)
         if not task:
@@ -455,6 +462,9 @@ def _collect(client, panel_id, task_id=None):
                 elif step.get("tool") == "user_pictures":
                     from . import ai_pictures
                     message.update(ai_pictures.message_of(step))  # the pictures themselves go with it
+                elif step.get("refs"):
+                    from . import ai_message_refs
+                    message.update(ai_message_refs.message_of(step))  # what its "@" point at, pictures attached
                 elif step.get("tool") == "user_stop":
                     message["kind"] = "stop"  # the user stopped the AI's run (ai_run_control.py)
                 elif step.get("tool") == "user_toolbox":

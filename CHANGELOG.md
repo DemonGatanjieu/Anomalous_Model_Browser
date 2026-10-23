@@ -11,6 +11,8 @@
 - 右边这一栏改成一张单独的卡片，不再用一条线硬隔开；默认窄一些，给中间的时间线留出地方。鼠标移到它左边缘会出现小竖条，拖动调宽窄（记得住，双击恢复）。
 - 左边的任务列表用窗口左上角的按钮收起 / 展开；收起后鼠标移到按钮上，列表会临时浮出来，点任务或移开就收回。
 - 素材在右边这一栏里时，鼠标移过卡片不再自动跳进详细说明（之前很难操作），点卡片上的 ⓘ 才看。
+- **留言框里的 @ 和 /**：打 **@** 弹出能搜索的列表（这个任务的图、搭配、模型、工作流、提示词、节点包、节点），选中的写成“@名字”并在下面显示成小标签，AI 收到的是确切的那个东西（图片连同生成参数一起）。开头打 **/** 是快捷指令：停止、撤销、展台、结构、素材、专用标签页、当前画布、新任务马上生效；重跑、解释、继续帮你写好一句话。
+- "@" in the AI workbench's message box names the task's pictures, combos, models, workflows, prompts, node packs and node types; the AI gets each in full with the message (pictures attached). "/" lists commands that act at once (stop, undo, side views, new task, canvas mode) or fill in words to send.
 - **整个自定义节点包交给 AI**：素材里点“节点”，再在来源那一排点某个自定义节点包，上面会出现“整包交给 AI”。不知道该选哪个节点时，把整个包给它，AI 自己从包里挑；选“只能用”时，这个包里的节点都允许，别的第三方和付费节点照样拦下。AI 用 `get_toolbox` 能看到包里有哪些节点，`find_nodes` 搜索时也把它们排在前面。
 - A whole custom node pack can be picked (from its source in the nodes' second column): the AI gets its node types in get_toolbox, finds them first, and with "only" every node of the pack is allowed.
 - 小窗里的“来源”不再是一条要横着拖的长条，改成一个“来源：全部 ▾”按钮：点开是一张列表（来源多时上面有搜索框），点一个就选上并收起；Esc 或点别处也收起。

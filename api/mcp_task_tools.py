@@ -3,7 +3,7 @@ work, report leaves a note for the user (with pictures made outside Anomalous's 
 show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), get_answers
 reads what the user picked or typed on it."""
 
-from . import ai_marks, ai_panels, ai_run_control, ai_run_tracking, ai_task_runs, ai_tasks, ai_toolbox
+from . import ai_marks, ai_message_refs, ai_panels, ai_run_control, ai_run_tracking, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -149,7 +149,6 @@ def stop_run(ctx, task=None):
 
 
 def get_toolbox(ctx, task=None):
-    from . import mcp_tools
     from .mcp_canvas_edit import find_nodes
 
     task_id = task or ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")
@@ -173,22 +172,11 @@ def get_toolbox(ctx, task=None):
                 {"type": name, "display_name": info[name].get("display_name") or name, "category": info[name].get("category") or ""}
                 for name in types[:PACK_TYPES]]})
         answer["packs_note"] = "Every node type of a pack is the user's pick; find_nodes(types=[...]) gives one in full."
-    for kind, lister, key in (("combos", mcp_tools.list_combos, "combos"), ("workflows", mcp_tools.list_workflows, "workflows")):
+    for kind in ("combos", "workflows", "prompts"):
         if box.get(kind):
-            answer[kind] = [item for name in box[kind] for item in lister(name, 5)[key] if item["name"] == name][:ai_toolbox.MAX_ITEMS]
-    if box.get("prompts"):
-        from .ai_toolbox_catalog import everything
-
-        prompts = {entry["id"]: entry for entry in everything()["prompts"]}
-        answer["prompts"] = [prompts[name] for name in box["prompts"] if name in prompts]
+            answer[kind] = [found for name in box[kind] if (found := ai_message_refs.lookup(kind, name)) is not None]
     if box.get("models"):
-        answer["models"] = []
-        for model_id in box["models"]:
-            try:
-                found = mcp_tools.get_model(model_id)
-                answer["models"].append(found[0] if isinstance(found, tuple) else found)  # without its cover picture
-            except ToolError:
-                answer["models"].append({"model_id": model_id, "missing": True})
+        answer["models"] = [ai_message_refs.lookup("models", model_id) or {"model_id": model_id, "missing": True} for model_id in box["models"]]
     return answer
 
 

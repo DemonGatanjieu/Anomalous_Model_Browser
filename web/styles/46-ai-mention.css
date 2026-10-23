@@ -1,0 +1,70 @@
+/* "@" and "/" in the AI workbench's message box (ui_ai_mention.js): the list over the box, and the
+   chips of what the message names. */
+
+.anomalous-ai-message { position: relative; }
+.anomalous-ai-message.is-quiet:focus-within { opacity: 1; } /* typing in it: not faded, nor the list over it */
+
+.anomalous-ai-mention {
+    position: absolute;
+    z-index: 6;
+    right: 12px;
+    bottom: calc(100% - 6px);
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    max-height: 340px;
+    padding: 6px;
+    overflow-y: auto;
+    border: 1px solid var(--amb-border-strong, var(--amb-border));
+    border-radius: 12px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
+}
+.anomalous-ai-mention[hidden] { display: none; }
+.anomalous-ai-mention-head { padding: 4px 8px 6px; color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-ai-mention-none { padding: 10px 8px; color: var(--amb-text-soft); font-size: 12.5px; }
+.anomalous-ai-mention-row {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 10px;
+    min-height: 38px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    color: var(--amb-text-main);
+    cursor: pointer;
+}
+.anomalous-ai-mention-row.is-on { background: color-mix(in srgb, var(--amb-link) 18%, transparent); }
+.anomalous-ai-mention-lead {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    color: var(--amb-text-soft);
+}
+.anomalous-ai-mention-lead img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-ai-mention-name { flex: 1; min-width: 0; overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-mention-kind { flex: none; max-width: 45%; overflow: hidden; color: var(--amb-text-dim); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+
+.anomalous-ai-mention-refs { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-ai-mention-refs[hidden] { display: none; }
+.anomalous-ai-mention-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 240px;
+    padding: 2px 4px 2px 3px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+    font-size: 12px;
+}
+.anomalous-ai-mention-chip .anomalous-ai-mention-lead { width: 20px; height: 20px; border-radius: 4px; }
+.anomalous-ai-mention-chip-name { min-width: 0; overflow: hidden; color: var(--amb-text-main); text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-mention-chip-x { display: inline-flex; padding: 3px; border: 0; border-radius: 5px; background: none; color: var(--amb-text-soft); cursor: pointer; }
+.anomalous-ai-mention-chip-x:hover { background: rgba(var(--amb-ink-rgb), 0.1); color: var(--amb-text-main); }
