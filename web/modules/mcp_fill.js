@@ -40,8 +40,10 @@ export function fillPlan(g, { prompt, negative, seed, width, height, image, imag
     if (width != null || height != null) {
         const size = Object.fromEntries([['width', width], ['height', height]].filter(([, value]) => value != null));
         for (const node of nodes) {
-            const latent = (node.outputs || []).some(output => String(output.type) === 'LATENT');
-            if (latent && has(node, 'width') && has(node, 'height')) add('size', node, valuePlan(node, size));
+            // A node that starts a latent: a hires fix's latent upscale takes one in and keeps its own size.
+            const starts = (node.outputs || []).some(output => String(output.type) === 'LATENT')
+                && !(node.inputs || []).some(input => String(input.type) === 'LATENT');
+            if (starts && has(node, 'width') && has(node, 'height')) add('size', node, valuePlan(node, size));
         }
         if (!set.size) throw new Error('No empty latent with a width and height on the canvas; set_values on the node that sets the size.');
     }

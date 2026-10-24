@@ -5,8 +5,8 @@ import { fillPlan } from '../web/modules/mcp_fill.js';
 
 const text = (name, value = '') => ({ name, value });
 const number = (name, value, min = 0, max = 0xffffffffffffffff) => ({ name, value, options: { min, max } });
-function node(id, type, widgets, { outputs = [], mode = 0, title, required = {} } = {}) {
-    const made = { id, type, title: title ?? type, mode, widgets, outputs, inputs: [] };
+function node(id, type, widgets, { outputs = [], inputs = [], mode = 0, title, required = {} } = {}) {
+    const made = { id, type, title: title ?? type, mode, widgets, outputs, inputs };
     Object.defineProperty(made, 'constructor', { value: { nodeData: { input: { required } } } });
     return made;
 }
@@ -20,10 +20,12 @@ const scale = node(5, 'ImageScale', [number('width', 512, 16, 16384), number('he
 const base = node(6, 'LoadImage', [text('image', 'a.png')], { title: '原图' });
 const marks = node(7, 'LoadImage', [text('image', 'b.png')], { title: '标注' });
 const resting = node(8, 'KSampler', [number('seed', 9)], { mode: 4 }); // bypassed: left alone
-const g = { _nodes: [prompts, sampler, custom, latent, scale, base, marks, resting] };
+const upscale = node(9, 'LatentUpscale', [number('width', 1152, 16, 16384), number('height', 1728, 16, 16384)],
+    { outputs: [{ name: 'LATENT', type: 'LATENT' }], inputs: [{ name: 'samples', type: 'LATENT' }] }); // a hires fix keeps its size
+const g = { _nodes: [prompts, sampler, custom, latent, scale, base, marks, resting, upscale] };
 
 const { plans, set } = fillPlan(g, { prompt: '海边少女', negative: 'blurry', seed: 42, width: 1024, height: 1536, image: 'x.png [output]', image_node: 7 });
-assert.deepEqual(set, { prompt: [1], negative: [1], seed: [2, 3], size: [4], image: [7] }, 'not the IMAGE scaler, not the bypassed sampler');
+assert.deepEqual(set, { prompt: [1], negative: [1], seed: [2, 3], size: [4], image: [7] }, 'not the IMAGE scaler, the latent upscale or the bypassed sampler');
 const values = plans.flatMap(({ node: item, plan }) => plan.map(([widget, value]) => [item.id, widget.name, value]));
 assert.deepEqual(values, [[1, 'positive', '海边少女'], [1, 'negative', 'blurry'], [2, 'seed', 42], [3, 'noise_seed', 42],
     [4, 'width', 1024], [4, 'height', 1536], [7, 'image', 'x.png [output]']]);
