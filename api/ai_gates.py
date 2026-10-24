@@ -25,7 +25,7 @@ from . import action_catalog, ai_tasks
 from .path_utils import atomic_write_json
 
 POLICIES = ("auto", "ask", "never")
-TOOL_SETS = ("full", "daily")
+TOOL_SETS = ("full", "daily", "lazy")
 RUN_WAITS = ("call", "wait")
 DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
 WAIT_SECONDS = 50  # below the minute many AI apps give a tool call
@@ -79,14 +79,14 @@ def _set_tool_setting(key, value):
 
 
 def tool_set():
-    """The tools AI apps are offered: "full" or "daily"."""
+    """The tools AI apps are offered: "full", "daily" or "lazy" (mcp_directory.py)."""
     chosen = _tool_settings().get("set")
     return chosen if chosen in TOOL_SETS else "full"
 
 
 def set_tool_set(name):
     if name not in TOOL_SETS:
-        raise ValueError("tools is full or daily")
+        raise ValueError("tools is full, daily or lazy")
     return _set_tool_setting("set", name)
 
 

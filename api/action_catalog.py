@@ -27,6 +27,9 @@ DAILY = frozenset({
     "find_nodes", "add_node", "add_nodes", "connect_nodes", "set_values", "new_workflow",
 })
 
+# The "lazy" set: the tools offered directly; the others are reached through mcp_directory's use_tool.
+CORE = frozenset({"begin_task", "get_situation", "run_workflow", "run_status", "report", "ask_user", "get_answers"})
+
 # Arguments with which a call also changes the canvas: it then asks as the stricter of its own gate and "canvas".
 ALSO_CANVAS = {"run_workflow": ("workflow", "prompt", "negative", "seed", "width", "height", "image", "image_node", "values")}
 
@@ -78,6 +81,8 @@ TOOLS = {
     "ask_user": Entry("panel", None, None),
     "show_run_map": Entry("panel", None, None),
     "begin_task": Entry(None, None, None),
+    "tool_help": Entry("look", None, None),
+    "use_tool": Entry(None, None, None),  # never a step itself: the server makes it the tool it names
     "track_run": Entry(None, "run", None),  # attaches an existing submission; creates its own run step
     "update_panel": Entry(None, None, None),
     "get_answers": Entry(None, None, None),

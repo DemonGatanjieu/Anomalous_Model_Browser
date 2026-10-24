@@ -1,5 +1,6 @@
 """The directory of tools by what an AI wants to do (api/mcp_directory.py): built from the catalog,
-only the tools offered, in begin_task's answer and in get_situation's while there is no task."""
+only the tools offered, in begin_task's answer and in get_situation's while there is no task; and
+the lazy set, where tool_help and use_tool reach the tools not offered directly."""
 import sys
 import unittest
 from pathlib import Path
@@ -8,7 +9,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import action_catalog, ai_gates, mcp_apps, mcp_directory, mcp_server  # noqa: E402
+from api import action_catalog, ai_gates, ai_tasks, mcp_apps, mcp_directory, mcp_server  # noqa: E402
 from test_mcp import rpc  # noqa: E402  (its module keeps tasks and gates in temporary folders)
 
 
@@ -47,6 +48,52 @@ class DirectoryTests(unittest.TestCase):
         call("begin_task", {"title": "有任务", "new_task": True})
         with mock.patch("api.mcp_situation.ask_page", side_effect=mcp_server.mcp_bridge.PageUnavailable("no page")):
             self.assertNotIn("directory", call("get_situation", {})["structuredContent"])
+
+
+class LazyTests(unittest.TestCase):
+    def setUp(self):
+        patcher = mock.patch.object(ai_gates, "tool_set", return_value="lazy")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_a_few_tools_and_the_way_to_the_rest(self):
+        names = {tool["name"] for tool in rpc("tools/list")["result"]["tools"]}
+        self.assertEqual(names, action_catalog.CORE | set(mcp_directory.DIRECTORY_TOOLS) | set(mcp_apps.APP_TOOLS))
+        found = call("begin_task", {"title": "按需", "new_task": True})["structuredContent"]["directory"]
+        self.assertIn("set_model (Swap a node's model)", found["Models"], "the directory names the tools not offered")
+        self.assertIn("use_tool(name, arguments)", found["note"])
+        self.assertNotIn("tool_help (", " ".join(found.values()))
+
+    def test_other_sets_do_not_offer_the_way_in(self):
+        for chosen in ("full", "daily"):
+            with mock.patch.object(ai_gates, "tool_set", return_value=chosen):
+                names = {tool["name"] for tool in rpc("tools/list")["result"]["tools"]}
+            self.assertFalse(names & set(mcp_directory.DIRECTORY_TOOLS), chosen)
+
+    def test_tool_help_tells_what_a_tool_takes(self):
+        answer = call("tool_help", {"names": ["set_model", "nope"]})["structuredContent"]
+        self.assertEqual(answer["tools"][0]["name"], "set_model")
+        self.assertIn("model_id", answer["tools"][0]["arguments"])
+        self.assertEqual(answer["not_found"], ["nope"])
+        self.assertTrue(call("tool_help", {"names": ["a", "b", "c", "d"]})["isError"], "three at most")
+
+    def test_use_tool_is_the_call_of_the_tool_it_names(self):
+        call("begin_task", {"title": "调用", "new_task": True})
+        with mock.patch.object(ai_gates, "check", wraps=ai_gates.check) as gate:
+            result = call("use_tool", {"name": "report", "arguments": {"text": "看看这张"}})
+        self.assertFalse(result["isError"], result)
+        self.assertEqual(gate.call_args[0][0], "report", "the user's gates see the tool itself")
+        task = next(item for item in ai_tasks.list_tasks() if item["title"] == "调用")
+        tools = [step["tool"] for step in ai_tasks.get_task(task["id"])["steps"]]
+        self.assertIn("report", tools)
+        self.assertNotIn("use_tool", tools, "the timeline shows the tool, never use_tool")
+
+    def test_a_wrong_use_says_where_to_look(self):
+        self.assertIn("No tool nope", call("use_tool", {"name": "nope"})["content"][0]["text"])
+        self.assertTrue(call("use_tool", {"name": "app_answer", "arguments": {}})["isError"], "never the card's own")
+        failed = call("use_tool", {"name": "report", "arguments": {"words": "x"}})
+        self.assertTrue(failed["isError"])
+        self.assertIn('tool_help(names=["report"])', failed["content"][0]["text"])
 
 
 if __name__ == "__main__":

@@ -4,10 +4,19 @@ ARCHITECTURE.md does for the code: each tool offered under its stage of the work
 so a new tool shows up by itself (tests/test_mcp_directory.py checks that every stage has a
 heading). mcp_server.py puts it into begin_task's answer, and into get_situation's while there
 is no task yet.
+
+With the "lazy" tool set (ai_gates.tool_set) AI apps are offered only action_catalog.CORE and
+two tools of this module: tool_help gives the description and arguments of tools named in the
+directory, use_tool calls one. use_tool has no run of its own: mcp_server.py makes the call the
+tool it names before anything else, so gates, steps and answers are that tool's.
 """
 
 from . import action_catalog
-from .mcp_tools import retext
+from .mcp_tools import ToolError, _schema, retext
+
+DIRECTORY_TOOLS = ("tool_help", "use_tool")
+MAX_HELP = 3  # tool specs in one answer: three stay under what Antigravity files away
+LAZY_NOTE = " Not in your tool list: tool_help(names) gives its arguments, use_tool(name, arguments) calls it."
 
 SECTIONS = (  # stage -> heading, in the order work usually goes
     ("run", "Run a workflow"), ("canvas", "The workflow on the canvas"), ("model", "Models"), ("prompt", "Prompts"),
@@ -17,19 +26,76 @@ SECTIONS = (  # stage -> heading, in the order work usually goes
 NOTE = "The tools by what you want to do: go straight to the one you need instead of looking around first."
 
 
-def directory(specs):
-    """{heading: "tool (title), ..."} for the tools offered, `specs` {name: spec}."""
+def directory(specs, lazy=False):
+    """{heading: "tool (title), ..."} for the tools offered, `specs` {name: spec}; `lazy`: most are
+    reached through use_tool."""
     sections = {}
     for name, entry in action_catalog.TOOLS.items():
         if name in specs:
             sections.setdefault(entry.stage, []).append(f"{name} ({specs[name].get('title') or name})")
-    return {"note": NOTE, **{heading: ", ".join(sections[stage]) for stage, heading in SECTIONS if stage in sections}}
+    return {"note": NOTE + (LAZY_NOTE if lazy else ""),
+            **{heading: ", ".join(sections[stage]) for stage, heading in SECTIONS if stage in sections}}
 
 
-def attach(result, name, specs):
+def attach(result, name, specs, lazy=False):
     """Puts the directory into begin_task's answer, and into get_situation's while there is no task."""
     data = result.get("structuredContent") if isinstance(result, dict) and not result.get("isError") else None
     if not isinstance(data, dict) or not (name == "begin_task" or (name == "get_situation" and not data.get("task"))):
         return result
-    retext(result, {**data, "directory": directory(specs)})
+    retext(result, {**data, "directory": directory(specs, lazy)})
     return result
+
+
+def help_of(tools, names):
+    """tool_help: what tools `names` do and take, from the server's `tools` {name: tool}."""
+    if not isinstance(names, list) or not 0 < len(names) <= MAX_HELP:
+        raise ToolError(f"names lists 1 to {MAX_HELP} tool names from the directory.")
+    found, missing = [], []
+    for name in names:
+        tool = tools.get(name) if isinstance(name, str) and name not in DIRECTORY_TOOLS else None
+        if tool:
+            schema = tool["spec"]["inputSchema"]
+            found.append({"name": name, "description": tool["spec"].get("description", ""),
+                          "arguments": schema.get("properties", {}), "required": schema.get("required", [])})
+        else:
+            missing.append(str(name)[:60])
+    return {"tools": found, **({"not_found": missing} if missing else {}),
+            "next": "use_tool(name, arguments) calls one, with arguments as listed."}
+
+
+def refused(text):
+    """A use_tool call that names no tool it can make."""
+    return {"content": [{"type": "text", "text": text}], "isError": True}
+
+
+def hinted(result, name):
+    """A failed use_tool call, with where its arguments are told."""
+    if isinstance(result, dict) and result.get("isError") and result.get("content"):
+        first = result["content"][0]
+        result["content"][0] = {**first, "text": f"{first.get('text', '')} tool_help(names=[\"{name}\"]) shows its arguments."}
+    return result
+
+
+def directory_tools(registry):
+    """tool_help and use_tool, `registry()` giving the server's tools."""
+    def tool_help(names):
+        return help_of(registry(), names)
+
+    return {
+        "tool_help": {"run": tool_help, "spec": {
+            "name": "tool_help", "title": "What a tool takes",
+            "description": f"The description and arguments of up to {MAX_HELP} tools named in the directory, to call "
+                           "them with use_tool.",
+            "inputSchema": _schema({"names": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_HELP}}, ["names"]),
+            "annotations": {"title": "What a tool takes", "readOnlyHint": True, "destructiveHint": False,
+                            "idempotentHint": True, "openWorldHint": False},
+        }},
+        "use_tool": {"spec": {
+            "name": "use_tool", "title": "Use a tool",
+            "description": "Calls a tool of the directory that is not in your tool list: name, and its arguments as "
+                           "tool_help gives them. It is that tool's call in every way (its answer, the user's gates).",
+            "inputSchema": _schema({"name": {"type": "string"}, "arguments": {"type": "object"}}, ["name"]),
+            "annotations": {"title": "Use a tool", "readOnlyHint": False, "destructiveHint": True,
+                            "idempotentHint": False, "openWorldHint": False},
+        }},
+    }

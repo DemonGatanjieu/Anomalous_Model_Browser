@@ -19,6 +19,8 @@
 - Shorter tool descriptions: the daily tools' descriptions are rewritten without repeats, keeping their rules, about 22,000 characters instead of 27,000; begin_task's rules are about 900 characters instead of 1,900.
 - 工具目录：AI 开始任务时，回复里附带一张按“想做的事”排好的工具目录（出图、画布、模型、提示词、图片、和你沟通……），AI 看一眼就直接去用对的工具，不用先到处试。目录从工具登记表自动生成，只列当前给 AI 的工具，新工具会自己出现。
 - A directory of the tools by what the AI wants to do comes with begin_task's answer (and get_situation's while there is no task): each tool offered under its stage of the work with its title, built from the catalog so new tools show up by themselves.
+- 按需加载工具：关卡窗口“给 AI 的工具”多了 **按需**。只直接给 AI 7 个最常用的工具，其余的 AI 照目录用 `tool_help` 查参数、用 `use_tool` 调用；新对话要读的说明从约 2.2 万字（日常）减到约 9000 字。通过 `use_tool` 的调用在时间线上照样显示成那个工具，关卡也照样按那个工具来问。默认仍是完整，随时可以换回日常或完整。
+- The "lazy" tool set offers AI apps only the seven most used tools plus tool_help (what a tool takes) and use_tool (call any tool of the directory), about 9,000 characters instead of 22,000 for the daily set. A use_tool call is the named tool's call in every way: its step, its gate, its answer.
 
 - 修复任务画布标签关闭或切换失败后误用当前工作流的问题：操作会明确报错，重新打开或明确指定新画布后才能继续。下载缺失模型现在也跟随任务画布；留言里的 `@` 搭配和工作流按完整名称查找，不再因模糊搜索前几项占满而误报缺失。
 - Task canvas actions now fail when their recorded tab is closed or cannot be activated instead of using another workflow. Missing-model downloads follow the task tab, and message references resolve exact combo/workflow names before search limits.

@@ -188,7 +188,9 @@ covered by the `styles.css` manifest.
   `api/mcp_directory.py` is the directory of the tools by what an AI wants to do (as this file is
   for the code): each tool offered under its stage (`action_catalog.TOOLS`) with its title, built
   from the registry, in begin_task's answer and in get_situation's while there is no task
-  (`tests/test_mcp_directory.py`).
+  (`tests/test_mcp_directory.py`). With the "lazy" tool set AI apps get only `action_catalog.CORE`
+  and its tool_help (what a tool takes) and use_tool, which mcp_server.py turns into the call of the
+  tool it names before anything else, so gates, steps and answers are that tool's.
   `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow
   opened in the task's tab once and reused (the page marks the tab with the workflow's file),
   then the prompts, seed, size and the picture a LoadImage reads filled in by the page's
