@@ -31,14 +31,24 @@ class FindNodesTests(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def test_search_gives_inputs_outputs_and_a_few_choices(self):
+    def test_search_gives_compact_candidates_without_choice_lists(self):
         found = mcp_canvas_edit.find_nodes({}, query="load checkpoint")
         node = found["nodes"][0]
         self.assertEqual((node["type"], found["total_matches"]), ("CheckpointLoaderSimple", 1))
-        choice = node["inputs"][0]
-        self.assertEqual((choice["type"], len(choice["choices"]), choice["choices_count"]), ("choice", mcp_canvas_edit.MAX_CHOICES, 80))
-        self.assertEqual([item["name"] for item in node["outputs"]], ["MODEL", "CLIP", "VAE"])
-        self.assertEqual(node["outputs"][1]["slot"], 1)
+        self.assertEqual(node["inputs"], ["ckpt_name:choice"])
+        self.assertEqual(node["outputs"], ["MODEL:MODEL", "CLIP:CLIP", "VAE:VAE"])
+        self.assertNotIn("m0.safetensors", str(found))
+
+    def test_search_is_bounded_even_with_many_large_node_definitions(self):
+        import json
+        with mock.patch.object(mcp_canvas_edit, "object_info", return_value={
+            "Large" + str(i): {"input": {"required": {"input" + str(k): ["STRING"] for k in range(100)}},
+                             "description": "x" * 10000} for i in range(100)
+        }):
+            result = mcp_canvas_edit.find_nodes({}, query="Large")
+        self.assertEqual(result["total_matches"], 100)
+        self.assertLessEqual(len(result["nodes"]), 5)
+        self.assertLess(len(json.dumps(result)), 3600)
 
     def test_settings_keep_their_range_and_sockets_say_so(self):
         node = mcp_canvas_edit.find_nodes({}, types=["KSampler"])["nodes"][0]
@@ -69,13 +79,37 @@ class BuildToolTests(unittest.TestCase):
 
     def test_the_page_gets_what_it_needs(self):
         self.assertIn("run_workflow", mcp_canvas_edit.add_node({}, "KSampler", {"steps": 28}, near_node_id=4)["next"])
-        self.assertEqual(self.page.call_args[0], ("add_node", {"type": "KSampler", "values": {"steps": 28}, "title": "", "near_node_id": 4}))
+        self.assertEqual(self.page.call_args[0], ("add_node", {"type": "KSampler", "values": {"steps": 28}, "title": "", "near_node_id": 4,
+                                                           "wire_from": [], "wire_to": [], "replace": False}))
         mcp_canvas_edit.connect_nodes({}, 4, 3, "model", output="0")
         self.assertEqual(self.page.call_args[0][1]["output"], 0, "a slot number given as text")
         mcp_canvas_edit.connect_nodes({}, 4, 3, "clip", output="CLIP")
         self.assertEqual(self.page.call_args[0][1]["output"], "CLIP")
         mcp_canvas_edit.remove_nodes({}, [3, 4])
         self.assertEqual(self.page.call_args[0], ("remove_nodes", {"node_ids": [3, 4]}))
+
+    def test_automatic_wiring_and_old_explicit_input_form(self):
+        mcp_canvas_edit.connect_nodes({}, 12, 15)
+        self.assertEqual(self.page.call_args[0][1], {"from_node_id": 12, "to_node_id": 15,
+                                                   "input": None, "output": None, "replace": None})
+        mcp_canvas_edit.connect_nodes({}, 12, 15, input="pixels")
+        self.assertEqual(self.page.call_args[0][1]["output"], 0)
+        mcp_canvas_edit.add_node({}, "VAEEncodeForInpaint", wire_from=[12, 4], wire_to=3, replace=True)
+        payload = self.page.call_args[0][1]
+        self.assertEqual((payload["wire_from"], payload["wire_to"], payload["replace"]), ([12, 4], [3], True))
+        mcp_canvas_edit.add_node({}, "ImageScale", insert_after=8, wire_to=9)
+        self.assertEqual(self.page.call_args[0][1]["insert_after"], 8)
+
+    def test_registry_accepts_auto_calls_without_socket_names(self):
+        for tool, args in (("connect_nodes", {"from_node_id": 1, "to_node_id": 2}),
+                           ("add_node", {"type": "ImageScale", "insert_after": 8, "wire_to": [9]})):
+            result = call_tool(mcp_server.TOOLS, tool, args, {})
+            self.assertFalse(result.get("isError"), result)
+        self.assertEqual(self.page.call_count, 2)
+
+    def test_receipt_does_not_claim_disconnected_branch_can_run(self):
+        self.page.return_value = {"reaches_output": False, "unwired": []}
+        self.assertIn("does not reach", mcp_canvas_edit.add_node({}, "ImageScale")["next"])
 
     def test_a_workflow_in_api_form(self):
         nodes = {"1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "a.safetensors"}},
@@ -91,6 +125,11 @@ class BuildToolTests(unittest.TestCase):
             lambda: mcp_canvas_edit.add_node({}, "KSampler", {"steps": [1, 2]}),
             lambda: mcp_canvas_edit.add_node({}, "KSampler", {"text": "x" * (mcp_canvas_edit.MAX_TEXT + 1)}),
             lambda: mcp_canvas_edit.add_node({}, "KSampler", near_node_id=True),
+            lambda: mcp_canvas_edit.add_node({}, "ImageScale", wire_from=[]),
+            lambda: mcp_canvas_edit.add_node({}, "ImageScale", wire_to=list(range(9))),
+            lambda: mcp_canvas_edit.add_node({}, "ImageScale", insert_type="IMAGE"),
+            lambda: mcp_canvas_edit.add_node({}, "ImageScale", replace="yes"),
+            lambda: mcp_canvas_edit.connect_nodes({}, 1, 2, replace="yes"),
             lambda: mcp_canvas_edit.connect_nodes({}, 1, 2, ""),
             lambda: mcp_canvas_edit.connect_nodes({}, {"id": 1}, 2, "model"),
             lambda: mcp_canvas_edit.set_values({}, 3, {}),

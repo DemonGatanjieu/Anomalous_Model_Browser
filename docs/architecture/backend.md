@@ -346,6 +346,17 @@ server's own `/anomalous/scan_all`, `/anomalous/download/status`, `/anomalous_tt
 minutes for the file). Downloads go through the page (`model_download.js` downloadMissing /
 downloadFrom), so the placement rules and the put-in after a download are the UI's own. Canvas changes are posted to the activity log with `via: "mcp"`.
 
+Canvas construction is also in the daily tool set. `find_nodes(query=...)` returns up to five
+brief candidates within a small text budget; `types=[...]` explicitly requests full settings.
+`add_node` accepts `insert_after`, optional `insert_type`, and `wire_from`/`wire_to` (one ID or up
+to eight IDs). `connect_nodes` accepts just two node IDs. Both return actual connections,
+remaining required inputs and whether the branch reaches an output; reachability is not run
+validation. Automatic wiring never replaces occupied inputs without `replace:true`, except
+the selected downstream edge of an insertion. The legacy explicit `input` form still defaults
+to output slot zero and permits replacement. Ambiguity is an error with bounded candidates.
+`get_situation` includes at most six path chains and eight node lines; its overall 3600-character
+budget trims these and reports omitted counts. Full canvas details remain explicitly available.
+
 ## Backups
 
 `api/backup.py` packs the user's data into one .zip (`POST /anomalous/backup/export`, then

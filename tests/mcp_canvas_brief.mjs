@@ -1,7 +1,7 @@
 // node tests/mcp_canvas_brief.mjs — the canvas in brief for an AI: a line per node, what a run still
 // needs wired and what on the canvas fits it, ComfyUI's errors.
 import assert from 'node:assert/strict';
-import { canvasBrief, unwired } from '../web/modules/mcp_canvas_brief.js';
+import { canvasBrief, flowChains, unwired } from '../web/modules/mcp_canvas_brief.js';
 
 /** A node as LiteGraph keeps it, with ComfyUI's data on which inputs a run needs. */
 function node(id, type, inputs = [], outputs = [], { required = inputs.map(input => input.name), mode = 0, title } = {}) {
@@ -43,11 +43,37 @@ assert.equal(canvasBrief(g).errors, undefined);
 
 const many = graph(Array.from({ length: 35 }, (_, at) => node(at + 1, 'SaveImage', [socket('images', 'IMAGE')], [])), {});
 const long = canvasBrief(many);
-assert.equal(long.lines.length, 30);
-assert.equal(long.more_nodes, 5);
+assert.equal(long.lines.length, 8);
+assert.equal(long.more_nodes, 27);
 assert.equal(long.unwired.length, 8);
 assert.equal(long.more_unwired, 27);
 assert.equal(long.unwired[0].fits, undefined, 'nothing on the canvas gives an IMAGE');
 assert.deepEqual(unwired(graph([], {})), { unwired: [] });
+
+assert(brief.chains.some(chain => chain.includes('CONDITIONING:positive')));
+assert(!brief.chains.some(chain => chain.includes('#6 ')), 'bypassed nodes are not active paths');
+const serial = graph([
+    node(1, 'EmptyLatentImage'), node(2, 'KSampler', [socket('latent_image', 'LATENT', 1)]),
+    node(3, 'VAEDecode', [socket('samples', 'LATENT', 2)]), node(4, 'SaveImage', [socket('images', 'IMAGE', 3)]),
+], { 1: { origin_id: 1 }, 2: { origin_id: 2 }, 3: { origin_id: 3 } });
+assert.deepEqual(flowChains(serial).chains, [
+    '#1 EmptyLatentImage --LATENT:latent_image--> #2 KSampler --LATENT:samples--> #3 VAEDecode --IMAGE:images--> #4 SaveImage',
+]);
+serial._nodes.push(node(5, 'VAELoader'));
+serial._nodes[2].inputs.push(socket('vae', 'VAE', 5));
+serial.links[5] = { origin_id: 5 };
+assert(flowChains(serial).chains[0].includes('#2 KSampler --LATENT:samples--> #3 VAEDecode --IMAGE:images--> #4 SaveImage'),
+    'auxiliary VAE input must not split the picture spine');
+serial._nodes[2].inputs.pop();
+delete serial.links[5];
+serial._nodes[0].inputs = [socket('loop', 'IMAGE', 4)];
+serial.links[4] = { origin_id: 4 };
+assert.equal(flowChains(serial).chains.length, 1, 'a malformed cyclic graph still terminates');
+assert(flowChains(serial).chains[0].length <= 240);
+const branches = graph([node(1, 'Source'), ...Array.from({ length: 20 }, (_, i) =>
+    node(i + 2, 'Target', [socket(i % 2 ? 'positive' : 'negative', 'CONDITIONING', i + 1)]))],
+    Object.fromEntries(Array.from({ length: 20 }, (_, i) => [i + 1, { origin_id: 1 }])));
+assert.equal(flowChains(branches).chains.length, 6);
+assert.equal(flowChains(branches).more_chains, 14);
 
 console.log('mcp_canvas_brief: ok');

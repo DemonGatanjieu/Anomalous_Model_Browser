@@ -81,7 +81,8 @@ class ProtocolTests(unittest.TestCase):
             status, body = post({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, {"MCP-Protocol-Version": "2025-06-18"})
         names = {tool["name"] for tool in body["result"]["tools"]}
         self.assertEqual(names, set(action_catalog.DAILY) | set(mcp_apps.APP_TOOLS))
-        self.assertNotIn("add_node", names)
+        self.assertTrue({"find_nodes", "add_node", "connect_nodes", "set_values", "new_workflow"} <= names)
+        self.assertNotIn("download_model", names)
         status, body = post({"jsonrpc": "2.0", "id": 2, "method": "tools/list"}, {"MCP-Protocol-Version": "2025-06-18"})
         self.assertIn("add_node", {tool["name"] for tool in body["result"]["tools"]}, "full by default")
 

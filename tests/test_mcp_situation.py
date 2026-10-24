@@ -66,6 +66,16 @@ class SituationTests(unittest.TestCase):
         self.assertLessEqual(len(tool_text(got)), mcp_situation.BUDGET)
         self.assertEqual(len(got["canvas"]["lines"]) + got["canvas"]["more_nodes"], 60)  # what was left out is counted
 
+    def test_chain_budget_keeps_missing_inputs_and_counts_omissions(self):
+        self.asked.return_value = {"node_count": 8, "lines": ["x" * 140] * 8,
+                                   "chains": ["x" * 240] * 6, "more_chains": 2,
+                                   "unwired": [{"node": 3, "input": "positive", "type": "CONDITIONING",
+                                                "fits": ["x" * 100] * 3}] * 8}
+        got = mcp_situation.get_situation(CTX)
+        self.assertLessEqual(len(tool_text(got)), mcp_situation.BUDGET)
+        self.assertEqual(len(got["canvas"]["unwired"]), 8)
+        self.assertEqual(len(got["canvas"]["chains"]) + got["canvas"]["more_chains"], 8)
+
 
 if __name__ == "__main__":
     unittest.main()

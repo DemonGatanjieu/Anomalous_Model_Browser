@@ -458,6 +458,20 @@ now redundant and can go as the rules they override are touched.
 
 ## Verification
 
+MCP canvas construction uses `canvas_wiring.js` to plan all connections against live sockets
+before mutation. Automatic pairs require a unique concrete type on both sides; wildcard,
+union and ambiguous sockets require explicit selection. Insertion requires one through type
+and an explicit downstream selection when the output branches. Final topology is checked for
+cycles after planned replacements. `mcp_canvas_edit.js` brackets application in one native
+beforeChange/afterChange transaction. On failure it removes the added node and restores prior
+connections; callback failures during restoration are reported as incomplete rollback.
+Asynchronous node preparation verifies the active graph, workflow key and serialized content
+before writing. Successful receipts report links and output reachability, not execution success.
+The activity log's limited undo is separate from ComfyUI's native Ctrl+Z for topology changes.
+`mcp_canvas_brief.js` collapses unbranched paths within each flow, grouping IMAGE/LATENT into
+the picture spine so auxiliary VAE/MASK inputs do not split it, keeps positive/negative roles,
+walks each edge once (including malformed cycles), and bounds the resulting text.
+
 `tests/prompt_tags.mjs` covers splitting, joining, weights and tag edits keeping
 separators. The UI fixture simulates DOM and ComfyUI APIs and does not replace
 checking the real host, layout, focus, drag gestures and theme rendering.

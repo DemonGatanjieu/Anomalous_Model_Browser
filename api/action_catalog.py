@@ -5,7 +5,7 @@ entry here: its kind (the AI workbench's colour, words and counts; None = not a 
 own), the stage of the work it belongs to (the flow over a task: models, combo, prompt,
 canvas, run, pictures, voice, library) and its gate (what it touches or costs, for the user's
 rules on what needs their OK: canvas, gpu, download, network, files; None = nothing to guard).
-tests/test_action_catalog.py keeps this catalog and the tools in step.
+tests/test_ai_tasks.py keeps this catalog and the tools in step.
 
 The user's own changes in Anomalous (activity log actions) get stages too, so the ones made
 while an AI works sit in the same flow as its steps (ai_tasks.note_activity).
@@ -19,11 +19,12 @@ STAGES = ("model", "combo", "prompt", "canvas", "run", "picture", "voice", "libr
 GATES = ("canvas", "gpu", "download", "network", "files")
 
 # The "daily" set the user can offer AI apps instead of all tools (ai_gates.tool_set): runs of saved
-# workflows with their blanks, pictures, models, the task's own; a small model reads half as much.
+# workflows with their blanks, pictures, models, the task's own, and compact canvas building.
 DAILY = frozenset({
     "begin_task", "get_situation", "report", "ask_user", "get_answers", "log_decision", "log_outside",
     "list_workflows", "run_workflow", "run_status", "stop_run", "search_images", "get_image_info", "zoom_image",
     "search_models", "set_model", "add_lora", "check_workflow_models", "fix_workflow_models",
+    "find_nodes", "add_node", "connect_nodes", "set_values", "new_workflow",
 })
 
 # Arguments with which a call also changes the canvas: it then asks as the stricter of its own gate and "canvas".

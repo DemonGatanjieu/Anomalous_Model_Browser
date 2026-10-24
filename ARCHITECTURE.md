@@ -176,7 +176,9 @@ covered by the `styles.css` manifest.
   `recorded`, after checking types, settings and choices against the nodes themselves;
   `web/modules/canvas_build.js` is its pure part (type fit, value checks, a free spot, the
   layered layout). `open_workflow` opens one of the user's saved workflows in a new tab.
-  `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): a line per node,
+  `web/modules/canvas_wiring.js` plans unique concrete-type connections, selected-branch insertion,
+  conflict/cycle checks and rollback on application failure (`tests/canvas_wiring.mjs`).
+  `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is
   get_situation: the task, that brief (describe_canvas with `brief`), the latest run and the

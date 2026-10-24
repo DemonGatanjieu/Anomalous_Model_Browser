@@ -2,7 +2,7 @@
 
 The task (what the user asked last, questions and gates still waiting for them, decisions so
 far, pictures made, steps done outside Anomalous), the canvas in brief (web/modules/
-mcp_canvas_brief.js: a line per node, the inputs nothing feeds yet and the outputs that fit,
+mcp_canvas_brief.js: flow chains, brief node lines, missing inputs and outputs that fit,
 ComfyUI's errors), the latest run, and the one thing to do next. For an AI starting a new chat
 on a task or unsure where it is: a small model reads this instead of describe_canvas, find_nodes
 and the task's history. Unread messages of the user's come with it as with every answer
@@ -73,10 +73,13 @@ def get_situation(ctx, task=None):
     canvas = _canvas()
     answer.update(run=run, canvas=canvas)
     answer["next"] = _next(summary, run, canvas)
-    # Stay under the budget: the canvas lines go first, then the decisions.
+    # Trim detail before chains and decisions; preserve actionable missing inputs and errors.
     while len(tool_text(answer)) > BUDGET and canvas.get("lines"):
         canvas["lines"].pop()
         canvas["more_nodes"] = canvas.get("more_nodes", 0) + 1
+    while len(tool_text(answer)) > BUDGET and canvas.get("chains"):
+        canvas["chains"].pop()
+        canvas["more_chains"] = canvas.get("more_chains", 0) + 1
     while len(tool_text(answer)) > BUDGET and record and answer["task"]["decisions"]:
         answer["task"]["decisions"].pop(0)
     return answer
@@ -86,8 +89,8 @@ SITUATION_TOOLS = {
     "get_situation": {"run": get_situation, "context": True, "spec": {
         "name": "get_situation", "title": "Where things stand",
         "description": "One call, the whole picture: the task (what the user asked last, what waits for them, "
-                       "decisions, pictures made), the canvas in brief (a line per node: what feeds it, what it "
-                       "gives; the inputs nothing feeds yet with the outputs that fit them; ComfyUI's errors), the "
+                       "decisions, pictures made), the canvas in brief (bounded flow chains, node lines, "
+                       "missing inputs with matching outputs, ComfyUI's errors), the "
                        "latest run, and next: the one thing to do now. Call it first in a new chat on a task, and "
                        "whenever you are unsure, instead of describe_canvas, find_nodes or reading files.",
         "inputSchema": _schema({"task": {"type": "string", "description": "Optional task id returned by begin_task."}}),

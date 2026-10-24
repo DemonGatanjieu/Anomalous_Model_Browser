@@ -2,6 +2,10 @@
 
 ## v1.62.0 — unreleased
 
+- AI 搭工作流支持一次添加并自动接线：`insert_after` 接回选中的下游，`wire_from` / `wire_to` 按唯一类型批量连接。正负条件歧义、多分支、已有输入冲突和循环在写入前报明；连接失败恢复原接线。成功回执包含实际连线、缺失输入与输出可达性，支持原生 Ctrl+Z 撤销。
+- 现状简报新增有长度限制的流程链；节点搜索只返回少量摘要，具体参数按需读取。日常工具集开放节点搜索、添加、连线、参数修改与新建工作流，减少逐线调用和重复上下文。
+- Canvas tools can add and wire a node in one call, safely splice a selected branch, and connect unique concrete types by node IDs. Ambiguity/conflicts/cycles are rejected before mutation; failed connections restore previous wiring. Compact receipts, bounded flow chains and brief node search reduce context, with construction tools available in the daily set.
+
 - 修复任务画布标签关闭或切换失败后误用当前工作流的问题：操作会明确报错，重新打开或明确指定新画布后才能继续。下载缺失模型现在也跟随任务画布；留言里的 `@` 搭配和工作流按完整名称查找，不再因模糊搜索前几项占满而误报缺失。
 - Task canvas actions now fail when their recorded tab is closed or cannot be activated instead of using another workflow. Missing-model downloads follow the task tab, and message references resolve exact combo/workflow names before search limits.
 

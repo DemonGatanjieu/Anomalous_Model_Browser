@@ -17,23 +17,18 @@ import { fillPlan } from './mcp_fill.js';
 import { translate as t } from './locales.js';
 import { setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { addWires, applyWires, pairWires, reachesOutput, validateWires } from './canvas_wiring.js';
+import { workflowKey } from './canvas_undo.js';
 
 const BLANK = { last_node_id: 0, last_link_id: 0, nodes: [], links: [], groups: [], config: {}, extra: {}, version: 0.4 };
 
-/** A node as the AI wires it: its inputs (with what feeds them), outputs and settings. */
+/** Socket details when a node was added without wiring; wired receipts already say what changed. */
 function shape(g, node) {
-    const settings = {};
-    for (const widget of node.widgets || []) {
-        if (!widget?.name || widget.type === 'button') continue;
-        settings[widget.name] = typeof widget.value === 'string' ? widget.value.slice(0, 200) : widget.value;
-    }
     return {
-        node_id: node.id, type: node.type, title: node.title,
         inputs: sockets(node).map(input => ({
             name: input.name, type: String(input.type), ...(input.link != null ? { from_node: linkOf(g, input.link)?.origin_id } : {}),
         })),
         outputs: (node.outputs || []).map((output, slot) => ({ slot, name: output.name, type: String(output.type) })),
-        settings,
     };
 }
 
@@ -52,19 +47,6 @@ function apply(node, plan) {
         widget.callback?.(value, app.canvas, node, app.canvas?.graph_mouse, null);
         node.onWidgetChanged?.(widget.name, value, old, widget);
     }
-}
-
-function outputSlot(node, output) {
-    const outputs = node.outputs || [];
-    if (Number.isInteger(output) && outputs[output]) return output;
-    const name = String(output ?? '').toLowerCase();
-    let slot = outputs.findIndex(item => String(item.name).toLowerCase() === name);
-    if (slot < 0) {
-        const typed = outputs.flatMap((item, index) => (String(item.type).toLowerCase() === name ? [index] : []));
-        slot = typed.length === 1 ? typed[0] : -1;
-    }
-    if (slot < 0) throw new Error(`Node ${node.id} (${node.type}) has no output ${output}; it has: ${outputs.map((item, i) => `${i} ${item.name}`).join(', ') || 'none'}.`);
-    return slot;
 }
 
 function inputSlot(node, input) {
@@ -137,43 +119,49 @@ async function withFreshChoices(make) {
 
 /** The canvas-building actions, given mcp_bridge.js's own helpers. */
 export function canvasEditActions({ recorded, nodeById }) {
-    function addNode({ type, title, values, near_node_id: nearId }, getOwner) {
+    function addNode({ type, title, values, near_node_id: nearId, replace = false, ...wiring }, getOwner) {
         return recorded(getOwner, 'mcpDidNode', async (g) => {
+            const key = workflowKey(app), before = JSON.stringify(g.serialize());
             const { node, plan } = await withFreshChoices(() => {
                 const made = newNode(String(type));
                 return { node: made, plan: valuePlan(made, values) };
             });
+            if ((app.canvas?.graph || app.graph) !== g || workflowKey(app) !== key || JSON.stringify(g.serialize()) !== before) {
+                throw new Error('The canvas changed while preparing the node. Nothing added; read get_situation again.');
+            }
             if (title) node.title = String(title).slice(0, 120);
-            const near = nearId != null ? nodeById(nearId) : null;
+            const near = (nearId ?? wiring.insert_after) != null ? nodeById(nearId ?? wiring.insert_after) : null;
+            const wires = validateWires(g, addWires(g, node, wiring), replace);
+            let connections;
             g.beforeChange?.();
-            node.pos = freeSpot(node, (g._nodes || []), near);
-            g.add(node);
-            apply(node, plan);
-            g.afterChange?.();
+            try {
+                node.pos = freeSpot(node, (g._nodes || []), near);
+                connections = applyWires(g, wires, node, () => apply(node, plan));
+            } finally { g.afterChange?.(); }
             g.setDirtyCanvas?.(true, true);
             recordCanvasStep(app);
-            return { ...shape(g, node), ...unwired(g), toast: { name: node.title || node.type } };
+            return { node_id: node.id, type: node.type, connections, reaches_output: reachesOutput(g, node),
+                ...unwired(g), ...(!connections.length ? shape(g, node) : {}),
+                toast: { name: node.title || node.type } };
         });
     }
 
-    function connectNodes({ from_node_id: fromId, output, to_node_id: toId, input }, getOwner) {
+    function connectNodes({ from_node_id: fromId, output, to_node_id: toId, input, replace }, getOwner) {
         return recorded(getOwner, 'mcpDidWire', (g) => {
             const from = nodeById(fromId);
             const to = nodeById(toId);
-            const slot = outputSlot(from, output);
-            const target = inputSlot(to, input);
-            const was = to.inputs[target].link != null ? linkOf(g, to.inputs[target].link)?.origin_id : null;
+            const plan = validateWires(g, pairWires(from, to, { output, input }), replace ?? (input != null && output != null));
+            let connections;
             g.beforeChange?.();
             try {
-                wire(g, from, slot, to, target);
+                connections = applyWires(g, plan);
             } finally {
                 g.afterChange?.();
             }
             g.setDirtyCanvas?.(true, true);
             recordCanvasStep(app);
             return {
-                from_node: from.id, output: from.outputs[slot].name, to_node: to.id, input: to.inputs[target].name,
-                ...(was != null && was !== from.id ? { replaced_link_from: was } : {}),
+                connections, reaches_output: reachesOutput(g, from),
                 ...unwired(g), toast: { from: from.title || from.type, to: to.title || to.type },
             };
         });

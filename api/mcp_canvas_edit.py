@@ -15,7 +15,7 @@ from .mcp_actions import _action, _local, _page
 from .mcp_tools import ToolError
 
 MAX_FOUND = 20
-MAX_CHOICES = 12
+MAX_SEARCH = 5
 MAX_CHOICES_NAMED = 60
 MAX_VALUES = 60
 MAX_TEXT = 20000
@@ -116,14 +116,25 @@ def find_nodes(ctx, query="", types=None):
             scored.append((not ai_toolbox.chosen(picked, name, item), 0 if name.lower() == " ".join(words) else 1 if all(w in label for w in words) else 2,
                            bool(item.get("deprecated")), ai_toolbox.source_of(item) == "api", len(name), name))
     scored.sort()
-    nodes = [_node(name, info[name], MAX_CHOICES) for *_rest, name in scored[:MAX_FOUND]]
+    # Searching identifies candidates; don't repeat hundreds of model choices/settings for each.
+    nodes = []
+    for *_rest, name in scored[:MAX_SEARCH]:
+        detail = _node(name, info[name], 0)
+        nodes.append({"type": name, "display_name": str(detail["display_name"])[:80],
+                      "source": str(detail["source"])[:80],
+                      "description": detail["description"][:96],
+                      "inputs": [f"{i['name'][:48]}:{i['type'][:48]}" for i in detail["inputs"][:8]],
+                      "outputs": [f"{i['name'][:48]}:{i['type'][:48]}" for i in detail["outputs"][:8]],
+                      **{k: detail[k] for k in ("paid", "deprecated") if k in detail},
+                      **({"more_inputs": len(detail["inputs"]) - 8} if len(detail["inputs"]) > 8 else {})})
     for node in nodes:
         if ai_toolbox.chosen(picked, node["type"], info[node["type"]]):
             node["picked_by_user"] = True
+    while len(nodes) > 1 and len(json.dumps(nodes, ensure_ascii=False)) > 3000:
+        nodes.pop()
     return {"nodes": nodes, "total_matches": len(scored),
-            "note": "Inputs of type choice take one of their choices; others are sockets fed by connect_nodes "
-                    "or settings set by values. types=[...] gives a node's full choice lists. picked_by_user: the user "
-                    "wants these used; paid: a Comfy API node that spends the user's credits, use it only when asked."}
+            "note": "Brief candidates; types=[chosen type] gives settings/choices and output slots when needed. "
+                    "Narrow query for other matches. picked_by_user: preferred; paid: spends credits, use only when asked."}
 
 
 def _id(value, what):
@@ -152,25 +163,49 @@ def _type(value):
 def _next(answer):
     """The checklist's next step after a change (the page answers with what is still unwired)."""
     if isinstance(answer, dict):
-        answer["next"] = ("connect_nodes: wire each of unwired (fits lists the outputs on the canvas that fit it)."
-                          if answer.get("unwired") else "Nothing a run needs is unwired: run_workflow runs it.")
+        answer["next"] = ("Connect the new branch to an output; it does not reach one yet."
+                          if answer.get("reaches_output") is False else
+                          "Wire unwired inputs with connect_nodes; unique types need only the two node IDs."
+                          if answer.get("unwired") else "No required input is unwired; run_workflow validates and runs the graph.")
     return answer
 
 
-def add_node(ctx, type, values=None, title="", near_node_id=None):
+def _ids(value, label):
+    if value is None:
+        return []
+    items = value if isinstance(value, list) else [value]
+    if not 1 <= len(items) <= 8:
+        raise ToolError(f"{label} names 1 to 8 node IDs.")
+    return [_id(item, label) for item in items]
+
+
+def add_node(ctx, type, values=None, title="", near_node_id=None, insert_after=None, insert_type=None,
+             wire_from=None, wire_to=None, replace=False):
+    if not isinstance(replace, bool):
+        raise ToolError("replace must be true or false.")
+    if insert_type is not None and (insert_after is None or not isinstance(insert_type, str) or not 0 < len(insert_type) <= 60):
+        raise ToolError("insert_type names a through type (e.g. IMAGE) and needs insert_after.")
+    wiring = {"wire_from": _ids(wire_from, "wire_from"), "wire_to": _ids(wire_to, "wire_to"), "replace": replace}
+    if insert_after is not None:
+        wiring.update(insert_after=_id(insert_after, "insert_after"), insert_type=insert_type)
     _allowed(ctx, [_type(type)])
     return _next(_page("add_node", {"type": _type(type), "values": _values(values), "title": str(title or "")[:120],
-                                    "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")}))
+                                    "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id"), **wiring}))
 
 
-def connect_nodes(ctx, from_node_id, to_node_id, input, output=0):
-    if isinstance(output, bool) or not isinstance(output, (int, str)) or len(str(output)) > 100:
+def connect_nodes(ctx, from_node_id, to_node_id, input=None, output=None, replace=None):
+    if output is not None and (isinstance(output, bool) or not isinstance(output, (int, str)) or len(str(output)) > 100):
         raise ToolError("output is the output's slot number or its name.")
     output = int(output) if isinstance(output, str) and output.strip().isdigit() else output
-    if not isinstance(input, str) or not input or len(input) > 100:
+    if input is not None and (not isinstance(input, str) or not input or len(input) > 100):
         raise ToolError("input is the input's name, as add_node, find_nodes or describe_canvas give it.")
+    if replace is not None and not isinstance(replace, bool):
+        raise ToolError("replace must be true or false.")
+    # Preserve the old explicit-input form's default output and replacement behaviour.
+    if input is not None and output is None:
+        output = 0
     return _next(_page("connect_nodes", {"from_node_id": _id(from_node_id, "from_node_id"), "output": output,
-                                         "to_node_id": _id(to_node_id, "to_node_id"), "input": input}))
+                                         "to_node_id": _id(to_node_id, "to_node_id"), "input": input, "replace": replace}))
 
 
 def set_values(ctx, node_id, values):
@@ -208,26 +243,31 @@ def open_workflow(ctx, name):
 
 _NODE_ID = {"type": "integer", "description": "A node id from describe_canvas or a tool's answer."}
 _VALUES = {"type": "object", "description": "{setting name: value}; a choice takes one of its choices exactly."}
+_NEIGHBOURS = {"oneOf": [_NODE_ID, {"type": "array", "items": _NODE_ID, "minItems": 1, "maxItems": 8}]}
 
 CANVAS_TOOLS = dict([
     _action("find_nodes", "Look up node types",
-            "The node types this ComfyUI has (built in and custom nodes): type, category, each input (a socket, or a "
-            "setting with its choices, default and range) and each output with its slot. query searches names, "
-            "categories and descriptions; types gives those nodes in full. Look here before add_node or new_workflow.",
+            "Find built-in and custom node types. query returns up to five brief candidates, without bulky choice "
+            "lists. types=[chosen type] gives inputs, settings, choices, ranges and output slots when needed. "
+            "Use add_node with insert_after or wire_from/wire_to to add and wire in one call.",
             find_nodes, {"query": {"type": "string"}, "types": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_FOUND}},
             read_only=True),
     _action("add_node", "Add a node",
-            "Adds one node to the open workflow, where the user sees it: right of near_node_id, or right of the "
-            "workflow; nothing it would cover. values sets its settings. The answer gives its node_id, inputs and "
-            "outputs for connect_nodes. One Ctrl+Z step.",
+            "Add and wire a node in ONE call. insert_after splices one branch end-to-end; if several branches, "
+            "wire_to selects the downstream node(s). Or wire_from/wire_to name neighbours; unique concrete types "
+            "wire automatically (IMAGE+MASK may both connect). Ambiguity changes nothing and lists candidates. "
+            "replace:true permits replacing occupied inputs. One undo step; returns connections and reaches_output.",
             add_node, {"type": {"type": "string", "description": "A node type from find_nodes, e.g. KSampler."},
-                       "values": _VALUES, "title": {"type": "string"}, "near_node_id": _NODE_ID}, ["type"]),
+                       "values": _VALUES, "title": {"type": "string"}, "near_node_id": _NODE_ID,
+                       "insert_after": _NODE_ID, "insert_type": {"type": "string", "description": "Only if needed: through type, e.g. IMAGE."},
+                       "wire_from": _NEIGHBOURS, "wire_to": _NEIGHBOURS, "replace": {"type": "boolean"}}, ["type"]),
     _action("connect_nodes", "Wire two nodes",
-            "Wires output `output` (slot number or name) of from_node_id to input `input` of to_node_id, replacing "
-            "what fed that input before (the answer says so). Types must fit. One Ctrl+Z step.",
-            connect_nodes, {"from_node_id": _NODE_ID, "output": {"type": "string", "default": "0", "description": "The output's slot number or name."},
-                            "to_node_id": _NODE_ID, "input": {"type": "string"}},
-            ["from_node_id", "to_node_id", "input"]),
+            "Wire two nodes by ID: all unique concrete matching types connect in one undo step. No guessing "
+            "positive/negative or wildcard sockets: ambiguity lists candidates, changes nothing. "
+            "Optional output/input select sockets explicitly; replace:true permits replacing existing wires in auto mode.",
+            connect_nodes, {"from_node_id": _NODE_ID, "output": {"type": "string", "description": "Optional output slot number or name."},
+                            "to_node_id": _NODE_ID, "input": {"type": "string"}, "replace": {"type": "boolean"}},
+            ["from_node_id", "to_node_id"]),
     _action("set_values", "Change a node's settings",
             "Sets settings of one node (steps, cfg, a sampler, a size, a file choice…), checked against what each "
             "takes. For prompts set_prompt, for models set_model find the right ones. One Ctrl+Z step.",
