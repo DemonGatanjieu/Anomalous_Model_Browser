@@ -131,9 +131,11 @@ async def api_gate(request):
 async def api_gates(request):
     """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools}; POST {gate, policy} changes one,
     POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py),
-    POST {tools: full | daily} which tools AI apps are offered (ai_gates.tool_set)."""
+    POST {tools: full | daily} which tools AI apps are offered (ai_gates.tool_set), POST {runs: call | wait}
+    how the AI waits for a run (ai_gates.run_wait)."""
     def settings():
-        return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "tools": ai_gates.tool_set()}
+        return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "tools": ai_gates.tool_set(),
+                "runs": ai_gates.run_wait()}
 
     if request.method == "GET":
         return web.json_response(settings())
@@ -143,6 +145,8 @@ async def api_gates(request):
             ai_task_canvas.set_default(body["canvas_tab"])
         elif "tools" in (body or {}):
             ai_gates.set_tool_set(body["tools"])
+        elif "runs" in (body or {}):
+            ai_gates.set_run_wait(body["runs"])
         else:
             ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
     except ValueError as error:

@@ -11,7 +11,9 @@ arguments goes ahead without asking twice. Policies are kept in the ComfyUI user
 (anomalous/ai_gates.json); changing one is a write (local_guard.py keeps it to this computer).
 The same window sets which tools AI apps are offered (tool_set: all, or the "daily" set of
 action_catalog.DAILY for a small model's everyday runs; anomalous/ai_tools.json); an app sees a
-change in a new chat (they keep the list a chat began with).
+change in a new chat (they keep the list a chat began with). It also sets how an AI waits for a
+run (run_wait): "call", it ends its turn and the user tells it when the run is done (the AI
+workbench gives them a line to paste), or "wait", it waits with run_status.
 """
 
 import json
@@ -24,6 +26,7 @@ from .path_utils import atomic_write_json
 
 POLICIES = ("auto", "ask", "never")
 TOOL_SETS = ("full", "daily")
+RUN_WAITS = ("call", "wait")
 DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
 WAIT_SECONDS = 50  # below the minute many AI apps give a tool call
 ALLOWED_SECONDS = 30 * 60  # an Allow the AI did not wait for holds this long for the same call
@@ -60,21 +63,43 @@ def _tools_path():
     return os.path.join(os.path.dirname(ai_tasks.tasks_dir()), "ai_tools.json")
 
 
-def tool_set():
-    """The tools AI apps are offered: "full" or "daily"."""
+def _tool_settings():
     try:
         with open(_tools_path(), encoding="utf-8") as source:
-            chosen = json.load(source).get("set")
-    except (OSError, ValueError, AttributeError):
-        chosen = None
+            stored = json.load(source)
+    except (OSError, ValueError):
+        stored = {}
+    return stored if isinstance(stored, dict) else {}
+
+
+def _set_tool_setting(key, value):
+    with _decided:
+        atomic_write_json(_tools_path(), {**_tool_settings(), key: value})
+    return value
+
+
+def tool_set():
+    """The tools AI apps are offered: "full" or "daily"."""
+    chosen = _tool_settings().get("set")
     return chosen if chosen in TOOL_SETS else "full"
 
 
 def set_tool_set(name):
     if name not in TOOL_SETS:
         raise ValueError("tools is full or daily")
-    atomic_write_json(_tools_path(), {"set": name})
-    return name
+    return _set_tool_setting("set", name)
+
+
+def run_wait():
+    """How an AI waits for its run: "call" (the user tells it when it is done) or "wait" (run_status)."""
+    chosen = _tool_settings().get("runs")
+    return chosen if chosen in RUN_WAITS else "call"
+
+
+def set_run_wait(mode):
+    if mode not in RUN_WAITS:
+        raise ValueError("runs is call or wait")
+    return _set_tool_setting("runs", mode)
 
 
 def describe(tool, arguments):

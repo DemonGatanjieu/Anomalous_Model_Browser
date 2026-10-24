@@ -12,7 +12,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import ai_task_runs, ai_tasks  # noqa: E402
+from api import ai_gates, ai_task_runs, ai_tasks  # noqa: E402
 from test_ai_tasks import isolate, ok  # noqa: E402
 
 
@@ -65,7 +65,9 @@ class ProgressTests(unittest.TestCase):
         self.assertEqual(told.call_args[0][1]["progress"]["value"], 3)
         status = ai_task_runs.status("Claude")
         self.assertEqual((status["state"], status["progress"]["max"]), ("running", 20))
-        self.assertIn("do not guess", status["next"])
+        self.assertIn("end your turn", status["next"], "by default the user tells the AI when it is done")
+        with mock.patch.object(ai_gates, "run_wait", return_value="wait"):
+            self.assertIn("run_status(wait_seconds=55)", ai_task_runs.status("Claude")["next"])
         history = {"p1": {"status": {"completed": True}, "outputs": {
             "9": {"images": [{"filename": "a.png", "subfolder": "x", "type": "output"}]},
             "12": {"images": [{"filename": "pose_00001_.png", "type": "temp"}]}}}}  # a PreviewImage: the AI's to look at
@@ -203,6 +205,26 @@ class NewsTests(unittest.TestCase):
             self.assertIn("pictures_attached", result["content"][0]["text"])
             again = ai_task_runs.show_pictures({"content": [{"type": "text", "text": "{}"}], "structuredContent": {}}, self.task)
             self.assertEqual(len(again["content"]), 1, "once per run")
+
+    def test_a_line_to_paste_until_the_ai_knows(self):
+        with mock.patch.object(ai_tasks, "_notify"), mock.patch.object(ai_gates, "run_wait", return_value="call"):
+            ai_task_runs._finish_run(self.task, self.step["id"], ["p1"], {"p1": {"status": {"completed": True}}})
+        self.assertTrue(ai_tasks.get_task(self.task)["steps"][-1]["call_ai"], "the workbench offers the line")
+        self.told()
+        self.assertNotIn("call_ai", ai_tasks.get_task(self.task)["steps"][-1], "gone once the AI is told")
+
+    def test_no_line_when_the_ai_waits_or_a_new_run_starts(self):
+        with mock.patch.object(ai_tasks, "_notify"), mock.patch.object(ai_gates, "run_wait", return_value="wait"):
+            ai_task_runs._finish_run(self.task, self.step["id"], ["p1"], {"p1": {"status": {"completed": True}}})
+        self.assertNotIn("call_ai", ai_tasks.get_task(self.task)["steps"][-1])
+        with ai_tasks._lock:
+            task = ai_tasks._load()[self.task]
+            task["steps"][-1]["call_ai"] = True
+            ai_tasks._save(task)
+        newer = ai_tasks.record("A", "run_workflow", {}, ok({"queued": 1}), time.time())
+        with mock.patch("threading.Thread"):
+            ai_task_runs.watch(newer["id"], {"prompt_ids": ["p2"]})
+        self.assertNotIn("call_ai", ai_tasks.get_task(self.task)["steps"][0], "an older run offers no line once another starts")
 
     def test_an_old_run_told_before_brings_no_pictures(self):
         with mock.patch.object(ai_tasks, "_notify"):

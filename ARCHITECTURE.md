@@ -326,7 +326,9 @@ covered by the `styles.css` manifest.
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
   decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
   one to link. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
-  step made and where it leads (and the strip of a task's results). `ui_ai_side.js` is the
+  step made and where it leads (and the strip of a task's results); `ui_ai_call.js` the lines to
+  paste to the AI on a run it did not wait for (`ai_gates.run_wait` "call": the server marks the
+  ended run `call_ai` until the AI is told). `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a line per
   panel that brings it there): like the timeline it reads from the top down, the task's panels in
   the order they came with their step numbers, the newest at the bottom. Opening a task,

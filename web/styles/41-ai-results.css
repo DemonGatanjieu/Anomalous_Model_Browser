@@ -264,6 +264,37 @@
 @container (max-width: 310px) { .anomalous-canvas-change-values { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-live-dot, .anomalous-ai-working { animation: none; } }
 
+/* Lines to paste to the AI when a run it did not wait for has ended (ui_ai_call.js). */
+.anomalous-ai-call {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    margin-top: 10px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--ai-run) 35%, var(--amb-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--ai-run) 7%, transparent);
+}
+.anomalous-ai-call-lead { color: var(--amb-text-main); font-size: 12px; }
+.anomalous-ai-call-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: var(--amb-bg-input, transparent);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.anomalous-ai-call-line:hover { border-color: var(--amb-border-strong); }
+.anomalous-ai-call-line.is-main { border-color: color-mix(in srgb, var(--ai-run) 55%, transparent); }
+.anomalous-ai-call-line.is-done { border-color: var(--amb-ok); color: var(--amb-ok); }
+.anomalous-ai-call-hint { flex-basis: 100%; color: var(--amb-text-dim); font-size: 11px; }
+
 /* A picture no longer in the output folder (ui_ai_images.js gonePicture): said so, where it was. */
 .anomalous-ai-gone {
     display: flex;

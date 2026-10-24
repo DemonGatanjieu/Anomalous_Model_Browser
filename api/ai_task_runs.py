@@ -15,7 +15,7 @@ what changed since the task's run before it (ai_run_map.py); a run the user or t
 import threading
 import time
 
-from . import ai_run_map, ai_run_watch, ai_tasks
+from . import ai_gates, ai_run_map, ai_run_watch, ai_tasks
 from .mcp_tools import ToolError, _image_content, _resolve_image, tool_text
 
 RUN_POLL_SECONDS = 2.0
@@ -152,6 +152,8 @@ def _finish_run(task_id, step_id, prompts, history, queued=None):
         if done >= len(prompts):
             step.pop("progress", None)
             step["ms"] = int((time.time() - step["at"]) * 1000)
+            if step["state"] in ("done", "error") and not step.get("told") and ai_gates.run_wait() == "call":
+                step["call_ai"] = True  # the workbench offers the user a line to paste to the AI
             task["updated"] = max(task["updated"], time.time())
         ai_tasks._save(task)
     ai_tasks._notify(task_id)
@@ -190,6 +192,9 @@ def watch(step_id, receipt):
             return  # The user may remove the task while its submission is returning.
         step["prompt_ids"] = list(prompts)
         step_at = step["at"]
+        for other in task.get("steps", []):  # a new run: no line to paste for an older one any more
+            if other is not step:
+                other.pop("call_ai", None)
         if receipt.get("submission_error"):
             step.update(submission_error=receipt["submission_error"], error=receipt["submission_error"], ok=False)
         ai_tasks._save(task)
@@ -295,8 +300,8 @@ def summary(run):
         parts.append(f"{round(time.time() - run['at'])} s so far")
         if progress.get("note"):
             parts.append(f"console says: {progress['note']}")
-        return (f"Your run is still going ({', '.join(parts)}). It has not finished: call run_status with "
-                "wait_seconds to wait for it; do not look in the output folder or guess." + warning)
+        return (f"Your run is still going ({', '.join(parts)}). It has not finished: {waiting_words()}; "
+                "do not look in the output folder or guess." + warning)
     if state == "cancelled":
         return ("The user stopped your run in Anomalous; do not start it again unless they ask." if run.get("stop") == "user"
                 else "Your run was stopped (stop_run).")
@@ -320,8 +325,17 @@ def news(task_id):
             answer["progress"] = run["progress"]
         if run.get("state") not in ("running", "asking", "allowed"):
             run["told"], run["shown"] = True, False  # show_pictures attaches them to this answer
+            run.pop("call_ai", None)
             ai_tasks._save(task)
         return answer
+
+
+def waiting_words():
+    """How the AI is to wait for a run still going, as the user chose (ai_gates.run_wait)."""
+    if ai_gates.run_wait() == "call":
+        return ("the user tells you when it is done (Anomalous gives them a line to paste to you): say it is running "
+                "and end your turn; do not wait with run_status")
+    return "call run_status with wait_seconds to wait for it"
 
 
 def show_pictures(result, task_id):
@@ -405,6 +419,7 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
             step = next((item for item in (task or {}).get("steps", []) if item["id"] == run["id"]), None)
             if step is not None:
                 step["told"], step["shown"] = True, False  # show_pictures attaches them to this answer
+                step.pop("call_ai", None)
                 ai_tasks._save(task)
     if run.get("progress"):
         answer["progress"] = run["progress"]
@@ -426,7 +441,9 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
         answer["error"] = run["error"]
     # What to do now, in one line a small model can follow (get_situation and the canvas tools say theirs too).
     answer["next"] = {
-        "running": "run_status(wait_seconds=55): it is still running; do not guess it is done or run it again.",
+        "running": (f"It is still running: {waiting_words()}. Do not guess it is done or run it again."
+                    if ai_gates.run_wait() == "call" else
+                    "run_status(wait_seconds=55): it is still running; do not guess it is done or run it again."),
         "allowed": "run_status(wait_seconds=55): it is about to run.",
         "done": ("The first answer telling you it ended has its pictures attached (pictures_attached): look at them, "
                  "then report what came out with images= its pictures; show_panel only to compare or ask. "

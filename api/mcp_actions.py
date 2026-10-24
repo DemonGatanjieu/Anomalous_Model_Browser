@@ -15,7 +15,7 @@ import time
 import urllib.error
 import urllib.request
 
-from . import mcp_fill
+from . import ai_gates, mcp_fill
 from .lora_info import trains_text_encoder
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import MAX_LIMIT, ToolError, _resolve_model, _schema
@@ -137,7 +137,10 @@ def run_workflow(ctx, batch=1, wait_seconds=15, workflow=None, **slots):
         raise ToolError((answer.get("submission_error") if isinstance(answer, dict) else None)
                         or "No valid submission receipts. Check ComfyUI's queue before retrying; do not repeat automatically.")
     answer = {"prompt_ids": ids, "queued": len(ids), "requested": batch,
-              "note": "Follow these runs with run_status (wait_seconds up to 55). Do not repeat the batch; accepted prompts are already queued."}
+              "note": ("If this answer does not say it is done, the user tells you when it is: say it is running and end "
+                       "your turn; run_status then brings its pictures." if ai_gates.run_wait() == "call" else
+                       "Follow these runs with run_status (wait_seconds up to 55).")
+              + " Do not repeat the batch; accepted prompts are already queued."}
     if filled:
         answer["filled"] = filled
     # Some prompts may have been accepted before validation or a transport failure stopped the batch.

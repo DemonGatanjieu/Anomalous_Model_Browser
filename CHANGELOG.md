@@ -13,6 +13,8 @@
 - add_nodes adds a group of nodes in API form to the open canvas in one call: links inside the group, to canvas nodes as "#12" (outputs by slot or name) and wire_to into canvas nodes, checked first, laid out as one block and undone in one step.
 - 图跑完后，第一个告诉 AI "跑完了" 的回复（不管是查进度还是别的工具）直接带着这次出的图，最多 4 张缩略图，每次运行只带一次。AI 不用再去取图，看完就能留言。
 - The answer that first tells the AI its run ended, run_status or any other, carries up to four thumbnails of the run's pictures, once per run, so it need not fetch them with get_image_info.
+- 跑完叫我：关卡窗口新增“等跑图”，默认“跑完叫我”。AI 提交后最多等 15 秒，还没跑完就告诉你在跑，然后收工，不再一遍遍查进度（以前一张图要查 10 次左右）。跑完后，AI 工作台那一步下面有几句话，点一下复制，粘到 AI 的对话框里，它就接着看结果和图；AI 知道结果后这几句话自动消失。选“AI 自己等”就和以前一样。
+- Tell AI when done: a new setting in the Gates window, on by default. The AI waits up to 15 s after queueing and, if the run still goes, says so and ends its turn instead of polling run_status. When the run ends, its step offers lines to copy into the AI's chat; they go once the AI knows. "AI waits" keeps the old way.
 
 - 修复任务画布标签关闭或切换失败后误用当前工作流的问题：操作会明确报错，重新打开或明确指定新画布后才能继续。下载缺失模型现在也跟随任务画布；留言里的 `@` 搭配和工作流按完整名称查找，不再因模糊搜索前几项占满而误报缺失。
 - Task canvas actions now fail when their recorded tab is closed or cannot be activated instead of using another workflow. Missing-model downloads follow the task tab, and message references resolve exact combo/workflow names before search limits.

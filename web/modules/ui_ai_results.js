@@ -20,6 +20,7 @@ import { imageResults } from './ui_ai_images.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import { estimateBox, runProgress } from './ui_ai_run_live.js';
 import { runMapBox } from './ui_ai_run_map.js';
+import { callAiLines } from './ui_ai_call.js';
 
 export const shared = { owner: null, taskId: null, entries: new Map(), player: null, openMap: null }; // openMap: ui_ai_workbench.js
 
@@ -146,6 +147,8 @@ export function resultLinks(step, changed = () => {}) {
     }
     if (pictures.length) links.append(button('anomalous-ai-link', t('aiOpenGallery'), () => shared.owner?.goTo('gallery')));
     if (links.childNodes.length) box.append(links, note);
+    const call = step.tool === 'run_workflow' ? callAiLines(step) : null;
+    if (call) box.append(call);
     return box.childNodes.length ? box : null;
 }
 

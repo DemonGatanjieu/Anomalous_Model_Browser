@@ -67,6 +67,17 @@ class GateTests(unittest.TestCase):
             target.write("[1]")
         self.assertEqual(ai_gates.tool_set(), "full", "a broken file offers everything")
 
+    def test_how_the_ai_waits_for_a_run(self):
+        ai_gates._tools_path = lambda: os.path.join(GATES, "ai_tools.json")
+        if os.path.exists(ai_gates._tools_path()):
+            os.remove(ai_gates._tools_path())
+        self.assertEqual(ai_gates.run_wait(), "call", "the user tells the AI when it is done")
+        ai_gates.set_tool_set("daily")
+        self.assertEqual(ai_gates.set_run_wait("wait"), "wait")
+        self.assertEqual((ai_gates.run_wait(), ai_gates.tool_set()), ("wait", "daily"), "one setting keeps the other")
+        with self.assertRaises(ValueError):
+            ai_gates.set_run_wait("soon")
+
     def test_auto_and_never(self):
         self.assertIsNone(self.call("set_prompt", {"text": "x"})[1])
         self.assertIsNone(self.call("search_models", {})[1], "reads have no gate")

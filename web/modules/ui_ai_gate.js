@@ -3,8 +3,9 @@
  * (what the AI wants to do; Allow, No with a reason for the AI, and "from now on, go ahead"), what
  * the user answered, and the Gates window where each kind of action is set to go ahead, ask first
  * or never (changing the canvas, using the GPU, downloading, going online, moving model files), whether a new
- * task works in a canvas tab of its own (api/ai_task_canvas.py), and which tools AI apps are offered
- * (all, or the daily set for a small model).
+ * task works in a canvas tab of its own (api/ai_task_canvas.py), which tools AI apps are offered
+ * (all, or the daily set for a small model), and whether the AI waits for a run or the user tells it
+ * when the run is done (ui_ai_call.js).
  */
 
 import { translate as t } from './locales.js';
@@ -131,6 +132,8 @@ export async function openGates() {
         async mode => (await save({ canvas_tab: mode })).canvas_tab),
     choiceRow('tools', ['daily', 'full'], known.tools || 'full', set => t(`aiToolSet_${set}`),
         async set => (await save({ tools: set })).tools),
+    choiceRow('runs', ['call', 'wait'], known.runs || 'call', mode => t(`aiRunWait_${mode}`),
+        async mode => (await save({ runs: mode })).runs),
     el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
     aiWindow(t('aiGates'), body);
 }
