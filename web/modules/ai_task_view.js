@@ -85,6 +85,29 @@ export function flowStages(task) {
     return [...stages.values()];
 }
 
+/**
+ * What a panel holds, for its card in the timeline: `icon` (question, image, nodes, models or
+ * panel) and `parts` `[{ key, values }]`: what it asks, pictures, a before-and-after, models, a
+ * node structure; none for words only.
+ */
+export function panelGist(panel) {
+    const blocks = (panel?.blocks || []).filter(Boolean);
+    const has = type => blocks.some(block => block.type === type);
+    const count = type => blocks.filter(block => block.type === type).reduce((sum, block) => sum + (block.items?.length || 0), 0);
+    const parts = [];
+    const choices = blocks.find(block => block.type === 'choices');
+    if (choices) parts.push({ key: 'aiGistAsk', values: { count: choices.options?.length || 0 } });
+    else if (has('input')) parts.push({ key: 'aiGistAskFree', values: {} });
+    if (has('picks')) parts.push({ key: 'aiGistPick', values: { count: count('picks') } });
+    if (has('slider')) parts.push({ key: 'aiGistCompare', values: {} });
+    if (has('images')) parts.push({ key: 'aiGistPictures', values: { count: count('images') } });
+    if (has('models')) parts.push({ key: 'aiGistModels', values: { count: count('models') } });
+    if (has('run_map') || has('diagram')) parts.push({ key: 'aiGistMap', values: {} });
+    const icon = choices || has('input') ? 'question' : has('picks') || has('slider') || has('images') ? 'image'
+        : has('run_map') || has('diagram') ? 'nodes' : has('models') ? 'models' : 'panel';
+    return { icon, parts };
+}
+
 /** The locale key naming a step's tool. */
 export function toolKey(tool) {
     return `aiTool_${String(tool || '').replace(/[^a-z_]/g, '')}`;

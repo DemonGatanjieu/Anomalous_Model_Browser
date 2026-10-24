@@ -11,6 +11,7 @@
 
 import { translate as t } from './locales.js';
 import { diagram } from './ui_ai_stage.js';
+import { iconButton } from './ui_ai_icons.js';
 import { runStory } from './ui_ai_run_story.js';
 
 const LABELLED = new Set(['MODEL', 'LATENT', 'IMAGE', 'CONDITIONING', 'UPSCALE_MODEL', 'MASK', 'CONTROL_NET']);
@@ -117,13 +118,10 @@ export function runMapBox(step, ctx, open = false) {
     const head = el('summary', 'anomalous-ai-run-map-head');
     head.append(el('span', 'anomalous-ai-run-map-title', t('aiMapTitle')), el('span', 'anomalous-ai-run-map-line', mapLine(step.map)));
     if (ctx.openSide) {
-        const large = el('button', 'anomalous-ai-run-map-side', t('aiMapOpenSide'));
-        large.type = 'button';
-        large.onclick = (event) => {
+        head.append(iconButton('anomalous-ai-side-open', 'sidebar', t('aiMapOpenSide'), (event) => {
             event.preventDefault(); // not the summary's open and close
             ctx.openSide(step.id);
-        };
-        head.append(large);
+        }, { size: 14 }));
     }
     more.append(head);
     let drawn = false;

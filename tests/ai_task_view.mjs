@@ -1,7 +1,7 @@
 // The AI workbench's rules (web/modules/ai_task_view.js): folding reads, words, counts, addresses.
 import assert from 'node:assert/strict';
 import {
-    activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, lookTools, outputUrl, outputPicture, pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskResults, taskState, toolKey,
+    activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, panelGist, lookTools, outputUrl, outputPicture, pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
 const look = (tool, ok = true, state = 'done') => ({ kind: 'look', tool, ok, state, summary: tool });
@@ -99,3 +99,11 @@ assert.deepEqual(flowStages(null), []);
 assert.deepEqual(activityIds({ steps: [{ results: [{ type: 'canvas', activity: 'a1' }, { type: 'model' }] }, { tool: 'user_activity', activity: 'u1', results: [] }] }), ['a1', 'u1']);
 
 console.log('ai_task_view: ok');
+
+// What a panel holds, for its card in the timeline.
+assert.deepEqual(panelGist({ blocks: [{ type: 'heading' }, { type: 'slider' }, { type: 'images', items: [{}, {}] }] }),
+    { icon: 'image', parts: [{ key: 'aiGistCompare', values: {} }, { key: 'aiGistPictures', values: { count: 2 } }] });
+assert.equal(panelGist({ blocks: [{ type: 'choices', options: [{}, {}] }, { type: 'images', items: [{}] }] }).icon, 'question', 'a question comes first');
+assert.deepEqual(panelGist({ blocks: [{ type: 'run_map' }] }), { icon: 'nodes', parts: [{ key: 'aiGistMap', values: {} }] });
+assert.deepEqual(panelGist({ blocks: [{ type: 'text' }] }), { icon: 'panel', parts: [] }, 'words only: no line under the title');
+console.log('ai_task_view: panel gist ok');

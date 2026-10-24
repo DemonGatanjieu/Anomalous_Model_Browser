@@ -343,19 +343,30 @@
     font-size: 12px;
 }
 
+/* A way somewhere or something to do under a step: a small button that looks pressable, its icon in the link colour. */
 .anomalous-ai-link {
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--amb-link);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-link) 6%, transparent);
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 12px;
+    line-height: 1.35;
     cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
 }
 
-.anomalous-ai-link:hover {
-    text-decoration: underline;
+.anomalous-ai-link:hover,
+.anomalous-ai-link:focus-visible {
+    border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
 }
+
+.anomalous-ai-link .anomalous-tb-icon { display: inline-flex; color: var(--amb-link); }
 
 .anomalous-ai-link.is-danger {
     color: var(--amb-danger-text);
@@ -733,7 +744,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px 12px;
+    gap: 6px 8px;
 }
 
 .anomalous-ai-chip {

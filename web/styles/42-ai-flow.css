@@ -221,12 +221,12 @@
 .anomalous-ai-run-map-change.is-added { background: color-mix(in srgb, var(--amb-ok) 16%, transparent); color: var(--amb-ok-text, var(--amb-ok)); }
 .anomalous-ai-run-map-change.is-removed { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-soft); text-decoration: line-through; }
 .anomalous-ai-run-map-more { min-width: 0; border: 1px solid var(--amb-border); border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.025); }
-.anomalous-ai-run-map-head { display: flex; align-items: baseline; gap: 8px; padding: 7px 11px; cursor: pointer; list-style: none; }
+.anomalous-ai-run-map-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 7px 11px; cursor: pointer; list-style: none; }
 .anomalous-ai-run-map-head::-webkit-details-marker { display: none; }
 .anomalous-ai-run-map-head::before { display: inline-block; color: var(--amb-text-dim); content: "▸"; transition: transform 0.15s; }
 .anomalous-ai-run-map-more[open] > .anomalous-ai-run-map-head::before { transform: rotate(90deg); }
 .anomalous-ai-run-map-title { flex: none; color: var(--amb-text-main); font-size: 12.5px; font-weight: 650; }
-.anomalous-ai-run-map-line { min-width: 0; overflow: hidden; color: var(--amb-text-soft); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-run-map-line { flex: 1 1 140px; min-width: 0; overflow: hidden; color: var(--amb-text-soft); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-run-map-more > .anomalous-ai-diagram-wrap { margin: 0 10px; }
 .anomalous-ai-run-map-note { padding: 2px 11px 9px; color: var(--amb-text-dim); font-size: 11px; }
 /* How big the run's samplers work, and what is too big for the card. */

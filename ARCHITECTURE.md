@@ -337,8 +337,9 @@ covered by the `styles.css` manifest.
   step made and where it leads (and the strip of a task's results); for a run the AI did not wait
   for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
   and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
-  stage, the column on the right where the AI's panels are shown (the timeline keeps a line per
-  panel that brings it there): like the timeline it reads from the top down, the task's panels in
+  stage, the column on the right where the AI's panels are shown (the timeline keeps a card per
+  panel, with what it holds from `ai_task_view.panelGist` and "Show on the right", which says
+  "on the right now" while the panel is in view there, an IntersectionObserver of the stage): like the timeline it reads from the top down, the task's panels in
   the order they came with their step numbers, the newest at the bottom. Opening a task,
   new/updated latest panels and late image loads follow the bottom while the reader is there;
   reading earlier content pauses follow, with a "See latest" button to resume. Timeline links

@@ -3,8 +3,9 @@
  * shown (ui_ai_panel.js), so they stay in view however many steps come after them. Like the
  * timeline it reads from the top down: the task's panels in the order they came, each with its
  * step number, the newest at the bottom. A new or updated latest panel follows to the bottom
- * while the user is there; otherwise a "See latest ↓" button says it changed. A panel's line in the timeline
- * brings the stage to that panel. A new panel opens the column on the stage, even after the user
+ * while the user is there; otherwise a "See latest ↓" button says it changed. A panel's card in
+ * the timeline (what it holds, "Show on the right") brings the stage to that panel, and says so
+ * while that panel is in view on the stage. A new panel opens the column on the stage, even after the user
  * closed it or was on another view, unless they turned that off in its head (kept on this browser).
  * In a window too narrow for three columns, the timeline and the side column take turns behind
  * two tabs: a panel that asks something brings the stage forward, another lights its tab.
@@ -14,12 +15,14 @@
  */
 
 import { translate as t } from './locales.js';
-import { panelPassed } from './ai_task_view.js';
+import { panelGist, panelPassed } from './ai_task_view.js';
 import { renderPanel } from './ui_ai_panel.js';
+import { icon, iconButton } from './ui_ai_icons.js';
 
 export const QUESTIONS = ['choices', 'input', 'picks'];
 const BOTTOM_PX = 60;
 const AUTO_KEY = 'anomalous_ai_stage_auto';
+const inView = new Set(); // the panels in view on the stage now: their cards in the timeline say so
 
 /** Whether a new panel opens the column (the user's choice on this browser; on unless they turned it off). */
 function autoOpen() {
@@ -106,14 +109,35 @@ export function focusPanel(stage, panelId) {
     stage.tab = 'stage';
 }
 
-/** The timeline's line for a panel step: its title, whether it waits for you, and the way to it. */
+/**
+ * The timeline's card for a panel step: what it holds (an icon, its title, a line of what is in
+ * it), whether it waits for you, and the button to it, which says "on the right now" while the
+ * panel is in view on the stage. The whole card opens it too.
+ */
 export function panelLine(step, onOpen) {
     const asks = openQuestions(step);
-    const line = button(`anomalous-ai-panel-line${asks ? ' is-asking' : ''}`, '', onOpen, t('aiStageOpen'));
-    line.append(el('span', 'anomalous-ai-panel-line-title', step.panel.title || ''));
+    const gist = panelGist(step.panel);
+    const line = el('div', `anomalous-ai-panel-line${asks ? ' is-asking' : ''}${inView.has(step.panel.id) ? ' is-shown' : ''}`);
+    line.dataset.panelId = step.panel.id;
+    line.title = t('aiStageOpen');
+    line.onclick = onOpen;
+    const words = el('span', 'anomalous-ai-panel-line-words');
+    words.append(el('span', 'anomalous-ai-panel-line-title', step.panel.title || t('aiStage')));
+    if (gist.parts.length) words.append(el('span', 'anomalous-ai-panel-line-gist', gist.parts.map(part => t(part.key, part.values)).join(' · ')));
+    line.append(icon(gist.icon, 18, 'anomalous-ai-panel-line-icon'), words);
     if (asks) line.append(el('span', 'anomalous-ai-panel-line-asks', t('aiState_asks')));
-    line.append(el('span', 'anomalous-ai-panel-line-go', t('aiStageGo')));
+    const here = el('span', 'anomalous-ai-panel-line-here');
+    here.append(el('span', 'anomalous-ai-panel-line-dot'), el('span', '', t('aiStageHere')));
+    line.append(iconButton('anomalous-ai-side-open', 'sidebar', t('aiStageGo'), (event) => {
+        event.stopPropagation(); // the card's own click would open it a second time
+        onOpen();
+    }, { size: 14 }), here);
     return line;
+}
+
+/** The cards in the timeline of `page` say which panels are in view on the stage. */
+function markInView(page) {
+    page?.querySelectorAll('.anomalous-ai-panel-line[data-panel-id]').forEach(line => line.classList.toggle('is-shown', inView.has(line.dataset.panelId)));
 }
 
 /** The two tabs of a narrow window: the timeline and the side column's view `label` (lit while a question waits or a new panel is unseen). */
@@ -173,6 +197,12 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
         body.addEventListener('load', () => {
             if (stage.atBottom && !stage.focus) scrollToLatest(body, stage);
         }, true);
+        box.inView?.disconnect();
+        inView.clear();
+        box.inView = typeof IntersectionObserver === 'function' ? new IntersectionObserver((seen) => {
+            for (const entry of seen) inView[entry.isIntersecting ? 'add' : 'delete'](entry.target.dataset.panelId);
+            markInView(box.closest('.anomalous-ai'));
+        }, { root: body, threshold: 0.3 }) : null;
     }
     const parts = [el('span', 'anomalous-ai-stage-title', t('aiStage')), el('span', 'anomalous-ai-stage-count', t('aiStagePanels', { count: steps.length }))];
     if (asks) parts.push(el('span', 'anomalous-ai-state is-asks', t('aiCountAsks', { count: asks })));
@@ -198,10 +228,17 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
         item.dataset.panelKey = key;
         item.dataset.panelId = step.panel.id;
         item.append(el('div', 'anomalous-ai-stage-item-step', t('aiStageStep', { number: ctx.numberOf(step.id) })), renderPanel(step, { ...ctx, passed }));
-        if (there) there.replaceWith(item);
-        else body.append(item);
+        if (there) {
+            box.inView?.unobserve(there);
+            there.replaceWith(item);
+        } else body.append(item);
+        box.inView?.observe(item);
     });
-    while (body.children.length > steps.length) body.lastElementChild.remove();
+    while (body.children.length > steps.length) {
+        box.inView?.unobserve(body.lastElementChild);
+        inView.delete(body.lastElementChild.dataset.panelId);
+        body.lastElementChild.remove();
+    }
 
     const find = id => [...body.children].find(item => item.dataset.panelId === id);
     if (stage.focus) {

@@ -73,18 +73,7 @@
 .anomalous-ai-side-map > .anomalous-ai-run-map { margin-top: 0; }
 
 /* A run's step in the timeline: see its shape large in the side column. */
-.anomalous-ai-run-map-side {
-    flex: none;
-    margin-left: auto;
-    padding: 0 4px;
-    border: none;
-    background: none;
-    color: var(--amb-link);
-    font: inherit;
-    font-size: 12px;
-    cursor: pointer;
-}
-.anomalous-ai-run-map-side:hover { text-decoration: underline; }
+.anomalous-ai-run-map-head .anomalous-ai-side-open { margin-left: auto; padding: 3px 10px; }
 
 /* In the window's title bar, on the AI page only: its generic button look does not apply. The
    list button takes the place of the page list's own (the AI page has none). */

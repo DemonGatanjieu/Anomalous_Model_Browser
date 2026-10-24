@@ -20,6 +20,7 @@ import { imageResults } from './ui_ai_images.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import { estimateBox, runProgress } from './ui_ai_run_live.js';
 import { runMapBox } from './ui_ai_run_map.js';
+import { iconButton } from './ui_ai_icons.js';
 
 export const shared = { owner: null, taskId: null, entries: new Map(), player: null, openMap: null }; // openMap: ui_ai_workbench.js
 
@@ -129,22 +130,22 @@ export function resultLinks(step, changed = () => {}) {
             box.append(canvasChanges(entry, { locate: change => locateNode(changeNodeId(change), note) }));
             if (entry) {
                 // One node changed: its own row above already finds it.
-                if ((entry.detail?.changes || []).length > 1) links.append(button('anomalous-ai-link', t('activityLocate'), () => locate(entry, note)));
+                if ((entry.detail?.changes || []).length > 1) links.append(iconButton('anomalous-ai-link', 'target', t('activityLocate'), () => locate(entry, note), { size: 14 }));
                 if (canUndo(app, entry)) {
-                    const undo = button('anomalous-ai-link', t('activityUndo'), () => {
+                    const undo = iconButton('anomalous-ai-link', 'undo', t('activityUndo'), () => {
                         let done = t('activityUndone');
                         try { undoEntry(app, entry); } catch (_) { done = t('activityUndoGone'); }
                         undo.replaceWith(el('span', 'anomalous-ai-link-done', done));
                         changed();
-                    });
+                    }, { size: 14 });
                     links.append(undo);
                 }
             }
         } else if (result.type === 'scan') {
-            links.append(button('anomalous-ai-link', t('aiOpenScan'), () => shared.owner?.openScanPage?.()));
+            links.append(iconButton('anomalous-ai-link', 'search', t('aiOpenScan'), () => shared.owner?.openScanPage?.(), { size: 14 }));
         }
     }
-    if (pictures.length) links.append(button('anomalous-ai-link', t('aiOpenGallery'), () => shared.owner?.goTo('gallery')));
+    if (pictures.length) links.append(iconButton('anomalous-ai-link', 'image', t('aiOpenGallery'), () => shared.owner?.goTo('gallery'), { size: 14 }));
     if (links.childNodes.length) box.append(links, note);
     return box.childNodes.length ? box : null;
 }
