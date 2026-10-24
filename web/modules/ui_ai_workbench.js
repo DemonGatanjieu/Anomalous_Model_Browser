@@ -281,7 +281,7 @@ function renderTask() {
         openStage: () => pickView(state.stage, 'stage', false, task, renderTask, () => void refresh()) });
     view.timeline.classList.toggle('is-waiting', preparing);
     // Opened, at its newest step (a page being prepared, at its top); read at the foot, kept there.
-    box.scrollTop = fresh && preparing ? 0 : fresh || keepBottom ? box.scrollHeight : keepTop;
+    if (!view.newest.jumping) box.scrollTop = fresh && preparing ? 0 : fresh || keepBottom ? box.scrollHeight : keepTop;
     view.newest.arrived((task.steps || []).slice(view.seen).filter(step => step.kind !== 'user').length);
     view.seen = (task.steps || []).length;
     drawStage(task, news.arrived);

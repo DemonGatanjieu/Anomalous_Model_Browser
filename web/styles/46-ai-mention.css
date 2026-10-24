@@ -241,9 +241,15 @@
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     color: var(--amb-text-main);
     cursor: pointer;
+    transition: transform 100ms ease, background-color 100ms ease, border-color 100ms ease;
 }
 .anomalous-ai-newest[hidden] { display: none; }
 .anomalous-ai-newest:hover, .anomalous-ai-newest:focus-visible { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 22%, var(--amb-bg-panel)); }
+.anomalous-ai-newest:active { transform: translateY(1px) scale(0.94); }
+@media (prefers-reduced-motion: reduce) {
+    .anomalous-ai-newest { transition: none; }
+    .anomalous-ai-newest:active { transform: none; }
+}
 .anomalous-ai-newest-count {
     position: absolute;
     top: -6px;

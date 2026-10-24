@@ -2,6 +2,9 @@
 
 ## v1.62.0 — unreleased
 
+- “回到最新一步”改为约 240 毫秒的短滚动，工作台刷新不会打断它；滚轮或触摸可随时接管，减少动态效果时直接定位，并补上按钮按下反馈。
+- Jump to latest now uses a short 240 ms scroll that survives workbench refreshes, yields to user navigation, respects reduced motion, and gives immediate pressed feedback.
+
 - AI 工作台新增右侧“成果”页：按步骤汇总图片，集中查看工作流、搭配、最新图片的提示词、模型下载请求和音频；复用图库的保存、参数对比与提示词复制入口。时间线上方改为简洁的成果统计，右侧按钮提示尚未查看的新成果。
 - The AI workbench now collects pictures, workflows, combos, prompts, model download requests and audio in a Results side view, reusing gallery keep/comparison actions. A compact timeline summary and unseen-result badge replace the old results strip.
 
