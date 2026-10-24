@@ -107,6 +107,22 @@ class BuildToolTests(unittest.TestCase):
             self.assertFalse(result.get("isError"), result)
         self.assertEqual(self.page.call_count, 2)
 
+    def test_a_group_of_nodes_with_canvas_links(self):
+        nodes = {"a": {"class_type": "VAEEncode", "inputs": {"pixels": ["#12", "0"], "vae": ["#4", "VAE"]}},
+                 "b": {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["a", 0], "mask": ["#12", "MASK"]}, "wire_to": 15}}
+        mcp_canvas_edit.add_nodes({}, nodes, replace=True)
+        action, payload = self.page.call_args[0]
+        self.assertEqual((action, payload["replace"], payload["near_node_id"]), ("add_nodes", True, None))
+        self.assertEqual(payload["nodes"]["a"]["inputs"]["pixels"], ["#12", 0], "a slot number given as text")
+        self.assertEqual(payload["nodes"]["b"]["wire_to"], [15])
+        for bad in ({"#1": {"class_type": "VAEEncode", "inputs": {}}},
+                    {"a": {"class_type": "VAEEncode", "inputs": {"pixels": ["#12"]}}},
+                    {"a": {"class_type": "VAEEncode", "inputs": {"pixels": ["#12", True]}}},
+                    {"a": {"class_type": "VAEEncode", "inputs": {}, "wire_to": list(range(9))}}):
+            with self.assertRaises(ToolError, msg=bad):
+                mcp_canvas_edit.add_nodes({}, bad)
+        self.assertEqual(self.page.call_count, 1)
+
     def test_settings_by_name_or_for_one_node(self):
         mcp_canvas_edit.set_values({}, values={"steps": 30, "12": {"denoise": 0.5}})
         self.assertEqual(self.page.call_args[0], ("set_values", {"node_id": None, "values": {"steps": 30, "12": {"denoise": 0.5}}}))

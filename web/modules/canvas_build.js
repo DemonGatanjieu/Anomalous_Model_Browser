@@ -108,6 +108,16 @@ export function apiLinks(nodes) {
     return links;
 }
 
+/** Positions for a group of new nodes added to a canvas: laid out as `layered` does, as one block in a free spot. */
+export function placedBlock(sized, links, others, near = null) {
+    const local = layered(sized, links, [0, 0]);
+    const keys = Object.keys(local);
+    const width = Math.max(...keys.map(key => local[key][0] + sized[key].size[0]));
+    const height = Math.max(...keys.map(key => local[key][1] + sized[key].size[1]));
+    const [x, y] = freeSpot({ size: [width, height] }, others, near);
+    return Object.fromEntries(keys.map(key => [key, [local[key][0] + x, local[key][1] + y]]));
+}
+
 /** Positions for the nodes `sized` ({key: node with size}) of an API-form workflow: columns by how far each is from its sources. */
 export function layered(sized, links, origin = [100, 100]) {
     const feeds = new Map();

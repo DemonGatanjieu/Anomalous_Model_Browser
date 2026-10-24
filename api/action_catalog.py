@@ -24,7 +24,7 @@ DAILY = frozenset({
     "begin_task", "get_situation", "report", "ask_user", "get_answers", "log_decision", "log_outside",
     "list_workflows", "run_workflow", "run_status", "stop_run", "search_images", "get_image_info", "zoom_image",
     "search_models", "set_model", "add_lora", "check_workflow_models", "fix_workflow_models",
-    "find_nodes", "add_node", "connect_nodes", "set_values", "new_workflow",
+    "find_nodes", "add_node", "add_nodes", "connect_nodes", "set_values", "new_workflow",
 })
 
 # Arguments with which a call also changes the canvas: it then asks as the stricter of its own gate and "canvas".
@@ -57,6 +57,7 @@ TOOLS = {
     "fix_workflow_models": Entry("canvas", "model", "canvas"),
     "find_nodes": Entry("look", "canvas", None),
     "add_node": Entry("canvas", "canvas", "canvas"),
+    "add_nodes": Entry("canvas", "canvas", "canvas"),
     "connect_nodes": Entry("canvas", "canvas", "canvas"),
     "set_values": Entry("canvas", "canvas", "canvas"),
     "remove_nodes": Entry("canvas", "canvas", "canvas"),

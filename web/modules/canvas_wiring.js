@@ -53,12 +53,13 @@ export function pairWires(from, to, { output, input } = {}) {
 }
 
 /** Wires from the new node into existing inputs; an input already fed is spliced when the new node
- * takes that type too (its old source feeds the new node: a LoRA or a ControlNet put in front). */
-function splice(g, node, pairs) {
+ * takes that type at an input nothing else in the plan feeds (`taken`: its input slots fed already):
+ * its old source feeds the new node, a LoRA or a ControlNet put in front. */
+function splice(g, node, pairs, taken = new Set()) {
     return pairs.flatMap(p => {
         const old = oldSource(g, p.to, p.target);
         const type = old?.from?.outputs[old.slot]?.type;
-        const fit = concrete(type) ? selected(node.inputs, null, true).filter(({ value }) => value.type === type) : [];
+        const fit = concrete(type) ? selected(node.inputs, null, true).filter(({ value, index }) => value.type === type && !taken.has(index)) : [];
         if (!fit.length) return [p]; // a plain replacement: validateWires wants replace:true
         const takes = fit.length > 1 ? fit.filter(({ value }) => sameName(value.name, p.to.inputs[p.target].name)
             || sameName(value.name, node.outputs[p.slot].name)) : fit;
@@ -78,7 +79,11 @@ export function addWires(g, node, { insert_after: after, insert_type: type, wire
         return found;
     };
     const upstream = from.map(get), downstream = to.map(get);
-    if (after == null) return [...upstream.flatMap(n => pairWires(n, node)), ...downstream.flatMap(n => splice(g, node, pairWires(node, n)))];
+    if (after == null) {
+        const fed = upstream.flatMap(n => pairWires(n, node));
+        const taken = new Set(fed.map(p => p.target));
+        return [...fed, ...downstream.flatMap(n => splice(g, node, pairWires(node, n), taken))];
+    }
     const anchor = get(after);
     // Each type the new node passes through (a LoRA after a checkpoint: MODEL and CLIP) is spliced.
     const through = pairWires(anchor, node).filter(p => !type || anchor.outputs[p.slot].type === type).flatMap(entry => {
@@ -102,6 +107,46 @@ export function addWires(g, node, { insert_after: after, insert_type: type, wire
         if (chosen.length || !links.length) plan.push(entry, ...chosen.map(l => ({ from: node, slot, to: get(l.target_id), target: l.target_slot, replace: true })));
     }
     if (downstream.some(n => !plan.some(p => p.from === node && p.to === n))) throw new Error('wire_to must name existing downstream branches of insert_after.');
+    return plan;
+}
+
+/**
+ * The wires of a group of new nodes in API form (add_nodes), still detached in `made` ({key: node}):
+ * an input given as [key in the group or "#canvas node id", output slot or name], then each node's
+ * wire_to, spliced into the canvas as add_node does.
+ */
+export function groupWires(g, made, nodes) {
+    const source = ref => {
+        const text = String(ref);
+        if (!text.startsWith('#')) {
+            if (!(text in made)) throw new Error(`${text} is neither a node of this group nor "#<canvas node id>".`);
+            return made[text];
+        }
+        const found = g.getNodeById(/^#\d+$/.test(text) ? Number(text.slice(1)) : text.slice(1));
+        if (!found) throw new Error(`No node ${text} on the canvas; get_situation lists them.`);
+        return found;
+    };
+    const plan = [];
+    for (const [key, spec] of Object.entries(nodes)) {
+        const to = made[key];
+        for (const [input, value] of Object.entries(spec?.inputs || {})) {
+            if (!Array.isArray(value)) continue;
+            if (!(to.inputs || []).some(item => sameName(item.name, input))) {
+                throw new Error(`Node ${key} (${to.type}) has no input ${input}; it has: ${(to.inputs || []).map(item => item.name).join(', ') || 'none'}.`);
+            }
+            try {
+                plan.push(...pairWires(source(value[0]), to, { output: value[1], input }));
+            } catch (error) {
+                throw new Error(`Node ${key}, input ${input}: ${error.message}`);
+            }
+        }
+        const taken = new Set(plan.filter(p => p.to === to).map(p => p.target));
+        for (const id of spec?.wire_to == null ? [] : [spec.wire_to].flat()) {
+            const into = g.getNodeById(id);
+            if (!into) throw new Error(`No node #${id} on the canvas; get_situation lists them.`);
+            plan.push(...splice(g, to, pairWires(to, into), taken));
+        }
+    }
     return plan;
 }
 
@@ -142,11 +187,12 @@ export function validateWires(g, proposed, replace = false) {
     return plan;
 }
 
-/** The caller brackets this in one beforeChange/afterChange and records only success. */
+/** The caller brackets this in one beforeChange/afterChange and records only success; `added` is a node or several. */
 export function applyWires(g, plan, added = null, prepare = () => {}) {
     const old = plan.map(p => oldSource(g, p.to, p.target));
+    const fresh = [added].flat().filter(Boolean);
     try {
-        if (added) g.add(added);
+        for (const node of fresh) g.add(node);
         prepare();
         for (const p of plan) {
             const linked = p.from.connect(p.slot, p.to, p.target);
@@ -159,8 +205,8 @@ export function applyWires(g, plan, added = null, prepare = () => {}) {
         for (const p of plan) {
             try { p.to.disconnectInput(p.target); } catch (e) { problems.push(e); }
         }
-        if (added && (g._nodes || []).includes(added)) {
-            try { g.remove(added); } catch (e) { problems.push(e); }
+        for (const node of fresh.filter(item => (g._nodes || []).includes(item))) {
+            try { g.remove(node); } catch (e) { problems.push(e); }
         }
         for (const p of old.filter(Boolean)) {
             try {

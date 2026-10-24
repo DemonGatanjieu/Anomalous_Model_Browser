@@ -102,6 +102,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | describe_canvas | 读当前工作流：每个节点的编号、类型、设置，哪个是正向/反向提示词框 |
 | find_nodes | 搜索最多五个节点摘要；需要具体参数和选项时，用 `types=[节点类型]` 读取 |
 | add_node / connect_nodes | 添加节点并按唯一类型自动连线，或把节点插进已有路径；见下方例子 |
+| add_nodes | 一次加一组节点：按 ComfyUI 的 API 格式写，组里的节点互相连，也能连画布上已有的节点（写 `"#12"`，输出写编号或名字），排成一块放在空位上，整组算一步撤销 |
 | set_prompt | 改写或追加正向/反向提示词 |
 | set_model | 换某个加载器节点里的模型 |
 | add_lora | 插入一个 LoRA，默认接在主模型加载器和已有的 LoRA 后面。LoRA 文件里练过文本编码器的（SD1.5、SDXL、Illustrious 的大多是），CLIP 线也接上：从 checkpoint 接，或者从 UNet 工作流里单独的 CLIP 加载器接，正反向提示词一起改接到它后面；没练过的（多数 Flux、Anima 的 LoRA）只接模型线 |
@@ -179,6 +180,15 @@ connect_nodes(from_node_id=12, to_node_id=15)
 add_node(type="ControlNetApplyAdvanced", wire_from=[20, 21], wire_to=5)
 add_node(type="LoraLoader", wire_to=[5, 2, 3])
 ```
+
+```text
+add_nodes(nodes={
+  "enc":  {"class_type": "VAEEncode", "inputs": {"pixels": ["#12", "IMAGE"], "vae": ["#4", "VAE"]}},
+  "mask": {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["enc", 0], "mask": ["#12", "MASK"]}, "wire_to": 3}
+}, replace=true)
+```
+
+一组节点一次加好：`#12`（加载图片）和 `#4`（模型加载器）是画布上已有的节点，`enc`、`mask` 是这组里新加的。`wire_to=3` 把这组的结果接进采样器 #3；它原来的空白潜空间被替换，所以要 `replace=true`。原来要十几次调用的局部重绘分支，现在一次。
 
 `wire_to` 指向的输入原来已经接着线时，会把新节点插在前面：采样器 #5 的正向、反向原来接着提示词 #2、#3，现在改接 ControlNet，#2、#3 接进它同名的正向、反向输入；#20（ControlNet 加载器）和 #21（加载图片）按类型接上。第二个调用把采样器的模型线和两个提示词的 CLIP 线都改从 LoRA 走，LoRA 自己接上原来的模型和 CLIP。新节点没有这种类型的输入（比如用加载图片顶替原来的图）才算替换，要 `replace=true`。
 

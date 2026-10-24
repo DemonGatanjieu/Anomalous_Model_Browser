@@ -50,7 +50,7 @@ INSTRUCTIONS = (
     "the activity log; and tools that act on the workflow open in ComfyUI (get_situation gives flow chains; "
     "describe_canvas only for details) or build one where the user watches: find_nodes searches brief types; "
     "add_node wires in the same call (wire_from/wire_to; wire_to=ID splices it in front of that node, "
-    "insert_after=ID behind it); "
+    "insert_after=ID behind it); add_nodes adds a whole group in ComfyUI's API form in one call; "
     "connect_nodes needs only two IDs unless sockets are ambiguous. Reuse receipts instead of rereading "
     "the graph. new_workflow opens a tab only when needed. Tools also scan models or have an "
     "Anomalous TTS voice speak. Canvas changes "

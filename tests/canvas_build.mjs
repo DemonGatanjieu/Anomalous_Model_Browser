@@ -1,6 +1,6 @@
 // node tests/canvas_build.mjs — the pure part of building a workflow on the canvas.
 import assert from 'node:assert/strict';
-import { apiLinks, checkedValue, freeSpot, layered, typesFit, valuePlan } from '../web/modules/canvas_build.js';
+import { apiLinks, checkedValue, freeSpot, layered, placedBlock, typesFit, valuePlan } from '../web/modules/canvas_build.js';
 
 assert.ok(typesFit('MODEL', 'MODEL'));
 assert.ok(typesFit('model', 'MODEL'), 'case does not matter');
@@ -67,4 +67,9 @@ assert.equal(spots[1][0], spots[4][0], 'sources share the first column');
 assert.ok(spots[2][0] > spots[1][0] && spots[3][0] > spots[2][0], 'each step right of what feeds it');
 assert.notEqual(spots[1][1], spots[4][1], 'one column, one above the other');
 assert.deepEqual(Object.keys(layered(sized, [{ from: '1', to: '2' }, { from: '2', to: '1' }])).sort(), ['1', '2', '3', '4', '5'], 'a loop still lays out');
+// A group added to a canvas keeps its columns and moves as one block right of the node it is near, clear of others.
+const block = placedBlock(sized, links, [near, box(480, 100)], near);
+assert.equal(block[1][0], 480, 'the first column starts where a single node would');
+assert.equal(block[2][0] - block[1][0], spots[2][0] - spots[1][0], 'columns kept');
+assert.ok(block[1][1] >= 100 + 200 + 30, 'the whole block below what it would cover');
 console.log('canvas_build: ok');

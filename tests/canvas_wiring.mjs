@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { addWires, applyWires, pairWires, reachesOutput, validateWires } from '../web/modules/canvas_wiring.js';
+import { addWires, applyWires, groupWires, pairWires, reachesOutput, validateWires } from '../web/modules/canvas_wiring.js';
 
 class Graph {
     constructor() { this._nodes = []; this.links = {}; this.serial = 0; this.nodeSerial = 0; }
@@ -182,4 +182,29 @@ const source = (g, n, slot) => g.getLink(n.inputs[slot].link).origin_id;
     const loader = node(null, [], [['IMAGE','IMAGE']]);
     assert.throws(() => validateWires(g, addWires(g, loader, { wire_to: [save.id] })), /replace:true/);
 }
-console.log('Typed wiring: insertion, splices, same-name pairs, fan-out, inpainting, ambiguity, cycles and rollback passed.');
+// A group in API form: links inside it, to canvas nodes as "#id" and outputs by name, then wire_to spliced; one rollback for all.
+{
+    const { g, ckpt, sampler } = textToImage();
+    const picture = node(g, [], [['IMAGE','IMAGE'], ['MASK','MASK']]);
+    const made = { a: node(null, [['pixels','IMAGE'], ['vae','VAE']], [['LATENT','LATENT']]), b: node(null, [['samples','LATENT'], ['mask','MASK']], [['LATENT','LATENT']]) };
+    const empty = node(g, [], [['LATENT','LATENT']]);
+    sampler.inputs.push({ name: 'latent_image', type: 'LATENT', link: null });
+    empty.connect(0, sampler, 3);
+    const nodes = { a: { inputs: { pixels: [`#${picture.id}`, 0], vae: [`#${ckpt.id}`, 'VAE'] } }, b: { inputs: { samples: ['a', 'LATENT'], mask: [`#${picture.id}`, 'MASK'] }, wire_to: sampler.id } };
+    assert.throws(() => validateWires(g, groupWires(g, made, nodes)), /latent_image is already wired.*replace:true/,
+        'the samples of b come from a, so it replaces the empty latent instead of splicing it');
+    const plan = validateWires(g, groupWires(g, made, nodes), true);
+    assert.equal(plan.length, 5, 'four links in, one into the sampler');
+    const before = snapshot(g);
+    made.b.fail = true;
+    assert.throws(() => applyWires(g, plan, Object.values(made)), /Original connections restored/);
+    assert.deepEqual(snapshot(g), before);
+    assert.equal(g._nodes.includes(made.a), false, 'every node of the group is taken out again');
+    made.b.fail = false;
+    assert.equal(applyWires(g, plan, Object.values(made)).length, 5);
+    assert.equal(source(g, sampler, 3), made.b.id);
+    assert.throws(() => groupWires(g, { c: node(null, [['image','IMAGE']], []) }, { c: { inputs: { image: ['#999', 0] } } }), /No node #999/);
+    assert.throws(() => groupWires(g, { c: node(null, [['image','IMAGE']], []) }, { c: { inputs: { image: ['zz', 0] } } }), /neither a node of this group/);
+    assert.throws(() => groupWires(g, { c: node(null, [['image','IMAGE']], []) }, { c: { inputs: { pixels: [`#${picture.id}`, 0] } } }), /Node c .* has no input pixels; it has: image/);
+}
+console.log('Typed wiring: insertion, splices, same-name pairs, groups, fan-out, inpainting, ambiguity, cycles and rollback passed.');

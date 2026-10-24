@@ -180,6 +180,43 @@ def add_node(ctx, type, values=None, title="", near_node_id=None, insert_after=N
                                     "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id"), **wiring}))
 
 
+def _api_nodes(nodes, canvas_refs=False):
+    """A workflow (or group) in ComfyUI's API form, checked for shape and size; the page checks the rest.
+    With canvas_refs a link may name a canvas node as "#12", an output by slot or name, and a node wire_to."""
+    if not isinstance(nodes, dict) or not 0 < len(nodes) <= MAX_WORKFLOW_NODES:
+        raise ToolError(f"nodes is a workflow in ComfyUI's API form: {{id: {{class_type, inputs}}}}, up to {MAX_WORKFLOW_NODES} nodes.")
+    if len(json.dumps(nodes, ensure_ascii=False)) > MAX_WORKFLOW_BYTES:
+        raise ToolError("That workflow is too large.")
+    for key, spec in nodes.items():
+        if (len(key) > 40 or not isinstance(spec, dict) or not isinstance(spec.get("class_type"), str)
+                or not isinstance(spec.get("inputs", {}), dict)):
+            raise ToolError(f"Node {key[:40]}: each node is {{class_type, inputs: {{name: value or [node id, output slot]}}}}.")
+        _type(spec["class_type"])
+        mcp_fill.flat_values({name: value for name, value in spec.get("inputs", {}).items() if not isinstance(value, list)})
+        if not canvas_refs:
+            continue
+        if key.startswith("#"):
+            raise ToolError(f"Node {key[:40]}: a key of the group cannot start with #, which names canvas nodes.")
+        for name, value in spec.get("inputs", {}).items():
+            if isinstance(value, list) and (len(value) != 2 or not isinstance(value[0], (str, int)) or isinstance(value[1], bool)
+                                            or not isinstance(value[1], (str, int)) or len(str(value[1])) > 100):
+                raise ToolError(f"Node {key[:40]}, input {name[:100]}: a link is [a key of this group or \"#<canvas node id>\", output slot or name].")
+            if isinstance(value, list) and isinstance(value[1], str) and value[1].strip().isdigit():
+                value[1] = int(value[1])
+        if spec.get("wire_to") is not None:
+            spec["wire_to"] = _ids(spec["wire_to"], f"{key[:40]}.wire_to")
+    return nodes
+
+
+def add_nodes(ctx, nodes, near_node_id=None, replace=False):
+    if not isinstance(replace, bool):
+        raise ToolError("replace must be true or false.")
+    _api_nodes(nodes, canvas_refs=True)
+    _allowed(ctx, [spec["class_type"] for spec in nodes.values()])
+    return _next(_page("add_nodes", {"nodes": nodes, "replace": replace,
+                                     "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")}, timeout=60))
+
+
 def connect_nodes(ctx, from_node_id, to_node_id, input=None, output=None, replace=None):
     if output is not None and (isinstance(output, bool) or not isinstance(output, (int, str)) or len(str(output)) > 100):
         raise ToolError("output is the output's slot number or its name.")
@@ -211,16 +248,7 @@ def remove_nodes(ctx, node_ids):
 
 def new_workflow(ctx, name="", nodes=None):
     if nodes is not None:
-        if not isinstance(nodes, dict) or not 0 < len(nodes) <= MAX_WORKFLOW_NODES:
-            raise ToolError(f"nodes is a workflow in ComfyUI's API form: {{id: {{class_type, inputs}}}}, up to {MAX_WORKFLOW_NODES} nodes.")
-        if len(json.dumps(nodes, ensure_ascii=False)) > MAX_WORKFLOW_BYTES:
-            raise ToolError("That workflow is too large.")
-        for key, spec in nodes.items():
-            if (len(key) > 40 or not isinstance(spec, dict) or not isinstance(spec.get("class_type"), str)
-                    or not isinstance(spec.get("inputs", {}), dict)):
-                raise ToolError(f"Node {key[:40]}: each node is {{class_type, inputs: {{name: value or [node id, output slot]}}}}.")
-            _type(spec["class_type"])
-            mcp_fill.flat_values({name: value for name, value in spec.get("inputs", {}).items() if not isinstance(value, list)})
+        _api_nodes(nodes)
         _allowed(ctx, [spec["class_type"] for spec in nodes.values()])
     return _page("new_workflow", {"name": str(name or "")[:60], "nodes": nodes}, timeout=60)
 
@@ -252,6 +280,15 @@ CANVAS_TOOLS = dict([
                        "values": _VALUES, "title": {"type": "string"}, "near_node_id": _NODE_ID,
                        "insert_after": _NODE_ID, "insert_type": {"type": "string", "description": "Only if needed: through type, e.g. IMAGE."},
                        "wire_from": _NEIGHBOURS, "wire_to": _NEIGHBOURS, "replace": {"type": "boolean"}}, ["type"]),
+    _action("add_nodes", "Add a group of nodes",
+            "Adds several nodes to the open workflow in ONE call, laid out as a block: nodes in ComfyUI's API form "
+            "({\"a\": {\"class_type\": \"VAEEncode\", \"inputs\": {\"pixels\": [\"#12\", 0], \"vae\": [\"#4\", \"VAE\"]}}, "
+            "\"b\": {\"class_type\": \"SetLatentNoiseMask\", \"inputs\": {\"samples\": [\"a\", 0], ...}, \"wire_to\": 15}}): "
+            "a link names a node of the group or a canvas node as \"#id\", and an output by slot or name; wire_to feeds "
+            "canvas nodes as add_node does (an input already fed is spliced; replace:true lets it replace one it "
+            "cannot splice). Everything is checked first; one Ctrl+Z step. The answer maps your keys to node ids "
+            "and lists what is still unwired.",
+            add_nodes, {"nodes": {"type": "object"}, "near_node_id": _NODE_ID, "replace": {"type": "boolean"}}, ["nodes"]),
     _action("connect_nodes", "Wire two nodes",
             "Wire two nodes by ID: unique matching types, and same-type sockets of the same name (positive to "
             "positive), connect in one undo step. No guessing a lone CONDITIONING into positive or negative, or "

@@ -13,7 +13,7 @@ import { translate as t } from './locales.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { tabName } from './mcp_canvas_edit.js';
 
-const CHANGES = new Set(['set_prompt', 'set_model', 'add_lora', 'place_combo', 'fix_models', 'add_node', 'connect_nodes', 'set_values', 'remove_nodes']);
+const CHANGES = new Set(['set_prompt', 'set_model', 'add_lora', 'place_combo', 'fix_models', 'add_node', 'add_nodes', 'connect_nodes', 'set_values', 'remove_nodes']);
 const FOLLOWS = new Set(['describe_canvas', 'check_models', 'run_workflow', 'download_missing', 'fill_slots']);
 const OPENS = new Set(['new_workflow', 'open_workflow']);
 const SWITCH_WAIT_MS = 4000;

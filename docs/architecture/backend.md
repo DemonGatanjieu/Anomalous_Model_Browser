@@ -357,6 +357,10 @@ old source feeds the new node's matching input. Otherwise automatic wiring never
 inputs without `replace:true`, except the selected downstream edge of an insertion; `insert_after`
 splices every type the node passes through (a LoRA's MODEL and CLIP). The legacy explicit `input` form still defaults
 to output slot zero and permits replacement. Ambiguity is an error with bounded candidates.
+`add_nodes` takes a group in API form for the open canvas: a link names a node of the group or a
+canvas node as `"#12"` and an output by slot or name; a node's `wire_to` feeds canvas nodes as
+`add_node` does, splicing only into inputs the group itself leaves free. The page lays the group out
+as one block in a free spot and applies it in one transaction with the same rollback.
 `get_situation` includes at most six path chains and eight node lines; its overall 3600-character
 budget trims these and reports omitted counts. Full canvas details remain explicitly available.
 

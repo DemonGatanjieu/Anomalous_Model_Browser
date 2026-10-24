@@ -1,6 +1,6 @@
 /**
- * The page side of the MCP tools that build a workflow (api/mcp_canvas_edit.py): add a node,
- * wire an output to an input, set a node's values, remove nodes, and open a new workflow tab,
+ * The page side of the MCP tools that build a workflow (api/mcp_canvas_edit.py): add a node or a
+ * group of them, wire an output to an input, set a node's values, remove nodes, and open a new workflow tab,
  * blank or built from a workflow in ComfyUI's API form. Each runs through mcp_bridge.js's
  * `recorded`, so it is one Ctrl+Z step, lands in the activity log as the AI's and shows under
  * its step in the AI workbench. Everything is checked before the canvas changes; answers give
@@ -11,13 +11,13 @@
 
 import { app } from '../../../scripts/app.js';
 import { recordCanvasStep } from './canvas_history.js';
-import { apiLinks, freeSpot, layered, typesFit, valuePlan } from './canvas_build.js';
+import { apiLinks, freeSpot, layered, placedBlock, typesFit, valuePlan } from './canvas_build.js';
 import { fedBy, linkOf, sockets, unwired } from './mcp_canvas_brief.js';
 import { fillPlan, valuesPlan } from './mcp_fill.js';
 import { translate as t } from './locales.js';
 import { setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
-import { addWires, applyWires, pairWires, reachesOutput, validateWires } from './canvas_wiring.js';
+import { addWires, applyWires, groupWires, pairWires, reachesOutput, validateWires } from './canvas_wiring.js';
 import { workflowKey } from './canvas_undo.js';
 
 const BLANK = { last_node_id: 0, last_link_id: 0, nodes: [], links: [], groups: [], config: {}, extra: {}, version: 0.4 };
@@ -147,6 +147,36 @@ export function canvasEditActions({ recorded, nodeById }) {
         });
     }
 
+    /** A group of new nodes in API form, wired among themselves, to the canvas ("#12") and by wire_to, as one block and one Ctrl+Z step. */
+    function addNodes({ nodes, near_node_id: nearId, replace = false }, getOwner) {
+        return recorded(getOwner, 'mcpDidNodes', async (g) => {
+            const key = workflowKey(app), before = JSON.stringify(g.serialize());
+            const built = await withFreshChoices(() => prepare(nodes));
+            if ((app.canvas?.graph || app.graph) !== g || workflowKey(app) !== key || JSON.stringify(g.serialize()) !== before) {
+                throw new Error('The canvas changed while preparing the nodes. Nothing added; read get_situation again.');
+            }
+            const wires = validateWires(g, groupWires(g, built.made, nodes), replace);
+            const keyOf = new Map(Object.entries(built.made).map(([name, node]) => [node, name]));
+            const inside = wires.filter(p => keyOf.has(p.from) && keyOf.has(p.to)).map(p => ({ from: keyOf.get(p.from), to: keyOf.get(p.to) }));
+            const spots = placedBlock(built.made, inside, g._nodes || [], nearId != null ? nodeById(nearId) : null);
+            const added = Object.values(built.made);
+            let connections;
+            g.beforeChange?.();
+            try {
+                for (const [name, node] of Object.entries(built.made)) node.pos = spots[name];
+                connections = applyWires(g, wires, added, () => Object.entries(built.made).forEach(([name, node]) => apply(node, built.plans[name])));
+            } finally { g.afterChange?.(); }
+            g.setDirtyCanvas?.(true, true);
+            recordCanvasStep(app);
+            const spliced = connections.filter(link => link.replaced_from != null);
+            return {
+                nodes: Object.fromEntries(Object.entries(built.made).map(([name, node]) => [name, node.id])), wired: connections.length,
+                ...(spliced.length ? { spliced } : {}), reaches_output: added.every(node => reachesOutput(g, node)),
+                ...unwired(g), toast: { count: added.length },
+            };
+        });
+    }
+
     function connectNodes({ from_node_id: fromId, output, to_node_id: toId, input, replace }, getOwner) {
         return recorded(getOwner, 'mcpDidWire', (g) => {
             const from = nodeById(fromId);
@@ -262,7 +292,7 @@ export function canvasEditActions({ recorded, nodeById }) {
     }
 
     return {
-        add_node: addNode, connect_nodes: connectNodes, set_values: setValues, remove_nodes: removeNodes,
+        add_node: addNode, add_nodes: addNodes, connect_nodes: connectNodes, set_values: setValues, remove_nodes: removeNodes,
         new_workflow: newWorkflow, open_workflow: openWorkflow, fill_slots: fillSlots,
     };
 }
