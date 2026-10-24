@@ -475,7 +475,7 @@ def _schema(properties=None, required=()):
     return schema
 
 
-_QUERY = {"type": "string", "description": "Words that must all appear (case-insensitive); empty lists everything."}
+_QUERY = {"type": "string", "description": "Words that must all appear; empty lists all."}
 _LIMIT = {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT, "default": 20}
 
 
@@ -496,18 +496,15 @@ TOOLS = dict([
           "Which models are matched on Civitai, which are not and why, which were never scanned, and what the last scan did.",
           scan_report),
     _tool("search_images", "Search output images",
-          "Find images ComfyUI generated, newest first, by words in their prompt, model or settings (e.g. a LoRA "
-          "name or 'seed:123'). Returns image paths for get_image_info. with_pictures attaches the first 6 "
-          "themselves (512 px), in the listed order, so you can look at them at once.",
+          "Output images, newest first, by words in their prompt, model or settings (a LoRA name, 'seed:123'). "
+          "with_pictures attaches the first 6 (512 px).",
           search_images, {"query": _QUERY, "limit": _LIMIT, "page": {"type": "integer", "minimum": 1, "default": 1},
                           "with_pictures": {"type": "boolean", "default": False}}),
     _tool("get_image_info", "Image generation settings",
-          "The nodes and settings that produced an output image (prompts, models, seed, sampler…) and whether the "
-          "user kept it as a recipe, combo or prompt. With folder=input, a picture in ComfyUI's input folder (what "
-          "LoadImage reads, e.g. the inpaint_image Anomalous put there), with folder=temp a run's preview (run_status "
-          "lists them): its size and the area LoadImage gives as MASK. include_image attaches a 512 px copy; "
-          "zoom_image shows a part larger. No need to look at these files any other way.",
-          get_image_info, {"image": {"type": "string", "description": "From search_images, e.g. 'ComfyUI_00012_.png'; with folder=input, the name LoadImage takes."},
+          "How an output image was made (prompts, models, seed, sampler…) and whether the user kept it. "
+          "folder=input: a picture LoadImage reads; folder=temp: a run's preview; both with their size and MASK "
+          "area. include_image attaches a 512 px copy; zoom_image shows a part larger.",
+          get_image_info, {"image": {"type": "string", "description": "From search_images; for folder=input, the name LoadImage takes."},
                            "include_image": {"type": "boolean", "default": False},
                            "folder": {"type": "string", "enum": ["output", "input", "temp"], "default": "output"}}, ["image"]),
     _tool("list_combos", "Combos",

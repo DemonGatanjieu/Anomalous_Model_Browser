@@ -258,61 +258,54 @@ def open_workflow(ctx, name):
     return _page("open_workflow", {"filename": filename, "name": name}, timeout=60)
 
 
-_NODE_ID = {"type": "integer", "description": "A node id from describe_canvas or a tool's answer."}
-_VALUES = {"type": "object", "description": "{setting name: value}; a choice takes one of its choices exactly."}
+_NODE_ID = {"type": "integer", "description": "A node id."}
+_VALUES = {"type": "object", "description": "{setting: value}; a choice exactly as listed."}
 _NEIGHBOURS = {"oneOf": [_NODE_ID, {"type": "array", "items": _NODE_ID, "minItems": 1, "maxItems": 8}]}
 
 CANVAS_TOOLS = dict([
     _action("find_nodes", "Look up node types",
-            "Find built-in and custom node types. query returns up to five brief candidates, without bulky choice "
-            "lists. types=[chosen type] gives inputs, settings, choices, ranges and output slots when needed. "
-            "Use add_node with insert_after or wire_from/wire_to to add and wire in one call.",
+            "Node types, built in and custom. query: up to 5 brief candidates; types=[...]: their inputs, "
+            "choices, ranges and outputs.",
             find_nodes, {"query": {"type": "string"}, "types": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_FOUND}},
             read_only=True),
     _action("add_node", "Add a node",
-            "Add and wire a node in ONE call. wire_from: nodes that feed it; wire_to: nodes it feeds, where an input "
-            "already fed is spliced (its old source feeds the new node: a ControlNet or LoRA put in front of a KSampler). "
-            "insert_after=ID splices it behind that node instead; with several branches, wire_to picks them. Unique "
-            "types, or same-type sockets of the same name (positive to positive), wire automatically. Ambiguity changes "
-            "nothing and lists candidates. replace:true lets it replace an input it cannot splice. One undo step; "
-            "returns connections and reaches_output.",
+            "Adds a node, wired in the same call: wire_from feeds it, wire_to takes its output (an input already "
+            "fed is spliced, its old source now feeding the new node: a ControlNet or LoRA before a KSampler); "
+            "insert_after=ID splices it behind a node. Same type or same socket name wires itself; anything "
+            "ambiguous changes nothing and lists the choices; replace:true replaces what it cannot splice. One "
+            "Ctrl+Z step.",
             add_node, {"type": {"type": "string", "description": "A node type from find_nodes, e.g. KSampler."},
                        "values": _VALUES, "title": {"type": "string"}, "near_node_id": _NODE_ID,
-                       "insert_after": _NODE_ID, "insert_type": {"type": "string", "description": "Only if needed: through type, e.g. IMAGE."},
+                       "insert_after": _NODE_ID, "insert_type": {"type": "string", "description": "Through type, only if asked (e.g. IMAGE)."},
                        "wire_from": _NEIGHBOURS, "wire_to": _NEIGHBOURS, "replace": {"type": "boolean"}}, ["type"]),
     _action("add_nodes", "Add a group of nodes",
-            "Adds several nodes to the open workflow in ONE call, laid out as a block: nodes in ComfyUI's API form "
-            "({\"a\": {\"class_type\": \"VAEEncode\", \"inputs\": {\"pixels\": [\"#12\", 0], \"vae\": [\"#4\", \"VAE\"]}}, "
-            "\"b\": {\"class_type\": \"SetLatentNoiseMask\", \"inputs\": {\"samples\": [\"a\", 0], ...}, \"wire_to\": 15}}): "
-            "a link names a node of the group or a canvas node as \"#id\", and an output by slot or name; wire_to feeds "
-            "canvas nodes as add_node does (an input already fed is spliced; replace:true lets it replace one it "
-            "cannot splice). Everything is checked first; one Ctrl+Z step. The answer maps your keys to node ids "
-            "and lists what is still unwired.",
+            "Adds a group of nodes in one call, as one block, in ComfyUI's API form: {\"a\": {\"class_type\": "
+            "\"VAEEncode\", \"inputs\": {\"pixels\": [\"#12\", 0], \"vae\": [\"#4\", \"VAE\"]}}, \"b\": {..., \"inputs\": "
+            "{\"samples\": [\"a\", 0]}, \"wire_to\": 15}}. A link names a key of the group or a canvas node \"#id\", and "
+            "an output slot or name; wire_to as in add_node. Checked first; one Ctrl+Z step; the answer maps keys "
+            "to node ids.",
             add_nodes, {"nodes": {"type": "object"}, "near_node_id": _NODE_ID, "replace": {"type": "boolean"}}, ["nodes"]),
     _action("connect_nodes", "Wire two nodes",
-            "Wire two nodes by ID: unique matching types, and same-type sockets of the same name (positive to "
-            "positive), connect in one undo step. No guessing a lone CONDITIONING into positive or negative, or "
-            "wildcard sockets: ambiguity lists candidates, changes nothing. "
-            "Optional output/input select sockets explicitly; replace:true permits replacing existing wires in auto mode.",
+            "Wires two nodes: every unique matching type, and same-type sockets of the same name (positive to "
+            "positive). Anything ambiguous (a lone CONDITIONING into positive or negative, wildcards) changes "
+            "nothing and lists the choices; then give output and input. replace:true lets it replace wires. One "
+            "Ctrl+Z step.",
             connect_nodes, {"from_node_id": _NODE_ID, "output": {"type": "string", "description": "Optional output slot number or name."},
                             "to_node_id": _NODE_ID, "input": {"type": "string"}, "replace": {"type": "boolean"}},
             ["from_node_id", "to_node_id"]),
     _action("set_values", "Change a node's settings",
-            "Sets settings (steps, cfg, denoise, a sampler, a file choice, a third-party node's own…), checked "
-            "against what each takes. values {setting name: value} goes to the one node that has that setting; a "
-            "name several nodes have takes the node: {\"12\": {\"denoise\": 0.5}}. node_id sets that node's values. "
-            "For prompts set_prompt, for models set_model find the right ones. One Ctrl+Z step.",
+            "Changes settings of any node, a third party's too, checked against what each takes: {setting: value} "
+            "goes to the one node that has it; name the node when several do: {\"12\": {\"denoise\": 0.5}}; or "
+            "node_id with its settings. Prompts: set_prompt; models: set_model. One Ctrl+Z step.",
             set_values, {"node_id": _NODE_ID, "values": _VALUES}, ["values"], destructive=True),
     _action("remove_nodes", "Remove nodes",
             "Removes nodes from the open workflow, with their wires. One Ctrl+Z step.",
             remove_nodes, {"node_ids": {"type": "array", "items": _NODE_ID, "maxItems": MAX_REMOVE}}, ["node_ids"],
             destructive=True),
     _action("new_workflow", "Start a new workflow",
-            "Opens a new workflow tab in ComfyUI, leaving the user's open one as it was: blank, or built and laid "
-            "out from nodes, a workflow in ComfyUI's API form ({\"1\": {\"class_type\": \"CheckpointLoaderSimple\", "
-            "\"inputs\": {\"ckpt_name\": \"x.safetensors\"}}, \"2\": {\"class_type\": \"CLIPTextEncode\", \"inputs\": "
-            "{\"text\": \"...\", \"clip\": [\"1\", 1]}}}: a value or [node id, output slot]). Everything is checked "
-            "before the tab opens. The answer maps your ids to the canvas's node ids.",
+            "Opens a new workflow tab, the user's open one untouched: blank, or built from nodes in ComfyUI's API "
+            "form ({\"1\": {\"class_type\": \"CLIPTextEncode\", \"inputs\": {\"text\": \"...\", \"clip\": [\"2\", 1]}}}: a value "
+            "or [node id, output slot]). Checked before it opens; the answer maps your ids to node ids.",
             new_workflow, {"name": {"type": "string"}, "nodes": {"type": "object"}}),
     _action("open_workflow", "Open a saved workflow",
             "Opens one of the user's saved workflows (list_workflows names them) in a new tab, leaving the open one "

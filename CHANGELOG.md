@@ -15,6 +15,8 @@
 - The answer that first tells the AI its run ended, run_status or any other, carries up to four thumbnails of the run's pictures, once per run, so it need not fetch them with get_image_info.
 - 跑完叫我：关卡窗口新增“等跑图”，默认“跑完叫我”。AI 提交后最多等 15 秒，还没跑完就告诉你在跑，然后收工，不再一遍遍查进度（以前一张图要查 10 次左右）。跑完后，AI 工作台那一步下面有几句话，点一下复制，粘到 AI 的对话框里，它就接着看结果和图；AI 知道结果后这几句话自动消失。选“AI 自己等”就和以前一样。
 - Tell AI when done: a new setting in the Gates window, on by default. The AI waits up to 15 s after queueing and, if the run still goes, says so and ends its turn instead of polling run_status. When the run ends, its step offers lines to copy into the AI's chat; they go once the AI knows. "AI waits" keeps the old way.
+- 工具说明压短：日常工具集里每个工具的说明重写，去掉重复和绕的话，规则和“不要做”的都保留；AI 要读的从约 2.7 万字减到约 2.2 万字，开始任务时收到的规则从约 1900 字减到约 900 字。
+- Shorter tool descriptions: the daily tools' descriptions are rewritten without repeats, keeping their rules, about 22,000 characters instead of 27,000; begin_task's rules are about 900 characters instead of 1,900.
 
 - 修复任务画布标签关闭或切换失败后误用当前工作流的问题：操作会明确报错，重新打开或明确指定新画布后才能继续。下载缺失模型现在也跟随任务画布；留言里的 `@` 搭配和工作流按完整名称查找，不再因模糊搜索前几项占满而误报缺失。
 - Task canvas actions now fail when their recorded tab is closed or cannot be activated instead of using another workflow. Missing-model downloads follow the task tab, and message references resolve exact combo/workflow names before search limits.
@@ -73,8 +75,8 @@
 - **宽窗口里时间线收在中间**：右边一栏关着、窗口又很宽时，时间线、标题和输入框不再横跨整个窗口，而是收成中间约 880 像素宽的一列（像聊天软件那样），滚动条仍在最右边。时间线里的图片按自己的大小从左排开，一张图不再被撑成横跨整行的大灰框。
 - **AI 每一步都知道下一步做什么**：开始任务、出图和看进度、加节点连线、问你问题得到回答，这些回复里都多了一句 `next`：比如“还在跑，等 55 秒再看”“跑完了，先放大看图再告诉你结果”“还缺这几根线，照清单连”“缺模型，先查缺哪个”。小模型不擅长自己规划，但很会照着做。
 - Answers of begin_task, run_workflow and run_status, the canvas changes and an answered ask_user carry next: the one thing to do now.
-- **给 AI 的工具可以选“日常”**：关卡窗口里多了 **给 AI 的工具：日常 / 完整**。日常只给 AI 19 个常用工具（照着跑、看图、换模型或 LoRA、查缺的模型、问你、留言、现状一览），AI 要读的说明从约 4.2 万字减到约 1.9 万字，Gemini Flash 这类小模型日常跑图不容易绕晕；要连线搭工作流、画面板、下载时选完整。换了以后在 AI 软件里开个新对话才生效。
-- The Gates window offers AI apps either every tool or a daily set of 19 (runs of saved workflows, pictures, models, the task's own): half the reading for a small model. Calls are not limited by it; apps see a change in a new chat.
+- **给 AI 的工具可以选“日常”**：关卡窗口里多了 **给 AI 的工具：日常 / 完整**。日常只给 AI 常用工具（照着跑、看图、换模型或 LoRA、查缺的模型、问你、留言、现状一览，以及自动接线搭工作流），AI 要读的说明约 2.2 万字，完整的约 4.1 万字，Gemini Flash 这类小模型日常跑图不容易绕晕；要画面板、下载时选完整。换了以后在 AI 软件里开个新对话才生效。
+- The Gates window offers AI apps either every tool or a daily set (runs of saved workflows, pictures, models, the task's own, canvas building): about half the reading for a small model. Calls are not limited by it; apps see a change in a new chat.
 - **照着跑：日常出图一步完成**：AI 出图时可以直接说“用哪个存好的工作流、改什么”：`run_workflow` 带上工作流名，再带上要改的提示词、反向提示词、种子、尺寸或一张图（比如你标注过的重绘图），AMB 就在任务专用标签页里打开它（第一次打开，之后接着用同一个标签页），填好这几处，其余照存好的样子不动，然后出图、等结果。尺寸只改起始的空白潜空间，高清修复里的 Latent 放大保持原来的放大尺寸。原来要 6、7 步（找工作流、打开、看画布、改提示词、改种子……），现在一步，小模型也不容易绕晕。填的内容和出图一起算一步，改画布那部分同样能 Ctrl+Z；如果你给“改画布”设的关卡比“用显卡”严，这一步按改画布的关卡来问你。画布报错是因为缺模型时，“现状一览”会让 AI 先查缺哪个模型，而不是乱换选项。
 - run_workflow takes blanks for a daily run in one call: workflow (a saved one, opened in the task's tab once and reused), prompt, negative, seed, width, height and image (image_node for several LoadImage nodes); the rest stays as saved. The size goes to the latent a run starts from, never to a hires fix's latent upscale. With blanks a run asks as the stricter of the GPU's and the canvas's gate.
 - **现状一览，AI 一次就知道到哪一步了**：新工具 `get_situation`，AI 调一次就拿到：任务（你最后说了什么、有几个问题在等你、定了哪些决策、出过哪些图、“AMB 之外”几次）、画布简报（每个节点一行：谁接到谁；**还缺哪几根线、各要什么类型、画布上哪些现有输出能接上**；ComfyUI 报错的节点）、最近一次出图，以及**下一步该做什么**。回复控制在约 3600 字以内，Antigravity 不会把它存成文件再让 AI 去读。新开对话或拿不准时先调它；连接说明里的那句话和规则也写上了。小模型（比如 Gemini Flash）不用再把整张图记在脑子里。

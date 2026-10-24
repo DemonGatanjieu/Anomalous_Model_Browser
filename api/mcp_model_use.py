@@ -140,13 +140,12 @@ def move_model(ctx, model_id, to_type):
 
 MODEL_TOOLS = dict([
     _action("search_models", "Search models",
-            "Find model files (checkpoints, LoRAs, VAEs…) by name, trigger word or base model. Returns model_id for "
-            "get_model, and loaded_by: the node types whose drop-down lists the file (use one of them). A file in the "
-            "wrong folder for what it is comes with belongs_in and placement instead: nothing loads it where it is.",
+            "Model files by name, trigger word or base model: model_id, and loaded_by (the node types that list "
+            "the file). A misfiled one comes with belongs_in: nothing loads it where it is.",
             search_models, {
                 "query": _QUERY,
-                "type": {"type": "string", "description": "ComfyUI models folder, e.g. checkpoints, loras, vae, diffusion_models, model_patches."},
-                "base_model": {"type": "string", "description": "Part of the base model name, e.g. SDXL, Pony, Flux, SD 1.5."},
+                "type": {"type": "string", "description": "A models folder: checkpoints, loras, vae…"},
+                "base_model": {"type": "string", "description": "e.g. SDXL, Pony, Flux."},
                 "source": {"type": "string", "enum": ["civitai", "inferred_from_file", "not_scanned"],
                            "description": "Where the model's information came from."},
                 "limit": _LIMIT}, read_only=True),

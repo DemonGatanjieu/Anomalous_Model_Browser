@@ -67,22 +67,20 @@ def zoom_image(image, region=None, folder="output", compare_with="", compare_fol
     return answer, extra
 
 
-_REGION = {"type": "object", "description": "Fractions 0-1 of the picture, as the user's marks give theirs; default the whole picture.",
+_REGION = {"type": "object", "description": "Fractions 0-1, like the user's marks; default all.",
            "properties": {name: {"type": "number", "minimum": 0, "maximum": 1} for name in ("x", "y", "width", "height")}}
 _FOLDER = {"type": "string", "enum": ["output", "input", "temp"], "default": "output"}
 
 LOOK_TOOLS = dict([
     _tool("zoom_image", "Look closer at a picture",
-          "Part of a picture shown larger, attached: to check a hand, a face, a seam or a mark's area at full detail. "
-          "folder: output (results), input (what LoadImage reads, e.g. inpaint_image), temp (a run's previews). "
-          "compare_with: a second picture, the same region attached beside it (a before and an after). Reads only. "
-          "Use it instead of cropping or comparing pictures with code of your own; change a picture only by running "
-          "a ComfyUI workflow (inpaint and the like), never by editing its file.",
-          zoom_image, {"image": {"type": "string", "description": "As search_images, get_image_info or run_status name it."},
+          "Part of a picture larger, at full detail (a hand, a face, a seam). folder: output, input or temp. "
+          "compare_with: a second picture, the same region beside it. Use it instead of cropping with code; "
+          "change pictures only by running a workflow, never by editing their files.",
+          zoom_image, {"image": {"type": "string", "description": "As the other tools name it."},
                        "region": _REGION, "folder": _FOLDER,
-                       "compare_with": {"type": "string", "description": "A second picture to show the same region of."},
+                       "compare_with": {"type": "string", "description": "A second picture."},
                        "compare_folder": {"type": "string", "enum": ["output", "input", "temp"],
-                                          "description": "compare_with's folder; default the same as folder."},
+                                          "description": "Default: folder."},
                        "size": {"type": "integer", "minimum": MIN_SIZE, "maximum": MAX_SIZE, "default": DEFAULT_SIZE}},
           ["image"]),
 ])

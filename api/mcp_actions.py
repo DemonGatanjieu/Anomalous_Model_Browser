@@ -238,7 +238,7 @@ def speak(ctx, character, text, seed=None, language="auto"):
 
 # ---------------------------------------------------------------- registry
 
-_NODE = {"type": "integer", "description": "A node id from describe_canvas."}
+_NODE = {"type": "integer", "description": "A node id."}
 _MODEL = {"type": "string", "description": "model_id from search_models."}
 
 
@@ -268,10 +268,8 @@ ACTIONS = dict([
             "Puts a model into a loader node (checkpoint, LoRA, VAE…) on the canvas, replacing the one it had.",
             set_model, {"node_id": _NODE, "model_id": _MODEL}, ["node_id", "model_id"], destructive=True),
     _action("add_lora", "Add a LoRA",
-            "Inserts a LoRA loader after node after_node_id (default: the workflow's main model loader, past "
-            "the LoRAs already on it) and moves everything that node fed behind it. LoRAs that train the text "
-            "encoder also take the CLIP line (from the same node, or a UNet workflow's CLIP loader); others "
-            "patch the model only.",
+            "Inserts a LoRA loader after after_node_id (default: the main model loader, past its LoRAs) and moves "
+            "what that node fed behind it; the CLIP line too when the LoRA trains the text encoder.",
             add_lora, {"model_id": _MODEL, "after_node_id": _NODE,
                        "strength_model": {"type": "number", "default": 1.0}, "strength_clip": {"type": "number", "default": 1.0}},
             ["model_id"]),
@@ -281,12 +279,11 @@ ACTIONS = dict([
             "changes; ports to nodes outside the combo (sampler…) stay open.",
             place_combo, {"name": {"type": "string", "description": "Combo name from list_combos."}}, ["name"]),
     _action("check_workflow_models", "Check missing models",
-            "Which models the open workflow needs that this computer does not have under that name, and which "
-            "of them Anomalous can put back (same file found by hash, or a likely candidate).",
+            "Models the open workflow names that this computer lacks, and which Anomalous can put back (the same "
+            "file by hash, or a likely one).",
             check_workflow_models, read_only=True),
     _action("fix_workflow_models", "Fix missing models",
-            "Puts back every missing model that Anomalous found with certainty (same file by hash). "
-            "Likely candidates are left for the user. One Ctrl+Z step.",
+            "Puts back every missing model found by hash; likely ones are left to the user. One Ctrl+Z step.",
             fix_workflow_models, destructive=True),
     _action("download_missing_models", "Download missing models",
             "Downloads the models the open workflow is missing whose source is certain: Civitai found by the "
@@ -306,24 +303,21 @@ ACTIONS = dict([
     _action("download_status", "Downloads", "How the downloads of this ComfyUI run are going.", download_status,
             read_only=True),
     _action("run_workflow", "Run the workflow",
-            "Queues the open workflow in ComfyUI, like pressing Run. Uses the GPU. Follow it with run_status, which "
-            "says where it stands and gives its pictures when done; do not look in the output folder for them. "
-            "A daily run in one call: workflow (a saved one, list_workflows names them) opens it in the task's tab "
-            "the first time and reuses it after; prompt and negative fill its prompt boxes, seed every sampler's "
-            "seed, width and height its empty latent, image (a picture from search_images, or in the input folder, "
-            "like an inpaint_image) its LoadImage; values any other setting by name ({\"steps\": 30}; "
-            "{\"12\": {\"denoise\": 0.5}} when several nodes have it, as set_values); the rest stays as saved. "
-            "Without workflow they fill the open canvas. No describe_canvas, set_prompt or set_values needed for these.",
+            "Queues the workflow (uses the GPU). In the same call: workflow (a saved one) opens in the task's tab "
+            "once and is reused; prompt, negative, seed (every sampler), width/height (the start latent), image "
+            "(its LoadImage) and values (any setting by name: {\"steps\": 30}, or {\"12\": {\"denoise\": 0.5}} when "
+            "several nodes have it) fill it in; the rest stays. Without workflow they fill the open canvas. Then "
+            "run_status, never the output folder.",
             run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1},
                            "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 15,
-                                            "description": "Wait for execution after submission; returns actual state/results. Never resubmit while running."},
-                           "workflow": {"type": "string", "description": "A saved workflow's name (list_workflows)."},
+                                            "description": "Seconds to wait for it to end."},
+                           "workflow": {"type": "string", "description": "A name from list_workflows."},
                            "prompt": {"type": "string"}, "negative": {"type": "string"},
                            "seed": {"type": "integer", "minimum": 0},
                            "width": {"type": "integer", "minimum": 16, "maximum": 16384},
                            "height": {"type": "integer", "minimum": 16, "maximum": 16384},
-                           "image": {"type": "string", "description": "subfolder/name.png in the output or input folder."},
-                           "image_node": {"type": "integer", "description": "The LoadImage to fill when the workflow has several."},
+                           "image": {"type": "string", "description": "subfolder/name.png, output or input folder."},
+                           "image_node": {"type": "integer", "description": "Which LoadImage, when there are several."},
                            "values": {"type": "object", "description": "Other settings by name, any node's."}}),
     _action("open_in_anomalous", "Show a model",
             "Opens Anomalous Model Browser on this model's page, so the user sees its cover and details.",

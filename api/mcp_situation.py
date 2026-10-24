@@ -88,12 +88,10 @@ def get_situation(ctx, task=None):
 SITUATION_TOOLS = {
     "get_situation": {"run": get_situation, "context": True, "spec": {
         "name": "get_situation", "title": "Where things stand",
-        "description": "One call, the whole picture: the task (what the user asked last, what waits for them, "
-                       "decisions, pictures made), the canvas in brief (bounded flow chains, node lines, "
-                       "missing inputs with matching outputs, ComfyUI's errors), the "
-                       "latest run, and next: the one thing to do now. Call it first in a new chat on a task, and "
-                       "whenever you are unsure, instead of describe_canvas, find_nodes or reading files.",
-        "inputSchema": _schema({"task": {"type": "string", "description": "Optional task id returned by begin_task."}}),
+        "description": "The whole picture in one call: the task (what the user asked last, what waits for them, decisions, "
+                       "pictures), the canvas in brief (flow chains, inputs nothing feeds and what fits them, errors), the "
+                       "latest run, and next: the one thing to do now. Call it first in a new chat, and whenever unsure.",
+        "inputSchema": _schema({"task": {"type": "string", "description": "begin_task's id (optional)."}}),
         "annotations": {"title": "Where things stand", "readOnlyHint": True, "destructiveHint": False,
                         "idempotentHint": True, "openWorldHint": False},
     }},

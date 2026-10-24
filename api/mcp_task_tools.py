@@ -18,26 +18,15 @@ def begin_task(ctx, title, new_task=False):
         ctx.get("client") or "AI", title, new_task=bool(new_task),
         session=ctx.get("session") or "", task_id=ctx.get("task"),
     )
-    answer = {"task": task["id"], "title": task["title"], "note": "Continue this task; do not begin another for its individual steps. "
-                                         "Ask the user anything with ask_user: they answer in Anomalous's AI workbench, not in your chat. "
-                                         "Use run_workflow to submit and see real execution progress. If you submit via /prompt or another tool, "
-                                         "immediately call track_run(prompt_ids, task) with the exact IDs from YOUR submission response. "
-                                         "External work is invisible until attached; never guess ownership from the global queue. "
-                                         "When the user's setting is a tab of the task's own, Anomalous keeps your canvas work in it "
-                                         "(it copies their open workflow there before your first change); do not switch tabs yourself. "
-                                         "Every AMB tool call from now on is a step of this task in Anomalous's AI workbench, "
-                                         "where the user sees, opens and undoes them. Call report to explain a choice "
-                                         "or to hand in pictures you made another way; report with done=true at the end. "
-                                         "The user's models, pictures, node types, canvas and runs are all in AMB's tools (search_models "
-                                         "says which node loads a model, move_model fixes a misfiled one, find_nodes lists node types, "
-                                         "search_images and get_image_info read pictures, zoom_image shows a part larger or "
-                                         "compares two, run_status lists a run's previews): do not read ComfyUI's folders or "
-                                         "source, run preprocessors or call its routes yourself; each of those asks the user to "
-                                         "allow it in your app. Change pictures only by running ComfyUI workflows (inpaint and "
-                                         "the like): never edit, paint over or overwrite picture files with code of your own. "
-                                         "If you still use another tool (a command, a script, reading or writing files), "
-                                         "call log_outside right after with what you ran and why. Unsure where things stand "
-                                         "(a new chat, many changes): get_situation gives the task, the canvas in brief and the next step."}
+    answer = {"task": task["id"], "title": task["title"], "note": (
+        "Continue this task; do not begin another for its steps. Every AMB call is a step the user sees, opens and "
+        "undoes in Anomalous's AI workbench. Ask them with ask_user (they answer there, not in your chat); report "
+        "explains a choice or hands in pictures, done=true at the end. Run with run_workflow; a run queued another "
+        "way needs track_run(prompt_ids) with your own IDs. In the task's own tab, do not switch tabs yourself. "
+        "Everything is in AMB's tools (models, pictures, node types, the canvas, runs and their previews): do not "
+        "read ComfyUI's folders or source, run preprocessors or call its routes yourself. Change pictures only by "
+        "running workflows, never by editing files with code. If you use another tool anyway, log_outside right "
+        "after. Unsure where things stand: get_situation.")}
     answer["next"] = ("get_situation shows where things stand; a daily run is one call: run_workflow(workflow: a saved "
                       "one, with the prompt, seed or size to change).")
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
@@ -249,7 +238,7 @@ BLOCKS_HELP = (
     "Plain text only (no markup, no links); up to 30 blocks, 12 pictures or models a block."
 )
 
-_TASK_PROP = {"type": "string", "description": "Optional task id returned by begin_task."}
+_TASK_PROP = {"type": "string", "description": "begin_task's id (optional)."}
 
 
 def _task_tool(name, title, description, run, properties, required=()):
@@ -271,41 +260,32 @@ TASK_TOOLS = dict([
                ai_run_tracking.track_run, {"prompt_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 8},
                    "task": _TASK_PROP, "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 15}}, ["prompt_ids"]),
     _task_tool("begin_task", "Begin a task",
-               "Call first when you start what the user asked for: names it in Anomalous's AI workbench, where the "
-               "user sees each of your steps with what it made, and can open or undo it. Reuses the user's waiting "
-               "task or your active task, including any preliminary reads. Use new_task=true only for a separate "
-               "user request, never for another step of the same work.",
+               "Call first: names what the user asked for in Anomalous's AI workbench, where they see, open and undo "
+               "each of your steps. Continues the waiting or active task; new_task=true only for a separate request.",
                begin_task, {"title": {"type": "string", "description": "A few words, in the user's language."},
                             "new_task": {"type": "boolean", "default": False}},
                ["title"]),
     _task_tool("report", "Tell the user",
-               "Leaves a note in the AI workbench, where the user reads your work: why you chose something, what to "
-               "look at, what is left, and your answers to them. Write there what you would tell them in your chat; "
-               "headings (#), lists (- or 1.), **bold** and `code` are laid out. reply_to: the id of the user's message "
-               "or marks you answer (user_messages[].id), so your reply shows under it. images: pictures you made in "
-               "ComfyUI's output folder (subfolder/name.png) that Anomalous's tools did not make, so they are kept "
-               "with the task. done=true ends the task.",
+               "A note in the AI workbench, where the user reads your work: your choices, what to look at, what is "
+               "left, your answers. Markdown headings, lists, bold and code are laid out. reply_to: the id of the "
+               "user's message you answer. images: output pictures (subfolder/name.png) to keep with the task. "
+               "done=true ends it.",
                report, {"text": {"type": "string"},
                         "images": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_LIMIT},
                         "done": {"type": "boolean", "default": False},
-                        "reply_to": {"type": "string", "description": "user_messages[].id of what you answer."},
+                        "reply_to": {"type": "string", "description": "The message id you answer."},
                         "task": _TASK_PROP}),
     _task_tool("log_outside", "Say what you did outside Anomalous",
-               "Right after you used a tool that is not Anomalous's (a shell command, a script, reading or writing "
-               "files, another server), say so here: what (the command or change, in a line), why (what Anomalous's "
-               "tools did not do for it), files (what it read, wrote or changed). The user sees it in the task's "
-               "timeline; Anomalous sees only the calls made to it. Prefer Anomalous's tools where they do the job.",
+               "Right after using a tool that is not Anomalous's (a command, a script, files, another server): what "
+               "you ran, why, and the files it touched, for the task's timeline. Prefer Anomalous's tools.",
                log_outside, {"what": {"type": "string"}, "why": {"type": "string"},
                              "files": {"type": "array", "items": {"type": "string"}, "maxItems": ai_outside.MAX_FILES},
                              "task": _TASK_PROP},
                ["what"]),
     _task_tool("log_decision", "Record a decision",
-               "Keeps a key decision of the task in Anomalous's AI workbench, where the user looks back on how the "
-               "task went. Talk it over wherever you like, your own chat too; once you and the user settle something "
-               "(a style, a model, a fix, what to drop), record it here: title (what it is about), decision (what was "
-               "settled), reason, rejected (the options left out), by (user: they chose; ai: your own call; "
-               "together), related (ids of this task's steps it is about: a run, the marks, a panel). The user's own "
-               "choices in Anomalous (panel answers, allowing a step, materials) are kept already; record the rest.",
+               "Records a settled decision of the task (a style, a model, a fix, what to drop) where the user looks "
+               "back on it: title, decision, reason, rejected options, by (user, ai or together), related step ids. "
+               "The user's own choices in Anomalous are kept already.",
                log_decision, {"title": {"type": "string"}, "decision": {"type": "string"}, "reason": {"type": "string"},
                               "rejected": {"type": "array", "items": {"type": "string"}, "maxItems": ai_decisions.MAX_REJECTED},
                               "by": {"type": "string", "enum": list(ai_decisions.BY), "default": "user"},
@@ -322,12 +302,10 @@ TASK_TOOLS = dict([
                             "task": _TASK_PROP},
                ["title", "blocks"]),
     _task_tool("ask_user", "Ask the user",
-               "Asks the user in Anomalous's AI workbench, where they watch your work, and waits for the answer: "
-               "a question with options to press (2-8 {label, detail, recommended}: mark the one you suggest with "
-               "recommended=true instead of writing it into the label) and, unless other=false, a line for their own "
-               "answer; no options: a question they answer in a line. Use it for every choice or preference that is "
-               "the user's while you work on an Anomalous task, never your own chat's question form. Returns the "
-               "choice (or their text); if they have not answered within wait_seconds, keep waiting with get_answers.",
+               "Asks the user in the AI workbench and waits: a question with 2-8 options ({label, detail, "
+               "recommended}; mark your suggestion recommended=true), and a line for their own answer unless "
+               "other=false; no options: a free answer. Use it for every choice that is the user's, not your chat's "
+               "question form. Unanswered within wait_seconds: wait on with get_answers.",
                ask_user, {"question": {"type": "string"},
                           "options": {"type": "array", "maxItems": 8, "items": {"type": "object", "properties": {
                               "label": {"type": "string"}, "detail": {"type": "string"}, "recommended": {"type": "boolean"}}}},
@@ -346,12 +324,10 @@ TASK_TOOLS = dict([
                               "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
                               "closed": {"type": "boolean"}, "task": _TASK_PROP}, ["panel"]),
     _task_tool("run_status", "How the run is going",
-               "Where your task's latest workflow run stands: none (no run yet), queued (how many runs are ahead), running (which node, "
-               "its steps, percent, nodes done of all), done (with the pictures it saved; the first answer telling you it "
-               "ended, this or any other, attaches up to 4 thumbnails, so get_image_info is not needed) or failed; summary says it "
-               "in one sentence. wait_seconds (up to 55) waits for it to end. Runs take a while: call this instead of "
-               "guessing, looking in the output folder or at the screen. While a run goes, your other tools' answers "
-               "carry the same news as your_run, and once more when it ends.",
+               "Your task's latest run: none, queued (runs ahead), running (node, steps, percent), done (its "
+               "pictures; the first answer telling you it ended attaches up to 4) or failed; summary says it in a "
+               "sentence. wait_seconds (up to 55) waits for the end. Call it instead of guessing or looking in "
+               "folders.",
                run_status, {"wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_task_runs.MAX_STATUS_WAIT, "default": 0},
                             "task": _TASK_PROP}),
     _task_tool("show_run_map", "Show what the run really was",
@@ -362,9 +338,8 @@ TASK_TOOLS = dict([
                "explanation with report. title: a few words in the user's language.",
                show_run_map, {"title": {"type": "string"}, "run": {"type": "string"}, "task": _TASK_PROP}, ["title"]),
     _task_tool("stop_run", "Stop the run",
-               "Stops your task's run that is still going: its prompts still queued leave ComfyUI's queue and the one "
-               "running is interrupted (never anyone else's). Use it when run_status warns that the run is far too big "
-               "or slow and the user agrees (ask_user), or when the user asks you to stop.",
+               "Stops your task's run: its queued prompts leave the queue, the running one is interrupted (never "
+               "anyone else's). When run_status warns it is far too big and the user agrees, or when the user asks.",
                stop_run, {"task": _TASK_PROP}),
     _task_tool("get_toolbox", "What the user picked for you",
                "The node types, whole custom node packs, combos, saved workflows, prompts and models the user picked in "
@@ -374,13 +349,10 @@ TASK_TOOLS = dict([
                "begin_task says when there are any.",
                get_toolbox, {"task": _TASK_PROP}),
     _task_tool("get_answers", "Read the user's answers and messages",
-               "What the user picked or typed on your panels, and what they wrote to you in the AI workbench "
-               "(messages: a change of mind, 'stop', 'make it brighter'; kind=change: something they changed "
-               "themselves in Anomalous while you worked, keep it), since you last asked; each once. For one "
-               "panel (and its task's messages), or all of yours. wait_seconds (up to 55) waits when nothing is there "
-               "yet: for that panel's open questions, or with no panel for anything the user sends. still_waiting "
-               "lists the questions not answered; skipped=true is a question the user chose not to answer (go on with your "
-               "own judgement). Check it between steps of longer work.",
+               "What the user picked or typed on your panels and wrote to you in the AI workbench since you last "
+               "asked, each once (kind=change: something they changed themselves; keep it). panel: one panel. "
+               "wait_seconds (up to 55) waits when nothing is there. still_waiting: questions not answered; "
+               "skipped=true: they chose not to answer, go on with your own judgement.",
                get_answers, {"panel": {"type": "string"},
                              "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": 0},
                              "task": _TASK_PROP}),
