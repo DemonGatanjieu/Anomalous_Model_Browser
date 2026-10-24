@@ -351,6 +351,42 @@
 .anomalous-ai-now-error:empty { display: none; }
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-now-pulse, .anomalous-ai-now-bar.is-waiting .anomalous-ai-now-fill { animation: none; } }
 
+/* Lines to paste into the AI's chat once it has stopped, in the strip's place (ui_ai_call.js). */
+.anomalous-ai-call {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    box-sizing: border-box;
+    padding: 4px 6px 4px 12px;
+    border: 1px dashed var(--amb-border);
+    border-radius: 11px;
+    font-size: 12px;
+}
+.anomalous-ai-call[hidden] { display: none; }
+.anomalous-ai-call-lead { flex: none; color: var(--amb-text-dim); }
+.anomalous-ai-call-lead.is-done { color: var(--amb-ok); }
+.anomalous-ai-call-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    max-width: 100%;
+    padding: 3px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
+    font: inherit;
+    cursor: pointer;
+}
+.anomalous-ai-call-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-call-line:hover { border-color: var(--amb-border-strong); }
+.anomalous-ai-call-line.is-main { border-color: color-mix(in srgb, var(--ai-run) 60%, transparent); background: color-mix(in srgb, var(--ai-run) 12%, var(--amb-bg-panel)); font-weight: 600; }
+.anomalous-ai-call-line.is-new { flex: 0 1 auto; color: var(--amb-text-soft); }
+.anomalous-ai-call-line.is-done { border-color: var(--amb-ok); color: var(--amb-ok); }
+
 /* A picture dragged over the message box (ui_ai_drop.js), and while one uploads. */
 .anomalous-ai-message.is-dropping { border-color: var(--amb-link); border-style: dashed; background: color-mix(in srgb, var(--amb-link) 12%, var(--amb-bg-page)); }
 .anomalous-ai-message.is-dropping::after {

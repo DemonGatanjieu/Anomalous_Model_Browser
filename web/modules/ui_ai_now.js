@@ -4,7 +4,8 @@
  * step), a run going (where it stands, a thin bar, stop), the AI busy with a tool; and the first
  * question the AI asked and nobody answered yet, to answer there: a pick of one as buttons (and
  * a line of one's own when the AI allows it), a line of text, or the way to the stage for the
- * rest (several picks, pictures to pick). Drawn again as
+ * rest (several picks, pictures to pick). When none of that is there, the lines to paste into the
+ * AI's chat once it has stopped (ui_ai_call.js), in the same place. Drawn again as
  * the task changes; a question's card only when another question comes, so typing in it survives.
  */
 
@@ -16,6 +17,7 @@ import { progressWords, stopButton } from './ui_ai_run_live.js';
 import { panelSteps, QUESTIONS } from './ui_ai_side.js';
 import { sendAnswer } from './ui_ai_panel.js';
 import { decideGate } from './ui_ai_gate.js';
+import { callRow } from './ui_ai_call.js';
 
 const RUNNING = ['submitting', 'queued', 'running'];
 const MAX_OPTIONS = 6;
@@ -144,7 +146,8 @@ export function nowStrip() {
     const strip = el('div', 'anomalous-ai-now');
     const line = el('div', 'anomalous-ai-now-status');
     const ask = el('div', 'anomalous-ai-now-asks');
-    strip.append(ask, line);
+    const call = callRow();
+    strip.append(ask, line, call);
     let kept = null;
     strip.update = (task, ctx = kept) => {
         kept = ctx;
@@ -155,7 +158,8 @@ export function nowStrip() {
             ask.dataset.key = key;
             ask.replaceChildren(...(asks.length ? [askCard(task, asks[0], asks.length - 1, ctx)] : []));
         }
-        strip.hidden = !line.childNodes.length && !ask.childNodes.length;
+        call.update(line.childNodes.length || asks.length ? null : task); // while the AI or the user has something to do, no word is needed
+        strip.hidden = !line.childNodes.length && !ask.childNodes.length && call.hidden;
     };
     return strip;
 }

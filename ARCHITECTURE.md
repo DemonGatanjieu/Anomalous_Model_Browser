@@ -304,7 +304,9 @@ covered by the `styles.css` manifest.
   over it what the message carries (`ui_ai_tray.js`: pictures to mark up with
   `ui_ai_marker.js` or leave out, chips of what "@" names), and over that what the task needs or
   does now (`ui_ai_now.js`: a gate to allow, a run's progress with stop, the AI's open question
-  to answer there). `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
+  to answer there; with none of that, `ui_ai_call.js`'s lines to paste into the AI's chat once it
+  has stopped, which `ai_call_lines.js` picks by what waits for the AI: a run it was not told has
+  ended, a reply it has not got, else go on, and a line for a new chat; `tests/ai_call_lines.mjs`). `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
   output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `ui_ai_mention.js` holds those refs
   and gives it "@" (the task's pictures, the gallery's newest and those its search finds,
   combos, models, workflows, prompts, node packs and node types from the materials picker's
@@ -332,9 +334,9 @@ covered by the `styles.css` manifest.
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
   decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
   one to link. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
-  step made and where it leads (and the strip of a task's results); `ui_ai_call.js` the lines to
-  paste to the AI on a run it did not wait for (`ai_gates.run_wait` "call": the server marks the
-  ended run `call_ai` until the AI is told). `ui_ai_side.js` is the
+  step made and where it leads (and the strip of a task's results); for a run the AI did not wait
+  for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
+  and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a line per
   panel that brings it there): like the timeline it reads from the top down, the task's panels in
   the order they came with their step numbers, the newest at the bottom. Opening a task,
