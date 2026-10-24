@@ -16,7 +16,7 @@ import threading
 import time
 
 from . import ai_gates, ai_run_map, ai_run_watch, ai_tasks
-from .mcp_tools import ToolError, _image_content, _resolve_image, tool_text
+from .mcp_tools import ToolError, _image_content, _resolve_image, retext, tool_text
 
 RUN_POLL_SECONDS = 2.0
 MAX_STATUS_WAIT = 55
@@ -366,21 +366,9 @@ def show_pictures(result, task_id):
         return result
     data = dict(result.get("structuredContent") or {})
     data["pictures_attached"] = shown
-    _retext(result, data)
+    retext(result, data)
     result["content"] = [*result["content"], *items]
     return result
-
-
-def _retext(result, data):
-    """A tool result with `data` as its structured content and as its text."""
-    result["structuredContent"] = data
-    content = list(result.get("content") or [])
-    text = {"type": "text", "text": tool_text(data)}
-    if content and isinstance(content[0], dict) and content[0].get("type") == "text":
-        content[0] = text
-    else:
-        content.insert(0, text)
-    result["content"] = content
 
 
 def tell(result, task_id):
@@ -391,7 +379,7 @@ def tell(result, task_id):
     data = result.get("structuredContent")
     data = dict(data) if isinstance(data, dict) else {}
     data["your_run"] = run
-    _retext(result, data)
+    retext(result, data)
     return result
 
 

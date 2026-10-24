@@ -553,5 +553,17 @@ def call_tool(tools, name, arguments, ctx=None):
             "structuredContent": data, "isError": False}
 
 
+def retext(result, data):
+    """A tool result with `data` as its structured content and as its text (the rest of its content kept)."""
+    result["structuredContent"] = data
+    content = list(result.get("content") or [])
+    text = {"type": "text", "text": tool_text(data)}
+    if content and isinstance(content[0], dict) and content[0].get("type") == "text":
+        content[0] = text
+    else:
+        content.insert(0, text)
+    result["content"] = content
+
+
 def _failure(message):
     return {"content": [{"type": "text", "text": message}], "isError": True}

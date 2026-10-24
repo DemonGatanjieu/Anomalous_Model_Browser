@@ -26,7 +26,7 @@ def begin_task(ctx, title, new_task=False):
         "Everything is in AMB's tools (models, pictures, node types, the canvas, runs and their previews): do not "
         "read ComfyUI's folders or source, run preprocessors or call its routes yourself. Change pictures only by "
         "running workflows, never by editing files with code. If you use another tool anyway, log_outside right "
-        "after. Unsure where things stand: get_situation.")}
+        "after. Unsure where things stand: get_situation. The directory below lists the tools by what you want to do.")}
     answer["next"] = ("get_situation shows where things stand; a daily run is one call: run_workflow(workflow: a saved "
                       "one, with the prompt, seed or size to change).")
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))

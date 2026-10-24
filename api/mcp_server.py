@@ -24,7 +24,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import action_catalog, ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_prompts
+from . import action_catalog, ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
@@ -57,7 +57,8 @@ INSTRUCTIONS = (
     "are single Ctrl+Z steps and are logged as the AI's; nothing deletes files. Ids returned by "
     "one tool (model_id, image, node ids) are what the others take. For what no tool does, tell "
     "the user where in Anomalous to do it (the rail on the left: Models, Gallery, Workflows, "
-    "Combos, Prompts, Voices). In a new chat on a task, or when unsure where things stand, call get_situation "
+    "Combos, Prompts, Voices). begin_task's answer carries a directory of the tools by what you want to do: "
+    "look there and go straight to the tool. In a new chat on a task, or when unsure where things stand, call get_situation "
     "first: the task, the canvas in brief (what is still unwired) and the next step in one answer. "
     "The user watches your work in Anomalous's AI workbench: call begin_task "
     "with a short title when you start what they asked for (it continues the waiting or active task; "
@@ -116,10 +117,14 @@ def _result(id_, result, modern):
     return web.json_response({"jsonrpc": "2.0", "id": id_, "result": result})
 
 
+def _offered():
+    """{name: spec} of the tools AI apps are offered (the user's choice in the AI workbench); calls are not limited by it."""
+    daily = ai_gates.tool_set() == "daily"
+    return {name: tool["spec"] for name, tool in TOOLS.items() if not daily or name in action_catalog.DAILY or name in mcp_apps.APP_TOOLS}
+
+
 def _tool_list(modern):
-    daily = ai_gates.tool_set() == "daily"  # the user's choice in the AI workbench; calls are not limited by it
-    result = {"tools": [mcp_apps.with_card(tool["spec"]) for name, tool in TOOLS.items()
-                        if not daily or name in action_catalog.DAILY or name in mcp_apps.APP_TOOLS]}
+    result = {"tools": [mcp_apps.with_card(spec) for spec in _offered().values()]}
     if modern:
         result.update(ttlMs=LIST_TTL_MS, cacheScope="public")
     return result
@@ -213,6 +218,7 @@ async def _call(params, request):
         await asyncio.to_thread(ai_task_runs.show_pictures, result, resolved_task)
     if name != "get_answers" and name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task or ("" if session else None))
+    mcp_directory.attach(result, name, {key: spec for key, spec in _offered().items() if key not in mcp_apps.APP_TOOLS})
     return ai_outside.tell(result, outside)
 
 

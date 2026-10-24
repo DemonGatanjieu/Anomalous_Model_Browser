@@ -185,6 +185,10 @@ covered by the `styles.css` manifest.
   get_situation: the task, that brief (describe_canvas with `brief`), the latest run and the
   next step in one answer kept under Antigravity's size for answers it files away, for an AI
   starting a new chat or lost (`tests/test_mcp_situation.py`, `tests/mcp_canvas_brief.mjs`).
+  `api/mcp_directory.py` is the directory of the tools by what an AI wants to do (as this file is
+  for the code): each tool offered under its stage (`action_catalog.TOOLS`) with its title, built
+  from the registry, in begin_task's answer and in get_situation's while there is no task
+  (`tests/test_mcp_directory.py`).
   `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow
   opened in the task's tab once and reused (the page marks the tab with the workflow's file),
   then the prompts, seed, size and the picture a LoadImage reads filled in by the page's
