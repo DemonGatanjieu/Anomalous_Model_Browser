@@ -1,20 +1,36 @@
 // The AI workbench's rules (web/modules/ai_task_view.js): folding reads, words, counts, addresses.
 import assert from 'node:assert/strict';
 import {
-    activityIds, audioResult, duration, flowStages, groupSteps, isVideo, lookTools, outputUrl, outputPicture, pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskResults, taskState, toolKey,
+    activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, lookTools, outputUrl, outputPicture, pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
 const look = (tool, ok = true, state = 'done') => ({ kind: 'look', tool, ok, state, summary: tool });
 const act = (tool, kind = 'canvas') => ({ kind, tool, ok: true, state: 'done', summary: `${tool}: K` });
 
-// Reads that follow each other fold into one row; a running or failed read and the work stay rows.
-const items = groupSteps([look('search_models'), look('describe_canvas'), act('place_combo'), look('list_combos', false), look('search_images')]);
+// Reads that follow each other fold into one row; a running or failed read and what the user looks for stay rows.
+const items = groupSteps([look('search_models'), look('describe_canvas'), act('report', 'note'), look('list_combos', false), look('search_images')]);
 assert.deepEqual(items.map(item => item.type), ['looks', 'step', 'step', 'looks']);
 assert.equal(items[0].steps.length, 2);
 const inFlight = groupSteps([look('search_models'), look('describe_canvas', true, 'running')]);
 assert.deepEqual(inFlight.map(item => item.type), ['looks', 'step'], 'an in-flight read stays visible until it finishes');
 assert.deepEqual(groupSteps(undefined), []);
 assert.deepEqual(lookTools([look('a'), look('b'), look('a')]), [{ tool: 'a', count: 2 }, { tool: 'b', count: 1 }]);
+
+// The AI's work in a row (reads, canvas changes, decisions) folds into a chain of three or more.
+const work = [look('find_nodes'), act('add_node'), act('add_node'), act('connect_nodes'), act('log_decision', 'decision'), act('run_workflow', 'run'), look('run_status')];
+const chained = groupSteps(work);
+assert.deepEqual(chained.map(item => item.type), ['chain', 'step', 'looks']);
+assert.equal(chained[0].steps.length, 5);
+assert.deepEqual(chainTools(chained[0].steps), [{ tool: 'look', kind: 'look', count: 1 }, { tool: 'add_node', kind: 'canvas', count: 2 },
+    { tool: 'connect_nodes', kind: 'canvas', count: 1 }, { tool: 'log_decision', kind: 'decision', count: 1 }]);
+assert.deepEqual(foldLooks(chained[0].steps).map(item => item.type), ['looks', 'step', 'step', 'step', 'step'], 'a chain opens to its steps, reads still folded');
+assert.deepEqual(groupSteps([look('a'), act('set_prompt'), look('b')]).map(item => item.type), ['looks', 'step', 'looks'], 'one change among reads stays in sight');
+assert.deepEqual(groupSteps([act('set_prompt'), act('set_values')]).map(item => item.type), ['step', 'step'], 'two steps stay as they are');
+assert.deepEqual(groupSteps([look('a'), look('b'), look('c')]).map(item => item.type), ['looks'], 'only reads stay a row of reads');
+const broken = groupSteps([act('add_node'), act('add_node'), { ...act('connect_nodes'), ok: false }, act('add_node'), act('add_node'), act('add_node')]);
+assert.deepEqual(broken.map(item => item.type), ['step', 'step', 'step', 'chain'], 'a failed step stays in sight and splits the work');
+assert.deepEqual(groupSteps([act('add_node'), act('add_node'), { ...act('set_values'), state: 'asking' }]).map(item => item.type), ['step', 'step', 'step'],
+    'a step waiting at a gate is not folded away');
 
 // Words.
 assert.equal(toolKey('place_combo'), 'aiTool_place_combo');

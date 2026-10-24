@@ -1,21 +1,49 @@
 /**
- * The AI workbench's rules without DOM (ui_ai_workbench.js draws them): which steps fold
- * together, what each tool is called, what a task counts, and where a result leads. A task
+ * The AI workbench's rules without DOM (ui_ai_workbench.js and ui_ai_chain.js draw them): which
+ * steps fold together, what each tool is called, what a task counts, and where a result leads. A task
  * and its steps are api/ai_tasks.py's shapes.
  */
 
 /** The kinds of step, in the order a task's counts name them. */
 export const KINDS = ['panel', 'user', 'decision', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'outside', 'look'];
 
+const WORK = new Set(['look', 'canvas', 'decision']); // the AI going about the work, not what the user looks for
+const CHAIN_MIN = 3;
+const settled = step => step.ok && !['running', 'asking', 'allowed'].includes(step.state);
+
 /**
- * The timeline: each step, but completed reads that follow each other fold into one row (`looks`),
- * so looking around does not push the work out of sight. A running or failed read stays a row of its own.
+ * The timeline. Reads, canvas changes and decisions that follow each other, finished and fine,
+ * fold into one row (`chain`) when there are three or more and two are not reads, so the work does
+ * not push what the user looks for (their words, the AI's notes and questions, panels, runs,
+ * errors) out of sight; else the reads among them fold alone (`looks`). A running, waiting or
+ * failed step stays a row of its own.
  */
 export function groupSteps(steps) {
     const items = [];
+    let work = [];
+    const close = () => {
+        if (work.length >= CHAIN_MIN && work.filter(step => step.kind !== 'look').length >= 2) items.push({ type: 'chain', steps: work });
+        else items.push(...foldLooks(work));
+        work = [];
+    };
     for (const step of steps || []) {
+        if (WORK.has(step.kind) && settled(step)) {
+            work.push(step);
+        } else {
+            close();
+            items.push({ type: 'step', step });
+        }
+    }
+    close();
+    return items;
+}
+
+/** `steps` with the finished reads that follow each other as one `looks` item (a chain opens to these). */
+export function foldLooks(steps) {
+    const items = [];
+    for (const step of steps) {
         const last = items.at(-1);
-        if (step.kind === 'look' && step.ok && step.state !== 'running') {
+        if (step.kind === 'look' && settled(step)) {
             if (last?.type === 'looks') last.steps.push(step);
             else items.push({ type: 'looks', steps: [step] });
         } else {
@@ -23,6 +51,18 @@ export function groupSteps(steps) {
         }
     }
     return items;
+}
+
+/** What a chain did, in the order first done: each tool with its kind and how often, the reads counted together as `look`. */
+export function chainTools(steps) {
+    const counts = new Map();
+    for (const step of steps) {
+        const tool = step.kind === 'look' ? 'look' : step.tool;
+        const item = counts.get(tool) || { tool, kind: step.kind, count: 0 };
+        item.count += 1;
+        counts.set(tool, item);
+    }
+    return [...counts.values()];
 }
 
 /**

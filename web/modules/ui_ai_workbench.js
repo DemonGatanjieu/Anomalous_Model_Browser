@@ -2,7 +2,7 @@
  * The AI workbench page: what AI apps did through Anomalous's MCP endpoint (api/ai_tasks.py).
  * The tasks on the left, newest first; on the right one task: its title and counts, what it
  * made (pictures, models, combos, sounds) as a strip on top, then its steps as a timeline,
- * reads folded into one row, each step with what it made and where that leads (the picture
+ * the AI's work in a row folded into one (ui_ai_chain.js), each step with what it made and where that leads (the picture
  * in the viewer, the model's page, the combo, the canvas change found or undone). A task the
  * AI is still working on grows by itself ("anomalous.ai_task" events) and says so at the foot.
  * The column on the right shows one view, picked by the switch at the top right
@@ -26,7 +26,7 @@ import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { translate as t } from './locales.js';
 import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
-import { canUndo, undoEntry } from './canvas_undo.js';
+import { canUndo } from './canvas_undo.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
 import { atFoot, newestButton } from './ui_ai_newest.js';
@@ -46,12 +46,13 @@ import { compareBar, setMarker } from './ui_ai_images.js';
 import { openMarker } from './ui_ai_marker.js';
 import { toolboxCount } from './ui_ai_toolbox.js';
 import { stepBody } from './ui_ai_step_body.js';
+import { chainRow, looksRow, undoChanges } from './ui_ai_chain.js';
 import { taskLinks } from './ui_ai_task_links.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewLabel } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
 import {
-    activityIds, duration, groupSteps, lookTools, stepDetail, taskCounts, taskResults, taskState, toolKey,
+    activityIds, duration, groupSteps, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
 
 const NARROW_PX = 720;
@@ -166,38 +167,8 @@ function stepRow(step, number) {
     return row;
 }
 
-function looksRow(steps, number) {
-    const row = el('div', 'anomalous-ai-step is-look is-folded');
-    row.dataset.stepIds = steps.map(step => step.id).join(' ');
-    row.append(el('span', 'anomalous-ai-step-dot', number));
-    const body = el('div', 'anomalous-ai-step-body');
-    const tools = lookTools(steps).map(({ tool, count }) => (count > 1 ? `${t(toolKey(tool))} ×${count}` : t(toolKey(tool))));
-    const head = button('anomalous-ai-looks', `${t('aiLooks', { count: steps.length })}：${tools.join('、')}`, () => {
-        details.hidden = !details.hidden;
-        head.setAttribute('aria-expanded', String(!details.hidden));
-    });
-    head.setAttribute('aria-expanded', 'false');
-    const details = el('div', 'anomalous-ai-looks-details');
-    details.hidden = true;
-    for (const step of steps) {
-        const detail = stepDetail(step);
-        const found = Number.isFinite(step.count) ? t('aiFound', { count: step.count }) : '';
-        details.append(el('div', 'anomalous-ai-look', [timeLabel(step.at), t(toolKey(step.tool)), detail, found].filter(Boolean).join(' · ')));
-    }
-    body.append(head, details);
-    row.append(body, el('div', 'anomalous-ai-step-when', timeLabel(steps[0].at)));
-    return row;
-}
-
 async function undoAll(task) {
-    const entries = taskResults(task).canvas.map(result => state.entries.get(result.activity)).filter(Boolean).reverse();
-    const undoable = entries.filter(entry => canUndo(app, entry));
-    if (!undoable.length || !await anomalousConfirm(t('aiUndoAllConfirm', { count: undoable.length }), t('aiUndoAll'))) return;
-    for (const entry of entries) {
-        if (!canUndo(app, entry)) break; // a later change of the user's is in the way: stop there
-        try { undoEntry(app, entry); } catch (_) { break; }
-    }
-    renderTask();
+    if (await undoChanges(task.steps, state.entries, t('aiUndoAll'), 'aiUndoAllConfirm')) renderTask();
 }
 
 function renderTask() {
@@ -286,10 +257,14 @@ function renderTask() {
 
     // Numbered in the order they happened, so the timeline reads 1, 2, 3 from the top.
     const items = groupSteps(task.steps);
-    const rows = items.map((item, at) => (item.type === 'looks'
-        ? { key: JSON.stringify(['looks', at, item.steps]), make: () => looksRow(item.steps, at + 1) }
-        : { key: JSON.stringify(['step', at, item.step, undoable(item.step)]), make: () => stepRow(item.step, at + 1) }));
-    state.numbers = new Map(items.flatMap((item, at) => (item.type === 'looks' ? item.steps : [item.step]).map(step => [step.id, at + 1])));
+    const rows = items.map((item, at) => {
+        if (item.type === 'looks') return { key: JSON.stringify(['looks', at, item.steps]), make: () => looksRow(item.steps, at + 1) };
+        if (item.type === 'step') return { key: JSON.stringify(['step', at, item.step, undoable(item.step)]), make: () => stepRow(item.step, at + 1) };
+        const live = at === items.length - 1 && !task.ended; // the AI may still add to it
+        return { key: JSON.stringify(['chain', at, item.steps, item.steps.map(undoable), live]),
+            make: () => chainRow(item.steps, at + 1, { entries: state.entries, stepRow, changed: renderTask, live }) };
+    });
+    state.numbers = new Map(items.flatMap((item, at) => (item.type === 'step' ? [item.step] : item.steps).map(step => [step.id, at + 1])));
     // A task the user started waits for an AI: how to get one on it, and a page to put things
     // ready for it meanwhile (their own steps are drawn there; its gallery feeds the message box).
     const preparing = Boolean(task.waiting) && items.every(item => item.type === 'step' && item.step.kind === 'user');
@@ -315,9 +290,12 @@ function renderTask() {
     drawStage(task, news.arrived);
 }
 
-/** Brings a step's row into view (from the flow), marked for a moment. */
+/** Brings a step's row into view (from the flow), marked for a moment; a folded chain opens to it. */
 function showStep(timeline, stepId) {
-    const row = [...timeline.querySelectorAll('[data-step-ids]')].find(item => item.dataset.stepIds.split(' ').includes(stepId));
+    const has = item => item.dataset.stepIds.split(' ').includes(stepId);
+    const chain = [...timeline.children].find(has);
+    chain?.reveal?.();
+    const row = [...timeline.querySelectorAll('[data-step-ids]')].findLast(has);
     if (!row) return;
     row.scrollIntoView({ block: 'center', behavior: 'smooth' });
     row.classList.add('is-flash');

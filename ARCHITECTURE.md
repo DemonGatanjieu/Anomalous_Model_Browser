@@ -367,7 +367,9 @@ covered by the `styles.css` manifest.
   ready" (the gallery grid of `ui_ai_gallery_pick.js` feeding the message box, moved in, the
   materials button and the user's own steps so far). The pictures (`web/assets/ai_*.webp`)
   were made with ChatGPT. `ai_task_view.js` holds
-  its rules without DOM (folding reads, tool words, counts, result addresses).
+  its rules without DOM (folding reads and chains of the AI's work, tool words, counts, result addresses);
+  `ui_ai_chain.js` draws the folded rows: reads in a row, and a chain of reads, canvas changes and
+  decisions as one row of chips with undo for its canvas changes, opening to its steps.
   `ask_user` (`api/mcp_task_tools.py`) is the AI's question in the workbench: a one-block panel
   (choices with an optional `recommended` option and an `other` line, or an input) whose answer
   it waits for in the same call; the server instructions and `begin_task` tell the AI to ask
