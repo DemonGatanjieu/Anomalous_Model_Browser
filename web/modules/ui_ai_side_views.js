@@ -56,7 +56,7 @@ export const viewLabel = view => t((VIEWS[view] || VIEWS.stage)[1]);
 
 /**
  * The switch: a button per view, lit for the one shown (`shown`: the column is on screen);
- * `badges` {stage, toolbox, outputs} are open questions, materials and results not seen yet. `onPick(view)`.
+ * `badges`: stage {count, unread}, asking question count, toolbox material count, outputs unseen count. `onPick(view)`.
  */
 export function sideSwitch(side, shown, badges, onPick) {
     const bar = el('div', 'anomalous-ai-side-switch');
@@ -64,12 +64,17 @@ export function sideSwitch(side, shown, badges, onPick) {
     bar.setAttribute('aria-label', t('aiSideSwitch'));
     for (const [view, [name, label]] of Object.entries(VIEWS)) {
         const on = shown && side.view === view;
-        const node = el('button', `anomalous-ai-side-btn${on ? ' is-on' : ''}${view === 'stage' && badges.stage ? ' is-asking' : ''}`);
+        const stage = view === 'stage';
+        const unread = stage && badges.stage.unread;
+        const count = stage ? badges.stage.count : badges[view];
+        const node = el('button', `anomalous-ai-side-btn${on ? ' is-on' : ''}${stage && badges.asking ? ' is-asking' : ''}${unread ? ' is-unread' : ''}`);
         node.type = 'button';
-        node.title = t(on ? 'aiSideHide' : label);
+        const description = [t(label), stage && count ? t('aiStagePanels', { count }) : '', unread ? t('aiStageUnread') : ''].filter(Boolean).join(' · ');
+        node.title = on ? `${description} · ${t('aiSideHide')}` : description;
+        if (stage) node.setAttribute('aria-label', description);
         node.setAttribute('aria-pressed', String(on));
         node.append(icon(name, 15), el('span', 'anomalous-ai-side-btn-label', t(label)));
-        if (badges[view]) node.append(el('span', 'anomalous-ai-side-btn-count', badges[view]));
+        if (count) node.append(el('span', `anomalous-ai-side-btn-count${stage ? ' is-total' : ''}`, count));
         node.onclick = () => onPick(view);
         bar.append(node);
     }

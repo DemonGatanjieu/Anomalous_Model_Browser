@@ -12,7 +12,7 @@
  * The stage is one of the side column's views (ui_ai_side_views.js).
  *
  * `stage` is the workbench's `{ taskId, latestKey, latestPanel, atBottom, focus, tab, view, mapStep, unseen, placed, hidden, lit,
- * outputsSeen }` (`outputsSeen`: ui_ai_outputs.js newOutputs).
+ * outputsSeen, panelKey, panelUnread }` (`outputsSeen`: ui_ai_outputs.js newOutputs).
  */
 
 import { translate as t } from './locales.js';
@@ -64,7 +64,7 @@ export function stageNews(task, stage) {
     const latestKey = JSON.stringify(latest?.panel || null);
     if (stage.taskId !== task?.id) {
         Object.assign(stage, { taskId: task?.id, latestKey, latestPanel: latest?.id, atBottom: true, focus: null, unseen: false, placed: false,
-            hidden: false, view: 'stage', mapStep: null, lit: false, outputsSeen: null });
+            hidden: false, view: 'stage', mapStep: null, lit: false, outputsSeen: null, panelKey: null, panelUnread: false });
         return { arrived: null, asking: 0, fresh: false };
     }
     const arrived = latestKey !== stage.latestKey ? latest : null;
@@ -72,6 +72,16 @@ export function stageNews(task, stage) {
     Object.assign(stage, { latestKey, latestPanel: latest?.id });
     if (arrived && !stage.atBottom) stage.unseen = true;
     return { arrived, asking: arrived ? openQuestions(arrived) : 0, fresh };
+}
+
+/** Panel count and updates not seen since the stage was shown, including edits to older panels. */
+export function stageBadge(task, stage, shown) {
+    const steps = panelSteps(task);
+    const key = JSON.stringify(steps.map(step => [step.id, step.panel]));
+    if (stage.panelKey != null && stage.panelKey !== key) stage.panelUnread = true;
+    stage.panelKey = key;
+    if (shown || !steps.length) stage.panelUnread = false;
+    return { count: steps.length, unread: Boolean(stage.panelUnread) };
 }
 
 /**

@@ -3,17 +3,20 @@
 <title>AI stage browser regression</title>
 <link rel="stylesheet" href="../web/styles/40-ai-side.css">
 <link rel="stylesheet" href="../web/styles/38-ai-panels.css">
+<link rel="stylesheet" href="../web/styles/45-ai-side-views.css">
 <style>
-  body { background: #202027; color: #eee; font: 14px sans-serif; }
+  body { background: #202027; color: #eee; font: 14px sans-serif; --amb-link: #a58af9; --amb-text-soft: #ccc; --amb-text-dim: #aaa; --amb-ink-rgb: 255,255,255; }
   #stage { width: 620px; height: 420px; border: 1px solid #777; }
   #results { white-space: pre-wrap; }
 </style>
 <!-- Only the unused ComfyUI canvas boundary is stubbed; panel DOM and CSS are real. -->
-<script type="importmap">{"imports":{"/scripts/app.js":"data:text/javascript,export const app = {};"}}</script>
+<script type="importmap">{"imports":{"/scripts/app.js":"data:text/javascript,export const app = {};","/scripts/api.js":"data:text/javascript,export const api = new EventTarget();"}}</script>
 <div id="results">Running…</div>
+<div id="switch"></div>
 <div id="stage" class="anomalous-ai-stage"></div>
 <script type="module">
-import { renderStage, stageNews, focusPanel } from '../web/modules/ui_ai_side.js';
+import { renderStage, stageNews, stageBadge, focusPanel } from '../web/modules/ui_ai_side.js';
+import { sideSwitch } from '../web/modules/ui_ai_side_views.js';
 const box = document.querySelector('#stage');
 const results = document.querySelector('#results');
 const stage = {};
@@ -31,6 +34,27 @@ const check = (value, label) => { if (!value) throw Error(label); results.textCo
 async function draw() { const news = stageNews(task, stage); renderStage(box, task, stage, ctx, news.arrived); await settle(); }
 try {
     results.textContent = '';
+    const badgeState = {};
+    const badgeTask = { id: 'badge-test', steps: [panel('a')] };
+    stageNews(badgeTask, badgeState);
+    check(stageBadge(badgeTask, badgeState, false).count === 1 && !badgeState.panelUnread, 'historical content has a count without a false unread dot');
+    badgeTask.steps.push(panel('b'));
+    check(stageBadge(badgeTask, badgeState, false).unread, 'new panel while hidden lights unread dot');
+    check(stageBadge(badgeTask, badgeState, false).unread, 'refresh keeps unread dot');
+    check(!stageBadge(badgeTask, badgeState, true).unread, 'opening the stage clears unread dot');
+    badgeTask.steps[0].panel.title = 'Older panel edited';
+    check(stageBadge(badgeTask, badgeState, false).unread, 'editing an older panel lights unread dot too');
+    const badgeBar = sideSwitch({ view: 'map' }, true, { stage: stageBadge(badgeTask, badgeState, false), asking: 0 }, () => {});
+    document.querySelector('#switch').append(badgeBar);
+    check(badgeBar.firstChild.classList.contains('is-unread') && badgeBar.firstChild.querySelector('.is-total').textContent === '2',
+        'stage button renders muted total and unread indicator');
+    check(badgeBar.firstChild.getAttribute('aria-label').includes('有未查看'), 'unread is also announced to assistive technology');
+    check(!stageBadge(badgeTask, badgeState, true).unread, 'viewing the update clears the dot');
+    badgeTask.steps[0].panel.title = 'Live update';
+    check(!stageBadge(badgeTask, badgeState, true).unread, 'visible updates do not create unread reminders');
+    stageNews({ id: 'other-badge-task', steps: [] }, badgeState);
+    const emptyBadge = stageBadge({ steps: [] }, badgeState, false);
+    check(emptyBadge.count === 0 && !emptyBadge.unread, 'another empty task clears count and unread state');
     await draw();
     check(bottom() && body().scrollTop > 100, 'historical single tall panel opens at bottom');
     task.steps.push(panel('2'));

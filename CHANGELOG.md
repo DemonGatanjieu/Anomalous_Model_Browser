@@ -2,6 +2,9 @@
 
 ## v1.62.0 — unreleased
 
+- 展台入口显示面板数量；收起或查看其他栏时出现新增、更新，会亮主题色小圆点，打开查看后消失。
+- The Stage button shows its panel count and a theme-colored dot for new or updated content while hidden; viewing the stage clears the dot.
+
 - “回到最新一步”改为约 240 毫秒的短滚动，工作台刷新不会打断它；滚轮或触摸可随时接管，减少动态效果时直接定位，并补上按钮按下反馈。
 - Jump to latest now uses a short 240 ms scroll that survives workbench refreshes, yields to user navigation, respects reduced motion, and gives immediate pressed feedback.
 

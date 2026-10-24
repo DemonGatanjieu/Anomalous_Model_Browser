@@ -33,7 +33,7 @@ import { atFoot, newestButton } from './ui_ai_newest.js';
 import { nowStrip } from './ui_ai_now.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
-import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageNews, tabBar } from './ui_ai_side.js';
+import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageBadge, stageNews, tabBar } from './ui_ai_side.js';
 import { connectHint } from './ui_ai_connect.js';
 import { waitingView } from './ui_ai_ready.js';
 import { gateCard } from './ui_ai_gate.js';
@@ -240,7 +240,7 @@ function renderTask() {
     const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
     titleLine.append(tools);
     const unseen = newOutputs(state.stage, task, shown && state.stage.view === 'outputs');
-    state.owner?.headerTools?.replaceChildren(sideSwitch(state.stage, shown, { stage: asking, toolbox: toolboxCount(task), outputs: unseen },
+    state.owner?.headerTools?.replaceChildren(sideSwitch(state.stage, shown, { stage: stageBadge(task, state.stage, shown && state.stage.view === 'stage'), asking, toolbox: toolboxCount(task), outputs: unseen },
         view => pickView(state.stage, view, shown, task, renderTask, () => void refresh())));
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);

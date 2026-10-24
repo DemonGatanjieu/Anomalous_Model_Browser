@@ -28,7 +28,7 @@
 }
 .anomalous-ai-side-btn:hover { background: rgba(var(--amb-ink-rgb), 0.07); color: var(--amb-text-main); }
 .anomalous-ai-side-btn.is-on { background: color-mix(in srgb, var(--amb-link) 20%, transparent); color: var(--amb-text-main); font-weight: 600; }
-.anomalous-ai-side-btn.is-asking::after {
+.anomalous-ai-side-btn.is-asking::after, .anomalous-ai-side-btn.is-unread::after {
     content: '';
     position: absolute;
     top: 4px;
@@ -38,6 +38,7 @@
     border-radius: 50%;
     background: var(--amb-warn);
 }
+.anomalous-ai-side-btn.is-unread::after { background: var(--amb-link); }
 .anomalous-ai-side-btn-count {
     min-width: 17px;
     padding: 0 5px;
@@ -48,6 +49,11 @@
     font-weight: 700;
     line-height: 16px;
     text-align: center;
+}
+.anomalous-ai-side-btn-count.is-total {
+    background: rgba(var(--amb-ink-rgb), 0.07);
+    color: var(--amb-text-dim);
+    font-weight: 500;
 }
 @media (max-width: 1100px) {
     .anomalous-ai-side-btn-label { display: none; }
