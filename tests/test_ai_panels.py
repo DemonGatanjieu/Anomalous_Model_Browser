@@ -371,8 +371,9 @@ class AskUserTests(unittest.TestCase):
         isolate()
         self.ctx = {"client": "Gemini", "session": "s1"}
 
-    def answer_later(self, **given):
+    def answer_later(self, delay=0, **given):
         def go():
+            time.sleep(delay)
             for _ in range(100):
                 tasks = ai_tasks.list_tasks()
                 task = ai_tasks.get_task(tasks[0]["id"]) if tasks else None
@@ -405,8 +406,15 @@ class AskUserTests(unittest.TestCase):
         self.assertEqual((got["text"], got["answered"]), ("冰与火，但要室内", True))
         self.assertIn("own answer", got["note"])
 
+    def test_it_waits_a_while_even_when_told_not_to(self):
+        self.answer_later(delay=0.3, choice=["o1"])
+        with mock.patch.object(mcp_task_tools, "ASK_WAIT_MIN", 5):
+            got = mcp_task_tools.ask_user(self.ctx, "修不修手？", ["修", "不修"], wait_seconds=0)
+        self.assertEqual((got["answered"], got["labels"]), (True, ["修"]), "the user answering in Anomalous needs no word in the chat")
+
     def test_no_options_is_a_line_and_no_answer_yet_says_how_to_keep_waiting(self):
-        got = mcp_task_tools.ask_user(self.ctx, "想要几张？", wait_seconds=0)
+        with mock.patch.object(mcp_task_tools, "ASK_WAIT_MIN", 0):
+            got = mcp_task_tools.ask_user(self.ctx, "想要几张？", wait_seconds=0)
         self.assertFalse(got["answered"])
         self.assertIn("get_answers", got["note"])
         step = ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"][0]

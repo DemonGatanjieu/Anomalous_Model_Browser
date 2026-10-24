@@ -273,7 +273,7 @@ CANVAS_TOOLS = dict([
             "fed is spliced, its old source now feeding the new node: a ControlNet or LoRA before a KSampler); "
             "insert_after=ID splices it behind a node. Same type or same socket name wires itself; anything "
             "ambiguous changes nothing and lists the choices; replace:true replaces what it cannot splice. One "
-            "Ctrl+Z step.",
+            "Ctrl+Z step. Several nodes wired to each other (an inpaint or upscale branch): add_nodes, in one call.",
             add_node, {"type": {"type": "string", "description": "A node type from find_nodes, e.g. KSampler."},
                        "values": _VALUES, "title": {"type": "string"}, "near_node_id": _NODE_ID,
                        "insert_after": _NODE_ID, "insert_type": {"type": "string", "description": "Through type, only if asked (e.g. IMAGE)."},

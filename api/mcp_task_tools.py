@@ -8,6 +8,7 @@ from . import ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
+ASK_WAIT_MIN = 30  # ask_user waits this long even when told not to: the user, reading the work, often answers at once
 
 
 def begin_task(ctx, title, new_task=False):
@@ -106,7 +107,7 @@ def ask_user(ctx, question, options=None, multiple=False, other=True, wait_secon
     try:
         panel = ai_panels.show(ctx.get("client") or "AI", question, [block], session=ctx.get("session") or "",
                                task_id=task or ctx.get("task"), tool="ask_user")
-        answer = ai_panels.get_answers(ctx.get("client") or "AI", panel["id"], wait_seconds)
+        answer = ai_panels.get_answers(ctx.get("client") or "AI", panel["id"], max(ASK_WAIT_MIN, float(wait_seconds or 0)))
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
     given = next((item for item in answer["answers"] if item["question"] == "answer"), None)
@@ -305,7 +306,7 @@ TASK_TOOLS = dict([
                "Asks the user in the AI workbench and waits: a question with 2-8 options ({label, detail, "
                "recommended}; mark your suggestion recommended=true), and a line for their own answer unless "
                "other=false; no options: a free answer. Use it for every choice that is the user's, not your chat's "
-               "question form. Unanswered within wait_seconds: wait on with get_answers.",
+               f"question form. Waits at least {ASK_WAIT_MIN} s, up to wait_seconds; unanswered: wait on with get_answers.",
                ask_user, {"question": {"type": "string"},
                           "options": {"type": "array", "maxItems": 8, "items": {"type": "object", "properties": {
                               "label": {"type": "string"}, "detail": {"type": "string"}, "recommended": {"type": "boolean"}}}},
