@@ -334,7 +334,13 @@ covered by the `styles.css` manifest.
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
   decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
   one to link. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
-  step made and where it leads (and the strip of a task's results); for a run the AI did not wait
+  step made and where it leads. `ui_ai_outputs.js` is what the whole task made: a line over the
+  timeline counting it, and the side column's Results view (`ai_task_view.taskOutputs`: the
+  pictures by the step that brought them, the workflow, the combos, the newest picture's prompts,
+  the models used and download requests — `ai_tasks.results_of` names the downloads — and the sounds),
+  which keeps what made the newest picture as a recipe, a combo or a saved prompt through the
+  keep menu's own `keepPictureAs`; its button counts what came since it was last seen
+  (`stage.outputsSeen`). For a run the AI did not wait
   for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
   and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a card per
@@ -349,8 +355,9 @@ covered by the `styles.css` manifest.
   `anomalous_ai_stage_auto`; in a narrow window it lights the stage's tab instead). A timeline panel
   link reopens it; selecting a different task resets it. The stage is one view of the side
   column: `ui_ai_side_views.js` is the switch in the window title bar, AI page only (stage, a run's
-  node map at full size with a list of the runs, the materials picker; the shown one again
-  closes the column), one pane per view kept between switches, and the picker's dock there.
+  node map at full size with a list of the runs, the decisions, the materials picker, the
+  results; the shown one again closes the column), one pane per view kept between switches
+  (each under `ui_ai_side.sideHead`), and the picker's dock there.
   The task's header stays on top while the timeline scrolls. In a window too narrow
   for three columns the timeline and the side column are two tabs (a panel that asks brings the stage
   forward). The side column is a card whose left-edge grip sets its width (`--ai-side-w`, kept;

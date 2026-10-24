@@ -1,14 +1,14 @@
 /**
  * The AI workbench page: what AI apps did through Anomalous's MCP endpoint (api/ai_tasks.py).
- * The tasks on the left, newest first; on the right one task: its title and counts, what it
- * made (pictures, models, combos, sounds) as a strip on top, then its steps as a timeline,
+ * The tasks on the left, newest first; on the right one task: its title and counts, a line
+ * counting what it made that opens the Results view (ui_ai_outputs.js), then its steps as a timeline,
  * the AI's work in a row folded into one (ui_ai_chain.js), each step with what it made and where that leads (the picture
  * in the viewer, the model's page, the combo, the canvas change found or undone). A task the
  * AI is still working on grows by itself ("anomalous.ai_task" events) and says so at the foot.
  * The column on the right shows one view, picked by the switch at the top right
  * in the window's title bar (ui_ai_side_views.js): the stage with the panels the AI drew (ui_ai_side.js; a line in the
  * timeline brings it there, its questions are answered there, a toast says so while the user is
- * elsewhere), a run's shape at full size, or the materials picker. The header stays on top while
+ * elsewhere), a run's shape at full size, the materials picker, or what the task made. The header stays on top while
  * the timeline scrolls. The task list folds from the title bar's button and peeks from it.
  * Under a task's title, the task it goes on from and those going on from it (ui_ai_task_links.js).
  * A step's words are ui_ai_step_body.js's; a decision the AI records shows as a card and the
@@ -41,7 +41,8 @@ import { iconButton } from './ui_ai_icons.js';
 import { listToggle, renderTaskList, stateIcon } from './ui_ai_task_list.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
-import { locateNode, openModel, resultLinks, shared, strip, updateRunProgress } from './ui_ai_results.js';
+import { locateNode, openModel, resultLinks, shared, updateRunProgress } from './ui_ai_results.js';
+import { drawOutputsLine, newOutputs } from './ui_ai_outputs.js';
 import { compareBar, setMarker } from './ui_ai_images.js';
 import { openMarker } from './ui_ai_marker.js';
 import { toolboxCount } from './ui_ai_toolbox.js';
@@ -68,7 +69,7 @@ const state = {
     selected: null,   // task id shown
     pinned: false,    // the user picked it: a new task of the AI does not take its place
     view: null,       // the shown task's parts kept between redraws (renderTask)
-    stage: { taskId: null, latestKey: null, atBottom: true, focus: null, tab: 'timeline', view: 'stage', mapStep: null, unseen: false, hidden: false }, // ui_ai_side.js
+    stage: { taskId: null, latestKey: null, atBottom: true, focus: null, tab: 'timeline', view: 'stage', mapStep: null, unseen: false, hidden: false, outputsSeen: null }, // ui_ai_side.js
     numbers: new Map(), // step id -> its number in the timeline (the stage shows it)
     tasksCollapsed: (() => { try { return localStorage.getItem(COLLAPSED_KEY) === '1'; } catch (_) { return false; } })(),
     task: null,       // its full record
@@ -192,7 +193,7 @@ function renderTask() {
         view = state.view = {
             taskId: task.id, header: el('div', 'anomalous-ai-task-head'), flow: el('div', 'anomalous-ai-flow-holder'),
             made: el('div', 'anomalous-ai-made-holder'),
-            timeline: el('div', 'anomalous-ai-timeline'), madeKey: null,
+            timeline: el('div', 'anomalous-ai-timeline'),
             message: messageBox(async (text, refs) => {
                 await postTask(task.id, { text, refs }, 'message');
                 await refresh();
@@ -238,7 +239,8 @@ function renderTask() {
     }, { iconOnly: true }));
     const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
     titleLine.append(tools);
-    state.owner?.headerTools?.replaceChildren(sideSwitch(state.stage, shown, { stage: asking, toolbox: toolboxCount(task) },
+    const unseen = newOutputs(state.stage, task, shown && state.stage.view === 'outputs');
+    state.owner?.headerTools?.replaceChildren(sideSwitch(state.stage, shown, { stage: asking, toolbox: toolboxCount(task), outputs: unseen },
         view => pickView(state.stage, view, shown, task, renderTask, () => void refresh())));
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);
@@ -248,12 +250,7 @@ function renderTask() {
     const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
     view.flow.replaceChildren(...(flow ? [flow] : []));
 
-    const madeKey = JSON.stringify(taskResults(task));
-    if (madeKey !== view.madeKey) {
-        view.madeKey = madeKey;
-        const made = strip(task);
-        view.made.replaceChildren(...(made ? [made] : []));
-    }
+    drawOutputsLine(view.made, task, () => pickView(state.stage, 'outputs', false, state.task, renderTask, () => void refresh()));
 
     // Numbered in the order they happened, so the timeline reads 1, 2, 3 from the top.
     const items = groupSteps(task.steps);
@@ -316,6 +313,7 @@ function drawStage(task, arrived = null) {
         stepOf: id => task.steps.find(item => item.id === id),
         changed: () => void refresh(),
         numberOf: id => state.numbers.get(id) || '',
+        showCanvas: () => state.owner?.close?.(),
         close: () => {
             state.stage.hidden = true;
             state.stage.tab = 'timeline';

@@ -394,9 +394,18 @@ def results_of(tool, arguments, data):
         out.extend({"type": "audio", "file": _short(f, 200)} for f in data.get("files") or [] if isinstance(f, str))
     if tool == "scan_models" and data.get("started"):
         out.append({"type": "scan"})
-    if tool in ("download_model", "download_missing_models"):
-        out.append({"type": "download"})
+    if tool == "download_model" and data.get("started"):
+        out.append({**_download_result(data), "name": _short(str(data.get("model") or ""), 160)})
+    if tool == "download_missing_models":
+        out.extend(_download_result(item) for item in data.get("started") or [] if isinstance(item, dict))
     return out[:MAX_RESULTS]
+
+
+def _download_result(started):
+    """A download the AI started (mcp_actions' answer): the file it makes, and its size when the site said."""
+    size = started.get("size")
+    return {"type": "download", "file": _short(str(started.get("to") or "").rsplit("/", 1)[-1], 200),
+            "size": size if isinstance(size, int) and size > 0 else None}
 
 
 def _count_of(data):

@@ -1,9 +1,10 @@
 /**
- * What an AI task made, and where it leads (ui_ai_workbench.js draws the task): the pictures a
- * step made (the viewer), its models (their page), the combo, the spoken audio (▶), the canvas
- * change (found on the canvas, undone while it can be), the scan; and the strip of everything
- * a task made above its timeline, and a run's progress while it goes with its stop button and
- * size warnings (ui_ai_run_live.js, kept live by updateRunProgress from the server's events).
+ * What a step of an AI task made, and where it leads (ui_ai_workbench.js draws the task): the
+ * pictures (the viewer), its models (their page), the combo, the spoken audio (▶), the canvas
+ * change (found on the canvas, undone while it can be), the scan; and a run's progress while it
+ * goes with its stop button and size warnings (ui_ai_run_live.js, kept live by
+ * updateRunProgress from the server's events). The task's Results view (ui_ai_outputs.js) uses
+ * the same model, combo and audio ways.
  * `shared` is set by the workbench: the browser (`owner`), the task shown (`taskId`) and the
  * activity entries of the task's canvas steps.
  */
@@ -15,7 +16,7 @@ import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { listCombos } from './image_keep.js';
-import { audioResult, outputUrl, taskResults } from './ai_task_view.js';
+import { audioResult, outputUrl } from './ai_task_view.js';
 import { imageResults } from './ui_ai_images.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import { estimateBox, runProgress } from './ui_ai_run_live.js';
@@ -42,7 +43,8 @@ function button(className, label, onClick, title) {
     return node;
 }
 
-function playButton(result) {
+/** ▶ for an audio result: plays it, or pauses it while it plays. */
+export function playButton(result) {
     const play = button('anomalous-ai-play', '▶', () => {
         const url = outputUrl(audioResult(result));
         if (shared.player?.dataset?.url === url && !shared.player.paused) {
@@ -63,7 +65,8 @@ export async function openModel(result) {
     await openListedModel(owner, { type: result.folder, path_idx: result.path_idx, rel: result.rel, filename: result.name || result.rel }, () => owner.goTo('ai'));
 }
 
-async function openComboNamed(name) {
+/** The combo named `name` on the Combos page (the page itself when it is not there any more). */
+export async function openComboNamed(name) {
     const owner = shared.owner;
     const note = (await listCombos().catch(() => [])).find(item => item.data?.name === name || item.name === name);
     if (note) await owner.openCombo(note);
@@ -148,32 +151,4 @@ export function resultLinks(step, changed = () => {}) {
     if (pictures.length) links.append(iconButton('anomalous-ai-link', 'image', t('aiOpenGallery'), () => shared.owner?.goTo('gallery'), { size: 14 }));
     if (links.childNodes.length) box.append(links, note);
     return box.childNodes.length ? box : null;
-}
-
-export function strip(task) {
-    const made = taskResults(task);
-    if (!made.image.length && !made.model.length && !made.combo.length && !made.audio.length) return null;
-    const box = el('div', 'anomalous-ai-made');
-    box.append(el('div', 'anomalous-ai-made-title', t('aiMade')));
-    if (made.image.length) {
-        if (made.image.length > 1) box.firstChild.append(el('span', 'anomalous-ai-made-hint', t('aiTickHint')));
-        box.append(imageResults(made.image, shared.owner, { compact: true }));
-    }
-    const chips = el('div', 'anomalous-ai-links');
-    const seen = new Set();
-    for (const result of [...made.model, ...made.combo]) {
-        const key = `${result.type}:${result.model_id || result.name}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        chips.append(result.type === 'model'
-            ? button('anomalous-ai-chip is-model', result.name || result.model_id, () => openModel(result), t('aiOpenModel'))
-            : button('anomalous-ai-chip is-combo', result.name, () => openComboNamed(result.name), t('aiOpenCombo')));
-    }
-    for (const result of made.audio) {
-        const chip = el('span', 'anomalous-ai-chip is-audio');
-        chip.append(playButton(result), el('span', '', result.file.split('/').pop()));
-        chips.append(chip);
-    }
-    if (chips.childNodes.length) box.append(chips);
-    return box;
 }

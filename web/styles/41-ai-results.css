@@ -75,7 +75,7 @@
 .anomalous-ai-image-results.is-said .anomalous-ai-image-grid { grid-template-columns: repeat(auto-fill, 168px); gap: 8px; }
 .anomalous-ai-image-results.is-said .anomalous-ai-image-preview img { height: 150px; object-fit: cover; }
 
-/* The results strip: small pictures in a row that wraps. */
+/* The Results view's pictures: small, in rows that wrap. */
 .anomalous-ai-image-results.is-compact .anomalous-ai-image-grid {
     grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
     gap: 8px;
@@ -83,7 +83,6 @@
 .anomalous-ai-image-card.is-compact { border-radius: 8px; }
 .anomalous-ai-image-card.is-compact img,
 .anomalous-ai-image-card.is-compact video { height: 96px; object-fit: cover; }
-.anomalous-ai-made-hint { margin-left: 8px; color: var(--amb-text-dim); font-size: 11.5px; font-weight: 400; letter-spacing: 0; }
 
 /* A picture's tick (to compare two) and tools (inspector, compare with the canvas, keep): over its
    corners, the tools only while the pointer is on the picture (always on touch screens). */
@@ -283,3 +282,128 @@
     cursor: help;
 }
 .anomalous-ai-image-card.is-gone .anomalous-ai-image-caption { color: var(--amb-text-dim); text-decoration: line-through; }
+
+/* What a task made (ui_ai_outputs.js): the line over the timeline, and the side column's Results view. */
+.anomalous-ai-out-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    margin-bottom: 14px;
+    padding: 8px 10px 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--amb-ok) 35%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--amb-ok) 7%, transparent);
+    font-size: 12.5px;
+}
+.anomalous-ai-out-line-icon { display: inline-flex; color: var(--amb-ok); }
+.anomalous-ai-out-line-words { flex: 1 1 160px; min-width: 0; color: var(--amb-text-main); }
+
+.anomalous-ai-outputs { display: flex; flex-direction: column; gap: 18px; }
+.anomalous-ai-out-part { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.anomalous-ai-out-head { display: flex; align-items: center; gap: 7px; color: var(--amb-text-soft); font-size: 12px; font-weight: 600; }
+.anomalous-ai-out-head .anomalous-tb-icon { display: inline-flex; color: var(--amb-link); }
+.anomalous-ai-out-count {
+    padding: 0 7px;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    font-size: 11px;
+    line-height: 18px;
+}
+.anomalous-ai-out-hint { margin-left: auto; color: var(--amb-text-dim); font-size: 11.5px; font-weight: 400; }
+/* Each step's pictures as a group as wide as its pictures, the groups in rows that wrap. */
+.anomalous-ai-out-groups { display: flex; flex-wrap: wrap; gap: 12px 14px; }
+.anomalous-ai-out-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 100%; }
+.anomalous-ai-out-group .anomalous-ai-image-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-ai-out-group .anomalous-ai-image-card { width: 96px; }
+.anomalous-ai-out-run {
+    align-self: flex-start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--amb-text-dim);
+    font: inherit;
+    font-size: 11.5px;
+    cursor: pointer;
+}
+.anomalous-ai-out-run:hover,
+.anomalous-ai-out-run:focus-visible { color: var(--amb-link); text-decoration: underline; }
+.anomalous-ai-out-more { align-self: flex-start; }
+.anomalous-ai-out-note { color: var(--amb-text-dim); font-size: 11.5px; line-height: 1.5; }
+
+.anomalous-ai-out-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 11px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+    color: var(--amb-text-main);
+}
+.anomalous-ai-out-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ai-canvas) 16%, transparent);
+    color: var(--ai-canvas);
+}
+.anomalous-ai-out-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.anomalous-ai-out-name { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-out-sub { color: var(--amb-text-dim); font-size: 11.5px; }
+
+.anomalous-ai-out-prompts { display: flex; flex-direction: column; gap: 6px; color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-out-prompt {
+    padding: 8px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+.anomalous-ai-out-prompt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.anomalous-ai-out-role { color: var(--amb-text-soft); font-size: 11px; font-weight: 600; }
+.anomalous-ai-out-prompt.is-negative .anomalous-ai-out-role { color: var(--amb-danger-text); }
+.anomalous-ai-out-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+.anomalous-ai-out-copy:hover,
+.anomalous-ai-out-copy:focus-visible { border-color: var(--amb-border-strong, var(--amb-border)); color: var(--amb-text-main); }
+.anomalous-ai-out-copy .anomalous-tb-icon { display: inline-flex; }
+/* Five lines at most; the whole text is in its tooltip and copied whole. */
+.anomalous-ai-out-prompt-text {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+}
+
+.anomalous-ai-chip.is-download { max-width: 100%; border-color: color-mix(in srgb, var(--amb-ok) 40%, transparent); cursor: default; }
+.anomalous-ai-out-new {
+    flex: none;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-ok) 18%, transparent);
+    color: var(--amb-ok);
+    font-size: 10.5px;
+    line-height: 16px;
+}
+.anomalous-ai-out-chip-name { overflow: hidden; text-overflow: ellipsis; }
+.anomalous-ai-out-size { flex: none; color: var(--amb-text-dim); }

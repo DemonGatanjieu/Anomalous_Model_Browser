@@ -130,12 +130,18 @@ class TaskTests(unittest.TestCase):
             ai_tasks.record("A", "add_lora", {"model_id": "m1"}, ok({"_activity": "e2"}), 1.0)
         ai_tasks.record("A", "speak", {"character": "Aris", "text": "hi"}, ok({"done": True, "files": ["audio/Aris/a.flac"]}), 2.0)
         ai_tasks.record("A", "scan_models", {"what": "new"}, ok({"started": True}), 3.0)
+        ai_tasks.record("A", "download_model", {"type": "loras", "url": "https://civitai.com/models/1"},
+                        ok({"started": True, "to": "SDXL/hand.safetensors", "size": 2048, "model": "Hands — v2"}), 4.0)
+        ai_tasks.record("A", "download_missing_models", {}, ok({"started": [{"model": "vae.safetensors", "to": "vae.safetensors", "size": None}],
+                                                               "not_started": [{"model": "x.safetensors", "reason": "no_source"}]}), 5.0)
         steps = ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"]
-        self.assertEqual([step["kind"] for step in steps], ["canvas", "speech", "scan"])
+        self.assertEqual([step["kind"] for step in steps], ["canvas", "speech", "scan", "download", "download"])
         self.assertEqual(steps[0]["results"], [{"type": "model", "model_id": "m1"}, {"type": "canvas", "activity": "e2"}])
         self.assertEqual(steps[1]["results"], [{"type": "audio", "file": "audio/Aris/a.flac"}])
         self.assertEqual(steps[2]["results"], [{"type": "scan"}])
-        self.assertIsNone(ai_tasks.record("A", "begin_task", {"title": "x"}, ok({}), 4.0), "begin_task is not a step")
+        self.assertEqual(steps[3]["results"], [{"type": "download", "file": "hand.safetensors", "size": 2048, "name": "Hands — v2"}])
+        self.assertEqual(steps[4]["results"], [{"type": "download", "file": "vae.safetensors", "size": None}], "only what started")
+        self.assertIsNone(ai_tasks.record("A", "begin_task", {"title": "x"}, ok({}), 6.0), "begin_task is not a step")
 
     def test_a_run_keeps_the_pictures_it_made(self):
         ai_tasks.record("A", "run_workflow", {"batch": 1}, ok({"queued": 1}), 1.0)  # no server: nothing to watch

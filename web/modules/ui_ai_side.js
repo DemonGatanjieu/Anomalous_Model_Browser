@@ -11,7 +11,8 @@
  * two tabs: a panel that asks something brings the stage forward, another lights its tab.
  * The stage is one of the side column's views (ui_ai_side_views.js).
  *
- * `stage` is the workbench's `{ taskId, latestKey, latestPanel, atBottom, focus, tab, view, mapStep, unseen, placed, hidden, lit }`.
+ * `stage` is the workbench's `{ taskId, latestKey, latestPanel, atBottom, focus, tab, view, mapStep, unseen, placed, hidden, lit,
+ * outputsSeen }` (`outputsSeen`: ui_ai_outputs.js newOutputs).
  */
 
 import { translate as t } from './locales.js';
@@ -63,7 +64,7 @@ export function stageNews(task, stage) {
     const latestKey = JSON.stringify(latest?.panel || null);
     if (stage.taskId !== task?.id) {
         Object.assign(stage, { taskId: task?.id, latestKey, latestPanel: latest?.id, atBottom: true, focus: null, unseen: false, placed: false,
-            hidden: false, view: 'stage', mapStep: null, lit: false });
+            hidden: false, view: 'stage', mapStep: null, lit: false, outputsSeen: null });
         return { arrived: null, asking: 0, fresh: false };
     }
     const arrived = latestKey !== stage.latestKey ? latest : null;
@@ -99,6 +100,15 @@ function autoSwitch() {
     node.setAttribute('aria-checked', String(on));
     node.append(el('span', 'anomalous-ai-stage-auto-track'), el('span', 'anomalous-ai-stage-auto-label', t('aiStageAuto')));
     return node;
+}
+
+/** The head of a side column view: its title, `more` beside it, × to close the column. */
+export function sideHead(title, close, ...more) {
+    const box = el('div', 'anomalous-ai-stage-head');
+    box.append(el('span', 'anomalous-ai-stage-title', title), ...more, el('span', 'anomalous-ai-gap'),
+        button('anomalous-ai-stage-close', '×', close, t('aiSideHide')));
+    box.lastChild.setAttribute('aria-label', t('aiSideHide'));
+    return box;
 }
 
 /** The stage goes to panel `panelId` (from its line in the timeline). */

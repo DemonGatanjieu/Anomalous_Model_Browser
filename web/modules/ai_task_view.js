@@ -158,6 +158,50 @@ export function taskResults(task) {
     return out;
 }
 
+/**
+ * What a task made, for the side column's Results view, each thing once: `runs` (the steps that
+ * brought pictures, newest first, with their pictures), the combos placed, the models used, the
+ * downloads, the sounds, and `canvas`, how many canvas changes.
+ */
+export function taskOutputs(task) {
+    const out = { runs: [], combos: [], models: [], downloads: [], audio: [], canvas: 0 };
+    const seen = new Set();
+    const first = key => !seen.has(key) && Boolean(seen.add(key));
+    for (const step of task?.steps || []) {
+        const pictures = [];
+        for (const result of step.results || []) {
+            if (result.type === 'image') {
+                if (result.filename && first(`image ${pictureKey(result)}`)) pictures.push(result);
+            } else if (result.type === 'combo') {
+                if (first(`combo ${result.name}`)) out.combos.push(result);
+            } else if (result.type === 'model') {
+                if (first(`model ${result.model_id}`)) out.models.push(result);
+            } else if (result.type === 'download') {
+                if (result.file && first(`download ${result.file}`)) out.downloads.push(result);
+            } else if (result.type === 'audio') {
+                if (first(`audio ${result.file}`)) out.audio.push(result);
+            } else if (result.type === 'canvas') out.canvas += 1;
+        }
+        if (pictures.length) out.runs.unshift({ step, pictures });
+    }
+    return out;
+}
+
+/** How many things `outputs` (taskOutputs) holds: what the task made, not its canvas changes. */
+export function outputCount(outputs) {
+    return outputs.runs.reduce((sum, run) => sum + run.pictures.length, 0)
+        + outputs.combos.length + outputs.models.length + outputs.downloads.length + outputs.audio.length;
+}
+
+/** The newest output picture of `outputs` still there, as the keep menu takes it: what Results keeps from. */
+export function newestPicture(outputs) {
+    for (const run of outputs.runs) {
+        const image = run.pictures.find(result => !result.gone && outputPicture(result));
+        if (image) return outputPicture(image);
+    }
+    return null;
+}
+
 /** The activity log entries a task's steps show: the AI's canvas changes and the user's own. */
 export function activityIds(task) {
     return (task?.steps || []).flatMap(step => [

@@ -378,25 +378,6 @@
     font-size: 12px;
 }
 
-/* What the task made: a strip of pictures and chips above the steps. */
-.anomalous-ai-made {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 16px;
-    padding: 12px;
-    border: 1px solid var(--amb-border);
-    border-radius: 12px;
-    background: rgba(var(--amb-ink-rgb), 0.025);
-}
-
-.anomalous-ai-made-title {
-    color: var(--amb-text-soft);
-    font-size: 11.5px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-}
-
 /* ---------- the timeline ---------- */
 .anomalous-ai-timeline {
     position: relative;

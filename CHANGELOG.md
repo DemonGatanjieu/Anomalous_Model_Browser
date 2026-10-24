@@ -2,6 +2,9 @@
 
 ## v1.62.0 — unreleased
 
+- AI 工作台新增右侧“成果”页：按步骤汇总图片，集中查看工作流、搭配、最新图片的提示词、模型下载请求和音频；复用图库的保存、参数对比与提示词复制入口。时间线上方改为简洁的成果统计，右侧按钮提示尚未查看的新成果。
+- The AI workbench now collects pictures, workflows, combos, prompts, model download requests and audio in a Results side view, reusing gallery keep/comparison actions. A compact timeline summary and unseen-result badge replace the old results strip.
+
 - AI 搭工作流支持一次添加并自动接线：`insert_after` 接回选中的下游，`wire_from` / `wire_to` 按唯一类型批量连接。正负条件歧义、多分支、已有输入冲突和循环在写入前报明；连接失败恢复原接线。成功回执包含实际连线、缺失输入与输出可达性，支持原生 Ctrl+Z 撤销。
 - 现状简报新增有长度限制的流程链；节点搜索只返回少量摘要，具体参数按需读取。日常工具集开放节点搜索、添加、连线、参数修改与新建工作流，减少逐线调用和重复上下文。
 - Canvas tools can add and wire a node in one call, safely splice a selected branch, and connect unique concrete types by node IDs. Ambiguity/conflicts/cycles are rejected before mutation; failed connections restore previous wiring. Compact receipts, bounded flow chains and brief node search reduce context, with construction tools available in the daily set.

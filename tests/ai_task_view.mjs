@@ -1,7 +1,8 @@
 // The AI workbench's rules (web/modules/ai_task_view.js): folding reads, words, counts, addresses.
 import assert from 'node:assert/strict';
 import {
-    activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, panelGist, lookTools, outputUrl, outputPicture, pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskResults, taskState, toolKey,
+    activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, panelGist, lookTools, newestPicture, outputCount, outputUrl, outputPicture,
+    pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskOutputs, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
 const look = (tool, ok = true, state = 'done') => ({ kind: 'look', tool, ok, state, summary: tool });
@@ -107,3 +108,19 @@ assert.equal(panelGist({ blocks: [{ type: 'choices', options: [{}, {}] }, { type
 assert.deepEqual(panelGist({ blocks: [{ type: 'run_map' }] }), { icon: 'nodes', parts: [{ key: 'aiGistMap', values: {} }] });
 assert.deepEqual(panelGist({ blocks: [{ type: 'text' }] }), { icon: 'panel', parts: [] }, 'words only: no line under the title');
 console.log('ai_task_view: panel gist ok');
+
+// Results: each thing once, the steps that brought pictures newest first, the newest picture still there to keep from.
+const outputs = taskOutputs({ steps: [
+    { id: 'r1', results: [{ type: 'image', filename: 'a.png' }, { type: 'image', filename: 'b.png' }, { type: 'canvas', activity: 'e1' }] },
+    { id: 'c1', results: [{ type: 'combo', name: 'K' }, { type: 'model', model_id: 'm1' }, { type: 'canvas', activity: 'e2' }] },
+    { id: 'r2', results: [{ type: 'image', filename: 'c.png', gone: true }, { type: 'image', filename: 'a.png' }, { type: 'image', filename: 'v.mp4' }] },
+    { id: 'n1', results: [{ type: 'combo', name: 'K' }, { type: 'model', model_id: 'm1' }, { type: 'download', file: 'hand.safetensors', size: 9 },
+        { type: 'audio', file: 'audio/A/1.flac' }, { type: 'scan' }] },
+] });
+assert.deepEqual(outputs.runs.map(run => [run.step.id, run.pictures.map(image => image.filename)]), [['r2', ['c.png', 'v.mp4']], ['r1', ['a.png', 'b.png']]]);
+assert.deepEqual([outputs.combos.length, outputs.models.length, outputs.downloads.map(item => item.file), outputs.audio.length, outputs.canvas], [1, 1, ['hand.safetensors'], 1, 2]);
+assert.equal(outputCount(outputs), 4 + 1 + 1 + 1 + 1);
+assert.deepEqual(newestPicture(outputs), { type: 'output', filename: 'a.png', subfolder: '' }, 'past a deleted picture and a video');
+assert.equal(newestPicture(taskOutputs({ steps: [] })), null);
+assert.equal(outputCount(taskOutputs(null)), 0);
+console.log('ai_task_view: results ok');

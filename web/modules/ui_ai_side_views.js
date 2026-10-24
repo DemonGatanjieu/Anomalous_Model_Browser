@@ -2,8 +2,8 @@
  * The AI workbench's side column shows one view at a time, picked by the switch at the top right
  * of the window (its title bar, on the AI page only), as an app's side panel is: the stage (the AI's panels, ui_ai_side.js), the
  * shape of a run at full size (ui_ai_run_map.js; the newest run, or one picked from the list or
- * from its step in the timeline), the task's decisions (ui_ai_decisions.js), or the materials
- * picker (ui_ai_toolbox.js) docked there.
+ * from its step in the timeline), the task's decisions (ui_ai_decisions.js), the materials
+ * picker (ui_ai_toolbox.js) docked there, or what the task made (ui_ai_outputs.js).
  * Picking the view that is shown closes the column. Each view keeps its own pane, so going back
  * finds it as it was: a scrolled stage, materials picked but not handed over yet. The column is a
  * card of its own beside the timeline; its left edge drags it wider or narrower (kept on this
@@ -18,8 +18,9 @@ import { timeLabel } from './activity_log.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { runMapBox } from './ui_ai_run_map.js';
 import { closeToolbox, openToolbox, setToolboxHost, toolboxOpenFor } from './ui_ai_toolbox.js';
-import { openQuestions, panelSteps, renderStage, tabBar } from './ui_ai_side.js';
+import { openQuestions, panelSteps, renderStage, sideHead, tabBar } from './ui_ai_side.js';
 import { renderDecisionsView } from './ui_ai_decisions.js';
+import { renderOutputsView } from './ui_ai_outputs.js';
 
 const WIDTH_KEY = 'anomalous.aiSideWidth';
 const WIDTH = { min: 340, start: 440 };
@@ -36,7 +37,9 @@ export function sideWidth() {
     }
 }
 
-export const VIEWS = { stage: ['panel', 'aiStage'], map: ['nodes', 'aiSideMap'], decisions: ['pin', 'aiSideDecisions'], toolbox: ['sparkle', 'aiToolbox'] };
+export const VIEWS = {
+    stage: ['panel', 'aiStage'], map: ['nodes', 'aiSideMap'], decisions: ['pin', 'aiSideDecisions'], toolbox: ['sparkle', 'aiToolbox'], outputs: ['tray', 'aiSideOutputs'],
+};
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -53,7 +56,7 @@ export const viewLabel = view => t((VIEWS[view] || VIEWS.stage)[1]);
 
 /**
  * The switch: a button per view, lit for the one shown (`shown`: the column is on screen);
- * `badges` {stage, toolbox} are open questions and materials. `onPick(view)`.
+ * `badges` {stage, toolbox, outputs} are open questions, materials and results not seen yet. `onPick(view)`.
  */
 export function sideSwitch(side, shown, badges, onPick) {
     const bar = el('div', 'anomalous-ai-side-switch');
@@ -160,17 +163,6 @@ function sidePanes(box) {
     return Object.fromEntries([...box.querySelectorAll(':scope > .anomalous-ai-side-pane')].map(pane => [pane.dataset.view, pane]));
 }
 
-function head(title, close, ...more) {
-    const box = el('div', 'anomalous-ai-stage-head');
-    const shut = el('button', 'anomalous-ai-stage-close', '×');
-    shut.type = 'button';
-    shut.title = t('aiSideHide');
-    shut.setAttribute('aria-label', t('aiSideHide'));
-    shut.onclick = close;
-    box.append(el('span', 'anomalous-ai-stage-title', title), ...more, el('span', 'anomalous-ai-gap'), shut);
-    return box;
-}
-
 /**
  * A run's shape at full size into `pane`: the run `side.mapStep` (null: the newest, following
  * new runs), a list to pick another. `ctx`: {locateNode, numberOf, close}. Drawn again only
@@ -200,7 +192,7 @@ export function renderMapView(pane, task, side, ctx) {
     }
     const body = el('div', 'anomalous-ai-stage-body anomalous-ai-side-map');
     body.append(run ? runMapBox(run, ctx, true) : el('div', 'anomalous-ai-stage-empty', t('aiSideMapNone')));
-    pane.replaceChildren(head(t('aiSideMap'), ctx.close, ...more), body);
+    pane.replaceChildren(sideHead(t('aiSideMap'), ctx.close, ...more), body);
 }
 
 /**
@@ -218,10 +210,11 @@ export function drawSide(box, task, side, ctx, pickTab, arrived = null) {
     else {
         const body = el('div', 'anomalous-ai-stage-body');
         body.append(el('div', 'anomalous-ai-stage-empty', t('aiStageNone')));
-        panes.stage.replaceChildren(head(t('aiStage'), ctx.close), body);
+        panes.stage.replaceChildren(sideHead(t('aiStage'), ctx.close), body);
     }
     if (side.view === 'map') renderMapView(panes.map, task, side, ctx);
     if (side.view === 'decisions') renderDecisionsView(panes.decisions, task, ctx);
+    if (side.view === 'outputs') renderOutputsView(panes.outputs, task, ctx);
 }
 
 /**

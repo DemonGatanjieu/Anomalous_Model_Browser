@@ -3,7 +3,8 @@
  * workbench): its whole workflow (Workflows page), its combo (Combos page) or its prompts
  * (saved prompts, in Prompt Studio), each row saying where it goes; one kept already shows ✓ and
  * opens it, and its Remove moves what was kept to the Recycle Bin after a confirmation.
- * Keeping runs recipe_save.js / image_keep.js and says what happened in a toast with Open.
+ * Keeping runs recipe_save.js / image_keep.js and says what happened in a toast with Open
+ * (also without the menu, keepPictureAs: the AI workbench's Results view).
  */
 
 import { translate as t } from './locales.js';
@@ -102,6 +103,11 @@ async function unkeep(spec, kept, item, { onKept }) {
         console.error(`[AMB] Could not remove the kept ${spec.kind}:`, error);
         await anomalousAlert(t('keepRemoveFailed'));
     }
+}
+
+/** Keeps `sourceImage` as `kind` ('recipe', 'combo' or 'prompt') as the menu's row does, saying so in a toast. */
+export function keepPictureAs(owner, kind, sourceImage) {
+    return keep(owner, KINDS.find(spec => spec.kind === kind), sourceImage, {}, {});
 }
 
 /** Closes the menu that is open, if any. */

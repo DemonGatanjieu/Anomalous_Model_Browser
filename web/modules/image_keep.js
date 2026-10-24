@@ -153,6 +153,12 @@ export async function renameCombo(filename, name) {
     return wanted;
 }
 
+/** The image's positive and negative prompts as its workflow has them: { positive, negative }. */
+export async function imagePrompts(sourceImage) {
+    const { metadata } = await readImage(sourceImage);
+    return { positive: metadata.promptPositive.join('\n'), negative: metadata.promptNegative.join('\n') };
+}
+
 /**
  * Keeps the image's positive and negative prompts as one saved prompt; the same prompts
  * saved before give that one back (`existed`). Returns { filename, name, existed }, or

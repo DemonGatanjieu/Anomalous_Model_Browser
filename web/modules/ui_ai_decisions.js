@@ -11,6 +11,7 @@ import { translate as t } from './locales.js';
 import { timeLabel } from './activity_log.js';
 import { toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
+import { sideHead } from './ui_ai_side.js';
 
 const BY = { user: 'aiDecisionByUser', ai: 'aiDecisionByAi', together: 'aiDecisionByTogether' };
 const MARKS = { logged: 'pin', answer: 'question', gate: 'shield', toolbox: 'sparkle', canvas: 'copy', stop: 'stop' };
@@ -70,17 +71,6 @@ function described(item) {
     }
 }
 
-function head(close) {
-    const box = el('div', 'anomalous-ai-stage-head');
-    const shut = el('button', 'anomalous-ai-stage-close', '×');
-    shut.type = 'button';
-    shut.title = t('aiSideHide');
-    shut.setAttribute('aria-label', t('aiSideHide'));
-    shut.onclick = close;
-    box.append(el('span', 'anomalous-ai-stage-title', t('aiSideDecisions')), el('span', 'anomalous-ai-gap'), shut);
-    return box;
-}
-
 /**
  * Every decision of `task` (the server's `decisions` and `decisions_gap`) into `pane`, oldest
  * first. `ctx`: {numberOf(stepId), close()}. Drawn again only when they changed.
@@ -116,5 +106,5 @@ export function renderDecisionsView(pane, task, ctx) {
         row.append(mark, text);
         body.append(row);
     }
-    pane.replaceChildren(head(ctx.close), body);
+    pane.replaceChildren(sideHead(t('aiSideDecisions'), ctx.close), body);
 }

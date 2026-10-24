@@ -48,6 +48,7 @@ const PATHS = {
     terminal: '<rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="m7 9.5 3 2.5-3 2.5M12.5 15h4.5"/>',
     expand: '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>',
     image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17.5 5-4.5 3.5 3 3-2.5 4.5 4"/>',
+    tray: '<path d="M3.5 13.5h4.8l1.5 2.6h4.4l1.5-2.6h4.8"/><path d="M6.2 4.5h11.6l2.7 9V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-4.5z"/><path d="M12 7.5v4.2M10 9.8l2 2 2-2"/>',
 };
 
 /** A line icon by name, `size` px, in the text colour. */
