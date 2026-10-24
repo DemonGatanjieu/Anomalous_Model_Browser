@@ -308,8 +308,9 @@ ACTIONS = dict([
             "A daily run in one call: workflow (a saved one, list_workflows names them) opens it in the task's tab "
             "the first time and reuses it after; prompt and negative fill its prompt boxes, seed every sampler's "
             "seed, width and height its empty latent, image (a picture from search_images, or in the input folder, "
-            "like an inpaint_image) its LoadImage; the rest stays as saved. Without workflow they fill the open "
-            "canvas. No describe_canvas, set_prompt or set_values needed for these.",
+            "like an inpaint_image) its LoadImage; values any other setting by name ({\"steps\": 30}; "
+            "{\"12\": {\"denoise\": 0.5}} when several nodes have it, as set_values); the rest stays as saved. "
+            "Without workflow they fill the open canvas. No describe_canvas, set_prompt or set_values needed for these.",
             run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1},
                            "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 15,
                                             "description": "Wait for execution after submission; returns actual state/results. Never resubmit while running."},
@@ -319,7 +320,8 @@ ACTIONS = dict([
                            "width": {"type": "integer", "minimum": 16, "maximum": 16384},
                            "height": {"type": "integer", "minimum": 16, "maximum": 16384},
                            "image": {"type": "string", "description": "subfolder/name.png in the output or input folder."},
-                           "image_node": {"type": "integer", "description": "The LoadImage to fill when the workflow has several."}}),
+                           "image_node": {"type": "integer", "description": "The LoadImage to fill when the workflow has several."},
+                           "values": {"type": "object", "description": "Other settings by name, any node's."}}),
     _action("open_in_anomalous", "Show a model",
             "Opens Anomalous Model Browser on this model's page, so the user sees its cover and details.",
             open_in_anomalous, {"model_id": _MODEL}, ["model_id"]),

@@ -1,7 +1,7 @@
 // node tests/mcp_fill.mjs — run_workflow's blanks planned on the canvas: prompts, seeds, size, the
 // picture a LoadImage reads; nothing planned when a blank has nowhere to go.
 import assert from 'node:assert/strict';
-import { fillPlan } from '../web/modules/mcp_fill.js';
+import { fillPlan, valuesPlan } from '../web/modules/mcp_fill.js';
 
 const text = (name, value = '') => ({ name, value });
 const number = (name, value, min = 0, max = 0xffffffffffffffff) => ({ name, value, options: { min, max } });
@@ -39,5 +39,33 @@ assert.throws(() => fillPlan(g, { width: 8 }), /width of node 4 is between 16 an
 assert.throws(() => fillPlan({ _nodes: [sampler] }, { prompt: 'a' }), /No positive prompt box/);
 assert.throws(() => fillPlan({ _nodes: [prompts] }, { seed: 1 }), /No sampler with a seed/);
 assert.throws(() => fillPlan({ _nodes: [scale] }, { height: 768 }), /No empty latent/);
+
+// Any other setting by name, a third-party node's too; a name several nodes have asks for the node.
+const sharpen = node(10, 'ImageSharpen_ThirdParty', [number('sharpen_radius', 1, 1, 31)]);
+const second = node(11, 'KSampler', [number('seed', 3), number('steps', 20, 1, 10000)]);
+assert.deepEqual(fillPlan({ _nodes: [sampler, sharpen] }, { values: { steps: 30, sharpen_radius: 3 } }).set, { values: [2, 10] });
+assert.throws(() => fillPlan({ _nodes: [sampler, second] }, { values: { steps: 30 } }), /steps is a setting of #2, #11: give the one to change as \{"<node id>"/);
+const both = valuesPlan({ _nodes: [sampler, second] }, { 11: { steps: 8 } });
+assert.deepEqual(both.map(({ node: item, plan }) => [item.id, plan.map(([widget, value]) => [widget.name, value])]), [[11, [['steps', 8]]]]);
+assert.throws(() => valuesPlan({ _nodes: [sampler] }, { cfg: 5 }), /No node on the canvas has a setting cfg/);
+assert.throws(() => valuesPlan({ _nodes: [sampler] }, { 99: { steps: 5 } }), /No node 99/);
+assert.throws(() => fillPlan({ _nodes: [sampler] }, { seed: 1, values: { 2: { seed: 2 } } }), /seed is set by a blank and by values/);
+
+// Two prompts combined into one sampler (regional prompts) are not given one text; a refiner's own prompt is.
+{
+    const links = { 1: { target_id: 33, target_slot: 0 }, 2: { target_id: 33, target_slot: 1 }, 3: { target_id: 34, target_slot: 0 }, 4: { target_id: 35, target_slot: 0 } };
+    const g2 = { links, getNodeById(id) { return this._nodes.find(item => item.id === id); } };
+    const encoder = (id, link) => node(id, 'CLIPTextEncode', [text('text', '')], { outputs: [{ name: 'CONDITIONING', type: 'CONDITIONING', links: [link] }], required: { text: multiline } });
+    const combine = node(33, 'ConditioningCombine', [], { outputs: [{ name: 'CONDITIONING', type: 'CONDITIONING', links: [3] }],
+        inputs: [{ name: 'conditioning_1', type: 'CONDITIONING' }, { name: 'conditioning_2', type: 'CONDITIONING' }] });
+    const into = id => node(id, 'KSampler', [number('seed', 1)], { inputs: [{ name: 'positive', type: 'CONDITIONING' }] });
+    g2._nodes = [encoder(31, 1), encoder(32, 2), combine, into(34)];
+    g2._nodes.forEach(item => { item.graph = g2; });
+    assert.throws(() => fillPlan(g2, { prompt: 'a castle' }), /Several positive prompt boxes feed one sampler \(#31, #32\)/);
+    g2._nodes = [encoder(31, 1), encoder(36, 4), combine, into(34), into(35)];
+    links[1] = { target_id: 34, target_slot: 0 };
+    g2._nodes.forEach(item => { item.graph = g2; });
+    assert.deepEqual(fillPlan(g2, { prompt: 'a castle' }).set, { prompt: [31, 36] }, 'base and refiner prompts each feed their own sampler');
+}
 
 console.log('mcp_fill: ok');

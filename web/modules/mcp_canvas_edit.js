@@ -13,7 +13,7 @@ import { app } from '../../../scripts/app.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { apiLinks, freeSpot, layered, typesFit, valuePlan } from './canvas_build.js';
 import { fedBy, linkOf, sockets, unwired } from './mcp_canvas_brief.js';
-import { fillPlan } from './mcp_fill.js';
+import { fillPlan, valuesPlan } from './mcp_fill.js';
 import { translate as t } from './locales.js';
 import { setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
@@ -168,18 +168,25 @@ export function canvasEditActions({ recorded, nodeById }) {
         });
     }
 
+    /** One node's settings (node_id), or settings by name for whichever nodes have them (mcp_fill.js valuesPlan). */
     function setValues({ node_id: nodeId, values }, getOwner) {
         return recorded(getOwner, 'mcpDidValues', async (g) => {
-            const node = nodeById(nodeId);
-            const plan = await withFreshChoices(() => valuePlan(node, values));
-            if (!plan.length) throw new Error('values is empty: {setting name: value}.');
-            g.beforeChange?.(node);
-            apply(node, plan);
-            g.afterChange?.(node);
-            if (app.lastNodeErrors?.[node.id]) delete app.lastNodeErrors[node.id];
+            const plans = await withFreshChoices(() => (nodeId != null
+                ? [{ node: nodeById(nodeId), plan: valuePlan(nodeById(nodeId), values) }] : valuesPlan(g, values)));
+            const count = plans.reduce((sum, { plan }) => sum + plan.length, 0);
+            if (!count) throw new Error('values is empty: {setting name: value}.');
+            g.beforeChange?.();
+            for (const { node, plan } of plans) {
+                apply(node, plan);
+                if (app.lastNodeErrors?.[node.id]) delete app.lastNodeErrors[node.id];
+            }
+            g.afterChange?.();
             g.setDirtyCanvas?.(true, true);
             recordCanvasStep(app);
-            return { node_id: node.id, set: Object.fromEntries(plan.map(([widget]) => [widget.name, widget.value])), toast: { count: plan.length } };
+            return {
+                set: Object.fromEntries(plans.map(({ node, plan }) => [node.id, Object.fromEntries(plan.map(([widget]) => [widget.name, widget.value]))])),
+                toast: { count },
+            };
         });
     }
 

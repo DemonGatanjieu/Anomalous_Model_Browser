@@ -187,7 +187,9 @@ covered by the `styles.css` manifest.
   `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow
   opened in the task's tab once and reused (the page marks the tab with the workflow's file),
   then the prompts, seed, size and the picture a LoadImage reads filled in by the page's
-  `fill_slots`, planned by `web/modules/mcp_fill.js` (pure); with them a run asks as the stricter
+  `fill_slots`, planned by `web/modules/mcp_fill.js` (pure). Any other setting goes by its name
+  (`values`, also set_values without a node): the one node that has it, else the AI names the
+  node; the fixed blanks are roles (which prompt, which latent), not a list that grows. With them a run asks as the stricter
   of its gate and the canvas's (`action_catalog.ALSO_CANVAS`). `tests/test_mcp_fill.py`,
   `tests/mcp_fill.mjs`.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",

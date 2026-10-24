@@ -17,8 +17,6 @@ from .mcp_tools import ToolError
 MAX_FOUND = 20
 MAX_SEARCH = 5
 MAX_CHOICES_NAMED = 60
-MAX_VALUES = 60
-MAX_TEXT = 20000
 MAX_REMOVE = 30
 MAX_WORKFLOW_NODES = 200
 MAX_WORKFLOW_BYTES = 1_000_000
@@ -143,17 +141,6 @@ def _id(value, what):
     return value
 
 
-def _values(values):
-    if values is None:
-        return {}
-    if not isinstance(values, dict) or len(values) > MAX_VALUES:
-        raise ToolError(f"values is an object {{setting name: value}} of up to {MAX_VALUES} settings.")
-    for name, value in values.items():
-        if len(name) > 100 or not (isinstance(value, (bool, int, float)) or (isinstance(value, str) and len(value) <= MAX_TEXT)):
-            raise ToolError(f"The value of {name[:100]} is a number, true/false or text of up to {MAX_TEXT} characters.")
-    return values
-
-
 def _type(value):
     if not isinstance(value, str) or not value.strip() or len(value) > 200:
         raise ToolError("type is a node type, as find_nodes gives it (e.g. KSampler).")
@@ -189,7 +176,7 @@ def add_node(ctx, type, values=None, title="", near_node_id=None, insert_after=N
     if insert_after is not None:
         wiring.update(insert_after=_id(insert_after, "insert_after"), insert_type=insert_type)
     _allowed(ctx, [_type(type)])
-    return _next(_page("add_node", {"type": _type(type), "values": _values(values), "title": str(title or "")[:120],
+    return _next(_page("add_node", {"type": _type(type), "values": mcp_fill.flat_values(values), "title": str(title or "")[:120],
                                     "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id"), **wiring}))
 
 
@@ -208,10 +195,12 @@ def connect_nodes(ctx, from_node_id, to_node_id, input=None, output=None, replac
                                          "to_node_id": _id(to_node_id, "to_node_id"), "input": input, "replace": replace}))
 
 
-def set_values(ctx, node_id, values):
+def set_values(ctx, node_id=None, values=None):
+    if node_id is None:
+        return _page("set_values", {"node_id": None, "values": mcp_fill.node_values(values)})
     if not values:
         raise ToolError("values is an object {setting name: value}.")
-    return _page("set_values", {"node_id": _id(node_id, "node_id"), "values": _values(values)})
+    return _page("set_values", {"node_id": _id(node_id, "node_id"), "values": mcp_fill.flat_values(values)})
 
 
 def remove_nodes(ctx, node_ids):
@@ -231,7 +220,7 @@ def new_workflow(ctx, name="", nodes=None):
                     or not isinstance(spec.get("inputs", {}), dict)):
                 raise ToolError(f"Node {key[:40]}: each node is {{class_type, inputs: {{name: value or [node id, output slot]}}}}.")
             _type(spec["class_type"])
-            _values({name: value for name, value in spec.get("inputs", {}).items() if not isinstance(value, list)})
+            mcp_fill.flat_values({name: value for name, value in spec.get("inputs", {}).items() if not isinstance(value, list)})
         _allowed(ctx, [spec["class_type"] for spec in nodes.values()])
     return _page("new_workflow", {"name": str(name or "")[:60], "nodes": nodes}, timeout=60)
 
@@ -272,9 +261,11 @@ CANVAS_TOOLS = dict([
                             "to_node_id": _NODE_ID, "input": {"type": "string"}, "replace": {"type": "boolean"}},
             ["from_node_id", "to_node_id"]),
     _action("set_values", "Change a node's settings",
-            "Sets settings of one node (steps, cfg, a sampler, a size, a file choice…), checked against what each "
-            "takes. For prompts set_prompt, for models set_model find the right ones. One Ctrl+Z step.",
-            set_values, {"node_id": _NODE_ID, "values": _VALUES}, ["node_id", "values"], destructive=True),
+            "Sets settings (steps, cfg, denoise, a sampler, a file choice, a third-party node's own…), checked "
+            "against what each takes. values {setting name: value} goes to the one node that has that setting; a "
+            "name several nodes have takes the node: {\"12\": {\"denoise\": 0.5}}. node_id sets that node's values. "
+            "For prompts set_prompt, for models set_model find the right ones. One Ctrl+Z step.",
+            set_values, {"node_id": _NODE_ID, "values": _VALUES}, ["values"], destructive=True),
     _action("remove_nodes", "Remove nodes",
             "Removes nodes from the open workflow, with their wires. One Ctrl+Z step.",
             remove_nodes, {"node_ids": {"type": "array", "items": _NODE_ID, "maxItems": MAX_REMOVE}}, ["node_ids"],

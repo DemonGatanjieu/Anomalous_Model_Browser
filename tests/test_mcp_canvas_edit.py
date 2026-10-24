@@ -9,7 +9,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import action_catalog, mcp_canvas_edit, mcp_server  # noqa: E402
+from api import action_catalog, mcp_canvas_edit, mcp_fill, mcp_server  # noqa: E402
 from api.mcp_tools import ToolError, call_tool  # noqa: E402
 
 INFO = {
@@ -107,6 +107,15 @@ class BuildToolTests(unittest.TestCase):
             self.assertFalse(result.get("isError"), result)
         self.assertEqual(self.page.call_count, 2)
 
+    def test_settings_by_name_or_for_one_node(self):
+        mcp_canvas_edit.set_values({}, values={"steps": 30, "12": {"denoise": 0.5}})
+        self.assertEqual(self.page.call_args[0], ("set_values", {"node_id": None, "values": {"steps": 30, "12": {"denoise": 0.5}}}))
+        mcp_canvas_edit.set_values({}, 4, {"cfg": 5})
+        self.assertEqual(self.page.call_args[0], ("set_values", {"node_id": 4, "values": {"cfg": 5}}), "the old form")
+        for values in ({"sampler": {"denoise": 0.5}}, {"12": {"denoise": [1]}}, {}, {"12": {f"s{i}": 1 for i in range(61)}}):
+            with self.assertRaises(ToolError, msg=values):
+                mcp_canvas_edit.set_values({}, values=values)
+
     def test_receipt_does_not_claim_disconnected_branch_can_run(self):
         self.page.return_value = {"reaches_output": False, "unwired": []}
         self.assertIn("does not reach", mcp_canvas_edit.add_node({}, "ImageScale")["next"])
@@ -123,7 +132,7 @@ class BuildToolTests(unittest.TestCase):
         bad = [
             lambda: mcp_canvas_edit.add_node({}, ""),
             lambda: mcp_canvas_edit.add_node({}, "KSampler", {"steps": [1, 2]}),
-            lambda: mcp_canvas_edit.add_node({}, "KSampler", {"text": "x" * (mcp_canvas_edit.MAX_TEXT + 1)}),
+            lambda: mcp_canvas_edit.add_node({}, "KSampler", {"text": "x" * (mcp_fill.MAX_TEXT + 1)}),
             lambda: mcp_canvas_edit.add_node({}, "KSampler", near_node_id=True),
             lambda: mcp_canvas_edit.add_node({}, "ImageScale", wire_from=[]),
             lambda: mcp_canvas_edit.add_node({}, "ImageScale", wire_to=list(range(9))),

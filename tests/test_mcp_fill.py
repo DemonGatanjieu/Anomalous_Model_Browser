@@ -61,6 +61,14 @@ class FillTests(unittest.TestCase):
         self.assertEqual(mcp_fill.fill(self.ctx, None, width=1024), {"size": [4]})
         self.assertEqual(self.calls, [("fill_slots", {"filename": None, "width": 1024})])
 
+    def test_other_settings_go_by_name_and_bad_ones_never_reach_the_page(self):
+        self.answers = [{"set": {"values": [3, 12]}}]
+        self.assertEqual(mcp_fill.fill(self.ctx, None, values={"steps": 30, "12": {"denoise": 0.5}}), {"values": [3, 12]})
+        self.assertEqual(self.calls[-1], ("fill_slots", {"filename": None, "values": {"steps": 30, "12": {"denoise": 0.5}}}))
+        with self.assertRaises(mcp_tools.ToolError):
+            mcp_fill.fill(self.ctx, None, values={"sampler": {"denoise": 0.5}})
+        self.assertEqual(len(self.calls), 1)
+
     def test_the_run_carries_what_was_filled_and_stops_when_it_fails(self):
         with mock.patch.object(mcp_actions, "ask_page", return_value={"prompt_ids": ["p1"]}) as run:
             self.answers = [{"opened": "海边"}, {"set": {"prompt": [6]}}]
