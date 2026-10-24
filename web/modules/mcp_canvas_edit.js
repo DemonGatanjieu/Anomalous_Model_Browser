@@ -130,7 +130,8 @@ export function canvasEditActions({ recorded, nodeById }) {
                 throw new Error('The canvas changed while preparing the node. Nothing added; read get_situation again.');
             }
             if (title) node.title = String(title).slice(0, 120);
-            const near = (nearId ?? wiring.insert_after) != null ? nodeById(nearId ?? wiring.insert_after) : null;
+            const nearBy = nearId ?? wiring.insert_after ?? wiring.wire_from?.[0] ?? wiring.wire_to?.[0];
+            const near = nearBy != null ? nodeById(nearBy) : null;
             const wires = validateWires(g, addWires(g, node, wiring), replace);
             let connections;
             g.beforeChange?.();

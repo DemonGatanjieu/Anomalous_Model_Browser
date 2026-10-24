@@ -166,14 +166,21 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 add_node(type="ImageScale", insert_after=8)
 ```
 
-原来 `#8 → #9 保存` 会变成 `#8 → 新放大节点 → #9 保存`。如果 #8 同时连到保存和预览，工具会要求用 `wire_to=9` 指定要插入的分支。只有一种明确的贯通类型才自动插入；多个贯通类型时用 `insert_type="IMAGE"` 等指定。没有下游时用 `wire_from=8` 延长末端。
+原来 `#8 → #9 保存` 会变成 `#8 → 新放大节点 → #9 保存`。如果 #8 同时连到保存和预览，工具会要求用 `wire_to=9` 指定要插入的分支。新节点让几种类型穿过时（LoRA 的模型线和 CLIP 线）每一种都接进去；只想插一种时用 `insert_type="MODEL"` 等指定。没有下游时用 `wire_from=8` 延长末端。
 
 ```text
 add_node(type="VAEEncodeForInpaint", wire_from=[12, 4], wire_to=3, replace=true)
 connect_nodes(from_node_id=12, to_node_id=15)
 ```
 
-前一个调用按唯一类型连接图片、遮罩、VAE 和采样器的 LATENT；`replace=true` 明确允许替换采样器原有的输入。后一个只报两个节点号，把它们之间唯一匹配的类型一次接好。同类型多插口（如 positive/negative）、通配类型不会猜，工具会要求指定插口；多来源争抢同一输入、循环和未获替换许可的已有连线都会在改动前报错。显式指定插口的旧调用仍保留原有替换行为。
+前一个调用按唯一类型连接图片、遮罩、VAE 和采样器的 LATENT；`replace=true` 明确允许替换采样器原有的输入。后一个只报两个节点号，把它们之间唯一匹配的类型一次接好。同类型的几个插口名字对得上时自动配对（ControlNet 的 positive/negative 对采样器的 positive/negative）；对不上的（一个提示词该接正向还是反向）和通配类型不会猜，工具会要求指定插口；多来源争抢同一输入、循环和未获替换许可的已有连线都会在改动前报错。显式指定插口的旧调用仍保留原有替换行为。
+
+```text
+add_node(type="ControlNetApplyAdvanced", wire_from=[20, 21], wire_to=5)
+add_node(type="LoraLoader", wire_to=[5, 2, 3])
+```
+
+`wire_to` 指向的输入原来已经接着线时，会把新节点插在前面：采样器 #5 的正向、反向原来接着提示词 #2、#3，现在改接 ControlNet，#2、#3 接进它同名的正向、反向输入；#20（ControlNet 加载器）和 #21（加载图片）按类型接上。第二个调用把采样器的模型线和两个提示词的 CLIP 线都改从 LoRA 走，LoRA 自己接上原来的模型和 CLIP。新节点没有这种类型的输入（比如用加载图片顶替原来的图）才算替换，要 `replace=true`。
 
 成功后直接返回实际接线、还缺的输入和是否通向输出，通常不用再读整张画布。输出可达只说明存在路径，运行前仍由 ComfyUI 校验。一次成功操作可用原生 Ctrl+Z 撤销；执行中连接失败会恢复原接线，第三方节点回调若妨碍恢复会明确报出，需要检查画布。升级后重启 ComfyUI、刷新页面，并重新连接 MCP；若 AI 软件缓存工具定义，再开一个对话。
 

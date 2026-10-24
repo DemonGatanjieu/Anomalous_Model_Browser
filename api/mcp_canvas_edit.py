@@ -253,17 +253,20 @@ CANVAS_TOOLS = dict([
             find_nodes, {"query": {"type": "string"}, "types": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_FOUND}},
             read_only=True),
     _action("add_node", "Add a node",
-            "Add and wire a node in ONE call. insert_after splices one branch end-to-end; if several branches, "
-            "wire_to selects the downstream node(s). Or wire_from/wire_to name neighbours; unique concrete types "
-            "wire automatically (IMAGE+MASK may both connect). Ambiguity changes nothing and lists candidates. "
-            "replace:true permits replacing occupied inputs. One undo step; returns connections and reaches_output.",
+            "Add and wire a node in ONE call. wire_from: nodes that feed it; wire_to: nodes it feeds, where an input "
+            "already fed is spliced (its old source feeds the new node: a ControlNet or LoRA put in front of a KSampler). "
+            "insert_after=ID splices it behind that node instead; with several branches, wire_to picks them. Unique "
+            "types, or same-type sockets of the same name (positive to positive), wire automatically. Ambiguity changes "
+            "nothing and lists candidates. replace:true lets it replace an input it cannot splice. One undo step; "
+            "returns connections and reaches_output.",
             add_node, {"type": {"type": "string", "description": "A node type from find_nodes, e.g. KSampler."},
                        "values": _VALUES, "title": {"type": "string"}, "near_node_id": _NODE_ID,
                        "insert_after": _NODE_ID, "insert_type": {"type": "string", "description": "Only if needed: through type, e.g. IMAGE."},
                        "wire_from": _NEIGHBOURS, "wire_to": _NEIGHBOURS, "replace": {"type": "boolean"}}, ["type"]),
     _action("connect_nodes", "Wire two nodes",
-            "Wire two nodes by ID: all unique concrete matching types connect in one undo step. No guessing "
-            "positive/negative or wildcard sockets: ambiguity lists candidates, changes nothing. "
+            "Wire two nodes by ID: unique matching types, and same-type sockets of the same name (positive to "
+            "positive), connect in one undo step. No guessing a lone CONDITIONING into positive or negative, or "
+            "wildcard sockets: ambiguity lists candidates, changes nothing. "
             "Optional output/input select sockets explicitly; replace:true permits replacing existing wires in auto mode.",
             connect_nodes, {"from_node_id": _NODE_ID, "output": {"type": "string", "description": "Optional output slot number or name."},
                             "to_node_id": _NODE_ID, "input": {"type": "string"}, "replace": {"type": "boolean"}},

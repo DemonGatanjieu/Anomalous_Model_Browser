@@ -134,4 +134,52 @@ const wire = (g, plan, added = null, replace = false) => applyWires(g, validateW
     assert.equal(g._nodes.length, 2);
     assert.deepEqual(snapshot(g), before);
 }
-console.log('Typed wiring: insertion, fan-out, inpainting, ambiguity, cycles and rollback passed.');
+// A text-to-image graph for the splices below: checkpoint, two prompts, sampler.
+function textToImage() {
+    const g = new Graph(), ckpt = node(g, [], [['MODEL','MODEL'], ['CLIP','CLIP'], ['VAE','VAE']]);
+    const pos = node(g, [['clip','CLIP']], [['CONDITIONING','CONDITIONING']]), neg = node(g, [['clip','CLIP']], [['CONDITIONING','CONDITIONING']]);
+    const sampler = node(g, [['model','MODEL'], ['positive','CONDITIONING'], ['negative','CONDITIONING']], [['LATENT','LATENT']]);
+    ckpt.connect(1, pos, 0); ckpt.connect(1, neg, 0);
+    ckpt.connect(0, sampler, 0); pos.connect(0, sampler, 1); neg.connect(0, sampler, 2);
+    return { g, ckpt, pos, neg, sampler };
+}
+const controlNet = () => node(null, [['positive','CONDITIONING'], ['negative','CONDITIONING'], ['control_net','CONTROL_NET'], ['image','IMAGE']],
+    [['positive','CONDITIONING'], ['negative','CONDITIONING']]);
+const source = (g, n, slot) => g.getLink(n.inputs[slot].link).origin_id;
+// Same-name sockets pair up; a ControlNet in front of the sampler takes each prompt at its own input.
+{
+    const { g, pos, neg, sampler } = textToImage();
+    const loader = node(g, [], [['CONTROL_NET','CONTROL_NET']]), picture = node(g, [], [['IMAGE','IMAGE'], ['MASK','MASK']]);
+    const cn = controlNet();
+    assert.equal(pairWires(cn, sampler).length, 2);
+    const result = wire(g, addWires(g, cn, { wire_from: [loader.id, picture.id], wire_to: [sampler.id] }), cn);
+    assert.equal(result.length, 6);
+    assert.deepEqual([source(g, cn, 0), source(g, cn, 1), source(g, cn, 2), source(g, cn, 3)], [pos.id, neg.id, loader.id, picture.id]);
+    assert.deepEqual([g.getLink(sampler.inputs[1].link).origin_slot, g.getLink(sampler.inputs[2].link).origin_slot], [0, 1]);
+    assert.equal(source(g, sampler, 1), cn.id);
+    assert.throws(() => addWires(g, controlNet(), { insert_after: pos.id }), /#new\.positive.*connect_nodes/);
+}
+// A LoRA behind a checkpoint splices MODEL and CLIP; the two prompts are two CLIP branches to choose.
+{
+    const { g, ckpt, pos, neg, sampler } = textToImage();
+    const lora = () => node(null, [['model','MODEL'], ['clip','CLIP']], [['MODEL','MODEL'], ['CLIP','CLIP']]);
+    assert.throws(() => addWires(g, lora(), { insert_after: ckpt.id }), /choose wire_to.*: 4, 2, 3/);
+    const first = lora();
+    assert.equal(wire(g, addWires(g, first, { insert_after: ckpt.id, wire_to: [sampler.id, pos.id, neg.id] }), first).length, 5);
+    assert.deepEqual([source(g, sampler, 0), source(g, pos, 0), source(g, neg, 0)], [first.id, first.id, first.id]);
+    const second = lora();
+    assert.equal(wire(g, addWires(g, second, { wire_to: [sampler.id, pos.id, neg.id] }), second).length, 5, 'the same splice in front');
+    assert.deepEqual([source(g, second, 0), source(g, second, 1), source(g, pos, 0)], [first.id, first.id, second.id]);
+}
+// A splice with two inputs of that type and neither named alike is left to the AI; a plain replacement still asks.
+{
+    const g = new Graph(), decode = node(g, [], [['IMAGE','IMAGE']]), save = node(g, [['images','IMAGE']], [], true);
+    decode.connect(0, save, 0);
+    assert.throws(() => addWires(g, node(null, [['image1','IMAGE'], ['image2','IMAGE']], [['IMAGE','IMAGE']]), { wire_to: [save.id] }), /image1 or image2/);
+    const scale = node(null, [['image','IMAGE']], [['IMAGE','IMAGE']]);
+    wire(g, addWires(g, scale, { wire_to: [save.id] }), scale);
+    assert.deepEqual([source(g, scale, 0), source(g, save, 0)], [decode.id, scale.id]);
+    const loader = node(null, [], [['IMAGE','IMAGE']]);
+    assert.throws(() => validateWires(g, addWires(g, loader, { wire_to: [save.id] })), /replace:true/);
+}
+console.log('Typed wiring: insertion, splices, same-name pairs, fan-out, inpainting, ambiguity, cycles and rollback passed.');

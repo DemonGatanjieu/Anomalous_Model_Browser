@@ -351,8 +351,11 @@ brief candidates within a small text budget; `types=[...]` explicitly requests f
 `add_node` accepts `insert_after`, optional `insert_type`, and `wire_from`/`wire_to` (one ID or up
 to eight IDs). `connect_nodes` accepts just two node IDs. Both return actual connections,
 remaining required inputs and whether the branch reaches an output; reachability is not run
-validation. Automatic wiring never replaces occupied inputs without `replace:true`, except
-the selected downstream edge of an insertion. The legacy explicit `input` form still defaults
+validation. Same-type sockets of the same name pair up (a ControlNet's positive/negative into a
+sampler's). An occupied input that `wire_to` feeds is spliced when the new node takes that type: the
+old source feeds the new node's matching input. Otherwise automatic wiring never replaces occupied
+inputs without `replace:true`, except the selected downstream edge of an insertion; `insert_after`
+splices every type the node passes through (a LoRA's MODEL and CLIP). The legacy explicit `input` form still defaults
 to output slot zero and permits replacement. Ambiguity is an error with bounded candidates.
 `get_situation` includes at most six path chains and eight node lines; its overall 3600-character
 budget trims these and reports omitted counts. Full canvas details remain explicitly available.
