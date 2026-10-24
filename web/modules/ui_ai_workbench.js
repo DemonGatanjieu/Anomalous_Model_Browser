@@ -33,7 +33,7 @@ import { atFoot, newestButton } from './ui_ai_newest.js';
 import { nowStrip } from './ui_ai_now.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
-import { focusPanel, openQuestions, panelLine, panelSteps, stageNews, tabBar } from './ui_ai_side.js';
+import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageNews, tabBar } from './ui_ai_side.js';
 import { connectHint } from './ui_ai_connect.js';
 import { waitingView } from './ui_ai_ready.js';
 import { gateCard } from './ui_ai_gate.js';
@@ -207,9 +207,9 @@ function renderTask() {
         view.dock.append(view.newest, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
         box.replaceChildren(view.tabs, view.header, view.flow, view.made, view.timeline, view.dock);
     }
-    // A new panel that asks something brings the stage forward when the window is narrow.
+    // A new panel opens the stage; in a narrow window only one that asks something takes its tab.
     const news = stageNews(task, state.stage);
-    if (news.asking) Object.assign(state.stage, { tab: 'stage', view: 'stage' });
+    bringStage(state.stage, news, state.page.classList.contains('is-tabbed') || state.page.classList.contains('is-narrow'));
     const asking = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
     const tabs = tabBar(state.stage, asking, pickTab, viewLabel(state.stage.view));
     view.tabs.replaceWith(tabs);

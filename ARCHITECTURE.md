@@ -343,7 +343,9 @@ covered by the `styles.css` manifest.
   new/updated latest panels and late image loads follow the bottom while the reader is there;
   reading earlier content pauses follow, with a "See latest" button to resume. Timeline links
   instead locate the requested panel's start. The stage's close button hides it for the selected
-  task (`stage.hidden`); updates preserve that choice and its DOM/drafts. A timeline panel
+  task (`stage.hidden`); updates of a panel preserve that choice and its DOM/drafts, a new panel
+  reopens it (`bringStage`) unless the user turned "Open on new panels" off (localStorage
+  `anomalous_ai_stage_auto`; in a narrow window it lights the stage's tab instead). A timeline panel
   link reopens it; selecting a different task resets it. The stage is one view of the side
   column: `ui_ai_side_views.js` is the switch in the window title bar, AI page only (stage, a run's
   node map at full size with a list of the runs, the materials picker; the shown one again
