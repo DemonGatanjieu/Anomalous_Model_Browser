@@ -11,6 +11,8 @@
 - Settings go by name instead of a growing list of blanks: run_workflow's and set_values' `values` set any node's setting, a third-party node's too ({"steps": 30}). The one node that has it is changed; a name several nodes have changes nothing and lists them, for the AI to name the node ({"12": {"denoise": 0.5}}). `prompt` no longer gives one text to several positive prompt boxes combined into one sampler (regional prompts).
 - 一次调用加一组节点：`add_nodes` 按 ComfyUI 的 API 格式写一组节点，组里互相连，也能连画布上已有的节点（`"#12"`），AMB 先检查类型，排成一块放在空位上，接好线，整组算一步撤销。原来要十几次调用的局部重绘分支，现在一次。
 - add_nodes adds a group of nodes in API form to the open canvas in one call: links inside the group, to canvas nodes as "#12" (outputs by slot or name) and wire_to into canvas nodes, checked first, laid out as one block and undone in one step.
+- 图跑完后，第一个告诉 AI "跑完了" 的回复（不管是查进度还是别的工具）直接带着这次出的图，最多 4 张缩略图，每次运行只带一次。AI 不用再去取图，看完就能留言。
+- The answer that first tells the AI its run ended, run_status or any other, carries up to four thumbnails of the run's pictures, once per run, so it need not fetch them with get_image_info.
 
 - 修复任务画布标签关闭或切换失败后误用当前工作流的问题：操作会明确报错，重新打开或明确指定新画布后才能继续。下载缺失模型现在也跟随任务画布；留言里的 `@` 搭配和工作流按完整名称查找，不再因模糊搜索前几项占满而误报缺失。
 - Task canvas actions now fail when their recorded tab is closed or cannot be activated instead of using another workflow. Missing-model downloads follow the task tab, and message references resolve exact combo/workflow names before search limits.

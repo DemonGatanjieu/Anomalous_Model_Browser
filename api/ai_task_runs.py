@@ -16,11 +16,12 @@ import threading
 import time
 
 from . import ai_run_map, ai_run_watch, ai_tasks
-from .mcp_tools import tool_text
+from .mcp_tools import ToolError, _image_content, _resolve_image, tool_text
 
 RUN_POLL_SECONDS = 2.0
 MAX_STATUS_WAIT = 55
 MAX_PREVIEWS = 8  # the last PreviewImage pictures of a run the AI is told of
+MAX_SHOWN = 4  # thumbnails of a finished run's pictures that come with the answer first telling of its end
 
 
 def _queue():
@@ -318,9 +319,54 @@ def news(task_id):
         if run.get("state") == "running" and run.get("progress"):
             answer["progress"] = run["progress"]
         if run.get("state") not in ("running", "asking", "allowed"):
-            run["told"] = True
+            run["told"], run["shown"] = True, False  # show_pictures attaches them to this answer
             ai_tasks._save(task)
         return answer
+
+
+def show_pictures(result, task_id):
+    """Attaches thumbnails of the latest run's pictures to the answer that first tells the AI it ended
+    (status() or news() marked it), so it sees what came out without get_image_info; once per run."""
+    if not isinstance(result, dict) or result.get("isError") or not task_id:
+        return result
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id)
+        run = next((step for step in reversed((task or {}).get("steps", [])) if step.get("tool") == "run_workflow"), None)
+        if not run or run.get("shown") is not False:
+            return result
+        run["shown"] = True
+        ai_tasks._save(task)
+    shown, items = [], []
+    for item in run.get("results") or []:
+        rel = "/".join(part for part in (item.get("subfolder"), item.get("filename")) if part)
+        if item.get("type") != "image" or len(items) >= MAX_SHOWN:
+            continue
+        try:
+            picture = _image_content(_resolve_image(rel)[1])
+        except ToolError:
+            picture = None
+        if picture:
+            shown.append(rel)
+            items.append(picture)
+    if not items:
+        return result
+    data = dict(result.get("structuredContent") or {})
+    data["pictures_attached"] = shown
+    _retext(result, data)
+    result["content"] = [*result["content"], *items]
+    return result
+
+
+def _retext(result, data):
+    """A tool result with `data` as its structured content and as its text."""
+    result["structuredContent"] = data
+    content = list(result.get("content") or [])
+    text = {"type": "text", "text": tool_text(data)}
+    if content and isinstance(content[0], dict) and content[0].get("type") == "text":
+        content[0] = text
+    else:
+        content.insert(0, text)
+    result["content"] = content
 
 
 def tell(result, task_id):
@@ -331,14 +377,7 @@ def tell(result, task_id):
     data = result.get("structuredContent")
     data = dict(data) if isinstance(data, dict) else {}
     data["your_run"] = run
-    result["structuredContent"] = data
-    content = list(result.get("content") or [])
-    text = {"type": "text", "text": tool_text(data)}
-    if content and isinstance(content[0], dict) and content[0].get("type") == "text":
-        content[0] = text
-    else:
-        content.insert(0, text)
-    result["content"] = content
+    _retext(result, data)
     return result
 
 
@@ -365,7 +404,7 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
             task = ai_tasks._load().get(task_id)
             step = next((item for item in (task or {}).get("steps", []) if item["id"] == run["id"]), None)
             if step is not None:
-                step["told"] = True
+                step["told"], step["shown"] = True, False  # show_pictures attaches them to this answer
                 ai_tasks._save(task)
     if run.get("progress"):
         answer["progress"] = run["progress"]
@@ -389,7 +428,9 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
     answer["next"] = {
         "running": "run_status(wait_seconds=55): it is still running; do not guess it is done or run it again.",
         "allowed": "run_status(wait_seconds=55): it is about to run.",
-        "done": "Look at pictures with zoom_image (or get_image_info), then report what came out.",
+        "done": ("The first answer telling you it ended has its pictures attached (pictures_attached): look at them, "
+                 "then report what came out with images= its pictures; show_panel only to compare or ask. "
+                 "zoom_image looks closer."),
         "asking": "get_answers(wait_seconds=55): the run waits for the user's OK in Anomalous.",
         "cancelled": "It was stopped and nothing more comes of it: ask_user what to change before running again.",
     }.get(run.get("state"), "get_situation shows what went wrong (a missing model: check_workflow_models); fix it, then run again.")

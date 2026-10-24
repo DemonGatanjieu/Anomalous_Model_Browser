@@ -188,6 +188,33 @@ class NewsTests(unittest.TestCase):
         self.assertIn("finished", ai_task_runs.status("A")["summary"])
         self.assertNotIn("your_run", self.told()["structuredContent"])
 
+    def test_the_pictures_come_once_with_the_answer_that_tells_the_end(self):
+        history = {"p1": {"status": {"completed": True}, "outputs": {"9": {"images": [
+            {"filename": f"{n}.png", "subfolder": "x", "type": "output"} for n in range(6)]}}}}
+        with mock.patch.object(ai_tasks, "_notify"):
+            ai_task_runs._finish_run(self.task, self.step["id"], ["p1"], history)
+        picture = {"type": "image", "data": "AAAA", "mimeType": "image/webp"}
+        with mock.patch.object(ai_task_runs, "_resolve_image", side_effect=lambda rel: (rel, "/out/" + rel)),                 mock.patch.object(ai_task_runs, "_image_content", return_value=picture):
+            before = ai_task_runs.show_pictures({"content": [{"type": "text", "text": "{}"}], "structuredContent": {}}, self.task)
+            self.assertEqual(len(before["content"]), 1, "nothing before the AI is told it ended")
+            result = ai_task_runs.show_pictures(self.told(), self.task)
+            self.assertEqual(result["structuredContent"]["pictures_attached"], ["x/0.png", "x/1.png", "x/2.png", "x/3.png"])
+            self.assertEqual([item["type"] for item in result["content"]], ["text"] + ["image"] * ai_task_runs.MAX_SHOWN)
+            self.assertIn("pictures_attached", result["content"][0]["text"])
+            again = ai_task_runs.show_pictures({"content": [{"type": "text", "text": "{}"}], "structuredContent": {}}, self.task)
+            self.assertEqual(len(again["content"]), 1, "once per run")
+
+    def test_an_old_run_told_before_brings_no_pictures(self):
+        with mock.patch.object(ai_tasks, "_notify"):
+            ai_task_runs._finish_run(self.task, self.step["id"], ["p1"], {"p1": {"status": {"completed": True}, "outputs": {
+                "9": {"images": [{"filename": "a.png", "type": "output"}]}}}})
+        with ai_tasks._lock:
+            task = ai_tasks._load()[self.task]
+            task["steps"][-1]["told"] = True  # told before pictures came with it: no "shown" mark
+            ai_tasks._save(task)
+        result = ai_task_runs.show_pictures({"content": [{"type": "text", "text": "{}"}], "structuredContent": {}}, self.task)
+        self.assertEqual(len(result["content"]), 1)
+
     def test_no_run_no_news(self):
         ai_tasks.begin_task("A", "other", new_task=True)
         self.assertIsNone(ai_task_runs.news(ai_tasks.active_task_id("A")))

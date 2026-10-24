@@ -239,7 +239,8 @@ covered by the `styles.css` manifest.
   are ahead, or the node running, its steps, a percent like ComfyUI's tab title and the nodes
   done; kept on the step in memory, sent to the page as `progress` events that only move the
   step's bar, and given to the AI by `run_status`, which can wait for the run to end, and as
-  `your_run` with one sentence in the AI's other answers while it goes and once after it ends,
+  `your_run` with one sentence in the AI's other answers while it goes and once after it ends
+  (that first answer also carries up to four thumbnails of its pictures: `show_pictures`),
   so the AI need not look for itself; the console's lines, time left, memory and the size
   warnings come with it, `api/ai_run_watch.py`, and the page draws them with a stop button,
   `web/modules/ui_ai_run_live.js`). A step a restart left

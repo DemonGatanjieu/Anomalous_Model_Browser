@@ -210,6 +210,7 @@ async def _call(params, request):
         resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)
         if name not in ("run_workflow", "run_status", "stop_run") and resolved_task:
             await asyncio.to_thread(ai_task_runs.tell, result, resolved_task)
+        await asyncio.to_thread(ai_task_runs.show_pictures, result, resolved_task)
     if name != "get_answers" and name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task or ("" if session else None))
     return ai_outside.tell(result, outside)

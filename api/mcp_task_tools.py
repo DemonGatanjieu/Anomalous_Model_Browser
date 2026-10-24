@@ -347,7 +347,8 @@ TASK_TOOLS = dict([
                               "closed": {"type": "boolean"}, "task": _TASK_PROP}, ["panel"]),
     _task_tool("run_status", "How the run is going",
                "Where your task's latest workflow run stands: none (no run yet), queued (how many runs are ahead), running (which node, "
-               "its steps, percent, nodes done of all), done (with the pictures it saved) or failed; summary says it "
+               "its steps, percent, nodes done of all), done (with the pictures it saved; the first answer telling you it "
+               "ended, this or any other, attaches up to 4 thumbnails, so get_image_info is not needed) or failed; summary says it "
                "in one sentence. wait_seconds (up to 55) waits for it to end. Runs take a while: call this instead of "
                "guessing, looking in the output folder or at the screen. While a run goes, your other tools' answers "
                "carry the same news as your_run, and once more when it ends.",
