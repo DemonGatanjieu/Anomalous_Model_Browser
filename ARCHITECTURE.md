@@ -17,6 +17,7 @@ and Current node lists the saved values. See the material contract below.
 
 | When changing... | Read... |
 | --- | --- |
+| A button, a page or words on screen: where it is drawn, what it calls, which backend function answers | `node tools/ui_map.mjs find <the words on screen>` (read from the code), then [`docs/architecture/ui-flows.md`](docs/architecture/ui-flows.md) (what each part is for, why, one name per thing) |
 | Python routes, storage, paths, metadata, covers, or scan state | [`docs/architecture/backend.md`](docs/architecture/backend.md) |
 | Browser lifecycle, UI state, localization, media, or graph edits | [`docs/architecture/frontend.md`](docs/architecture/frontend.md) |
 | Update-guide content/versioning or sidebar hover labels | [`docs/architecture/update-guide.md`](docs/architecture/update-guide.md) |

@@ -2,8 +2,9 @@
 // Fails when a source file is missing from the architecture map, a web module is
 // no longer imported from an entry, a new file starts over the size threshold, a
 // file already over it grew since the last commit (AGENTS.md section 2), or a web file
-// does not parse as the ES module the browser loads, or a CSS :has() matches the style
-// attribute.
+// does not parse as the ES module the browser loads, a CSS :has() matches the style
+// attribute, or the UI map's hand-written part (docs/architecture/ui-flows.md) names words,
+// files or routes the code no longer has (tools/ui_map.mjs).
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -101,6 +102,10 @@ for (const file of [...list('web', '.css'), ...list('web/styles', '.css')]) {
         }
     }
 }
+
+// 7. The UI map's hand-written part says what the screen and the code have now.
+const { check: uiFlowFailures } = await import('./ui_map.mjs');
+failures.push(...await uiFlowFailures());
 
 if (failures.length) {
     console.error(`\nStructure check failed:\n  ${failures.join('\n  ')}`);

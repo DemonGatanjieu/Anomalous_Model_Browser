@@ -73,9 +73,9 @@
 - search_models and get_model say which node types load each model, and where a misfiled one belongs; `move_model` moves it there behind a new "files" gate (asks by default, never overwrites). An empty drop-down in add_node now says ComfyUI found no file for it.
 - AI 第一次在任务的副本标签页上动手时，切换标签页不再被记成“你在画布上的改动”告诉 AI。
 - The AI switching to its task tab is no longer reported to it as a canvas change of the user's.
-- **工作台里直接用图库的图**：留言框左边新增图片按钮，打开图库（最新的在前，可按提示词、模型、seed 搜索），点选几张后 **加进消息**；打 **@** 时也能看到图库最新的图，打字会顺带在图库里搜。AI 收到的是图片本身和它的生成参数。
+- **工作台里直接用图库的图**：留言框左边新增图片按钮，打开图库（最新的在前，可按提示词、模型、seed 搜索），点选几张后 **加进留言**；打 **@** 时也能看到图库最新的图，打字会顺带在图库里搜。AI 收到的是图片本身和它的生成参数。
 - Gallery pictures in the AI workbench: the message box's picture button picks them from the gallery (newest first, searchable), and "@" offers the gallery's newest pictures and searches it as you type; the AI gets each picture with what made it.
-- **等 AI 接手时先备好材料**：“等 AI 接手”的任务顶上有 **开始 / 备料** 两页切换。**备料** 是单独的一页：大的图库（可搜索，点一张就放到最下面的输入框上，再点一下拿掉）和“已经备好”的列表；切换按钮上显示备好了几样。AI 接手时一起收到。
+- **等 AI 接手时先备好素材**：“等 AI 接手”的任务顶上有 **开始 / 备料** 两页切换。**备料** 是单独的一页：大的图库（可搜索，点一张就放到最下面的输入框上，再点一下拿掉）和“已经备好”的列表；切换按钮上显示备好了几样。AI 接手时一起收到。
 - A task waiting for an AI has two pages, Get started / Put ready: Put ready shows the gallery as a big searchable grid feeding the message box (click to add or drop a picture) and what is ready; the AI gets it all when it takes the task.
 - **不全屏时中间更宽敞**：AI 工作台的窗口不够高时（没有最大化），任务标题、状态、时间步数、“接着”和右边的工具并成一行，上下留白也收紧；输入框下面的提示只在出错时显示（平时鼠标停在输入框上能看到）；等 AI 接手的页面图片变小、步骤靠紧。同样的窗口里，中间能多显示约两成内容；最大化时样子不变。
 - In a low window (not maximised) the AI workbench keeps the task's head to one line, tightens the room around it, shows the message box's hint only for a failure (its words are the input's tooltip) and shrinks the waiting page's picture: about a fifth more room for the timeline.
@@ -135,7 +135,7 @@
 - Tasks remember the task they go on from (an AI's new task while on another, or one the user starts from a task): links under the title lead both ways, the list marks follow-ups, the user can link or unlink, and an AI beginning a follow-up hears what was decided before.
 - **决策记录**：聊天在哪里都行，结论留在 AMB。AI 用新工具 `log_decision` 把商量好的结论记成时间线上的 📌 卡片（定了什么、为什么、没选哪些、谁定的、跟哪几步有关）；你在 AMB 里的选择（面板回答、允许或不允许、交出去的素材、AI 改画布的地方、停止）自动算作决策。右上角新增 **决策**，按时间列出全部决策，点一下回到那一步；AI 很久没记录时会轻轻提醒。AI 重新接手任务时会先收到这些决策。
 - Key decisions stay in Anomalous: the AI records what was settled with `log_decision` (a card on the timeline: what, why, what was left out, who decided, the steps it is about); the user's own choices in Anomalous count as decisions too; a Decisions view in the side column lists them all with a link to each step, notes work done since the last one, and begin_task repeats them to an AI picking the task up.
-- **留言框里的 @ 和 /**：打 **@** 弹出能搜索的列表（这个任务的图、搭配、模型、工作流、提示词、节点包、节点），选中的写成“@名字”并在下面显示成小标签，AI 收到的是确切的那个东西（图片连同生成参数一起）。开头打 **/** 是快捷指令：停止、撤销、展台、结构、素材、副本、当前画布、新任务马上生效；重跑、解释、继续帮你写好一句话。
+- **留言框里的 @ 和 /**：打 **@** 弹出能搜索的列表（这个任务的图、搭配、模型、工作流、提示词、节点包、节点），选中的写成“@名字”并在下面显示成小标签，AI 收到的是确切的那个东西（图片连同生成参数一起）。开头打 **/** 是快捷指令：停止、撤销、展台、节点结构、素材、副本、当前画布、新任务马上生效；重跑、解释、继续帮你写好一句话。
 - "@" in the AI workbench's message box names the task's pictures, combos, models, workflows, prompts, node packs and node types; the AI gets each in full with the message (pictures attached). "/" lists commands that act at once (stop, undo, side views, new task, canvas mode) or fill in words to send.
 - **整个自定义节点包交给 AI**：素材里点“节点”，再在来源那一排点某个自定义节点包，上面会出现“整包交给 AI”。不知道该选哪个节点时，把整个包给它，AI 自己从包里挑；选“只能用”时，这个包里的节点都允许，别的第三方和付费节点照样拦下。AI 用 `get_toolbox` 能看到包里有哪些节点，`find_nodes` 搜索时也把它们排在前面。
 - A whole custom node pack can be picked (from its source in the nodes' second column): the AI gets its node types in get_toolbox, finds them first, and with "only" every node of the pack is allowed.
@@ -185,7 +185,7 @@
 - New `ask_user` tool: a question with options (one may be marked recommended) and a line for an answer of the user's own, shown in the AI workbench; the AI waits for the answer in the same call. The server instructions tell AIs to ask this way, not in their own chat.
 
 ### AI 工作台换新外观 / A new look for the AI workbench
-- 左边任务栏：“新任务”成了醒目的主按钮，“连接 AI”和“关卡”变成带图标的按钮；下面写着最近接入的是哪个 AI、什么时候；有任务在进行、等你回答或出错时，上面出现对应的筛选按钮和数量；每个任务前的状态换成清楚的图标，选中的任务左边有一条色条。
+- 左边任务栏：“新任务”成了醒目的主按钮，“连接 AI”和“关卡”变成带图标的按钮；下面写着最近连接的是哪个 AI、什么时候；有任务在进行、等你回答或出错时，上面出现对应的筛选按钮和数量；每个任务前的状态换成清楚的图标，选中的任务左边有一条色条。
 - 任务标题栏：状态标签带图标；“素材”“全部撤销”“显示展台”是统一样式的按钮，“改名”和“从列表移除”换成铅笔和垃圾桶图标（鼠标移上去有说明，删除悬停时变红）。
 - 等 AI 接手的任务：左边一张插图，右边标题；下面是三个带编号、连成一条线的步骤（想让 AI 做什么 → 把这句话发给 AI，大号“复制这句话”按钮 → AI 的每一步会出现在这里，附淡淡的示意）；最下面“第一次用？先把 AI 连上 AMB”是一张带插图的卡片，点“查看连接方法”就在原地展开。没有任何任务时的欢迎页也换成插图加同样的卡片。插图是用 ChatGPT 画的。
 - The task list leads with a New task button, icon buttons for Connect an AI and the gates, which AI came last, quick filters by state and state icons; a task's header uses icon buttons; a waiting task shows a picture, three numbered steps and a connect card that opens in place; the empty page matches. Illustrations made with ChatGPT.
