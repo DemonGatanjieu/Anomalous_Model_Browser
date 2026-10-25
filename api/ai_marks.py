@@ -173,6 +173,7 @@ def save(task_id, image, png, marks, text="", now=None, mask=None, mode=None):
         task["steps"].append(step)
         del task["steps"][:-ai_tasks.MAX_STEPS]
         task["updated"] = max(task.get("updated", 0), now)
+        task["ended"] = None  # like a message (ai_panels.leave_message): the task goes on
         ai_tasks._save(task)
     ai_tasks._notify(task_id)
     return step

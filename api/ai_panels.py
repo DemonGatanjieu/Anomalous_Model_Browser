@@ -435,6 +435,7 @@ def leave_message(task_id, text, refs=None, now=None):
         task["steps"].append(step)
         del task["steps"][:-ai_tasks.MAX_STEPS]
         task["updated"] = max(task.get("updated", 0), now)
+        task["ended"] = None  # writing to the AI goes on with the task: its next call comes back here
         ai_tasks._save(task)
         _answered.notify_all()
     ai_tasks._notify(task_id)

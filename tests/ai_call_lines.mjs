@@ -6,6 +6,8 @@ const first = task => callLines(task)?.lines[0];
 
 assert.equal(callLines(null), null);
 assert.equal(callLines({ ended: 5, steps: [ai('report')] }), null, 'an ended task waits for nothing');
+assert.equal(callLines({ ended: 5, steps: [ai('report'), { tool: 'user_marks', kind: 'user', delivered: false }] })?.lines[0], 'aiCallReplied',
+    'unless the user wrote to it afterwards');
 const waiting = { waiting: true, steps: [{ tool: 'user_message', kind: 'user', delivered: false }] };
 assert.equal(callLines(waiting), null, 'a task waiting for its first AI has the line that starts it on its own card');
 

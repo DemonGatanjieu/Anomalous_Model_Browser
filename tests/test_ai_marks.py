@@ -80,6 +80,16 @@ class MarkTests(unittest.TestCase):
         with self.assertRaises(ToolError):
             mcp_task_tools.report({"client": "Claude", "task": self.task}, "x", reply_to=note["id"])  # not the user's
 
+    def test_marks_on_an_ended_task_open_it_again_for_the_ais_next_call(self):
+        mcp_task_tools.report({"client": "Claude"}, "做完了", done=True)
+        self.assertTrue(ai_tasks.get_task(self.task)["ended"])
+        marks = ai_marks.save(self.task, "a.png", png(), MARKS)
+        self.assertIsNone(ai_tasks.get_task(self.task)["ended"])
+        with mock.patch.object(ai_marks, "_image_content", return_value={"type": "image", "data": "x", "mimeType": "image/webp"}):
+            reply = mcp_task_tools.report({"client": "Claude"}, "改好了", reply_to=marks["id"])
+        self.assertTrue(reply["noted"], "the reply lands under the marks, not in a new task")
+        self.assertEqual(len(ai_tasks.list_tasks()), 1)
+
     def test_a_repaint_mask_becomes_the_picture_with_that_area_as_its_mask(self):
         inputs = tempfile.mkdtemp(prefix="amb_ai_marks_input_")
         buffer = io.BytesIO()
