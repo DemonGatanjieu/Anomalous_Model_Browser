@@ -1,16 +1,19 @@
 /**
  * Gates on the AI workbench (api/ai_gates.py): the card under a step that waits for the user's OK
- * (what the AI wants to do; Allow, No with a reason for the AI, and "from now on, go ahead"), what
+ * (what the AI wants to do; Allow, No, a reason for the AI folded until asked for, and "from now
+ * on, go ahead"), what
  * the user answered, and the Gates window where each kind of action is set to go ahead, ask first
  * or never (changing the canvas, using the GPU, downloading, going online, moving model files), whether a new
  * task works in a canvas tab of its own (api/ai_task_canvas.py), which tools AI apps are offered
- * (all, the daily set for a small model, or on demand: a few and the rest through a directory), and whether the AI waits for a run or the user tells it
- * when the run is done (ui_ai_call.js).
+ * (all, or the daily set with the rest on demand through a directory), how long the AI waits for
+ * the user's answer, and whether the AI waits for a run or the user tells it when the run is done
+ * (ui_ai_call.js).
  */
 
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
+import { icon } from './ui_ai_icons.js';
 
 export const GATES = ['canvas', 'gpu', 'download', 'network', 'files'];
 const POLICIES = ['auto', 'ask', 'never'];
@@ -66,7 +69,14 @@ export function gateCard(step, taskId, changed) {
     }
     const reason = el('input', 'anomalous-ai-gate-reason');
     reason.placeholder = t('aiGateReason');
+    reason.hidden = true; // a reason is optional: the line opens from "say how to change it"
     reason.addEventListener('keydown', event => event.stopPropagation());
+    const why = button('anomalous-ai-panel-own', '', () => {
+        reason.hidden = false;
+        why.remove();
+        reason.focus();
+    });
+    why.append(icon('pencil', 13), el('span', '', t('aiGateSayWhy')));
     const remember = el('label', 'anomalous-ai-gate-remember');
     const box = el('input');
     box.type = 'checkbox';
@@ -82,7 +92,7 @@ export function gateCard(step, taskId, changed) {
     };
     const actions = el('div', 'anomalous-ai-gate-actions');
     actions.append(button('anomalous-ai-gate-allow', t('aiGateAllow'), () => answer('allow')),
-        button('anomalous-ai-gate-deny', t('aiGateDeny'), () => answer('deny')), remember);
+        button('anomalous-ai-gate-deny', t('aiGateDeny'), () => answer('deny')), why, remember);
     card.append(reason, actions);
     if (asked.timed_out) card.append(el('div', 'anomalous-ai-gate-note', t('aiGateLate')));
     return card;

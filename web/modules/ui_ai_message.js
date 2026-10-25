@@ -110,7 +110,7 @@ export function messageBox(onSend, source) {
             note.textContent = text;
             note.classList.add('is-error');
         } });
-        box.refs = { add: item => at.add(item), remove: id => at.remove(id), has: id => at.has(id), room }; // for ui_ai_ready.js's gallery
+        box.refs = { add: item => at.add(item), remove: id => at.remove(id), has: id => at.has(id), room, pictures: () => at.pictures() }; // for ui_ai_ready.js
         box.setMaterials = count => materials.setCount(count);
     }
     box.note = note;

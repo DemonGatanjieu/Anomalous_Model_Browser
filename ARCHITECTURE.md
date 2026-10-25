@@ -399,11 +399,10 @@ covered by the `styles.css` manifest.
   `ui_ai_connect.js` says how to connect an AI app (the address, a sentence to send the AI so
   it sets itself up and starts on a waiting task, each common app's way), in a window from the
   list's "Connect an AI", and as a card (`connectHint`) that opens the guide in place on the
-  empty page and under a task waiting for an AI (numbered steps under a picture: what to do,
-  the way to put things ready, the sentence to send, where the steps will show).
-  `ui_ai_ready.js` gives a waiting task its two pages, switched on top: that card, and "Put
-  ready" (the gallery grid of `ui_ai_gallery_pick.js` feeding the message box, moved in, the
-  materials button and the user's own steps so far). The pictures (`web/assets/ai_*.webp`)
+  empty page and under a task waiting for an AI. `ui_ai_ready.js` is that waiting task's one
+  page: the sentence to send the AI first, kept in view at the top while the page scrolls, then
+  folds to open for what may be put ready (what to do, a line naming the task; the gallery grid
+  of `ui_ai_gallery_pick.js` feeding the message box) and the user's own steps so far. The pictures (`web/assets/ai_*.webp`)
   were made with ChatGPT. `ai_task_view.js` holds
   its rules without DOM (folding reads and chains of the AI's work, tool words, counts, result addresses);
   `ui_ai_chain.js` draws the folded rows: reads in a row, and a chain of reads, canvas changes and

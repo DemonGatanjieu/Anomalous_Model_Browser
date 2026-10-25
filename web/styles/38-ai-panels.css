@@ -18,7 +18,11 @@
     opacity: 0.72;
 }
 
+.anomalous-ai-panel-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+
 .anomalous-ai-panel-title {
+    flex: 1;
+    min-width: 0;
     color: var(--amb-text-main);
     font-size: 15px;
     font-weight: 700;
@@ -290,18 +294,24 @@
     border-top: 1px solid var(--amb-border);
 }
 
-/* Questions: buttons or a line of text. */
+/* Questions: buttons that send at a press, or a line of text; "let the AI decide" in the head. */
 .anomalous-ai-panel-ask {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
+.anomalous-ai-panel-ask-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+
 .anomalous-ai-panel-question {
+    flex: 1;
+    min-width: 0;
     color: var(--amb-text-main);
     font-size: 13px;
     font-weight: 600;
 }
+
+.anomalous-ai-panel-hint { margin-top: -4px; color: var(--amb-text-dim); font-size: 11.5px; }
 
 .anomalous-ai-panel-options {
     display: flex;
@@ -311,8 +321,8 @@
 
 .anomalous-ai-panel-option {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 12px;
     min-width: 120px;
     padding: 9px 14px;
     border: 1px solid var(--amb-border-strong);
@@ -331,7 +341,25 @@
     transform: translateY(-1px);
 }
 
-.anomalous-ai-panel-option.is-picked {
+.anomalous-ai-panel-option:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+.anomalous-ai-panel-option-text { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+
+/* The arrow says a press sends; it comes forward on hover, a tick once picked. */
+.anomalous-ai-panel-option-go {
+    flex: none;
+    color: var(--amb-text-dim);
+    transition: color 0.15s, transform 0.15s;
+}
+
+.anomalous-ai-panel-option:hover:not(:disabled) .anomalous-ai-panel-option-go { color: var(--amb-link); transform: translateX(2px); }
+.anomalous-ai-panel-options.is-multiple .anomalous-ai-panel-option-go { opacity: 0; }
+.anomalous-ai-panel-options.is-multiple .anomalous-ai-panel-option.is-picked .anomalous-ai-panel-option-go { color: var(--amb-ok); opacity: 1; }
+.anomalous-ai-panel-option.is-picked .anomalous-ai-panel-option-go { color: var(--amb-ok); }
+.anomalous-ai-panel-options.is-sending .anomalous-ai-panel-option.is-picked { animation: anomalous-ai-panel-sending 1s ease-in-out infinite; }
+@keyframes anomalous-ai-panel-sending { 50% { opacity: 0.7; } }
+
+.anomalous-ai-panel-option.is-picked,
+.anomalous-ai-panel-option.is-recommended.is-picked {
     border-color: color-mix(in srgb, var(--amb-ok) 70%, transparent);
     background: color-mix(in srgb, var(--amb-ok) 16%, transparent);
 }
@@ -433,18 +461,37 @@
 .anomalous-ai-panel-answer { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .anomalous-ai-panel-typed.is-skipped { border-left-color: var(--amb-text-dim); background: rgba(var(--amb-ink-rgb), 0.05); color: var(--amb-text-soft); }
 
-.anomalous-ai-panel-skip {
+/* "Let the AI decide" and "None of these, I'll say it…": small pills, plainly buttons, quieter than the options. */
+.anomalous-ai-panel-skip,
+.anomalous-ai-panel-own {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
     align-self: flex-start;
-    padding: 2px 4px;
-    border: none;
+    gap: 5px;
+    padding: 3px 10px;
+    border: 1px dashed var(--amb-border-strong);
+    border-radius: 999px;
     background: none;
-    color: var(--amb-text-dim);
+    color: var(--amb-text-soft);
     font: inherit;
     font-size: 12px;
-    text-decoration: underline dotted;
+    line-height: 18px;
+    white-space: nowrap;
     cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-.anomalous-ai-panel-skip:hover { color: var(--amb-text-main); }
+
+.anomalous-ai-panel-skip:hover:not(:disabled),
+.anomalous-ai-panel-own:hover:not(:disabled) {
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-ai-panel-skip:disabled { opacity: 0.5; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .anomalous-ai-panel-options.is-sending .anomalous-ai-panel-option.is-picked { animation: none; } }
 
 /* Whether the AI has what the user gave it (ui_ai_delivery.js): sent and waiting, or the AI has it. */
 .anomalous-ai-delivery {

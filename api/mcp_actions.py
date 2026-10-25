@@ -122,7 +122,7 @@ def download_status(ctx):
                                           "failed (error says why; starting it again continues it), cancelled."}
 
 
-def run_workflow(ctx, batch=1, wait_seconds=15, workflow=None, **slots):
+def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, **slots):
     from .ai_run_tracking import checked_wait
     checked_wait(wait_seconds)  # Reject malformed waits before anything can be submitted.
     batch = max(1, min(8, int(batch)))
@@ -309,7 +309,7 @@ ACTIONS = dict([
             "several nodes have it) fill it in; the rest stays. Without workflow they fill the open canvas. Then "
             "run_status, never the output folder.",
             run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1},
-                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 15,
+                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 55,
                                             "description": "Seconds to wait for it to end."},
                            "workflow": {"type": "string", "description": "A name from list_workflows."},
                            "prompt": {"type": "string"}, "negative": {"type": "string"},

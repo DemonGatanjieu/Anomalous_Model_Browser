@@ -213,6 +213,9 @@ function renderTask() {
         view.tabs = el('div', 'anomalous-ai-tabs');
         view.dock.append(view.newest, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
         box.replaceChildren(view.tabs, view.header, view.flow, view.made, view.timeline, view.dock);
+        // How much of the column the stuck header covers, for what sticks under it (the waiting page's sentence).
+        new ResizeObserver(() => box.style.setProperty('--anomalous-ai-head-h',
+            `${view.header.offsetHeight + parseFloat(getComputedStyle(view.header).top || 0)}px`)).observe(view.header);
     }
     // A new panel opens the stage; in a narrow window only one that asks something takes its tab.
     const news = stageNews(task, state.stage);

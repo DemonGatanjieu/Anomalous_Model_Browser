@@ -3,8 +3,9 @@
  * text, pictures (a row, a grid or side by side to compare, with marks), the slider, picks and
  * the diagram (ui_ai_stage.js), the user's models as cards with their covers, tables, lists,
  * settings, a progress bar, and questions: buttons (one pick or several), picks and a line of
- * text, whose answers (or a skip) go back to the server for the AI to read, each with a pill
- * saying whether the AI has it yet (ui_ai_delivery.js). Only
+ * text, whose answers (or "let the AI decide") go back to the server for the AI to read, each
+ * with a pill saying whether the AI has it yet (ui_ai_delivery.js). A question says that one
+ * press sends; a line of one's own beside the options stays folded until asked for. Only
  * text is ever written into the page (textContent); the blocks were checked by the server and
  * are checked again by their shape here. Also the toast when the AI shows a panel while the
  * user is elsewhere.
@@ -17,6 +18,7 @@ import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
 import { runMapBox } from './ui_ai_run_map.js';
 import { decoratePicture, gonePicture, showPicture } from './ui_ai_images.js';
 import { deliveryState } from './ui_ai_delivery.js';
+import { icon } from './ui_ai_icons.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -64,9 +66,9 @@ function answerNote(answer) {
     return box;
 }
 
-/** Leaves a question unanswered on purpose; the AI hears that it was skipped. */
+/** Leaves the question to the AI: it hears the user left it to its own judgement. */
 function skipButton(ctx, block, note) {
-    const node = button('anomalous-ai-panel-skip', t('aiPanelSkip'), async () => {
+    const node = button('anomalous-ai-panel-skip', '', async () => {
         node.disabled = true;
         try {
             await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, skip: true });
@@ -76,6 +78,33 @@ function skipButton(ctx, block, note) {
             node.disabled = false;
         }
     });
+    node.append(icon('sparkle', 13), el('span', '', t('aiPanelSkip')));
+    return node;
+}
+
+/**
+ * A question's head: the question, and on the right "let the AI decide" while it is open. A
+ * question without words of its own is the panel's title (ask_user's): the button goes up there.
+ */
+function askHead(question, skip, ctx) {
+    if (!question && skip && ctx.titleRow && !ctx.titleRow.querySelector('.anomalous-ai-panel-skip')) {
+        ctx.titleRow.append(skip);
+        return document.createDocumentFragment();
+    }
+    const head = el('div', 'anomalous-ai-panel-ask-head');
+    head.append(el('div', 'anomalous-ai-panel-question', question || ''));
+    if (skip) head.append(skip);
+    return head;
+}
+
+/** A line of one's own, folded: "None of these, I'll say it" opens `open()` (the line) in its place, its field focused. */
+export function ownWords(className, open) {
+    const node = button(className, '', () => {
+        const line = open();
+        node.replaceWith(line);
+        line.querySelector('input')?.focus();
+    });
+    node.append(icon('pencil', 13), el('span', '', t('aiPanelOwnWords')));
     return node;
 }
 
@@ -239,36 +268,45 @@ function otherLine(ctx, block, options) {
 
 function choices(block, ctx) {
     const box = el('div', 'anomalous-ai-panel-ask');
-    if (block.question) box.append(el('div', 'anomalous-ai-panel-question', block.question));
     const answer = ctx.answers[block.id];
-    const options = el('div', 'anomalous-ai-panel-options');
+    const open = !answer && !ctx.closed;
     const note = el('div', 'anomalous-ai-panel-error');
+    box.append(askHead(block.question, open && skipButton(ctx, block, note), ctx));
+    if (open) box.append(el('div', 'anomalous-ai-panel-hint', t(block.multiple ? 'aiPanelHintSome' : 'aiPanelHintOne')));
+    const options = el('div', `anomalous-ai-panel-options${block.multiple ? ' is-multiple' : ''}`);
     const picked = new Set(answer?.choice || []);
     const submit = async (ids) => {
         options.querySelectorAll('button').forEach(node => { node.disabled = true; });
+        options.classList.add('is-sending');
         try {
             await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, choice: ids });
         } catch (error) {
             note.textContent = error.message;
-            options.querySelectorAll('button').forEach(node => { node.disabled = false; });
+            options.classList.remove('is-sending');
+            options.querySelectorAll('button').forEach((node) => {
+                node.disabled = false;
+                if (!block.multiple) node.classList.remove('is-picked');
+            });
             return;
         }
         ctx.changed();
     };
     for (const option of list(block.options)) {
         const node = button(`anomalous-ai-panel-option${picked.has(option.id) ? ' is-picked' : ''}`, '', () => {
+            node.classList.toggle('is-picked', block.multiple ? undefined : true); // which one goes shows at once
             if (!block.multiple) return void submit([option.id]);
-            node.classList.toggle('is-picked');
             confirm.disabled = !options.querySelector('.anomalous-ai-panel-option.is-picked');
         });
         node.dataset.id = option.id;
+        const words = el('span', 'anomalous-ai-panel-option-text');
         if (option.recommended) {
             node.classList.add('is-recommended');
-            node.append(el('span', 'anomalous-ai-panel-option-badge', t('aiPanelRecommended')));
+            words.append(el('span', 'anomalous-ai-panel-option-badge', t('aiPanelRecommended')));
         }
-        node.append(el('span', 'anomalous-ai-panel-option-label', optionLabel(option)));
-        if (option.detail) node.append(el('span', 'anomalous-ai-panel-option-detail', option.detail));
-        node.disabled = Boolean(answer) || ctx.closed;
+        words.append(el('span', 'anomalous-ai-panel-option-label', optionLabel(option)));
+        if (option.detail) words.append(el('span', 'anomalous-ai-panel-option-detail', option.detail));
+        node.append(words, icon(block.multiple ? 'check' : 'arrowRight', 15, 'anomalous-ai-panel-option-go'));
+        node.disabled = !open;
         options.append(node);
     }
     box.append(options);
@@ -276,10 +314,9 @@ function choices(block, ctx) {
         submit([...options.querySelectorAll('.anomalous-ai-panel-option.is-picked')].map(node => node.dataset.id));
     });
     confirm.disabled = true;
-    if (block.multiple && !answer && !ctx.closed) box.append(confirm);
+    if (block.multiple && open) box.append(confirm);
     if (answer?.text) box.append(el('div', 'anomalous-ai-panel-typed', answer.text));
-    else if (block.other && !answer && !ctx.closed) box.append(otherLine(ctx, block, options));
-    if (!answer && !ctx.closed) box.append(skipButton(ctx, block, note));
+    else if (block.other && open) box.append(ownWords('anomalous-ai-panel-own', () => otherLine(ctx, block, options)));
     box.append(note);
     if (answer) box.append(answerNote(answer));
     return box;
@@ -287,8 +324,9 @@ function choices(block, ctx) {
 
 function input(block, ctx) {
     const box = el('div', 'anomalous-ai-panel-ask');
-    box.append(el('div', 'anomalous-ai-panel-question', block.question));
     const answer = ctx.answers[block.id];
+    const note = el('div', 'anomalous-ai-panel-error');
+    box.append(askHead(block.question, !answer && !ctx.closed && skipButton(ctx, block, note), ctx));
     if (answer) {
         if (!answer.skipped) box.append(el('div', 'anomalous-ai-panel-typed', answer.text));
         box.append(answerNote(answer));
@@ -300,7 +338,6 @@ function input(block, ctx) {
     field.maxLength = 2000;
     field.placeholder = block.placeholder || t('aiPanelTypeHere');
     field.disabled = ctx.closed;
-    const note = el('div', 'anomalous-ai-panel-error');
     const go = button('anomalous-ai-panel-send', t('aiPanelSend'), async () => {
         if (!field.value.trim()) return;
         go.disabled = true;
@@ -319,9 +356,7 @@ function input(block, ctx) {
         if (event.key === 'Enter') go.click();
     });
     line.append(field, go);
-    box.append(line);
-    if (!ctx.closed) box.append(skipButton(ctx, block, note));
-    box.append(note);
+    box.append(line, note);
     return box;
 }
 
@@ -367,8 +402,10 @@ const DRAW = {
 export function renderPanel(step, ctx) {
     const panel = step.panel || {};
     const card = el('div', `anomalous-ai-panel${panel.closed ? ' is-closed' : ''}`);
-    card.append(el('div', 'anomalous-ai-panel-title', panel.title || ''));
-    const blockCtx = { ...ctx, stepId: step.id, answers: step.answers || {}, closed: Boolean(panel.closed) };
+    const titleRow = el('div', 'anomalous-ai-panel-title-row');
+    titleRow.append(el('div', 'anomalous-ai-panel-title', panel.title || ''));
+    card.append(titleRow);
+    const blockCtx = { ...ctx, stepId: step.id, answers: step.answers || {}, closed: Boolean(panel.closed), titleRow };
     for (const block of list(panel.blocks)) {
         const draw = DRAW[block?.type];
         if (draw) card.append(draw(block, blockCtx));

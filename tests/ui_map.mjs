@@ -1,7 +1,7 @@
 // The UI map (tools/ui_map.mjs, tools/ui_map_scan.mjs): addresses as the code writes them, which
 // backend route each reaches, and the check of the hand-written part against the screen's words.
 import assert from 'node:assert/strict';
-import { reaches, routeShape } from '../tools/ui_map_scan.mjs';
+import { buildIndex, reaches, routeShape } from '../tools/ui_map_scan.mjs';
 import { check } from '../tools/ui_map.mjs';
 
 assert.equal(routeShape('/anomalous/ai_tasks/${encodeURIComponent(task.id)}/marks`'), '/anomalous/ai_tasks/{}/marks');
@@ -34,5 +34,8 @@ const glossary = (zh, en) => check(['## 统一叫法', '| 说法 | English | 不
 assert.deepEqual(await glossary('配方（配方包、搭配方案除外）', 'recipe（recipe package 除外）、recipes'), []);
 assert.match((await glossary('配方', '—')).join('\n'), /"配方" is retired/, 'without the exceptions 配方包 counts');
 assert.match((await glossary('—', 'recipe')).join('\n'), /"recipe" is retired/);
+
+// A word the backend names for the page (an option's label_key) counts as used.
+assert.ok((await buildIndex()).serverKeys.has('aiRepaintUseAi'));
 
 console.log('ui map ok');

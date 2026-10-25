@@ -2,9 +2,10 @@
  * What the task needs or does now, over its message box (ui_ai_message.js, in the workbench's dock),
  * so the user follows it from the foot of the page: a step waiting at a gate (Allow, No, see the
  * step), a run going (where it stands, a thin bar, stop), the AI busy with a tool; and the first
- * question the AI asked and nobody answered yet, to answer there: a pick of one as buttons (and
- * a line of one's own when the AI allows it), a line of text, or the way to the stage for the
- * rest (several picks, pictures to pick). When none of that is there, the lines to paste into the
+ * question the AI asked and nobody answered yet, to answer there: a pick of one as buttons that
+ * send at a press (and a line of one's own, folded, when the AI allows it), a line of text, or the
+ * way to the stage for the rest (several picks, pictures to pick); "let the AI decide" sits in its
+ * head. When none of that is there, the lines to paste into the
  * AI's chat once it has stopped (ui_ai_call.js), in the same place. Drawn again as
  * the task changes; a question's card only when another question comes, so typing in it survives.
  */
@@ -15,7 +16,7 @@ import { toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
 import { progressWords, stopButton } from './ui_ai_run_live.js';
 import { panelSteps, QUESTIONS } from './ui_ai_side.js';
-import { noteTyping, optionLabel, sendAnswer } from './ui_ai_panel.js';
+import { noteTyping, optionLabel, ownWords, sendAnswer } from './ui_ai_panel.js';
 import { decideGate } from './ui_ai_gate.js';
 import { callRow } from './ui_ai_call.js';
 
@@ -95,6 +96,9 @@ function askCard(task, { step, block }, more, ctx) {
     head.append(icon('question', 15), el('span', 'anomalous-ai-now-question', block.question || step.panel.title || t('aiNowAsk')));
     if (more) head.append(button('anomalous-ai-link', t('aiNowMore', { count: more }), ctx.openStage));
     const note = el('div', 'anomalous-ai-now-error');
+    const decide = button('anomalous-ai-panel-skip', '', () => send({ skip: true }, [...card.querySelectorAll('button, input')]));
+    decide.append(icon('sparkle', 13), el('span', '', t('aiPanelSkip')));
+    head.append(decide);
     const send = async (body, nodes) => {
         nodes.forEach((node) => { node.disabled = true; });
         try {
@@ -103,11 +107,13 @@ function askCard(task, { step, block }, more, ctx) {
         } catch (error) {
             note.textContent = error.message;
             nodes.forEach((node) => { node.disabled = false; });
+            card.querySelector('.is-picked')?.classList.remove('is-picked');
         }
     };
     const answers = el('div', 'anomalous-ai-now-answers');
     const options = Array.isArray(block.options) ? block.options : [];
-    const ownWords = (placeholder) => {
+    const ownLine = (placeholder) => {
+        const line = el('div', 'anomalous-ai-now-own');
         const field = el('input', 'anomalous-ai-now-field');
         field.placeholder = placeholder;
         const go = button('anomalous-ai-panel-send', t('aiPanelSend'), () => {
@@ -118,23 +124,28 @@ function askCard(task, { step, block }, more, ctx) {
             if (event.key === 'Enter' && !event.isComposing) go.click();
         });
         field.addEventListener('input', () => noteTyping(task.id));
-        answers.append(field, go);
+        line.append(field, go);
+        return line;
     };
+    let hint = '';
     if (block.type === 'choices' && !block.multiple && options.length <= MAX_OPTIONS) {
         for (const option of options) {
-            const chip = button(`anomalous-ai-now-option${option.recommended ? ' is-recommended' : ''}`, '', () => send({ choice: [option.id] }, [...answers.querySelectorAll('button')]), option.detail || '');
+            const chip = button(`anomalous-ai-now-option${option.recommended ? ' is-recommended' : ''}`, '', () => {
+                chip.classList.add('is-picked'); // which one goes shows at once
+                void send({ choice: [option.id] }, [...card.querySelectorAll('button, input')]);
+            }, option.detail || '');
             if (option.recommended) chip.append(icon('star', 12));
-            chip.append(el('span', '', optionLabel(option)));
+            chip.append(el('span', '', optionLabel(option)), icon('arrowRight', 13, 'anomalous-ai-now-option-go'));
             answers.append(chip);
         }
-        if (block.other) ownWords(t('aiNowOther'));
+        if (block.other) answers.append(ownWords('anomalous-ai-panel-own', () => ownLine(t('aiNowOther'))));
+        hint = t('aiPanelHintOne');
     } else if (block.type === 'input') {
-        ownWords(block.placeholder || t('aiNowAnswerHere'));
+        answers.append(ownLine(block.placeholder || t('aiNowAnswerHere')));
     } else {
         answers.append(button('anomalous-ai-now-option', t(block.type === 'picks' ? 'aiNowPick' : 'aiNowOpen'), ctx.openStage));
     }
-    answers.append(button('anomalous-ai-now-skip', t('aiPanelSkip'), () => send({ skip: true }, [...answers.querySelectorAll('button')])));
-    card.append(head, answers, note);
+    card.append(head, ...(hint ? [el('div', 'anomalous-ai-panel-hint', hint)] : []), answers, note);
     return card;
 }
 

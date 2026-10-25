@@ -982,5 +982,4 @@
 .anomalous-ai.is-short .anomalous-ai-dock { padding-top: 10px; }
 .anomalous-ai.is-short .anomalous-ai-message-hint:not(.is-error) { display: none; }
 .anomalous-ai.is-short .anomalous-ai-waiting { gap: 14px; }
-.anomalous-ai.is-short .anomalous-ai-waiting-art { width: 88px; height: 88px; }
-.anomalous-ai.is-short .anomalous-ai-waiting-steps { gap: 12px; }
+.anomalous-ai.is-short .anomalous-ai-waiting-art { width: 72px; height: 72px; }

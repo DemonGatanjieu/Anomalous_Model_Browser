@@ -336,7 +336,14 @@
 }
 .anomalous-ai-now-option:hover { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 20%, var(--amb-bg-panel)); }
 .anomalous-ai-now-option.is-recommended { border-color: var(--amb-link); }
-.anomalous-ai-now-option:disabled, .anomalous-ai-now-skip:disabled { opacity: 0.5; cursor: default; }
+.anomalous-ai-now-option.is-picked { border-color: var(--amb-ok); background: color-mix(in srgb, var(--amb-ok) 18%, var(--amb-bg-panel)); }
+.anomalous-ai-now-option-go { color: var(--amb-text-dim); transition: color 0.15s, transform 0.15s; }
+.anomalous-ai-now-option:hover:not(:disabled) .anomalous-ai-now-option-go { color: var(--amb-link); transform: translateX(2px); }
+.anomalous-ai-now-ask .anomalous-ai-panel-skip { margin-left: auto; }
+.anomalous-ai-now-ask .anomalous-ai-panel-hint { margin-top: -2px; }
+.anomalous-ai-now-own { display: flex; flex: 1 1 260px; gap: 6px; min-width: 0; }
+.anomalous-ai-now-option:disabled { cursor: default; }
+.anomalous-ai-now-option:disabled:not(.is-picked) { opacity: 0.5; }
 .anomalous-ai-now-field {
     flex: 1 1 220px;
     min-width: 0;
@@ -351,8 +358,6 @@
     font-size: 12.5px;
 }
 .anomalous-ai-now-field:focus { border-color: color-mix(in srgb, var(--amb-link) 60%, transparent); outline: none; }
-.anomalous-ai-now-skip { padding: 4px 8px; border: 0; background: none; color: var(--amb-text-dim); font: inherit; font-size: 12px; cursor: pointer; }
-.anomalous-ai-now-skip:hover { color: var(--amb-text-main); text-decoration: underline; }
 .anomalous-ai-now-error { color: var(--amb-danger-text); font-size: 12px; }
 .anomalous-ai-now-error:empty { display: none; }
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-now-pulse, .anomalous-ai-now-bar.is-waiting .anomalous-ai-now-fill { animation: none; } }

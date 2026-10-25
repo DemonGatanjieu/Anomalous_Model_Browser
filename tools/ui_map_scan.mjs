@@ -1,7 +1,8 @@
 // The UI map's index (tools/ui_map.mjs), read from the code each time so it cannot go stale:
 // the words on screen (web/modules/locales.js), what each web file shows of them, the
 // /anomalous/ addresses it calls and the CSS classes it makes, which files import it, the
-// backend's routes with the function behind each, and which CSS files style each class.
+// backend's routes with the function behind each, the words the backend names for the page
+// (an option's label_key), and which CSS files style each class.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -140,6 +141,18 @@ function scanFile(file, keys) {
     return { file, uses, calls, classes, imports, about: head.split(/(?<=\.)\s+(?=[A-Z(`"])/)[0] || '' };
 }
 
+/** Words of the page the backend names (an option's label_key, api/ai_repaint.py): keys in quotes in api/*.py. */
+function serverWords(keys) {
+    const found = new Set();
+    for (const file of list('api', '.py')) {
+        for (const match of read(file).matchAll(STRING)) {
+            const value = match[1] ?? match[2];
+            if (keys.has(value) && /[A-Z]/.test(value)) found.add(value);
+        }
+    }
+    return found;
+}
+
 /** The whole index. */
 export async function buildIndex() {
     const text = await words();
@@ -155,5 +168,5 @@ export async function buildIndex() {
                 .filter(route => !call.method || exact.length < 2 || route.method === call.method);
         }
     }
-    return { text, keys, files, importers, routes, css: cssIndex() };
+    return { text, keys, files, importers, routes, serverKeys: serverWords(keys), css: cssIndex() };
 }

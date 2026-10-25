@@ -142,7 +142,7 @@ export async function build() {
         const callers = index.files.filter(one => one.calls.some(call => call.routes.includes(route))).map(one => path.posix.basename(one.file));
         lines.push(`- \`${route.method} ${route.route}\` → \`${route.file}\` ${route.func}：${callers.join('、') || '前端没有调用'}`);
     }
-    const unused = [...index.keys].filter(key => !index.files.some(one => one.uses.has(key)));
+    const unused = [...index.keys].filter(key => !index.serverKeys.has(key) && !index.files.some(one => one.uses.has(key)));
     const lost = index.files.flatMap(one => one.calls.filter(call => !call.routes.length).map(call => `${one.file}:${call.line} ${call.shape}`));
     lines.push('', '## 看起来没用上的', '', `- 没有文件用到的文字 key（${unused.length}）：${unused.join('、') || '无'}`, `- 后端没有的地址（${lost.length}）：${lost.join('、') || '无'}`, '');
     fs.writeFileSync(path.join(ROOT, MAP), lines.join('\n'));

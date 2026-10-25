@@ -5,7 +5,7 @@
  * something the user gave it that it has not got yet, or nothing (go on). The last line picks the
  * task up in a new chat. A task that ended has lines only while a reply of the user's waits (writing
  * to it opens it again, api/ai_panels.py); one still waiting for its first AI has none
- * (ui_ai_connect.js waitingCard has the line that starts it).
+ * (ui_ai_ready.js, the waiting page, has the line that starts it).
  */
 
 const REPLIES = new Set(['user_message', 'user_marks', 'user_pictures', 'user_toolbox']);

@@ -3,22 +3,20 @@
  * task waiting for an AI): the address, a sentence to paste to the AI so it sets itself up (and
  * starts on the task, when one waits), the way for each common app, and rules for the AI app to
  * keep (use Anomalous's tools, never edit pictures with code, say what it did outside). Only this computer can
- * connect; the address is this page's own. A task waiting for an AI (waitingCard) leads with
- * what the user wants, a way to the page where they put things ready for it (ui_ai_ready.js)
- * and the one sentence to send, in numbered steps under a picture;
- * connecting (connectHint) is a card under it that opens the guide in place.
+ * connect; the address is this page's own. Connecting (connectHint) is a card that opens the guide
+ * in place, under a task waiting for an AI (ui_ai_ready.js) and on the empty page.
  */
 
 import { translate as t } from './locales.js';
 import { copyText } from './ui_dialog.js';
-import { icon, iconButton } from './ui_ai_icons.js';
+import { iconButton } from './ui_ai_icons.js';
 
 const ART = {
     waiting: new URL('../assets/ai_waiting.webp', import.meta.url).href,
     connect: new URL('../assets/ai_connect.webp', import.meta.url).href,
 };
 
-function art(name, className) {
+export function art(name, className) {
     const img = el('img', className);
     img.src = ART[name];
     img.alt = '';
@@ -109,66 +107,6 @@ export function connectHint(title = '') {
     const row = el('div', 'anomalous-ai-hint-row');
     row.append(art('connect', 'anomalous-ai-hint-art'), words);
     card.append(row, guide);
-    return card;
-}
-
-function step(number, label, ...body) {
-    const item = el('li', 'anomalous-ai-waiting-step');
-    item.append(el('span', 'anomalous-ai-waiting-num', String(number)), el('div', 'anomalous-ai-waiting-step-label', label), ...body);
-    return item;
-}
-
-/** What the timeline will look like: three faint steps. */
-function preview() {
-    const box = el('div', 'anomalous-ai-waiting-ghost');
-    for (const [name, key] of [['search', 'aiTool_describe_canvas'], ['models', 'aiTool_set_model'], ['image', 'aiTool_run_workflow']]) {
-        const line = el('div', 'anomalous-ai-waiting-ghost-row');
-        line.append(icon(name, 14), el('span', '', t(key)));
-        box.append(line);
-    }
-    return box;
-}
-
-/** Step 2 of a waiting task: what is ready so far and the way to the page for it (`prep.open()`). */
-function readyStep(prep) {
-    const body = el('div', 'anomalous-ai-waiting-ready');
-    const done = [prep.ready && t('aiWaitingReadySome', { count: prep.ready }), prep.materials && t('aiWaitingMaterialsCount', { count: prep.materials })].filter(Boolean);
-    body.append(el('span', 'anomalous-ai-waiting-ready-text', done.length ? done.join(' · ') : t('aiWaitingReadyBody')),
-        iconButton('anomalous-ai-waiting-ready-go', 'arrowRight', t('aiWaitingReadyGo'), prep.open));
-    return body;
-}
-
-/**
- * A task the user started, waiting for an AI: a picture, then numbered steps (what they want, in
- * a line that renames the task: `rename(title)`; what is ready, `prep` for readyStep; the
- * sentence that has the AI take it; where its steps will show), and the card for an AI not
- * connected yet.
- */
-export function waitingCard(task, rename, prep) {
-    const card = el('div', 'anomalous-ai-waiting');
-    const hero = el('div', 'anomalous-ai-waiting-hero');
-    const words = el('div', 'anomalous-ai-waiting-words');
-    words.append(el('div', 'anomalous-ai-waiting-title', t('aiWaitingTitle')), el('p', 'anomalous-ai-waiting-body', t('aiWaitingBody')));
-    hero.append(art('waiting', 'anomalous-ai-waiting-art'), words);
-    const wish = el('input', 'anomalous-ai-waiting-wish');
-    wish.placeholder = t('aiWaitingWish');
-    wish.value = task.title || '';
-    wish.setAttribute('aria-label', t('aiWaitingWish'));
-    wish.addEventListener('keydown', (event) => {
-        event.stopPropagation();
-        if (event.key === 'Enter' && !event.isComposing) wish.blur();
-    });
-    wish.addEventListener('blur', () => {
-        if (wish.value.trim() !== (task.title || '')) void rename(wish.value.trim());
-    });
-    const field = el('label', 'anomalous-ai-waiting-field');
-    field.append(icon('pencil', 16), wish);
-    const sentence = task.title ? t('aiHandSentence', { task: task.title }) : t('aiWaitingSentence');
-    const steps = el('ol', 'anomalous-ai-waiting-steps');
-    steps.append(step(1, t('aiWaitingStepWish'), field), step(2, t('aiWaitingReady'), readyStep(prep)),
-        step(3, t('aiWaitingSay'), copyLine(sentence, { code: false, label: t('aiConnectCopySentence') })),
-        step(4, t('aiWaitingStep3'), preview()));
-    card.append(hero, steps, connectHint(task.title));
     return card;
 }
 
