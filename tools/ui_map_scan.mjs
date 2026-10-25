@@ -96,7 +96,7 @@ function cssIndex() {
 }
 
 const KEY_LIKE = /^[a-zA-Z][A-Za-z0-9_]{2,}$/;
-const STRING = /'([^'\\\n]*)'|"([^"\\\n]*)"/g;
+const STRING = /'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"/g; // a '\n' inside is part of the string
 const TEMPLATE = /`([^`]*)`/g;
 
 /** What one web file uses: words (key -> lines), addresses, classes (class -> lines), imports. */

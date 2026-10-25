@@ -111,4 +111,4 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 
 ## 还没统一的
 
-- `node tools/ui_map.mjs build` 的最后一节列出没有文件用到的文字（目前 33 条），清理前先确认不是拼出来的 key。
+- `node tools/ui_map.mjs build` 的最后一节列出没有文件用到的文字（2026-10-25 清理过一次，当时为 0），清理前先确认不是拼出来的 key、也不是后端错误信息当 key 用的（`t(error.message)`）。
