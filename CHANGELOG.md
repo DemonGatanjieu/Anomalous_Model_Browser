@@ -60,6 +60,12 @@
 - Generating, ▶ on a line, pushing, dragging and copying all follow who reads each line: the script carries `[name]` where the speaker changes (Anomalous_TTS reads it already), and in Auto mode each character uses its own generation settings. A file voiced again from the audio gallery comes back with its speakers.
 - The character cards' **Voice-over** button is gone: the switch at the top of the page and the cast do its job.
 
+## v1.60.2 (Fix: the browser opens whatever the plugin folder is called) — 2026-10-25
+
+### 💬 From a Bilibili comment (来自 B 站评论)
+- **The browser opens when the plugin folder has another name (插件文件夹改了名也能打开)**: a plugin unpacked from a ZIP of GitHub sits in `Anomalous_Model_Browser-main`; the browser's look did not load there, so a click on **Model Browser** seemed to do nothing (the browser lay under the canvas, without its look) and that button showed in the top bar although the floating button was chosen. The plugin now finds its files under whatever name its folder has. Updates to the plugin also reach the page at once there again, as with the usual name.
+
+
 ## v1.60.1 (Cloud Servers, Generation Presets, Full Window, Faster Scan Page) — 2026-10-22
 
 ### 🎚️ Reference audio: every clip in a list, main and auxiliary references (参考音频：全部列出，主参考和副参考)
