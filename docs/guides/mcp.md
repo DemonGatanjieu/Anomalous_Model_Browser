@@ -90,7 +90,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | scan_report | 哪些模型匹配上了 C 站，哪些没有、原因是什么，哪些还没扫，上次扫描做了什么 |
 | search_images / get_image_info | 按提示词、模型、参数找出图；看某张图的全部生成参数，可以附上缩略图。`folder=input` 时看 ComfyUI 输入文件夹里的图（比如你标注时 AMB 存的重绘遮罩图）：尺寸、要重画的区域在哪、占多大，也能附上图，不用 AI 自己跑命令去看 |
 | list_combos | 你的搭配（主模型 + LoRA + 提示词） |
-| list_workflows | 你的工作流配方，带标签、备注和主要设置 |
+| list_workflows | 你存下的工作流，带标签、备注和主要设置 |
 | list_saved_prompts | 提示词工坊里存的提示词 |
 | search_audio | 用 Anomalous TTS 生成过的语音，带台词和角色 |
 | recent_activity | 插件最近改过什么（操作记录） |

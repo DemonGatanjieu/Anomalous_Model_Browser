@@ -29,4 +29,10 @@ assert.match(wrong[1], /ui_ai_nothing_here\.js/);
 assert.match(wrong[2], /no_such_route/);
 assert.match(wrong[3], /"新任务" is retired/);
 
+// A retired name with where it is not that name: 配方包 and 搭配方案 are not 配方, {recipe} is no word on screen.
+const glossary = (zh, en) => check(['## 统一叫法', '| 说法 | English | 不再用 | 不再用（English） |', '| --- | --- | --- | --- |', `| 工作流 | workflow | ${zh} | ${en} |`].join('\n'));
+assert.deepEqual(await glossary('配方（配方包、搭配方案除外）', 'recipe（recipe package 除外）、recipes'), []);
+assert.match((await glossary('配方', '—')).join('\n'), /"配方" is retired/, 'without the exceptions 配方包 counts');
+assert.match((await glossary('—', 'recipe')).join('\n'), /"recipe" is retired/);
+
 console.log('ui map ok');

@@ -2,6 +2,9 @@
 
 ## v1.62.0 — unreleased
 
+- 同一个东西只用一个名字：界面上的“配方”统一叫 **工作流**（工作流页的卡片、保存和导出、操作记录、备份说明），“配方包”保留，它是发给别人的 .zip；AI 工作台里统一用“素材”“留言”“节点结构”“连接”“副本”“撤销”。
+- One name for each thing: what the screen called a recipe is a **workflow** everywhere (the Workflows page, saving and exporting, the activity log, backups); a recipe package stays the .zip you give to others. The AI workbench says materials, message, node map and copy throughout.
+
 - 标注窗口的“同时做成重绘遮罩”勾选框换成 **怎么改** 三选一：交给 AI 判断、只改标出的地方（其余保持原样，AMB 做好遮罩，AI 只重绘这些地方）、整张重新出图。你选的会作为你的要求写在 AI 收到的第一句，时间线里那条标注也写着“改法：…”；用“涂重绘区”笔刷时自动选中“只改标出的地方”。
 - The marker's "make a repaint mask" checkbox is now **How to change it**, one of three: leave it to the AI, only the marked areas (the rest stays; Anomalous makes the mask and the AI repaints just those), or the whole picture anew. The choice is the first thing the AI reads, as yours, and the timeline row says it; painting with the repaint brush picks "only the marked areas".
 

@@ -170,20 +170,37 @@ export async function check(doc = null) {
             if (token.startsWith('/anomalous/') && !index.routes.some(route => route.shape.startsWith(routeShape(token.replace(/^(GET|POST) /, ''))))) failures.push(`${where}: no backend route \`${token}\``);
         }
     });
-    // The glossary: one name for each thing; the names it retired are not on screen.
+    // The glossary: one name for each thing; the names it retired are not on screen. A retired name
+    // may list where it is not that name ("配方（配方包、搭配方案除外）"); {placeholders} do not count.
     const glossary = doc.split(/^## /m).find(part => part.startsWith('统一叫法')) || '';
     for (const row of glossary.split('\n').filter(item => /^\|/.test(item) && !/^\|\s*[-:]/.test(item)).slice(1)) {
         const cells = row.split('|').slice(1, -1).map(cell => cell.trim());
         const retired = [[cells[2], 'zh'], [cells[3], 'en']];
         for (const [list, lang] of retired) {
-            for (const word of String(list || '').split(/[、,，]/).map(item => item.replace(/[「」`]/g, '').trim()).filter(item => item && !/^[-—–无]+$/.test(item))) {
-                const test = lang === 'en' ? new RegExp(`\\b${word}\\b`, 'i') : null;
-                const hits = Object.entries(index.text[lang]).filter(([, value]) => (test ? test.test(value) : String(value).includes(word))).map(([key]) => key);
+            for (const entry of retiredNames(list)) {
+                const [, word, except = ''] = entry.match(/^([^（]+)(?:（(.*)）)?$/);
+                const others = except.replace(/除外|除了/g, '').split(/[、,，/]/).map(item => item.trim()).filter(Boolean);
+                const bare = value => others.reduce((text, other) => text.split(other).join(' '), String(value).replace(/\{[^}]*\}/g, ' '));
+                const test = lang === 'en' ? new RegExp(`\\b${word.trim()}\\b`, 'i') : null;
+                const hits = Object.entries(index.text[lang]).filter(([, value]) => (test ? test.test(bare(value)) : bare(value).includes(word.trim()))).map(([key]) => key);
                 if (hits.length) failures.push(`${FLOWS} glossary: "${word}" is retired for 「${cells[0]}」 but still on screen: ${hits.slice(0, 6).join(', ')}`);
             }
         }
     }
     return failures;
+}
+
+/** A glossary cell's retired names, split at 、 , ， outside （…）; "—" and 无 are none. */
+function retiredNames(cell) {
+    const out = [''];
+    let depth = 0;
+    for (const char of String(cell || '').replace(/[「」`]/g, '')) {
+        if (char === '（') depth += 1;
+        if (char === '）') depth -= 1;
+        if (!depth && '、,，'.includes(char)) out.push('');
+        else out[out.length - 1] += char;
+    }
+    return out.map(item => item.trim()).filter(item => item && !/^[-—–无]+$/.test(item));
 }
 
 function fileExists(token) {

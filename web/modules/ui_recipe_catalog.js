@@ -150,29 +150,29 @@ export function recipeMatchesFilter(data, query, selectedTags, scope = 'all') {
 function renderRecipeEmptyGuide(owner) {
     const guide = appendText(owner.recipeListContainer, 'div', '', 'anomalous-recipe-empty-guide');
     appendText(guide, 'div', '⚡', 'anomalous-recipe-empty-icon');
-    appendText(guide, 'h3', t('recipeEmptyGuideTitle') || '工作流配方工坊暂无配方', 'anomalous-recipe-empty-title');
-    appendText(guide, 'p', t('recipeEmptyGuideSubtitle') || '保存、管理与复用 ComfyUI 完整或局部工作流，支持画布直接拖拽载入与模型自愈。', 'anomalous-recipe-empty-subtitle');
+    appendText(guide, 'h3', t('recipeEmptyGuideTitle'), 'anomalous-recipe-empty-title');
+    appendText(guide, 'p', t('recipeEmptyGuideSubtitle'), 'anomalous-recipe-empty-subtitle');
 
     const steps = appendText(guide, 'div', '', 'anomalous-recipe-empty-steps');
 
     const step1 = appendText(steps, 'div', '', 'anomalous-recipe-empty-step');
     appendText(step1, 'div', '💾', 'anomalous-recipe-step-icon');
-    appendText(step1, 'strong', t('recipeEmptyStep1Title') || '1. 保存当前工作流');
-    appendText(step1, 'p', t('recipeEmptyStep1Desc') || '点击右上角“保存当前工作流”按钮，即可将当前画布节点网络与参数保存为配方。');
+    appendText(step1, 'strong', t('recipeEmptyStep1Title'));
+    appendText(step1, 'p', t('recipeEmptyStep1Desc'));
 
     const step2 = appendText(steps, 'div', '', 'anomalous-recipe-empty-step');
     appendText(step2, 'div', '🎯', 'anomalous-recipe-step-icon');
-    appendText(step2, 'strong', t('recipeEmptyStep2Title') || '2. 画布直接拖拽');
-    appendText(step2, 'p', t('recipeEmptyStep2Desc') || '按住配方卡片直接拖拽到 ComfyUI 画布空白处释放，瞬间载入整套工作流，无需重新接线。');
+    appendText(step2, 'strong', t('recipeEmptyStep2Title'));
+    appendText(step2, 'p', t('recipeEmptyStep2Desc'));
 
     const step3 = appendText(steps, 'div', '', 'anomalous-recipe-empty-step');
     appendText(step3, 'div', '🩺', 'anomalous-recipe-step-icon');
-    appendText(step3, 'strong', t('recipeEmptyStep3Title') || '3. 缺失模型自愈');
-    appendText(step3, 'p', t('recipeEmptyStep3Desc') || '若配方中的模型在本地缺失，点击卡片进入详情可智能比对并一键替换为同类可用模型。');
+    appendText(step3, 'strong', t('recipeEmptyStep3Title'));
+    appendText(step3, 'p', t('recipeEmptyStep3Desc'));
 
     const actionBtn = appendText(guide, 'button', '', 'anomalous-recipe-empty-action-btn');
     actionBtn.type = 'button';
-    actionBtn.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>${t('recipeEmptySaveCurrentBtn') || '保存当前工作流'}</span>`;
+    actionBtn.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>${t('recipeEmptySaveCurrentBtn')}</span>`;
     actionBtn.onclick = () => owner.handleSaveRecipe?.();
 }
 
