@@ -29,7 +29,8 @@ function sourcesOf(graph, node) {
 }
 
 /**
- * `Map(node id → { type, title, widgets: { name → text }, links, sources })`; buttons have no value.
+ * `Map(node id → { type, title, widgets: { name → text }, links, sources })`; buttons have no value,
+ * nor ComfyUI's own `$$` widgets (`$$canvas-image-preview` holds the picture a node shows).
  * `links`: the node's input links, so a rewiring shows (canvas_undo.js uses it); `sources`:
  * what feeds each input, in words (sourcesOf).
  */
@@ -39,7 +40,7 @@ export function snapshotGraph(graph) {
         if (node?.id === undefined || node.id === null) continue;
         const widgets = {};
         for (const widget of node.widgets || []) {
-            if (!widget?.name || widget.type === 'button') continue;
+            if (!widget?.name || widget.type === 'button' || widget.name.startsWith('$$')) continue;
             widgets[widget.name] = valueText(widget.value);
         }
         const links = (node.inputs || []).map(input => input?.link ?? '').join(',');

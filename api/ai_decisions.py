@@ -88,7 +88,7 @@ def lines(task, limit=12):
         if item["type"] == "logged":
             words.append(f"{item['title']}: {item['decision']}" + (f" (because {item['reason']})" if item["reason"] else ""))
         elif item["type"] == "answer":
-            words.append(f"The user answered \"{item['question']}\": " + ("skipped" if item["skipped"] else item["answer"]))
+            words.append(f"The user answered \"{item['question']}\": " + ("left it to you" if item["skipped"] else item["answer"]))
         elif item["type"] == "gate":
             words.append(f"The user {'allowed' if item['allowed'] else 'refused'} {item['tool']}" + (f": {item['text']}" if item["text"] else ""))
         elif item["type"] == "toolbox":

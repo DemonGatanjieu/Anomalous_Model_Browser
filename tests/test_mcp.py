@@ -14,7 +14,8 @@ PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
 from api import (  # noqa: E402
-    action_catalog, ai_gates, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_canvas_edit, mcp_model_use, mcp_server, mcp_tools,
+    action_catalog, ai_gates, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_canvas_edit, mcp_directory, mcp_model_use, mcp_server,
+    mcp_tools,
 )
 
 MODERN = "2026-07-28"
@@ -80,7 +81,8 @@ class ProtocolTests(unittest.TestCase):
         with mock.patch.object(ai_gates, "tool_set", return_value="daily"):
             status, body = post({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, {"MCP-Protocol-Version": "2025-06-18"})
         names = {tool["name"] for tool in body["result"]["tools"]}
-        self.assertEqual(names, set(action_catalog.DAILY) | set(mcp_apps.APP_TOOLS))
+        self.assertEqual(names, set(action_catalog.DAILY) | set(mcp_directory.DIRECTORY_TOOLS) | set(mcp_apps.APP_TOOLS), "the rest on demand")
+        self.assertIn("show_panel", names)
         self.assertTrue({"find_nodes", "add_node", "connect_nodes", "set_values", "new_workflow"} <= names)
         self.assertNotIn("download_model", names)
         status, body = post({"jsonrpc": "2.0", "id": 2, "method": "tools/list"}, {"MCP-Protocol-Version": "2025-06-18"})

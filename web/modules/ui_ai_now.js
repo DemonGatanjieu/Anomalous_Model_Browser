@@ -15,7 +15,7 @@ import { toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
 import { progressWords, stopButton } from './ui_ai_run_live.js';
 import { panelSteps, QUESTIONS } from './ui_ai_side.js';
-import { sendAnswer } from './ui_ai_panel.js';
+import { noteTyping, sendAnswer } from './ui_ai_panel.js';
 import { decideGate } from './ui_ai_gate.js';
 import { callRow } from './ui_ai_call.js';
 
@@ -117,6 +117,7 @@ function askCard(task, { step, block }, more, ctx) {
             event.stopPropagation(); // typing here is not the browser's shortcuts
             if (event.key === 'Enter' && !event.isComposing) go.click();
         });
+        field.addEventListener('input', () => noteTyping(task.id));
         answers.append(field, go);
     };
     if (block.type === 'choices' && !block.multiple && options.length <= MAX_OPTIONS) {

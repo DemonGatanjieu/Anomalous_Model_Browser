@@ -2,6 +2,11 @@
 
 ## v1.62.0 — unreleased
 
+- AI 问你问题后会等你：关卡窗口新增 **等我回答**（1 分钟 / 3 分钟 / 10 分钟，默认 3 分钟）。一次调用最多等 55 秒，你没答它就接着等，直到这个时间；你在回答框或留言框里打字时，停手一分钟内都算还在答。AI 写完说明或放出展台面板后会被提醒：收工前先问你下一步做什么、要不要开始（跑图、下载、扫描时除外），说明里写了问句的，提醒它改用提问。问题上的“这题跳过”改叫 **你来定**，AI 收到后自己决定、记下决定，不再把同一个问题再问一遍。
+- The AI waits for your answer: the Gates window has **Waiting for your answer** (1, 3 or 10 minutes, 3 by default). One call waits up to 55 s and the AI then waits on until that time, and while you type in an answer or the message box until a minute after your last key. After a note or a panel it is reminded to ask what next or whether to go ahead before it ends its turn (not while a run, download or scan goes on), and to put a question in its note into ask_user. "Skip this one" is now **Your call**: the AI decides, records it and does not ask again.
+- 记录里不再出现“你在 AMB 里改了：保存图像 $$canvas-image-preview”：那是 ComfyUI 显示预览图时自己改的内部字段，不是你的改动，以前会被当成你的改动发给 AI。
+- The record no longer says you changed a Save Image node's `$$canvas-image-preview`: ComfyUI sets it to show a node's picture, and it used to reach the AI as your change.
+
 - AI 已经把任务做完了，你再留言或在图上标注：任务重新打开，留言框上方出现那句一键复制的话（“我在 Anomalous 里回复了，看看再接着做”），AI 回来接着在这个任务里做、回复也挂在你那条下面，不再另开一个新任务。给更早的任务留言也一样：AI 手上的任务做完或停下后，会回到你留言的那个任务。
 - When the AI had already finished a task and you write to it or mark a picture, the task opens again: the line to copy for the AI shows over the message box, and the AI goes on in this task, answering under what you wrote, instead of starting a new one. The same holds when you write to an older task while the AI had moved on: once its own task is done or paused, it comes back to the one you wrote to.
 
@@ -46,8 +51,8 @@
 - Shorter tool descriptions: the daily tools' descriptions are rewritten without repeats, keeping their rules, about 22,000 characters instead of 27,000; begin_task's rules are about 900 characters instead of 1,900.
 - 工具目录：AI 开始任务时，回复里附带一张按“想做的事”排好的工具目录（出图、画布、模型、提示词、图片、和你沟通……），AI 看一眼就直接去用对的工具，不用先到处试。目录从工具登记表自动生成，只列当前给 AI 的工具，新工具会自己出现。
 - A directory of the tools by what the AI wants to do comes with begin_task's answer (and get_situation's while there is no task): each tool offered under its stage of the work with its title, built from the catalog so new tools show up by themselves.
-- 按需加载工具：关卡窗口“给 AI 的工具”多了 **按需**。只直接给 AI 7 个最常用的工具，其余的 AI 照目录用 `tool_help` 查参数、用 `use_tool` 调用；新对话要读的说明从约 2.2 万字（日常）减到约 9000 字。通过 `use_tool` 的调用在时间线上照样显示成那个工具，关卡也照样按那个工具来问。默认仍是完整，随时可以换回日常或完整。
-- The "lazy" tool set offers AI apps only the seven most used tools plus tool_help (what a tool takes) and use_tool (call any tool of the directory), about 9,000 characters instead of 22,000 for the daily set. A use_tool call is the named tool's call in every way: its step, its gate, its answer.
+- 日常工具集其余按需：关卡窗口“给 AI 的工具”选 **日常** 时，常用工具（现在也包括展台面板）直接给，其余的（下载、扫描、配音、搭配、提示词等）在工具目录里标着 `[use_tool]`，AI 用 `tool_help` 查参数、用 `use_tool` 调用，不再完全用不了；约 2.3 万字，完整约 4 万字。通过 `use_tool` 的调用在时间线上照样显示成那个工具，关卡也照样按那个工具来问。默认仍是完整。
+- The daily tool set reaches the rest on demand: the everyday tools (now with show_panel) are offered directly and the others are marked `[use_tool]` in the directory, where tool_help tells what one takes and use_tool calls it; about 23,000 characters against 40,000 for all. A use_tool call is the named tool's call in every way: its step, its gate, its answer. Full stays the default.
 - 给 AI 的话常驻在消息框上方：AI 停下来的时候（没在调用工具、没在跑图、没在等你回答），AI 工作台消息框上方总有一行话，点一下就复制，粘到 AI 的对话框里。话跟着情况变：图跑完了是“跑完了，看看结果”这几句；你在 AMB 里回复了、AI 还没收到，是“我在 Anomalous 里回复了，看看再接着做”；别的时候是“继续”。最后一句“用 Anomalous 接着做任务：…”给新开的 AI 对话用。原来挂在跑图那一步下面的几句话挪到了这里。“交给 AI”给你的那句话也不再叫 AI 用旧的 show_panel 问你。
 - Lines for the AI's chat stay over the message box: whenever the AI is not in a call, a run or a question, the AI workbench offers a line to copy that fits what waits (about the run that ended; "I replied in Anomalous, take a look and go on" when it has not got your reply yet; else "Go on"), and one that picks the task up in a new chat. The lines under a finished run's step moved here. The Hand to AI sentence no longer tells the AI to ask with show_panel.
 - AI 在 AMB 里问你时至少等 30 秒：就算它自己说不等（Gemini 常这样），你在 AMB 里点了选项，它在同一步里就收到，接着做，不用再回 AI 的对话框说“继续”。“加节点”工具的说明也提醒 AI：要加一组互相连着的节点（重绘、放大一段），用一次调用的“加一组节点”。

@@ -1,6 +1,6 @@
 """The directory of tools by what an AI wants to do (api/mcp_directory.py): built from the catalog,
-only the tools offered, in begin_task's answer and in get_situation's while there is no task; and
-the lazy set, where tool_help and use_tool reach the tools not offered directly."""
+in begin_task's answer and in get_situation's while there is no task; and the daily set, where
+tool_help and use_tool reach the tools not offered directly, which the directory marks."""
 import sys
 import unittest
 from pathlib import Path
@@ -32,12 +32,11 @@ class DirectoryTests(unittest.TestCase):
         self.assertEqual(found["Run a workflow"], "run_workflow (Run the workflow), run_status (How the run is going)")
         self.assertEqual(set(found), {"note", "Run a workflow", "Pictures"})
 
-    def test_begin_task_carries_the_directory_of_the_tools_offered(self):
-        with mock.patch.object(ai_gates, "tool_set", return_value="daily"):
-            result = call("begin_task", {"title": "目录", "new_task": True})
+    def test_begin_task_carries_the_directory(self):
+        result = call("begin_task", {"title": "目录", "new_task": True})
         found = result["structuredContent"]["directory"]
         self.assertIn("run_workflow", found["Run a workflow"])
-        self.assertNotIn("download_model", " ".join(found.values()), "not offered in the daily set")
+        self.assertNotIn("[use_tool]", " ".join(found.values()), "the full set offers every tool")
         self.assertIn('"directory"', result["content"][0]["text"], "the text says it too")
         self.assertLess(len(result["content"][0]["text"]), 4000, "small enough to stay in the chat")
 
@@ -50,25 +49,28 @@ class DirectoryTests(unittest.TestCase):
             self.assertNotIn("directory", call("get_situation", {})["structuredContent"])
 
 
-class LazyTests(unittest.TestCase):
+class DailyTests(unittest.TestCase):
     def setUp(self):
-        patcher = mock.patch.object(ai_gates, "tool_set", return_value="lazy")
+        patcher = mock.patch.object(ai_gates, "tool_set", return_value="daily")
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def test_a_few_tools_and_the_way_to_the_rest(self):
+    def test_the_everyday_tools_and_the_way_to_the_rest(self):
         names = {tool["name"] for tool in rpc("tools/list")["result"]["tools"]}
-        self.assertEqual(names, action_catalog.CORE | set(mcp_directory.DIRECTORY_TOOLS) | set(mcp_apps.APP_TOOLS))
-        found = call("begin_task", {"title": "按需", "new_task": True})["structuredContent"]["directory"]
-        self.assertIn("set_model (Swap a node's model)", found["Models"], "the directory names the tools not offered")
+        self.assertEqual(names, action_catalog.DAILY | set(mcp_directory.DIRECTORY_TOOLS) | set(mcp_apps.APP_TOOLS))
+        found = call("begin_task", {"title": "日常", "new_task": True})["structuredContent"]["directory"]
+        text = " ".join(found.values())
+        self.assertIn("set_model (Swap a node's model)", text)
+        self.assertNotIn("set_model (Swap a node's model) [use_tool]", text, "offered directly: no mark")
+        self.assertIn("download_model (", text)
+        self.assertIn("[use_tool]", found["Models"], "the others are marked")
         self.assertIn("use_tool(name, arguments)", found["note"])
-        self.assertNotIn("tool_help (", " ".join(found.values()))
+        self.assertNotIn("tool_help (", text)
 
-    def test_other_sets_do_not_offer_the_way_in(self):
-        for chosen in ("full", "daily"):
-            with mock.patch.object(ai_gates, "tool_set", return_value=chosen):
-                names = {tool["name"] for tool in rpc("tools/list")["result"]["tools"]}
-            self.assertFalse(names & set(mcp_directory.DIRECTORY_TOOLS), chosen)
+    def test_the_full_set_does_not_offer_the_way_in(self):
+        with mock.patch.object(ai_gates, "tool_set", return_value="full"):
+            names = {tool["name"] for tool in rpc("tools/list")["result"]["tools"]}
+        self.assertFalse(names & set(mcp_directory.DIRECTORY_TOOLS))
 
     def test_tool_help_tells_what_a_tool_takes(self):
         answer = call("tool_help", {"names": ["set_model", "nope"]})["structuredContent"]

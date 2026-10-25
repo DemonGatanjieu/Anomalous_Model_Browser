@@ -130,8 +130,10 @@ export async function openGates() {
     }
     body.append(choiceRow('canvasTab', ['new', 'current'], known.canvas_tab || 'new', mode => t(`aiCanvasTab_${mode}`),
         async mode => (await save({ canvas_tab: mode })).canvas_tab),
-    choiceRow('tools', ['lazy', 'daily', 'full'], known.tools || 'full', set => t(`aiToolSet_${set}`),
+    choiceRow('tools', ['daily', 'full'], known.tools || 'full', set => t(`aiToolSet_${set}`),
         async set => (await save({ tools: set })).tools),
+    choiceRow('answerWait', [60, 180, 600], known.answer_wait || 180, seconds => t(`aiAnswerWait_${seconds}`),
+        async seconds => (await save({ answer_wait: seconds })).answer_wait),
     choiceRow('runs', ['call', 'wait'], known.runs || 'call', mode => t(`aiRunWait_${mode}`),
         async mode => (await save({ runs: mode })).runs),
     el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));

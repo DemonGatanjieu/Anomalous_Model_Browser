@@ -4,11 +4,13 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox
+from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
 ASK_WAIT_MIN = 30  # ask_user waits this long even when told not to: the user, reading the work, often answers at once
+ASK_NEXT = ("Before you end your turn, ask_user what to do next or whether to go ahead: a note or a panel alone leaves "
+            "the user waiting. Only a run, a download or a scan going on lets you end it without asking.")
 
 
 def begin_task(ctx, title, new_task=False):
@@ -57,6 +59,10 @@ def report(ctx, text="", images=None, done=False, reply_to=None, task=None):
     except ValueError as error:
         raise ToolError(str(error))
     answer = {"noted": True, "pictures": len(step["results"])}
+    if not done:
+        answer["next"] = ASK_NEXT
+        if any(mark in str(text or "") for mark in ("?", "？")):
+            answer["next"] = "Your note asks the user something: ask it with ask_user (options to press) instead. " + ASK_NEXT
     if missing:
         answer["not_found"] = missing
         answer["note"] = "Pictures are paths inside ComfyUI's output folder (subfolder/name.png), as search_images gives them."
@@ -96,6 +102,8 @@ def show_panel(ctx, title, blocks, task=None):
         answer["questions"] = asks
         answer["note"] = ("The user answers in Anomalous when they get to it; call get_answers with this panel id "
                           "(wait_seconds up to 55 waits for it) before going on with what depends on it.")
+    else:
+        answer["next"] = ASK_NEXT
     return answer
 
 
@@ -112,12 +120,11 @@ def ask_user(ctx, question, options=None, multiple=False, other=True, wait_secon
         raise ToolError(str(error))
     given = next((item for item in answer["answers"] if item["question"] == "answer"), None)
     if not given:
-        return {"answered": False, "panel": panel["id"],
-                "note": "The user has not answered yet. Keep waiting with get_answers(panel, wait_seconds=55); "
-                        "do not ask the same in your own chat, they answer in Anomalous."}
+        return {"answered": False, "panel": panel["id"], **ai_answer_wait.wait_on(panel["id"])}
     out = {"answered": True, "panel": panel["id"], "next": "Go on with the user's answer; log_decision it when it settles a choice."}
     if given.get("skipped"):
-        out.update(skipped=True, note="The user skipped this question: go on with your own judgement.")
+        out.update(skipped=True, note="The user left this to you: decide it yourself, log_decision what you chose and "
+                                      "go on. Do not ask the same again.")
     elif given.get("text"):
         out["text"] = given["text"]
         if given.get("choice") == ["other"]:
@@ -213,7 +220,7 @@ def get_answers(ctx, panel=None, wait_seconds=0, task=None):
         task_id = task or ctx.get("task") or None
         if not task_id and ctx.get("session"):
             task_id = ai_tasks.active_task_id(client, ctx["session"]) or ""
-        answer = ai_panels.get_answers(client, panel, wait_seconds, task_id=task_id)
+        answer = ai_answer_wait.for_answer(ai_panels.get_answers(client, panel, wait_seconds, task_id=task_id), panel)
         return answer, ai_marks.image_items(answer.get("messages") or [])  # marked pictures, as pictures
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
@@ -306,7 +313,8 @@ TASK_TOOLS = dict([
                "Asks the user in the AI workbench and waits: a question with 2-8 options ({label, detail, "
                "recommended}; mark your suggestion recommended=true), and a line for their own answer unless "
                "other=false; no options: a free answer. Use it for every choice that is the user's, not your chat's "
-               f"question form. Waits at least {ASK_WAIT_MIN} s, up to wait_seconds; unanswered: wait on with get_answers.",
+               f"question form. Waits at least {ASK_WAIT_MIN} s, up to wait_seconds; unanswered and keep_waiting: wait on "
+               "with get_answers. End every round of work with it.",
                ask_user, {"question": {"type": "string"},
                           "options": {"type": "array", "maxItems": 8, "items": {"type": "object", "properties": {
                               "label": {"type": "string"}, "detail": {"type": "string"}, "recommended": {"type": "boolean"}}}},
@@ -352,8 +360,8 @@ TASK_TOOLS = dict([
     _task_tool("get_answers", "Read the user's answers and messages",
                "What the user picked or typed on your panels and wrote to you in the AI workbench since you last "
                "asked, each once (kind=change: something they changed themselves; keep it). panel: one panel. "
-               "wait_seconds (up to 55) waits when nothing is there. still_waiting: questions not answered; "
-               "skipped=true: they chose not to answer, go on with your own judgement.",
+               "wait_seconds (up to 55) waits when nothing is there. still_waiting: questions not answered, and "
+               "keep_waiting=true: call it again; skipped=true: they left it to you, decide yourself.",
                get_answers, {"panel": {"type": "string"},
                              "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": 0},
                              "task": _TASK_PROP}),

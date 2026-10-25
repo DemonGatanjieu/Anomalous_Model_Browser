@@ -66,7 +66,7 @@ def _words(step):
 def _answered(step):
     """What the user already answered on a panel step: [{question, answer}]."""
     blocks = {block["id"]: block for block in step["panel"]["blocks"]}
-    return [{"question": blocks.get(block, {}).get("question", ""), "answer": "(skipped)" if given.get("skipped") else "、".join(given.get("labels") or [given.get("text", "")])}
+    return [{"question": blocks.get(block, {}).get("question", ""), "answer": "(left to the AI)" if given.get("skipped") else "、".join(given.get("labels") or [given.get("text", "")])}
             for block, given in step.get("answers", {}).items()]
 
 

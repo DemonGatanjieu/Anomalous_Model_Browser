@@ -10,10 +10,12 @@ reaches it as a message (ai_panels._collect), and an allowed call made again wit
 arguments goes ahead without asking twice. Policies are kept in the ComfyUI user folder
 (anomalous/ai_gates.json); changing one is a write (local_guard.py keeps it to this computer).
 The same window sets which tools AI apps are offered (tool_set: all, or the "daily" set of
-action_catalog.DAILY for a small model's everyday runs; anomalous/ai_tools.json); an app sees a
+action_catalog.DAILY for a small model's everyday runs, the rest on demand through mcp_directory's
+use_tool; anomalous/ai_tools.json); an app sees a
 change in a new chat (they keep the list a chat began with). It also sets how an AI waits for a
 run (run_wait): "call", it ends its turn and the user tells it when the run is done (the AI
-workbench gives them a line to paste), or "wait", it waits with run_status.
+workbench gives them a line to paste), or "wait", it waits with run_status; and how long in all an
+AI waits for the user's answer to its question (answer_wait, ai_answer_wait.py).
 """
 
 import json
@@ -25,8 +27,9 @@ from . import action_catalog, ai_tasks
 from .path_utils import atomic_write_json
 
 POLICIES = ("auto", "ask", "never")
-TOOL_SETS = ("full", "daily", "lazy")
+TOOL_SETS = ("full", "daily")
 RUN_WAITS = ("call", "wait")
+ANSWER_WAITS = (60, 180, 600)  # seconds; the first call waits 30-55 s, get_answers the rest
 DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
 WAIT_SECONDS = 50  # below the minute many AI apps give a tool call
 ALLOWED_SECONDS = 30 * 60  # an Allow the AI did not wait for holds this long for the same call
@@ -79,14 +82,14 @@ def _set_tool_setting(key, value):
 
 
 def tool_set():
-    """The tools AI apps are offered: "full", "daily" or "lazy" (mcp_directory.py)."""
+    """The tools AI apps are offered: "full" or "daily" (mcp_directory.py)."""
     chosen = _tool_settings().get("set")
     return chosen if chosen in TOOL_SETS else "full"
 
 
 def set_tool_set(name):
     if name not in TOOL_SETS:
-        raise ValueError("tools is full, daily or lazy")
+        raise ValueError("tools is full or daily")
     return _set_tool_setting("set", name)
 
 
@@ -100,6 +103,18 @@ def set_run_wait(mode):
     if mode not in RUN_WAITS:
         raise ValueError("runs is call or wait")
     return _set_tool_setting("runs", mode)
+
+
+def answer_wait():
+    """How long in all an AI waits for the user's answer, in seconds (one of ANSWER_WAITS)."""
+    chosen = _tool_settings().get("answer_wait")
+    return chosen if chosen in ANSWER_WAITS else 180
+
+
+def set_answer_wait(seconds):
+    if seconds not in ANSWER_WAITS or isinstance(seconds, bool):
+        raise ValueError("answer_wait is 60, 180 or 600")
+    return _set_tool_setting("answer_wait", seconds)
 
 
 def describe(tool, arguments):

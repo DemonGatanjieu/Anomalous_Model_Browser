@@ -5,10 +5,11 @@ so a new tool shows up by itself (tests/test_mcp_directory.py checks that every 
 heading). mcp_server.py puts it into begin_task's answer, and into get_situation's while there
 is no task yet.
 
-With the "lazy" tool set (ai_gates.tool_set) AI apps are offered only action_catalog.CORE and
-two tools of this module: tool_help gives the description and arguments of tools named in the
-directory, use_tool calls one. use_tool has no run of its own: mcp_server.py makes the call the
-tool it names before anything else, so gates, steps and answers are that tool's.
+With the "daily" tool set (ai_gates.tool_set) AI apps are offered action_catalog.DAILY and two
+tools of this module for the rest, which the directory marks: tool_help gives the description and
+arguments of tools named in the directory, use_tool calls one. use_tool has no run of its own:
+mcp_server.py makes the call the tool it names before anything else, so gates, steps and answers
+are that tool's.
 """
 
 from . import action_catalog
@@ -16,7 +17,8 @@ from .mcp_tools import ToolError, _schema, retext
 
 DIRECTORY_TOOLS = ("tool_help", "use_tool")
 MAX_HELP = 3  # tool specs in one answer: three stay under what Antigravity files away
-LAZY_NOTE = " Not in your tool list: tool_help(names) gives its arguments, use_tool(name, arguments) calls it."
+ON_DEMAND = " [use_tool]"
+ON_DEMAND_NOTE = " Tools marked [use_tool] are not in your tool list: tool_help(names) gives their arguments, use_tool(name, arguments) calls one."
 
 SECTIONS = (  # stage -> heading, in the order work usually goes
     ("run", "Run a workflow"), ("canvas", "The workflow on the canvas"), ("model", "Models"), ("prompt", "Prompts"),
@@ -26,23 +28,24 @@ SECTIONS = (  # stage -> heading, in the order work usually goes
 NOTE = "The tools by what you want to do: go straight to the one you need instead of looking around first."
 
 
-def directory(specs, lazy=False):
-    """{heading: "tool (title), ..."} for the tools offered, `specs` {name: spec}; `lazy`: most are
-    reached through use_tool."""
+def directory(specs, offered=None):
+    """{heading: "tool (title), ..."} for the tools of `specs` {name: spec}; with `offered` (the names
+    in the AI's tool list), the others are marked as reached through use_tool."""
     sections = {}
     for name, entry in action_catalog.TOOLS.items():
         if name in specs:
-            sections.setdefault(entry.stage, []).append(f"{name} ({specs[name].get('title') or name})")
-    return {"note": NOTE + (LAZY_NOTE if lazy else ""),
+            mark = ON_DEMAND if offered is not None and name not in offered else ""
+            sections.setdefault(entry.stage, []).append(f"{name} ({specs[name].get('title') or name}){mark}")
+    return {"note": NOTE + (ON_DEMAND_NOTE if offered is not None else ""),
             **{heading: ", ".join(sections[stage]) for stage, heading in SECTIONS if stage in sections}}
 
 
-def attach(result, name, specs, lazy=False):
+def attach(result, name, specs, offered=None):
     """Puts the directory into begin_task's answer, and into get_situation's while there is no task."""
     data = result.get("structuredContent") if isinstance(result, dict) and not result.get("isError") else None
     if not isinstance(data, dict) or not (name == "begin_task" or (name == "get_situation" and not data.get("task"))):
         return result
-    retext(result, {**data, "directory": directory(specs, lazy)})
+    retext(result, {**data, "directory": directory(specs, offered)})
     return result
 
 

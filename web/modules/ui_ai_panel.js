@@ -45,6 +45,17 @@ export async function sendAnswer(taskId, body) {
     return data;
 }
 
+const TYPING_EVERY_MS = 5000;
+let typed = { taskId: '', at: 0 };
+
+/** The user is typing an answer or a message on task `taskId`: the AI waits on for it (api/ai_answer_wait.py); told at most every few seconds. */
+export function noteTyping(taskId) {
+    const now = Date.now();
+    if (!taskId || (typed.taskId === taskId && now - typed.at < TYPING_EVERY_MS)) return;
+    typed = { taskId, at: now };
+    fetch(`/anomalous/ai_tasks/${encodeURIComponent(taskId)}/typing`, { method: 'POST' }).catch(() => {});
+}
+
 /** What became of an answer: skipped (said so), and whether the AI has it yet. */
 function answerNote(answer) {
     const box = el('div', 'anomalous-ai-panel-answer');
@@ -194,7 +205,10 @@ function otherLine(ctx, block, options) {
         event.stopPropagation(); // typing here is not the browser's shortcuts
         if (event.key === 'Enter' && !event.isComposing) go.click();
     });
-    field.addEventListener('input', () => field.setCustomValidity(''));
+    field.addEventListener('input', () => {
+        field.setCustomValidity('');
+        noteTyping(ctx.taskId);
+    });
     line.append(field, go);
     return line;
 }
@@ -275,6 +289,7 @@ function input(block, ctx) {
         }
     });
     go.disabled = ctx.closed;
+    field.addEventListener('input', () => noteTyping(ctx.taskId));
     field.addEventListener('keydown', (event) => {
         event.stopPropagation(); // typing here is not the browser's shortcuts
         if (event.key === 'Enter') go.click();

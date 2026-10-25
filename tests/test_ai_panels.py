@@ -14,7 +14,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_panels, ai_tasks, mcp_task_tools  # noqa: E402
+from api import ai_answer_wait, ai_gates, ai_panels, ai_tasks, mcp_task_tools  # noqa: E402
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_panels_")
 OUTPUT = tempfile.mkdtemp(prefix="amb_ai_panels_out_")
@@ -398,7 +398,7 @@ class AskUserTests(unittest.TestCase):
         self.answer_later(skip=True)
         got = mcp_task_tools.ask_user(self.ctx, "要不要加光效？", ["要", "不要"], wait_seconds=5)
         self.assertEqual((got["answered"], got["skipped"]), (True, True))
-        self.assertIn("own judgement", got["note"])
+        self.assertIn("left this to you", got["note"])
 
     def test_their_own_answer_when_no_option_fits(self):
         self.answer_later(text="冰与火，但要室内")
@@ -411,6 +411,30 @@ class AskUserTests(unittest.TestCase):
         with mock.patch.object(mcp_task_tools, "ASK_WAIT_MIN", 5):
             got = mcp_task_tools.ask_user(self.ctx, "修不修手？", ["修", "不修"], wait_seconds=0)
         self.assertEqual((got["answered"], got["labels"]), (True, ["修"]), "the user answering in Anomalous needs no word in the chat")
+
+    def test_unanswered_it_waits_on_for_the_users_time_and_while_they_type(self):
+        with mock.patch.object(mcp_task_tools, "ASK_WAIT_MIN", 0):
+            got = mcp_task_tools.ask_user(self.ctx, "手指怎么修？", ["只重画手指", "整张重画"], wait_seconds=0)
+        self.assertEqual((got["answered"], got["keep_waiting"]), (False, True))
+        self.assertGreater(got["seconds_left"], 170, "three minutes unless the user set otherwise")
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        asked = ai_tasks.get_task(task_id)["steps"][0]["at"]
+        late = asked + ai_gates.answer_wait() + 5
+        self.assertFalse(ai_answer_wait.wait_on(got["panel"], now=late)["keep_waiting"])
+        self.assertIn("end your turn", ai_answer_wait.wait_on(got["panel"], now=late)["note"])
+        self.assertTrue(ai_answer_wait.typing(task_id, now=late - 10))
+        typing = ai_answer_wait.wait_on(got["panel"], now=late)
+        self.assertEqual((typing["keep_waiting"], typing["typing"]), (True, True), "typing keeps the AI waiting")
+        answer, _ = mcp_task_tools.get_answers(self.ctx, panel=got["panel"])
+        self.assertTrue(answer["keep_waiting"], "get_answers says it too")
+        self.assertFalse(ai_answer_wait.typing("no_such_task"))
+
+    def test_a_note_or_panel_alone_says_to_ask_before_stopping(self):
+        self.assertIn("ask_user", mcp_task_tools.report(self.ctx, "换好了 LoRA")["next"])
+        self.assertIn("ask it with ask_user", mcp_task_tools.report(self.ctx, "要不要再亮一点？")["next"])
+        self.assertNotIn("next", mcp_task_tools.report(self.ctx, "做完了", done=True))
+        shown = mcp_task_tools.show_panel(self.ctx, "方案", [{"type": "text", "text": "先修手"}])
+        self.assertIn("ask_user", shown["next"])
 
     def test_no_options_is_a_line_and_no_answer_yet_says_how_to_keep_waiting(self):
         with mock.patch.object(mcp_task_tools, "ASK_WAIT_MIN", 0):

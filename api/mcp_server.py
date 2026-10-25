@@ -68,7 +68,9 @@ INSTRUCTIONS = (
     "panel questions there: call get_answers to wait for or read them, and any unread user_messages "
     "or user_answers attached to a tool result must also be honoured. While you work on an Anomalous task, ask "
     "the user every question (a choice, a preference, yes or no) with ask_user, never in your own chat or its "
-    "question form: the user watches and answers in Anomalous. Likewise write your explanations and replies "
+    "question form: the user watches and answers in Anomalous. Until they say the task is done, end every round "
+    "with ask_user (what next, or whether to go ahead), not with a note or panel alone; only a run, download or "
+    "scan going on lets you end your turn without asking. Likewise write your explanations and replies "
     "there with report (reply_to answers their message or marks), not only in your chat. Show plans, workflow explanations "
     "and results in chronological order with show_panel; update_panel appends new content below what "
     "the user already saw. Use run_workflow for execution: it returns real state/results after a bounded wait. "
@@ -120,17 +122,15 @@ def _result(id_, result, modern):
 
 def _offered():
     """{name: spec} of the tools AI apps are offered (the user's choice in the AI workbench); calls are not limited by it."""
-    chosen = ai_gates.tool_set()
-    keep = {"daily": action_catalog.DAILY, "lazy": action_catalog.CORE | set(mcp_directory.DIRECTORY_TOOLS)}.get(chosen)
+    keep = action_catalog.DAILY | set(mcp_directory.DIRECTORY_TOOLS) if ai_gates.tool_set() == "daily" else None
     return {name: tool["spec"] for name, tool in TOOLS.items()
             if name in mcp_apps.APP_TOOLS or (name in keep if keep else name not in mcp_directory.DIRECTORY_TOOLS)}
 
 
 def _directory_specs():
-    """The tools the directory names: those offered, or with the lazy set all that use_tool reaches."""
-    lazy = ai_gates.tool_set() == "lazy"
-    specs = {name: tool["spec"] for name, tool in TOOLS.items()} if lazy else _offered()
-    return {name: spec for name, spec in specs.items() if name not in mcp_apps.APP_TOOLS and name not in mcp_directory.DIRECTORY_TOOLS}, lazy
+    """The tools the directory names (all of them), and with the daily set those offered directly (use_tool reaches the rest)."""
+    specs = {name: tool["spec"] for name, tool in TOOLS.items() if name not in mcp_apps.APP_TOOLS and name not in mcp_directory.DIRECTORY_TOOLS}
+    return specs, set(_offered()) if ai_gates.tool_set() == "daily" else None
 
 
 def _tool_list(modern):

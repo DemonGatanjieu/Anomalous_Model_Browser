@@ -190,9 +190,10 @@ covered by the `styles.css` manifest.
   `api/mcp_directory.py` is the directory of the tools by what an AI wants to do (as this file is
   for the code): each tool offered under its stage (`action_catalog.TOOLS`) with its title, built
   from the registry, in begin_task's answer and in get_situation's while there is no task
-  (`tests/test_mcp_directory.py`). With the "lazy" tool set AI apps get only `action_catalog.CORE`
-  and its tool_help (what a tool takes) and use_tool, which mcp_server.py turns into the call of the
-  tool it names before anything else, so gates, steps and answers are that tool's.
+  (`tests/test_mcp_directory.py`). With the "daily" tool set AI apps get `action_catalog.DAILY`
+  and its tool_help (what a tool takes) and use_tool for the others, which the directory marks and
+  mcp_server.py turns into the call of the tool it names before anything else, so gates, steps and
+  answers are that tool's.
   `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow
   opened in the task's tab once and reused (the page marks the tab with the workflow's file),
   then the prompts, seed, size and the picture a LoadImage reads filled in by the page's
@@ -265,8 +266,12 @@ covered by the `styles.css` manifest.
   `change`); `activity_log.tag` names the task on the entry, and the activity page links to
   it. `api/ai_gates.py` holds the user's gates: each gate is `auto`, `ask` or `never`
   (`anomalous/ai_gates.json`, `/anomalous/ai_gates`); `mcp_server.py` asks it before running a
-  tool. It also keeps which tools AI apps are offered (`tool_set`: all, or `action_catalog.DAILY`;
-  `anomalous/ai_tools.json`), which `tools/list` follows. With `ask` the step waits in state `asking` (what it would do listed) for up to 50 s;
+  tool. It also keeps which tools AI apps are offered (`tool_set`: all, or `action_catalog.DAILY`
+  with the rest on demand; `anomalous/ai_tools.json`), which `tools/list` follows, and how long in
+  all an AI waits for the user's answer (`answer_wait`: 1, 3 or 10 minutes): `api/ai_answer_wait.py`
+  tells an AI whose question is still open to wait on with get_answers until then, and while the
+  user types (the page posts `POST /anomalous/ai_tasks/{id}/typing`) until a minute after their last
+  key; report and show_panel remind it to end each round with ask_user. With `ask` the step waits in state `asking` (what it would do listed) for up to 50 s;
   the user's Allow or No comes through `POST /anomalous/ai_tasks/{id}/gate`. Unanswered by
   then, the AI is told to wait and call again; the later answer reaches it as a message of kind
   `gate`, and the same call made again after an Allow goes ahead without asking twice.

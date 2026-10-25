@@ -24,8 +24,9 @@ assert.deepEqual(diffSnapshots(before, after).map(c => [c.kind, c.node, c.widget
 ]);
 assert.deepEqual(diffSnapshots(before, before), []);
 
-// Buttons and nameless widgets hold no value.
-const withButton = snapshotGraph(graph([{ id: 1, type: 'X', title: 'X', widgets: [{ name: 'run', type: 'button', value: 1 }, { value: 5 }] }]));
+// Buttons, nameless widgets and ComfyUI's own preview hold no value.
+const withButton = snapshotGraph(graph([{ id: 1, type: 'X', title: 'X', widgets: [{ name: 'run', type: 'button', value: 1 }, { value: 5 },
+    { name: '$$canvas-image-preview', value: 'a.png' }] }]));
 assert.deepEqual(withButton.get('1').widgets, {});
 
 // Object values compare by content; a widget that appears counts as a change.

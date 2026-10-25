@@ -19,16 +19,14 @@ STAGES = ("model", "combo", "prompt", "canvas", "run", "picture", "voice", "libr
 GATES = ("canvas", "gpu", "download", "network", "files")
 
 # The "daily" set the user can offer AI apps instead of all tools (ai_gates.tool_set): runs of saved
-# workflows with their blanks, pictures, models, the task's own, and compact canvas building.
+# workflows with their blanks, pictures, models, the task's own, and compact canvas building; the
+# others stay reachable through mcp_directory's tool_help and use_tool.
 DAILY = frozenset({
-    "begin_task", "get_situation", "report", "ask_user", "get_answers", "log_decision", "log_outside",
+    "begin_task", "get_situation", "report", "ask_user", "get_answers", "log_decision", "log_outside", "show_panel",
     "list_workflows", "run_workflow", "run_status", "stop_run", "search_images", "get_image_info", "zoom_image",
     "search_models", "set_model", "add_lora", "check_workflow_models", "fix_workflow_models",
     "find_nodes", "add_node", "add_nodes", "connect_nodes", "set_values", "new_workflow",
 })
-
-# The "lazy" set: the tools offered directly; the others are reached through mcp_directory's use_tool.
-CORE = frozenset({"begin_task", "get_situation", "run_workflow", "run_status", "report", "ask_user", "get_answers"})
 
 # Arguments with which a call also changes the canvas: it then asks as the stricter of its own gate and "canvas".
 ALSO_CANVAS = {"run_workflow": ("workflow", "prompt", "negative", "seed", "width", "height", "image", "image_node", "values")}

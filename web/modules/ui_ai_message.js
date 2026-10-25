@@ -16,6 +16,7 @@ import { mentions } from './ui_ai_mention.js';
 import { galleryPicker } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
 import { iconButton } from './ui_ai_icons.js';
+import { noteTyping } from './ui_ai_panel.js';
 
 const MAX_REFS = 12; // api/ai_message_refs.py
 const MAX_PICTURES = 8; // a message's pictures, as ai_pictures.py hands them
@@ -88,6 +89,7 @@ export function messageBox(onSend, source) {
         }
     });
     field.addEventListener('input', fit);
+    field.addEventListener('input', () => noteTyping(source?.task?.()?.id));
     line.append(field, send);
     box.append(tray, line, note);
     if (source) {

@@ -90,6 +90,15 @@ async def api_answer(request):
     return web.json_response({"answers": answers})
 
 
+async def api_typing(request):
+    """POST /anomalous/ai_tasks/{id}/typing: the user is typing an answer or a message (ai_answer_wait.py)."""
+    from . import ai_answer_wait
+
+    if not ai_answer_wait.typing(request.match_info["task_id"]):
+        return web.json_response({"error": "not_found"}, status=404)
+    return web.json_response({"ok": True})
+
+
 async def api_message(request):
     """POST /anomalous/ai_tasks/{id}/message: {text, refs?} - the user writes to the AI on that task (refs: its "@")."""
     from . import ai_panels
@@ -132,10 +141,10 @@ async def api_gates(request):
     """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools}; POST {gate, policy} changes one,
     POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py),
     POST {tools: full | daily} which tools AI apps are offered (ai_gates.tool_set), POST {runs: call | wait}
-    how the AI waits for a run (ai_gates.run_wait)."""
+    how the AI waits for a run (ai_gates.run_wait), POST {answer_wait: 60 | 180 | 600} for the user's answer."""
     def settings():
         return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "tools": ai_gates.tool_set(),
-                "runs": ai_gates.run_wait()}
+                "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait()}
 
     if request.method == "GET":
         return web.json_response(settings())
@@ -147,6 +156,8 @@ async def api_gates(request):
             ai_gates.set_tool_set(body["tools"])
         elif "runs" in (body or {}):
             ai_gates.set_run_wait(body["runs"])
+        elif "answer_wait" in (body or {}):
+            ai_gates.set_answer_wait(body["answer_wait"])
         else:
             ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
     except ValueError as error:
@@ -258,6 +269,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}", api_change)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/message", api_message)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/typing", api_typing)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/gate", api_gate)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/marks", api_marks)
     app.router.add_get("/anomalous/ai_tasks/{task_id}/marks/{name}", api_marked)
