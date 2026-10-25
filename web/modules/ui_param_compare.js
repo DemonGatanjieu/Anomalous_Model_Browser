@@ -9,7 +9,7 @@
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
 import { recordCanvasStep } from './canvas_history.js';
-import { detachedGraph } from './detached_graph.js';
+import { readDetached } from './detached_graph.js';
 import { applyNodeMaterialValues } from './node_material_actions.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { keyParamTest, onKeyParamsChange, toggleKeyParam } from './key_params.js';
@@ -42,7 +42,7 @@ const sideTitle = side => (side.image?.filename && side.label ? `${side.label} Â
 /** One side's parameters: the canvas as it is now, a saved workflow, or the workflow kept in an output image. */
 async function readSide(side, signal) {
     if (side.canvas) return readParams(canvasGraph());
-    if (side.workflow) return readParams(detachedGraph(side.workflow));
+    if (side.workflow) return readDetached(side.workflow, readParams);
     const response = await fetch('/anomalous/inspect_image_material', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,7 +53,7 @@ async function readSide(side, signal) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const { workflow } = await response.json();
     if (!workflow) throw new Error(t('compareNoWorkflow'));
-    return readParams(detachedGraph(workflow));
+    return readDetached(workflow, readParams);
 }
 
 function sideCard(side, letter) {

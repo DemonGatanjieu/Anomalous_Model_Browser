@@ -3,7 +3,9 @@
  * workflow kept as a recipe or a combo). ComfyUI's frontend keeps widget values by the root
  * graph's id, node and name, and a workflow saved from the open canvas carries the canvas's
  * id: configured under that id, the detached graph would share the canvas's widget values and
- * write its own onto them. So the copy gets an id of its own. No DOM.
+ * write its own onto them. So the copy gets an id of its own. Its nodes' widgets still make
+ * DOM elements on ComfyUI's page (prompt boxes that showed at its top left), which only the
+ * nodes' removal takes away: read it through readDetached, which clears it afterwards.
  */
 
 /** A random version-4 UUID; `crypto.randomUUID` exists only on https or this computer. */
@@ -23,4 +25,25 @@ export function detachedGraph(workflow) {
     const graph = new globalThis.LiteGraph.LGraph();
     graph.configure(copy);
     return graph;
+}
+
+/**
+ * What `read(graph)` gives for `workflow` on a detached graph, the graph cleared once it is
+ * read (after the promise settles when `read` returns one). What `read` gives must not need
+ * the graph's nodes later.
+ */
+export function readDetached(workflow, read) {
+    const graph = detachedGraph(workflow);
+    let result;
+    try {
+        result = read(graph);
+    } catch (error) {
+        graph.clear();
+        throw error;
+    }
+    if (typeof result?.then !== 'function') {
+        graph.clear();
+        return result;
+    }
+    return Promise.resolve(result).finally(() => graph.clear());
 }
