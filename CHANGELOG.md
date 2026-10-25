@@ -12,6 +12,7 @@
 - **Right-click the empty canvas → AMB** opens any of AMB's pages.
 - **Make it yours: Settings → Canvas → Right-click menu**. Switch each entry on or off and move it up or down; a line above each list shows what the menu will offer. Two cards, each with a small drawing of the menu, choose whether AMB's entries sit **together under "AMB"** (the default, ComfyUI's menu gets one line more) or are **listed in the menu**. *Adjust this menu…* at the end of the submenu leads there. **Save as combo** moved into the AMB submenu with the rest.
 - In the model picker, Esc now closes the picker wherever the focus is, and only the picker: it used to close the browser behind it when the search box had lost the focus.
+- The floating AMB button no longer sits on the head of a model picker opened from this menu (with the browser closed).
 - Fixed: when a model folder is a link (a junction to another drive, say), a combo kept from a picture and other lookups of saved model paths got a wrong place for the model, or failed.
 
 ### 🧩 A combo's page, redone (搭配详情重做)

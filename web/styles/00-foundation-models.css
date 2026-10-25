@@ -371,6 +371,7 @@ html.theme-abyssal-scarlet #anomalous-trigger-btn:hover .anomalous-trigger-icon 
 }
 
 #anomalous-trigger-btn.anomalous-trigger-hidden,
+html.anomalous-picker-open #anomalous-trigger-btn,
 body.anomalous-prompt-studio-open #anomalous-trigger-btn,
 body:has(.anomalous-prompt-studio-drawer) #anomalous-trigger-btn {
     visibility: hidden !important;

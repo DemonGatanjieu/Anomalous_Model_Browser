@@ -110,6 +110,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             window.removeEventListener('keydown', onEscape, true);
             stopMedia(modal);
             modal.remove();
+            if (!document.querySelector('.anomalous-picker-overlay')) document.documentElement.classList.remove('anomalous-picker-open');
         };
 
         const header = document.createElement('div');
@@ -211,6 +212,8 @@ export function _openGalleryReplacer(node, w, options = {}) {
         confirmBtn.style.cssText = 'padding:10px 20px;background:#1976d2;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700;';
         footer.append(selectionText, cancelBtn, confirmBtn);
         modal.appendChild(footer);
+        // Opened from the canvas's right-click menu the browser is closed, so the floating button would sit on the picker's head.
+        document.documentElement.classList.add('anomalous-picker-open');
         document.body.appendChild(modal);
 
         let folderCounts = new Map();
