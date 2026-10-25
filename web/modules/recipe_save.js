@@ -9,7 +9,7 @@ import { captureRecipeDraft } from './recipe_parser.js';
 import { promptTitle } from './prompt_composition.js';
 import { outputImageUrl, previewIsVideo } from './ui_recipe_media.js';
 import { jsonResponse } from './ui_dom.js';
-import { detachedGraph } from './detached_graph.js';
+import { readDetached } from './detached_graph.js';
 
 const post = (url, body) => fetch(url, {
     method: 'POST',
@@ -141,7 +141,7 @@ export async function keepImageAsRecipe(sourceImage, { name = '', tags = [], wor
         workflow = info.workflow;
         suggested = info.suggested_name || '';
     }
-    const draft = captureRecipeDraft(detachedGraph(workflow));
+    const draft = readDetached(workflow, captureRecipeDraft);
     const recipeName = String(name || promptTitle(draft.metadata.promptPositive?.[0]) || suggested || sourceImage?.filename || 'Workflow').trim().slice(0, 120);
     const { filename } = await persistRecipe(draft, {
         name: recipeName, tags, notes: '', sourceImage,

@@ -8,7 +8,7 @@
  */
 
 import { translate as t } from './locales.js';
-import { detachedGraph } from './detached_graph.js';
+import { readDetached } from './detached_graph.js';
 import { keyParamTest, onKeyParamsChange } from './key_params.js';
 import { focusTest } from './recipe_focus.js';
 import { compareParams, readParams, shownValue } from './param_compare.js';
@@ -32,7 +32,7 @@ export function redrawParameterSets() {
 
 /** A workflow's values as readParams reads them, read once per workflow object. */
 export function workflowParams(workflow) {
-    if (!read.has(workflow)) read.set(workflow, readParams(detachedGraph(workflow)));
+    if (!read.has(workflow)) read.set(workflow, readDetached(workflow, readParams));
     return read.get(workflow);
 }
 

@@ -277,6 +277,7 @@
 - **Right-click the empty canvas → AMB** opens any of AMB's pages.
 - **Make it yours: Settings → Canvas → Right-click menu**. Switch each entry on or off and move it up or down; a line above each list shows what the menu will offer. Two cards, each with a small drawing of the menu, choose whether AMB's entries sit **together under "AMB"** (the default, ComfyUI's menu gets one line more) or are **listed in the menu**. *Adjust this menu…* at the end of the submenu leads there. **Save as combo** moved into the AMB submenu with the rest.
 - In the model picker, Esc now closes the picker wherever the focus is, and only the picker: it used to close the browser behind it when the search box had lost the focus.
+- The floating AMB button no longer sits on the head of a model picker opened from this menu (with the browser closed).
 - Fixed: when a model folder is a link (a junction to another drive, say), a combo kept from a picture and other lookups of saved model paths got a wrong place for the model, or failed.
 
 ### 🧩 A combo's page, redone (搭配详情重做)
@@ -291,6 +292,7 @@
 - **Keep → Its combo** now keeps the nodes that made the picture's model and prompts: the model and CLIP loaders, the whole LoRA chain (Power Lora Loader and other packs' nodes too), CLIP skip and model patches, the positive **and** negative prompt nodes, with every value as the picture had it. The sampler, size and decoding are left out, so Put on canvas gives a group you wire to your own sampler, like a combo saved from the canvas.
 - It used to keep only the main model, the LoRAs' names and the positive prompt: LoRA strengths came back as 1.0, and the negative prompt and CLIP skip were lost. **A combo only remembers; it never changes a value** (now one of the plugin's rules). Combos kept before stay as they are.
 - Models are named by where they are on this computer; one this computer lacks is kept by the picture's name and said after keeping. A workflow without a sampler to read from still gives the simple kind.
+- Fixed: after a picture was kept (as a workflow, combo or prompt) or its parameters compared, the prompt boxes of its workflow could stay on ComfyUI's page and show at its top left, over the tabs. The workflow read off the picture is now taken away once it is read.
 
 ### 🩺 Model Check and ComfyUI-Manager's list (模型检查与 Manager 清单)
 - A **Download by name** from ComfyUI-Manager's model list now also says where the list's file is (the site and repository), to help you decide.
