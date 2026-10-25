@@ -9,9 +9,12 @@ from .config import *
 from .notebooks import *
 from .parameters import *
 
+import os
+
 from aiohttp import web
 
-EXTENSION_STATIC_PREFIX = '/extensions/Anomalous_Model_Browser/'
+# ComfyUI serves the web folder under the plugin folder's own name, whatever it is called.
+EXTENSION_STATIC_PREFIX = f'/extensions/{os.path.basename(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))}/'
 
 
 @web.middleware
