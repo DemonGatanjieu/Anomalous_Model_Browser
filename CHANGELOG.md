@@ -265,7 +265,7 @@
 - **Diagrams**: boxes and arrows, laid out by Anomalous (in columns or rows), with a label on an arrow; a box naming a canvas node (◎) finds it on the canvas.
 - The AI only sends data (places as fractions of the picture, what connects to what); every shape and line is drawn by Anomalous, so it looks the same whichever AI is connected, and no drawing code of the AI's is taken.
 
-## v1.61.0 — unreleased
+## v1.61.0 (Quick Search, Canvas Menu, Combos From Pictures, Tidier Model Folders, Multi-Character Voice-over) — 2026-10-25
 
 ### 🔎 Quick search on the canvas: Alt+B (画布快速搜索)
 - **Press Alt+B over the canvas** (or right-click the empty canvas → AMB → *Quick search…*) and type: combos, models and saved prompts that match show at once, with their pictures. A model is found by its name, file, base model or trigger words; a combo by its name, models or prompt; a prompt by its text.
