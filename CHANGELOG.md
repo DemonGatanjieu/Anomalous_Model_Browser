@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.61.0 — unreleased
+## v1.61.0 (Quick Search, Canvas Menu, Combos From Pictures, Tidier Model Folders, Multi-Character Voice-over) — 2026-10-25
 
 ### 🔎 Quick search on the canvas: Alt+B (画布快速搜索)
 - **Press Alt+B over the canvas** (or right-click the empty canvas → AMB → *Quick search…*) and type: combos, models and saved prompts that match show at once, with their pictures. A model is found by its name, file, base model or trigger words; a combo by its name, models or prompt; a prompt by its text.

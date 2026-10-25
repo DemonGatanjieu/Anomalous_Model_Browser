@@ -1,13 +1,13 @@
 // Content only. Maintenance checklist: docs/architecture/update-guide.md.
 // Change the ID only when users should see a new guide, never for typo fixes.
 export const CURRENT_UPDATE_GUIDE = Object.freeze({
-    id: '2026-10-model-import-and-tidy',
+    id: '2026-10-quick-search-and-canvas-menu',
     steps: Object.freeze([
-        { id: 'import', icon: '📥', titleKey: 'updateGuideImportTitle', bodyKey: 'updateGuideImportBody' },
-        { id: 'tidy', icon: '🧹', titleKey: 'updateGuideTidyTitle', bodyKey: 'updateGuideTidyBody' },
-        { id: 'base-models', icon: '🧬', titleKey: 'updateGuideBaseModelsTitle', bodyKey: 'updateGuideBaseModelsBody' },
-        { id: 'compare', icon: '⇄', titleKey: 'updateGuideCompareTitle', bodyKey: 'updateGuideCompareBody' },
-        { id: 'settings-tabs', icon: '⚙️', titleKey: 'updateGuideSettingsTabsTitle', bodyKey: 'updateGuideSettingsTabsBody' },
+        { id: 'quick-search', icon: '⌨️', titleKey: 'updateGuideQuickSearchTitle', bodyKey: 'updateGuideQuickSearchBody' },
+        { id: 'canvas-menu', icon: '🖱️', titleKey: 'updateGuideCanvasMenuTitle', bodyKey: 'updateGuideCanvasMenuBody' },
+        { id: 'keep-combo', icon: '📌', titleKey: 'updateGuideKeepComboTitle', bodyKey: 'updateGuideKeepComboBody' },
+        { id: 'sidecars', icon: '🗂️', titleKey: 'updateGuideSidecarsTitle', bodyKey: 'updateGuideSidecarsBody' },
+        { id: 'voice-over', icon: '🎭', titleKey: 'updateGuideVoiceOverTitle', bodyKey: 'updateGuideVoiceOverBody' },
     ]),
 });
 
