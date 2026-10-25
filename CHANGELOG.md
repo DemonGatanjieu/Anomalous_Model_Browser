@@ -2,8 +2,8 @@
 
 ## v1.62.0 — unreleased
 
-- AI 已经把任务做完了，你再留言或在图上标注：任务重新打开，留言框上方出现那句一键复制的话（“我在 Anomalous 里回复了，看看再接着做”），AI 回来接着在这个任务里做、回复也挂在你那条下面，不再另开一个新任务。
-- When the AI had already finished a task and you write to it or mark a picture, the task opens again: the line to copy for the AI shows over the message box, and the AI goes on in this task, answering under what you wrote, instead of starting a new one.
+- AI 已经把任务做完了，你再留言或在图上标注：任务重新打开，留言框上方出现那句一键复制的话（“我在 Anomalous 里回复了，看看再接着做”），AI 回来接着在这个任务里做、回复也挂在你那条下面，不再另开一个新任务。给更早的任务留言也一样：AI 手上的任务做完或停下后，会回到你留言的那个任务。
+- When the AI had already finished a task and you write to it or mark a picture, the task opens again: the line to copy for the AI shows over the message box, and the AI goes on in this task, answering under what you wrote, instead of starting a new one. The same holds when you write to an older task while the AI had moved on: once its own task is done or paused, it comes back to the one you wrote to.
 
 - 同一个东西只用一个名字：界面上的“配方”统一叫 **工作流**（工作流页的卡片、保存和导出、操作记录、备份说明），“配方包”保留，它是发给别人的 .zip；AI 工作台里统一用“素材”“留言”“节点结构”“连接”“副本”“撤销”。
 - One name for each thing: what the screen called a recipe is a **workflow** everywhere (the Workflows page, saving and exporting, the activity log, backups); a recipe package stays the .zip you give to others. The AI workbench says materials, message, node map and copy throughout.

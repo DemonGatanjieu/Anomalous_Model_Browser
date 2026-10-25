@@ -13,7 +13,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import action_catalog, activity_log, ai_panels, ai_task_changes, ai_task_runs, ai_tasks, ai_tasks_routes, mcp_task_tools  # noqa: E402
+from api import action_catalog, activity_log, ai_callers, ai_panels, ai_task_changes, ai_task_runs, ai_tasks, ai_tasks_routes, mcp_task_tools  # noqa: E402
 from api.mcp_server import TOOLS  # noqa: E402
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_tasks_")
@@ -314,11 +314,35 @@ class TaskTests(unittest.TestCase):
         ai_tasks.record("A", "add_lora", {}, ok({"_activity": entry["id"]}), ai_tasks.time.time())
         self.assertEqual(activity_log.list_entries()[0]["task"], ai_tasks.list_tasks()[0]["id"])
 
+    def test_the_ai_goes_on_in_the_task_the_user_wrote_to(self):
+        ai_tasks.begin_task("A", "睡衣少女")
+        ai_tasks.report("A", "做完了", done=True)
+        old_id = ai_tasks.list_tasks()[0]["id"]
+        ai_tasks.begin_task("A", "另一件事", new_task=True)
+        ai_tasks.report("A", "也做完了", done=True)
+        self.assertNotEqual(ai_tasks.list_tasks()[0]["id"], old_id)
+        asked = ai_panels.leave_message(old_id, "这根手指怪怪的")
+        ai_tasks.record("A", "describe_canvas", {}, ok({}), ai_tasks.time.time(), True)
+        self.assertEqual(ai_tasks.get_task(old_id)["steps"][-1]["tool"], "describe_canvas", "its next call lands in the task written to")
+        self.assertIsNone(ai_tasks.get_task(old_id)["ended"])
+        ai_panels.attach_pending(ok({}), "A")
+        self.assertTrue(mcp_task_tools.report({"client": "A"}, "改好了", reply_to=asked["id"])["noted"])
+
+    def test_a_reply_elsewhere_does_not_pull_the_ai_off_its_open_task(self):
+        ai_tasks.begin_task("A", "旧的")
+        ai_tasks.report("A", "做完了", done=True)
+        old_id = ai_tasks.list_tasks()[0]["id"]
+        ai_tasks.begin_task("A", "正在做", new_task=True)
+        busy = ai_tasks.list_tasks()[0]["id"]
+        ai_panels.leave_message(old_id, "顺便看看这个")
+        ai_tasks.record("A", "describe_canvas", {}, ok({}), ai_tasks.time.time(), True)
+        self.assertEqual(ai_tasks.get_task(busy)["steps"][-1]["tool"], "describe_canvas")
+
     def test_client_names(self):
-        self.assertEqual(ai_tasks.client_of({}, {"_meta": {"io.modelcontextprotocol/clientInfo": {"name": "claude-code"}}}), "Claude Code")
-        self.assertEqual(ai_tasks.client_of({"User-Agent": "Cursor/1.2 (win)"}, {}), "Cursor")
-        self.assertEqual(ai_tasks.client_of({"User-Agent": "my<tool>/1"}, {}), "mytool")
-        self.assertEqual(ai_tasks.client_of({}, {}), "AI")
+        self.assertEqual(ai_callers.client_of({}, {"_meta": {"io.modelcontextprotocol/clientInfo": {"name": "claude-code"}}}), "Claude Code")
+        self.assertEqual(ai_callers.client_of({"User-Agent": "Cursor/1.2 (win)"}, {}), "Cursor")
+        self.assertEqual(ai_callers.client_of({"User-Agent": "my<tool>/1"}, {}), "mytool")
+        self.assertEqual(ai_callers.client_of({}, {}), "AI")
 
     def test_routes(self):
         ai_tasks.record("A", "describe_canvas", {}, ok({}), 1.0, True)

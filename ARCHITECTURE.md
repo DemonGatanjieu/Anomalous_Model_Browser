@@ -335,7 +335,10 @@ covered by the `styles.css` manifest.
   mode — `ai_task_canvas.set_mode` adds a `user_canvas` step — and stops); `GET` of a task adds
   `decisions` and `decisions_gap` (runs and canvas changes since the AI's last one), begin_task
   repeats them to an AI picking the task up. `ui_ai_decisions.js` draws the card and the side
-  column's Decisions view. `tests/test_ai_decisions.py`. `api/ai_task_links.py` keeps which task
+  column's Decisions view. `tests/test_ai_decisions.py`. `api/ai_callers.py` names who calls (the
+  app from its client info or User-Agent, a session, a task it names); an app whose task ended or
+  paused goes on in the task the user wrote to and it has not read (`ai_tasks._take_replied`,
+  which opens it again). `api/ai_task_links.py` keeps which task
   a task goes on from (`from`: set when an AI begins a new task while on another, or the user
   starts one while looking at a task; changed or taken off by the user, never a loop); `GET` of a
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was

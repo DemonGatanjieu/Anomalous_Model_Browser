@@ -24,7 +24,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import action_catalog, ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
+from . import action_catalog, ai_callers, ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
@@ -187,9 +187,9 @@ async def _call(params, request):
     if not isinstance(name, str) or name not in TOOLS or not isinstance(raw_arguments, dict):
         return None
     arguments = dict(raw_arguments)
-    client = ai_tasks.client_of(request.headers, params)
-    session = ai_tasks.session_of(request.headers, params)
-    task_id = ai_tasks.task_of(request.headers, params, arguments)
+    client = ai_callers.client_of(request.headers, params)
+    session = ai_callers.session_of(request.headers, params)
+    task_id = ai_callers.task_of(request.headers, params, arguments)
     if "task" in arguments and "task" not in TOOLS[name]["spec"]["inputSchema"].get("properties", {}):
         arguments.pop("task", None)
     ctx = {"base_url": f"{request.scheme}://{request.host}", "client": client, "session": session, "task": task_id}  # loopback, checked in api_mcp

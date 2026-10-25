@@ -14,7 +14,8 @@ made while an AI works join its task through ai_task_changes.py. A step a restar
 
 The user can start a task first (New task, POST /anomalous/ai_tasks): it waits for an AI, and
 the next app that calls takes it over, so the work it does next starts there instead of joining
-the app's last task.
+the app's last task. Likewise an app whose task ended or paused goes on in the task the user wrote
+to (a message, marks, pictures, materials) that it has not read yet, rather than starting one.
 
 Tasks are files in the ComfyUI user folder (anomalous/ai_tasks/<id>.json), the newest
 MAX_TASKS kept. Recording never fails a tool call: the record is a convenience. The page
@@ -150,43 +151,7 @@ def _notify(task_id, extra=None):
         pass
 
 
-# ---------------------------------------------------------------- who is calling
-
-_CLIENT_NAMES = (
-    ("claude-code", "Claude Code"), ("claude", "Claude"), ("cursor", "Cursor"), ("cherry", "Cherry Studio"),
-    ("windsurf", "Windsurf"), ("codex", "Codex"), ("gemini", "Gemini"), ("vscode", "VS Code"), ("cline", "Cline"),
-)
-
-
-def client_of(headers, params):
-    """A short name for the AI app making a call: the client info it sends, else its User-Agent."""
-    meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else {}
-    info = meta.get("io.modelcontextprotocol/clientInfo")
-    raw = info.get("name") if isinstance(info, dict) and isinstance(info.get("name"), str) else ""
-    if not raw:
-        raw = (headers.get("User-Agent") or "").split(" ")[0].split("/")[0]
-    lowered = raw.lower()
-    for key, name in _CLIENT_NAMES:
-        if key in lowered:
-            return name
-    clean = re.sub(r"[^\w .-]", "", raw).strip()[:40]
-    return clean or "AI"
-
-
-def session_of(headers, params):
-    """An optional session key when one app runs multiple MCP sessions at once."""
-    meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else {}
-    raw = headers.get("Mcp-Session-Id") or headers.get("X-Anomalous-Session") or meta.get("sessionId") or meta.get("conversationId") or ""
-    return re.sub(r"[^\w .:-]", "", str(raw)).strip()[:64] if isinstance(raw, str) else ""
-
-
-def task_of(headers, params, arguments=None):
-    """An explicit task id from headers, request metadata or tool arguments."""
-    meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else {}
-    arg_task = arguments.get("task") if isinstance(arguments, dict) else None
-    raw = arg_task or headers.get("X-Anomalous-Task") or meta.get("anomalous/task") or meta.get("task") or ""
-    return re.sub(r"[^\w-]", "", str(raw)).strip()[:64] if isinstance(raw, str) else ""
-
+# ---------------------------------------------------------------- who is calling (named in ai_callers.py)
 
 def _owner_key(client, session=""):
     return f"{client}::{session}" if session else client
@@ -319,7 +284,27 @@ def current_task(client, now=None, session="", task_id=None):
         if task and not task.get("ended"):
             task["ended"] = task.get("updated")
             _save(task)
-        return _new_task(client, now=now, session=session)
+        return _take_replied(tasks, client, session) or _new_task(client, now=now, session=session)
+
+
+REPLIES = {"user_message", "user_marks", "user_pictures", "user_toolbox"}  # what the user gives the AI (ai_call_lines.js)
+
+
+def _take_replied(tasks, client, session="", previous=None):
+    """The newest task of this app the user wrote to since its AI last read (an ended one opens
+    again), now this app's instead of a new one (its own open task `previous` ends), or None."""
+    replied = max((task for task in tasks.values() if task.get("client") == client and any(
+        step.get("kind") == "user" and step.get("tool") in REPLIES and not step.get("delivered") for step in task["steps"])),
+        key=lambda task: task.get("updated", 0), default=None)
+    if replied is None:
+        return None
+    if previous and previous is not replied and not previous.get("ended"):
+        previous["ended"] = previous.get("updated")
+        _save(previous)
+    replied["ended"] = None
+    _bind_owner(client, session, replied["id"])
+    _save(replied)
+    return replied
 
 
 def begin_task(client, title, now=None, new_task=False, session="", task_id=None):
@@ -333,6 +318,8 @@ def begin_task(client, title, now=None, new_task=False, session="", task_id=None
             task = _take_waiting(client, now, session=session)
         if task is None and not new_task and previous and not previous.get("ended") and now - previous.get("updated", 0) < IDLE_SECONDS:
             task = previous
+        if task is None and not new_task:
+            task = _take_replied(tasks, client, session, previous)
         if task is None:
             if previous and not previous.get("ended"):
                 previous["ended"] = now
