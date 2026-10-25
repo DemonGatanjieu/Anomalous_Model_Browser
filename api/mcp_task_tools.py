@@ -4,7 +4,7 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox
+from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -115,13 +115,35 @@ def ask_user(ctx, question, options=None, multiple=False, other=True, wait_secon
     try:
         panel = ai_panels.show(ctx.get("client") or "AI", question, [block], session=ctx.get("session") or "",
                                task_id=task or ctx.get("task"), tool="ask_user")
-        answer = ai_panels.get_answers(ctx.get("client") or "AI", panel["id"], max(ASK_WAIT_MIN, float(wait_seconds or 0)))
+    except ai_panels.PanelError as error:
+        raise ToolError(str(error))
+    return _answer_of(ctx, panel["id"], wait_seconds)
+
+
+def propose_repaint_area(ctx, title, marks, areas=None, grow=12, feather=8, note="", wait_seconds=ai_panels.MAX_WAIT):
+    """The area to repaint for the user's marks, theirs beside the AI's for them to pick (ai_repaint.py); waits like ask_user."""
+    try:
+        panel = ai_repaint.propose(ctx.get("client") or "AI", title, str(marks or ""), areas, grow, feather,
+                                   str(note or "")[:400], session=ctx.get("session") or "")
+    except ai_repaint.RepaintError as error:
+        raise ToolError(str(error))
+    return _answer_of(ctx, panel["id"], wait_seconds)
+
+
+def _answer_of(ctx, panel_id, wait_seconds):
+    """The answer to the question of panel `panel_id` once the user gives it, waiting at least ASK_WAIT_MIN."""
+    try:
+        answer = ai_panels.get_answers(ctx.get("client") or "AI", panel_id, max(ASK_WAIT_MIN, float(wait_seconds or 0)))
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
     given = next((item for item in answer["answers"] if item["question"] == "answer"), None)
     if not given:
-        return {"answered": False, "panel": panel["id"], **ai_answer_wait.wait_on(panel["id"])}
-    out = {"answered": True, "panel": panel["id"], "next": "Go on with the user's answer; log_decision it when it settles a choice."}
+        return {"answered": False, "panel": panel_id, **ai_answer_wait.wait_on(panel_id)}
+    out = {"answered": True, "panel": panel_id, "next": "Go on with the user's answer; log_decision it when it settles a choice."}
+    if given.get("inpaint_image"):
+        out.update(inpaint_image=given["inpaint_image"], inpaint_note=given["note"])
+    elif given.get("note"):
+        out["next"] = given["note"]
     if given.get("skipped"):
         out.update(skipped=True, note="The user left this to you: decide it yourself, log_decision what you chose and "
                                       "go on. Do not ask the same again.")
@@ -322,6 +344,23 @@ TASK_TOOLS = dict([
                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": ai_panels.MAX_WAIT},
                           "task": _TASK_PROP},
                ["question"]),
+    _task_tool("propose_repaint_area", "Agree on the area to repaint",
+               "Before repainting only the marked areas: the user's marks are rough, so show them the area you would "
+               "repaint. marks: the marks' message id. areas: boxes or ellipses {shape, x, y, w, h} as fractions of the "
+               "picture (x, y its top left), or none to keep the marks; grow: pixels added around; feather: pixels of "
+               "soft edge. The user sees theirs and yours side by side and picks one, or marks again; with an area "
+               "picked the answer has inpaint_image (the picture with that area as its alpha, in ComfyUI's input "
+               "folder) and inpaint_note. Build the repaint yourself. Waits like ask_user.",
+               propose_repaint_area, {"title": {"type": "string", "description": "A few words, in the user's language."},
+                                      "marks": {"type": "string"},
+                                      "areas": {"type": "array", "maxItems": ai_repaint.MAX_AREAS, "items": {"type": "object", "properties": {
+                                          "shape": {"type": "string", "enum": list(ai_repaint.SHAPES)}, "x": {"type": "number"},
+                                          "y": {"type": "number"}, "w": {"type": "number"}, "h": {"type": "number"}}}},
+                                      "grow": {"type": "integer", "minimum": 0, "maximum": ai_repaint.MAX_GROW, "default": 12},
+                                      "feather": {"type": "integer", "minimum": 0, "maximum": ai_repaint.MAX_FEATHER, "default": 8},
+                                      "note": {"type": "string", "description": "Why you moved it, in a line."},
+                                      "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": ai_panels.MAX_WAIT}},
+               ["title", "marks"]),
     _task_tool("update_panel", "Change a panel",
                "Adds new output at the BOTTOM of an existing panel, preserving earlier content and its order. "
                "Send only the new blocks; repeated unchanged blocks are kept once. To deliberately correct an "

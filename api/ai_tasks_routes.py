@@ -74,7 +74,7 @@ async def api_change(request):
 
 async def api_answer(request):
     """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text | skip: true} - the user's answer on a panel."""
-    from . import ai_panels
+    from . import ai_panels, ai_repaint
 
     try:
         body = await request.json()
@@ -82,10 +82,16 @@ async def api_answer(request):
         body = None
     if not isinstance(body, dict):
         return web.json_response({"error": "Expected {step, block, choice | text}"}, status=400)
+    task_id, step_id, skip = request.match_info["task_id"], str(body.get("step")), body.get("skip") is True
     try:
-        answers = ai_panels.answer(request.match_info["task_id"], str(body.get("step")), str(body.get("block")),
-                                   body.get("choice"), body.get("text"), skip=body.get("skip") is True)
+        # A repaint area picked: its picture is made first (outside the lock), so the AI gets it with the answer.
+        extra = await asyncio.to_thread(ai_repaint.prepare, task_id, step_id, body.get("choice"), body.get("text"), skip)
+    except ai_repaint.RepaintError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    try:
+        answers = ai_panels.answer(task_id, step_id, str(body.get("block")), body.get("choice"), body.get("text"), skip=skip, extra=extra)
     except ai_panels.PanelError as error:
+        ai_repaint.discard(extra)
         return web.json_response({"error": str(error)}, status=400)
     return web.json_response({"answers": answers})
 

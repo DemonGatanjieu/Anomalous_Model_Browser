@@ -290,6 +290,13 @@ covered by the `styles.css` manifest.
   task goes, as workflows may load it), and the AI's marks message carries its name with how to
   inpaint with it (LoadImage gives the MASK). The canvas tools read ComfyUI's lists anew once
   when a value is not among a drop-down's choices, so they take such a new file.
+  `api/ai_repaint.py` lets the AI agree on that area with the user first (propose_repaint_area:
+  boxes or ellipses, grown and softened by pixels): both areas tinted over the picture into the
+  task's marks folder, side by side on a panel (block `area`, `ui_ai_panel.js`) with the AI's,
+  the user's own or marking again; the picked area is written like the user's mask
+  (`ai_marks.write_inpaint`, soft edges kept) before the answer is recorded, so the answer the AI
+  reads carries `inpaint_image` and the inpaint note. Building the repaint stays the AI's.
+  Options Anomalous makes name a page word (`label_key`). `tests/test_ai_repaint.py`.
   `web/modules/ui_ai_gate.js` draws the card under a step that asks and the Gates window;
   `ui_ai_flow.js` the flow over a task (its stages in order, each done, running, waiting or
   failed; a stage leads to its first step). `ui_ai_handoff.js` is "Hand to AI" on a model's

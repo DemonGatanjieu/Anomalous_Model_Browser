@@ -2,6 +2,9 @@
 
 ## v1.62.0 — unreleased
 
+- 局部重绘前先对一下范围：你圈得不一定准，AI 看了标好的图可以挪动、改形状（方框 / 椭圆）、往外扩、把边缘做软，然后在展台把 **你圈的** 和 **AI 调整后** 并排给你看，你点 **用 AI 调整的 / 用我圈的 / 我重新圈**，或者写一句想怎么改。选好以后 AMB 把带这个遮罩的图放进 input 文件夹，AI 收到文件名和一句常用重绘节点的提示；画布上怎么加节点、怎么连线仍然由 AI 自己搭，不套固定模板。
+- Agree on the area before repainting: your marks are rough, so the AI can move, reshape (box or ellipse), grow and soften the area and show **Your marks** beside **The AI's area** on the stage; you pick **Use the AI's / Use mine / I'll mark it again** or write what to change. Anomalous then puts the picture with that mask into the input folder and the AI gets its name with a short note on the usual repaint nodes; how to build the repaint on the canvas stays the AI's, no fixed template.
+
 - AI 问你问题后会等你：关卡窗口新增 **等我回答**（1 分钟 / 3 分钟 / 10 分钟，默认 3 分钟）。一次调用最多等 55 秒，你没答它就接着等，直到这个时间；你在回答框或留言框里打字时，停手一分钟内都算还在答。AI 写完说明或放出展台面板后会被提醒：收工前先问你下一步做什么、要不要开始（跑图、下载、扫描时除外），说明里写了问句的，提醒它改用提问。问题上的“这题跳过”改叫 **你来定**，AI 收到后自己决定、记下决定，不再把同一个问题再问一遍。
 - The AI waits for your answer: the Gates window has **Waiting for your answer** (1, 3 or 10 minutes, 3 by default). One call waits up to 55 s and the AI then waits on until that time, and while you type in an answer or the message box until a minute after your last key. After a note or a panel it is reminded to ask what next or whether to go ahead before it ends its turn (not while a run, download or scan goes on), and to put a question in its note into ask_user. "Skip this one" is now **Your call**: the AI decides, records it and does not ask again.
 - 记录里不再出现“你在 AMB 里改了：保存图像 $$canvas-image-preview”：那是 ComfyUI 显示预览图时自己改的内部字段，不是你的改动，以前会被当成你的改动发给 AI。

@@ -15,7 +15,7 @@ import { toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
 import { progressWords, stopButton } from './ui_ai_run_live.js';
 import { panelSteps, QUESTIONS } from './ui_ai_side.js';
-import { noteTyping, sendAnswer } from './ui_ai_panel.js';
+import { noteTyping, optionLabel, sendAnswer } from './ui_ai_panel.js';
 import { decideGate } from './ui_ai_gate.js';
 import { callRow } from './ui_ai_call.js';
 
@@ -124,7 +124,7 @@ function askCard(task, { step, block }, more, ctx) {
         for (const option of options) {
             const chip = button(`anomalous-ai-now-option${option.recommended ? ' is-recommended' : ''}`, '', () => send({ choice: [option.id] }, [...answers.querySelectorAll('button')]), option.detail || '');
             if (option.recommended) chip.append(icon('star', 12));
-            chip.append(el('span', '', option.label));
+            chip.append(el('span', '', optionLabel(option)));
             answers.append(chip);
         }
         if (block.other) ownWords(t('aiNowOther'));

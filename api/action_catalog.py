@@ -23,6 +23,7 @@ GATES = ("canvas", "gpu", "download", "network", "files")
 # others stay reachable through mcp_directory's tool_help and use_tool.
 DAILY = frozenset({
     "begin_task", "get_situation", "report", "ask_user", "get_answers", "log_decision", "log_outside", "show_panel",
+    "propose_repaint_area",
     "list_workflows", "run_workflow", "run_status", "stop_run", "search_images", "get_image_info", "zoom_image",
     "search_models", "set_model", "add_lora", "check_workflow_models", "fix_workflow_models",
     "find_nodes", "add_node", "add_nodes", "connect_nodes", "set_values", "new_workflow",
@@ -77,6 +78,7 @@ TOOLS = {
     "log_outside": Entry("outside", None, None),  # what it did with other tools (ai_outside.py, which also notes what changed)
     "show_panel": Entry("panel", None, None),
     "ask_user": Entry("panel", None, None),
+    "propose_repaint_area": Entry("panel", "picture", None),
     "show_run_map": Entry("panel", None, None),
     "begin_task": Entry(None, None, None),
     "tool_help": Entry("look", None, None),

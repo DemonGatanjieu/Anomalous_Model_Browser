@@ -34,9 +34,11 @@ MAX_NOTE = 300
 SHAPES = ("box", "circle", "arrow", "pen")
 MODES = {
     "auto": "How to change it is up to you: say in report which way you took (repaint only the marked areas, "
-            "or make the picture anew) and why.",
+            "or make the picture anew) and why. To repaint only the marked areas, propose_repaint_area(marks=this "
+            "id) agrees on the area with the user and makes the picture to repaint.",
     "local": "The user chose: change ONLY the marked areas and keep everything else exactly as it is. Repaint "
-             "them from inpaint_image (inpaint_note says how); do not make the whole picture anew.",
+             "them from inpaint_image (inpaint_note says how); do not make the whole picture anew. If the area "
+             "looks off, propose_repaint_area(marks=this id) agrees on a better one first.",
     "whole": "The user chose: make the whole picture anew with these changes (its own model and prompt, "
              "changed as the notes say; a new seed or img2img). Do not repaint only a part of it.",
 }
@@ -110,15 +112,20 @@ def _words(marks, text, mode="auto"):
     return "\n".join(lines)
 
 
-def _inpaint_file(picture, mask, step_id):
-    """The picture with mask `mask` (PNG bytes, white where to repaint) as its alpha, in ComfyUI's
-    input folder (a new file, never one that is there): its name for LoadImage."""
+def picture_path(picture):
+    """Where an output picture {subfolder, filename} (as _output_media gives it) is on disk."""
+    return os.path.join(folder_paths.get_output_directory(), picture["subfolder"], picture["filename"])
+
+
+def write_inpaint(picture, area_of, name_id):
+    """The picture with its repaint area as alpha in ComfyUI's input folder (a new file, never one
+    that is there), so LoadImage gives the area as MASK: its name. `area_of(size)` makes the area
+    (an "L" image of that size, white where to repaint, soft edges kept)."""
     from PIL import Image, ImageOps
 
-    source = os.path.join(folder_paths.get_output_directory(), picture["subfolder"], picture["filename"])
     try:
-        with Image.open(source) as original, Image.open(io.BytesIO(mask)) as drawn:
-            area = drawn.convert("L").resize(original.size, Image.NEAREST).point(lambda value: 255 if value > 127 else 0)
+        with Image.open(picture_path(picture)) as original:
+            area = area_of(original.size)
             if not area.getbbox():
                 raise MarksError("The repaint area is empty")
             out = original.convert("RGB")
@@ -127,10 +134,21 @@ def _inpaint_file(picture, mask, step_id):
         raise
     except Exception:  # noqa: BLE001 - a picture PIL cannot read cannot be repainted either
         raise MarksError("The picture cannot be read for repainting")
-    name = f"anomalous_inpaint_{step_id}.png"
+    name = f"anomalous_inpaint_{name_id}.png"
     with open(os.path.join(folder_paths.get_input_directory(), name), "xb") as target:  # never replaces a file
         out.save(target, "PNG")
     return name
+
+
+def _inpaint_file(picture, mask, step_id):
+    """write_inpaint with the area the user drew (`mask`, PNG bytes, white where to repaint)."""
+    from PIL import Image
+
+    def drawn_area(size):
+        with Image.open(io.BytesIO(mask)) as drawn:
+            return drawn.convert("L").resize(size, Image.NEAREST).point(lambda value: 255 if value > 127 else 0)
+
+    return write_inpaint(picture, drawn_area, step_id)
 
 
 def save(task_id, image, png, marks, text="", now=None, mask=None, mode=None):

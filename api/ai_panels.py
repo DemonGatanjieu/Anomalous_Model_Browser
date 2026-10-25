@@ -7,7 +7,7 @@ at places given as fractions of the picture), slider (two pictures over each oth
 drag between them), picks (pictures with a reason and "take this one"), models (the user's, by
 model_id), diagram (boxes and arrows, laid out by the page; a box can name a canvas node),
 table, list, params, choices (buttons; one or several picks) and input (a line of text),
-progress, divider. Nothing the AI sends is run or rendered as markup, and no drawing of its own
+progress, divider; and area (the user's repaint area beside the AI's, ai_repaint.py). Nothing the AI sends is run or rendered as markup, and no drawing of its own
 (SVG) is taken: every block is checked here to be one of these shapes, with plain strings and
 numbers of bounded size, pictures only from the output folder and models only from the user's
 folders. The page draws them (ui_ai_panel.js).
@@ -20,6 +20,7 @@ the same way.
 """
 
 import os
+import re
 import threading
 import time
 import uuid
@@ -38,11 +39,13 @@ TONES = ("normal", "muted", "tip", "warning")
 LAYOUTS = ("row", "grid", "compare")
 INTERACTIVE = ("choices", "input", "picks")
 INPAINT_NOTE = (
-    "The user painted where to repaint. LoadImage(image=inpaint_image) gives the picture and, as MASK, that area. "
+    "inpaint_image is the picture with the area to repaint: LoadImage(image=inpaint_image) gives the picture and, as MASK, that area. "
     "inpaint_image is already in ComfyUI's input folder, ready: do not check it with a command; "
     "get_image_info(image=inpaint_image, folder='input', include_image=true) shows it and the area, zoom_image a part "
     "of it larger. Repaint with a workflow; do not paint the picture with code of your own. "
-    "Use the picture's own model and prompt (get_image_info on image), e.g. new_workflow: CheckpointLoaderSimple, "
+    "Use the picture's own model and prompt (get_image_info on image) and build it with add_node and its wiring "
+    "(in the picture's workflow, LoadImage -> VAEEncode(pixels, vae) -> SetLatentNoiseMask(samples, mask) in place "
+    "of the empty latent), e.g. new_workflow: CheckpointLoaderSimple, "
     "LoadImage, CLIPTextEncode x2, VAEEncode(pixels, vae) -> SetLatentNoiseMask(samples, mask) -> KSampler "
     "(denoise 0.5-0.8 keeps the look; 1.0 with VAEEncodeForInpaint(grow_mask_by 8) replaces it) -> VAEDecode -> "
     "SaveImage; GrowMask softens the edge. Say in report what you set and why, ask_user the strength if unsure, "
@@ -202,6 +205,10 @@ def clean_block(block, at, taken):
                    multiple=block.get("multiple") is True)
     elif kind == "run_map":  # a run's real shape (ai_run_map.py), drawn by the page from the step; only show_run_map makes it
         out["step"] = _text(block.get("step"), 20, f"{where}.step", True)
+    elif kind == "area":  # the user's repaint area and the AI's, pictures in the task's marks folder; only ai_repaint makes it
+        if not all(ai_marks.FILE_NAME.fullmatch(str(block.get(side))) for side in ("yours", "ai")):
+            raise PanelError(f"{where}: an area block shows pictures Anomalous made")
+        out.update({side: block[side] for side in ("yours", "ai")}, grow=int(block.get("grow") or 0), feather=int(block.get("feather") or 0))
     elif kind == "diagram":
         out.update(_diagram(block, where))
     elif kind == "models":
@@ -247,7 +254,8 @@ def clean_block(block, at, taken):
                 raise PanelError(f"{where}.options: id {option_id!r} twice")
             ids.add(option_id)
             options.append({"id": option_id, "label": label, "detail": _text(option.get("detail"), 200, f"{where}.options[{i}].detail"),
-                            **({"recommended": True} if option.get("recommended") is True else {})})
+                            **({"recommended": True} if option.get("recommended") is True else {}),
+                            **({"label_key": option["label_key"]} if re.fullmatch(r"ai[A-Z]\w{1,40}", str(option.get("label_key"))) else {})})
         # other: a line for an answer none of the options is
         out.update(question=_text(block.get("question"), 200, f"{where}.question"), options=options,
                    multiple=block.get("multiple") is True, other=block.get("other") is True)
@@ -337,12 +345,12 @@ def _find(panel_id):
     return None, None
 
 
-def show(client, title, blocks, now=None, session="", task_id=None, tool="show_panel"):
+def show(client, title, blocks, now=None, session="", task_id=None, tool="show_panel", extra=None):
     title = _text(title, 120, "title", True)
     panel = {"id": uuid.uuid4().hex[:10], "title": title, "blocks": _block_ids(clean_blocks(blocks)), "closed": False}
     now = time.time() if now is None else now
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": tool, "kind": "panel", "ok": True,
-            "summary": f"{tool}: {title}", "panel": panel, "answers": {}, "results": []}
+            "summary": f"{tool}: {title}", "panel": panel, "answers": {}, "results": [], **(extra or {})}
     with ai_tasks._lock:
         task = ai_tasks.current_task(client, now, session=session, task_id=task_id)
         ai_tasks._add_step(task, step)
@@ -372,8 +380,9 @@ def update(panel_id, title=None, blocks=None, closed=None):
     return panel
 
 
-def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=False):
-    """The user's answer to one block of a panel (from the page), or `skip` it. Returns the step's answers."""
+def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=False, extra=None):
+    """The user's answer to one block of a panel (from the page), or `skip` it, with `extra` for the AI
+    (ai_repaint.prepare). Returns the step's answers."""
     with _answered:
         task = ai_tasks._load().get(task_id)
         step = next((item for item in (task or {}).get("steps") or [] if item.get("id") == step_id), None)
@@ -386,7 +395,7 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
             raise PanelError("No such question")
         if block_id in step.setdefault("answers", {}):
             raise PanelError("Already answered")
-        entry = {"at": time.time() if now is None else now, "delivered": False}
+        entry = {"at": time.time() if now is None else now, "delivered": False, **(extra or {})}
         if skip:
             entry["skipped"] = True
         elif block["type"] == "choices" and block.get("other") and not choice and isinstance(text, str) and text.strip():
@@ -509,7 +518,7 @@ def _collect(client, panel_id, task_id=None):
                 given.update(delivered=True, delivered_at=time.time())
                 changed.add(task["id"])
                 item = {"panel": panel["id"], "question": block["id"], "asked": block.get("question", "")}
-                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped") if key in given})
+                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note") if key in given})
                 out.append(item)
     for tid in changed:
         ai_tasks._save(tasks[tid])

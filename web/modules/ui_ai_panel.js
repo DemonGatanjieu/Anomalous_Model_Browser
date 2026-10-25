@@ -116,6 +116,30 @@ function images(block, ctx) {
     return box;
 }
 
+/** The user's repaint area beside the one the AI proposes (api/ai_repaint.py): pictures Anomalous drew in the task's marks folder. */
+function area(block, ctx) {
+    const box = el('div', 'anomalous-ai-panel-images is-compare');
+    for (const [side, words] of [['yours', 'aiRepaintYours'], ['ai', 'aiRepaintAi']]) {
+        const url = `/anomalous/ai_tasks/${encodeURIComponent(ctx.taskId)}/marks/${encodeURIComponent(block[side])}`;
+        const figure = el('figure', 'anomalous-ai-panel-figure');
+        const open = button('anomalous-ai-panel-picture', '', () => ctx.openPicture(url, false), t('aiOpenPicture'));
+        const image = el('img');
+        image.loading = 'lazy';
+        image.alt = t(words);
+        image.src = url;
+        open.append(image);
+        const edge = side === 'ai' && (block.grow || block.feather) ? ` · ${t('aiRepaintEdge', { grow: block.grow, feather: block.feather })}` : '';
+        figure.append(open, el('figcaption', '', t(words) + edge));
+        box.append(figure);
+    }
+    return box;
+}
+
+/** An option's words: Anomalous's own options name a word of the page (label_key), the AI's are plain labels. */
+export function optionLabel(option) {
+    return option.label_key ? t(option.label_key) : option.label;
+}
+
 function models(block, ctx) {
     const box = el('div', 'anomalous-ai-panel-models');
     for (const item of list(block.items)) {
@@ -242,7 +266,7 @@ function choices(block, ctx) {
             node.classList.add('is-recommended');
             node.append(el('span', 'anomalous-ai-panel-option-badge', t('aiPanelRecommended')));
         }
-        node.append(el('span', 'anomalous-ai-panel-option-label', option.label));
+        node.append(el('span', 'anomalous-ai-panel-option-label', optionLabel(option)));
         if (option.detail) node.append(el('span', 'anomalous-ai-panel-option-detail', option.detail));
         node.disabled = Boolean(answer) || ctx.closed;
         options.append(node);
@@ -305,6 +329,7 @@ const DRAW = {
     heading: block => el('h3', 'anomalous-ai-panel-heading', block.text),
     text: block => el('p', `anomalous-ai-panel-text is-${['muted', 'tip', 'warning'].includes(block.tone) ? block.tone : 'normal'}`, block.text),
     images,
+    area,
     models,
     table,
     list: (block) => {
