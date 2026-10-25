@@ -1,12 +1,15 @@
 /**
  * Marking a picture for the AI (api/ai_marks.py): a window over the page with the picture and four
  * simple tools - box, circle, arrow, pen - in three colours, each mark numbered with a note of what
- * to change there, plus a line for the whole picture, and a brush that paints the area to repaint.
+ * to change there, plus a line for the whole picture, and a brush that paints the area to repaint;
+ * and how to change it (MODES, the AI reads it first as the user's choice): leave it to the AI,
+ * change only the marked areas (painting with the brush picks it), or make the whole picture anew.
  * "Send to the AI" draws the marks onto the picture (at most MAX_EDGE px), and sends that PNG with
- * the marks (fractions of the picture) to the task; with "make a repaint mask" on, also a mask
- * (white where boxes, circles, lines and brush strokes are) that the server turns into the picture
- * ready to repaint. The AI gets the notes and the marked picture with its next step. Also the
- * timeline's row for marks sent (marksStep). Every listener lives as long as the window and goes with it.
+ * the marks (fractions of the picture) and the choice to the task; for "only the marked areas",
+ * also a mask (white where boxes, circles, lines and brush strokes are) that the server turns into
+ * the picture ready to repaint. The AI gets the notes and the marked picture with its next step.
+ * Also the timeline's row for marks sent (marksStep), which says the choice. Every listener lives
+ * as long as the window and goes with it.
  */
 
 import { translate as t } from './locales.js';
@@ -19,6 +22,7 @@ const MASK_COLOR = 'rgba(255, 64, 160, 0.45)';
 const MAX_STROKES = 300;
 const MASK_EDGE = 4096;
 const AREAS = new Set(['box', 'circle', 'pen', 'mask']);
+const MODES = ['auto', 'local', 'whole'];
 const COLORS = ['#ff4d4f', '#fadb14', '#36cfc9'];
 const MAX_EDGE = 2048;
 const MAX_MARKS = 20;
@@ -142,6 +146,7 @@ function paint(ctx, mark, number, w, h) {
 export function openMarker(image, taskId, sent) {
     const marks = [];
     let tool = 'box';
+    let mode = 'auto';
     let color = COLORS[0];
     let brush = 0.05;
     let drawing = null;
@@ -198,11 +203,37 @@ export function openMarker(image, taskId, sent) {
     whole.placeholder = t('aiMarkWhole');
     whole.rows = 3;
     const send = button('anomalous-ai-marker-send', t('aiMarkSend'), () => void submit());
-    const repaint = el('label', 'anomalous-ai-marker-repaint');
-    const repaintBox = el('input');
-    repaintBox.type = 'checkbox';
-    repaint.append(repaintBox, el('span', '', t('aiMarkRepaint')));
-    side.append(empty, list, whole, repaint, send, el('div', 'anomalous-ai-marker-note', t('aiMarkNote')));
+    // How to change it: one of three, each saying what it means.
+    const ways = el('div', 'anomalous-ai-marker-modes');
+    ways.setAttribute('role', 'radiogroup');
+    ways.setAttribute('aria-label', t('aiMarkModeTitle'));
+    const wayButtons = MODES.map((id) => {
+        const way = el('button', 'anomalous-ai-marker-mode');
+        way.type = 'button';
+        way.dataset.mode = id;
+        way.setAttribute('role', 'radio');
+        const words = el('span', 'anomalous-ai-marker-mode-words');
+        words.append(el('span', 'anomalous-ai-marker-mode-name', t(`aiMarkMode_${id}`)), el('span', 'anomalous-ai-marker-mode-why'));
+        way.append(el('span', 'anomalous-ai-marker-mode-dot'), words);
+        way.onclick = () => {
+            mode = id;
+            // Only the marked areas, and nothing marked as an area yet: the brush to paint one.
+            if (id === 'local' && !marks.some(mark => AREAS.has(mark.shape))) toolButtons[TOOLS.findIndex(([name]) => name === 'mask')].click();
+            showModes();
+        };
+        return way;
+    });
+    ways.append(el('div', 'anomalous-ai-marker-modes-title', t('aiMarkModeTitle')), ...wayButtons);
+    function showModes() {
+        const areas = marks.some(mark => AREAS.has(mark.shape));
+        for (const way of wayButtons) {
+            const id = way.dataset.mode;
+            way.classList.toggle('is-on', id === mode);
+            way.setAttribute('aria-checked', String(id === mode));
+            way.querySelector('.anomalous-ai-marker-mode-why').textContent = t(id === 'local' && !areas ? 'aiMarkModeNeedArea' : `aiMarkModeWhy_${id}`);
+        }
+    }
+    side.append(empty, list, whole, ways, send, el('div', 'anomalous-ai-marker-note', t('aiMarkNote')));
 
     const body = el('div', 'anomalous-ai-marker-body');
     const left = el('div', 'anomalous-ai-marker-left');
@@ -222,8 +253,7 @@ export function openMarker(image, taskId, sent) {
         let number = 0;
         [...marks, ...(drawing ? [drawing] : [])].forEach(mark => paint(ctx, mark, mark.shape === 'mask' ? 0 : ++number, canvas.width, canvas.height));
         empty.hidden = marks.length > 0;
-        repaintBox.disabled = !marks.some(mark => AREAS.has(mark.shape));
-        if (repaintBox.disabled) repaintBox.checked = false;
+        showModes();
         // The notes, one per mark (not per brush stroke), kept as typed.
         const notes = noted();
         while (list.children.length > notes.length) list.lastElementChild.remove();
@@ -274,7 +304,7 @@ export function openMarker(image, taskId, sent) {
         // A click without a drag makes no mark; a brush click is a dot of the repaint area.
         if (drawing.shape === 'mask') {
             marks.push(drawing);
-            repaintBox.checked = true;
+            mode = 'local';
         } else if (drawing.points.length > 1 && (box.w > 0.01 || box.h > 0.01)) {
             marks.push(drawing);
         }
@@ -323,8 +353,9 @@ export function openMarker(image, taskId, sent) {
     }
 
     async function submit() {
-        if (!marks.length || (!noted().length && !repaintBox.checked)) {
-            await anomalousAlert(t('aiMarkNeedOne'));
+        const areas = marks.some(mark => AREAS.has(mark.shape));
+        if (!marks.length || (mode === 'local' ? !areas : !noted().length)) {
+            await anomalousAlert(t(marks.length && mode === 'local' ? 'aiMarkModeNeedArea' : 'aiMarkNeedOne'));
             return;
         }
         send.disabled = true;
@@ -333,8 +364,8 @@ export function openMarker(image, taskId, sent) {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     image: [image.subfolder, image.filename].filter(Boolean).join('/'), png: composite(), text: whole.value.trim(),
-                    marks: noted().map(mark => ({ shape: mark.shape, note: (mark.note || '').trim(), ...bounds(mark) })),
-                    ...(repaintBox.checked ? { mask: repaintMask() } : {}),
+                    marks: noted().map(mark => ({ shape: mark.shape, note: (mark.note || '').trim(), ...bounds(mark) })), mode,
+                    ...(mode === 'local' ? { mask: repaintMask() } : {}),
                 }),
             });
             const data = await response.json().catch(() => ({}));
@@ -352,7 +383,7 @@ export function openMarker(image, taskId, sent) {
     document.body.append(overlay);
 }
 
-/** The timeline's row body for marks the user sent: the marked picture, the notes, whether the AI has them. */
+/** The timeline's row body for marks the user sent: the marked picture, how to change it, the notes, whether the AI has them. */
 export function marksStep(step, taskId, owner) {
     const box = el('div', 'anomalous-ai-marks-sent');
     const url = `/anomalous/ai_tasks/${encodeURIComponent(taskId)}/marks/${encodeURIComponent(step.marked)}`;
@@ -367,6 +398,8 @@ export function marksStep(step, taskId, owner) {
     box.append(open, el('div', 'anomalous-ai-marks-sent-words'));
     const words = box.lastChild;
     if (step.note) words.append(el('div', 'anomalous-ai-user-text', step.note));
+    const mode = step.mode || (step.inpaint ? 'local' : ''); // marks sent before there was a choice: none, or a mask
+    if (mode) words.append(el('div', `anomalous-ai-marks-mode is-${mode}`, t('aiMarkModeChosen', { mode: t(`aiMarkMode_${mode}`) })));
     if (step.inpaint) words.append(el('div', 'anomalous-ai-marks-inpaint', t('aiMarkInpaintReady', { file: step.inpaint })));
     words.append(notes, deliveryState(step));
     return box;

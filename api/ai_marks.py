@@ -7,10 +7,12 @@ like a message (ai_panels._collect, kind "marks": the notes with where each mark
 fractions of the picture) and, attached to the same answer, the marked picture as a thumbnail
 (image_items), so an AI that can see pictures sees the marks. Only an output picture can be
 marked; the PNG is checked (signature, size, dimensions) before it is kept.
-With a mask (the marker's "repaint" brush, and the boxes, circles and lines; white where to
-repaint), the picture is also written to ComfyUI's input folder as anomalous_inpaint_<step>.png
-with that area as its alpha, so LoadImage gives the picture and the area as its MASK for an
-inpaint workflow; the AI gets the file name with the marks.
+The user also says how to change the picture (MODES), and the AI reads that choice first, as the
+user's: leave it to the AI, change only the marked areas, or make the whole picture anew. For
+"only the marked areas" the page sends a mask (the marker's "repaint" brush, and the boxes,
+circles and lines; white where to repaint), and the picture is also written to ComfyUI's input
+folder as anomalous_inpaint_<step>.png with that area as its alpha, so LoadImage gives the
+picture and the area as its MASK for an inpaint workflow; the AI gets the file name with the marks.
 """
 
 import base64
@@ -30,6 +32,14 @@ MAX_EDGE = 4096
 MAX_MARKS = 20
 MAX_NOTE = 300
 SHAPES = ("box", "circle", "arrow", "pen")
+MODES = {
+    "auto": "How to change it is up to you: say in report which way you took (repaint only the marked areas, "
+            "or make the picture anew) and why.",
+    "local": "The user chose: change ONLY the marked areas and keep everything else exactly as it is. Repaint "
+             "them from inpaint_image (inpaint_note says how); do not make the whole picture anew.",
+    "whole": "The user chose: make the whole picture anew with these changes (its own model and prompt, "
+             "changed as the notes say; a new seed or img2img). Do not repaint only a part of it.",
+}
 FILE_NAME = re.compile(r"[0-9a-f]{10}\.png")
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
@@ -90,9 +100,9 @@ def _clean(marks, masked=False):
     return out
 
 
-def _words(marks, text):
-    """The message the AI reads: the user's words, then each mark with where it is."""
-    lines = [text] if text else []
+def _words(marks, text, mode="auto"):
+    """The message the AI reads: how to change the picture, the user's words, then each mark with where it is."""
+    lines = [MODES[mode]] + ([text] if text else [])
     for number, mark in enumerate(marks, 1):
         where = (f"x {round(mark['x'] * 100)}–{round((mark['x'] + mark['w']) * 100)}%, "
                  f"y {round(mark['y'] * 100)}–{round((mark['y'] + mark['h']) * 100)}% of the picture")
@@ -123,9 +133,18 @@ def _inpaint_file(picture, mask, step_id):
     return name
 
 
-def save(task_id, image, png, marks, text="", now=None, mask=None):
-    """Keeps the marked picture and adds the user's marks to the task; with `mask` (a PNG data
-    URL), also the picture ready to repaint (_inpaint_file). Returns the step."""
+def save(task_id, image, png, marks, text="", now=None, mask=None, mode=None):
+    """Keeps the marked picture and adds the user's marks to the task, with how to change it (a
+    key of MODES; without one, "local" when there is a mask, as the page sent before there was a
+    choice). For "local", `mask` (a PNG data URL) also makes the picture ready to repaint
+    (_inpaint_file); the other ways keep no mask. Returns the step."""
+    mode = mode or ("local" if mask else "auto")
+    if mode not in MODES:
+        raise MarksError(f"How to change it is one of {', '.join(MODES)}")
+    if mode != "local":
+        mask = None
+    elif not mask:
+        raise MarksError("Changing only the marked areas needs a box, circle, line or painted area")
     try:
         picture = ai_tasks._output_media(image)
     except (ValueError, OSError):
@@ -149,7 +168,7 @@ def save(task_id, image, png, marks, text="", now=None, mask=None):
         with open(os.path.join(ai_tasks.marks_dir(task_id), f"{step_id}.png"), "xb") as target:  # a new name: never replaces
             target.write(data)
         step = {"id": step_id, "at": now, "ms": 0, "tool": "user_marks", "kind": "user", "ok": True, "state": "done",
-                "summary": "user_marks", "text": _words(marks, text), "note": text, "image": picture, "marks": marks,
+                "summary": "user_marks", "text": _words(marks, text, mode), "note": text, "image": picture, "marks": marks, "mode": mode,
                 "marked": f"{step_id}.png", "delivered": False, "results": [], **({"inpaint": inpaint} if inpaint else {})}
         task["steps"].append(step)
         del task["steps"][:-ai_tasks.MAX_STEPS]

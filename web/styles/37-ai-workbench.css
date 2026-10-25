@@ -319,10 +319,48 @@
 
 .anomalous-ai-tool:hover { border-color: var(--amb-border-strong); background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
 .anomalous-ai-tool.is-icon { width: 30px; padding: 0; justify-content: center; }
-/* Where the AI works on the canvas (ui_ai_task_canvas.js): its own tab or the open canvas, and that tab. */
-.anomalous-ai-canvas { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+/* Where the AI works on the canvas (ui_ai_task_canvas.js): a copy or the open canvas, the list to pick from, and the copy's tab. */
+.anomalous-ai-canvas { position: relative; display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.anomalous-ai-canvas-mode[aria-expanded="true"] { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 12%, transparent); }
+.anomalous-ai-canvas-menu {
+    position: absolute;
+    z-index: 8;
+    top: calc(100% + 4px);
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: min(320px, 86vw);
+    padding: 6px;
+    border: 1px solid var(--amb-border-strong, var(--amb-border));
+    border-radius: 10px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+}
+.anomalous-ai-canvas-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-canvas-choice > .anomalous-tb-icon { flex: none; margin-top: 1px; color: var(--amb-link); }
+.anomalous-ai-canvas-choice:hover, .anomalous-ai-canvas-choice:focus-visible { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-main); outline: 0; }
+.anomalous-ai-canvas-choice.is-on { background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-canvas-choice-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.anomalous-ai-canvas-choice-name { font-size: 13px; font-weight: 600; }
+.anomalous-ai-canvas-choice-why { color: var(--amb-text-dim); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-canvas-mode.is-new { border-color: color-mix(in srgb, var(--amb-link) 45%, transparent); color: var(--amb-link); }
 .anomalous-ai-canvas-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     max-width: 160px;
     height: 30px;
     padding: 0 10px;

@@ -477,6 +477,7 @@ def _collect(client, panel_id, task_id=None):
                 elif step.get("tool") == "user_marks":
                     # Marks on a picture: the picture's path for the AI, and the marked one attached (ai_marks.image_items).
                     message.update(kind="marks", image="/".join(part for part in (step["image"].get("subfolder"), step["image"]["filename"]) if part),
+                                   mode=step.get("mode") or ("local" if step.get("inpaint") else "auto"),
                                    _marked=ai_marks.path_of(task["id"], step.get("marked")))
                     if step.get("inpaint"):
                         message.update(inpaint_image=step["inpaint"], inpaint_note=INPAINT_NOTE)

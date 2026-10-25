@@ -106,6 +106,23 @@ export function compareBar() {
     return bar;
 }
 
+/**
+ * Output picture `image` in `img`: its 512 px thumbnail first (quick to load and to draw, so a task
+ * opens without waiting for its pictures), then the file itself if the picture shows larger than
+ * the thumbnail can be sharp. Other pictures (not in the output folder) as they are.
+ */
+export function showPicture(img, image) {
+    const thumbnail = picturePreview(image);
+    const full = outputUrl(image);
+    img.decoding = 'async';
+    if (thumbnail !== full) {
+        img.addEventListener('load', () => {
+            if (img.clientWidth * (window.devicePixelRatio || 1) > img.naturalWidth * 1.1) img.src = full; // the thumbnail stays until it is in
+        }, { once: true });
+    }
+    img.src = thumbnail;
+}
+
 /** A picture that is no longer in the output folder (deleted or moved): said so, nothing to open. */
 export function gonePicture(image) {
     const box = el('div', 'anomalous-ai-gone');
@@ -129,8 +146,8 @@ export function imageCard(image, owner, { compact = false } = {}) {
         media.preload = 'none';
         media.muted = true;
     } else {
-        media.src = picturePreview(image);
         media.loading = 'lazy';
+        showPicture(media, image);
         media.alt = image.filename;
         media.onerror = () => { // deleted while the page was open
             card.classList.add('is-gone');

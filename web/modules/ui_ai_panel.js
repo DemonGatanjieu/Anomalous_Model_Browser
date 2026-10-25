@@ -15,7 +15,7 @@ import { timeLabel } from './activity_log.js';
 import { outputUrl, isVideo } from './ai_task_view.js';
 import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
 import { runMapBox } from './ui_ai_run_map.js';
-import { decoratePicture, gonePicture } from './ui_ai_images.js';
+import { decoratePicture, gonePicture, showPicture } from './ui_ai_images.js';
 import { deliveryState } from './ui_ai_delivery.js';
 
 function el(tag, className, text) {
@@ -77,11 +77,12 @@ function picture(item, ctx, className) {
     }
     const open = button('anomalous-ai-panel-picture', '', () => ctx.openPicture(outputUrl(item), isVideo(item)), t('aiOpenPicture'));
     const media = el(isVideo(item) ? 'video' : 'img');
-    media.src = outputUrl(item);
     if (media.tagName === 'IMG') {
         media.loading = 'lazy';
         media.alt = item.caption || item.filename;
+        showPicture(media, item);
     } else {
+        media.src = outputUrl(item);
         media.muted = true;
         media.preload = 'metadata';
     }

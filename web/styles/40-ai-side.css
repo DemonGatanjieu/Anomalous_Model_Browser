@@ -13,8 +13,24 @@
     grid-template-columns: minmax(0, 1fr) var(--ai-side-w, 440px);
 }
 
-.anomalous-ai.tasks-collapsed .anomalous-ai-tasks {
-    display: none;
+/* Folded away, the task list stays laid out out of sight (45-ai-side-views.css slides it in), so
+   bringing it back has nothing to lay out first. */
+.anomalous-ai.tasks-collapsed:not(.is-narrow) .anomalous-ai-tasks {
+    position: absolute;
+    z-index: 30;
+    top: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: 270px;
+    border: 1px solid var(--amb-border);
+    border-radius: 14px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-14px);
+    transition: opacity 0.1s linear, transform 0.12s ease-out, visibility 0s linear 0.12s;
+    will-change: transform;
 }
 
 /* Too narrow for three columns: the timeline and the stage take turns in one. */

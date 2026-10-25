@@ -12,7 +12,7 @@ import { translate as t } from './locales.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { arrowEnds, diagramBoxes, markBox } from './ai_stage_layout.js';
 import { isVideo, outputPicture, outputUrl } from './ai_task_view.js';
-import { decoratePicture, gonePicture } from './ui_ai_images.js';
+import { decoratePicture, gonePicture, showPicture } from './ui_ai_images.js';
 import { openParamCompare } from './ui_param_compare.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -37,11 +37,12 @@ const list = value => (Array.isArray(value) ? value : []);
 function media(item) {
     if (item.gone) return gonePicture(item);
     const node = el(isVideo(item) ? 'video' : 'img');
-    node.src = outputUrl(item);
     if (node.tagName === 'IMG') {
         node.loading = 'lazy';
         node.alt = item.caption || item.label || item.filename;
+        showPicture(node, item);
     } else {
+        node.src = outputUrl(item);
         node.muted = true;
         node.preload = 'metadata';
     }

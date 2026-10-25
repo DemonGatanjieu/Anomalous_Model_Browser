@@ -155,7 +155,7 @@ async def api_gates(request):
 
 
 async def api_marks(request):
-    """POST /anomalous/ai_tasks/{id}/marks: {image, png, marks, text} - the user's marks on a picture for the AI."""
+    """POST /anomalous/ai_tasks/{id}/marks: {image, png, marks, text, mode, mask} - the user's marks on a picture for the AI."""
     from . import ai_panels
 
     body = await _body(request)
@@ -163,7 +163,7 @@ async def api_marks(request):
         return web.json_response({"error": "Expected {image, png, marks}"}, status=400)
     try:
         step = await asyncio.to_thread(ai_marks.save, request.match_info["task_id"], body.get("image"),
-                                       body.get("png"), body.get("marks"), body.get("text"), None, body.get("mask"))
+                                       body.get("png"), body.get("marks"), body.get("text"), None, body.get("mask"), body.get("mode"))
     except ai_marks.MarksError as error:
         return web.json_response({"error": str(error)}, status=400)
     ai_panels.wake()

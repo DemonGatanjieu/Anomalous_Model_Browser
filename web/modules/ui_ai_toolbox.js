@@ -23,6 +23,7 @@ import { card, coverUrl, detail, refreshCard, rowCard } from './ui_ai_toolbox_ca
 import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture, sourceBadge } from './ui_ai_toolbox_icons.js';
 import { deliveryState } from './ui_ai_delivery.js';
+import { closeFacetMenu, toggleFacetMenu } from './ui_ai_facet_menu.js';
 
 const MODES = ['prefer', 'only'];
 const CHUNK = 60;
@@ -289,8 +290,11 @@ export async function openToolbox(task, changed = () => {}) {
                 state.facet = facet;
                 drawGrid();
             });
-            node.title = label;
+            node.dataset.label = label;
+            // The whole name in a tooltip only when the row cuts it short.
+            node.onpointerenter = () => { node.title = node.children[1].scrollWidth > node.children[1].clientWidth ? label : ''; };
             node.append(el('span', 'anomalous-tb-facet-count', String(count)));
+            if (state.facet === facet && body.classList.contains('is-side')) node.append(icon('check', 14));
             if (facet && state.picks.packs.includes(facet)) node.classList.add('has-pack');
             return node;
         };
@@ -307,56 +311,9 @@ export async function openToolbox(task, changed = () => {}) {
             current?.source ? sourceBadge(current.source, 20) : icon('list', 15),
             el('span', 'anomalous-tb-facet-open-label', `${title}：${current?.label || t('aiTbEverything')}`),
             el('span', 'anomalous-tb-facet-count', String(current?.count ?? beforeFacet.length)), icon('chevronDown', 14)],
-        () => facetMenu(title, rows), t('aiTbPickSource'));
+        () => toggleFacetMenu({ host: main, top: side.offsetTop + side.offsetHeight, title, rows: rows(), button: open }), t('aiTbPickSource'));
         open.setAttribute('aria-haspopup', 'listbox');
         side.replaceChildren(open);
-    }
-
-    let menu = null;
-    /** The side panel's list of sources (or types) over the cards: a search when it is long; a pick or Esc closes it. */
-    function facetMenu(title, rows) {
-        if (menu?.isConnected) return void closeMenu();
-        menu = el('div', 'anomalous-tb-facet-menu');
-        menu.dataset.anomalousEscape = '1'; // Esc closes this list, not the browser
-        const items = rows();
-        const list = el('div', 'anomalous-tb-facet-menu-list');
-        list.setAttribute('role', 'listbox');
-        list.append(...items);
-        if (items.length > 8) {
-            const find = el('input', 'anomalous-tb-facet-menu-find');
-            find.type = 'search';
-            find.placeholder = t('aiTbFindSource', { what: title });
-            find.addEventListener('input', () => {
-                const words = find.value.trim().toLowerCase();
-                for (const item of items) item.hidden = Boolean(words) && !item.title.toLowerCase().includes(words);
-            });
-            menu.append(find);
-            requestAnimationFrame(() => find.focus());
-        }
-        menu.append(list);
-        menu.addEventListener('click', (event) => { if (event.target.closest('.anomalous-tb-facet')) closeMenu(); });
-        const top = side.offsetTop + side.offsetHeight;
-        menu.style.top = `${top}px`;
-        menu.style.maxHeight = `${Math.max(160, main.clientHeight - top - 8)}px`;
-        main.append(menu);
-        setTimeout(() => document.addEventListener('pointerdown', outside, true));
-        document.addEventListener('keydown', escape);
-    }
-
-    function outside(event) {
-        if (!menu?.contains(event.target) && !event.target.closest?.('.anomalous-tb-facet-open')) closeMenu();
-    }
-
-    // After the browser's own Esc handler has seen the list's mark (it then keeps the browser open).
-    function escape(event) {
-        if (event.key === 'Escape') setTimeout(closeMenu);
-    }
-
-    function closeMenu() {
-        menu?.remove();
-        menu = null;
-        document.removeEventListener('pointerdown', outside, true);
-        document.removeEventListener('keydown', escape);
     }
 
     /** While one custom node pack is shown: its name, how many node types, and picking it whole. */
@@ -374,7 +331,7 @@ export async function openToolbox(task, changed = () => {}) {
 
     let observer = null;
     function drawGrid() {
-        closeMenu();
+        closeFacetMenu();
         observer?.disconnect();
         cards.clear();
         const { items, beforeFacet } = shown();

@@ -18,6 +18,9 @@
  * Under the timeline the user can write to the AI on that task; the message waits until the AI
  * asks (get_answers) or runs its next step, and says whether it has. The list groups the tasks
  * by day, each with an icon for where it stands.
+ * Picking a task draws it at once from what is in hand (a copy read before or read ahead while the
+ * pointer rested on it, ai_task_cache.js; the activity entries known) and again, only what
+ * changed, once the server has answered.
  * In a narrow window the list and the task take turns. The rules are in ai_task_view.js.
  * Also the home page's "What the AI did lately" and the rail entry's dot for news.
  */
@@ -52,6 +55,8 @@ import { taskLinks } from './ui_ai_task_links.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewLabel } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
+import { syncRows } from './sync_rows.js';
+import { forgetTask, keptTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
 import {
     activityIds, duration, groupSteps, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
@@ -115,7 +120,6 @@ async function postTask(id, body, action = '') {
 }
 
 const fetchTasks = (limit = 100) => getJson(`/anomalous/ai_tasks?limit=${limit}`).then(data => data.tasks || []);
-const fetchTask = id => getJson(`/anomalous/ai_tasks/${encodeURIComponent(id)}`).then(data => data.task || null);
 
 // ---------------------------------------------------------------- the list
 
@@ -124,6 +128,8 @@ function renderList(box) {
         tasks: state.tasks, selected: state.selected, onNew: newTask,
         // Picking the newest task follows the AI again; an older one stays put.
         onPick: (summary) => { state.pinned = summary.id !== state.tasks[0]?.id; void select(summary.id); },
+        onHover: (summary) => { if (summary.id !== state.selected) readAhead(summary.id); },
+        onLeave: stopReadAhead,
     });
 }
 
@@ -232,6 +238,7 @@ function renderTask() {
     }, { iconOnly: true }), iconButton('anomalous-ai-tool is-icon is-danger', 'trash', t('aiRemove'), async () => {
         if (!await anomalousConfirm(t('aiRemoveConfirm'), t('aiRemove'))) return;
         await postTask(task.id, { remove: true }).catch(error => anomalousAlert(error.message));
+        forgetTask(task.id);
         state.selected = null;
         state.task = null;
         state.narrowView = 'list';
@@ -378,44 +385,52 @@ function undoable(step) {
         .map(result => [state.entries.get(result.activity) || null, state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity))]);
 }
 
-/** Rows into `parent` in this order, keeping those whose key is the same (they are not touched). */
-function syncRows(parent, rows) {
-    rows.forEach((row, at) => {
-        const there = parent.children[at];
-        if (there?.dataset.rowKey === row.key) return;
-        const made = row.make();
-        made.dataset.rowKey = row.key;
-        if (there) there.replaceWith(made);
-        else parent.append(made);
-    });
-    while (parent.children.length > rows.length) parent.lastElementChild.remove();
+const unknownEntries = new Set(); // activity ids the log no longer has: not asked for again
+
+/** The activity entries of `task`'s canvas steps already in hand. */
+function keptEntries(task) {
+    const wanted = new Set(activityIds(task));
+    return new Map([...state.entries].filter(([id]) => wanted.has(id)));
 }
 
-async function loadEntries(task) {
-    const wanted = new Set(activityIds(task));
-    const kept = new Map([...state.entries].filter(([id]) => wanted.has(id)));
-    if (wanted.size && [...wanted].some(id => !kept.has(id))) {
-        const entries = await fetchActivity({ limit: 500 });
-        for (const entry of entries) if (wanted.has(entry.id)) kept.set(entry.id, entry);
-    }
+/** Those and the missing ones from the activity log; null when none was missing. */
+async function missingEntries(task) {
+    const kept = keptEntries(task);
+    const missing = activityIds(task).filter(id => !kept.has(id) && !unknownEntries.has(id));
+    if (!missing.length) return null;
+    const entries = await fetchActivity({ limit: 500 });
+    for (const entry of entries) if (missing.includes(entry.id)) kept.set(entry.id, entry);
+    for (const id of missing) if (!kept.has(id)) unknownEntries.add(id);
     return kept;
+}
+
+function showTask(task, entries) {
+    state.task = task;
+    shared.entries = state.entries = entries;
+    shared.taskId = task?.id || null;
+    renderTask();
+}
+
+/** Task `id` as the server has it now, drawn; then again once the activity entries it lacked came. */
+async function showRead(id, request, otherwise) {
+    const current = () => state.selected === id && request === state.request;
+    const task = await readTask(id).catch(() => otherwise);
+    if (!current()) return;
+    showTask(task, task ? keptEntries(task) : new Map());
+    const entries = task ? await missingEntries(task).catch(() => null) : null;
+    if (entries && current()) showTask(task, entries);
 }
 
 async function select(id) {
     const request = ++state.request;
     state.selected = id;
     state.narrowView = 'task';
-    state.page?.querySelectorAll('.anomalous-ai-task-row').forEach(row => row.classList.remove('is-current'));
     renderList(state.page.querySelector('.anomalous-ai-tasks'));
     layout();
-    const task = await fetchTask(id).catch(() => null);
-    if (state.selected !== id || request !== state.request) return;
-    const entries = task ? await loadEntries(task).catch(() => new Map()) : new Map();
-    if (state.selected !== id || request !== state.request) return;
-    state.task = task;
-    shared.entries = state.entries = entries;
-    shared.taskId = task?.id || null;
-    renderTask();
+    // A task read before shows at once; what changed since follows.
+    const known = keptTask(id);
+    if (known) showTask(known, keptEntries(known));
+    await showRead(id, request, known);
 }
 
 /** Pictures on the AI page can be marked for the task shown (ui_ai_marker.js). */
@@ -481,14 +496,7 @@ async function refresh() {
         state.task = null;
     }
     renderList(state.page.querySelector('.anomalous-ai-tasks'));
-    const task = await fetchTask(state.selected).catch(() => null);
-    if (request !== state.request) return;
-    const entries = task ? await loadEntries(task).catch(() => new Map()) : new Map();
-    if (request !== state.request) return;
-    state.task = task;
-    shared.entries = state.entries = entries;
-    shared.taskId = task?.id || null;
-    renderTask();
+    await showRead(state.selected, request, state.task?.id === state.selected ? state.task : null); // a failed read keeps what shows
     layout();
 }
 

@@ -103,6 +103,25 @@ class MarkTests(unittest.TestCase):
         self.assertIn("SetLatentNoiseMask", message["inpaint_note"])
         self.assertEqual(os.listdir(inputs), [step["inpaint"]], "an empty mask writes nothing")
 
+    def test_how_to_change_it_reaches_the_ai_first_as_the_users_choice(self):
+        inputs = tempfile.mkdtemp(prefix="amb_ai_marks_input_")
+        buffer = io.BytesIO()
+        Image.new("L", (8, 8), 255).save(buffer, "PNG")
+        mask = "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode()
+        with mock.patch.object(ai_marks.folder_paths, "get_input_directory", return_value=inputs):
+            whole = ai_marks.save(self.task, "a.png", png(), MARKS, "亮一点", mask=mask, mode="whole")
+            local = ai_marks.save(self.task, "a.png", png(), MARKS, mask=mask, mode="local")
+            left = ai_marks.save(self.task, "a.png", png(), MARKS)
+        self.assertEqual((whole["mode"], "inpaint" in whole), ("whole", False), "anew: no mask is kept even when one is sent")
+        self.assertEqual(os.listdir(inputs), [local["inpaint"]])
+        self.assertEqual(left["mode"], "auto")
+        for step, words in ((whole, "make the whole picture anew"), (local, "change ONLY the marked areas"), (left, "up to you")):
+            self.assertIn(words, step["text"].split(chr(10))[0], "the choice is the first thing the AI reads")
+        with mock.patch.object(ai_marks, "_image_content", return_value=None):
+            messages = ai_panels.attach_pending(ok({}), "Claude", task_id=self.task)["structuredContent"]["user_messages"]
+        self.assertEqual([message["mode"] for message in messages], ["whole", "local", "auto"])
+        self.assertEqual(["inpaint_image" in message for message in messages], [False, True, False])
+
     def test_what_is_refused(self):
         for image, picture, marks in [("../a.png", png(), MARKS), ("nope.png", png(), MARKS), ("a.png", "data:image/jpeg;base64,AAAA", MARKS),
                                       ("a.png", "data:image/png;base64," + base64.b64encode(b"not a png").decode(), MARKS),
@@ -112,6 +131,9 @@ class MarkTests(unittest.TestCase):
                 ai_marks.save(self.task, image, picture, marks)
         with self.assertRaises(ai_marks.MarksError):
             ai_marks.save("no-task", "a.png", png(), MARKS)
+        for mode in ("sometimes", "local"):  # not a way; only the marked areas without an area to repaint
+            with self.assertRaises(ai_marks.MarksError, msg=mode):
+                ai_marks.save(self.task, "a.png", png(), MARKS, mode=mode)
         self.assertIsNone(ai_marks.path_of(self.task, "../../x.png"))
 
     def test_path_on_another_drive_is_a_validation_error(self):

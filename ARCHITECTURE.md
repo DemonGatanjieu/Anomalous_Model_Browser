@@ -88,7 +88,8 @@ covered by the `styles.css` manifest.
   the Gates window or per task): `mcp_bridge.ask_page` gives canvas actions the task's tab,
   `web/modules/mcp_task_tab.js` brings it to the front by clicking ComfyUI's tab (the store
   alone would not load its graph) or copies the open workflow into a new one before the first
-  change; `web/modules/ui_ai_task_canvas.js` is the header's switch and the tab's chip.
+  change; `web/modules/ui_ai_task_canvas.js` is the header's chip saying which ("AI edits a
+  copy ▾", opening the two to pick from with what each means) and the copy's "Show the copy".
   `ai_pictures.mark_gone` marks a task's pictures no longer in the output folder (`gone`) on its
   `GET`, which `ui_ai_images.gonePicture` shows instead of a broken picture.
   `api/ai_pictures.py` hands the AI output pictures (gallery card menu, the inspector's ✦): a
@@ -213,6 +214,9 @@ covered by the `styles.css` manifest.
   answer from `api/ai_toolbox_catalog.py` (combos, workflows with covers and prompts, prompts
   saved or inside combos and workflows as `combo:<name>` / `workflow:<name>`, models with
   covers), read ahead when a task header is drawn and kept a minute.
+  `web/modules/ui_ai_facet_menu.js` is the side panel's list of sources (or types) under its
+  "Source: All ▾" button: a search over the names, ↑ ↓ and Enter, the row under the pointer lit
+  and the one shown ticked.
   `web/modules/ui_ai_toolbox_cards.js` draws the cards (a node in miniature with its sockets in
   ComfyUI's colours, covers, prompt text) and the detail pane; `web/modules/ui_ai_toolbox_icons.js`
   each pack's badge, and the illustrations (`web/assets/toolbox_*.webp`, made
@@ -272,8 +276,10 @@ covered by the `styles.css` manifest.
   the marked picture attached as an image to the same answer. `web/modules/ui_ai_marker.js` is
   the marker window (box, circle, arrow, pen; three colours; a note per mark; a brush for the
   area to repaint) opened from a picture's ✎ on the AI page, and the timeline row of marks sent.
-  With "make a repaint mask" the page also sends a mask (white where boxes, circles, lines and
-  brush strokes are); the server writes the picture with that area as its alpha to ComfyUI's
+  The user also picks how to change it (`ai_marks.MODES`: leave it to the AI, only the marked
+  areas, the whole picture anew), the first line the AI reads, as the user's choice, and the
+  timeline row says it. For only the marked areas the page also sends a mask (white where boxes,
+  circles, lines and brush strokes are); the server writes the picture with that area as its alpha to ComfyUI's
   input folder as `anomalous_inpaint_<step>.png` (a new file, never replacing one; kept when the
   task goes, as workflows may load it), and the AI's marks message carries its name with how to
   inpaint with it (LoadImage gives the MASK). The canvas tools read ComfyUI's lists anew once
@@ -362,9 +368,15 @@ covered by the `styles.css` manifest.
   for three columns the timeline and the side column are two tabs (a panel that asks brings the stage
   forward). The side column is a card whose left-edge grip sets its width (`--ai-side-w`, kept;
   the timeline keeps `TIMELINE_MIN`). The task list folds from the title bar's list button
-  (`headerLeadTools`, `listToggle`); folded, pointing at it peeks the list over the page. `ui_ai_task_list.js` draws it (New task, Connect an AI
+  (`headerLeadTools`, `listToggle`); folded, the list stays laid out out of sight, and pointing at
+  the button (or moving left onto the page's left edge) slides it over the page at once.
+  `ui_ai_task_list.js` draws it (New task, Connect an AI
   and the gates, which AI came last, quick filters by state, the tasks by day with a state
-  icon each). `ui_ai_icons.js` is the AI pages' one set of line icons and the icon button.
+  icon each), making anew only the rows that changed (`web/modules/sync_rows.js`, the timeline's
+  way too). `web/modules/ai_task_cache.js` keeps the tasks as last read: a task picked shows at
+  once from there (read ahead while the pointer rests on its row) and again, what changed, when the
+  server answers; the activity entries a task lacks follow. The stage's pictures, like the
+  timeline's, load the 512 px thumbnail first and the file itself only when shown larger. `ui_ai_icons.js` is the AI pages' one set of line icons and the icon button.
   `ai_text_format.js` lays out what the AI writes (its notes and replies: headings, lists, bold,
   code) with textContent only. A note may answer the user's message or marks (`report`'s
   `reply_to`): the two steps point at each other, and the timeline links them both ways.

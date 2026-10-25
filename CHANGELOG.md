@@ -2,6 +2,18 @@
 
 ## v1.62.0 — unreleased
 
+- 标注窗口的“同时做成重绘遮罩”勾选框换成 **怎么改** 三选一：交给 AI 判断、只改标出的地方（其余保持原样，AMB 做好遮罩，AI 只重绘这些地方）、整张重新出图。你选的会作为你的要求写在 AI 收到的第一句，时间线里那条标注也写着“改法：…”；用“涂重绘区”笔刷时自动选中“只改标出的地方”。
+- The marker's "make a repaint mask" checkbox is now **How to change it**, one of three: leave it to the AI, only the marked areas (the rest stays; Anomalous makes the mask and the AI repaints just those), or the whole picture anew. The choice is the first thing the AI reads, as yours, and the timeline row says it; painting with the repaint brush picks "only the marked areas".
+
+- 任务列表更跟手：收起时列表也提前排好藏在左边，鼠标碰到左上角按钮（或从页面往左移到最左边缘）下一帧就滑出来；每几秒的自动刷新只重画变了的任务。点任务马上显示：看过的任务直接出来，鼠标停在任务上时先读好，再悄悄补上最新内容；展台里的图先用缩略图，显示得比缩略图大时才换原图。
+- The task list keeps up: folded, it stays laid out out of sight and slides in from the next frame when the pointer reaches its button (or moves left onto the page's left edge); the regular refresh redraws only the tasks that changed. A picked task shows at once, from the copy read before or read ahead while the pointer rested on it, then fills in what changed; the stage's pictures load as thumbnails first and as the file itself only when shown larger.
+
+- 任务标题栏的“专用标签页”改叫 **AI 改副本 ▾**：点开是带说明的二选一（改副本 / 改当前画布），不再点一下就悄悄切换；旁边的按钮叫 **切到副本**。快捷指令和关卡窗口用同样的说法。
+- The header's "Own tab" is now **AI edits a copy ▾**, opening the two ways with what each means instead of switching at a click; beside it, **Show the copy**. The / commands and the Gates window say the same.
+
+- 素材的“来源”列表：鼠标移到哪一行，哪一行就亮起来，当前选中的那项有底色和勾（之前被一条样式盖掉了）；名字没被截断时不再弹白色小提示；搜索框里能用 ↑ ↓ 选、回车确定。
+- The materials' Source list lights the row under the pointer and tints and ticks the one shown (a later style had hidden both); a name gets a tooltip only when it is cut short; ↑ ↓ and Enter work from the search.
+
 - 展台入口显示面板数量；收起或查看其他栏时出现新增、更新，会亮主题色小圆点，打开查看后消失。
 - The Stage button shows its panel count and a theme-colored dot for new or updated content while hidden; viewing the stage clears the dot.
 
@@ -59,7 +71,7 @@
 - Model patches (Anima LLLite, the Qwen-Image block-wise and Z-Image Fun ControlNets) are told from ControlNets by their header: imported into `model_patches`, and Tidy offers to move those already in `controlnet`.
 - **AI 找模型时直接知道该用哪个节点**：`search_models` / `get_model` 给每个模型写上能加载它的节点；放错文件夹的会说该放哪、放在这里加载不了，同名文件已经在对的地方时会直接指给 AI。新工具 `move_model` 把放错的模型挪过去（新关卡“挪动模型文件”，默认先问你；从不覆盖文件）。AI 不必再去命令行翻 ComfyUI 的源码。AI 加节点时如果下拉列表是空的，会被告知“ComfyUI 没找到文件，可能放错了文件夹”。
 - search_models and get_model say which node types load each model, and where a misfiled one belongs; `move_model` moves it there behind a new "files" gate (asks by default, never overwrites). An empty drop-down in add_node now says ComfyUI found no file for it.
-- AI 第一次在任务专用标签页上动手时，切换标签页不再被记成“你在画布上的改动”告诉 AI。
+- AI 第一次在任务的副本标签页上动手时，切换标签页不再被记成“你在画布上的改动”告诉 AI。
 - The AI switching to its task tab is no longer reported to it as a canvas change of the user's.
 - **工作台里直接用图库的图**：留言框左边新增图片按钮，打开图库（最新的在前，可按提示词、模型、seed 搜索），点选几张后 **加进消息**；打 **@** 时也能看到图库最新的图，打字会顺带在图库里搜。AI 收到的是图片本身和它的生成参数。
 - Gallery pictures in the AI workbench: the message box's picture button picks them from the gallery (newest first, searchable), and "@" offers the gallery's newest pictures and searches it as you type; the AI gets each picture with what made it.
@@ -100,7 +112,7 @@
 - Answers of begin_task, run_workflow and run_status, the canvas changes and an answered ask_user carry next: the one thing to do now.
 - **给 AI 的工具可以选“日常”**：关卡窗口里多了 **给 AI 的工具：日常 / 完整**。日常只给 AI 常用工具（照着跑、看图、换模型或 LoRA、查缺的模型、问你、留言、现状一览，以及自动接线搭工作流），AI 要读的说明约 2.2 万字，完整的约 4.1 万字，Gemini Flash 这类小模型日常跑图不容易绕晕；要画面板、下载时选完整。换了以后在 AI 软件里开个新对话才生效。
 - The Gates window offers AI apps either every tool or a daily set (runs of saved workflows, pictures, models, the task's own, canvas building): about half the reading for a small model. Calls are not limited by it; apps see a change in a new chat.
-- **照着跑：日常出图一步完成**：AI 出图时可以直接说“用哪个存好的工作流、改什么”：`run_workflow` 带上工作流名，再带上要改的提示词、反向提示词、种子、尺寸或一张图（比如你标注过的重绘图），AMB 就在任务专用标签页里打开它（第一次打开，之后接着用同一个标签页），填好这几处，其余照存好的样子不动，然后出图、等结果。尺寸只改起始的空白潜空间，高清修复里的 Latent 放大保持原来的放大尺寸。原来要 6、7 步（找工作流、打开、看画布、改提示词、改种子……），现在一步，小模型也不容易绕晕。填的内容和出图一起算一步，改画布那部分同样能 Ctrl+Z；如果你给“改画布”设的关卡比“用显卡”严，这一步按改画布的关卡来问你。画布报错是因为缺模型时，“现状一览”会让 AI 先查缺哪个模型，而不是乱换选项。
+- **照着跑：日常出图一步完成**：AI 出图时可以直接说“用哪个存好的工作流、改什么”：`run_workflow` 带上工作流名，再带上要改的提示词、反向提示词、种子、尺寸或一张图（比如你标注过的重绘图），AMB 就在任务的副本标签页里打开它（第一次打开，之后接着用同一个标签页），填好这几处，其余照存好的样子不动，然后出图、等结果。尺寸只改起始的空白潜空间，高清修复里的 Latent 放大保持原来的放大尺寸。原来要 6、7 步（找工作流、打开、看画布、改提示词、改种子……），现在一步，小模型也不容易绕晕。填的内容和出图一起算一步，改画布那部分同样能 Ctrl+Z；如果你给“改画布”设的关卡比“用显卡”严，这一步按改画布的关卡来问你。画布报错是因为缺模型时，“现状一览”会让 AI 先查缺哪个模型，而不是乱换选项。
 - run_workflow takes blanks for a daily run in one call: workflow (a saved one, opened in the task's tab once and reused), prompt, negative, seed, width, height and image (image_node for several LoadImage nodes); the rest stays as saved. The size goes to the latent a run starts from, never to a hires fix's latent upscale. With blanks a run asks as the stricter of the GPU's and the canvas's gate.
 - **现状一览，AI 一次就知道到哪一步了**：新工具 `get_situation`，AI 调一次就拿到：任务（你最后说了什么、有几个问题在等你、定了哪些决策、出过哪些图、“AMB 之外”几次）、画布简报（每个节点一行：谁接到谁；**还缺哪几根线、各要什么类型、画布上哪些现有输出能接上**；ComfyUI 报错的节点）、最近一次出图，以及**下一步该做什么**。回复控制在约 3600 字以内，Antigravity 不会把它存成文件再让 AI 去读。新开对话或拿不准时先调它；连接说明里的那句话和规则也写上了。小模型（比如 Gemini Flash）不用再把整张图记在脑子里。
 - `get_situation`: the task, the canvas in brief (a line per node, the inputs still unwired with the outputs that fit, ComfyUI's errors), the latest run and the next step in one answer under about 3,600 characters, for a new chat or an AI that lost track.
@@ -123,7 +135,7 @@
 - Tasks remember the task they go on from (an AI's new task while on another, or one the user starts from a task): links under the title lead both ways, the list marks follow-ups, the user can link or unlink, and an AI beginning a follow-up hears what was decided before.
 - **决策记录**：聊天在哪里都行，结论留在 AMB。AI 用新工具 `log_decision` 把商量好的结论记成时间线上的 📌 卡片（定了什么、为什么、没选哪些、谁定的、跟哪几步有关）；你在 AMB 里的选择（面板回答、允许或不允许、交出去的素材、AI 改画布的地方、停止）自动算作决策。右上角新增 **决策**，按时间列出全部决策，点一下回到那一步；AI 很久没记录时会轻轻提醒。AI 重新接手任务时会先收到这些决策。
 - Key decisions stay in Anomalous: the AI records what was settled with `log_decision` (a card on the timeline: what, why, what was left out, who decided, the steps it is about); the user's own choices in Anomalous count as decisions too; a Decisions view in the side column lists them all with a link to each step, notes work done since the last one, and begin_task repeats them to an AI picking the task up.
-- **留言框里的 @ 和 /**：打 **@** 弹出能搜索的列表（这个任务的图、搭配、模型、工作流、提示词、节点包、节点），选中的写成“@名字”并在下面显示成小标签，AI 收到的是确切的那个东西（图片连同生成参数一起）。开头打 **/** 是快捷指令：停止、撤销、展台、结构、素材、专用标签页、当前画布、新任务马上生效；重跑、解释、继续帮你写好一句话。
+- **留言框里的 @ 和 /**：打 **@** 弹出能搜索的列表（这个任务的图、搭配、模型、工作流、提示词、节点包、节点），选中的写成“@名字”并在下面显示成小标签，AI 收到的是确切的那个东西（图片连同生成参数一起）。开头打 **/** 是快捷指令：停止、撤销、展台、结构、素材、副本、当前画布、新任务马上生效；重跑、解释、继续帮你写好一句话。
 - "@" in the AI workbench's message box names the task's pictures, combos, models, workflows, prompts, node packs and node types; the AI gets each in full with the message (pictures attached). "/" lists commands that act at once (stop, undo, side views, new task, canvas mode) or fill in words to send.
 - **整个自定义节点包交给 AI**：素材里点“节点”，再在来源那一排点某个自定义节点包，上面会出现“整包交给 AI”。不知道该选哪个节点时，把整个包给它，AI 自己从包里挑；选“只能用”时，这个包里的节点都允许，别的第三方和付费节点照样拦下。AI 用 `get_toolbox` 能看到包里有哪些节点，`find_nodes` 搜索时也把它们排在前面。
 - A whole custom node pack can be picked (from its source in the nodes' second column): the AI gets its node types in get_toolbox, finds them first, and with "only" every node of the pack is allowed.
@@ -141,9 +153,9 @@
 - 面板上的问题可以点 **这题跳过**：可选的问题不再一直显示“等你回答”，AI 会收到“你跳过了”，自己拿主意。
 - Each answer, message, set of marks and picture handed to the AI shows a pill: "Sent · waiting for the AI", then "The AI has it" with the time. Panel questions can be skipped; the AI reads `skipped: true`.
 
-### 看得见 AI 跑了什么、专用标签页、图片直接给 AI / What the AI ran, its own tab, pictures straight to the AI
+### 看得见 AI 跑了什么、AI 改副本、图片直接给 AI / What the AI ran, a copy for the AI, pictures straight to the AI
 - 每次运行下面都有 **节点结构**：一行写明底模、几个 LoRA、尺寸、步数，点开是方块图（LoRA 带权重、正负提示词、采样器设置……，点方块定位到画布上的节点），还用黄色小块标出 **比上次改了什么**，比如“步数 20 → 30”“LoRA 权重 0.65 → 0.8”“新增「加载LoRA」”。图是 AMB 按 ComfyUI 实际收到的工作流画的，不靠 AI 描述；AI 讲解时用新工具 `show_run_map` 一次把它放上展台。
-- **AI 的专用标签页**（默认开）：AI 第一次改画布前，AMB 把你正开着的工作流复制到以任务命名的新标签页，之后它只在那一页改和运行；你切去别处，它下次动手前会切回来；你原来的工作流一笔不动。任务标题栏能切换“专用标签页 / 当前画布”、点标签页名字跳过去；关卡窗口里设定新任务的默认做法。
+- **AI 改副本**（默认开）：AI 第一次改画布前，AMB 把你正开着的工作流复制到以任务命名的新标签页（副本），之后它只在副本里改和运行；你切去别处，它下次动手前会切回来；你原来的工作流一笔不动。任务标题栏的“AI 改副本 ▾”能换成“改当前画布”，“切到副本”跳过去；关卡窗口里设定新任务的默认做法。
 - **图片直接发给 AI**：图库右键“发给 AI”或看图窗口的 ✦，可以发给 AI 正在做的任务（也能开新任务），可附一句话。AI 收到图片本身和从图里读出的模型、LoRA、提示词、尺寸、采样设置。AI 搜图库时也能让结果直接带上前 6 张图。
 - Each run shows the shape ComfyUI actually ran (boxes, links, settings; boxes locate their nodes) and what changed since the run before; `show_run_map` puts it on the stage. By default the AI works in a tab of the task's own: the open workflow is copied before its first change and brought back before later ones, the user's tab untouched (per task, and a default in the Gates window). Output pictures can be handed to the task an AI is on (gallery menu, inspector): the AI gets them attached with what made them; `search_images(with_pictures)` attaches the first six.
 
@@ -163,8 +175,8 @@
 - The AI can build workflows on the canvas the user sees: look up this ComfyUI's node types (custom nodes too) with their inputs, outputs and choices; open a new tab, blank or built and laid out from a workflow in API form (the open one is left alone); add, wire, set and remove nodes. Each is one Ctrl+Z step, logged as the AI's and shown under its AI workbench step, rewiring included. Wrong types, choices and settings are refused with what fits, before anything changes. Wiring that would loop is refused too, and a run ComfyUI rejects reports ComfyUI's own reason.
 
 ### 局部重绘：涂一涂就交给 AI / Repaint an area: paint it, hand it to the AI
-- 标注窗口多了“▧ 涂重绘区”笔刷（粗细可调）和“同时做成重绘遮罩”开关：涂上要重画的地方（框、圈、画笔圈的地方也算）发给 AI，AMB 就在 ComfyUI 的 input 文件夹里做好一张带遮罩的原图（`anomalous_inpaint_….png`），AI 用 LoadImage 读进来就能局部重绘；AI 同时收到怎么接、重绘强度怎么选的说明。时间线上你的标注下面写着“已做成重绘遮罩”。AI 搭工作流时如果刚生成的文件还不在下拉列表里，AMB 会自动刷新一次列表。
-- The marker's repaint brush and "make a repaint mask": the picture with the painted area as its alpha goes to ComfyUI's input folder for LoadImage, and the AI is told how to inpaint with it. Canvas tools refresh ComfyUI's lists once when a choice is missing.
+- 标注窗口多了“▧ 涂重绘区”笔刷（粗细可调）：涂上要重画的地方（框、圈、画笔圈的地方也算），选“只改标出的地方”发给 AI，AMB 就在 ComfyUI 的 input 文件夹里做好一张带遮罩的原图（`anomalous_inpaint_….png`），AI 用 LoadImage 读进来就能局部重绘；AI 同时收到怎么接、重绘强度怎么选的说明。时间线上你的标注下面写着“已做成重绘遮罩”。AI 搭工作流时如果刚生成的文件还不在下拉列表里，AMB 会自动刷新一次列表。
+- The marker's repaint brush and "only the marked areas": the picture with the painted area as its alpha goes to ComfyUI's input folder for LoadImage, and the AI is told how to inpaint with it. Canvas tools refresh ComfyUI's lists once when a choice is missing.
 
 ### AI 的问题在 AMB 里问 / The AI asks in Anomalous
 - 你在图上标注或给 AI 留言后，AI 的分析和修改方案也回在 AMB 里：它的留言会写明“回复第几步”，你那条标注下面出现“AI 已回复 · 第几步”，两边点一下就互相跳过去。AI 的留言现在有排版：小标题、列表、加粗、`代码` 都会正常显示（只认这几种写法，不会运行网页代码）。AMB 告诉 AI：收到标注和留言就在 AMB 里回复，要你选修法就用选择题问。
