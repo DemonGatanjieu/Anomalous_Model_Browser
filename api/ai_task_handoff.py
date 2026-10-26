@@ -33,12 +33,13 @@ def latest_replied(tasks, client, now):
 
 def just_done(task, tasks, waiting, client, now):
     """`task` (the app's last one) when it said it is done (report done) moments ago: a look the AI
-    takes right after (checking its result) goes there, the task staying ended, and no empty task is
-    made for it. None when the user started a task for the next AI (`waiting`) or wrote to one."""
+    takes right after (checking its result) goes there, the task staying ended, and what it shows or
+    asks the user about it (a before and after, "happy with it?") opens it again; no new task is made
+    for either. None when the user started a task for the next AI (`waiting`) or wrote to one."""
     if not task or not task.get("ended") or not 0 <= now - task["ended"] < AFTER_DONE:
         return None
-    if not task["steps"] or task["steps"][-1].get("tool") != "report":
-        return None
+    if not any(step.get("tool") == "report" and step.get("at") == task["ended"] for step in task["steps"]):
+        return None  # it ended by a pause or another task, not by the AI saying it is done
     if (waiting and not waiting.get("ended")) or latest_replied(tasks, client, now):
         return None
     return task

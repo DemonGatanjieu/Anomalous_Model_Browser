@@ -349,7 +349,7 @@ def show(client, title, blocks, now=None, session="", task_id=None, tool="show_p
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": tool, "kind": "panel", "ok": True,
             "summary": f"{tool}: {title}", "panel": panel, "answers": {}, "results": [], **(extra or {})}
     with ai_tasks._lock:
-        task = ai_tasks.current_task(client, now, session=session, task_id=task_id)
+        task = ai_tasks.current_task(client, now, session=session, task_id=task_id, follow_up=True)
         ai_tasks._add_step(task, step)
         ai_tasks._save(task)
     ai_tasks._notify(task["id"], {"panel": title, "asks": any(b["type"] in INTERACTIVE for b in panel["blocks"])})
