@@ -39,6 +39,13 @@ class BudgetTests(unittest.TestCase):
                 self.assertLessEqual(len(tool["inputSchema"].get("required") or []), MAX_REQUIRED)
                 self.assertTrue(tool.get("description"), "every tool says what it is for")
 
+    def test_each_step_has_a_name_in_both_languages(self):
+        # The timeline names a step by aiTool_<tool> (web/modules/ai_task_view.js toolKey); the card's own calls are not steps.
+        words = (PLUGIN / "web" / "modules" / "locales.js").read_text(encoding="utf-8")
+        for name in set(mcp_server.TOOLS) - set(mcp_server.mcp_apps.APP_TOOLS):
+            with self.subTest(tool=name):
+                self.assertEqual(words.count(f"aiTool_{name}:"), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

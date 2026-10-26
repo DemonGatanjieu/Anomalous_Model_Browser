@@ -534,6 +534,22 @@ def tool_text(data):
     return json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 
 
+JSON_TYPES = {"string": (str,), "integer": (int,), "number": (int, float), "boolean": (bool,), "array": (list,), "object": (dict,)}
+
+
+def _renamed(spec, arguments, unknown, missing):
+    """(wrong, right) when the one needed argument came under another name, with a value of its type
+    (open_workflow {name: …} for {workflow: …}, as light models write it), else None."""
+    if len(unknown) != 1 or len(missing) != 1:
+        return None
+    wrong, right = next(iter(unknown)), missing[0]
+    kinds = JSON_TYPES.get(spec["properties"][right].get("type"))
+    value = arguments[wrong]
+    if not kinds or not isinstance(value, kinds) or (isinstance(value, bool) and bool not in kinds):
+        return None
+    return wrong, right
+
+
 def call_tool(tools, name, arguments, ctx=None):
     """An MCP tools/call result for tool `name` of `tools` (run in a worker thread). Tools marked
     `context` get `ctx` ({base_url} of this server) first."""
@@ -541,6 +557,11 @@ def call_tool(tools, name, arguments, ctx=None):
     spec = tool["spec"]["inputSchema"]
     unknown = set(arguments) - set(spec["properties"])
     missing = [key for key in spec.get("required", []) if key not in arguments]
+    renamed = _renamed(spec, arguments, unknown, missing)
+    if renamed:
+        wrong, right = renamed
+        arguments = {**{key: value for key, value in arguments.items() if key != wrong}, right: arguments[wrong]}
+        unknown, missing = set(), []
     if unknown or missing:
         wrong = "; ".join(part for part in (unknown and f"Unknown arguments {sorted(unknown)}", missing and f"missing {missing}") if part)
         takes = ", ".join(key + (" (needed)" if key in spec.get("required", []) else "") for key in spec["properties"] if key != "task")
@@ -553,6 +574,8 @@ def call_tool(tools, name, arguments, ctx=None):
         logging.getLogger(__name__).warning("Anomalous MCP tool %s failed", name, exc_info=True)
         return _failure(f"{name} failed: {error}")
     data, extra = value if isinstance(value, tuple) else (value, [])
+    if renamed and isinstance(data, dict):
+        data = {**data, "arguments_note": f"Took {renamed[0]} as {renamed[1]}: {name} calls it {renamed[1]}."}
     return {"content": [{"type": "text", "text": tool_text(data)}, *extra],
             "structuredContent": data, "isError": False}
 

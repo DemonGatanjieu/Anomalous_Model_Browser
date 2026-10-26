@@ -460,11 +460,23 @@ class CardAndPromptTests(unittest.TestCase):
 
 class ArgumentTests(unittest.TestCase):
     def test_a_wrong_argument_is_answered_with_what_the_tool_takes(self):
-        result = rpc("tools/call", {"name": "set_prompt", "arguments": {"text": "一只猫"}}, "set_prompt")["result"]
+        result = rpc("tools/call", {"name": "set_prompt", "arguments": {"text": "一只猫", "colour": "red"}}, "set_prompt")["result"]
         self.assertTrue(result["isError"])
         text = result["content"][0]["text"]
-        self.assertIn("Unknown arguments ['text']; missing ['prompt']", text)
+        self.assertIn("Unknown arguments ['colour', 'text']; missing ['prompt']", text)
         self.assertIn("set_prompt takes: prompt (needed), role, node_id, mode", text, "the AI corrects itself in one go")
+
+    def test_the_one_needed_argument_under_another_name_is_taken(self):
+        tools = {"open": {"spec": {"inputSchema": {"properties": {"workflow": {"type": "string"}, "seed": {"type": "integer"}},
+                                                   "required": ["workflow"]}},
+                          "run": lambda workflow, seed=0: {"opened": workflow}}}
+        result = mcp_tools.call_tool(tools, "open", {"name": "exam_txt2img"})
+        self.assertFalse(result["isError"])
+        self.assertEqual(result["structuredContent"]["opened"], "exam_txt2img")
+        self.assertIn("Took name as workflow", result["structuredContent"]["arguments_note"], "so the next call is right")
+        for wrong in ({"name": 3}, {"name": "a", "other": "b"}, {"name": True}):
+            with self.subTest(arguments=wrong):
+                self.assertTrue(mcp_tools.call_tool(tools, "open", wrong)["isError"], "another type, or more than one guess: asked again")
 
 if __name__ == "__main__":
     unittest.main()

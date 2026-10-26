@@ -6,6 +6,8 @@
 - Fixed task resumption and answer waiting: resume by the latest unread user reply, including panel answers, rather than background updates; a task with a tool still running is excluded from automatic takeover. Reading answers without a panel now handles expired questions too. Timeout choices and user answers arriving at that boundary reach the AI in the same call; messages and pictures sent while it waits for a question are no longer consumed without delivery.
 
 - AI 少走弯路、少猜：
+  - 只差一个必填参数、又正好多写了一个名字不对的参数（比如打开工作流时把 `workflow` 写成 `name`）时，AMB 直接照它的意思做，并告诉 AI 正确的名字，省一次来回。
+  - 时间线里 AI“放大看图”那一步显示成代码名，改成了中文名。
   - 去掉了“给 AI 的工具”里的 **日常**：所有工具都直接给。Antigravity、Claude Code、Cursor、VS Code 这些软件会自己按需读工具说明，AMB 再做一层“现查现用”只会让 AI 多绕路（一次实测 29 次调用里 18 次花在查工具和转一道上）。
   - AMB 更新以后，AI 软件还拿着旧的工具列表来调用时，任务标题下面会出现一行黄字，告诉你怎么让它重新连接；AI 那边也收到同样的提醒。AI 软件重新取了列表，黄字自己消失。
   - AI 加 LoRA 或换模型时，AMB 对比 LoRA 和主模型的底模：一个是 SD 1.5、一个是 SDXL 这种用不了的，会提醒 AI 并告诉它按底模去找；Pony 的 LoRA 用在 Illustrious 上这种能用但可能效果差的，也会轻轻提一句。只提醒，不拦着。
@@ -15,6 +17,8 @@
   - 很久以前（两个多小时前）留下、AI 一直没收到的留言或标注，不再把一个新对话拉进那个旧任务。
   - 关卡窗口新增 **等不到回答时**：**停下等我**（默认）或 **按推荐的继续**。选后者时，到了等待时间你还没答，AI 标了推荐项的选择题就按推荐的选，展台和“决策”里都写着“到时间，按推荐选了”；没有推荐项的问题、你已经动手写了回答的问题、关卡里“先问我”的事，永远不会替你答。
 - The AI takes fewer detours and guesses less:
+  - When a call lacks its one needed argument and has one unknown argument of the right type instead (`name` for open_workflow's `workflow`), Anomalous takes it as meant and tells the AI the right name, saving a round trip.
+  - The timeline names the AI's "look closer at a picture" step instead of showing its code name.
   - The tool set's **Daily** choice is gone: AI apps get every tool. Antigravity, Claude Code, Cursor and VS Code load tool descriptions as they need them, so looking tools up through Anomalous only added detours (in one run 18 of 29 calls).
   - When an AI app still calls by the tool list of an older Anomalous, a yellow line under the task header says how to reconnect it, and the AI is told too; it goes once the app fetches the list again.
   - Adding a LoRA or swapping a model, Anomalous compares the base models of the LoRA and the main model: one that cannot work (SD 1.5 on SDXL) is pointed out with how to find a fitting one; one that loads but may look off (a Pony LoRA on Illustrious) gets a softer note. A note only, never a block.
