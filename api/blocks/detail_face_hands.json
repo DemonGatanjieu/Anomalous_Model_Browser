@@ -1,0 +1,120 @@
+{
+  "job": "detail",
+  "rank": 1,
+  "short": "after a picture is made",
+  "title": {
+    "zh": "部位细化（脸和手）",
+    "en": "Face and hand detailing"
+  },
+  "about": {
+    "zh": "出完图以后找出脸和手，各自放大重画再贴回去。细化后的图另存一张，文件名以 detailed 开头。",
+    "en": "After a picture is made, finds faces and hands, repaints each larger and puts it back. Saved beside it, prefix detailed."
+  },
+  "source": {
+    "zh": "参考工作流的「部位细化」组",
+    "en": "The reference workflow's detailing group"
+  },
+  "packs": {
+    "FaceDetailer": "ComfyUI-Impact-Pack",
+    "UltralyticsDetectorProvider": "ComfyUI-Impact-Subpack"
+  },
+  "detectors": {
+    "face": "face_yolov8",
+    "hand": "hand_yolov8"
+  },
+  "nodes": {
+    "face_finder": {
+      "class_type": "UltralyticsDetectorProvider",
+      "inputs": {
+        "model_name": "$face"
+      }
+    },
+    "hand_finder": {
+      "class_type": "UltralyticsDetectorProvider",
+      "inputs": {
+        "model_name": "$hand"
+      }
+    },
+    "face": {
+      "class_type": "FaceDetailer",
+      "inputs": {
+        "image": [
+          "$decode",
+          0
+        ],
+        "model": [
+          "$sampler.model",
+          "*"
+        ],
+        "clip": [
+          "$sampler.positive.clip",
+          "*"
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "bbox_detector": [
+          "face_finder",
+          0
+        ],
+        "denoise": 0.4,
+        "guide_size": 512
+      }
+    },
+    "hands": {
+      "class_type": "FaceDetailer",
+      "inputs": {
+        "image": [
+          "face",
+          "image"
+        ],
+        "model": [
+          "$sampler.model",
+          "*"
+        ],
+        "clip": [
+          "$sampler.positive.clip",
+          "*"
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "bbox_detector": [
+          "hand_finder",
+          0
+        ],
+        "denoise": 0.45,
+        "guide_size": 512
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": [
+          "hands",
+          "image"
+        ],
+        "filename_prefix": "detailed"
+      }
+    }
+  },
+  "after": "run_workflow saves the picture as before and the detailed one beside it (prefix detailed)."
+}

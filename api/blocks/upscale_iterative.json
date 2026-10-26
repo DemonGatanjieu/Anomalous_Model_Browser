@@ -1,0 +1,95 @@
+{
+  "job": "upscale",
+  "rank": 2,
+  "short": "1.3× in 3 small steps, steadier",
+  "title": {
+    "zh": "迭代放大",
+    "en": "Iterative upscale"
+  },
+  "about": {
+    "zh": "分 3 小步放大到 1.3 倍，每步轻轻重画一次，比一步到位更稳。另存一张，文件名以 upscaled 开头。",
+    "en": "Enlarges to 1.3× in 3 small steps, a light redraw each, steadier than one jump. Saved beside it, prefix upscaled."
+  },
+  "source": {
+    "zh": "参考工作流的「迭代放大」组（作者另加的噪声增强要 ComfyUI Noise，这里没用）",
+    "en": "The reference workflow's iterative upscale group (its noise boost needs ComfyUI Noise, left out)"
+  },
+  "packs": {
+    "PixelKSampleUpscalerProvider": "ComfyUI-Impact-Pack",
+    "IterativeImageUpscale": "ComfyUI-Impact-Pack"
+  },
+  "instead": "upscale",
+  "upscaler": true,
+  "nodes": {
+    "upscaler": {
+      "class_type": "UpscaleModelLoader",
+      "inputs": {
+        "model_name": "$upscaler"
+      }
+    },
+    "redraw": {
+      "class_type": "PixelKSampleUpscalerProvider",
+      "like": "$sampler",
+      "inputs": {
+        "scale_method": "lanczos",
+        "model": [
+          "$sampler.model",
+          "*"
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "denoise": 0.3,
+        "use_tiled_vae": false,
+        "tile_size": 1024,
+        "upscale_model_opt": [
+          "upscaler",
+          0
+        ]
+      }
+    },
+    "steps": {
+      "class_type": "IterativeImageUpscale",
+      "inputs": {
+        "pixels": [
+          "$save.images",
+          "*"
+        ],
+        "upscale_factor": 1.3,
+        "steps": 3,
+        "temp_prefix": "",
+        "upscaler": [
+          "redraw",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "step_mode": "geometric",
+        "vae_compression": 8
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": [
+          "steps",
+          0
+        ],
+        "filename_prefix": "upscaled"
+      }
+    }
+  },
+  "after": "run_workflow saves the picture as before and the 1.3× one beside it (prefix upscaled): 3 steps, each redrawn at denoise 0.3 with the sampler's steps and cfg.",
+  "notes": "The source's values: factor 1.32, 3 steps, denoise 0.3, geometric; its noise injection (ComfyUI Noise) is left out."
+}

@@ -1,0 +1,75 @@
+{
+  "job": "upscale",
+  "rank": 4,
+  "short": "2×, in tiles",
+  "title": {
+    "zh": "分块放大",
+    "en": "Tiled upscale"
+  },
+  "about": {
+    "zh": "放大 2 倍，按 1024 的小块逐块重画，多大的图都放得下，比「放大」慢。",
+    "en": "2×, redrawn in 1024 tiles, so any size fits; slower than Upscale."
+  },
+  "source": {
+    "zh": "节点包 UltimateSDUpscale 自带的示例",
+    "en": "UltimateSDUpscale's own example"
+  },
+  "packs": {
+    "UltimateSDUpscale": "ComfyUI_UltimateSDUpscale"
+  },
+  "instead": "upscale",
+  "upscaler": true,
+  "nodes": {
+    "upscaler": {
+      "class_type": "UpscaleModelLoader",
+      "inputs": {
+        "model_name": "$upscaler"
+      }
+    },
+    "tiles": {
+      "class_type": "UltimateSDUpscale",
+      "like": "$sampler",
+      "inputs": {
+        "image": [
+          "$save.images",
+          "*"
+        ],
+        "model": [
+          "$sampler.model",
+          "*"
+        ],
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "upscale_model": [
+          "upscaler",
+          0
+        ],
+        "upscale_by": 2.0,
+        "denoise": 0.3,
+        "tile_width": 1024,
+        "tile_height": 1024
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": [
+          "tiles",
+          0
+        ],
+        "filename_prefix": "upscaled"
+      }
+    }
+  },
+  "after": "run_workflow saves the picture as before and the 2× one beside it (prefix upscaled); each tile is redrawn with the sampler's steps and cfg at denoise 0.3 (higher adds more detail, and may add seams)."
+}

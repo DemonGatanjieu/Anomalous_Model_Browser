@@ -1,0 +1,113 @@
+{
+  "job": "upscale",
+  "rank": 1,
+  "short": "1.25×",
+  "title": {
+    "zh": "放大",
+    "en": "Upscale"
+  },
+  "about": {
+    "zh": "放大模型放大到 1.25 倍，再用同样的设置轻轻重画一遍（强度 0.35），细节是画出来的而不是糊的。另存一张，文件名以 upscaled 开头。",
+    "en": "An upscale model enlarges it to 1.25×, then a light redraw with the same settings (denoise 0.35) makes the detail real. Saved beside it, prefix upscaled."
+  },
+  "source": {
+    "zh": "参考工作流的「通用放大」组",
+    "en": "The reference workflow's general upscale group"
+  },
+  "packs": {},
+  "upscaler": true,
+  "after": "run_workflow saves the picture as before and the larger one beside it (prefix upscaled). The redraw sampler has the first one's steps and cfg at denoise 0.35: lower keeps more of the picture, higher adds more (and above 0.5 may change it). For 2× or more use upscale_tiled.",
+  "notes": "1.25× and denoise 0.35: the source used 1.25 and 0.32; its author says more than 1.5× goes wrong, and 1.5× of 832×1216 is too much for a 6 GB card.",
+  "upscale_by": 1.25,
+  "nodes": {
+    "upscaler": {
+      "class_type": "UpscaleModelLoader",
+      "inputs": {
+        "model_name": "$upscaler"
+      }
+    },
+    "enlarge": {
+      "class_type": "ImageUpscaleWithModel",
+      "inputs": {
+        "upscale_model": [
+          "upscaler",
+          0
+        ],
+        "image": [
+          "$save.images",
+          "*"
+        ]
+      }
+    },
+    "fit": {
+      "class_type": "ImageScaleBy",
+      "inputs": {
+        "image": [
+          "enlarge",
+          0
+        ],
+        "upscale_method": "lanczos",
+        "scale_by": "$fit"
+      }
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": [
+          "fit",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      }
+    },
+    "redraw": {
+      "class_type": "KSampler",
+      "like": "$sampler",
+      "inputs": {
+        "model": [
+          "$sampler.model",
+          "*"
+        ],
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "latent_image": [
+          "encode",
+          0
+        ],
+        "denoise": 0.35
+      }
+    },
+    "decode": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "redraw",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": [
+          "decode",
+          0
+        ],
+        "filename_prefix": "upscaled"
+      }
+    }
+  }
+}

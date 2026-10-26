@@ -1,0 +1,118 @@
+{
+  "job": "upscale",
+  "rank": 3,
+  "short": "1.25×, redrawn by a second, steadier model",
+  "title": {
+    "zh": "双模型放大",
+    "en": "Upscale with a second model"
+  },
+  "about": {
+    "zh": "和「放大」一样，但重画换一个模型：底模放大时不稳（眼睛走样、多出肚脐）就换一个更稳的。新加的模型加载器先是同一个模型，由 AI 按你的意思换。",
+    "en": "Like Upscale, but the redraw uses a second model, for a base model that goes wrong when enlarged. The new loader starts as the same model; the AI changes it as you say."
+  },
+  "source": {
+    "zh": "参考工作流的「Refiner/放大」加载器和作者的说明",
+    "en": "The reference workflow's upscale loader and its author's note"
+  },
+  "packs": {},
+  "upscaler": true,
+  "after": "The redraw's model comes from a new loader (second_model), for now the same checkpoint as the first: set_model it to the steadier one the user wants (ask_user, search_models), of the same family (SDXL with SDXL: it reuses the first model's prompts). Then run_workflow; the larger one is saved beside it (prefix upscaled).",
+  "notes": "The source keeps a second loader for upscaling; its author: switch to it when the base model goes wrong enlarged.",
+  "upscale_by": 1.25,
+  "nodes": {
+    "second_model": {
+      "class_type": "CheckpointLoaderSimple",
+      "like": "$loader",
+      "inputs": {}
+    },
+    "upscaler": {
+      "class_type": "UpscaleModelLoader",
+      "inputs": {
+        "model_name": "$upscaler"
+      }
+    },
+    "enlarge": {
+      "class_type": "ImageUpscaleWithModel",
+      "inputs": {
+        "upscale_model": [
+          "upscaler",
+          0
+        ],
+        "image": [
+          "$save.images",
+          "*"
+        ]
+      }
+    },
+    "fit": {
+      "class_type": "ImageScaleBy",
+      "inputs": {
+        "image": [
+          "enlarge",
+          0
+        ],
+        "upscale_method": "lanczos",
+        "scale_by": "$fit"
+      }
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": [
+          "fit",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      }
+    },
+    "redraw": {
+      "class_type": "KSampler",
+      "like": "$sampler",
+      "inputs": {
+        "model": [
+          "second_model",
+          0
+        ],
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "latent_image": [
+          "encode",
+          0
+        ],
+        "denoise": 0.35
+      }
+    },
+    "decode": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "redraw",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": [
+          "decode",
+          0
+        ],
+        "filename_prefix": "upscaled"
+      }
+    }
+  }
+}

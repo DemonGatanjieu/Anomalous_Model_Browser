@@ -8,6 +8,7 @@
  * may be a role too. A node of the block "like" a role takes that node's settings of the same
  * name (a second sampler with the first one's steps and cfg); one that "replaces" a role also
  * takes its links in and out, and the old node goes (LanPaint's sampler in the KSampler's place).
+ * "$loader" is the node the sampler's model comes from, past its LoRAs (a second model loader "like" it).
  * Several samplers: near_node_id names the one, else nothing changes and they are listed.
  */
 
@@ -45,7 +46,20 @@ function settingsOf(node) {
     return Object.fromEntries((node.widgets || []).filter(item => item?.name && item.type !== 'button').map(item => [item.name, item.value]));
 }
 
-/** The roles on graph `g`: {sampler, decode, save}; decode and save may be missing. */
+/** The node `node`'s model comes from, through the nodes passing a MODEL on (LoRAs): the loader. */
+function loaderOf(g, node) {
+    let at = node;
+    for (let hop = 0; hop < 30; hop++) {
+        const id = inputNamed(at, 'model')?.link;
+        const link = id == null ? null : linkOf(g, id);
+        const from = link && g.getNodeById(link.origin_id);
+        if (!from) break;
+        at = from;
+    }
+    return at === node ? null : at;
+}
+
+/** The roles on graph `g`: {sampler, decode, save, loader}; decode, save and loader may be missing. */
 export function findRoles(g, nearId = null) {
     const samplers = (g._nodes || []).filter(node => !OFF.has(node.mode) && SAMPLER_INPUTS.every(name => inputNamed(node, name)));
     let sampler = nearId == null ? null : samplers.find(node => String(node.id) === String(nearId));
@@ -62,7 +76,7 @@ export function findRoles(g, nearId = null) {
         && (node.outputs || []).some(item => upper(item.type) === 'IMAGE')) || null;
     const picture = decode ? decode.outputs.findIndex(item => upper(item.type) === 'IMAGE') : -1;
     const save = decode ? outputOf(g, decode, picture) || takers(g, decode, picture)[0] || null : null;
-    return { sampler, decode, save };
+    return { sampler, decode, save, loader: loaderOf(g, sampler) };
 }
 
 function upstream(g, node, path, ref) {
@@ -83,7 +97,8 @@ export function placeRoles(g, nodes, nearId = null) {
     const roles = findRoles(g, nearId);
     const role = (name, ref) => {
         const node = roles[name];
-        if (!node) throw new Error(`${ref}: no ${name} on the canvas (the sampler's ${name === 'decode' ? 'VAE Decode' : 'Save Image'}). Nothing added.`);
+        const what = { decode: 'VAE Decode', save: 'Save Image', loader: 'model loader' }[name] || name;
+        if (!node) throw new Error(`${ref}: no ${name} on the canvas (the sampler's ${what}). Nothing added.`);
         return node;
     };
     const link = (value) => {

@@ -1,0 +1,79 @@
+{
+  "job": "repaint",
+  "rank": 2,
+  "short": "best blend, slow",
+  "title": {
+    "zh": "局部重绘·LanPaint",
+    "en": "Repaint: LanPaint"
+  },
+  "about": {
+    "zh": "把采样器换成 LanPaint 的，每一步多想几遍，新画的部分和周围融合得最好；任何模型都能用，但慢好几倍。",
+    "en": "The sampler becomes LanPaint's, which thinks several times a step, so the new part blends in best; any model, several times slower."
+  },
+  "source": {
+    "zh": "节点包 LanPaint 自带的 SDXL 示例",
+    "en": "LanPaint's own SDXL example"
+  },
+  "packs": {
+    "LanPaint_KSampler": "LanPaint",
+    "LanPaint_ImageEncode": "LanPaint",
+    "LanPaint_ImageDecode": "LanPaint"
+  },
+  "instead": "inpaint_crop_stitch",
+  "takes": "inpaint",
+  "nodes": {
+    "picture": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "encode": {
+      "class_type": "LanPaint_ImageEncode",
+      "inputs": {
+        "image": [
+          "picture",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "mask": [
+          "picture",
+          1
+        ]
+      }
+    },
+    "sampler": {
+      "class_type": "LanPaint_KSampler",
+      "replaces": "$sampler",
+      "inputs": {
+        "latent_image": [
+          "encode",
+          0
+        ],
+        "denoise": 1.0
+      }
+    },
+    "decode": {
+      "class_type": "LanPaint_ImageDecode",
+      "replaces": "$decode",
+      "inputs": {
+        "samples": [
+          "sampler",
+          0
+        ],
+        "image": [
+          "picture",
+          0
+        ],
+        "mask": [
+          "picture",
+          1
+        ]
+      }
+    }
+  },
+  "after": "The KSampler is now LanPaint's (same steps, cfg and seed) and repaints only the area, blending it into the rest. Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"). Then run_workflow; it takes several times longer than before."
+}

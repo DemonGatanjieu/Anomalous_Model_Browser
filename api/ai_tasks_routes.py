@@ -268,6 +268,25 @@ async def api_toolbox(request):
         return web.json_response({"error": str(error)}, status=502)
 
 
+async def api_blocks(request):
+    """GET /anomalous/ai_blocks: every ready-made block as the 做法 panel shows it (reference_blocks.status);
+    POST {name, on}: the user turns one on or off for the AI."""
+    from . import mcp_canvas_edit, reference_blocks
+    from .mcp_tools import ToolError
+
+    if request.method == "POST":
+        body = await _body(request) or {}
+        try:
+            reference_blocks.set_on(str(body.get("name") or ""), bool(body.get("on")))
+        except reference_blocks.BlockError as error:
+            return web.json_response({"error": str(error)}, status=400)
+    try:
+        info = await asyncio.to_thread(mcp_canvas_edit.object_info, {"base_url": f"{request.scheme}://{request.host}"})
+    except ToolError as error:
+        return web.json_response({"error": str(error)}, status=502)
+    return web.json_response({"blocks": reference_blocks.status(info), "jobs": list(reference_blocks.JOBS)})
+
+
 def register_routes(app):
     activity_log.add_listener(ai_task_changes.note_activity)  # the user's changes while an AI works
     app.router.add_get("/anomalous/ai_tasks", api_list)
@@ -287,5 +306,7 @@ def register_routes(app):
     app.router.add_get("/anomalous/ai_toolbox", api_toolbox)
     app.router.add_get("/anomalous/ai_toolbox/favorites", api_toolbox)
     app.router.add_post("/anomalous/ai_toolbox/favorites", api_toolbox)
+    app.router.add_get("/anomalous/ai_blocks", api_blocks)
+    app.router.add_post("/anomalous/ai_blocks", api_blocks)
     app.router.add_get("/anomalous/ai_gates", api_gates)
     app.router.add_post("/anomalous/ai_gates", api_gates)

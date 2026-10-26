@@ -1,0 +1,77 @@
+{
+  "job": "follow",
+  "rank": 2,
+  "short": "its layout and shapes",
+  "title": {
+    "zh": "照着构图画",
+    "en": "Follow a layout"
+  },
+  "about": {
+    "zh": "你递给 AI 一张图，AMB 读出远近和形状（深度图），让新图保持这个构图。",
+    "en": "From a picture you hand the AI, Anomalous reads its depth and keeps that layout and those shapes."
+  },
+  "source": {
+    "zh": "参考工作流的「底图控制网」组（作者默认用深度）",
+    "en": "The reference workflow's ControlNet group (depth, its default)"
+  },
+  "packs": {
+    "DepthAnythingV2Preprocessor": "comfyui_controlnet_aux"
+  },
+  "takes": "reference",
+  "control": "depth",
+  "nodes": {
+    "reference": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "depth": {
+      "class_type": "DepthAnythingV2Preprocessor",
+      "inputs": {
+        "image": [
+          "reference",
+          0
+        ],
+        "ckpt_name": "depth_anything_v2_vitl.pth",
+        "resolution": 1024
+      }
+    },
+    "controlnet": {
+      "class_type": "ControlNetLoader",
+      "inputs": {
+        "control_net_name": "$controlnet"
+      }
+    },
+    "steer": {
+      "class_type": "ControlNetApplyAdvanced",
+      "inputs": {
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "control_net": [
+          "controlnet",
+          0
+        ],
+        "image": [
+          "depth",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "strength": 0.7,
+        "start_percent": 0.0,
+        "end_percent": 0.7
+      },
+      "wire_to": "$sampler"
+    }
+  },
+  "after": "run_workflow: the picture now keeps that layout (strength 0.7, for the first 70% of the steps; lower either to let the model change more). The prompt still says what is drawn."
+}

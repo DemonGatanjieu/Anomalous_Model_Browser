@@ -1,0 +1,100 @@
+{
+  "job": "repaint",
+  "rank": 1,
+  "short": "small fixes, the rest untouched",
+  "title": {
+    "zh": "局部重绘·裁切缝合",
+    "en": "Repaint: crop and stitch"
+  },
+  "about": {
+    "zh": "把圈出的地方连同周围一圈裁出来，放大到 1024 重画，再缝回原图，别处一点不动。适合修手、修脸这类小地方。",
+    "en": "Crops the marked area with a margin, repaints it at 1024 and stitches it back; the rest is untouched. For hands, faces, small fixes."
+  },
+  "source": {
+    "zh": "参考工作流的「局部重绘」组，和节点包自带的示例一致",
+    "en": "The reference workflow's repaint group, as the pack's own example"
+  },
+  "packs": {
+    "InpaintCropImproved": "ComfyUI-Inpaint-CropAndStitch",
+    "InpaintStitchImproved": "ComfyUI-Inpaint-CropAndStitch"
+  },
+  "instead": "inpaint_basic",
+  "takes": "inpaint",
+  "nodes": {
+    "picture": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "soft": {
+      "class_type": "DifferentialDiffusion",
+      "inputs": {
+        "model": [
+          "$sampler.model",
+          "*"
+        ]
+      },
+      "wire_to": "$sampler"
+    },
+    "crop": {
+      "class_type": "InpaintCropImproved",
+      "inputs": {
+        "image": [
+          "picture",
+          0
+        ],
+        "mask": [
+          "picture",
+          1
+        ],
+        "mask_blend_pixels": 32,
+        "context_from_mask_extend_factor": 2.0,
+        "output_resize_to_target_size": true,
+        "output_target_width": 1024,
+        "output_target_height": 1024,
+        "downscale_algorithm": "lanczos",
+        "upscale_algorithm": "lanczos"
+      }
+    },
+    "condition": {
+      "class_type": "InpaintModelConditioning",
+      "inputs": {
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "pixels": [
+          "crop",
+          "cropped_image"
+        ],
+        "mask": [
+          "crop",
+          "cropped_mask"
+        ]
+      },
+      "wire_to": "$sampler"
+    },
+    "stitch": {
+      "class_type": "InpaintStitchImproved",
+      "inputs": {
+        "stitcher": [
+          "crop",
+          "stitcher"
+        ],
+        "inpainted_image": [
+          "$decode",
+          0
+        ]
+      },
+      "wire_to": "$save"
+    }
+  },
+  "roles": {
+    "sampler": {
+      "denoise": 0.75
+    }
+  },
+  "after": "The sampler now repaints only the cropped area, at denoise 0.75 (lower keeps more of the old). Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"), or it paints the whole subject there. Then run_workflow; the saved picture is the whole one, stitched.",
+  "notes": "Denoise 0.75: at 1 a model not made for inpainting paints a whole new subject into the crop. Context factor 2.0 is the source's."
+}

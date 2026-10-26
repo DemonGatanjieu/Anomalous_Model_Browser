@@ -1,0 +1,49 @@
+/* The side column's Ways view (ui_ai_blocks.js): the ready-made blocks by job, each with its
+   words, what it lacks (greyed) and its switch for the AI. */
+
+.anomalous-ai-blocks { display: flex; flex-direction: column; gap: 14px; }
+.anomalous-ai-blocks-note { color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
+.anomalous-ai-blocks-note.is-error { color: var(--amb-warn); }
+.anomalous-ai-blocks-group { display: flex; flex-direction: column; gap: 6px; }
+.anomalous-ai-blocks-job { color: var(--amb-text-soft); font-size: 12px; font-weight: 600; }
+
+.anomalous-ai-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 11px;
+    border: 1px solid var(--amb-border);
+    border-radius: 9px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+.anomalous-ai-block.is-missing { background: none; border-style: dashed; }
+.anomalous-ai-block.is-missing .anomalous-ai-block-title,
+.anomalous-ai-block.is-missing .anomalous-ai-block-about,
+.anomalous-ai-block.is-off .anomalous-ai-block-title,
+.anomalous-ai-block.is-off .anomalous-ai-block-about { color: var(--amb-text-soft); opacity: 0.75; }
+.anomalous-ai-block-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.anomalous-ai-block-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.anomalous-ai-block-title { color: var(--amb-text-main); font-size: 13.5px; font-weight: 600; }
+.anomalous-ai-block-state {
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--amb-warn) 18%, transparent);
+    color: var(--amb-text-main);
+    font-size: 11.5px;
+}
+.anomalous-ai-block-state.is-ready { background: color-mix(in srgb, var(--amb-ok) 18%, transparent); }
+.anomalous-ai-block-about { color: var(--amb-text-main); font-size: 12.5px; line-height: 1.5; }
+.anomalous-ai-block-source { color: var(--amb-text-soft); font-size: 11.5px; }
+.anomalous-ai-block-lacks { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-ai-block-lack {
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent);
+    border-radius: 6px;
+    background: none;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 11.5px;
+}
+.anomalous-ai-block-lack.is-pack { cursor: pointer; }
+.anomalous-ai-block-lack.is-pack:hover { background: color-mix(in srgb, var(--amb-warn) 14%, transparent); }
+.anomalous-ai-block-switch { flex: none; width: 16px; height: 16px; margin-top: 2px; accent-color: var(--amb-link); cursor: pointer; }

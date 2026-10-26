@@ -381,7 +381,10 @@ covered by the `styles.css` manifest.
   the models used and download requests — `ai_tasks.results_of` names the downloads — and the sounds),
   which keeps what made the newest picture as a recipe, a combo or a saved prompt through the
   keep menu's own `keepPictureAs`; its button counts what came since it was last seen
-  (`stage.outputsSeen`). For a run the AI did not wait
+  (`stage.outputsSeen`). `ui_ai_blocks.js` is the side column's Ways view (做法): the ready-made
+  blocks by job (GET /anomalous/ai_blocks, `reference_blocks.status`), each block's words from its
+  data file, greyed with the pack (a way into ComfyUI-Manager) or model it lacks, and a switch that
+  keeps it from the AI (POST, `user/anomalous/ai_blocks.json`). For a run the AI did not wait
   for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
   and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a card per

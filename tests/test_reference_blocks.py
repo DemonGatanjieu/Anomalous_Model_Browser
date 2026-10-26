@@ -28,19 +28,53 @@ EVERYTHING = {kind: {} for block in reference_blocks.BLOCKS.values() for kind in
 BUILT_IN = {"LoadImage": {}, "KSampler": {}}
 
 
+def keep_switches_apart(case):
+    """The panel's switches in a temporary file, not the user's."""
+    folder = tempfile.TemporaryDirectory()
+    case.addCleanup(folder.cleanup)
+    patcher = mock.patch.object(reference_blocks, "_off_path", return_value=os.path.join(folder.name, "ai_blocks.json"))
+    patcher.start()
+    case.addCleanup(patcher.stop)
+
+
 class BlockTests(unittest.TestCase):
-    def test_the_directory_lists_each_under_its_job_and_says_what_is_missing(self):
+    def setUp(self):
+        keep_switches_apart(self)
+
+    def test_the_directory_lists_what_can_run_by_job_and_the_rest_in_a_line(self):
         listed = reference_blocks.directory(BUILT_IN)
-        self.assertEqual(set(listed), set(reference_blocks.JOBS.values()))
-        text = " ".join(listed.values())
+        self.assertEqual(listed[reference_blocks.JOBS["repaint"]], "inpaint_basic (built-in nodes only)", "only what runs here")
+        self.assertIn("inpaint_lanpaint (LanPaint)", listed["Not here yet, needs"])
+        self.assertIn("upscale (upscaler model)", listed["Not here yet, needs"], "built-in nodes, but no upscale model")
+        everything = reference_blocks.directory(EVERYTHING)
+        self.assertNotIn("Not here yet, needs", everything)
+        text = " ".join(everything.values())
         self.assertTrue(all(f"{name} (" in text for name in reference_blocks.BLOCKS), "every block is in it")
-        repaint = listed[reference_blocks.JOBS["repaint"]]
-        self.assertIn("inpaint_crop_stitch (small fixes, the rest untouched; needs ComfyUI-Inpaint-CropAndStitch, use inpaint_basic)",
-                      repaint)
-        self.assertIn("inpaint_basic (built-in nodes only)", repaint, "ComfyUI's own nodes only")
-        self.assertNotIn("needs", " ".join(reference_blocks.directory(EVERYTHING).values()))
-        self.assertNotIn("needs", " ".join(reference_blocks.directory().values()), "node list unknown: nothing claimed")
-        self.assertLess(len(" ".join(reference_blocks.directory(BUILT_IN).values())), 900, "small: it goes with begin_task")
+        self.assertEqual(set(reference_blocks.directory()), set(reference_blocks.JOBS.values()), "node list unknown: all, nothing claimed")
+        self.assertLess(len(" ".join(everything.values())), 900, "small: it goes with begin_task")
+
+    def test_a_block_turned_off_is_not_offered_and_cannot_be_built(self):
+        reference_blocks.set_on("inpaint_lanpaint", False)
+        self.assertNotIn("inpaint_lanpaint", " ".join(reference_blocks.directory(EVERYTHING).values()))
+        with self.assertRaisesRegex(reference_blocks.BlockError, "turned block inpaint_lanpaint off"):
+            reference_blocks.nodes_of("inpaint_lanpaint", EVERYTHING, "a.png")
+        shown = {item["name"]: item for item in reference_blocks.status(BUILT_IN)}
+        self.assertEqual((shown["inpaint_lanpaint"]["on"], shown["inpaint_lanpaint"]["usable"]), (False, False))
+        self.assertEqual(shown["inpaint_lanpaint"]["packs"], [{"name": "LanPaint", "installed": False}])
+        self.assertEqual(shown["upscale"]["models"], [{"kind": "upscaler"}])
+        self.assertEqual(shown["control_pose"]["packs"], [{"name": "comfyui_controlnet_aux", "installed": False}])
+        self.assertTrue(shown["inpaint_basic"]["usable"])
+        self.assertEqual(reference_blocks.set_on("inpaint_lanpaint", True), set())
+        with self.assertRaises(reference_blocks.BlockError):
+            reference_blocks.set_on("nope", True)
+
+    def test_every_block_has_its_words_in_both_languages(self):
+        for name, block in reference_blocks.BLOCKS.items():
+            with self.subTest(block=name):
+                for field in ("title", "about", "source"):
+                    self.assertTrue(block[field]["zh"] and block[field]["en"])
+                self.assertIn(block["job"], reference_blocks.JOBS)
+                self.assertTrue(block["short"] and block["after"])
 
     def test_a_repaint_block_is_the_group_with_the_users_picture(self):
         nodes = reference_blocks.nodes_of("inpaint_crop_stitch", EVERYTHING, " anomalous_inpaint_ab.png ")
@@ -68,13 +102,13 @@ class BlockTests(unittest.TestCase):
     def test_upscaling_takes_an_upscale_model_and_brings_it_to_a_quarter_larger(self):
         nodes = reference_blocks.nodes_of("upscale", EVERYTHING)
         self.assertEqual((nodes["upscaler"]["inputs"]["model_name"], nodes["fit"]["inputs"]["scale_by"]), ("4x-UltraSharp.pth", 0.3125))
-        self.assertEqual((nodes["redraw"]["like"], nodes["redraw"]["inputs"]["denoise"]), ("$sampler", reference_blocks.UPSCALE_DENOISE))
+        self.assertEqual((nodes["redraw"]["like"], nodes["redraw"]["inputs"]["denoise"]), ("$sampler", 0.35))
         self.assertEqual(nodes["enlarge"]["inputs"]["image"], ["$save.images", "*"], "the saved picture, stitched or not")
         only_2x = {**EVERYTHING, "UpscaleModelLoader": {"input": {"required": {"model_name": [["2x-Lite.pth"]]}}}}
         self.assertEqual(reference_blocks.nodes_of("upscale", only_2x)["fit"]["inputs"]["scale_by"], 0.625)
         with self.assertRaisesRegex(reference_blocks.BlockError, "No upscale model"):
             reference_blocks.nodes_of("upscale_tiled", {**EVERYTHING, "UpscaleModelLoader": {}})
-        self.assertIn("needs ComfyUI_UltimateSDUpscale, use upscale)", reference_blocks.directory(BUILT_IN)[reference_blocks.JOBS["upscale"]])
+        self.assertIn("upscale_tiled (ComfyUI_UltimateSDUpscale)", reference_blocks.directory(BUILT_IN)["Not here yet, needs"])
 
     def test_lanpaint_takes_the_samplers_place(self):
         nodes = reference_blocks.nodes_of("inpaint_lanpaint", EVERYTHING, "a.png")
@@ -106,11 +140,12 @@ class BlockTests(unittest.TestCase):
                             self.assertTrue(value[0] in block["nodes"] or value[0].split(".")[0] in ("$sampler", "$decode", "$save"))
                 for field in ("wire_to", "like", "replaces"):
                     if field in spec:
-                        self.assertIn(spec[field], ("$sampler", "$decode", "$save"))
+                        self.assertIn(spec[field], ("$sampler", "$decode", "$save", "$loader"))
 
 
 class AddBlockTests(unittest.TestCase):
     def setUp(self):
+        keep_switches_apart(self)
         for name, value in (("_page", {"nodes": {}, "reaches_output": True}), ("object_info", EVERYTHING)):
             patcher = mock.patch.object(mcp_canvas_edit, name, return_value=value)
             setattr(self, name.strip("_"), patcher.start())

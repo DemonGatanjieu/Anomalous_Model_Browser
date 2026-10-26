@@ -46,7 +46,7 @@ async function searchManager(selector, words) {
 
 /** ComfyUI Manager's node pack list, searched for `pack` where the Manager allows it (its name
  * is also copied, to paste where it does not); the browser steps aside for it. */
-async function openManager(owner, pack) {
+export async function openManager(owner, pack) {
     const manager = await findManager();
     if (!manager) {
         alert(t('tidyUsageNoManager'));

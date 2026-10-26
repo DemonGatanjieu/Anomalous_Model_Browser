@@ -41,7 +41,7 @@ function txt2img() {
 {
     const { g, ckpt, pos, neg, sampler, decode, save } = txt2img();
     const roles = findRoles(g);
-    assert.deepEqual([roles.sampler, roles.decode, roles.save], [sampler, decode, save]);
+    assert.deepEqual([roles.sampler, roles.decode, roles.save, roles.loader], [sampler, decode, save, ckpt]);
     const placed = placeRoles(g, {
         a: { class_type: 'X', inputs: { model: ['$sampler.model', '*'], clip: ['$sampler.positive.clip', '*'], vae: ['$decode.vae', '*'],
             image: ['$decode', 0], negative: ['$sampler.negative', '*'], steps: 20 }, wire_to: '$save' },
@@ -54,6 +54,15 @@ function txt2img() {
     assert.ok(pos, 'unused');
     const plain = { a: { class_type: 'X', inputs: { image: ['#3', 0] } } };
     assert.equal(placeRoles(g, plain), plain, 'a group naming no role is passed on as it is');
+}
+
+// The loader is past the LoRAs on the model line.
+{
+    const { g, ckpt, sampler } = txt2img();
+    const lora = g.node('LoraLoader', [['model', 'MODEL'], ['clip', 'CLIP']], [['MODEL', 'MODEL'], ['CLIP', 'CLIP']]);
+    g.wire(ckpt, 0, lora, 'model');
+    g.wire(lora, 0, sampler, 'model');
+    assert.equal(findRoles(g).loader, ckpt, 'past the LoRA');
 }
 
 // Several samplers: near_node_id picks one, else nothing is guessed; muted ones do not count.

@@ -229,8 +229,8 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
     if (nodes is None) == (block is None):
         raise ToolError("Give either nodes (a group in API form) or block (a ready-made one from begin_task's blocks), one of the two.")
     if block is not None:
-        if reference_blocks.BLOCKS.get(str(block), {}).get("control") and image:
-            image = ai_pictures.to_input(image)  # the picture to follow, where LoadImage reads
+        if reference_blocks.BLOCKS.get(str(block), {}).get("takes") in ("reference", "picture") and image:
+            image = ai_pictures.to_input(image)  # the picture to follow or work on, where LoadImage reads
         try:  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
             nodes, replace = reference_blocks.nodes_of(str(block), object_info(ctx), image, lambda: _main_base(near_node_id),
                                                        _base_of), True

@@ -1,0 +1,70 @@
+{
+  "job": "repaint",
+  "rank": 3,
+  "short": "built-in nodes only",
+  "title": {
+    "zh": "局部重绘·官方节点",
+    "en": "Repaint: built-in nodes"
+  },
+  "about": {
+    "zh": "只用 ComfyUI 自带的节点：整张图一起采样，只有圈出的地方变。没装上面两个包时用。",
+    "en": "ComfyUI's own nodes only: the whole picture is sampled, only the area changes. For when neither pack above is installed."
+  },
+  "source": {
+    "zh": "ComfyUI 官方的局部重绘做法",
+    "en": "ComfyUI's own way to inpaint"
+  },
+  "packs": {},
+  "takes": "inpaint",
+  "nodes": {
+    "picture": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "soft": {
+      "class_type": "DifferentialDiffusion",
+      "inputs": {
+        "model": [
+          "$sampler.model",
+          "*"
+        ]
+      },
+      "wire_to": "$sampler"
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": [
+          "picture",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      }
+    },
+    "area": {
+      "class_type": "SetLatentNoiseMask",
+      "inputs": {
+        "samples": [
+          "encode",
+          0
+        ],
+        "mask": [
+          "picture",
+          1
+        ]
+      },
+      "wire_to": "$sampler"
+    }
+  },
+  "roles": {
+    "sampler": {
+      "denoise": 0.7
+    }
+  },
+  "after": "The sampler repaints only the area, at denoise 0.7 so it keeps the picture's look (higher changes more). Then run_workflow."
+}

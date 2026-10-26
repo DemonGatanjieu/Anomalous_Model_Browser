@@ -1,0 +1,79 @@
+{
+  "job": "follow",
+  "rank": 1,
+  "short": "its pose",
+  "title": {
+    "zh": "照着姿势画",
+    "en": "Follow a pose"
+  },
+  "about": {
+    "zh": "你递给 AI 一张图，AMB 读出人物姿势（OpenPose），用和你底模对得上的控制网让新图摆出这个姿势。",
+    "en": "From a picture you hand the AI, Anomalous reads the pose (OpenPose) and steers the picture with a ControlNet that fits your model."
+  },
+  "source": {
+    "zh": "参考工作流的「底图控制网」组",
+    "en": "The reference workflow's ControlNet group"
+  },
+  "packs": {
+    "OpenposePreprocessor": "comfyui_controlnet_aux"
+  },
+  "takes": "reference",
+  "control": "pose",
+  "nodes": {
+    "reference": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "pose": {
+      "class_type": "OpenposePreprocessor",
+      "inputs": {
+        "image": [
+          "reference",
+          0
+        ],
+        "detect_hand": "enable",
+        "detect_body": "enable",
+        "detect_face": "enable",
+        "resolution": 1024
+      }
+    },
+    "controlnet": {
+      "class_type": "ControlNetLoader",
+      "inputs": {
+        "control_net_name": "$controlnet"
+      }
+    },
+    "steer": {
+      "class_type": "ControlNetApplyAdvanced",
+      "inputs": {
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "control_net": [
+          "controlnet",
+          0
+        ],
+        "image": [
+          "pose",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "strength": 0.8,
+        "start_percent": 0.0,
+        "end_percent": 0.8
+      },
+      "wire_to": "$sampler"
+    }
+  },
+  "after": "run_workflow: the picture now takes that pose (strength 0.8, for the first 80% of the steps; lower either for a looser pose). The prompt still says who and what: change it if it fights the pose."
+}

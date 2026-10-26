@@ -10,7 +10,12 @@
   - **放大**：用放大模型放大到 1.25 倍，再用同样的设置轻轻重画一遍（强度 0.35），细节是真画出来的而不是糊的，另存一张（文件名以 upscaled 开头）。只用 ComfyUI 自带的节点，自动挑你装的放大模型。参考工作流作者也只用 1.25 倍，6GB 显存的卡上 1.5 倍就太吃力了。
   - **分块放大**：放大 2 倍，按 1024 的小块逐块重画，多大的图都放得下，比上一个慢。需要节点包 ComfyUI_UltimateSDUpscale。
   - **照着姿势画**、**照着构图画**：你递给 AI 一张图，AMB 读出它的姿势（OpenPose）或深度（Depth Anything V2），用控制网引导出图。控制网模型由 AMB 按画布上底模的类型自动挑（SDXL 的配 SDXL 的，同底模的优先），参考图自动复制一份到输入文件夹（只新建，不覆盖）。需要节点包 comfyui_controlnet_aux。
-  - 缺节点包时，AI 会知道缺哪个、该用哪块代替；画布上有好几个采样器时，它要指明用哪一个，AMB 不乱猜。AI 开工时收到的清单按"要做的事"分组，每块几个字。
+  - **迭代放大**：分 3 小步放大到 1.3 倍，每步轻轻重画，比一步到位更稳。用 Impact Pack。
+  - **双模型放大**：和"放大"一样，但重画换一个更稳的模型（底模放大时容易走样就用它）；新加的模型加载器先是同一个模型，AI 按你的意思换。只用自带节点。
+  - **背景移除**：把一张图的背景抠掉，存成透明 PNG（文件名以 nobg 开头）。需要节点包 comfyui-inspyrenet-rembg。
+  - 画布上有好几个采样器时，AI 要指明用哪一个，AMB 不乱猜。
+- AI 工作台右边多了**做法**面板：按"要做的事"分组列出所有做法，每块写着能干什么、从哪学来的。缺节点包或缺模型的变灰，写明缺什么，点缺的节点包会打开 ComfyUI-Manager 去搜它。每块有个开关：关掉的，AI 就看不到，硬要用也会被拒绝。AI 开工时只收到开着又能用的做法，其余的只附一行"装了什么还能用什么"。
+- 每块做法现在是一个单独的数据文件（api/blocks/），里面有它的节点、要的节点包和模型、给 AI 的话、面板上的中英文说明。以后收集到新做法，加一个文件就行。
 - AI has ready-made ways of doing things (reference blocks): a few groups of nodes distilled from workflows that do one job well; the AI names one and Anomalous builds it on the canvas, spliced into your workflow, in one call instead of node by node. The AI gets their list, a line each, when it begins a task.
   - **Repaint, crop and stitch**: crops the marked area with a margin around it, repaints it at 1024 and stitches it back, the rest untouched. Anomalous sets the sampler's denoise to 0.75 and tells the AI to write the prompt for that area only ("a hand, five fingers"), or it paints the whole picture's subject (a whole person) into it. Needs ComfyUI-Inpaint-CropAndStitch.
   - **Repaint (built-in nodes)**: for when that pack is not installed, ComfyUI's own nodes only.
@@ -19,7 +24,12 @@
   - **Upscale**: an upscale model enlarges the picture to 1.25×, then a light redraw with the same settings (denoise 0.35) makes the new detail real rather than smeared; saved beside it (prefix upscaled). ComfyUI's own nodes, with an upscale model you have. 1.25× is what the source workflow used; 1.5× is too much for a 6 GB card.
   - **Tiled upscale**: 2×, redrawn in 1024 tiles, so any size fits; slower. Needs ComfyUI_UltimateSDUpscale.
   - **Follow a pose**, **follow a layout**: from a picture you hand the AI, Anomalous reads the pose (OpenPose) or depth (Depth Anything V2) and steers the picture with a ControlNet it picks to fit the canvas's model (SDXL with SDXL, the very same base first); the picture is copied into the input folder, never over a file. Needs comfyui_controlnet_aux.
-  - A missing pack is named to the AI with the block to use instead; with several samplers on the canvas it has to say which one, nothing is guessed. The list the AI gets when it begins is grouped by job, a few words a block.
+  - **Iterative upscale**: 1.3× in 3 small steps, a light redraw each, steadier than one jump. Uses Impact Pack.
+  - **Upscale with a second model**: like Upscale, but a second, steadier model redraws it (for a base model that goes wrong enlarged); its new loader starts as the same model and the AI changes it as you say. Built-in nodes only.
+  - **Remove the background**: saves a picture with its background cut away as a transparent PNG (prefix nobg). Needs comfyui-inspyrenet-rembg.
+  - With several samplers on the canvas the AI has to say which one; nothing is guessed.
+- A **Ways** panel on the right of the AI workbench lists every way by job, what it does and where it came from. Ways missing a node pack or a model are greyed with what they lack; a missing pack opens ComfyUI-Manager searched for it. Each has a switch: one turned off is not offered to the AI, and building it is refused. When it begins, the AI gets only the ways that are on and can run here, with one line on what installing which pack would add.
+- Each way is now a data file of its own (api/blocks/): its nodes, the packs and models it needs, what the AI is told and the panel's words in both languages, so a way collected later is one more file.
 
 ## v1.62.0 — unreleased
 

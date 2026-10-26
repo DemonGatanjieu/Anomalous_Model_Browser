@@ -1,0 +1,50 @@
+{
+  "job": "process",
+  "rank": 1,
+  "short": "cut the subject out, transparent",
+  "title": {
+    "zh": "背景移除",
+    "en": "Remove the background"
+  },
+  "about": {
+    "zh": "把一张图的背景抠掉，存成透明背景的 PNG（文件名以 nobg 开头）。",
+    "en": "Cuts a picture's background away and saves it as a transparent PNG (prefix nobg)."
+  },
+  "source": {
+    "zh": "参考工作流的「背景移除」组，换成你装的 inspyrenet-rembg",
+    "en": "The reference workflow's background removal, with your inspyrenet-rembg"
+  },
+  "packs": {
+    "InspyrenetRembg": "comfyui-inspyrenet-rembg"
+  },
+  "takes": "picture",
+  "nodes": {
+    "picture": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "cut": {
+      "class_type": "InspyrenetRembg",
+      "inputs": {
+        "image": [
+          "picture",
+          0
+        ],
+        "torchscript_jit": "default"
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": [
+          "cut",
+          0
+        ],
+        "filename_prefix": "nobg"
+      }
+    }
+  },
+  "after": "run_workflow saves it with the background cut away (transparent PNG, prefix nobg). On a canvas that makes pictures those are made too: to cut this one out alone, add the block on a blank tab (new_workflow)."
+}
