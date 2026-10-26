@@ -19,6 +19,7 @@ import { setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { addWires, applyWires, groupWires, pairWires, reachesOutput, validateWires } from './canvas_wiring.js';
 import { workflowKey } from './canvas_undo.js';
+import { placeRoles } from './canvas_roles.js';
 
 const BLANK = { last_node_id: 0, last_link_id: 0, nodes: [], links: [], groups: [], config: {}, extra: {}, version: 0.4 };
 
@@ -147,9 +148,10 @@ export function canvasEditActions({ recorded, nodeById }) {
         });
     }
 
-    /** A group of new nodes in API form, wired among themselves, to the canvas ("#12") and by wire_to, as one block and one Ctrl+Z step. */
-    function addNodes({ nodes, near_node_id: nearId, replace = false }, getOwner) {
+    /** A group of new nodes in API form, wired among themselves, to the canvas ("#12", or a block's roles: canvas_roles.js) and by wire_to, as one block and one Ctrl+Z step. */
+    function addNodes({ nodes: asked, near_node_id: nearId, replace = false }, getOwner) {
         return recorded(getOwner, 'mcpDidNodes', async (g) => {
+            const nodes = placeRoles(g, asked, nearId);
             const key = workflowKey(app), before = JSON.stringify(g.serialize());
             const built = await withFreshChoices(() => prepare(nodes));
             if ((app.canvas?.graph || app.graph) !== g || workflowKey(app) !== key || JSON.stringify(g.serialize()) !== before) {

@@ -10,7 +10,7 @@ import json
 import threading
 import time
 
-from . import ai_tasks, ai_toolbox, mcp_fill
+from . import ai_tasks, ai_toolbox, mcp_fill, reference_blocks
 from .mcp_actions import _action, _local, _page
 from .mcp_tools import ToolError
 
@@ -208,13 +208,24 @@ def _api_nodes(nodes, canvas_refs=False):
     return nodes
 
 
-def add_nodes(ctx, nodes, near_node_id=None, replace=False):
+def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None):
     if not isinstance(replace, bool):
         raise ToolError("replace must be true or false.")
-    _api_nodes(nodes, canvas_refs=True)
+    if (nodes is None) == (block is None):
+        raise ToolError("Give nodes (a group in API form) or block (a ready-made one from begin_task's blocks), not both.")
+    if block is not None:
+        try:  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
+            nodes, replace = reference_blocks.nodes_of(str(block), object_info(ctx), image), True
+        except reference_blocks.BlockError as error:
+            raise ToolError(str(error))
+    else:
+        _api_nodes(nodes, canvas_refs=True)
     _allowed(ctx, [spec["class_type"] for spec in nodes.values()])
-    return _next(_page("add_nodes", {"nodes": nodes, "replace": replace,
-                                     "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")}, timeout=60))
+    answer = _next(_page("add_nodes", {"nodes": nodes, "replace": replace,
+                                       "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")}, timeout=60))
+    if block is not None and isinstance(answer, dict) and not answer.get("unwired") and answer.get("reaches_output") is not False:
+        answer["next"] = reference_blocks.after(str(block))
+    return answer
 
 
 def connect_nodes(ctx, from_node_id, to_node_id, input=None, output=None, replace=None):
@@ -283,8 +294,11 @@ CANVAS_TOOLS = dict([
             "\"VAEEncode\", \"inputs\": {\"pixels\": [\"#12\", 0], \"vae\": [\"#4\", \"VAE\"]}}, \"b\": {..., \"inputs\": "
             "{\"samples\": [\"a\", 0]}, \"wire_to\": 15}}. A link names a key of the group or a canvas node \"#id\", and "
             "an output slot or name; wire_to as in add_node. Checked first; one Ctrl+Z step; the answer maps keys "
-            "to node ids.",
-            add_nodes, {"nodes": {"type": "object"}, "near_node_id": _NODE_ID, "replace": {"type": "boolean"}}, ["nodes"]),
+            "to node ids. Or block: a ready-made one (begin_task lists them), spliced into the canvas's sampler by "
+            "itself; near_node_id picks the sampler when there are several.",
+            add_nodes, {"nodes": {"type": "object"}, "block": {"type": "string", "enum": list(reference_blocks.BLOCKS)},
+                        "image": {"type": "string", "description": "For a repaint block: inpaint_image."},
+                        "near_node_id": _NODE_ID, "replace": {"type": "boolean"}}),
     _action("connect_nodes", "Wire two nodes",
             "Wires two nodes: every unique matching type, and same-type sockets of the same name (positive to "
             "positive). Anything ambiguous (a lone CONDITIONING into positive or negative, wildcards) changes "

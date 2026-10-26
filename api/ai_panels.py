@@ -39,17 +39,13 @@ TONES = ("normal", "muted", "tip", "warning")
 LAYOUTS = ("row", "grid", "compare")
 INTERACTIVE = ("choices", "input", "picks")
 INPAINT_NOTE = (
-    "inpaint_image is the picture with the area to repaint: LoadImage(image=inpaint_image) gives the picture and, as MASK, that area. "
-    "inpaint_image is already in ComfyUI's input folder, ready: do not check it with a command; "
-    "get_image_info(image=inpaint_image, folder='input', include_image=true) shows it and the area, zoom_image a part "
-    "of it larger. Repaint with a workflow; do not paint the picture with code of your own. "
-    "Use the picture's own model and prompt (get_image_info on image) and build it with add_node and its wiring "
-    "(in the picture's workflow, LoadImage -> VAEEncode(pixels, vae) -> SetLatentNoiseMask(samples, mask) in place "
-    "of the empty latent), e.g. new_workflow: CheckpointLoaderSimple, "
-    "LoadImage, CLIPTextEncode x2, VAEEncode(pixels, vae) -> SetLatentNoiseMask(samples, mask) -> KSampler "
-    "(denoise 0.5-0.8 keeps the look; 1.0 with VAEEncodeForInpaint(grow_mask_by 8) replaces it) -> VAEDecode -> "
-    "SaveImage; GrowMask softens the edge. Say in report what you set and why, ask_user the strength if unsure, "
-    "and show the old and new picture with a slider panel."
+    "inpaint_image is the picture with the area to repaint as its alpha, already in ComfyUI's input folder: do not "
+    "check it with a command (get_image_info(image=inpaint_image, folder='input', include_image=true) shows it). "
+    "Repaint with a workflow, never by painting the file with code. On a workflow that makes this picture (its model "
+    "and prompt: get_image_info on the picture says them), add_nodes(block=\"inpaint_crop_stitch\", image=inpaint_image) "
+    "builds the repaint in one call, wired into its sampler (block inpaint_basic when that one needs a pack not "
+    "installed); then run_workflow. Say in report what you set and why, ask_user the strength if unsure, and show "
+    "the old and new picture with a slider panel."
 )
 COLORS = ("red", "green", "blue", "yellow", "purple")
 MAX_MARKS = 8

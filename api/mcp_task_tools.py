@@ -4,7 +4,7 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox
+from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, reference_blocks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -32,6 +32,7 @@ def begin_task(ctx, title, new_task=False):
         "after. Unsure where things stand: get_situation. The directory below lists the tools by what you want to do.")}
     answer["next"] = ("get_situation shows where things stand; a daily run is one call: run_workflow(workflow: a saved "
                       "one, with the prompt, seed or size to change).")
+    answer["blocks"] = _blocks(ctx)
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
@@ -48,6 +49,17 @@ def begin_task(ctx, title, new_task=False):
                                 "set_model / add_lora / get_model, image to get_image_info, a combo's name to place_combo, "
                                 "a workflow's name to open_workflow.")
     return answer
+
+
+def _blocks(ctx):
+    """The ready-made blocks (reference_blocks.py), each a line, for begin_task's answer: what to reach for first."""
+    from .mcp_canvas_edit import object_info  # the node list, to say which blocks need a pack first
+    try:
+        info = object_info(ctx) if ctx.get("base_url") else None
+    except ToolError:
+        info = None
+    return {"note": "Ready-made ways to do these; add_nodes(block=…) builds one on the canvas, wired in. Prefer them "
+                    "to building it node by node.", **reference_blocks.directory(info)}
 
 
 def report(ctx, text="", images=None, done=False, reply_to=None, task=None):
@@ -366,7 +378,8 @@ TASK_TOOLS = dict([
                "picture (x, y its top left), or none to keep the marks; grow: pixels added around; feather: pixels of "
                "soft edge. The user sees theirs and yours side by side and picks one, or marks again; with an area "
                "picked the answer has inpaint_image (the picture with that area as its alpha, in ComfyUI's input "
-               "folder) and inpaint_note. Build the repaint yourself. Waits like ask_user.",
+               "folder) and inpaint_note: add_nodes(block=\"inpaint_crop_stitch\", image=inpaint_image) builds the repaint. "
+               "Waits like ask_user.",
                _question_with_images(propose_repaint_area), {"title": {"type": "string", "description": "A few words, in the user's language."},
                                       "marks": {"type": "string"},
                                       "areas": {"type": "array", "maxItems": ai_repaint.MAX_AREAS, "items": {"type": "object", "properties": {

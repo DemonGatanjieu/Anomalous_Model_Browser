@@ -187,6 +187,13 @@ covered by the `styles.css` manifest.
   `web/modules/canvas_wiring.js` plans unique concrete-type connections, selected-branch insertion,
   splices, the wires of a group added in API form (add_nodes; `canvas_build.placedBlock` lays it
   out as one block), conflict/cycle checks and rollback on application failure (`tests/canvas_wiring.mjs`).
+  `api/reference_blocks.py` holds the ready-made blocks distilled from workflows that do one
+  thing well (a repaint that crops and stitches, face and hand detailing): begin_task hands the
+  AI their directory, `add_nodes(block=…)` builds one, its nodes and the settings that workflow
+  used, a block whose pack is missing naming the pack and a built-in stand-in
+  (`tests/test_reference_blocks.py`). Its links name roles that `web/modules/canvas_roles.js`
+  finds on the canvas by their sockets (the sampler, its decode and save, what feeds an input
+  upstream; several samplers: near_node_id), before canvas_wiring splices it in (`tests/canvas_roles.mjs`).
   `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is

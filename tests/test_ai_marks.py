@@ -110,7 +110,7 @@ class MarkTests(unittest.TestCase):
         with mock.patch.object(ai_marks, "_image_content", return_value=None):
             message = ai_panels.attach_pending(ok({}), "Claude", task_id=self.task)["structuredContent"]["user_messages"][0]
         self.assertEqual(message["inpaint_image"], step["inpaint"])
-        self.assertIn("SetLatentNoiseMask", message["inpaint_note"])
+        self.assertIn("inpaint_crop_stitch", message["inpaint_note"])
         self.assertEqual(os.listdir(inputs), [step["inpaint"]], "an empty mask writes nothing")
 
     def test_how_to_change_it_reaches_the_ai_first_as_the_users_choice(self):
