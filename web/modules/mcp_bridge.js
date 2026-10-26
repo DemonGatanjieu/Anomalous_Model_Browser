@@ -16,6 +16,7 @@ import { postCanvasActivity } from './activity_log.js';
 import { keepUndo, workflowKey } from './canvas_undo.js';
 import { canvasBrief } from './mcp_canvas_brief.js';
 import { canvasEditActions } from './mcp_canvas_edit.js';
+import { findRoles } from './canvas_roles.js';
 import { onTaskTab } from './mcp_task_tab.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { chainEnd, loraChain, mainModelLoaders, modelLineStart, planLoraInsertion, spliceLora } from './graph_splice.js';
@@ -291,8 +292,15 @@ async function openModel({ type, path_idx: pathIdx, rel }, getOwner) {
     return { opened: rel };
 }
 
+/** The model line of the sampler a block goes with (canvas_roles.js): the server picks a ControlNet that fits it. */
+function blockModel({ near_node_id: nearId }) {
+    const g = currentGraph();
+    return modelLine(g, findRoles(g, nearId).sampler);
+}
+
 const ACTIONS = {
     describe_canvas: describeCanvas,
+    block_model: blockModel,
     set_prompt: setPrompt,
     set_model: setModel,
     add_lora: addLora,

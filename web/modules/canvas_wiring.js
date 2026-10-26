@@ -140,6 +140,15 @@ export function groupWires(g, made, nodes) {
                 throw new Error(`Node ${key}, input ${input}: ${error.message}`);
             }
         }
+        // A node taking another's place (canvas_roles.js): the old node's sources, where the new node has
+        // that input, and the inputs its outputs fed.
+        for (const [input, value] of Object.entries(spec?.kept || {})) {
+            if ((to.inputs || []).some(item => sameName(item.name, input))) plan.push(...pairWires(source(value[0]), to, { output: value[1], input }));
+        }
+        for (const feed of spec?.feeds || []) {
+            const into = g.getNodeById(feed.to);
+            if (into) plan.push(...pairWires(to, into, { output: feed.output, input: feed.input }).map(p => ({ ...p, replace: true })));
+        }
         const taken = new Set(plan.filter(p => p.to === to).map(p => p.target));
         for (const id of spec?.wire_to == null ? [] : [spec.wire_to].flat()) {
             const into = g.getNodeById(id);

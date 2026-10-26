@@ -58,8 +58,8 @@ def _blocks(ctx):
         info = object_info(ctx) if ctx.get("base_url") else None
     except ToolError:
         info = None
-    return {"note": "Ready-made ways to do these; add_nodes(block=…) builds one on the canvas, wired in. Prefer them "
-                    "to building it node by node.", **reference_blocks.directory(info)}
+    return {"note": "add_nodes(block=…) builds one on the canvas, wired in; prefer it to node by node.",
+            **reference_blocks.directory(info)}
 
 
 def report(ctx, text="", images=None, done=False, reply_to=None, task=None):

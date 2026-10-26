@@ -9,6 +9,7 @@ message in the output folder's ai_inbox, so the gallery has it and the message c
 any other: read as a picture first, size-capped, never over a file.
 """
 
+import hashlib
 import io
 import json
 import os
@@ -139,6 +140,32 @@ def hand(task_id, images, text="", now=None):
         ai_tasks._save(task)
     ai_tasks._notify(task_id)
     return step
+
+
+def to_input(image):
+    """Picture `image` as a file in ComfyUI's input folder, where LoadImage reads (a control block's
+    reference): its name there. One already there stays itself; an output picture the user handed
+    ("subfolder/name.png") is copied, named by its content so the same picture is one file, never over another."""
+    from .mcp_tools import _resolve_folder_image
+
+    rel = str(image or "").replace("\\", "/").strip("/")
+    try:
+        return _resolve_folder_image(rel, "input")[0]
+    except ToolError:
+        pass
+    with open(_resolve_image(rel)[1], "rb") as source:
+        data = source.read()
+    name = f"anomalous_reference_{hashlib.sha1(data).hexdigest()[:12]}.png"
+    target = os.path.join(ai_tasks.folder_paths.get_input_directory(), name)
+    if not os.path.isfile(target):
+        try:
+            with Image.open(io.BytesIO(data)) as picture, open(target, "xb") as out:
+                picture.convert("RGB").save(out, "PNG")
+        except FileExistsError:
+            pass  # the same picture, copied a moment ago
+        except OSError:
+            raise ToolError(f"{image} cannot be read as a picture.")
+    return name
 
 
 def message_of(step):

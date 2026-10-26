@@ -79,4 +79,29 @@ function txt2img() {
     assert.throws(() => findRoles(new Graph()), /No sampler \(KSampler\) on the canvas/);
 }
 
+// The save past a stitch put in between; a node like the sampler takes its settings, one replacing
+// it (and its decode) takes their links in and out too, the links between the two replaced left to the block.
+{
+    const { g, ckpt, pos, neg, sampler, decode, save } = txt2img();
+    const stitch = g.node('InpaintStitchImproved', [['stitcher', 'STITCHER'], ['inpainted_image', 'IMAGE']], [['image', 'IMAGE']]);
+    decode.outputs[0].links = [];
+    g.wire(decode, 0, stitch, 'inpainted_image');
+    g.wire(stitch, 0, save, 'images');
+    assert.equal(findRoles(g).save, save, 'the output node, not the stitch');
+    assert.deepEqual(placeRoles(g, { a: { class_type: 'X', inputs: { image: ['$save.images', '*'] } } }).a.inputs.image, [`#${stitch.id}`, 0]);
+    sampler.widgets = [{ name: 'seed', value: 7 }, { name: 'steps', value: 30 }, { name: 'go', type: 'button' }];
+    const placed = placeRoles(g, {
+        e: { class_type: 'LanPaint_ImageEncode', inputs: { vae: ['$decode.vae', '*'] } },
+        s: { class_type: 'LanPaint_KSampler', replaces: '$sampler', inputs: { latent_image: ['e', 0], denoise: 1 } },
+        d: { class_type: 'LanPaint_ImageDecode', replaces: '$decode', inputs: { samples: ['s', 0] } },
+        r: { class_type: 'KSampler', like: '$sampler', inputs: { denoise: 0.35 } },
+    });
+    assert.deepEqual(placed.s, { class_type: 'LanPaint_KSampler', inputs: { latent_image: ['e', 0], denoise: 1 }, carry: { seed: 7, steps: 30 },
+        kept: { model: [`#${ckpt.id}`, 0], positive: [`#${pos.id}`, 0], negative: [`#${neg.id}`, 0] }, feeds: [], replaces: sampler.id },
+        'the latent it is given, the rest from the old sampler; its only taker is replaced too');
+    assert.deepEqual([placed.d.kept, placed.d.feeds, placed.d.replaces],
+        [{ vae: [`#${ckpt.id}`, 2] }, [{ output: 'IMAGE', to: stitch.id, input: 'inpainted_image' }], decode.id]);
+    assert.deepEqual(placed.r, { class_type: 'KSampler', inputs: { denoise: 0.35 }, carry: { seed: 7, steps: 30 } }, 'like: settings only');
+}
+
 console.log('canvas_roles ok');

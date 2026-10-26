@@ -1,29 +1,46 @@
 """Ready-made blocks (api/reference_blocks.py) and add_nodes(block=…): what the AI is offered, what a
 block needs here, and the group the page is asked to build. No ComfyUI, no page."""
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
+from PIL import Image
+
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import mcp_canvas_edit, mcp_task_tools, reference_blocks  # noqa: E402
+from api import ai_pictures, mcp_canvas_edit, mcp_task_tools, reference_blocks  # noqa: E402
 from api.mcp_tools import ToolError  # noqa: E402
 
 DETECTORS = {"input": {"required": {"model_name": [["bbox/hand_yolov8n.pt", "bbox/hand_yolov8s.pt", "bbox/face_yolov8m.pt", "segm/person_yolov8m-seg.pt"]]}}}
-EVERYTHING = {kind: {} for block in reference_blocks.BLOCKS.values() for kind in block["packs"]} | {"UltralyticsDetectorProvider": DETECTORS}
+UPSCALERS = {"input": {"required": {"model_name": ["COMBO", {"options": ["2x-Lite.pth", "RealESRGAN_x4plus.pth", "4x-UltraSharp.pth"]}]}}}
+CONTROLNETS = {"input": {"required": {"control_net_name": [[
+    "SD_1.5/control_v11p_sd15_openpose.safetensors", "anima-lllite-pose-1.safetensors", "SDXL/union-promax.safetensors",
+    "NoobAI/noob-openpose.safetensors", "SDXL/xinsir-openpose.safetensors"]]}}}
+BASES = {"SD_1.5/control_v11p_sd15_openpose.safetensors": "SD 1.5", "SDXL/union-promax.safetensors": "SDXL 1.0",
+         "NoobAI/noob-openpose.safetensors": "NoobAI", "SDXL/xinsir-openpose.safetensors": "SDXL 1.0"}
+base = lambda name: BASES.get(name, "")  # noqa: E731
+EVERYTHING = {kind: {} for block in reference_blocks.BLOCKS.values() for kind in block["packs"]} | {
+    "UltralyticsDetectorProvider": DETECTORS, "UpscaleModelLoader": UPSCALERS, "ControlNetLoader": CONTROLNETS}
 BUILT_IN = {"LoadImage": {}, "KSampler": {}}
 
 
 class BlockTests(unittest.TestCase):
-    def test_the_directory_says_what_each_is_for_and_what_is_missing(self):
+    def test_the_directory_lists_each_under_its_job_and_says_what_is_missing(self):
         listed = reference_blocks.directory(BUILT_IN)
-        self.assertEqual(set(listed), set(reference_blocks.BLOCKS))
-        self.assertIn("Needs ComfyUI-Inpaint-CropAndStitch (not installed: use inpaint_basic)", listed["inpaint_crop_stitch"])
-        self.assertNotIn("Needs", listed["inpaint_basic"], "ComfyUI's own nodes only")
-        self.assertNotIn("Needs", reference_blocks.directory(EVERYTHING)["inpaint_crop_stitch"])
-        self.assertNotIn("Needs", reference_blocks.directory()["inpaint_crop_stitch"], "node list unknown: nothing claimed")
+        self.assertEqual(set(listed), set(reference_blocks.JOBS.values()))
+        text = " ".join(listed.values())
+        self.assertTrue(all(f"{name} (" in text for name in reference_blocks.BLOCKS), "every block is in it")
+        repaint = listed[reference_blocks.JOBS["repaint"]]
+        self.assertIn("inpaint_crop_stitch (small fixes, the rest untouched; needs ComfyUI-Inpaint-CropAndStitch, use inpaint_basic)",
+                      repaint)
+        self.assertIn("inpaint_basic (built-in nodes only)", repaint, "ComfyUI's own nodes only")
+        self.assertNotIn("needs", " ".join(reference_blocks.directory(EVERYTHING).values()))
+        self.assertNotIn("needs", " ".join(reference_blocks.directory().values()), "node list unknown: nothing claimed")
+        self.assertLess(len(" ".join(reference_blocks.directory(BUILT_IN).values())), 900, "small: it goes with begin_task")
 
     def test_a_repaint_block_is_the_group_with_the_users_picture(self):
         nodes = reference_blocks.nodes_of("inpaint_crop_stitch", EVERYTHING, " anomalous_inpaint_ab.png ")
@@ -48,6 +65,38 @@ class BlockTests(unittest.TestCase):
         with self.assertRaisesRegex(reference_blocks.BlockError, "No face detector model"):
             reference_blocks.nodes_of("detail_face_hands", no_faces)
 
+    def test_upscaling_takes_an_upscale_model_and_brings_it_to_a_quarter_larger(self):
+        nodes = reference_blocks.nodes_of("upscale", EVERYTHING)
+        self.assertEqual((nodes["upscaler"]["inputs"]["model_name"], nodes["fit"]["inputs"]["scale_by"]), ("4x-UltraSharp.pth", 0.3125))
+        self.assertEqual((nodes["redraw"]["like"], nodes["redraw"]["inputs"]["denoise"]), ("$sampler", reference_blocks.UPSCALE_DENOISE))
+        self.assertEqual(nodes["enlarge"]["inputs"]["image"], ["$save.images", "*"], "the saved picture, stitched or not")
+        only_2x = {**EVERYTHING, "UpscaleModelLoader": {"input": {"required": {"model_name": [["2x-Lite.pth"]]}}}}
+        self.assertEqual(reference_blocks.nodes_of("upscale", only_2x)["fit"]["inputs"]["scale_by"], 0.625)
+        with self.assertRaisesRegex(reference_blocks.BlockError, "No upscale model"):
+            reference_blocks.nodes_of("upscale_tiled", {**EVERYTHING, "UpscaleModelLoader": {}})
+        self.assertIn("needs ComfyUI_UltimateSDUpscale, use upscale)", reference_blocks.directory(BUILT_IN)[reference_blocks.JOBS["upscale"]])
+
+    def test_lanpaint_takes_the_samplers_place(self):
+        nodes = reference_blocks.nodes_of("inpaint_lanpaint", EVERYTHING, "a.png")
+        self.assertEqual((nodes["sampler"]["replaces"], nodes["decode"]["replaces"]), ("$sampler", "$decode"))
+        self.assertEqual(nodes["sampler"]["inputs"]["latent_image"], ["encode", 0])
+        with self.assertRaisesRegex(reference_blocks.BlockError, "LanPaint, not installed here. Use block inpaint_crop_stitch"):
+            reference_blocks.nodes_of("inpaint_lanpaint", BUILT_IN, "a.png")
+
+    def test_a_control_block_takes_a_controlnet_that_fits_the_canvas_model(self):
+        def control(name, main):
+            return reference_blocks.nodes_of(name, EVERYTHING, "ref.png", lambda: main, base)["controlnet"]["inputs"]["control_net_name"]
+        self.assertEqual(control("control_pose", "SDXL 1.0"), "SDXL/xinsir-openpose.safetensors", "its very base first")
+        self.assertEqual(control("control_pose", "NoobAI"), "NoobAI/noob-openpose.safetensors")
+        self.assertEqual(control("control_pose", "Illustrious"), "NoobAI/noob-openpose.safetensors", "of the SDXL family, in list order")
+        self.assertEqual(control("control_pose", "SD 1.5"), "SD_1.5/control_v11p_sd15_openpose.safetensors")
+        self.assertEqual(control("control_depth", "SDXL 1.0"), "SDXL/union-promax.safetensors", "no depth one: the union one follows depth too")
+        with self.assertRaisesRegex(reference_blocks.BlockError, "No depth ControlNet for SD 1.x models"):
+            control("control_depth", "SD 1.5")
+        self.assertEqual(control("control_pose", ""), "SD_1.5/control_v11p_sd15_openpose.safetensors", "model unknown: the first of the kind")
+        with self.assertRaisesRegex(reference_blocks.BlockError, "needs image: the picture to follow"):
+            reference_blocks.nodes_of("control_pose", EVERYTHING)
+
     def test_every_link_names_a_node_of_its_block_or_a_role(self):
         for name, block in reference_blocks.BLOCKS.items():
             for key, spec in block["nodes"].items():
@@ -55,8 +104,9 @@ class BlockTests(unittest.TestCase):
                     if isinstance(value, list):
                         with self.subTest(block=name, node=key):
                             self.assertTrue(value[0] in block["nodes"] or value[0].split(".")[0] in ("$sampler", "$decode", "$save"))
-                if "wire_to" in spec:
-                    self.assertIn(spec["wire_to"], ("$sampler", "$decode", "$save"))
+                for field in ("wire_to", "like", "replaces"):
+                    if field in spec:
+                        self.assertIn(spec[field], ("$sampler", "$decode", "$save"))
 
 
 class AddBlockTests(unittest.TestCase):
@@ -74,6 +124,19 @@ class AddBlockTests(unittest.TestCase):
         self.assertEqual(payload["nodes"]["picture"]["inputs"]["image"], "a.png")
         self.assertIn("set_prompt it to what belongs in the area", answer["next"], "what to do next with this block")
 
+    def test_a_control_block_asks_the_page_for_the_model_and_copies_the_picture_to_input(self):
+        answers = {"block_model": {"model": "noob.safetensors", "loras": []}, "add_nodes": {"nodes": {}, "reaches_output": True}}
+        self.page.side_effect = lambda action, payload=None, **_: answers[action]
+        with mock.patch.object(ai_pictures, "to_input", return_value="anomalous_reference_x.png") as to_input, \
+                mock.patch.object(mcp_canvas_edit, "_base_of", side_effect=base), \
+                mock.patch.object(mcp_canvas_edit.model_advice, "_main_base", return_value="Illustrious"):
+            mcp_canvas_edit.add_nodes({}, block="control_pose", image="ai_inbox/ref.png")
+        to_input.assert_called_once_with("ai_inbox/ref.png")
+        self.assertEqual([call[0][0] for call in self.page.call_args_list], ["block_model", "add_nodes"])
+        nodes = self.page.call_args[0][1]["nodes"]
+        self.assertEqual((nodes["reference"]["inputs"]["image"], nodes["controlnet"]["inputs"]["control_net_name"]),
+                         ("anomalous_reference_x.png", "NoobAI/noob-openpose.safetensors"), "Illustrious is of the SDXL family")
+
     def test_nodes_or_block_not_both_and_errors_reach_the_ai(self):
         for arguments in ({}, {"nodes": {"a": {"class_type": "LoadImage"}}, "block": "inpaint_basic"}):
             with self.assertRaisesRegex(ToolError, "either nodes .* or block .*one of the two"):
@@ -88,9 +151,27 @@ class AddBlockTests(unittest.TestCase):
                 mock.patch.object(mcp_task_tools.ai_tasks, "get_task", return_value={"id": "t", "steps": []}):
             blocks = mcp_task_tools.begin_task({"client": "A"}, "修手")["blocks"]
         self.assertIn("add_nodes(block=", blocks["note"])
-        self.assertIn("inpaint_crop_stitch", blocks)
+        self.assertIn("inpaint_crop_stitch (", blocks[reference_blocks.JOBS["repaint"]])
         self.object_info.side_effect = ToolError("down")
-        self.assertNotIn("Needs", mcp_task_tools._blocks({})["inpaint_crop_stitch"], "no node list: the plain directory")
+        self.assertNotIn("needs", " ".join(mcp_task_tools._blocks({}).values()), "no node list: the plain directory")
+
+
+class ReferencePictureTests(unittest.TestCase):
+    def test_a_handed_picture_is_copied_to_input_once_and_an_input_one_stays(self):
+        with tempfile.TemporaryDirectory() as output, tempfile.TemporaryDirectory() as input_dir:
+            os.makedirs(os.path.join(output, "ai_inbox"))
+            Image.new("RGBA", (8, 8), "red").save(os.path.join(output, "ai_inbox", "ref.png"))
+            Image.new("RGB", (8, 8), "blue").save(os.path.join(input_dir, "mine.png"))
+            folders = ai_pictures.ai_tasks.folder_paths
+            with mock.patch.object(folders, "get_output_directory", return_value=output), \
+                    mock.patch.object(folders, "get_input_directory", return_value=input_dir):
+                name = ai_pictures.to_input("ai_inbox/ref.png")
+                self.assertEqual(ai_pictures.to_input("ai_inbox\\ref.png"), name, "the same picture, the same file")
+                self.assertEqual(ai_pictures.to_input("mine.png"), "mine.png")
+                with self.assertRaises(ToolError):
+                    ai_pictures.to_input("ai_inbox/gone.png")
+            self.assertTrue(name.startswith("anomalous_reference_"))
+            self.assertEqual(sorted(os.listdir(input_dir)), sorted(["mine.png", name]))
 
 
 if __name__ == "__main__":

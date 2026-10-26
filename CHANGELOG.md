@@ -6,12 +6,20 @@
   - **局部重绘·裁切缝合**：把圈出的地方连同周围一圈一起裁出来，放大到 1024 重画，再缝回原图，别处一点不动。AMB 顺手把采样强度调到 0.75，并提醒 AI 把提示词改成只写这块地方（比如“一只手，五根手指”），不然它会把整张图的内容（比如一整个人）画进这一小块里。需要节点包 ComfyUI-Inpaint-CropAndStitch。
   - **局部重绘（官方节点）**：没装上面那个包时用它，只用 ComfyUI 自带的节点。
   - **部位细化（脸和手）**：出完图以后找出脸和手，各自放大重画再贴回去，细化后的图另存一张（文件名以 detailed 开头）。需要 Impact Pack 和 Impact Subpack，以及 models/ultralytics/bbox 里的检测模型。
-  - 缺节点包时，AI 会知道缺哪个、该用哪块代替；画布上有好几个采样器时，它要指明用哪一个，AMB 不乱猜。
+  - **局部重绘·LanPaint**：把采样器整个换成 LanPaint 的（步数、CFG、种子照搬原来的），它每一步都多想几遍，新画的部分和周围融合得最好，任何模型都能用，不用专门的重绘模型；代价是慢好几倍。需要节点包 LanPaint。
+  - **放大**：用放大模型放大到 1.25 倍，再用同样的设置轻轻重画一遍（强度 0.35），细节是真画出来的而不是糊的，另存一张（文件名以 upscaled 开头）。只用 ComfyUI 自带的节点，自动挑你装的放大模型。参考工作流作者也只用 1.25 倍，6GB 显存的卡上 1.5 倍就太吃力了。
+  - **分块放大**：放大 2 倍，按 1024 的小块逐块重画，多大的图都放得下，比上一个慢。需要节点包 ComfyUI_UltimateSDUpscale。
+  - **照着姿势画**、**照着构图画**：你递给 AI 一张图，AMB 读出它的姿势（OpenPose）或深度（Depth Anything V2），用控制网引导出图。控制网模型由 AMB 按画布上底模的类型自动挑（SDXL 的配 SDXL 的，同底模的优先），参考图自动复制一份到输入文件夹（只新建，不覆盖）。需要节点包 comfyui_controlnet_aux。
+  - 缺节点包时，AI 会知道缺哪个、该用哪块代替；画布上有好几个采样器时，它要指明用哪一个，AMB 不乱猜。AI 开工时收到的清单按"要做的事"分组，每块几个字。
 - AI has ready-made ways of doing things (reference blocks): a few groups of nodes distilled from workflows that do one job well; the AI names one and Anomalous builds it on the canvas, spliced into your workflow, in one call instead of node by node. The AI gets their list, a line each, when it begins a task.
   - **Repaint, crop and stitch**: crops the marked area with a margin around it, repaints it at 1024 and stitches it back, the rest untouched. Anomalous sets the sampler's denoise to 0.75 and tells the AI to write the prompt for that area only ("a hand, five fingers"), or it paints the whole picture's subject (a whole person) into it. Needs ComfyUI-Inpaint-CropAndStitch.
   - **Repaint (built-in nodes)**: for when that pack is not installed, ComfyUI's own nodes only.
   - **Face and hand detailing**: after a picture is made, finds faces and hands, repaints each larger and puts it back, saving the detailed picture beside it (prefix detailed). Needs Impact Pack and Impact Subpack and detector models in models/ultralytics/bbox.
-  - A missing pack is named to the AI with the block to use instead; with several samplers on the canvas it has to say which one, nothing is guessed.
+  - **Repaint with LanPaint**: the sampler becomes LanPaint's (same steps, cfg and seed), which thinks several times a step, so the new part blends in best, with any model and no inpainting model; several times slower. Needs LanPaint.
+  - **Upscale**: an upscale model enlarges the picture to 1.25×, then a light redraw with the same settings (denoise 0.35) makes the new detail real rather than smeared; saved beside it (prefix upscaled). ComfyUI's own nodes, with an upscale model you have. 1.25× is what the source workflow used; 1.5× is too much for a 6 GB card.
+  - **Tiled upscale**: 2×, redrawn in 1024 tiles, so any size fits; slower. Needs ComfyUI_UltimateSDUpscale.
+  - **Follow a pose**, **follow a layout**: from a picture you hand the AI, Anomalous reads the pose (OpenPose) or depth (Depth Anything V2) and steers the picture with a ControlNet it picks to fit the canvas's model (SDXL with SDXL, the very same base first); the picture is copied into the input folder, never over a file. Needs comfyui_controlnet_aux.
+  - A missing pack is named to the AI with the block to use instead; with several samplers on the canvas it has to say which one, nothing is guessed. The list the AI gets when it begins is grouped by job, a few words a block.
 
 ## v1.62.0 — unreleased
 

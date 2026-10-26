@@ -89,6 +89,11 @@ function prepare(nodes) {
         } catch (error) {
             throw new Error(`Node ${key}: ${error.message}`);
         }
+        // Settings it takes from the node it is like (canvas_roles.js), where it has them and the value fits.
+        for (const [name, value] of Object.entries(spec?.carry || {})) {
+            if (name in values) continue;
+            try { plans[key].push(...valuePlan(node, { [name]: value })); } catch { /* not a setting of this node */ }
+        }
         made[key] = node;
     }
     for (const link of links) {
@@ -164,6 +169,8 @@ export function canvasEditActions({ recorded, nodeById }) {
             const keyOf = new Map(Object.entries(built.made).map(([name, node]) => [node, name]));
             const inside = wires.filter(p => keyOf.has(p.from) && keyOf.has(p.to)).map(p => ({ from: keyOf.get(p.from), to: keyOf.get(p.to) }));
             const spots = placedBlock(built.made, inside, g._nodes || [], nearId != null ? nodeById(nearId) : null);
+            const gone = Object.entries(nodes).filter(([, spec]) => spec.replaces != null).map(([name, spec]) => [name, g.getNodeById(spec.replaces)]);
+            for (const [name, old] of gone) spots[name] = [...old.pos];
             const added = Object.values(built.made);
             let connections;
             g.beforeChange?.();
@@ -171,13 +178,14 @@ export function canvasEditActions({ recorded, nodeById }) {
                 for (const [name, node] of Object.entries(built.made)) node.pos = spots[name];
                 connections = applyWires(g, wires, added, () => Object.entries(built.made).forEach(([name, node]) => apply(node, built.plans[name])));
                 settings.forEach(([node, plan]) => apply(node, plan));
+                for (const [, old] of gone) g.remove(old);
             } finally { g.afterChange?.(); }
             g.setDirtyCanvas?.(true, true);
             recordCanvasStep(app);
             const spliced = connections.filter(link => link.replaced_from != null);
             return {
                 nodes: Object.fromEntries(Object.entries(built.made).map(([name, node]) => [name, node.id])), wired: connections.length,
-                ...(spliced.length ? { spliced } : {}), reaches_output: added.every(node => reachesOutput(g, node)),
+                ...(spliced.length ? { spliced } : {}), ...(gone.length ? { replaced: gone.map(([, old]) => old.id) } : {}), reaches_output: added.every(node => reachesOutput(g, node)),
                 ...unwired(g), toast: { count: added.length },
             };
         });

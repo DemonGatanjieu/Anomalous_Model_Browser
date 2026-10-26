@@ -10,7 +10,7 @@ import json
 import threading
 import time
 
-from . import ai_tasks, ai_toolbox, mcp_fill, reference_blocks
+from . import ai_pictures, ai_tasks, ai_toolbox, mcp_fill, model_advice, reference_blocks
 from .mcp_actions import _action, _local, _page
 from .mcp_tools import ToolError
 
@@ -208,14 +208,32 @@ def _api_nodes(nodes, canvas_refs=False):
     return nodes
 
 
+def _main_base(near_node_id):
+    """The base model of the model the canvas's sampler uses, as the page reads its loader (model_advice.py)."""
+    line = _page("block_model", {"near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")})
+    return model_advice._main_base((line or {}).get("model") or "")
+
+
+def _base_of(name):
+    """ControlNet file `name`'s base model, as Anomalous knows it."""
+    try:
+        path = model_advice.folder_paths.get_full_path("controlnet", name)
+    except (KeyError, TypeError):
+        path = None
+    return model_advice.base_of(path) if path else ""
+
+
 def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None):
     if not isinstance(replace, bool):
         raise ToolError("replace must be true or false.")
     if (nodes is None) == (block is None):
         raise ToolError("Give either nodes (a group in API form) or block (a ready-made one from begin_task's blocks), one of the two.")
     if block is not None:
+        if reference_blocks.BLOCKS.get(str(block), {}).get("control") and image:
+            image = ai_pictures.to_input(image)  # the picture to follow, where LoadImage reads
         try:  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
-            nodes, replace = reference_blocks.nodes_of(str(block), object_info(ctx), image), True
+            nodes, replace = reference_blocks.nodes_of(str(block), object_info(ctx), image, lambda: _main_base(near_node_id),
+                                                       _base_of), True
         except reference_blocks.BlockError as error:
             raise ToolError(str(error))
     else:
@@ -298,7 +316,7 @@ CANVAS_TOOLS = dict([
             "to node ids. Or block: a ready-made one (begin_task lists them), spliced into the canvas's sampler by "
             "itself; near_node_id picks the sampler when there are several.",
             add_nodes, {"nodes": {"type": "object"}, "block": {"type": "string", "enum": list(reference_blocks.BLOCKS)},
-                        "image": {"type": "string", "description": "For a repaint block: inpaint_image."},
+                        "image": {"type": "string", "description": "A repaint block's inpaint_image; a control block's picture to follow."},
                         "near_node_id": _NODE_ID, "replace": {"type": "boolean"}}),
     _action("connect_nodes", "Wire two nodes",
             "Wires two nodes: every unique matching type, and same-type sockets of the same name (positive to "

@@ -207,4 +207,20 @@ const source = (g, n, slot) => g.getLink(n.inputs[slot].link).origin_id;
     assert.throws(() => groupWires(g, { c: node(null, [['image','IMAGE']], []) }, { c: { inputs: { image: ['zz', 0] } } }), /neither a node of this group/);
     assert.throws(() => groupWires(g, { c: node(null, [['image','IMAGE']], []) }, { c: { inputs: { pixels: [`#${picture.id}`, 0] } } }), /Node c .* has no input pixels; it has: image/);
 }
+// A group node taking a canvas node's place (canvas_roles.js "replaces"): the old node's sources where
+// the new one has the input, and its outputs' takers, replaced; an input the new node lacks is left.
+{
+    const { g, ckpt, pos, neg, sampler } = textToImage();
+    const decode = node(g, [['samples','LATENT'], ['vae','VAE']], [['IMAGE','IMAGE']]);
+    sampler.connect(0, decode, 0);
+    const made = { s: node(null, [['model','MODEL'], ['positive','CONDITIONING'], ['negative','CONDITIONING'], ['latent_image','LATENT']], [['LATENT','LATENT']]),
+        e: node(null, [], [['LATENT','LATENT']]) };
+    const nodes = { e: { inputs: {} }, s: { inputs: { latent_image: ['e', 0] },
+        kept: { model: [`#${ckpt.id}`, 0], positive: [`#${pos.id}`, 0], negative: [`#${neg.id}`, 0], noise: [`#${ckpt.id}`, 0] },
+        feeds: [{ output: 'LATENT', to: decode.id, input: 'samples' }] } };
+    const plan = validateWires(g, groupWires(g, made, nodes));
+    applyWires(g, plan, Object.values(made));
+    assert.deepEqual([0, 1, 2, 3].map(slot => source(g, made.s, slot)), [ckpt.id, pos.id, neg.id, made.e.id]);
+    assert.equal(source(g, decode, 0), made.s.id, 'what the old node fed now comes from the new one');
+}
 console.log('Typed wiring: insertion, splices, same-name pairs, groups, fan-out, inpainting, ambiguity, cycles and rollback passed.');
