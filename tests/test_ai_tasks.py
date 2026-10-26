@@ -15,6 +15,7 @@ sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
 from api import action_catalog, activity_log, ai_callers, ai_panels, ai_task_changes, ai_task_runs, ai_tasks, ai_tasks_routes, mcp_task_tools  # noqa: E402
 from api.mcp_server import TOOLS  # noqa: E402
+from api.ai_task_handoff import REPLY_FRESH
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_tasks_")
 LOG = tempfile.mkdtemp(prefix="amb_ai_activity_")
@@ -331,7 +332,7 @@ class TaskTests(unittest.TestCase):
         ai_tasks.begin_task("A", "前天的")
         ai_tasks.report("A", "做完了", done=True)
         old_id = ai_tasks.list_tasks()[0]["id"]
-        ai_panels.leave_message(old_id, "这根手指怪怪的", now=ai_tasks.time.time() - ai_tasks.REPLY_FRESH - 60)
+        ai_panels.leave_message(old_id, "这根手指怪怪的", now=ai_tasks.time.time() - REPLY_FRESH - 60)
         ai_tasks._current.clear()  # ComfyUI started again since: no task is this app's open one
         ai_tasks.record("A", "describe_canvas", {}, ok({}), ai_tasks.time.time(), True)
         self.assertNotEqual(ai_tasks.get_task(old_id)["steps"][-1]["tool"], "describe_canvas", "a new task, not the one written to days ago")

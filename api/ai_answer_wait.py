@@ -38,23 +38,29 @@ def take_recommended(task_id, step):
 
 def typing(task_id, now=None):
     """The user is typing in task `task_id` (an answer or a message). False for no such task."""
-    if not ai_tasks.get_task(task_id):
-        return False
-    _typed[task_id] = time.time() if now is None else now
-    return True
+    with ai_tasks._lock:
+        if not ai_tasks.get_task(task_id):
+            return False
+        _typed[task_id] = time.time() if now is None else now
+        return True
 
 
-def wait_on(panel_id, now=None):
+def wait_on(panel_id, now=None, allow_recommended=True):
     """For a question of panel `panel_id` still open: {keep_waiting, seconds_left?, typing?, note}, or {}."""
     with ai_tasks._lock:
         task, step = ai_panels._find(panel_id)
+        return _wait_on(task, step, now, allow_recommended)
+
+
+def _wait_on(task, step, now, allow_recommended):
+    """Check typing and commit a timeout choice under the same lock as user answers."""
     if not step:
         return {}
     now = time.time() if now is None else now
     typed = _typed.get(task["id"], 0)
     left = max(step["at"] + ai_gates.answer_wait(), typed + AFTER_TYPING) - now
     if left <= 0:
-        if ai_gates.no_answer() == "recommended" and take_recommended(task["id"], step):
+        if allow_recommended and ai_gates.no_answer() == "recommended" and take_recommended(task["id"], step):
             return {"keep_waiting": False, "took_recommended": True, "note": TOOK}
         return {"keep_waiting": False, "note": "You waited as long as the user set: end your turn now. They answer in "
                                                "Anomalous and tell you in your chat to go on."}
@@ -72,6 +78,28 @@ def for_answer(answer, panel_id=None, now=None):
     if not waiting or answer.get("answers") or answer.get("messages"):
         return answer
     if panel_id is None:
-        found = [found for item in waiting if (found := wait_on(item["panel"], now)).get("keep_waiting")]
-        return {**answer, **max(found, key=lambda item: item["seconds_left"])} if found else answer
+        found = [wait_on(panel, now) for panel in dict.fromkeys(item["panel"] for item in waiting)]
+        live = [item for item in found if item.get("keep_waiting")]
+        status = max(live, key=lambda item: item["seconds_left"]) if live else next((item for item in found if item), {})
+        took = any(item.get("took_recommended") for item in found)
+        return {**answer, **status, **({"took_recommended": True} if took else {})}
     return {**answer, **wait_on(panel_id, now)}
+
+
+def collect(client, panel_id=None, wait_seconds=0, task_id=None):
+    """Wait unlocked, then deliver a timeout choice or a racing user answer in this same call."""
+    answer = ai_panels.get_answers(client, panel_id, wait_seconds, task_id=task_id)
+    if answer.get("answers") or answer.get("messages") or not answer.get("still_waiting"):
+        return answer
+    with ai_tasks._lock:
+        # Input may have arrived after the long wait released its lock. Read it before choosing.
+        answer = ai_panels.get_answers(client, panel_id, 0, task_id=task_id)
+        if answer.get("answers") or answer.get("messages") or not answer.get("still_waiting"):
+            return answer
+        status = for_answer(answer, panel_id)
+        fresh = ai_panels.get_answers(client, panel_id, 0, task_id=task_id)
+        if fresh.get("answers") or fresh.get("messages"):
+            if any(item.get("recommended_on_timeout") for item in fresh.get("answers", [])):
+                fresh["note"] = TOOK
+            return fresh
+        return {**status, **fresh} if fresh.get("still_waiting") else fresh

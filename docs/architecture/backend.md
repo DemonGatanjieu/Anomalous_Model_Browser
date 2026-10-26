@@ -267,6 +267,17 @@ delivery. Gate decisions wake both gate waiters and `get_answers` readers. Expli
 selection in `ai_panels._collect` is exclusive, including when that task no longer exists;
 session-scoped `get_answers` resolves its own active task before collecting input.
 
+`api/ai_task_handoff.py` selects automatic resumption candidates without mutating ownership:
+it ranks unread user messages, marks, materials and panel answers
+by the input's own timestamp, not the task's last background update. Only inputs less than
+two hours old qualify; future timestamps and automatic timeout choices do not. A task with
+an in-flight step is excluded from automatic takeover; explicit task selection is unchanged.
+`ai_answer_wait.collect` is shared by `get_answers` and question tools: after the bounded wait,
+typing/deadline checks, automatic choices and a final nonblocking collection share the task
+lock. A user answer that won the race is returned in that call, without a stale stop note.
+Without a panel id, deadlines are checked once per waiting panel, including expired ones.
+Question receipts preserve messages and attach their pictures even when no option was chosen.
+
 Run monitoring failures end the receipt as `stopped` with a reason without cancelling the
 host workflow. No detected queue entry is not success. Batch progress keeps the complete
 prompt list, and partial errors are saved even before all prompts finish. Marked-image

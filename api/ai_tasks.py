@@ -36,6 +36,7 @@ import uuid
 import folder_paths
 
 from . import action_catalog, activity_log
+from .ai_task_handoff import latest_replied
 from .path_utils import atomic_write_json
 
 FORMAT = 1
@@ -287,17 +288,10 @@ def current_task(client, now=None, session="", task_id=None):
         return _take_replied(tasks, client, now, session) or _new_task(client, now=now, session=session)
 
 
-REPLIES = {"user_message", "user_marks", "user_pictures", "user_toolbox"}  # what the user gives the AI (ai_call_lines.js)
-REPLY_FRESH = 2 * 3600  # an unread reply older than this no longer draws a new chat's calls to its task
-
-
 def _take_replied(tasks, client, now, session="", previous=None):
     """The newest task of this app the user wrote to lately, since its AI last read (an ended one
     opens again), now this app's instead of a new one (its own open task `previous` ends), or None."""
-    replied = max((task for task in tasks.values() if task.get("client") == client and any(
-        step.get("kind") == "user" and step.get("tool") in REPLIES and not step.get("delivered")
-        and now - step.get("at", 0) < REPLY_FRESH for step in task["steps"])),
-        key=lambda task: task.get("updated", 0), default=None)
+    replied = latest_replied(tasks, client, now)
     if replied is None:
         return None
     if previous and previous is not replied and not previous.get("ended"):

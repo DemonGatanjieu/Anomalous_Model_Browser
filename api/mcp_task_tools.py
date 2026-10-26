@@ -134,16 +134,18 @@ def _answer_of(ctx, panel_id, wait_seconds):
     """The answer to the question of panel `panel_id` once the user gives it, waiting at least ASK_WAIT_MIN."""
     client = ctx.get("client") or "AI"
     try:
-        answer = ai_panels.get_answers(client, panel_id, max(ASK_WAIT_MIN, float(wait_seconds or 0)))
+        answer = ai_answer_wait.collect(client, panel_id, max(ASK_WAIT_MIN, float(wait_seconds or 0)))
         given = next((item for item in answer["answers"] if item["question"] == "answer"), None)
         if not given:
-            waited = ai_answer_wait.wait_on(panel_id)
-            if not waited.get("took_recommended"):
-                return {"answered": False, "panel": panel_id, **waited}
-            given = next((item for item in ai_panels.get_answers(client, panel_id, 0)["answers"] if item["question"] == "answer"), {})
+            if answer.get("messages") and answer.get("still_waiting"):
+                # Read the user's new instruction before considering an automatic choice.
+                answer.update(ai_answer_wait.wait_on(panel_id, allow_recommended=False))
+            return {"answered": False, "panel": panel_id, **answer}
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
     out = {"answered": True, "panel": panel_id, "next": "Go on with the user's answer; log_decision it when it settles a choice."}
+    if answer.get("messages"):
+        out["messages"] = answer["messages"]
     if given.get("inpaint_image"):
         out.update(inpaint_image=given["inpaint_image"], inpaint_note=given["note"])
     elif given.get("note"):
@@ -248,9 +250,7 @@ def get_answers(ctx, panel=None, wait_seconds=0, task=None):
         task_id = task or ctx.get("task") or None
         if not task_id and ctx.get("session"):
             task_id = ai_tasks.active_task_id(client, ctx["session"]) or ""
-        answer = ai_answer_wait.for_answer(ai_panels.get_answers(client, panel, wait_seconds, task_id=task_id), panel)
-        if answer.get("took_recommended"):  # Anomalous answered for the user just now: it goes in this answer
-            answer = {**ai_panels.get_answers(client, panel, 0, task_id=task_id), "note": ai_answer_wait.TOOK}
+        answer = ai_answer_wait.collect(client, panel, wait_seconds, task_id=task_id)
         return answer, ai_marks.image_items(answer.get("messages") or [])  # marked pictures, as pictures
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
@@ -286,6 +286,14 @@ def _task_tool(name, title, description, run, properties, required=()):
         "annotations": {"title": title, "readOnlyHint": name in ("run_status", "get_toolbox"), "destructiveHint": False,
                         "idempotentHint": False, "openWorldHint": False},
     }}
+
+
+def _question_with_images(run):
+    """The question receipt also carries pictures the user sent while it was waiting."""
+    def call(ctx, **arguments):
+        result = run(ctx, **arguments)
+        return result, ai_marks.image_items(result.get("messages") or [])
+    return call
 
 
 TASK_TOOLS = dict([
@@ -345,7 +353,7 @@ TASK_TOOLS = dict([
                "other=false; no options: a free answer. Use it for every choice that is the user's, not your chat's "
                f"question form. Waits at least {ASK_WAIT_MIN} s, up to wait_seconds; unanswered and keep_waiting: wait on "
                "with get_answers. End every round of work with it.",
-               ask_user, {"question": {"type": "string"},
+               _question_with_images(ask_user), {"question": {"type": "string"},
                           "options": {"type": "array", "maxItems": 8, "items": {"type": "object", "properties": {
                               "label": {"type": "string"}, "detail": {"type": "string"}, "recommended": {"type": "boolean"}}}},
                           "multiple": {"type": "boolean", "default": False}, "other": {"type": "boolean", "default": True},
@@ -359,7 +367,7 @@ TASK_TOOLS = dict([
                "soft edge. The user sees theirs and yours side by side and picks one, or marks again; with an area "
                "picked the answer has inpaint_image (the picture with that area as its alpha, in ComfyUI's input "
                "folder) and inpaint_note. Build the repaint yourself. Waits like ask_user.",
-               propose_repaint_area, {"title": {"type": "string", "description": "A few words, in the user's language."},
+               _question_with_images(propose_repaint_area), {"title": {"type": "string", "description": "A few words, in the user's language."},
                                       "marks": {"type": "string"},
                                       "areas": {"type": "array", "maxItems": ai_repaint.MAX_AREAS, "items": {"type": "object", "properties": {
                                           "shape": {"type": "string", "enum": list(ai_repaint.SHAPES)}, "x": {"type": "number"},
