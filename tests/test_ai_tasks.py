@@ -203,10 +203,14 @@ class TaskTests(unittest.TestCase):
         self.assertEqual(len(ai_tasks.list_tasks()), 1, "no empty task for one look")
         task = ai_tasks.get_task(task_id)
         self.assertEqual((len(task["steps"]), task["ended"]), (3, 110.0), "still done")
+        ai_panels.show("Gemini", "前后对比", [{"type": "text", "text": "好了"}], now=116.0)
+        self.assertEqual((len(ai_tasks.list_tasks()), ai_tasks.get_task(task_id)["ended"]), (1, None),
+                         "showing or asking about what it just did opens that task again")
+        ai_tasks.report("Gemini", "完成", done=True, now=118.0)
         ai_tasks.record("Gemini", "set_prompt", {"prompt": "x"}, ok({}), 120.0)
         self.assertEqual(len(ai_tasks.list_tasks()), 2, "new work is a new task")
         ai_tasks.record("Gemini", "get_situation", {}, ok({}), 120.0 + AFTER_DONE, True)
-        self.assertEqual(ai_tasks.get_task(task_id)["steps"][-1]["tool"], "get_situation", "only right after done")
+        self.assertEqual(ai_tasks.get_task(task_id)["steps"][-1]["tool"], "report", "only right after done")
 
     def test_a_task_the_user_started_waits_however_long(self):
         started = ai_tasks.start_task("画一张魔女", now=100.0)

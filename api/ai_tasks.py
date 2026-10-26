@@ -265,9 +265,10 @@ def active_task_id(client, session="", task_id=None):
         return found if found in tasks else None
 
 
-def current_task(client, now=None, session="", task_id=None):
+def current_task(client, now=None, session="", task_id=None, follow_up=False):
     """The task this app's calls go to now: an explicit task, one the user started for the next
-    AI, else its open one, unless it paused too long."""
+    AI, else its open one, unless it paused too long. `follow_up`: a panel, question or note, which
+    right after the AI said its task is done is about that task (ai_task_handoff.just_done)."""
     now = time.time() if now is None else now
     with _lock:
         tasks = _load()
@@ -284,6 +285,10 @@ def current_task(client, now=None, session="", task_id=None):
         if task and not task.get("ended"):
             task["ended"] = task.get("updated")
             _save(task)
+        if follow_up and just_done(task, tasks, tasks.get(_waiting[0]), client, now):
+            task["ended"] = None
+            _save(task)
+            return task
         return _take_replied(tasks, client, now, session) or _new_task(client, now=now, session=session)
 
 
@@ -514,7 +519,7 @@ def report(client, text, images=None, done=False, now=None, session="", task_id=
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "report", "kind": "note", "ok": True,
             "state": "done", "summary": "report", "text": _short(text, MAX_NOTE), "results": results}
     with _lock:
-        task = current_task(client, now, session=session, task_id=task_id)
+        task = current_task(client, now, session=session, task_id=task_id, follow_up=True)
         asked = next((item for item in task["steps"] if reply_to and item["id"] == reply_to and item.get("kind") == "user"), None)
         if reply_to and not asked:
             raise ValueError("reply_to is the id of the user's message or marks (user_messages[].id) in this task")
