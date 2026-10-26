@@ -1,7 +1,7 @@
 {
   "job": "repaint",
   "rank": 3,
-  "short": "built-in nodes only",
+  "short": "built-in nodes",
   "title": {
     "zh": "局部重绘·官方节点",
     "en": "Repaint: built-in nodes"

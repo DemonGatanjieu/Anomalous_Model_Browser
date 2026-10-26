@@ -56,6 +56,7 @@ function blockRow(block, owner, redraw) {
         el('span', `anomalous-ai-block-state${block.usable ? ' is-ready' : ''}`, t(block.usable ? 'aiBlocksReady' : 'aiBlocksMissing')));
     body.append(head, el('div', 'anomalous-ai-block-about', words(block.about)));
     if (!block.usable) body.append(lacks(block, owner));
+    if (block.better_with?.length) body.append(el('div', 'anomalous-ai-block-source', t('aiBlocksBetterWith', { names: block.better_with.join(', ') })));
     if (words(block.source)) body.append(el('div', 'anomalous-ai-block-source', t('aiBlocksSource', { source: words(block.source) })));
     const toggle = el('input', 'anomalous-ai-block-switch');
     toggle.type = 'checkbox';

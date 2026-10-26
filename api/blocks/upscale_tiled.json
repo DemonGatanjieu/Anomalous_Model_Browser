@@ -7,8 +7,8 @@
     "en": "Tiled upscale"
   },
   "about": {
-    "zh": "放大 2 倍，按 1024 的小块逐块重画，多大的图都放得下，比「放大」慢。",
-    "en": "2×, redrawn in 1024 tiles, so any size fits; slower than Upscale."
+    "zh": "放大 2 倍，按 1024 的小块逐块重画，多大的图都放得下，比「放大」慢。 装了 KJNodes 时，还会把颜色对齐到原图，防止放大后颜色跑偏。",
+    "en": "2×, redrawn in 1024 tiles, so any size fits; slower than Upscale. With KJNodes, its colours are matched to the original, so they don't drift."
   },
   "source": {
     "zh": "节点包 UltimateSDUpscale 自带的示例",
@@ -60,16 +60,37 @@
         "tile_height": 1024
       }
     },
+    "match": {
+      "class_type": "ColorMatch",
+      "optional": true,
+      "inputs": {
+        "image_ref": [
+          "$save.images",
+          "*"
+        ],
+        "image_target": [
+          "tiles",
+          0
+        ],
+        "method": "mkl",
+        "strength": 1.0,
+        "multithread": true
+      }
+    },
     "save": {
       "class_type": "SaveImage",
       "inputs": {
         "images": [
-          "tiles",
+          "match|tiles",
           0
         ],
         "filename_prefix": "upscaled"
       }
     }
   },
-  "after": "run_workflow saves the picture as before and the 2× one beside it (prefix upscaled); each tile is redrawn with the sampler's steps and cfg at denoise 0.3 (higher adds more detail, and may add seams)."
+  "after": "run_workflow saves the picture as before and the 2× one beside it (prefix upscaled); each tile is redrawn with the sampler's steps and cfg at denoise 0.3 (higher adds more detail, and may add seams).",
+  "extras": {
+    "ColorMatch": "ComfyUI-KJNodes"
+  },
+  "notes": "ColorMatch mkl after the redraw is the source's, optional (KJNodes)."
 }

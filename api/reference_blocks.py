@@ -28,8 +28,9 @@ TAKES = {"inpaint": "the picture with the area as its alpha (inpaint_image from 
 CONTROLS = {"pose": ("openpose", "pose"), "depth": ("depth",)}
 ANY_CONTROL = ("union", "promax")
 # The directory's headings, what an AI wants done; under each, its blocks with a few words apiece.
-JOBS = {"repaint": "Repaint a marked area", "upscale": "Enlarge a picture", "follow": "Follow a picture the user gave",
-        "detail": "Fix faces and hands", "process": "Work on a picture the user gave"}
+JOBS = {"repaint": "Repaint an area", "upscale": "Upscale", "follow": "Follow a given picture",
+        "detail": "Fix faces and hands", "process": "Picture work"}
+DIRECTORY_CHARS = 800  # what begin_task carries of it: past this, the blocks' names alone, however many are collected
 _lock = threading.Lock()
 
 
@@ -100,8 +101,10 @@ def status(info):
         packs = sorted(set(block["packs"].values()))
         lacking = {pack for kind, pack in block["packs"].items() if kind not in info}
         models = [] if lacking else _missing_models(block, info)
+        extras = sorted({pack for kind, pack in (block.get("extras") or {}).items() if kind not in info})
         out.append({"name": name, "job": block["job"], "title": block["title"], "about": block["about"],
                     "source": block.get("source") or {}, "packs": [{"name": pack, "installed": pack not in lacking} for pack in packs],
+                    "better_with": extras,
                     "models": models, "usable": not lacking and not models, "on": name not in off,
                     **({"instead": block["instead"]} if block.get("instead") else {})})
     return out
@@ -124,11 +127,15 @@ def directory(info=None):
         lacking = sorted({pack for kind, pack in block["packs"].items() if kind not in info}) if info is not None else []
         models = _missing_models(block, info) if info is not None and not lacking else []
         if lacking or models:
-            later.append(f"{name} ({', '.join(lacking) or ', '.join(item['kind'] + ' model' for item in models)})")
+            later.append((name, ', '.join(lacking) or ', '.join(item['kind'] + ' model' for item in models)))
         else:
-            out.setdefault(JOBS.get(block["job"], "Other"), []).append(f"{name} ({block['short']})")
-    listed = {heading: ", ".join(names) for heading, names in out.items() if names}
-    return {**listed, **({"Not here yet, needs": ", ".join(later)} if later else {})}
+            out.setdefault(JOBS.get(block["job"], "Other"), []).append((name, block["short"]))
+
+    def lines(words):  # "name (a few words)" while it fits, else the names alone
+        listed = {heading: ", ".join(f"{name} ({why})" if words else name for name, why in names) for heading, names in out.items() if names}
+        return {**listed, **({"Not here yet, needs": ", ".join(f"{name} ({why})" if words else name for name, why in later)} if later else {})}
+    full = lines(True)
+    return full if len(json.dumps(full, ensure_ascii=False)) <= DIRECTORY_CHARS else lines(False)
 
 
 def _choices(info, kind, name):
@@ -204,8 +211,13 @@ def nodes_of(name, info, image=None, main_base=lambda: "", base_of=lambda name: 
         fills["$fit"] = round(block.get("upscale_by", 1) / times, 4)  # the model's 4× brought back to the block's size
     if block.get("control"):
         fills["$controlnet"] = _controlnet(info, block["control"], main_base(), base_of)
-    return {key: {**spec, "inputs": {input: fills.get(value, value) if isinstance(value, str) else value
-                                     for input, value in spec["inputs"].items()}} for key, spec in block["nodes"].items()}
+    # A node of a pack that only makes the block better (ColorMatch after an upscale) goes when the pack
+    # is missing; a link "match|decode" takes the first of those nodes still there.
+    nodes = {key: spec for key, spec in block["nodes"].items() if not spec.get("optional") or spec["class_type"] in info}
+    link = lambda value: [next(key for key in value[0].split("|") if key in nodes), value[1]] if "|" in str(value[0]) else value  # noqa: E731
+    return {key: {**{field: value for field, value in spec.items() if field != "optional"},
+                  "inputs": {input: fills.get(value, value) if isinstance(value, str) else link(value) if isinstance(value, list) else value
+                             for input, value in spec["inputs"].items()}} for key, spec in nodes.items()}
 
 
 def roles_of(name):

@@ -13,6 +13,9 @@
   - **迭代放大**：分 3 小步放大到 1.3 倍，每步轻轻重画，比一步到位更稳。用 Impact Pack。
   - **双模型放大**：和"放大"一样，但重画换一个更稳的模型（底模放大时容易走样就用它）；新加的模型加载器先是同一个模型，AI 按你的意思换。只用自带节点。
   - **背景移除**：把一张图的背景抠掉，存成透明 PNG（文件名以 nobg 开头）。需要节点包 comfyui-inspyrenet-rembg。
+  - **读图出标签**：你递给 AI 一张图，WD14 打标器读出它的 Danbooru 标签，AI 照着写提示词。需要节点包 ComfyUI-WD14-Tagger，第一次用时会下载打标模型（约 1.2GB）。AI 运行后，节点输出的文字（比如这些标签）现在也会带回给它。
+  - 装了 KJNodes 时，几种放大都会在最后把颜色对齐到原图（参考工作流的做法），防止放大后颜色跑偏；没装也照常能用，面板上写着"装了 KJNodes 会更好"。
+  - 照着姿势画用的 OpenPose 认真人照片和 3D 图准，认二次元人物常认错；面板和给 AI 的说明里都写明了，二次元图用照着构图画。
   - 画布上有好几个采样器时，AI 要指明用哪一个，AMB 不乱猜。
 - AI 工作台右边多了**做法**面板：按"要做的事"分组列出所有做法，每块写着能干什么、从哪学来的。缺节点包或缺模型的变灰，写明缺什么，点缺的节点包会打开 ComfyUI-Manager 去搜它。每块有个开关：关掉的，AI 就看不到，硬要用也会被拒绝。AI 开工时只收到开着又能用的做法，其余的只附一行"装了什么还能用什么"。
 - 每块做法现在是一个单独的数据文件（api/blocks/），里面有它的节点、要的节点包和模型、给 AI 的话、面板上的中英文说明。以后收集到新做法，加一个文件就行。
@@ -27,6 +30,9 @@
   - **Iterative upscale**: 1.3× in 3 small steps, a light redraw each, steadier than one jump. Uses Impact Pack.
   - **Upscale with a second model**: like Upscale, but a second, steadier model redraws it (for a base model that goes wrong enlarged); its new loader starts as the same model and the AI changes it as you say. Built-in nodes only.
   - **Remove the background**: saves a picture with its background cut away as a transparent PNG (prefix nobg). Needs comfyui-inspyrenet-rembg.
+  - **Tags from a picture**: from a picture you hand the AI, the WD14 tagger reads its Danbooru tags for the AI to write the prompt from. Needs ComfyUI-WD14-Tagger; the first time it downloads its model (about 1.2 GB). What a run's nodes show as words (these tags) now reaches the AI with the run.
+  - With KJNodes, the upscales match their colours to the original at the end (as the source workflow does), so they don't drift; without it they work as before and the panel says they're better with KJNodes.
+  - OpenPose (Follow a pose) reads photos and 3D well and anime characters often wrongly; the panel and the AI are told so, and to use Follow a layout for anime.
   - With several samplers on the canvas the AI has to say which one; nothing is guessed.
 - A **Ways** panel on the right of the AI workbench lists every way by job, what it does and where it came from. Ways missing a node pack or a model are greyed with what they lack; a missing pack opens ComfyUI-Manager searched for it. Each has a switch: one turned off is not offered to the AI, and building it is refused. When it begins, the AI gets only the ways that are on and can run here, with one line on what installing which pack would add.
 - Each way is now a data file of its own (api/blocks/): its nodes, the packs and models it needs, what the AI is told and the panel's words in both languages, so a way collected later is one more file.

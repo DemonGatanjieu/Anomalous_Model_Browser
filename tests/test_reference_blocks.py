@@ -43,7 +43,7 @@ class BlockTests(unittest.TestCase):
 
     def test_the_directory_lists_what_can_run_by_job_and_the_rest_in_a_line(self):
         listed = reference_blocks.directory(BUILT_IN)
-        self.assertEqual(listed[reference_blocks.JOBS["repaint"]], "inpaint_basic (built-in nodes only)", "only what runs here")
+        self.assertEqual(listed[reference_blocks.JOBS["repaint"]], "inpaint_basic (built-in nodes)", "only what runs here")
         self.assertIn("inpaint_lanpaint (LanPaint)", listed["Not here yet, needs"])
         self.assertIn("upscale (upscaler model)", listed["Not here yet, needs"], "built-in nodes, but no upscale model")
         everything = reference_blocks.directory(EVERYTHING)
@@ -52,6 +52,10 @@ class BlockTests(unittest.TestCase):
         self.assertTrue(all(f"{name} (" in text for name in reference_blocks.BLOCKS), "every block is in it")
         self.assertEqual(set(reference_blocks.directory()), set(reference_blocks.JOBS.values()), "node list unknown: all, nothing claimed")
         self.assertLess(len(" ".join(everything.values())), 900, "small: it goes with begin_task")
+        with mock.patch.object(reference_blocks, "DIRECTORY_CHARS", 200):
+            names = reference_blocks.directory(EVERYTHING)
+        self.assertEqual(names[reference_blocks.JOBS["repaint"]], "inpaint_crop_stitch, inpaint_lanpaint, inpaint_basic",
+                         "too many to say each: the names alone")
 
     def test_a_block_turned_off_is_not_offered_and_cannot_be_built(self):
         reference_blocks.set_on("inpaint_lanpaint", False)
@@ -110,6 +114,15 @@ class BlockTests(unittest.TestCase):
             reference_blocks.nodes_of("upscale_tiled", {**EVERYTHING, "UpscaleModelLoader": {}})
         self.assertIn("upscale_tiled (ComfyUI_UltimateSDUpscale)", reference_blocks.directory(BUILT_IN)["Not here yet, needs"])
 
+    def test_a_node_only_making_a_block_better_goes_when_its_pack_is_missing(self):
+        nodes = reference_blocks.nodes_of("upscale", {**EVERYTHING, "ColorMatch": {}})
+        self.assertEqual((nodes["match"]["inputs"]["image_target"], nodes["save"]["inputs"]["images"]), (["decode", 0], ["match", 0]))
+        self.assertNotIn("optional", nodes["match"])
+        plain = reference_blocks.nodes_of("upscale", {key: value for key, value in EVERYTHING.items() if key != "ColorMatch"})
+        self.assertEqual(("match" in plain, plain["save"]["inputs"]["images"]), (False, ["decode", 0]))
+        shown = {item["name"]: item for item in reference_blocks.status(BUILT_IN)}
+        self.assertEqual(shown["upscale"]["better_with"], ["ComfyUI-KJNodes"])
+
     def test_lanpaint_takes_the_samplers_place(self):
         nodes = reference_blocks.nodes_of("inpaint_lanpaint", EVERYTHING, "a.png")
         self.assertEqual((nodes["sampler"]["replaces"], nodes["decode"]["replaces"]), ("$sampler", "$decode"))
@@ -137,7 +150,8 @@ class BlockTests(unittest.TestCase):
                 for value in spec["inputs"].values():
                     if isinstance(value, list):
                         with self.subTest(block=name, node=key):
-                            self.assertTrue(value[0] in block["nodes"] or value[0].split(".")[0] in ("$sampler", "$decode", "$save"))
+                            self.assertTrue(all(part in block["nodes"] for part in value[0].split("|"))
+                                            or value[0].split(".")[0] in ("$sampler", "$decode", "$save", "$loader"))
                 for field in ("wire_to", "like", "replaces"):
                     if field in spec:
                         self.assertIn(spec[field], ("$sampler", "$decode", "$save", "$loader"))

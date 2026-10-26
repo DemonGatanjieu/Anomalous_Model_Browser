@@ -1,14 +1,14 @@
 {
   "job": "upscale",
   "rank": 3,
-  "short": "1.25×, redrawn by a second, steadier model",
+  "short": "1.25×, a second model redraws",
   "title": {
     "zh": "双模型放大",
     "en": "Upscale with a second model"
   },
   "about": {
-    "zh": "和「放大」一样，但重画换一个模型：底模放大时不稳（眼睛走样、多出肚脐）就换一个更稳的。新加的模型加载器先是同一个模型，由 AI 按你的意思换。",
-    "en": "Like Upscale, but the redraw uses a second model, for a base model that goes wrong when enlarged. The new loader starts as the same model; the AI changes it as you say."
+    "zh": "和「放大」一样，但重画换一个模型：底模放大时不稳（眼睛走样、多出肚脐）就换一个更稳的。新加的模型加载器先是同一个模型，由 AI 按你的意思换。 装了 KJNodes 时，还会把颜色对齐到原图，防止放大后颜色跑偏。",
+    "en": "Like Upscale, but the redraw uses a second model, for a base model that goes wrong when enlarged. The new loader starts as the same model; the AI changes it as you say. With KJNodes, its colours are matched to the original, so they don't drift."
   },
   "source": {
     "zh": "参考工作流的「Refiner/放大」加载器和作者的说明",
@@ -17,7 +17,7 @@
   "packs": {},
   "upscaler": true,
   "after": "The redraw's model comes from a new loader (second_model), for now the same checkpoint as the first: set_model it to the steadier one the user wants (ask_user, search_models), of the same family (SDXL with SDXL: it reuses the first model's prompts). Then run_workflow; the larger one is saved beside it (prefix upscaled).",
-  "notes": "The source keeps a second loader for upscaling; its author: switch to it when the base model goes wrong enlarged.",
+  "notes": "The source keeps a second loader for upscaling; its author: switch to it when the base model goes wrong enlarged. ColorMatch mkl after the redraw is the source's, optional (KJNodes).",
   "upscale_by": 1.25,
   "nodes": {
     "second_model": {
@@ -104,15 +104,35 @@
         ]
       }
     },
+    "match": {
+      "class_type": "ColorMatch",
+      "optional": true,
+      "inputs": {
+        "image_ref": [
+          "fit",
+          0
+        ],
+        "image_target": [
+          "decode",
+          0
+        ],
+        "method": "mkl",
+        "strength": 1.0,
+        "multithread": true
+      }
+    },
     "save": {
       "class_type": "SaveImage",
       "inputs": {
         "images": [
-          "decode",
+          "match|decode",
           0
         ],
         "filename_prefix": "upscaled"
       }
     }
+  },
+  "extras": {
+    "ColorMatch": "ComfyUI-KJNodes"
   }
 }

@@ -1,14 +1,14 @@
 {
   "job": "upscale",
   "rank": 2,
-  "short": "1.3× in 3 small steps, steadier",
+  "short": "1.3× in 3 steps",
   "title": {
     "zh": "迭代放大",
     "en": "Iterative upscale"
   },
   "about": {
-    "zh": "分 3 小步放大到 1.3 倍，每步轻轻重画一次，比一步到位更稳。另存一张，文件名以 upscaled 开头。",
-    "en": "Enlarges to 1.3× in 3 small steps, a light redraw each, steadier than one jump. Saved beside it, prefix upscaled."
+    "zh": "分 3 小步放大到 1.3 倍，每步轻轻重画一次，比一步到位更稳。另存一张，文件名以 upscaled 开头。 装了 KJNodes 时，还会把颜色对齐到原图，防止放大后颜色跑偏。",
+    "en": "Enlarges to 1.3× in 3 small steps, a light redraw each, steadier than one jump. Saved beside it, prefix upscaled. With KJNodes, its colours are matched to the original, so they don't drift."
   },
   "source": {
     "zh": "参考工作流的「迭代放大」组（作者另加的噪声增强要 ComfyUI Noise，这里没用）",
@@ -79,11 +79,28 @@
         "vae_compression": 8
       }
     },
+    "match": {
+      "class_type": "ColorMatch",
+      "optional": true,
+      "inputs": {
+        "image_ref": [
+          "$save.images",
+          "*"
+        ],
+        "image_target": [
+          "steps",
+          0
+        ],
+        "method": "mkl",
+        "strength": 1.0,
+        "multithread": true
+      }
+    },
     "save": {
       "class_type": "SaveImage",
       "inputs": {
         "images": [
-          "steps",
+          "match|steps",
           0
         ],
         "filename_prefix": "upscaled"
@@ -91,5 +108,8 @@
     }
   },
   "after": "run_workflow saves the picture as before and the 1.3× one beside it (prefix upscaled): 3 steps, each redrawn at denoise 0.3 with the sampler's steps and cfg.",
-  "notes": "The source's values: factor 1.32, 3 steps, denoise 0.3, geometric; its noise injection (ComfyUI Noise) is left out."
+  "notes": "The source's values: factor 1.32, 3 steps, denoise 0.3, geometric; its noise injection (ComfyUI Noise) is left out. ColorMatch mkl after the redraw is the source's, optional (KJNodes).",
+  "extras": {
+    "ColorMatch": "ComfyUI-KJNodes"
+  }
 }

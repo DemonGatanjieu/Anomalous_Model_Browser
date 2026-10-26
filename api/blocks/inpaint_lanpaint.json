@@ -75,5 +75,5 @@
       }
     }
   },
-  "after": "The KSampler is now LanPaint's (same steps, cfg and seed) and repaints only the area, blending it into the rest. Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"). Then run_workflow; it takes several times longer than before."
+  "after": "The KSampler is now LanPaint's (same steps, cfg and seed): it samples the whole picture and changes only the area, blending it in. Keep the prompt about the whole picture and add what the area should show (set_prompt mode append: \"a hand, five fingers\"). Then run_workflow; it takes a few times longer than before."
 }

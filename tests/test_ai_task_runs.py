@@ -70,11 +70,13 @@ class ProgressTests(unittest.TestCase):
             self.assertIn("run_status(wait_seconds=55)", ai_task_runs.status("Claude")["next"])
         history = {"p1": {"status": {"completed": True}, "outputs": {
             "9": {"images": [{"filename": "a.png", "subfolder": "x", "type": "output"}]},
-            "12": {"images": [{"filename": "pose_00001_.png", "type": "temp"}]}}}}  # a PreviewImage: the AI's to look at
+            "12": {"images": [{"filename": "pose_00001_.png", "type": "temp"}]},  # a PreviewImage: the AI's to look at
+            "14": {"tags": ["1girl, red hair, smile"]}}}}  # a tagger's words
         threading.Timer(0.3, ai_task_runs._finish_run, (task_id, step_id, ["p1"], history)).start()
         status = ai_task_runs.status("Claude", wait_seconds=5)
         self.assertEqual((status["state"], status["pictures"], status["previews"]), ("done", ["x/a.png"], ["pose_00001_.png"]))
         self.assertIn("folder='temp'", status["previews_note"])
+        self.assertEqual(status["texts"], [{"node": "14", "text": "1girl, red hair, smile"}], "what nodes showed as words")
         self.assertEqual([item["filename"] for item in ai_tasks.get_task(task_id)["steps"][0]["results"]], ["a.png"], "previews are no results")
         self.assertNotIn("progress", ai_tasks.get_task(task_id)["steps"][0], "a finished run has no progress left")
 

@@ -1,7 +1,7 @@
 {
   "job": "repaint",
   "rank": 1,
-  "short": "small fixes, the rest untouched",
+  "short": "small fixes",
   "title": {
     "zh": "局部重绘·裁切缝合",
     "en": "Repaint: crop and stitch"

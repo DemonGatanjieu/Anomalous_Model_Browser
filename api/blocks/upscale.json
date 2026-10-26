@@ -7,8 +7,8 @@
     "en": "Upscale"
   },
   "about": {
-    "zh": "放大模型放大到 1.25 倍，再用同样的设置轻轻重画一遍（强度 0.35），细节是画出来的而不是糊的。另存一张，文件名以 upscaled 开头。",
-    "en": "An upscale model enlarges it to 1.25×, then a light redraw with the same settings (denoise 0.35) makes the detail real. Saved beside it, prefix upscaled."
+    "zh": "放大模型放大到 1.25 倍，再用同样的设置轻轻重画一遍（强度 0.35），细节是画出来的而不是糊的。另存一张，文件名以 upscaled 开头。 装了 KJNodes 时，还会把颜色对齐到原图，防止放大后颜色跑偏。",
+    "en": "An upscale model enlarges it to 1.25×, then a light redraw with the same settings (denoise 0.35) makes the detail real. Saved beside it, prefix upscaled. With KJNodes, its colours are matched to the original, so they don't drift."
   },
   "source": {
     "zh": "参考工作流的「通用放大」组",
@@ -17,7 +17,7 @@
   "packs": {},
   "upscaler": true,
   "after": "run_workflow saves the picture as before and the larger one beside it (prefix upscaled). The redraw sampler has the first one's steps and cfg at denoise 0.35: lower keeps more of the picture, higher adds more (and above 0.5 may change it). For 2× or more use upscale_tiled.",
-  "notes": "1.25× and denoise 0.35: the source used 1.25 and 0.32; its author says more than 1.5× goes wrong, and 1.5× of 832×1216 is too much for a 6 GB card.",
+  "notes": "1.25× and denoise 0.35: the source used 1.25 and 0.32; its author says more than 1.5× goes wrong, and 1.5× of 832×1216 is too much for a 6 GB card. ColorMatch mkl after the redraw is the source's, optional (KJNodes).",
   "upscale_by": 1.25,
   "nodes": {
     "upscaler": {
@@ -99,15 +99,35 @@
         ]
       }
     },
+    "match": {
+      "class_type": "ColorMatch",
+      "optional": true,
+      "inputs": {
+        "image_ref": [
+          "fit",
+          0
+        ],
+        "image_target": [
+          "decode",
+          0
+        ],
+        "method": "mkl",
+        "strength": 1.0,
+        "multithread": true
+      }
+    },
     "save": {
       "class_type": "SaveImage",
       "inputs": {
         "images": [
-          "decode",
+          "match|decode",
           0
         ],
         "filename_prefix": "upscaled"
       }
     }
+  },
+  "extras": {
+    "ColorMatch": "ComfyUI-KJNodes"
   }
 }
