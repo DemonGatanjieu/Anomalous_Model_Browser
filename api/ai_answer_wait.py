@@ -7,7 +7,8 @@ typing an answer (the page posts POST /anomalous/ai_tasks/{id}/typing as they ty
 after their last key. Then the AI ends its turn and the user brings it back with a line to paste
 (web/modules/ai_call_lines.js); or, when the user set so (ai_gates.no_answer "recommended"), each
 open choice the AI marked a recommended option for takes it, marked as such for the user and the
-AI (recommended_on_timeout), and the AI goes on. Typing is kept in memory only.
+AI (recommended_on_timeout), and the AI goes on; not once the user began writing (typed since the
+question came): they stepped away mid-answer, and it waits for them. Typing is kept in memory only.
 """
 
 import time
@@ -17,6 +18,9 @@ from . import ai_gates, ai_panels, ai_tasks
 AFTER_TYPING = 60  # the user typed this recently: their answer is on its way
 TOOK = ("The user did not answer in time and set that your recommended option goes then: Anomalous took it for "
         "them (recommended_on_timeout). Go on with it; a question without a recommended option stays open for the user.")
+STOP = "You waited as long as the user set: end your turn now. They answer in Anomalous and tell you in your chat to go on."
+WROTE = ("The user began writing an answer, then stepped away: end your turn now. Nothing is chosen for them; they "
+         "finish it in Anomalous and tell you in your chat to go on.")
 _typed = {}  # task id -> time of the user's last key
 
 
@@ -60,10 +64,10 @@ def _wait_on(task, step, now, allow_recommended):
     typed = _typed.get(task["id"], 0)
     left = max(step["at"] + ai_gates.answer_wait(), typed + AFTER_TYPING) - now
     if left <= 0:
-        if allow_recommended and ai_gates.no_answer() == "recommended" and take_recommended(task["id"], step):
+        wrote = typed >= step["at"]  # a half-written answer is theirs: no option is taken over it
+        if allow_recommended and not wrote and ai_gates.no_answer() == "recommended" and take_recommended(task["id"], step):
             return {"keep_waiting": False, "took_recommended": True, "note": TOOK}
-        return {"keep_waiting": False, "note": "You waited as long as the user set: end your turn now. They answer in "
-                                               "Anomalous and tell you in your chat to go on."}
+        return {"keep_waiting": False, "note": WROTE if wrote else STOP}
     typing_now = now - typed < AFTER_TYPING
     return {"keep_waiting": True, "seconds_left": round(left), **({"typing": True} if typing_now else {}),
             "note": ("The user is typing their answer" if typing_now else "The user has not answered yet")

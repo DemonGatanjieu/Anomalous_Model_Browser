@@ -217,9 +217,10 @@ function renderTask() {
         new ResizeObserver(() => box.style.setProperty('--anomalous-ai-head-h',
             `${view.header.offsetHeight + parseFloat(getComputedStyle(view.header).top || 0)}px`)).observe(view.header);
     }
-    // A new panel opens the stage; in a narrow window only one that asks something takes its tab.
+    // A new panel opens the stage; in a narrow window only one that asks something takes its tab, and not from under the user's typing.
     const news = stageNews(task, state.stage);
-    bringStage(state.stage, news, state.page.classList.contains('is-tabbed') || state.page.classList.contains('is-narrow'));
+    const typing = state.page.contains(document.activeElement) && document.activeElement.matches('textarea, input:not([type]), input[type=text]');
+    bringStage(state.stage, news, state.page.classList.contains('is-tabbed') || state.page.classList.contains('is-narrow'), typing);
     const asking = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
     const tabs = tabBar(state.stage, asking, pickTab, viewLabel(state.stage.view));
     view.tabs.replaceWith(tabs);

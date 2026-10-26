@@ -87,14 +87,16 @@ export function stageBadge(task, stage, shown) {
 /**
  * Brings the stage forward for `news` (stageNews): a panel that asks shows it (in a narrow window
  * `tabbed`, its tab comes forward); a new one opens the column on the stage at its newest panel
- * when the user lets it, lighting the tab of a narrow window instead of taking it.
+ * when the user lets it, lighting the tab of a narrow window instead of taking it; and while they
+ * type (`typing`), a narrow window lights the tab of one that asks too, the field staying before them.
  */
-export function bringStage(stage, news, tabbed) {
+export function bringStage(stage, news, tabbed, typing = false) {
     const open = news.fresh && autoOpen();
     if (news.asking || open) stage.view = 'stage';
     if (open) Object.assign(stage, { hidden: false, atBottom: true });
-    if (news.asking || (open && !tabbed)) stage.tab = 'stage';
-    else if (open) stage.lit = stage.tab !== 'stage';
+    const take = news.asking || (open && !tabbed);
+    if (take && !(tabbed && typing)) stage.tab = 'stage';
+    else if (take || open) stage.lit = stage.tab !== 'stage';
 }
 
 /** The switch in the stage's head: whether a new panel opens the column. */

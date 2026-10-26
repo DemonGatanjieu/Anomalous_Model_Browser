@@ -276,6 +276,9 @@ an in-flight step is excluded from automatic takeover; explicit task selection i
 typing/deadline checks, automatic choices and a final nonblocking collection share the task
 lock. A user answer that won the race is returned in that call, without a stale stop note.
 Without a panel id, deadlines are checked once per waiting panel, including expired ones.
+Typing counts from real keys only (the page posts at most every 5 s) and holds the deadline for
+`AFTER_TYPING` after the last one; a question the user typed on since it was asked is never
+answered on timeout, the AI is told they began an answer and ends its turn.
 Question receipts preserve messages and attach their pictures even when no option was chosen.
 
 Run monitoring failures end the receipt as `stopped` with a reason without cancelling the

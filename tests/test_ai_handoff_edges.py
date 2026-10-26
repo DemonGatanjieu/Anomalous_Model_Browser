@@ -87,6 +87,25 @@ class HandoffEdges(unittest.TestCase):
         self.assertTrue(answer["typing"])
         self.assertFalse(step.get("answers"))
 
+    def test_a_half_written_answer_is_never_overruled(self):
+        asked = self.ask()
+        task, step = ai_panels._find(asked["panel"])
+        ai_answer_wait.typing(task["id"], now=step["at"] + 30)  # then they walked away
+        late = step["at"] + 30 + ai_answer_wait.AFTER_TYPING + ai_gates.answer_wait()
+        with mock.patch.object(ai_gates, "no_answer", return_value="recommended"):
+            answer = ai_answer_wait.wait_on(asked["panel"], now=late)
+        self.assertIs(answer["keep_waiting"], False, "the AI does not wait forever")
+        self.assertIn("began writing", answer["note"])
+        self.assertFalse(step.get("answers"), "the recommended option is not taken over their words")
+
+    def test_typing_before_the_question_does_not_count_as_an_answer(self):
+        asked = self.ask()
+        task, step = ai_panels._find(asked["panel"])
+        ai_answer_wait.typing(task["id"], now=step["at"] - 100)  # a message to the AI, before it asked
+        with mock.patch.object(ai_gates, "no_answer", return_value="recommended"):
+            answer = ai_answer_wait.wait_on(asked["panel"], now=step["at"] + ai_gates.answer_wait() + 1)
+        self.assertTrue(answer.get("took_recommended"))
+
     def test_ineligible_replies_never_resume_a_task(self):
         for entry in ({"at": 100}, {"at": 7301}, {"at": 7299, "delivered": True},
                       {"at": 7299, "recommended_on_timeout": True}):

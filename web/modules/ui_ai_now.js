@@ -1,13 +1,14 @@
 /**
  * What the task needs or does now, over its message box (ui_ai_message.js, in the workbench's dock),
  * so the user follows it from the foot of the page: a step waiting at a gate (Allow, No, see the
- * step), a run going (where it stands, a thin bar, stop), the AI busy with a tool; and the first
- * question the AI asked and nobody answered yet, to answer there: a pick of one as buttons that
+ * step), a run going (where it stands, a thin bar, stop), the AI busy with a tool; and the newest
+ * question nobody answered yet (one the user half answered stays in front), to answer there: a pick of one as buttons that
  * send at a press (and a line of one's own, folded, when the AI allows it), a line of text, or the
  * way to the stage for the rest (several picks, pictures to pick); "let the AI decide" sits in its
  * head. When none of that is there, the lines to paste into the
  * AI's chat once it has stopped (ui_ai_call.js), in the same place. Drawn again as
- * the task changes; a question's card only when another question comes, so typing in it survives.
+ * the task changes; a question's card only when another question comes, keeping what was half
+ * typed in it (ui_ai_panel.js draftField).
  */
 
 import { translate as t } from './locales.js';
@@ -16,7 +17,7 @@ import { toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
 import { progressWords, stopButton } from './ui_ai_run_live.js';
 import { panelSteps, QUESTIONS } from './ui_ai_side.js';
-import { noteTyping, optionLabel, ownWords, sendAnswer } from './ui_ai_panel.js';
+import { draftField, hasDraft, optionLabel, ownWords, sendAnswer } from './ui_ai_panel.js';
 import { decideGate } from './ui_ai_gate.js';
 import { callRow } from './ui_ai_call.js';
 
@@ -123,7 +124,7 @@ function askCard(task, { step, block }, more, ctx) {
             event.stopPropagation(); // typing here is not the browser's shortcuts
             if (event.key === 'Enter' && !event.isComposing) go.click();
         });
-        field.addEventListener('input', () => noteTyping(task.id));
+        draftField(field, task.id, step.id, block.id);
         line.append(field, go);
         return line;
     };
@@ -138,7 +139,7 @@ function askCard(task, { step, block }, more, ctx) {
             chip.append(el('span', '', optionLabel(option)), icon('arrowRight', 13, 'anomalous-ai-now-option-go'));
             answers.append(chip);
         }
-        if (block.other) answers.append(ownWords('anomalous-ai-panel-own', () => ownLine(t('aiNowOther'))));
+        if (block.other) answers.append(ownWords('anomalous-ai-panel-own', () => ownLine(t('aiNowOther')), hasDraft(task.id, step.id, block.id)));
         hint = t('aiPanelHintOne');
     } else if (block.type === 'input') {
         answers.append(ownLine(block.placeholder || t('aiNowAnswerHere')));
@@ -165,6 +166,8 @@ export function nowStrip() {
         kept = ctx;
         line.replaceChildren(...[statusLine(task, ctx)].filter(Boolean));
         const asks = task.ended ? [] : openAsks(task);
+        const held = asks.findIndex(({ step, block }) => hasDraft(task.id, step.id, block.id));
+        if (held > 0) asks.unshift(...asks.splice(held, 1)); // a question half answered stays in front as others come
         const key = asks.length ? JSON.stringify([asks[0].step.id, asks[0].block.id, asks.length]) : '';
         if (key !== ask.dataset.key) {
             ask.dataset.key = key;

@@ -37,14 +37,46 @@ function button(className, label, onClick, title) {
 
 const list = value => (Array.isArray(value) ? value : []);
 
-/** An answer to one of a panel's questions ({step, block, choice | text | skip}), as the AI will read it. */
+/** An answer to one of a panel's questions ({step, block, choice | text | skip}), as the AI will read it; what was half typed there goes. */
 export async function sendAnswer(taskId, body) {
     const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(taskId)}/answer`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);
+    drafts.delete(draftKey(taskId, body.step, body.block));
     return data;
+}
+
+const drafts = new Map(); // question -> what the user half typed in its line, while this page is open
+const draftKey = (taskId, stepId, blockId) => JSON.stringify([taskId, stepId, blockId]);
+
+/** Whether the user half typed an answer to question `blockId` of step `stepId`. */
+export function hasDraft(taskId, stepId, blockId) {
+    return drafts.has(draftKey(taskId, stepId, blockId));
+}
+
+/**
+ * `field` as the answer line to question `blockId` of step `stepId`: drawn again (an answer or a
+ * new question came, the AI read one), it keeps what the user half typed there, and the focus
+ * when it had it; each key tells the server they are typing.
+ */
+export function draftField(field, taskId, stepId, blockId) {
+    const key = draftKey(taskId, stepId, blockId);
+    field.dataset.draft = key;
+    field.value = drafts.get(key) || '';
+    if (field.value && document.activeElement?.dataset?.draft === key) { // the line it replaces is still on the page
+        requestAnimationFrame(() => {
+            if (!field.isConnected || (document.activeElement && document.activeElement !== document.body)) return;
+            field.focus();
+            field.setSelectionRange(field.value.length, field.value.length);
+        });
+    }
+    field.addEventListener('input', () => {
+        if (field.value) drafts.set(key, field.value);
+        else drafts.delete(key);
+        noteTyping(taskId);
+    });
 }
 
 const TYPING_EVERY_MS = 5000;
@@ -98,8 +130,9 @@ function askHead(question, skip, ctx) {
     return head;
 }
 
-/** A line of one's own, folded: "None of these, I'll say it" opens `open()` (the line) in its place, its field focused. */
-export function ownWords(className, open) {
+/** A line of one's own, folded: "None of these, I'll say it" opens `open()` (the line) in its place, its field focused; `unfolded` (something half typed in it): the line at once. */
+export function ownWords(className, open, unfolded = false) {
+    if (unfolded) return open();
     const node = button(className, '', () => {
         const line = open();
         node.replaceWith(line);
@@ -259,10 +292,8 @@ function otherLine(ctx, block, options) {
         event.stopPropagation(); // typing here is not the browser's shortcuts
         if (event.key === 'Enter' && !event.isComposing) go.click();
     });
-    field.addEventListener('input', () => {
-        field.setCustomValidity('');
-        noteTyping(ctx.taskId);
-    });
+    field.addEventListener('input', () => field.setCustomValidity(''));
+    draftField(field, ctx.taskId, ctx.stepId, block.id);
     line.append(field, go);
     return line;
 }
@@ -317,7 +348,7 @@ function choices(block, ctx) {
     confirm.disabled = true;
     if (block.multiple && open) box.append(confirm);
     if (answer?.text) box.append(el('div', 'anomalous-ai-panel-typed', answer.text));
-    else if (block.other && open) box.append(ownWords('anomalous-ai-panel-own', () => otherLine(ctx, block, options)));
+    else if (block.other && open) box.append(ownWords('anomalous-ai-panel-own', () => otherLine(ctx, block, options), hasDraft(ctx.taskId, ctx.stepId, block.id)));
     box.append(note);
     if (answer) box.append(answerNote(answer));
     return box;
@@ -351,10 +382,10 @@ function input(block, ctx) {
         }
     });
     go.disabled = ctx.closed;
-    field.addEventListener('input', () => noteTyping(ctx.taskId));
+    draftField(field, ctx.taskId, ctx.stepId, block.id);
     field.addEventListener('keydown', (event) => {
         event.stopPropagation(); // typing here is not the browser's shortcuts
-        if (event.key === 'Enter') go.click();
+        if (event.key === 'Enter' && !event.isComposing) go.click();
     });
     line.append(field, go);
     box.append(line, note);
