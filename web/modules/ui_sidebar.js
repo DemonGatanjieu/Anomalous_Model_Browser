@@ -1137,6 +1137,10 @@ export function createDOM() {
         modelSettingsDialog.className = 'anomalous-model-settings-dialog';
         modelSettingsDialog.setAttribute('role', 'dialog');
         modelSettingsDialog.setAttribute('aria-modal', 'true');
+        // ComfyUI frontend isModalOpen() checks [role="dialog"][aria-modal="true"]:not([hidden])
+        // on the element itself, so the dialog needs its own hidden flag or all global
+        // keybindings (Delete/Ctrl+B/...) stay dead even when the overlay is hidden.
+        modelSettingsDialog.hidden = true;
 
         const modelSettingsTitle = document.createElement('h2');
         const modelSettingsDescription = document.createElement('p');
@@ -1211,11 +1215,12 @@ export function createDOM() {
         };
         refreshModelSettingsText();
 
-        const closeModelSettings = () => { modelSettingsOverlay.hidden = true; };
+        const closeModelSettings = () => { modelSettingsOverlay.hidden = true; modelSettingsDialog.hidden = true; };
         modelSettingsBtn.onclick = () => {
             refreshModelSettingsText();
             settingsHubModal.style.display = 'none';
             modelSettingsOverlay.hidden = false;
+            modelSettingsDialog.hidden = false;
             videoSetting.select.focus();
         };
         modelSettingsClose.onclick = closeModelSettings;
