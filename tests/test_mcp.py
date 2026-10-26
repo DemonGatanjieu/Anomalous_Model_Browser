@@ -474,9 +474,9 @@ class ArgumentTests(unittest.TestCase):
         self.assertFalse(result["isError"])
         self.assertEqual(result["structuredContent"]["opened"], "exam_txt2img")
         self.assertIn("Took name as workflow", result["structuredContent"]["arguments_note"], "so the next call is right")
-        for wrong in ({"name": 3}, {"name": "a", "other": "b"}, {"name": True}):
+        for wrong in ({"name": 3}, {"name": "a", "other": "b"}, {"name": True}, {"style": "anime"}):
             with self.subTest(arguments=wrong):
-                self.assertTrue(mcp_tools.call_tool(tools, "open", wrong)["isError"], "another type, or more than one guess: asked again")
+                self.assertTrue(mcp_tools.call_tool(tools, "open", wrong)["isError"], "another type, more than one guess, or a name not known to mean it: asked again")
 
 if __name__ == "__main__":
     unittest.main()

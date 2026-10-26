@@ -335,7 +335,9 @@ supported list. `initialize` selects the legacy shape (2025-03-26 to 2025-11-25)
 session id is minted, so both eras are stateless. Unknown methods are -32601 (404 for
 modern requests).
 
-`api/mcp_arguments.py` owns unambiguous required-argument renaming. The MCP server normalizes
+`api/mcp_arguments.py` owns unambiguous required-argument renaming: one needed argument missing,
+one unknown argument whose name is a known other name for it (ALIASES, from the tool exams) and
+whose value has its type. A same-typed value under any other name is not taken. The MCP server normalizes
 before recording a step or checking a gate, so the approval signature, displayed arguments,
 execution and result references all use the same names. Direct `mcp_tools.call_tool` callers
 use the same normalization; the successful receipt tells the AI which name was corrected.
