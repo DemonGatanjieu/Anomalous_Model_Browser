@@ -8,6 +8,7 @@
 - 修复任务接续与等待回答：按你最近一次未读回复接续任务，后台进度更新不再打乱顺序；选择题回答也能接回原任务，仍有工具正在执行的任务不会被新会话自动接走。读取答案不指定面板时也会正确处理超时；到时间自动选择或恰好收到你的回答，都会在当次调用里交给 AI。等选择题时发的留言和图片不再被读走却漏传。
 - Fixed task resumption and answer waiting: resume by the latest unread user reply, including panel answers, rather than background updates; a task with a tool still running is excluded from automatic takeover. Reading answers without a panel now handles expired questions too. Timeout choices and user answers arriving at that boundary reach the AI in the same call; messages and pictures sent while it waits for a question are no longer consumed without delivery.
 
+- 任务列表更准：AI 改正过来的错（比如参数写错、下一次就对了）不再让整个任务显示成“出错”，只有 AI 没跨过去的才算，红标改叫“有一步没做成”；AI 说做完以后马上再看一眼结果，这一眼记在原来的任务里，不再多出一个只有一步的空任务；你点“新任务”写好的任务一直等到 AI 来接（或者你再开一个新的），不会过了 12 小时悄悄失效、而页面还写着“等 AI 接手”。
 - AI 少走弯路、少猜：
   - AI 把必填参数写成了常见的另一个名字（比如打开工作流时把 `workflow` 写成 `name`、看图时把 `image` 写成 `file`）时，AMB 直接照它的意思做，并告诉 AI 正确的名字，省一次来回。只认考试里见过的这几种叫法；别的名字照旧报错、列出该写什么，免得猜错意思。
   - 时间线里 AI“放大看图”那一步显示成代码名，改成了中文名。
@@ -19,6 +20,7 @@
   - 用 Gemini 3.8 Flash 实际考了 7 道常见任务（出图、换模型加 LoRA、问你再改、缺模型、找图看参数、搭放大分支、修断线），失败多半出在第一次用某个工具时参数写错，于是：参数写错时，AI 收到的报错会列出这个工具该写哪些参数，下一次就对；同一个东西在各工具里叫同一个名字（写提示词和跑图都叫 `prompt`，打开工作流和跑图都叫 `workflow`）；等待时间写超了（比如 120 秒）按最长的 55 秒等，不再报错；按类型找模型时写单数（checkpoint、lora）也能找到。
   - 很久以前（两个多小时前）留下、AI 一直没收到的留言或标注，不再把一个新对话拉进那个旧任务。
   - 关卡窗口新增 **等不到回答时**：**停下等我**（默认）或 **按推荐的继续**。选后者时，到了等待时间你还没答，AI 标了推荐项的选择题就按推荐的选，展台和“决策”里都写着“到时间，按推荐选了”；没有推荐项的问题、你已经动手写了回答的问题、关卡里“先问我”的事，永远不会替你答。
+- The task list says what is true: an error the AI got past (a wrong argument right on the next call) no longer marks the whole task as failed, only one it did not get past does, and the red mark reads "A step did not go through"; a look the AI takes right after saying it is done goes into that task instead of making an empty one-step task; a task you start with New task waits until an AI takes it (or you start another), instead of quietly lapsing after 12 hours while its page still says it waits.
 - The AI takes fewer detours and guesses less:
   - When a call writes its one needed argument under a known other name (`name` for open_workflow's `workflow`, `file` for `image`), Anomalous takes it as meant and tells the AI the right name, saving a round trip. Only the names seen in the exams count; any other is answered with what the tool takes, so no meaning is guessed.
   - The timeline names the AI's "look closer at a picture" step instead of showing its code name.

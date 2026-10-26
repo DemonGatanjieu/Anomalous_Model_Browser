@@ -15,7 +15,7 @@ sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
 from api import action_catalog, activity_log, ai_callers, ai_panels, ai_task_changes, ai_task_runs, ai_tasks, ai_tasks_routes, mcp_task_tools  # noqa: E402
 from api.mcp_server import TOOLS  # noqa: E402
-from api.ai_task_handoff import REPLY_FRESH
+from api.ai_task_handoff import AFTER_DONE, REPLY_FRESH
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_tasks_")
 LOG = tempfile.mkdtemp(prefix="amb_ai_activity_")
@@ -187,6 +187,33 @@ class TaskTests(unittest.TestCase):
                 ai_tasks.begin_task("A", f"t{index}", now=100.0 + index, new_task=True)
         self.assertEqual([task["title"] for task in ai_tasks.list_tasks()], ["t4", "t3", "t2"])
         self.assertEqual(len(os.listdir(TMP)), 3)
+
+    def test_a_failure_the_ai_got_past_does_not_mark_the_task(self):
+        ai_tasks.record("Gemini", "check_workflow_models", {"workflow": "x"}, failed("Unknown arguments ['workflow']"), 100.0, True)
+        ai_tasks.record("Gemini", "check_workflow_models", {}, ok({"missing": []}), 101.0, True)
+        self.assertEqual(ai_tasks.list_tasks()[0]["errors"], 0, "corrected on the next call")
+        ai_tasks.record("Gemini", "run_workflow", {}, failed("ComfyUI did not take the run"), 102.0)
+        self.assertEqual(ai_tasks.list_tasks()[0]["errors"], 1, "still not run")
+
+    def test_a_look_right_after_done_stays_in_that_task(self):
+        ai_tasks.record("Gemini", "run_workflow", {}, ok({}), 100.0)
+        done, _ = ai_tasks.report("Gemini", "做好了", done=True, now=110.0)
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        ai_tasks.record("Gemini", "get_situation", {}, ok({}), 114.0, True)
+        self.assertEqual(len(ai_tasks.list_tasks()), 1, "no empty task for one look")
+        task = ai_tasks.get_task(task_id)
+        self.assertEqual((len(task["steps"]), task["ended"]), (3, 110.0), "still done")
+        ai_tasks.record("Gemini", "set_prompt", {"prompt": "x"}, ok({}), 120.0)
+        self.assertEqual(len(ai_tasks.list_tasks()), 2, "new work is a new task")
+        ai_tasks.record("Gemini", "get_situation", {}, ok({}), 120.0 + AFTER_DONE, True)
+        self.assertEqual(ai_tasks.get_task(task_id)["steps"][-1]["tool"], "get_situation", "only right after done")
+
+    def test_a_task_the_user_started_waits_however_long(self):
+        started = ai_tasks.start_task("画一张魔女", now=100.0)
+        later = 100.0 + 18 * 3600
+        with mock.patch.object(ai_tasks.time, "time", return_value=later):
+            ai_tasks.record("Gemini", "get_situation", {}, ok({}), later, True)
+        self.assertEqual(ai_tasks.get_task(started["id"])["client"], "Gemini", "taken the next day, as its page says")
 
     def test_a_task_the_user_starts_waits_for_the_next_app(self):
         ai_tasks.record("Claude", "describe_canvas", {}, ok({}), 100.0, True)

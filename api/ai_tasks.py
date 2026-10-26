@@ -36,7 +36,7 @@ import uuid
 import folder_paths
 
 from . import action_catalog, activity_log
-from .ai_task_handoff import latest_replied
+from .ai_task_handoff import just_done, latest_replied, unresolved
 from .path_utils import atomic_write_json
 
 FORMAT = 1
@@ -44,7 +44,6 @@ MAX_TASKS = 300
 MAX_STEPS = 400
 MAX_TASK_BYTES = 2 * 1024 * 1024
 IDLE_SECONDS = 20 * 60  # a longer pause between calls of one app starts a new task
-WAITING_SECONDS = 12 * 60 * 60  # a task the user started waits this long for an AI to take it
 MAX_TEXT = 300
 MAX_NOTE = 2000
 MAX_TITLE = 80
@@ -202,7 +201,7 @@ def _take_waiting(client, now, session=""):
     """The task the user started, now this app's (its own open task ends), or None."""
     task = _load().get(_waiting[0])
     _waiting[0] = None
-    if not task or task.get("ended") or now - task.get("started", 0) > WAITING_SECONDS:
+    if not task or task.get("ended"):  # it waits until an AI takes it, as its page says, or the user starts another
         return None
     owner = _owner_key(client, session)
     previous = _load().get(_current.get(owner) or (None if session else _current.get(client)))
@@ -411,7 +410,7 @@ def begin_step(client, tool, arguments, started=None, read_only=False, session="
         step = {"id": uuid.uuid4().hex[:10], "at": started, "ms": 0, "tool": tool, "kind": what.kind, "stage": what.stage,
                 "ok": True, "state": "running", "summary": summary_of(tool, args), "results": []}
         with _lock:
-            task = current_task(client, started, session=session, task_id=task_id)
+            task = (read_only and not task_id and _just_done(client, session, started)) or                 current_task(client, started, session=session, task_id=task_id)
             _add_step(task, step)
             _save(task)
         _notify(task["id"])
@@ -419,6 +418,13 @@ def begin_step(client, tool, arguments, started=None, read_only=False, session="
     except Exception:  # noqa: BLE001 - the record must never fail the AI's call
         log.warning("Anomalous AI tasks: begin_step of %s failed", tool, exc_info=True)
         return None
+
+
+def _just_done(client, session, now):
+    """This app's task it said is done moments ago, for a look right after (ai_task_handoff.just_done)."""
+    tasks = _load()
+    task = tasks.get(_current.get(_owner_key(client, session)) or (None if session else _current.get(client)))
+    return just_done(task, tasks, tasks.get(_waiting[0]), client, now)
 
 
 def finish_step(client, tool, arguments, result, started, read_only=False, step_ref=None, session="", task_id=None):
@@ -447,7 +453,7 @@ def finish_step(client, tool, arguments, result, started, read_only=False, step_
                 state = "error" if failed else "done" if gate.get("used") else "allowed"
                 error = (step.get("error") or "你没有允许 / You said no") if failed else ""
             if task is None:
-                task = current_task(client, started, session=session, task_id=task_id)
+                task = (read_only and not task_id and _just_done(client, session, started)) or                     current_task(client, started, session=session, task_id=task_id)
             if step is None:
                 step = {"id": uuid.uuid4().hex[:10], "at": started, "ms": ms, "tool": tool, "kind": kind, "stage": what.stage,
                         "ok": not failed, "state": state, "summary": summary, "results": results}
@@ -540,7 +546,7 @@ def task_summary(task, now=None):
         "started": task.get("started"), "updated": task.get("updated"), "ended": task.get("ended"),
         "waiting": bool(task.get("waiting")) and not task.get("ended"),
         "live": any(step.get("state") == "running" and now - step.get("at", 0) < RUN_WATCH_SECONDS for step in steps),
-        "steps": len(steps), "kinds": kinds, "errors": sum(1 for step in steps if not step.get("ok")),
+        "steps": len(steps), "kinds": kinds, "errors": unresolved(steps),
         "images": len(images), "cover": images[-1] if images else None, "asks": asks, "from": task.get("from"),
     }
 
