@@ -20,7 +20,7 @@ BLOCKS = {
             "picture": {"class_type": "LoadImage", "inputs": {"image": "$image"}},
             "soft": {"class_type": "DifferentialDiffusion", "inputs": {"model": ["$sampler.model", "*"]}, "wire_to": "$sampler"},
             "crop": {"class_type": "InpaintCropImproved", "inputs": {
-                "image": ["picture", 0], "mask": ["picture", 1], "mask_blend_pixels": 32, "context_from_mask_extend_factor": 1.2,
+                "image": ["picture", 0], "mask": ["picture", 1], "mask_blend_pixels": 32, "context_from_mask_extend_factor": 2.0,
                 "output_resize_to_target_size": True, "output_target_width": 1024, "output_target_height": 1024,
                 "downscale_algorithm": "lanczos", "upscale_algorithm": "lanczos"}},
             "condition": {"class_type": "InpaintModelConditioning", "inputs": {
@@ -29,8 +29,11 @@ BLOCKS = {
             "stitch": {"class_type": "InpaintStitchImproved", "inputs": {"stitcher": ["crop", "stitcher"], "inpainted_image": ["$decode", 0]},
                        "wire_to": "$save"},
         },
-        "after": "The sampler now repaints the cropped area (its steps, cfg and sampler stay; denoise 1 repaints it "
-                 "fully, 0.6–0.8 keeps more of the old). run_workflow; the saved picture is the whole one, stitched.",
+        "roles": {"sampler": {"denoise": 0.75}},  # at 1 a model not made for inpainting paints a whole new subject into the crop
+        "after": "The sampler now repaints only the cropped area, at denoise 0.75 (lower keeps more of the old). Its "
+                 "prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five "
+                 "fingers\"), or it paints the whole subject there. Then run_workflow; the saved picture is the whole "
+                 "one, stitched.",
     },
     "inpaint_basic": {
         "for": "Repaint a marked area (inpaint_image) with ComfyUI's own nodes only: the whole picture is sampled, "
@@ -44,7 +47,9 @@ BLOCKS = {
             "area": {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["encode", 0], "mask": ["picture", 1]},
                      "wire_to": "$sampler"},
         },
-        "after": "Set the sampler's denoise to 0.6–0.8 (set_values) so the area keeps the picture's look, then run_workflow.",
+        "roles": {"sampler": {"denoise": 0.7}},
+        "after": "The sampler repaints only the area, at denoise 0.7 so it keeps the picture's look (higher changes more). "
+                 "Then run_workflow.",
     },
     "detail_face_hands": {
         "for": "Fix faces and hands after a picture is made: finds each one, repaints it larger and puts it back "
@@ -115,6 +120,11 @@ def nodes_of(name, info, image=None):
         fills[f"${role}"] = _detector(info, prefix)
     return {key: {**spec, "inputs": {input: fills.get(value, value) if isinstance(value, str) else value
                                      for input, value in spec["inputs"].items()}} for key, spec in block["nodes"].items()}
+
+
+def roles_of(name):
+    """The settings block `name` changes on canvas nodes it finds ({role: {setting: value}}), as the page applies them."""
+    return BLOCKS[name].get("roles") or {}
 
 
 def after(name):

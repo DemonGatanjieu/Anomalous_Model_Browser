@@ -3,12 +3,12 @@
 ## v1.63.0 — unreleased
 
 - AI 有了现成的做法可以照着用（参考做法）：从擅长这些活的工作流里提炼出来的几块节点，AI 说一声用哪块，AMB 就在画布上搭好、接进你的工作流里，一次调用，不用 AI 一个个节点地搭。AI 开工时会收到这份清单，每块一行。
-  - **局部重绘·裁切缝合**：把圈出的地方裁出来放大到 1024 重画，再缝回原图，别处一点不动。需要节点包 ComfyUI-Inpaint-CropAndStitch。
+  - **局部重绘·裁切缝合**：把圈出的地方连同周围一圈一起裁出来，放大到 1024 重画，再缝回原图，别处一点不动。AMB 顺手把采样强度调到 0.75，并提醒 AI 把提示词改成只写这块地方（比如“一只手，五根手指”），不然它会把整张图的内容（比如一整个人）画进这一小块里。需要节点包 ComfyUI-Inpaint-CropAndStitch。
   - **局部重绘（官方节点）**：没装上面那个包时用它，只用 ComfyUI 自带的节点。
   - **部位细化（脸和手）**：出完图以后找出脸和手，各自放大重画再贴回去，细化后的图另存一张（文件名以 detailed 开头）。需要 Impact Pack 和 Impact Subpack，以及 models/ultralytics/bbox 里的检测模型。
   - 缺节点包时，AI 会知道缺哪个、该用哪块代替；画布上有好几个采样器时，它要指明用哪一个，AMB 不乱猜。
 - AI has ready-made ways of doing things (reference blocks): a few groups of nodes distilled from workflows that do one job well; the AI names one and Anomalous builds it on the canvas, spliced into your workflow, in one call instead of node by node. The AI gets their list, a line each, when it begins a task.
-  - **Repaint, crop and stitch**: crops the marked area, repaints it at 1024 and stitches it back, the rest untouched. Needs ComfyUI-Inpaint-CropAndStitch.
+  - **Repaint, crop and stitch**: crops the marked area with a margin around it, repaints it at 1024 and stitches it back, the rest untouched. Anomalous sets the sampler's denoise to 0.75 and tells the AI to write the prompt for that area only ("a hand, five fingers"), or it paints the whole picture's subject (a whole person) into it. Needs ComfyUI-Inpaint-CropAndStitch.
   - **Repaint (built-in nodes)**: for when that pack is not installed, ComfyUI's own nodes only.
   - **Face and hand detailing**: after a picture is made, finds faces and hands, repaints each larger and puts it back, saving the detailed picture beside it (prefix detailed). Needs Impact Pack and Impact Subpack and detector models in models/ultralytics/bbox.
   - A missing pack is named to the AI with the block to use instead; with several samplers on the canvas it has to say which one, nothing is guessed.

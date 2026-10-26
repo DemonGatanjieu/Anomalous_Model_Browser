@@ -44,7 +44,8 @@ INPAINT_NOTE = (
     "Repaint with a workflow, never by painting the file with code. On a workflow that makes this picture (its model "
     "and prompt: get_image_info on the picture says them), add_nodes(block=\"inpaint_crop_stitch\", image=inpaint_image) "
     "builds the repaint in one call, wired into its sampler (block inpaint_basic when that one needs a pack not "
-    "installed); then run_workflow. Say in report what you set and why, ask_user the strength if unsure, and show "
+    "installed); set_prompt the sampler's prompt to what belongs in the area (\"a hand, five fingers\"), not the "
+    "whole picture, then run_workflow. Say in report what you set and why, ask_user the strength if unsure, and show "
     "the old and new picture with a slider panel."
 )
 COLORS = ("red", "green", "blue", "yellow", "purple")

@@ -19,7 +19,7 @@ import { setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { addWires, applyWires, groupWires, pairWires, reachesOutput, validateWires } from './canvas_wiring.js';
 import { workflowKey } from './canvas_undo.js';
-import { placeRoles } from './canvas_roles.js';
+import { findRoles, placeRoles } from './canvas_roles.js';
 
 const BLANK = { last_node_id: 0, last_link_id: 0, nodes: [], links: [], groups: [], config: {}, extra: {}, version: 0.4 };
 
@@ -149,9 +149,12 @@ export function canvasEditActions({ recorded, nodeById }) {
     }
 
     /** A group of new nodes in API form, wired among themselves, to the canvas ("#12", or a block's roles: canvas_roles.js) and by wire_to, as one block and one Ctrl+Z step. */
-    function addNodes({ nodes: asked, near_node_id: nearId, replace = false }, getOwner) {
+    function addNodes({ nodes: asked, near_node_id: nearId, replace = false, roles = {} }, getOwner) {
         return recorded(getOwner, 'mcpDidNodes', async (g) => {
             const nodes = placeRoles(g, asked, nearId);
+            // A block's settings on the canvas nodes it goes with (the sampler's denoise), in the same Ctrl+Z step.
+            const found = Object.keys(roles).length ? findRoles(g, nearId) : {};
+            const settings = Object.entries(roles).filter(([role]) => found[role]).map(([role, values]) => [found[role], valuePlan(found[role], values)]);
             const key = workflowKey(app), before = JSON.stringify(g.serialize());
             const built = await withFreshChoices(() => prepare(nodes));
             if ((app.canvas?.graph || app.graph) !== g || workflowKey(app) !== key || JSON.stringify(g.serialize()) !== before) {
@@ -167,6 +170,7 @@ export function canvasEditActions({ recorded, nodeById }) {
             try {
                 for (const [name, node] of Object.entries(built.made)) node.pos = spots[name];
                 connections = applyWires(g, wires, added, () => Object.entries(built.made).forEach(([name, node]) => apply(node, built.plans[name])));
+                settings.forEach(([node, plan]) => apply(node, plan));
             } finally { g.afterChange?.(); }
             g.setDirtyCanvas?.(true, true);
             recordCanvasStep(app);

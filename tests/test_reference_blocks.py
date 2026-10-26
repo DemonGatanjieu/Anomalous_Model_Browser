@@ -70,12 +70,13 @@ class AddBlockTests(unittest.TestCase):
         answer = mcp_canvas_edit.add_nodes({}, block="inpaint_crop_stitch", image="a.png", near_node_id=5)
         action, payload = self.page.call_args[0]
         self.assertEqual((action, payload["replace"], payload["near_node_id"]), ("add_nodes", True, 5))
+        self.assertEqual(payload["roles"], {"sampler": {"denoise": 0.75}}, "the sampler's strength set with it")
         self.assertEqual(payload["nodes"]["picture"]["inputs"]["image"], "a.png")
-        self.assertIn("stitched", answer["next"], "what to do next with this block")
+        self.assertIn("set_prompt it to what belongs in the area", answer["next"], "what to do next with this block")
 
     def test_nodes_or_block_not_both_and_errors_reach_the_ai(self):
         for arguments in ({}, {"nodes": {"a": {"class_type": "LoadImage"}}, "block": "inpaint_basic"}):
-            with self.assertRaisesRegex(ToolError, "nodes .* or block"):
+            with self.assertRaisesRegex(ToolError, "either nodes .* or block .*one of the two"):
                 mcp_canvas_edit.add_nodes({}, **arguments)
         self.object_info.return_value = BUILT_IN
         with self.assertRaisesRegex(ToolError, "inpaint_basic instead"):

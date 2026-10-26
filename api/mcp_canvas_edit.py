@@ -212,7 +212,7 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
     if not isinstance(replace, bool):
         raise ToolError("replace must be true or false.")
     if (nodes is None) == (block is None):
-        raise ToolError("Give nodes (a group in API form) or block (a ready-made one from begin_task's blocks), not both.")
+        raise ToolError("Give either nodes (a group in API form) or block (a ready-made one from begin_task's blocks), one of the two.")
     if block is not None:
         try:  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
             nodes, replace = reference_blocks.nodes_of(str(block), object_info(ctx), image), True
@@ -222,6 +222,7 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
         _api_nodes(nodes, canvas_refs=True)
     _allowed(ctx, [spec["class_type"] for spec in nodes.values()])
     answer = _next(_page("add_nodes", {"nodes": nodes, "replace": replace,
+                                       "roles": reference_blocks.roles_of(str(block)) if block is not None else {},
                                        "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")}, timeout=60))
     if block is not None and isinstance(answer, dict) and not answer.get("unwired") and answer.get("reaches_output") is not False:
         answer["next"] = reference_blocks.after(str(block))
