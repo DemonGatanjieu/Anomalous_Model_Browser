@@ -253,8 +253,8 @@ def new_workflow(ctx, name="", nodes=None):
     return _page("new_workflow", {"name": str(name or "")[:60], "nodes": nodes}, timeout=60)
 
 
-def open_workflow(ctx, name):
-    filename, name = mcp_fill.saved_workflow(name)
+def open_workflow(ctx, workflow):
+    filename, name = mcp_fill.saved_workflow(workflow)
     return _page("open_workflow", {"filename": filename, "name": name}, timeout=60)
 
 
@@ -310,5 +310,5 @@ CANVAS_TOOLS = dict([
     _action("open_workflow", "Open a saved workflow",
             "Opens one of the user's saved workflows (list_workflows names them) in a new tab, leaving the open one "
             "as it was, to run it or build on it with add_node, connect_nodes and set_values.",
-            open_workflow, {"name": {"type": "string", "description": "A workflow name from list_workflows."}}, ["name"]),
+            open_workflow, {"workflow": {"type": "string", "description": "A workflow name from list_workflows."}}, ["workflow"]),
 ])

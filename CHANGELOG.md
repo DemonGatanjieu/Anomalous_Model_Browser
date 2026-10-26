@@ -8,6 +8,8 @@
   - AI 加 LoRA 或换模型时，AMB 对比 LoRA 和主模型的底模：一个是 SD 1.5、一个是 SDXL 这种用不了的，会提醒 AI 并告诉它按底模去找；Pony 的 LoRA 用在 Illustrious 上这种能用但可能效果差的，也会轻轻提一句。只提醒，不拦着。
   - AI 看模型详情时，能看到作者示例图用的采样器、步数、CFG、尺寸，LoRA 还有作者用的权重（来自扫描时存下的 Civitai 资料），还有版本名。
   - 跑图被 ComfyUI 拒绝时，AI 收到的不再是原样的英文报错，而是“哪个节点、缺什么、该用哪个工具修”。
+  - 用 Gemini 3.8 Flash 实际考了 7 道常见任务（出图、换模型加 LoRA、问你再改、缺模型、找图看参数、搭放大分支、修断线），失败多半出在第一次用某个工具时参数写错，于是：参数写错时，AI 收到的报错会列出这个工具该写哪些参数，下一次就对；同一个东西在各工具里叫同一个名字（写提示词和跑图都叫 `prompt`，打开工作流和跑图都叫 `workflow`）；等待时间写超了（比如 120 秒）按最长的 55 秒等，不再报错；按类型找模型时写单数（checkpoint、lora）也能找到。
+  - 很久以前（两个多小时前）留下、AI 一直没收到的留言或标注，不再把一个新对话拉进那个旧任务。
   - 关卡窗口新增 **等不到回答时**：**停下等我**（默认）或 **按推荐的继续**。选后者时，到了等待时间你还没答，AI 标了推荐项的选择题就按推荐的选，展台和“决策”里都写着“到时间，按推荐选了”；没有推荐项的问题、关卡里“先问我”的事，永远不会替你答。
 - The AI takes fewer detours and guesses less:
   - The tool set's **Daily** choice is gone: AI apps get every tool. Antigravity, Claude Code, Cursor and VS Code load tool descriptions as they need them, so looking tools up through Anomalous only added detours (in one run 18 of 29 calls).
@@ -15,6 +17,8 @@
   - Adding a LoRA or swapping a model, Anomalous compares the base models of the LoRA and the main model: one that cannot work (SD 1.5 on SDXL) is pointed out with how to find a fitting one; one that loads but may look off (a Pony LoRA on Illustrious) gets a softer note. A note only, never a block.
   - Model details give the AI the sampler, steps, CFG and size the author's example pictures used, and for a LoRA the weight (from the Civitai record a scan keeps), and the version name.
   - When ComfyUI refuses a run, the AI gets which node, what is missing and the tool that fixes it, instead of ComfyUI's raw report.
+  - Gemini 3.8 Flash took seven everyday tasks as an exam (a run, a model and LoRA swap, asking you first, a missing model, a picture's settings, an upscale branch, a broken link); most failed calls were a tool's first use with wrong arguments, so: an argument error now lists what the tool takes, so the next call is right; one thing has one argument name across tools (`prompt` for set_prompt as for run_workflow, `workflow` for open_workflow as for run_workflow); a wait longer than 55 s waits 55 s instead of failing; a model type in the singular (checkpoint, lora) finds them too.
+  - A message or marks the AI never got, left more than two hours ago, no longer draws a new chat into that old task.
   - The Gates window has **When I don't answer**: **Wait for me** (the default) or **Go with the recommendation**, where a choice the AI marked a recommended option for takes it once your waiting time runs out, shown on the stage and under Decisions; a question without a recommendation, and anything a gate asks first, is never answered for you.
 
 - AI 问你的问题更好答：选项是一按就发出去的按钮，右边有箭头，问题下面写着“点一个就发给 AI”，点了马上变成选中的样子；**让 AI 定** 挪到问题右上角，不再跟选项挤在一起被当成“确认”；“都不是”那一行默认收起成 **都不是，我自己说…**，关卡卡片上的原因也收起成 **说说想怎么改…**，点了才出输入框。展台、留言框上方的提问条、关卡卡片都一样。关卡窗口里几条说明改对了：改画布也管加节点、连线、新建工作流；跑完以后那几句话在留言框上方；“先问我”和按钮上的字对上了。

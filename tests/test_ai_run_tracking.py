@@ -43,10 +43,11 @@ class TrackingTests(unittest.TestCase):
             self.assertEqual(ai_tasks.get_task(other)["steps"], [])
 
     def test_bad_wait_is_rejected_before_registration(self):
-        for value in ("later", float("nan"), -1, 56, True):
+        for value in ("later", float("nan"), True):
             with self.assertRaises(ToolError):
                 ai_run_tracking.track_run(self.ctx, ["one"], wait_seconds=value)
         self.assertEqual(ai_tasks.get_task(self.task)["steps"], [])
+        self.assertEqual([ai_run_tracking.checked_wait(value) for value in (-1, 30, 120)], [0, 30, 55], "too long: one call's longest")
 
     def test_recent_contact_and_silence_do_not_claim_execution(self):
         self.assertFalse(ai_tasks.task_summary(ai_tasks.get_task(self.task))["live"])

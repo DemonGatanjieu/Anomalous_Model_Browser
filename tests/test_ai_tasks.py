@@ -264,7 +264,7 @@ class TaskTests(unittest.TestCase):
 
     def test_steps_carry_their_stage(self):
         ai_tasks.record("A", "search_models", {"query": "x"}, ok({"models": []}), 1.0, True)
-        ai_tasks.record("A", "set_prompt", {"text": "x"}, ok({}), 2.0)
+        ai_tasks.record("A", "set_prompt", {"prompt": "x"}, ok({}), 2.0)
         steps = ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"]
         self.assertEqual([(s["kind"], s["stage"]) for s in steps], [("look", "model"), ("canvas", "prompt")])
 
@@ -326,6 +326,15 @@ class TaskTests(unittest.TestCase):
         self.assertIsNone(ai_tasks.get_task(old_id)["ended"])
         ai_panels.attach_pending(ok({}), "A")
         self.assertTrue(mcp_task_tools.report({"client": "A"}, "改好了", reply_to=asked["id"])["noted"])
+
+    def test_a_reply_left_unread_long_ago_does_not_draw_a_new_chat(self):
+        ai_tasks.begin_task("A", "前天的")
+        ai_tasks.report("A", "做完了", done=True)
+        old_id = ai_tasks.list_tasks()[0]["id"]
+        ai_panels.leave_message(old_id, "这根手指怪怪的", now=ai_tasks.time.time() - ai_tasks.REPLY_FRESH - 60)
+        ai_tasks._current.clear()  # ComfyUI started again since: no task is this app's open one
+        ai_tasks.record("A", "describe_canvas", {}, ok({}), ai_tasks.time.time(), True)
+        self.assertNotEqual(ai_tasks.get_task(old_id)["steps"][-1]["tool"], "describe_canvas", "a new task, not the one written to days ago")
 
     def test_a_reply_elsewhere_does_not_pull_the_ai_off_its_open_task(self):
         ai_tasks.begin_task("A", "旧的")

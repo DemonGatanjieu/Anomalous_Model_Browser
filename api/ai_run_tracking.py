@@ -8,9 +8,10 @@ from .mcp_tools import ToolError
 
 
 def checked_wait(value):
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 <= value <= 55:
-        raise ToolError("wait_seconds must be a number between 0 and 55.")
-    return value
+    """wait_seconds as seconds from 0 to 55: one call waits no longer, so a longer wait is cut to that."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ToolError("wait_seconds is a number of seconds, up to 55.")
+    return min(max(value, 0), 55)
 
 
 def track_run(ctx, prompt_ids, task=None, wait_seconds=15):

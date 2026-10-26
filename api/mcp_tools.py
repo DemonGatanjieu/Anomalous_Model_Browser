@@ -215,8 +215,9 @@ def _each_model():
 def search_models(query="", type="", base_model="", source="", limit=20):
     terms, wanted_base, found = _terms(query), str(base_model or "").lower(), []
     total = 0
+    type = str(type or "").lower()
     for folder_type, path_idx, base_dir, file_path in _each_model():
-        if type and folder_type != type:
+        if type and type not in (folder_type, folder_type.rstrip("s")):  # "checkpoint" finds the checkpoints too
             continue
         meta = get_metadata(file_path)
         if wanted_base and wanted_base not in str(meta.get("baseModel") or "").lower():
@@ -541,7 +542,9 @@ def call_tool(tools, name, arguments, ctx=None):
     unknown = set(arguments) - set(spec["properties"])
     missing = [key for key in spec.get("required", []) if key not in arguments]
     if unknown or missing:
-        return _failure(f"Unknown arguments {sorted(unknown)}" if unknown else f"Missing arguments {missing}")
+        wrong = "; ".join(part for part in (unknown and f"Unknown arguments {sorted(unknown)}", missing and f"missing {missing}") if part)
+        takes = ", ".join(key + (" (needed)" if key in spec.get("required", []) else "") for key in spec["properties"] if key != "task")
+        return _failure(f"{wrong}. {name} takes: {takes or 'nothing'}.")
     try:
         value = tool["run"](ctx, **arguments) if tool.get("context") else tool["run"](**arguments)
     except ToolError as error:

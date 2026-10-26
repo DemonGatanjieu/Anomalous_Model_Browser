@@ -60,10 +60,10 @@ def describe_canvas(ctx):
     return _page("describe_canvas")
 
 
-def set_prompt(ctx, text, role="positive", node_id=None, mode="replace"):
+def set_prompt(ctx, prompt, role="positive", node_id=None, mode="replace"):
     if role not in ("positive", "negative") or mode not in ("replace", "append"):
         raise ToolError("role is positive or negative; mode is replace or append.")
-    return _page("set_prompt", {"text": str(text), "role": role, "node_id": node_id, "mode": mode})
+    return _page("set_prompt", {"text": str(prompt), "role": role, "node_id": node_id, "mode": mode})
 
 
 def _base_note(result, folder_type, file_path):
@@ -137,7 +137,7 @@ def download_status(ctx):
 
 def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, **slots):
     from .ai_run_tracking import checked_wait
-    checked_wait(wait_seconds)  # Reject malformed waits before anything can be submitted.
+    checked_wait(wait_seconds)  # Reject a wait that is no number before anything can be submitted.
     batch = max(1, min(8, int(batch)))
     filled = mcp_fill.fill(ctx, workflow, **slots)  # a saved workflow and its blanks first (mcp_fill.py)
     try:
@@ -278,9 +278,9 @@ ACTIONS = dict([
     _action("set_prompt", "Write a prompt",
             "Writes text into the workflow's positive or negative prompt box (or the one on node_id). "
             "mode=append adds to what is there. One Ctrl+Z step.",
-            set_prompt, {"text": {"type": "string"}, "role": {"type": "string", "enum": ["positive", "negative"], "default": "positive"},
+            set_prompt, {"prompt": {"type": "string"}, "role": {"type": "string", "enum": ["positive", "negative"], "default": "positive"},
                          "node_id": _NODE, "mode": {"type": "string", "enum": ["replace", "append"], "default": "replace"}},
-            ["text"], destructive=True),
+            ["prompt"], destructive=True),
     _action("set_model", "Swap a node's model",
             "Puts a model into a loader node (checkpoint, LoRA, VAE…) on the canvas, replacing the one it had. "
             "base_model_note in the answer: a LoRA and the main model are for different base models.",

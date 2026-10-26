@@ -284,17 +284,19 @@ def current_task(client, now=None, session="", task_id=None):
         if task and not task.get("ended"):
             task["ended"] = task.get("updated")
             _save(task)
-        return _take_replied(tasks, client, session) or _new_task(client, now=now, session=session)
+        return _take_replied(tasks, client, now, session) or _new_task(client, now=now, session=session)
 
 
 REPLIES = {"user_message", "user_marks", "user_pictures", "user_toolbox"}  # what the user gives the AI (ai_call_lines.js)
+REPLY_FRESH = 2 * 3600  # an unread reply older than this no longer draws a new chat's calls to its task
 
 
-def _take_replied(tasks, client, session="", previous=None):
-    """The newest task of this app the user wrote to since its AI last read (an ended one opens
-    again), now this app's instead of a new one (its own open task `previous` ends), or None."""
+def _take_replied(tasks, client, now, session="", previous=None):
+    """The newest task of this app the user wrote to lately, since its AI last read (an ended one
+    opens again), now this app's instead of a new one (its own open task `previous` ends), or None."""
     replied = max((task for task in tasks.values() if task.get("client") == client and any(
-        step.get("kind") == "user" and step.get("tool") in REPLIES and not step.get("delivered") for step in task["steps"])),
+        step.get("kind") == "user" and step.get("tool") in REPLIES and not step.get("delivered")
+        and now - step.get("at", 0) < REPLY_FRESH for step in task["steps"])),
         key=lambda task: task.get("updated", 0), default=None)
     if replied is None:
         return None
@@ -319,7 +321,7 @@ def begin_task(client, title, now=None, new_task=False, session="", task_id=None
         if task is None and not new_task and previous and not previous.get("ended") and now - previous.get("updated", 0) < IDLE_SECONDS:
             task = previous
         if task is None and not new_task:
-            task = _take_replied(tasks, client, session, previous)
+            task = _take_replied(tasks, client, now, session, previous)
         if task is None:
             if previous and not previous.get("ended"):
                 previous["ended"] = now

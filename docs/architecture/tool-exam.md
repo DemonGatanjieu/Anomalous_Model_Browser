@@ -16,10 +16,13 @@ AMB 给 AI 软件的工具，以轻量模型（Gemini Flash）能顺畅用为准
 
 ## 怎么考
 
-1. 在隔离的测试 ComfyUI（8199 端口，自己的 user 和 output 文件夹，模型只读）上开 AMB。关卡里把"下载模型"和"挪动模型文件"设成"不许做"，不扫描。
-2. AI 软件连到这个测试 ComfyUI（Antigravity：MCP 设置里 anomalous 的地址改成 8199，考完改回来）。连之前先问用户。
-3. 每道题开一个新对话，把"开头那句话"发给 AI；需要你回答的地方照"你怎么答"去答。
-4. 全部做完后打分：
+1. 在隔离的测试 ComfyUI（8199 端口，自己的 user 和 output 文件夹，模型只读）上开 AMB，页面开着（画布上的事由页面做）。关卡里把"下载模型""联网扫描""挪动模型文件"设成"不许做"。
+2. 在测试 ComfyUI 的工作流页存好三个工作流：`exam_txt2img`（一个能出图的文生图）、`exam_missing`（同一个，主模型的文件名改成这台电脑没有的）、`exam_broken`（同一个，KSampler 的 model 线断开）。
+3. AI 软件连到这个测试 ComfyUI（Antigravity：MCP 设置里 anomalous 的地址改成 8199，考完改回来）。连之前、每次开考之前都先问用户。
+4. 每道题先在 AMB 里点"新任务"，再开一个新对话，把"开头那句话"（后面加一句"只用 Anomalous 的工具，不要运行命令或读写文件"）发给 AI；需要你回答的地方照"你怎么答"去答。
+
+   Antigravity 也能用它自带的命令行开对话：`resources/bin/language_server.exe agentapi new-conversation --model=flash "<开头那句话>"`（`send-message <对话> "<话>"` 接着说）。要先设好三个环境变量：`ANTIGRAVITY_LS_ADDRESS`（它日志里 "for HTTP" 那个端口）、`ANTIGRAVITY_CSRF_TOKEN`（它的 language_server 启动参数 `--csrf_token`，只在本机有效，不要写进任何文件）、`ANTIGRAVITY_PROJECT_ID`（平时用的那个项目）。注意：这样开的对话里 Gemini 不去读工具说明文件，参数名靠猜，比在界面里开的对话更难，算"最差情况"。
+5. 全部做完后打分：
 
    ```bash
    node tools/tool_exam.mjs <测试 ComfyUI 的 user 文件夹>/anomalous/ai_tasks --since=2026-10-26T20:00
@@ -27,19 +30,25 @@ AMB 给 AI 软件的工具，以轻量模型（Gemini Flash）能顺畅用为准
 
    每道题一行：AI 调用了几次（calls）、失败几次（failed）、绕路几次（detours：以前版本的查工具，或者拿着旧的工具列表来调用）、问了你几次、你答了几次、跑了几次图、失败几次、有没有收尾、用了几分钟。最后一行是总数，下面一行是失败率和绕路率。
 
-5. 和上一次的分数比：失败率、绕路率不能变高，每题的调用次数不能明显变多。
+6. 和上一次的分数比：失败率、绕路率不能变高，每题的调用次数不能明显变多。
 
 ## 考题
 
 | # | 开头那句话 | 你怎么答 | 合格 |
 | --- | --- | --- | --- |
-| 1 | 用 Anomalous 出一张图：画布上的文生图工作流，提示词写"一只在窗台上晒太阳的橘猫"，跑一张。 | 不用答 | 一次 `run_workflow` 出图；不超过 6 次调用 |
-| 2 | 用 Anomalous 把主模型换成一个 SDXL 底模，再加一个适合它的 LoRA，权重照作者示例图的来，跑一张。 | 它问用哪个时选推荐的 | 用了 `set_model`、`add_lora`；LoRA 权重来自 `get_model` 的 author_examples；没有底模不配的提醒，或有提醒后换掉了 |
-| 3 | 用 Anomalous 给这张图想两个改法，问我选哪个，再照我选的做。 | 选不是推荐的那个 | 用 `ask_user` 问、标了推荐、等到你回答；照你选的做 |
+| 1 | 用 Anomalous 出一张图：用工作流 exam_txt2img，提示词写"一只在窗台上晒太阳的橘猫"，跑一张。 | 不用答 | 出图；不超过 6 次调用 |
+| 2 | 用 Anomalous 打开工作流 exam_txt2img，把主模型换成另一个 Illustrious 底模，再加一个适合它的 LoRA，权重照作者示例图的来，跑一张。 | 它问用哪个时选推荐的 | 用了 `set_model`、`add_lora`；LoRA 权重来自 `get_model` 的 author_examples；没有底模不配的提醒，或有提醒后换掉了 |
+| 3 | 用 Anomalous 给最新那张 exam 开头的图想两个改法，问我选哪个，再照我选的做。 | 选不是推荐的那个 | 用 `ask_user` 问、等到你回答；照你选的做 |
 | 4 | 用 Anomalous 修图库里最新一张图的手：我在 AMB 里圈出来。 | 在图上圈手，确认它调整后的范围 | `propose_repaint_area` → 你确认 → AI 自己加重绘节点 → 跑出来 |
-| 5 | 用 Anomalous 打开工作流 exam_missing（缺一个模型），把缺的模型补上再跑。 | 不用答 | 用 `check_workflow_models` / `fix_workflow_models`，不下载 |
-| 6 | 用 Anomalous 找出最近用 LoRA anime_eyes_detail 出的图，告诉我当时的权重和种子。 | 不用答 | `search_images` + `get_image_info`，答对 |
-| 7 | 用 Anomalous 给画布上的工作流加一个放大分支（放大到 1.5 倍），跑一张。 | 不用答 | 用 `add_nodes` 一次搭好并接线，跑出来 |
-| 8 | 用 Anomalous 跑一下画布上的工作流。（事先把 KSampler 的 model 线断开） | 不用答 | 收到"哪个节点缺什么"的提示后用 `connect_nodes` 接上，再跑成功；失败不超过 2 次 |
+| 5 | 用 Anomalous 打开工作流 exam_missing，它缺一个模型。检查缺了什么，处理好以后跑一张。 | 不用答 | 用 `check_workflow_models`，下载被关卡拦下后换上一个有的模型，跑出来 |
+| 6 | 用 Anomalous 找出最近一张用了 LoRA 的图，告诉我当时用的是哪个 LoRA、权重多少、种子多少。 | 不用答 | `search_images` + `get_image_info`，答对 |
+| 7 | 用 Anomalous 给工作流 exam_txt2img 加一个放大分支（放大到 1.5 倍），跑一张。 | 不用答 | 搭好并接线，跑出来 |
+| 8 | 用 Anomalous 跑一下工作流 exam_broken。 | 不用答 | 收到"哪个节点缺什么"的提示后用 `connect_nodes` 接上，再跑成功；失败不超过 3 次 |
 
-第 5 题要先在测试 ComfyUI 里存一个工作流 `exam_missing`：把一个工作流里的模型名改成这台电脑没有、但能按指纹找回的文件。
+## 2026-10-26 第一次考试（Antigravity 命令行开的对话，Gemini 3.8 Flash）
+
+7 道题（第 4 题要在图上手动圈，没考），107 次调用，失败 19 次（18%），绕路 0。题都做成了：出图、换模型加 LoRA、问了再照答案做、缺模型时没下载、答对图的参数、搭放大分支、断线时照提示接好。
+
+失败几乎都出在"第一次用某个工具"：空着参数调一次（7 次）、故意传个假参数看报错里列出的参数（6 次）、凭感觉写参数名（4 次，比如给 `set_prompt` 写 `prompt`、给 `open_workflow` 写 `name`）。另有 1 次等待时间写了 120 秒，1 次是关卡按设置拦下下载。
+
+据此改了：参数写错时报错列出该写哪些参数（下一次就对）；同一个东西在各工具里用同一个参数名（提示词都叫 `prompt`，工作流都叫 `workflow`）；等待时间超了按 55 秒；按类型找模型时单数也认。也试过在每个工具说明开头写上参数，重考时没有变化（这种对话里 Gemini 只看工具名），又撤掉了。

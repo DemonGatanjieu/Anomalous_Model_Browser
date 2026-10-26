@@ -210,7 +210,7 @@ async def _call(params, request):
     if name == "run_workflow" and step and step.get("state") == "running":
         ai_task_runs.watch(step["id"], result.get("structuredContent") or {})
         await asyncio.to_thread(ai_run_tracking.wait_for_receipt, result, client, session, active_task,
-                                arguments.get("wait_seconds", 55), step["id"])
+                                ai_run_tracking.checked_wait(arguments.get("wait_seconds", 55)), step["id"])
     # The user's news and the run's go to the AI, never to the card's own calls (they do not reach the AI).
     if name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)

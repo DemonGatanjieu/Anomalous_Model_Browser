@@ -80,10 +80,10 @@ class GateTests(unittest.TestCase):
             ai_gates.set_run_wait("soon")
 
     def test_auto_and_never(self):
-        self.assertIsNone(self.call("set_prompt", {"text": "x"})[1])
+        self.assertIsNone(self.call("set_prompt", {"prompt": "x"})[1])
         self.assertIsNone(self.call("search_models", {})[1], "reads have no gate")
         ai_gates.set_policy("canvas", "never")
-        ref, verdict = self.call("set_prompt", {"text": "x"})
+        ref, verdict = self.call("set_prompt", {"prompt": "x"})
         self.assertTrue(verdict["isError"])
         self.assertEqual(ai_tasks.get_task(ref[0])["steps"][-1]["state"], "error")
 

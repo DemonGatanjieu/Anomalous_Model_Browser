@@ -157,6 +157,8 @@ class ToolTests(unittest.TestCase):
             model = found["models"][0]
             self.assertEqual((model["model_id"], model["source"], model["loaded_by"]), ("loras:0:sub/neon_city.safetensors", "civitai", ["LoraLoader"]))
             self.assertEqual(mcp_tools.call_tool(tools, "search_models", {"source": "not_scanned"}, CTX)["structuredContent"]["total_matches"], 1)
+            for kind, count in (("lora", 2), ("LoRAs", 2), ("checkpoints", 0)):
+                self.assertEqual(mcp_tools.call_tool(tools, "search_models", {"type": kind}, CTX)["structuredContent"]["total_matches"], count, kind)
             detail = mcp_tools.call_tool(tools, "get_model", {"model_id": model["model_id"]}, CTX)["structuredContent"]
             self.assertEqual((detail["description"], detail["user_notes"], detail["loaded_by"]), ("Bright lights", "mine", ["LoraLoader"]))
             for bad in ("loras:0:../../secret.safetensors", "loras:0:sub/missing.safetensors", "nonsense"):
@@ -454,6 +456,15 @@ class CardAndPromptTests(unittest.TestCase):
         self.assertEqual(rpc("prompts/get", {"name": "pick_best", "arguments": {}}, "pick_best")["error"]["code"], -32602)
         self.assertEqual(rpc("prompts/get", {"name": "nope"}, "nope")["error"]["code"], -32602)
 
+
+
+class ArgumentTests(unittest.TestCase):
+    def test_a_wrong_argument_is_answered_with_what_the_tool_takes(self):
+        result = rpc("tools/call", {"name": "set_prompt", "arguments": {"text": "一只猫"}}, "set_prompt")["result"]
+        self.assertTrue(result["isError"])
+        text = result["content"][0]["text"]
+        self.assertIn("Unknown arguments ['text']; missing ['prompt']", text)
+        self.assertIn("set_prompt takes: prompt (needed), role, node_id, mode", text, "the AI corrects itself in one go")
 
 if __name__ == "__main__":
     unittest.main()
