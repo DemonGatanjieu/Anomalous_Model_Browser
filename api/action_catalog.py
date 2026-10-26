@@ -18,17 +18,6 @@ Entry = namedtuple("Entry", "kind stage gate")
 STAGES = ("model", "combo", "prompt", "canvas", "run", "picture", "voice", "library")
 GATES = ("canvas", "gpu", "download", "network", "files")
 
-# The "daily" set the user can offer AI apps instead of all tools (ai_gates.tool_set): runs of saved
-# workflows with their blanks, pictures, models, the task's own, and compact canvas building; the
-# others stay reachable through mcp_directory's tool_help and use_tool.
-DAILY = frozenset({
-    "begin_task", "get_situation", "report", "ask_user", "get_answers", "log_decision", "log_outside", "show_panel",
-    "propose_repaint_area",
-    "list_workflows", "run_workflow", "run_status", "stop_run", "search_images", "get_image_info", "zoom_image",
-    "search_models", "set_model", "add_lora", "check_workflow_models", "fix_workflow_models",
-    "find_nodes", "add_node", "add_nodes", "connect_nodes", "set_values", "new_workflow",
-})
-
 # Arguments with which a call also changes the canvas: it then asks as the stricter of its own gate and "canvas".
 ALSO_CANVAS = {"run_workflow": ("workflow", "prompt", "negative", "seed", "width", "height", "image", "image_node", "values")}
 
@@ -81,8 +70,6 @@ TOOLS = {
     "propose_repaint_area": Entry("panel", "picture", None),
     "show_run_map": Entry("panel", None, None),
     "begin_task": Entry(None, None, None),
-    "tool_help": Entry("look", None, None),
-    "use_tool": Entry(None, None, None),  # never a step itself: the server makes it the tool it names
     "track_run": Entry(None, "run", None),  # attaches an existing submission; creates its own run step
     "update_panel": Entry(None, None, None),
     "get_answers": Entry(None, None, None),

@@ -3,19 +3,19 @@
 ## v1.62.0 — unreleased
 
 - AI 少走弯路、少猜：
-  - AI 软件拿着旧的工具列表来调用时（你换了工具组，或 AMB 更新了），任务标题下面会出现一行黄字，告诉你怎么让它重新连接；AI 那边也收到同样的提醒。
+  - 去掉了“给 AI 的工具”里的 **日常**：所有工具都直接给。Antigravity、Claude Code、Cursor、VS Code 这些软件会自己按需读工具说明，AMB 再做一层“现查现用”只会让 AI 多绕路（一次实测 29 次调用里 18 次花在查工具和转一道上）。
+  - AMB 更新以后，AI 软件还拿着旧的工具列表来调用时，任务标题下面会出现一行黄字，告诉你怎么让它重新连接；AI 那边也收到同样的提醒。AI 软件重新取了列表，黄字自己消失。
   - AI 加 LoRA 或换模型时，AMB 对比 LoRA 和主模型的底模：一个是 SD 1.5、一个是 SDXL 这种用不了的，会提醒 AI 并告诉它按底模去找；Pony 的 LoRA 用在 Illustrious 上这种能用但可能效果差的，也会轻轻提一句。只提醒，不拦着。
   - AI 看模型详情时，能看到作者示例图用的采样器、步数、CFG、尺寸，LoRA 还有作者用的权重（来自扫描时存下的 Civitai 资料），还有版本名。
   - 跑图被 ComfyUI 拒绝时，AI 收到的不再是原样的英文报错，而是“哪个节点、缺什么、该用哪个工具修”。
   - 关卡窗口新增 **等不到回答时**：**停下等我**（默认）或 **按推荐的继续**。选后者时，到了等待时间你还没答，AI 标了推荐项的选择题就按推荐的选，展台和“决策”里都写着“到时间，按推荐选了”；没有推荐项的问题、关卡里“先问我”的事，永远不会替你答。
-  - “给 AI 的工具”的说明改了：Antigravity 自己会按需读工具说明，选 **完整** 就对了；**日常** 只给工具数量有上限的软件用。
 - The AI takes fewer detours and guesses less:
-  - When an AI app calls by an older tool list (you switched the tool set, or Anomalous was updated), a yellow line under the task header says how to reconnect it, and the AI is told too.
+  - The tool set's **Daily** choice is gone: AI apps get every tool. Antigravity, Claude Code, Cursor and VS Code load tool descriptions as they need them, so looking tools up through Anomalous only added detours (in one run 18 of 29 calls).
+  - When an AI app still calls by the tool list of an older Anomalous, a yellow line under the task header says how to reconnect it, and the AI is told too; it goes once the app fetches the list again.
   - Adding a LoRA or swapping a model, Anomalous compares the base models of the LoRA and the main model: one that cannot work (SD 1.5 on SDXL) is pointed out with how to find a fitting one; one that loads but may look off (a Pony LoRA on Illustrious) gets a softer note. A note only, never a block.
   - Model details give the AI the sampler, steps, CFG and size the author's example pictures used, and for a LoRA the weight (from the Civitai record a scan keeps), and the version name.
   - When ComfyUI refuses a run, the AI gets which node, what is missing and the tool that fixes it, instead of ComfyUI's raw report.
   - The Gates window has **When I don't answer**: **Wait for me** (the default) or **Go with the recommendation**, where a choice the AI marked a recommended option for takes it once your waiting time runs out, shown on the stage and under Decisions; a question without a recommendation, and anything a gate asks first, is never answered for you.
-  - The tool set's description now says Antigravity reads tool descriptions itself, so **Full** is the one for it; **Daily** is for apps that take a limited number of tools.
 
 - AI 问你的问题更好答：选项是一按就发出去的按钮，右边有箭头，问题下面写着“点一个就发给 AI”，点了马上变成选中的样子；**让 AI 定** 挪到问题右上角，不再跟选项挤在一起被当成“确认”；“都不是”那一行默认收起成 **都不是，我自己说…**，关卡卡片上的原因也收起成 **说说想怎么改…**，点了才出输入框。展台、留言框上方的提问条、关卡卡片都一样。关卡窗口里几条说明改对了：改画布也管加节点、连线、新建工作流；跑完以后那几句话在留言框上方；“先问我”和按钮上的字对上了。
 - Questions from the AI are easier to answer: options are buttons that send at a press, with an arrow and "One press sends it to the AI" above them, and the pressed one shows at once; **Let the AI decide** sits at the question's top right instead of under the options where it read as a confirm button; a line of your own stays folded as **None of these, I'll say it…**, and the Gates card's reason as **Say how to change it…**. The same on the stage, the question strip over the message box and the Gates card. Gates window texts fixed: changing the canvas includes adding nodes, wiring and new workflows; the lines after a run are over the message box; the intro names "Ask me" as the button does.
@@ -56,8 +56,8 @@
 - The AI workbench now collects pictures, workflows, combos, prompts, model download requests and audio in a Results side view, reusing gallery keep/comparison actions. A compact timeline summary and unseen-result badge replace the old results strip.
 
 - AI 搭工作流支持一次添加并自动接线：`insert_after` 接回选中的下游，`wire_from` / `wire_to` 按唯一类型批量连接。正负条件歧义、多分支、已有输入冲突和循环在写入前报明；连接失败恢复原接线。成功回执包含实际连线、缺失输入与输出可达性，支持原生 Ctrl+Z 撤销。
-- 现状简报新增有长度限制的流程链；节点搜索只返回少量摘要，具体参数按需读取。日常工具集开放节点搜索、添加、连线、参数修改与新建工作流，减少逐线调用和重复上下文。
-- Canvas tools can add and wire a node in one call, safely splice a selected branch, and connect unique concrete types by node IDs. Ambiguity/conflicts/cycles are rejected before mutation; failed connections restore previous wiring. Compact receipts, bounded flow chains and brief node search reduce context, with construction tools available in the daily set.
+- 现状简报新增有长度限制的流程链；节点搜索只返回少量摘要，具体参数按需读取，减少逐线调用和重复上下文。
+- Canvas tools can add and wire a node in one call, safely splice a selected branch, and connect unique concrete types by node IDs. Ambiguity/conflicts/cycles are rejected before mutation; failed connections restore previous wiring. Compact receipts, bounded flow chains and brief node search reduce context.
 - AI 加节点时能插在已有的线前面：`wire_to` 指向的输入原来接着线的，改接新节点，原来的来源接进新节点，比如在采样器前加 ControlNet（正向接正向、反向接反向），或在采样器和两个提示词前加 LoRA，一次调用接好。同类型的几个插口名字相同时自动配对；`insert_after` 会把 LoRA 的模型线和 CLIP 线一起接进去。
 - add_node splices in front of a node: an input `wire_to` feeds that was already wired now goes through the new node, its old source feeding the new node (a ControlNet before a KSampler, positive to positive and negative to negative; a LoRA before the sampler and both prompts). Same-type sockets of the same name pair up, and `insert_after` splices every type a node passes through (a LoRA's MODEL and CLIP).
 - 改参数不再靠固定的填空：`run_workflow` 和 `set_values` 都能按参数名改任何节点的参数，第三方节点也一样（比如 `{"steps": 30}`）。只有一个节点有这个参数就直接改；几个节点都有时（高清修复的两个采样器）什么都不改，列出是哪几个，让 AI 写上节点号。几个正向提示词框接进同一个采样器（分区提示词）时，`prompt` 也不再把同一句话填进所有框，而是停下来让 AI 分别写。
@@ -68,12 +68,10 @@
 - The answer that first tells the AI its run ended, run_status or any other, carries up to four thumbnails of the run's pictures, once per run, so it need not fetch them with get_image_info.
 - 跑完叫我：关卡窗口新增“等跑图”，默认“跑完叫我”。AI 提交后最多等 1 分钟（跑得快的当场就拿到结果），还没跑完就告诉你在跑，然后收工，不再一遍遍查进度（以前一张图要查 10 次左右）。跑完后，留言框上方有几句话，点一下复制，粘到 AI 的对话框里，它就接着看结果和图；AI 知道结果后这几句话自动消失。选“AI 自己等”就和以前一样。
 - Tell AI when done: a new setting in the Gates window, on by default. The AI waits up to a minute after queueing (a quick run comes back with its pictures at once) and, if the run still goes, says so and ends its turn instead of polling run_status. When the run ends, lines over the message box are ready to copy into the AI's chat; they go once the AI knows. "AI waits" keeps the old way.
-- 工具说明压短：日常工具集里每个工具的说明重写，去掉重复和绕的话，规则和“不要做”的都保留；AI 要读的从约 2.7 万字减到约 2.2 万字，开始任务时收到的规则从约 1900 字减到约 900 字。
-- Shorter tool descriptions: the daily tools' descriptions are rewritten without repeats, keeping their rules, about 22,000 characters instead of 27,000; begin_task's rules are about 900 characters instead of 1,900.
+- 工具说明压短：常用工具的说明重写，去掉重复和绕的话，规则和“不要做”的都保留；开始任务时收到的规则从约 1900 字减到约 900 字。
+- Shorter tool descriptions: the everyday tools' descriptions are rewritten without repeats, keeping their rules; begin_task's rules are about 900 characters instead of 1,900.
 - 工具目录：AI 开始任务时，回复里附带一张按“想做的事”排好的工具目录（出图、画布、模型、提示词、图片、和你沟通……），AI 看一眼就直接去用对的工具，不用先到处试。目录从工具登记表自动生成，只列当前给 AI 的工具，新工具会自己出现。
 - A directory of the tools by what the AI wants to do comes with begin_task's answer (and get_situation's while there is no task): each tool offered under its stage of the work with its title, built from the catalog so new tools show up by themselves.
-- 日常工具集其余按需：关卡窗口“给 AI 的工具”选 **日常** 时，常用工具（现在也包括展台面板）直接给，其余的（下载、扫描、配音、搭配、提示词等）在工具目录里标着 `[use_tool]`，AI 用 `tool_help` 查参数、用 `use_tool` 调用，不再完全用不了；约 2.3 万字，完整约 4 万字。通过 `use_tool` 的调用在时间线上照样显示成那个工具，关卡也照样按那个工具来问。默认仍是完整。
-- The daily tool set reaches the rest on demand: the everyday tools (now with show_panel) are offered directly and the others are marked `[use_tool]` in the directory, where tool_help tells what one takes and use_tool calls it; about 23,000 characters against 40,000 for all. A use_tool call is the named tool's call in every way: its step, its gate, its answer. Full stays the default.
 - 给 AI 的话常驻在消息框上方：AI 停下来的时候（没在调用工具、没在跑图、没在等你回答），AI 工作台消息框上方总有一行话，点一下就复制，粘到 AI 的对话框里。话跟着情况变：图跑完了是“跑完了，看看结果”这几句；你在 AMB 里回复了、AI 还没收到，是“我在 Anomalous 里回复了，看看再接着做”；别的时候是“继续”。最后一句“用 Anomalous 接着做任务：…”给新开的 AI 对话用。原来挂在跑图那一步下面的几句话挪到了这里。“交给 AI”给你的那句话也不再叫 AI 用旧的 show_panel 问你。
 - Lines for the AI's chat stay over the message box: whenever the AI is not in a call, a run or a question, the AI workbench offers a line to copy that fits what waits (about the run that ended; "I replied in Anomalous, take a look and go on" when it has not got your reply yet; else "Go on"), and one that picks the task up in a new chat. The lines under a finished run's step moved here. The Hand to AI sentence no longer tells the AI to ask with show_panel.
 - AI 在 AMB 里问你时至少等 30 秒：就算它自己说不等（Gemini 常这样），你在 AMB 里点了选项，它在同一步里就收到，接着做，不用再回 AI 的对话框说“继续”。“加节点”工具的说明也提醒 AI：要加一组互相连着的节点（重绘、放大一段），用一次调用的“加一组节点”。
@@ -142,8 +140,6 @@
 - **宽窗口里时间线收在中间**：右边一栏关着、窗口又很宽时，时间线、标题和输入框不再横跨整个窗口，而是收成中间约 880 像素宽的一列（像聊天软件那样），滚动条仍在最右边。时间线里的图片按自己的大小从左排开，一张图不再被撑成横跨整行的大灰框。
 - **AI 每一步都知道下一步做什么**：开始任务、出图和看进度、加节点连线、问你问题得到回答，这些回复里都多了一句 `next`：比如“还在跑，等 55 秒再看”“跑完了，先放大看图再告诉你结果”“还缺这几根线，照清单连”“缺模型，先查缺哪个”。小模型不擅长自己规划，但很会照着做。
 - Answers of begin_task, run_workflow and run_status, the canvas changes and an answered ask_user carry next: the one thing to do now.
-- **给 AI 的工具可以选“日常”**：关卡窗口里多了 **给 AI 的工具：日常 / 完整**。日常只给 AI 常用工具（照着跑、看图、换模型或 LoRA、查缺的模型、问你、留言、现状一览，以及自动接线搭工作流），AI 要读的说明约 2.2 万字，完整的约 4.1 万字，Gemini Flash 这类小模型日常跑图不容易绕晕；要画面板、下载时选完整。换了以后在 AI 软件里开个新对话才生效。
-- The Gates window offers AI apps either every tool or a daily set (runs of saved workflows, pictures, models, the task's own, canvas building): about half the reading for a small model. Calls are not limited by it; apps see a change in a new chat.
 - **照着跑：日常出图一步完成**：AI 出图时可以直接说“用哪个存好的工作流、改什么”：`run_workflow` 带上工作流名，再带上要改的提示词、反向提示词、种子、尺寸或一张图（比如你标注过的重绘图），AMB 就在任务的副本标签页里打开它（第一次打开，之后接着用同一个标签页），填好这几处，其余照存好的样子不动，然后出图、等结果。尺寸只改起始的空白潜空间，高清修复里的 Latent 放大保持原来的放大尺寸。原来要 6、7 步（找工作流、打开、看画布、改提示词、改种子……），现在一步，小模型也不容易绕晕。填的内容和出图一起算一步，改画布那部分同样能 Ctrl+Z；如果你给“改画布”设的关卡比“用显卡”严，这一步按改画布的关卡来问你。画布报错是因为缺模型时，“现状一览”会让 AI 先查缺哪个模型，而不是乱换选项。
 - run_workflow takes blanks for a daily run in one call: workflow (a saved one, opened in the task's tab once and reused), prompt, negative, seed, width, height and image (image_node for several LoadImage nodes); the rest stays as saved. The size goes to the latent a run starts from, never to a hires fix's latent upscale. With blanks a run asks as the stricter of the GPU's and the canvas's gate.
 - **现状一览，AI 一次就知道到哪一步了**：新工具 `get_situation`，AI 调一次就拿到：任务（你最后说了什么、有几个问题在等你、定了哪些决策、出过哪些图、“AMB 之外”几次）、画布简报（每个节点一行：谁接到谁；**还缺哪几根线、各要什么类型、画布上哪些现有输出能接上**；ComfyUI 报错的节点）、最近一次出图，以及**下一步该做什么**。回复控制在约 3600 字以内，Antigravity 不会把它存成文件再让 AI 去读。新开对话或拿不准时先调它；连接说明里的那句话和规则也写上了。小模型（比如 Gemini Flash）不用再把整张图记在脑子里。

@@ -346,7 +346,7 @@ server's own `/anomalous/scan_all`, `/anomalous/download/status`, `/anomalous_tt
 minutes for the file). Downloads go through the page (`model_download.js` downloadMissing /
 downloadFrom), so the placement rules and the put-in after a download are the UI's own. Canvas changes are posted to the activity log with `via: "mcp"`.
 
-Canvas construction is also in the daily tool set. `find_nodes(query=...)` returns up to five
+`find_nodes(query=...)` returns up to five
 brief candidates within a small text budget; `types=[...]` explicitly requests full settings.
 `add_node` accepts `insert_after`, optional `insert_type`, and `wire_from`/`wire_to` (one ID or up
 to eight IDs). `connect_nodes` accepts just two node IDs. Both return actual connections,

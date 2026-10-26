@@ -54,20 +54,6 @@ class GateTests(unittest.TestCase):
             json.dump({"canvas": "never", "gpu": "nonsense"}, target)
         self.assertEqual((ai_gates.policies()["canvas"], ai_gates.policies()["gpu"]), ("never", "auto"))
 
-    def test_the_tools_offered(self):
-        ai_gates._tools_path = lambda: os.path.join(GATES, "ai_tools.json")
-        if os.path.exists(ai_gates._tools_path()):
-            os.remove(ai_gates._tools_path())
-        self.assertEqual(ai_gates.tool_set(), "full")
-        self.assertEqual(ai_gates.set_tool_set("daily"), "daily")
-        self.assertEqual(ai_gates.tool_set(), "daily")
-        for gone in ("tiny", "lazy"):
-            with self.assertRaises(ValueError):
-                ai_gates.set_tool_set(gone)
-        with open(ai_gates._tools_path(), "w", encoding="utf-8") as target:
-            target.write("[1]")
-        self.assertEqual(ai_gates.tool_set(), "full", "a broken file offers everything")
-
     def test_how_long_the_ai_waits_for_an_answer(self):
         ai_gates._tools_path = lambda: os.path.join(GATES, "ai_tools.json")
         if os.path.exists(ai_gates._tools_path()):
@@ -84,9 +70,12 @@ class GateTests(unittest.TestCase):
         if os.path.exists(ai_gates._tools_path()):
             os.remove(ai_gates._tools_path())
         self.assertEqual(ai_gates.run_wait(), "call", "the user tells the AI when it is done")
-        ai_gates.set_tool_set("daily")
+        ai_gates.set_answer_wait(600)
         self.assertEqual(ai_gates.set_run_wait("wait"), "wait")
-        self.assertEqual((ai_gates.run_wait(), ai_gates.tool_set()), ("wait", "daily"), "one setting keeps the other")
+        self.assertEqual((ai_gates.run_wait(), ai_gates.answer_wait()), ("wait", 600), "one setting keeps the other")
+        with open(ai_gates._tools_path(), "w", encoding="utf-8") as target:
+            target.write("[1]")
+        self.assertEqual(ai_gates.run_wait(), "call", "a broken file: the defaults")
         with self.assertRaises(ValueError):
             ai_gates.set_run_wait("soon")
 

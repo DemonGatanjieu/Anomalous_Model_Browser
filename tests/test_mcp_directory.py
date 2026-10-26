@@ -1,6 +1,7 @@
 """The directory of tools by what an AI wants to do (api/mcp_directory.py): built from the catalog,
 in begin_task's answer and in get_situation's while there is no task; and the daily set, where
-tool_help and use_tool reach the tools not offered directly, which the directory marks."""
+an app holding an older tool list is told so."""
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -9,7 +10,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import action_catalog, ai_gates, ai_tasks, mcp_apps, mcp_directory, mcp_server  # noqa: E402
+from api import action_catalog, ai_tasks, mcp_apps, mcp_directory, mcp_server  # noqa: E402
 from test_mcp import rpc  # noqa: E402  (its module keeps tasks and gates in temporary folders)
 
 
@@ -36,7 +37,6 @@ class DirectoryTests(unittest.TestCase):
         result = call("begin_task", {"title": "目录", "new_task": True})
         found = result["structuredContent"]["directory"]
         self.assertIn("run_workflow", found["Run a workflow"])
-        self.assertNotIn("[use_tool]", " ".join(found.values()), "the full set offers every tool")
         self.assertIn('"directory"', result["content"][0]["text"], "the text says it too")
         self.assertLess(len(result["content"][0]["text"]), 4000, "small enough to stay in the chat")
 
@@ -49,79 +49,31 @@ class DirectoryTests(unittest.TestCase):
             self.assertNotIn("directory", call("get_situation", {})["structuredContent"])
 
 
-class DailyTests(unittest.TestCase):
-    def setUp(self):
-        patcher = mock.patch.object(ai_gates, "tool_set", return_value="daily")
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
-    def test_the_everyday_tools_and_the_way_to_the_rest(self):
-        names = {tool["name"] for tool in rpc("tools/list")["result"]["tools"]}
-        self.assertEqual(names, action_catalog.DAILY | set(mcp_directory.DIRECTORY_TOOLS) | set(mcp_apps.APP_TOOLS))
-        found = call("begin_task", {"title": "日常", "new_task": True})["structuredContent"]["directory"]
-        text = " ".join(found.values())
-        self.assertIn("set_model (Swap a node's model)", text)
-        self.assertNotIn("set_model (Swap a node's model) [use_tool]", text, "offered directly: no mark")
-        self.assertIn("download_model (", text)
-        self.assertIn("[use_tool]", found["Models"], "the others are marked")
-        self.assertIn("use_tool(name, arguments)", found["note"])
-        self.assertNotIn("tool_help (", text)
-
-    def test_the_full_set_does_not_offer_the_way_in(self):
-        with mock.patch.object(ai_gates, "tool_set", return_value="full"):
-            names = {tool["name"] for tool in rpc("tools/list")["result"]["tools"]}
-        self.assertFalse(names & set(mcp_directory.DIRECTORY_TOOLS))
-
-    def test_tool_help_tells_what_a_tool_takes(self):
-        answer = call("tool_help", {"names": ["set_model", "nope"]})["structuredContent"]
-        self.assertEqual(answer["tools"][0]["name"], "set_model")
-        self.assertIn("model_id", answer["tools"][0]["arguments"])
-        self.assertEqual(answer["not_found"], ["nope"])
-        self.assertTrue(call("tool_help", {"names": ["a", "b", "c", "d"]})["isError"], "three at most")
-
-    def test_use_tool_is_the_call_of_the_tool_it_names(self):
-        call("begin_task", {"title": "调用", "new_task": True})
-        with mock.patch.object(ai_gates, "check", wraps=ai_gates.check) as gate:
-            result = call("use_tool", {"name": "report", "arguments": {"text": "看看这张"}})
-        self.assertFalse(result["isError"], result)
-        self.assertEqual(gate.call_args[0][0], "report", "the user's gates see the tool itself")
-        task = next(item for item in ai_tasks.list_tasks() if item["title"] == "调用")
-        tools = [step["tool"] for step in ai_tasks.get_task(task["id"])["steps"]]
-        self.assertIn("report", tools)
-        self.assertNotIn("use_tool", tools, "the timeline shows the tool, never use_tool")
-
-    def test_a_wrong_use_says_where_to_look(self):
-        self.assertIn("No tool nope", call("use_tool", {"name": "nope"})["content"][0]["text"])
-        self.assertTrue(call("use_tool", {"name": "app_answer", "arguments": {}})["isError"], "never the card's own")
-        failed = call("use_tool", {"name": "report", "arguments": {"words": "x"}})
-        self.assertTrue(failed["isError"])
-        self.assertIn('tool_help(names=["report"])', failed["content"][0]["text"])
-
-
 class StaleListTests(unittest.TestCase):
-    """An app calling by a tool list it fetched before the user switched the set (mcp_directory.stale)."""
+    """An app going on with the tool list it fetched before Anomalous was updated (mcp_directory.stale)."""
 
-    def test_the_rule(self):
-        daily = action_catalog.DAILY | set(mcp_directory.DIRECTORY_TOOLS)
-        full = set(mcp_server.TOOLS) - set(mcp_directory.DIRECTORY_TOOLS)
-        self.assertFalse(mcp_directory.stale("report", False, full))
-        self.assertTrue(mcp_directory.stale("tool_help", False, full), "the full set offers no tool_help")
-        self.assertTrue(mcp_directory.stale("download_model", True, full), "nor use_tool")
-        self.assertFalse(mcp_directory.stale("download_model", True, daily))
-        self.assertTrue(mcp_directory.stale("report", True, daily), "report is offered directly")
-        self.assertTrue(mcp_directory.stale("download_model", False, daily), "a tool the daily list lacks")
+    def setUp(self):
+        mcp_directory._lists = None
+        if os.path.exists(mcp_directory._path()):
+            os.remove(mcp_directory._path())
+
+    def test_an_app_never_seen_fetching_is_not_told(self):
+        self.assertNotIn("tool_list", call("begin_task", {"title": "没见过", "new_task": True})["structuredContent"])
 
     def test_the_ai_and_the_workbench_are_told_until_the_app_fetches_the_list(self):
-        call("begin_task", {"title": "旧列表", "new_task": True})
-        with mock.patch.object(ai_gates, "tool_set", return_value="full"):
-            answer = call("tool_help", {"names": ["report"]})
+        rpc("tools/list")
+        task = call("begin_task", {"title": "旧列表", "new_task": True})["structuredContent"]
+        self.assertNotIn("tool_list", call("report", {"text": "好", "task": task["task"]})["structuredContent"], "today's list")
+        with mock.patch.dict(mcp_server.TOOLS["report"]["spec"], {"description": "Anomalous was updated"}):
+            answer = call("report", {"text": "还在", "task": task["task"]})
             self.assertIn("older list", answer["structuredContent"]["tool_list"])
             self.assertIn("tool_list", answer["content"][0]["text"], "the text says it too")
-            task = next(item for item in ai_tasks.list_tasks() if item["title"] == "旧列表")
-            self.assertTrue(ai_tasks.get_task(task["id"])["stale_tools"])
-            self.assertNotIn("tool_list", call("report", {"text": "好"})["structuredContent"], "a call by the list offered")
+            self.assertTrue(ai_tasks.get_task(task["task"])["stale_tools"])
             rpc("tools/list")
-        self.assertNotIn("stale_tools", ai_tasks.get_task(task["id"]), "fetched again: the note goes")
+            self.assertNotIn("stale_tools", ai_tasks.get_task(task["task"]), "fetched again: the note goes")
+            self.assertNotIn("tool_list", call("report", {"text": "好了", "task": task["task"]})["structuredContent"])
+        mcp_directory._lists = None
+        self.assertTrue(mcp_directory.stale("test", mcp_server._tools()), "kept on disk: the app now holds the other list")
 
 
 if __name__ == "__main__":

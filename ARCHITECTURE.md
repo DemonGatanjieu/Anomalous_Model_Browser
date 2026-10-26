@@ -194,12 +194,12 @@ covered by the `styles.css` manifest.
   next step in one answer kept under Antigravity's size for answers it files away, for an AI
   starting a new chat or lost (`tests/test_mcp_situation.py`, `tests/mcp_canvas_brief.mjs`).
   `api/mcp_directory.py` is the directory of the tools by what an AI wants to do (as this file is
-  for the code): each tool offered under its stage (`action_catalog.TOOLS`) with its title, built
-  from the registry, in begin_task's answer and in get_situation's while there is no task
-  (`tests/test_mcp_directory.py`). With the "daily" tool set AI apps get `action_catalog.DAILY`
-  and its tool_help (what a tool takes) and use_tool for the others, which the directory marks and
-  mcp_server.py turns into the call of the tool it names before anything else, so gates, steps and
-  answers are that tool's.
+  for the code): each tool under its stage (`action_catalog.TOOLS`) with its title, built from the
+  registry, in begin_task's answer and in get_situation's while there is no task
+  (`tests/test_mcp_directory.py`). AI apps are offered every tool (they load what they need
+  themselves: Antigravity reads a tool's file before its first call); the module also keeps which
+  list each app fetched last (`anomalous/ai_tool_lists.json`), so a call from an app still holding
+  the list of an older Anomalous is told so and the task header says how to reconnect it.
   `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow
   opened in the task's tab once and reused (the page marks the tab with the workflow's file),
   then the prompts, seed, size and the picture a LoadImage reads filled in by the page's
@@ -275,9 +275,7 @@ covered by the `styles.css` manifest.
   `change`); `activity_log.tag` names the task on the entry, and the activity page links to
   it. `api/ai_gates.py` holds the user's gates: each gate is `auto`, `ask` or `never`
   (`anomalous/ai_gates.json`, `/anomalous/ai_gates`); `mcp_server.py` asks it before running a
-  tool. It also keeps which tools AI apps are offered (`tool_set`: all, or `action_catalog.DAILY`
-  with the rest on demand; `anomalous/ai_tools.json`), which `tools/list` follows, and how long in
-  all an AI waits for the user's answer (`answer_wait`: 1, 3 or 10 minutes): `api/ai_answer_wait.py`
+  tool. It also keeps (`anomalous/ai_tools.json`) how long in all an AI waits for the user's answer (`answer_wait`: 1, 3 or 10 minutes): `api/ai_answer_wait.py`
   tells an AI whose question is still open to wait on with get_answers until then, and while the
   user types (the page posts `POST /anomalous/ai_tasks/{id}/typing`) until a minute after their last
   key; report and show_panel remind it to end each round with ask_user. With `ask` the step waits in state `asking` (what it would do listed) for up to 50 s;

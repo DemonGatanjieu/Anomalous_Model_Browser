@@ -24,7 +24,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import action_catalog, ai_callers, ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
+from . import ai_callers, ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
@@ -34,8 +34,7 @@ from .mcp_situation import SITUATION_TOOLS
 from .mcp_task_tools import TASK_TOOLS
 from .mcp_tools import TOOLS as READ_TOOLS, call_tool
 
-TOOLS = {**READ_TOOLS, **MODEL_TOOLS, **LOOK_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **SITUATION_TOOLS, **mcp_apps.APP_TOOLS,
-         **mcp_directory.directory_tools(lambda: TOOLS)}
+TOOLS = {**READ_TOOLS, **MODEL_TOOLS, **LOOK_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **SITUATION_TOOLS, **mcp_apps.APP_TOOLS}
 CAPABILITIES = {
     "tools": {"listChanged": False}, "prompts": {"listChanged": False}, "resources": {"listChanged": False},
     "extensions": {mcp_apps.EXTENSION: {"mimeTypes": [mcp_apps.MIME]}},  # the card in the conversation (mcp_apps.py)
@@ -120,21 +119,13 @@ def _result(id_, result, modern):
     return web.json_response({"jsonrpc": "2.0", "id": id_, "result": result})
 
 
-def _offered():
-    """{name: spec} of the tools AI apps are offered (the user's choice in the AI workbench); calls are not limited by it."""
-    keep = action_catalog.DAILY | set(mcp_directory.DIRECTORY_TOOLS) if ai_gates.tool_set() == "daily" else None
-    return {name: tool["spec"] for name, tool in TOOLS.items()
-            if name in mcp_apps.APP_TOOLS or (name in keep if keep else name not in mcp_directory.DIRECTORY_TOOLS)}
-
-
-def _directory_specs():
-    """The tools the directory names (all of them), and with the daily set those offered directly (use_tool reaches the rest)."""
-    specs = {name: tool["spec"] for name, tool in TOOLS.items() if name not in mcp_apps.APP_TOOLS and name not in mcp_directory.DIRECTORY_TOOLS}
-    return specs, set(_offered()) if ai_gates.tool_set() == "daily" else None
+def _tools():
+    """The tool list AI apps are offered, as tools/list gives it."""
+    return [mcp_apps.with_card(tool["spec"]) for tool in TOOLS.values()]
 
 
 def _tool_list(modern):
-    result = {"tools": [mcp_apps.with_card(spec) for spec in _offered().values()]}
+    result = {"tools": _tools()}
     if modern:
         result.update(ttlMs=LIST_TTL_MS, cacheScope="public")
     return result
@@ -177,13 +168,6 @@ def _modern_header_problem(request, method, params, version):
 async def _call(params, request):
     name = params.get("name")
     raw_arguments = params.get("arguments") or {}
-    via = name == "use_tool" and isinstance(raw_arguments, dict)
-    if via:  # mcp_directory.py: from here on the call is the tool it names
-        name, raw_arguments = raw_arguments.get("name"), raw_arguments.get("arguments") or {}
-        if not isinstance(name, str) or name not in TOOLS or name in mcp_directory.DIRECTORY_TOOLS or name in mcp_apps.APP_TOOLS:
-            return mcp_directory.refused(f"No tool {str(name)[:60]} to use: the directory (begin_task, get_situation) names them.")
-        if not isinstance(raw_arguments, dict):
-            return mcp_directory.refused(f"arguments is an object, {name}'s arguments as tool_help gives them.")
     if not isinstance(name, str) or name not in TOOLS or not isinstance(raw_arguments, dict):
         return None
     arguments = dict(raw_arguments)
@@ -235,10 +219,8 @@ async def _call(params, request):
         await asyncio.to_thread(ai_task_runs.show_pictures, result, resolved_task)
     if name != "get_answers" and name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task or ("" if session else None))
-    mcp_directory.attach(result, name, *_directory_specs())
-    if via:
-        mcp_directory.hinted(result, name)
-    if name not in mcp_apps.APP_TOOLS and mcp_directory.stale(name, via, set(_offered())):
+    mcp_directory.attach(result, name, {key: tool["spec"] for key, tool in TOOLS.items() if key not in mcp_apps.APP_TOOLS})
+    if name not in mcp_apps.APP_TOOLS and mcp_directory.stale(client, _tools()):
         await asyncio.to_thread(mcp_directory.tell_stale, result, active_task)
     return ai_outside.tell(result, outside)
 
@@ -283,8 +265,9 @@ async def api_mcp(request):
     if method == "ping":
         return _result(id_, {}, modern)
     if method == "tools/list":
-        await asyncio.to_thread(mcp_directory.cleared, ai_callers.client_of(request.headers, params))
-        return _result(id_, _tool_list(modern), modern)
+        listing = _tool_list(modern)
+        await asyncio.to_thread(mcp_directory.listed, ai_callers.client_of(request.headers, params), listing["tools"])
+        return _result(id_, listing, modern)
     if method == "prompts/list":
         return _result(id_, mcp_prompts.list_prompts(), modern)
     if method == "prompts/get":

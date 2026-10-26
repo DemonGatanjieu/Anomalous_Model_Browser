@@ -4,9 +4,8 @@
  * on, go ahead"), what
  * the user answered, and the Gates window where each kind of action is set to go ahead, ask first
  * or never (changing the canvas, using the GPU, downloading, going online, moving model files), whether a new
- * task works in a canvas tab of its own (api/ai_task_canvas.py), which tools AI apps are offered
- * (all, or the daily set with the rest on demand through a directory), how long the AI waits for
- * the user's answer, and whether the AI waits for a run or the user tells it when the run is done
+ * task works in a canvas tab of its own (api/ai_task_canvas.py), how long the AI waits for the
+ * user's answer and what happens when nobody answers, and whether the AI waits for a run or the user tells it when the run is done
  * (ui_ai_call.js).
  */
 
@@ -140,8 +139,6 @@ export async function openGates() {
     }
     body.append(choiceRow('canvasTab', ['new', 'current'], known.canvas_tab || 'new', mode => t(`aiCanvasTab_${mode}`),
         async mode => (await save({ canvas_tab: mode })).canvas_tab),
-    choiceRow('tools', ['daily', 'full'], known.tools || 'full', set => t(`aiToolSet_${set}`),
-        async set => (await save({ tools: set })).tools),
     choiceRow('answerWait', [60, 180, 600], known.answer_wait || 180, seconds => t(`aiAnswerWait_${seconds}`),
         async seconds => (await save({ answer_wait: seconds })).answer_wait),
     choiceRow('noAnswer', ['stop', 'recommended'], known.no_answer || 'stop', mode => t(`aiNoAnswer_${mode}`),

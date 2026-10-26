@@ -26,7 +26,7 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | --- | --- | --- |
 | 「新任务」 | 写一句要 AI 做什么（可以空着），任务显示“等 AI 接手”；下一个来调用的 AI 直接接手它，不会接在旧任务后面 | `POST /anomalous/ai_tasks` |
 | 「连接 AI」 | 弹出连接说明：地址、复制给 AI 的那句话、各个软件怎么加（`ui_ai_connect.js`） | 无 |
-| 「关卡」 | AI 做哪些事要先问你（改画布、用显卡、下载……），还有给 AI 的工具集（`ui_ai_gate.js`） | `/anomalous/ai_gates` |
+| 「关卡」 | AI 做哪些事要先问你（改画布、用显卡、下载……），还有 AI 怎么等你回答、怎么等跑图（`ui_ai_gate.js`） | `/anomalous/ai_gates` |
 | 「全部」「进行中」「等你回答」「出错」 | 只筛这一栏，不改任何东西 | 无 |
 | 一个任务 | 中间显示它。看过的、鼠标停过的马上出来，再悄悄补上最新内容（`ai_task_cache.js`） | `GET /anomalous/ai_tasks/{task_id}` |
 
@@ -44,7 +44,7 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | 「改名」 / 「从列表移除」 | 移除只删这条记录，图、画布、工作流都不动 | `POST /anomalous/ai_tasks/{task_id}` |
 | 「接着哪个任务…」 | 把这个任务接在另一个后面，两边都显示链接（`ui_ai_task_links.js`） | `POST /anomalous/ai_tasks/{task_id}`（from） |
 
-AI 软件拿着旧的工具列表来调用时（你换了工具组，或 AMB 更新了），标题栏下面出现一行黄字「AI 软件拿的还是旧的工具列表，会多走弯路。请重新连接：Antigravity 重启一下，或在它的 MCP 设置里把 anomalous 关掉再打开；然后开个新对话。」，AI 那边也会收到同样的提醒（`mcp_directory.stale`）。AI 软件重新取工具列表（`tools/list`）后这行自动消失。
+AMB 更新以后，AI 软件还拿着旧的工具列表来调用时，标题栏下面出现一行黄字「AI 软件拿的还是旧的工具列表，会多走弯路。请重新连接：Antigravity 重启一下，或在它的 MCP 设置里把 anomalous 关掉再打开；然后开个新对话。」，AI 那边也会收到同样的提醒（`mcp_directory.stale`，按每个 AI 软件上次取的列表比对）。AI 软件重新取工具列表（`tools/list`）后这行自动消失。
 
 标题栏右上角的一排是侧栏的开关：「展台」「节点结构」「决策」「素材」「成果」（`ui_ai_side_views.js`），同一时间只开一个。
 

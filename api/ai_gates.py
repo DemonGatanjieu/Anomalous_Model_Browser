@@ -9,11 +9,7 @@ the AI is told to wait (get_answers) and call the same tool again; the user's la
 reaches it as a message (ai_panels._collect), and an allowed call made again with the same
 arguments goes ahead without asking twice. Policies are kept in the ComfyUI user folder
 (anomalous/ai_gates.json); changing one is a write (local_guard.py keeps it to this computer).
-The same window sets which tools AI apps are offered (tool_set: all, or the "daily" set of
-action_catalog.DAILY for a small model's everyday runs, the rest on demand through mcp_directory's
-use_tool; anomalous/ai_tools.json); an app sees a
-change in a new chat (they keep the list a chat began with). It also sets how an AI waits for a
-run (run_wait): "call", it ends its turn and the user tells it when the run is done (the AI
+The same window sets (anomalous/ai_tools.json) how an AI waits for a run (run_wait): "call", it ends its turn and the user tells it when the run is done (the AI
 workbench gives them a line to paste), or "wait", it waits with run_status; how long in all an
 AI waits for the user's answer to its question (answer_wait, ai_answer_wait.py), and what happens
 when that time runs out (no_answer): "stop", the AI ends its turn and waits for the user, or
@@ -29,7 +25,6 @@ from . import action_catalog, ai_tasks
 from .path_utils import atomic_write_json
 
 POLICIES = ("auto", "ask", "never")
-TOOL_SETS = ("full", "daily")
 RUN_WAITS = ("call", "wait")
 ANSWER_WAITS = (60, 180, 600)  # seconds; the first call waits 30-55 s, get_answers the rest
 NO_ANSWERS = ("stop", "recommended")
@@ -82,18 +77,6 @@ def _set_tool_setting(key, value):
     with _decided:
         atomic_write_json(_tools_path(), {**_tool_settings(), key: value})
     return value
-
-
-def tool_set():
-    """The tools AI apps are offered: "full" or "daily" (mcp_directory.py)."""
-    chosen = _tool_settings().get("set")
-    return chosen if chosen in TOOL_SETS else "full"
-
-
-def set_tool_set(name):
-    if name not in TOOL_SETS:
-        raise ValueError("tools is full or daily")
-    return _set_tool_setting("set", name)
 
 
 def run_wait():

@@ -146,11 +146,11 @@ async def api_gate(request):
 async def api_gates(request):
     """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools}; POST {gate, policy} changes one,
     POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py),
-    POST {tools: full | daily} which tools AI apps are offered (ai_gates.tool_set), POST {runs: call | wait}
+    POST {runs: call | wait}
     how the AI waits for a run (ai_gates.run_wait), POST {answer_wait: 60 | 180 | 600} for the user's answer,
     POST {no_answer: stop | recommended} what happens when that time runs out."""
     def settings():
-        return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "tools": ai_gates.tool_set(),
+        return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(),
                 "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait(), "no_answer": ai_gates.no_answer()}
 
     if request.method == "GET":
@@ -159,8 +159,6 @@ async def api_gates(request):
     try:
         if "canvas_tab" in (body or {}):
             ai_task_canvas.set_default(body["canvas_tab"])
-        elif "tools" in (body or {}):
-            ai_gates.set_tool_set(body["tools"])
         elif "runs" in (body or {}):
             ai_gates.set_run_wait(body["runs"])
         elif "answer_wait" in (body or {}):
