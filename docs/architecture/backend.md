@@ -272,6 +272,15 @@ it ranks unread user messages, marks, materials and panel answers
 by the input's own timestamp, not the task's last background update. Only inputs less than
 two hours old qualify; future timestamps and automatic timeout choices do not. A task with
 an in-flight step is excluded from automatic takeover; explicit task selection is unchanged.
+For five minutes after `report(done=True)`, reads stay in the finished task and panels/notes
+reopen it. `ai_tasks.current_task` applies this to both implicit and explicit task ids, including
+step recording without a start receipt. Automatic follow-ups yield to waiting tasks and unread
+replies; an explicit id keeps precedence and does not consume another task waiting for an AI.
+Task error counts only treat completed successful steps as recovery, never running, asking,
+allowed or cancelled steps. New receipts keep a compact `recovery_target` (explicit node,
+connection, workflow or resource, and setting names for `set_values`), so another target's
+success does not hide the failure. Legacy receipts lacking this identity retain tool-level
+matching with each other; no targets are guessed or migrated into historical records.
 `ai_answer_wait.collect` is shared by `get_answers` and question tools: after the bounded wait,
 typing/deadline checks, automatic choices and a final nonblocking collection share the task
 lock. A user answer that won the race is returned in that call, without a stale stop note.
