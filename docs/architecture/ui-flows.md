@@ -44,6 +44,8 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | 「改名」 / 「从列表移除」 | 移除只删这条记录，图、画布、工作流都不动 | `POST /anomalous/ai_tasks/{task_id}` |
 | 「接着哪个任务…」 | 把这个任务接在另一个后面，两边都显示链接（`ui_ai_task_links.js`） | `POST /anomalous/ai_tasks/{task_id}`（from） |
 
+AI 软件拿着旧的工具列表来调用时（你换了工具组，或 AMB 更新了），标题栏下面出现一行黄字「AI 软件拿的还是旧的工具列表，会多走弯路。请重新连接：Antigravity 重启一下，或在它的 MCP 设置里把 anomalous 关掉再打开；然后开个新对话。」，AI 那边也会收到同样的提醒（`mcp_directory.stale`）。AI 软件重新取工具列表（`tools/list`）后这行自动消失。
+
 标题栏右上角的一排是侧栏的开关：「展台」「节点结构」「决策」「素材」「成果」（`ui_ai_side_views.js`），同一时间只开一个。
 
 ### 中间：等 AI 接手的任务（`ui_ai_ready.js`）

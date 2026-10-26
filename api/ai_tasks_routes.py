@@ -147,10 +147,11 @@ async def api_gates(request):
     """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools}; POST {gate, policy} changes one,
     POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py),
     POST {tools: full | daily} which tools AI apps are offered (ai_gates.tool_set), POST {runs: call | wait}
-    how the AI waits for a run (ai_gates.run_wait), POST {answer_wait: 60 | 180 | 600} for the user's answer."""
+    how the AI waits for a run (ai_gates.run_wait), POST {answer_wait: 60 | 180 | 600} for the user's answer,
+    POST {no_answer: stop | recommended} what happens when that time runs out."""
     def settings():
         return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "tools": ai_gates.tool_set(),
-                "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait()}
+                "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait(), "no_answer": ai_gates.no_answer()}
 
     if request.method == "GET":
         return web.json_response(settings())
@@ -164,6 +165,8 @@ async def api_gates(request):
             ai_gates.set_run_wait(body["runs"])
         elif "answer_wait" in (body or {}):
             ai_gates.set_answer_wait(body["answer_wait"])
+        elif "no_answer" in (body or {}):
+            ai_gates.set_no_answer(body["no_answer"])
         else:
             ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
     except ValueError as error:

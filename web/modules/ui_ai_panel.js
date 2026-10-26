@@ -62,6 +62,7 @@ export function noteTyping(taskId) {
 function answerNote(answer) {
     const box = el('div', 'anomalous-ai-panel-answer');
     if (answer.skipped) box.append(el('div', 'anomalous-ai-panel-typed is-skipped', t('aiPanelSkipped')));
+    if (answer.recommended_on_timeout) box.append(el('div', 'anomalous-ai-panel-typed is-skipped', t('aiPanelTimedOut')));
     box.append(deliveryState(answer, 'aiPanelSeen'));
     return box;
 }

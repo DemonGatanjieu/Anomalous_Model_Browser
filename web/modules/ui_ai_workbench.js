@@ -255,6 +255,7 @@ function renderTask() {
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);
     header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')),
+        ...(task.stale_tools ? [el('div', 'anomalous-ai-task-stale', t('aiStaleTools'))] : []), // mcp_directory.stale
         taskLinks(task, state.tasks, { open: (id) => { state.pinned = true; void select(id); }, changed: refresh }));
 
     const flow = flowMap(task, stepId => showStep(view.timeline, stepId));

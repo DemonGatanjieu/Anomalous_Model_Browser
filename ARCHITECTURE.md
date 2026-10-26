@@ -25,6 +25,7 @@ and Current node lists the saved values. See the material contract below.
 | Saved prompts and node values (material files), image parameter details, keeping an output image | [`docs/architecture/material-library.md`](docs/architecture/material-library.md) |
 | Model Check, provenance hashes, missing-model recovery, or model scanning | [`docs/architecture/model-resolution.md`](docs/architecture/model-resolution.md) |
 | Why a current product boundary exists | [`docs/decisions/README.md`](docs/decisions/README.md) |
+| The MCP tools AI apps get: adding one, its description or arguments | [`docs/architecture/tool-exam.md`](docs/architecture/tool-exam.md) (the tool budget, `tests/test_tool_budget.py`; the exam tasks and their scorecard, `node tools/tool_exam.mjs`) |
 | Recurring implementation mistakes and post-mortems | [`docs/architecture/lessons.md`](docs/architecture/lessons.md) |
 
 `README.md` is user-facing documentation and `CHANGELOG.md` is user-facing
@@ -170,6 +171,11 @@ covered by the `styles.css` manifest.
   with what loads each model: the node types whose drop-down lists it (from `/object_info`),
   or, for a file whose header says it belongs in another folder (model_placement.py), where,
   and `move_model` (behind the "files" gate) moves it there as Tidy does.
+  `api/model_advice.py` is what Anomalous knows about using a model well: get_model's
+  `author_examples` (sampler, steps, CFG, size and a LoRA's weight from the example pictures in
+  the Civitai record a scan keeps), and add_lora / set_model's `base_model_note` when a LoRA and
+  the main model on its line (`graph_splice.js` loraChain / modelLineStart, reported by the page)
+  are for different base models. `tests/test_model_advice.py`.
   `api/mcp_canvas_edit.py` holds the tools that build a workflow where the user watches:
   `find_nodes` reads this ComfyUI's node types from its own `/object_info` (kept two
   minutes); `add_node`, `connect_nodes`, `set_values`, `remove_nodes` and `new_workflow` (a
@@ -202,6 +208,9 @@ covered by the `styles.css` manifest.
   node; the fixed blanks are roles (which prompt, which latent), not a list that grows. With them a run asks as the stricter
   of its gate and the canvas's (`action_catalog.ALSO_CANVAS`). `tests/test_mcp_fill.py`,
   `tests/mcp_fill.mjs`.
+  `api/run_refusal.py` says ComfyUI's refusal of a run as what to do next: the page passes it on
+  as data (`web/modules/mcp_run.js` refusal), each problem becomes a line naming the node, what
+  is wrong and the tool that fixes it. `tests/test_run_refusal.py`, `tests/mcp_run.mjs`.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
   `web/modules/ui_ai_toolbox.js`, from the task header a side panel (on the AI page a view of
   its side column, `setToolboxHost`; elsewhere docked on the right) that leaves

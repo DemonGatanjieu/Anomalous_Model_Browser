@@ -14,8 +14,10 @@ action_catalog.DAILY for a small model's everyday runs, the rest on demand throu
 use_tool; anomalous/ai_tools.json); an app sees a
 change in a new chat (they keep the list a chat began with). It also sets how an AI waits for a
 run (run_wait): "call", it ends its turn and the user tells it when the run is done (the AI
-workbench gives them a line to paste), or "wait", it waits with run_status; and how long in all an
-AI waits for the user's answer to its question (answer_wait, ai_answer_wait.py).
+workbench gives them a line to paste), or "wait", it waits with run_status; how long in all an
+AI waits for the user's answer to its question (answer_wait, ai_answer_wait.py), and what happens
+when that time runs out (no_answer): "stop", the AI ends its turn and waits for the user, or
+"recommended", a choice the AI marked a recommended option for takes it (never a gate's question).
 """
 
 import json
@@ -30,6 +32,7 @@ POLICIES = ("auto", "ask", "never")
 TOOL_SETS = ("full", "daily")
 RUN_WAITS = ("call", "wait")
 ANSWER_WAITS = (60, 180, 600)  # seconds; the first call waits 30-55 s, get_answers the rest
+NO_ANSWERS = ("stop", "recommended")
 DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
 WAIT_SECONDS = 50  # below the minute many AI apps give a tool call
 ALLOWED_SECONDS = 30 * 60  # an Allow the AI did not wait for holds this long for the same call
@@ -115,6 +118,18 @@ def set_answer_wait(seconds):
     if seconds not in ANSWER_WAITS or isinstance(seconds, bool):
         raise ValueError("answer_wait is 60, 180 or 600")
     return _set_tool_setting("answer_wait", seconds)
+
+
+def no_answer():
+    """When the user's time runs out unanswered: "stop" (the AI waits for them) or "recommended"."""
+    chosen = _tool_settings().get("no_answer")
+    return chosen if chosen in NO_ANSWERS else "stop"
+
+
+def set_no_answer(mode):
+    if mode not in NO_ANSWERS:
+        raise ValueError("no_answer is stop or recommended")
+    return _set_tool_setting("no_answer", mode)
 
 
 def describe(tool, arguments):

@@ -63,7 +63,7 @@ export function decisionCard(record, numberOf = null) {
 function described(item) {
     switch (item.type) {
     case 'logged': return [item.title, item.decision];
-    case 'answer': return [item.question || t('aiDecisionAnswer'), item.skipped ? t('aiPanelSkipped') : item.answer];
+    case 'answer': return [item.question || t('aiDecisionAnswer'), item.skipped ? t('aiPanelSkipped') : item.timed_out ? t('aiPanelTookRecommended', { answer: item.answer }) : item.answer];
     case 'gate': return [t(toolKey(item.tool)), [t(item.allowed ? 'aiDecisionAllowed' : 'aiDecisionRefused'), item.text].filter(Boolean).join('：')];
     case 'toolbox': return [t('aiDecisionToolbox'), item.count ? t('aiDecisionToolboxText', { count: item.count, mode: t(`aiTbMode_${item.mode}`) }) : t('aiToolboxCleared')];
     case 'canvas': return [t('aiDecisionCanvas'), t(item.mode === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')];

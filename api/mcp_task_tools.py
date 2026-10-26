@@ -132,13 +132,17 @@ def propose_repaint_area(ctx, title, marks, areas=None, grow=12, feather=8, note
 
 def _answer_of(ctx, panel_id, wait_seconds):
     """The answer to the question of panel `panel_id` once the user gives it, waiting at least ASK_WAIT_MIN."""
+    client = ctx.get("client") or "AI"
     try:
-        answer = ai_panels.get_answers(ctx.get("client") or "AI", panel_id, max(ASK_WAIT_MIN, float(wait_seconds or 0)))
+        answer = ai_panels.get_answers(client, panel_id, max(ASK_WAIT_MIN, float(wait_seconds or 0)))
+        given = next((item for item in answer["answers"] if item["question"] == "answer"), None)
+        if not given:
+            waited = ai_answer_wait.wait_on(panel_id)
+            if not waited.get("took_recommended"):
+                return {"answered": False, "panel": panel_id, **waited}
+            given = next((item for item in ai_panels.get_answers(client, panel_id, 0)["answers"] if item["question"] == "answer"), {})
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
-    given = next((item for item in answer["answers"] if item["question"] == "answer"), None)
-    if not given:
-        return {"answered": False, "panel": panel_id, **ai_answer_wait.wait_on(panel_id)}
     out = {"answered": True, "panel": panel_id, "next": "Go on with the user's answer; log_decision it when it settles a choice."}
     if given.get("inpaint_image"):
         out.update(inpaint_image=given["inpaint_image"], inpaint_note=given["note"])
@@ -153,6 +157,8 @@ def _answer_of(ctx, panel_id, wait_seconds):
             out["note"] = "None of your options: the user wrote their own answer."
     else:
         out.update(choice=given.get("choice"), labels=given.get("labels"))
+    if given.get("recommended_on_timeout"):
+        out.update(recommended_on_timeout=True, next=ai_answer_wait.TOOK)
     return out
 
 
@@ -243,6 +249,8 @@ def get_answers(ctx, panel=None, wait_seconds=0, task=None):
         if not task_id and ctx.get("session"):
             task_id = ai_tasks.active_task_id(client, ctx["session"]) or ""
         answer = ai_answer_wait.for_answer(ai_panels.get_answers(client, panel, wait_seconds, task_id=task_id), panel)
+        if answer.get("took_recommended"):  # Anomalous answered for the user just now: it goes in this answer
+            answer = {**ai_panels.get_answers(client, panel, 0, task_id=task_id), "note": ai_answer_wait.TOOK}
         return answer, ai_marks.image_items(answer.get("messages") or [])  # marked pictures, as pictures
     except ai_panels.PanelError as error:
         raise ToolError(str(error))

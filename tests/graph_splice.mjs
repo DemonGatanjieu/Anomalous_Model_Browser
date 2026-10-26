@@ -1,6 +1,6 @@
 // Where a LoRA goes and how it is wired (web/modules/graph_splice.js), on a small stand-in graph.
 import assert from 'node:assert/strict';
-import { chainEnd, loraInsertionCapabilities, mainModelLoaders, planLoraInsertion, spliceLora } from '../web/modules/graph_splice.js';
+import { chainEnd, loraChain, loraInsertionCapabilities, mainModelLoaders, modelLineStart, planLoraInsertion, spliceLora } from '../web/modules/graph_splice.js';
 
 const SLOTS = {
     CheckpointLoaderSimple: [[], ['MODEL', 'CLIP', 'VAE']],
@@ -85,6 +85,11 @@ function checkpointWorkflow() {
     const lora2 = spliceLora({ graph: g, plan: plan2, anchorNode: lora, insertedNode: node(null, 'LoraLoaderModelOnly') });
     assert.equal(source(g, sampler, 0), `LoraLoaderModelOnly#${lora2.id}`);
     assert.equal(source(g, pos, 0), `LoraLoader#${lora.id}`);
+    // The model line, for the server's base-model check: the loader it starts at and its LoRAs in order.
+    assert.deepEqual(loraChain(g, ckpt, 'MODEL'), [lora, lora2]);
+    assert.equal(modelLineStart(g, lora2), ckpt);
+    assert.equal(modelLineStart(g, sampler), ckpt);
+    assert.equal(modelLineStart(g, ckpt), ckpt, 'a loader starts its own line');
 }
 
 {

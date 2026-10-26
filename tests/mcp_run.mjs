@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { queueTracked } from '../web/modules/mcp_run.js';
 
 // Only the host is substituted: its queue drains batches, emits request IDs, and calls widgets around submissions.
-function host({ failAt = 0, manual = false } = {}) {
+function host({ failAt = 0, manual = false, refuse = null } = {}) {
     const api = new EventTarget();
     const events = (name, detail) => api.dispatchEvent(Object.assign(new Event(name), { detail }));
     let count = 0;
@@ -10,7 +10,7 @@ function host({ failAt = 0, manual = false } = {}) {
     api.queuePrompt = async () => {
         const n = ++count;
         await Promise.resolve();
-        if (n === failAt) throw new Error('invalid graph');
+        if (n === failAt) throw Object.assign(new Error('invalid graph'), refuse ? { response: refuse, toString: () => 'Prompt outputs failed validation' } : {});
         return { prompt_id: `p${n}` };
     };
     const app = {
@@ -89,5 +89,15 @@ for (const manual of [false, true]) {
     assert.deepEqual((await first).prompt_ids, ['p1', 'p2']);
     delete app.nextQueueRequestId;
     await assert.rejects(queueTracked(app, api), /Update the frontend/);
+}
+{
+    // ComfyUI's refusal goes on as data too, for the server to say what to do next.
+    const refuse = { error: { type: 'prompt_outputs_failed_validation', message: 'Prompt outputs failed validation', details: '' },
+        node_errors: { 3: { class_type: 'KSampler', errors: [{ type: 'required_input_missing', message: 'Required input is missing', details: 'model', extra_info: { input_name: 'model' } }] } } };
+    const result = await queueTracked(...Object.values(host({ failAt: 1, refuse })).slice(0, 2));
+    assert.equal(result.queued, 0);
+    assert.equal(result.refusal.type, 'prompt_outputs_failed_validation');
+    assert.deepEqual(result.refusal.nodes, [{ node: '3', class_type: 'KSampler', type: 'required_input_missing', message: 'Required input is missing',
+        details: 'model', input: 'model', value: undefined }]);
 }
 console.log('mcp_run: exact receipts, manual interleaving, partial failure, busy guard and cleanup passed');

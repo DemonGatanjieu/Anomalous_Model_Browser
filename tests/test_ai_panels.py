@@ -429,6 +429,36 @@ class AskUserTests(unittest.TestCase):
         self.assertTrue(answer["keep_waiting"], "get_answers says it too")
         self.assertFalse(ai_answer_wait.typing("no_such_task"))
 
+    def test_on_the_users_word_time_running_out_takes_the_recommended_option(self):
+        from api import ai_decisions
+        options = [{"label": "只重画手指", "recommended": True}, {"label": "整张重画"}]
+        with mock.patch.object(mcp_task_tools, "ASK_WAIT_MIN", 0):
+            got = mcp_task_tools.ask_user(self.ctx, "手指怎么修？", options, wait_seconds=0)
+            plain = mcp_task_tools.ask_user(self.ctx, "几张？", ["一", "二"], wait_seconds=0)
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        late = time.time() + ai_gates.answer_wait() + 5
+        self.assertIn("end your turn", ai_answer_wait.wait_on(got["panel"], now=late)["note"], "by default nobody answers for the user")
+        with mock.patch.object(ai_gates, "no_answer", return_value="recommended"):
+            told = ai_answer_wait.wait_on(got["panel"], now=late)
+            self.assertIn("end your turn", ai_answer_wait.wait_on(plain["panel"], now=late)["note"], "no recommended option: left open")
+        self.assertEqual((told["keep_waiting"], told["took_recommended"]), (False, True))
+        answer, _ = mcp_task_tools.get_answers(self.ctx, panel=got["panel"])
+        item = answer["answers"][0]
+        self.assertEqual((item["labels"], item["recommended_on_timeout"]), (["只重画手指"], True))
+        self.assertIn("in time", ai_decisions.lines(ai_tasks.get_task(task_id))[-1], "the decisions say how it was answered")
+
+    def test_the_recommended_option_taken_on_time_comes_in_the_same_call(self):
+        options = [{"label": "只重画手指", "recommended": True}, {"label": "整张重画"}]
+        with mock.patch.object(mcp_task_tools, "ASK_WAIT_MIN", 0), mock.patch.object(ai_gates, "answer_wait", return_value=0):
+            asked = mcp_task_tools.ask_user(self.ctx, "手指怎么修？", options, wait_seconds=0)
+            self.assertFalse(asked["answered"], "the default: the AI waits for the user")
+            with mock.patch.object(ai_gates, "no_answer", return_value="recommended"):
+                answer, _ = mcp_task_tools.get_answers(self.ctx, panel=asked["panel"])
+                again = mcp_task_tools.ask_user(self.ctx, "还要放大吗？", options, wait_seconds=0)
+        self.assertEqual(answer["answers"][0]["labels"], ["只重画手指"], "get_answers hands it over at once")
+        self.assertIn("took it for them", answer["note"])
+        self.assertEqual((again["answered"], again["labels"], again["recommended_on_timeout"]), (True, ["只重画手指"], True))
+
     def test_a_note_or_panel_alone_says_to_ask_before_stopping(self):
         self.assertIn("ask_user", mcp_task_tools.report(self.ctx, "换好了 LoRA")["next"])
         self.assertIn("ask it with ask_user", mcp_task_tools.report(self.ctx, "要不要再亮一点？")["next"])

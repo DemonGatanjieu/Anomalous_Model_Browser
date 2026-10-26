@@ -10,9 +10,17 @@ tools of this module for the rest, which the directory marks: tool_help gives th
 arguments of tools named in the directory, use_tool calls one. use_tool has no run of its own:
 mcp_server.py makes the call the tool it names before anything else, so gates, steps and answers
 are that tool's.
+
+AI apps keep the tool list they fetched (Antigravity files it away and refetches only when it
+reconnects), so after the user switches the tool set, or Anomalous is updated, an app can call by a
+list that is no longer offered. stale() spots that from the call; the answer then tells the AI, and
+the task notes it (task["stale_tools"]) so the workbench tells the user how to reconnect, until the
+app fetches the list again (cleared()).
 """
 
-from . import action_catalog
+import time
+
+from . import action_catalog, ai_tasks
 from .mcp_tools import ToolError, _schema, retext
 
 DIRECTORY_TOOLS = ("tool_help", "use_tool")
@@ -26,6 +34,10 @@ SECTIONS = (  # stage -> heading, in the order work usually goes
     (None, "The task and the user"),
 )
 NOTE = "The tools by what you want to do: go straight to the one you need instead of looking around first."
+STALE_NOTE = ("Your app holds an older list of Anomalous's tools than the one offered now (the user changed the tool "
+              "set, or Anomalous was updated). The call went through, but tell the user in report to reconnect the "
+              "app to Anomalous (Antigravity: restart it, or switch the anomalous MCP server off and on) and to go on "
+              "in a new chat.")
 
 
 def directory(specs, offered=None):
@@ -77,6 +89,47 @@ def hinted(result, name):
         first = result["content"][0]
         result["content"][0] = {**first, "text": f"{first.get('text', '')} tool_help(names=[\"{name}\"]) shows its arguments."}
     return result
+
+
+def stale(name, via, offered):
+    """Whether a call of `name` (`via` use_tool) shows the app holds an older list than `offered`, the
+    names offered now: tool_help or use_tool when they are not offered, use_tool for a tool offered
+    directly, or a tool the list does not have."""
+    if via:
+        return "use_tool" not in offered or name in offered
+    return name not in offered
+
+
+def tell_stale(result, task_id):
+    """Says so in the call's answer, and notes it on the task for the workbench."""
+    if isinstance(result, dict):
+        data = result.get("structuredContent")
+        first = (result.get("content") or [None])[0]
+        if isinstance(data, dict) and not result.get("isError"):
+            retext(result, {**data, "tool_list": STALE_NOTE})
+        elif isinstance(first, dict) and first.get("type") == "text":
+            result["content"][0] = {**first, "text": f"{first.get('text', '')} {STALE_NOTE}"}
+    if not task_id:
+        return result
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id)
+        if task is None or task.get("stale_tools"):
+            return result
+        task["stale_tools"] = time.time()
+        ai_tasks._save(task)
+    ai_tasks._notify(task_id)
+    return result
+
+
+def cleared(client):
+    """The AI app `client` fetched the tool list again: the notes on its tasks go."""
+    with ai_tasks._lock:
+        changed = [task for task in ai_tasks._load().values() if task.get("stale_tools") and task.get("client") == client]
+        for task in changed:
+            task.pop("stale_tools")
+            ai_tasks._save(task)
+    for task in changed:
+        ai_tasks._notify(task["id"])
 
 
 def directory_tools(registry):

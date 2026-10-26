@@ -2,6 +2,21 @@
 
 ## v1.62.0 — unreleased
 
+- AI 少走弯路、少猜：
+  - AI 软件拿着旧的工具列表来调用时（你换了工具组，或 AMB 更新了），任务标题下面会出现一行黄字，告诉你怎么让它重新连接；AI 那边也收到同样的提醒。
+  - AI 加 LoRA 或换模型时，AMB 对比 LoRA 和主模型的底模：一个是 SD 1.5、一个是 SDXL 这种用不了的，会提醒 AI 并告诉它按底模去找；Pony 的 LoRA 用在 Illustrious 上这种能用但可能效果差的，也会轻轻提一句。只提醒，不拦着。
+  - AI 看模型详情时，能看到作者示例图用的采样器、步数、CFG、尺寸，LoRA 还有作者用的权重（来自扫描时存下的 Civitai 资料），还有版本名。
+  - 跑图被 ComfyUI 拒绝时，AI 收到的不再是原样的英文报错，而是“哪个节点、缺什么、该用哪个工具修”。
+  - 关卡窗口新增 **等不到回答时**：**停下等我**（默认）或 **按推荐的继续**。选后者时，到了等待时间你还没答，AI 标了推荐项的选择题就按推荐的选，展台和“决策”里都写着“到时间，按推荐选了”；没有推荐项的问题、关卡里“先问我”的事，永远不会替你答。
+  - “给 AI 的工具”的说明改了：Antigravity 自己会按需读工具说明，选 **完整** 就对了；**日常** 只给工具数量有上限的软件用。
+- The AI takes fewer detours and guesses less:
+  - When an AI app calls by an older tool list (you switched the tool set, or Anomalous was updated), a yellow line under the task header says how to reconnect it, and the AI is told too.
+  - Adding a LoRA or swapping a model, Anomalous compares the base models of the LoRA and the main model: one that cannot work (SD 1.5 on SDXL) is pointed out with how to find a fitting one; one that loads but may look off (a Pony LoRA on Illustrious) gets a softer note. A note only, never a block.
+  - Model details give the AI the sampler, steps, CFG and size the author's example pictures used, and for a LoRA the weight (from the Civitai record a scan keeps), and the version name.
+  - When ComfyUI refuses a run, the AI gets which node, what is missing and the tool that fixes it, instead of ComfyUI's raw report.
+  - The Gates window has **When I don't answer**: **Wait for me** (the default) or **Go with the recommendation**, where a choice the AI marked a recommended option for takes it once your waiting time runs out, shown on the stage and under Decisions; a question without a recommendation, and anything a gate asks first, is never answered for you.
+  - The tool set's description now says Antigravity reads tool descriptions itself, so **Full** is the one for it; **Daily** is for apps that take a limited number of tools.
+
 - AI 问你的问题更好答：选项是一按就发出去的按钮，右边有箭头，问题下面写着“点一个就发给 AI”，点了马上变成选中的样子；**让 AI 定** 挪到问题右上角，不再跟选项挤在一起被当成“确认”；“都不是”那一行默认收起成 **都不是，我自己说…**，关卡卡片上的原因也收起成 **说说想怎么改…**，点了才出输入框。展台、留言框上方的提问条、关卡卡片都一样。关卡窗口里几条说明改对了：改画布也管加节点、连线、新建工作流；跑完以后那几句话在留言框上方；“先问我”和按钮上的字对上了。
 - Questions from the AI are easier to answer: options are buttons that send at a press, with an arrow and "One press sends it to the AI" above them, and the pressed one shows at once; **Let the AI decide** sits at the question's top right instead of under the options where it read as a confirm button; a line of your own stays folded as **None of these, I'll say it…**, and the Gates card's reason as **Say how to change it…**. The same on the stage, the question strip over the message box and the Gates card. Gates window texts fixed: changing the canvas includes adding nodes, wiring and new workflows; the lines after a run are over the message box; the intro names "Ask me" as the button does.
 

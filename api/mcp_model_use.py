@@ -11,7 +11,7 @@ import threading
 
 import folder_paths
 
-from . import mcp_canvas_edit, mcp_tools, model_placement
+from . import mcp_canvas_edit, mcp_tools, model_advice, model_placement
 from .mcp_actions import _action
 from .mcp_tools import _LIMIT, _QUERY, ToolError
 from .model_constants import MODEL_EXTENSIONS
@@ -105,6 +105,10 @@ def search_models(ctx, query="", type="", base_model="", source="", limit=20):
 
 def get_model(ctx, model_id, include_cover=False):
     detail, extra = mcp_tools.get_model(model_id, include_cover)
+    folder_type, _idx, _base, path = mcp_tools._resolve_model(model_id)
+    examples = model_advice.author_examples(path, folder_type, detail.get("sha256", ""))
+    if examples:
+        detail["author_examples"] = examples
     return _about(ctx, detail), extra
 
 
@@ -150,9 +154,10 @@ MODEL_TOOLS = dict([
                            "description": "Where the model's information came from."},
                 "limit": _LIMIT}, read_only=True),
     _action("get_model", "Model details",
-            "Everything known about one model: Civitai name and link, trigger words, base model, description, "
-            "the user's own name and notes, and loaded_by (or belongs_in and placement) as in search_models. "
-            "include_cover attaches its cover picture.",
+            "Everything known about one model: Civitai name, version and link, trigger words, base model, description, "
+            "the user's own name and notes, author_examples (the sampler, steps, CFG, size and, for a LoRA, the weight "
+            "its author's example pictures used: a good start), and loaded_by (or belongs_in and placement) as in "
+            "search_models. include_cover attaches its cover picture.",
             get_model, {"model_id": {"type": "string", "description": "From search_models."},
                         "include_cover": {"type": "boolean", "default": False}}, ["model_id"], read_only=True),
     _action("move_model", "Move a model to its folder",

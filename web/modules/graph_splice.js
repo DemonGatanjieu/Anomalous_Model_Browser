@@ -48,16 +48,35 @@ function inputSource(graph, node, slot) {
     return origin ? { node: origin, slot: link.origin_slot } : null;
 }
 
-/** Follows `type` from `node` through the LoRA loaders chained after it: the last of them. */
-export function chainEnd(graph, node, type) {
+/** The LoRA loaders chained after `node` on its `type` line, in order. */
+export function loraChain(graph, node, type) {
+    const chain = [];
     let end = node;
     for (let hop = 0; hop < 20; hop++) {
         const slot = findSlotIndex(end.outputs, type);
         const targets = slot < 0 ? [] : outputLinks(graph, end, slot);
         if (targets.length !== 1 || !/lora/i.test(targets[0].targetNode.type || '')) break;
         end = targets[0].targetNode;
+        chain.push(end);
     }
-    return end;
+    return chain;
+}
+
+/** Follows `type` from `node` through the LoRA loaders chained after it: the last of them. */
+export function chainEnd(graph, node, type) {
+    return loraChain(graph, node, type).at(-1) || node;
+}
+
+/** The node the MODEL line through `node` starts at (its loader): `node` itself when it takes no MODEL. */
+export function modelLineStart(graph, node) {
+    let at = node;
+    for (let hop = 0; hop < 20; hop++) {
+        const slot = findSlotIndex(at.inputs, 'MODEL');
+        const source = slot < 0 ? null : inputSource(graph, at, slot);
+        if (!source) break;
+        at = source.node;
+    }
+    return at;
 }
 
 /** The workflow's main model loaders (checkpoint, UNet), bypassed ones left out. */

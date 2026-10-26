@@ -144,6 +144,8 @@ export async function openGates() {
         async set => (await save({ tools: set })).tools),
     choiceRow('answerWait', [60, 180, 600], known.answer_wait || 180, seconds => t(`aiAnswerWait_${seconds}`),
         async seconds => (await save({ answer_wait: seconds })).answer_wait),
+    choiceRow('noAnswer', ['stop', 'recommended'], known.no_answer || 'stop', mode => t(`aiNoAnswer_${mode}`),
+        async mode => (await save({ no_answer: mode })).no_answer),
     choiceRow('runs', ['call', 'wait'], known.runs || 'call', mode => t(`aiRunWait_${mode}`),
         async mode => (await save({ runs: mode })).runs),
     el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));

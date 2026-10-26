@@ -54,7 +54,7 @@ def decisions(task):
                 out.append({"type": "answer", "step": step["id"], "at": given.get("at", step["at"]),
                             "question": block.get("question") or step["panel"].get("title") or "",
                             "answer": "、".join(given.get("labels") or []) if given.get("labels") and given.get("choice") != ["other"] else given.get("text", ""),
-                            "skipped": bool(given.get("skipped"))})
+                            "skipped": bool(given.get("skipped")), "timed_out": bool(given.get("recommended_on_timeout"))})
         elif (step.get("gate") or {}).get("at"):
             asked = step["gate"]
             out.append({"type": "gate", "step": step["id"], "at": asked["at"], "tool": tool,
@@ -88,7 +88,8 @@ def lines(task, limit=12):
         if item["type"] == "logged":
             words.append(f"{item['title']}: {item['decision']}" + (f" (because {item['reason']})" if item["reason"] else ""))
         elif item["type"] == "answer":
-            words.append(f"The user answered \"{item['question']}\": " + ("left it to you" if item["skipped"] else item["answer"]))
+            words.append(f"Nobody answered \"{item['question']}\" in time; your recommended option was taken: {item['answer']}" if item["timed_out"] else
+                         f"The user answered \"{item['question']}\": " + ("left it to you" if item["skipped"] else item["answer"]))
         elif item["type"] == "gate":
             words.append(f"The user {'allowed' if item['allowed'] else 'refused'} {item['tool']}" + (f": {item['text']}" if item["text"] else ""))
         elif item["type"] == "toolbox":

@@ -381,6 +381,18 @@
     font-size: 12px;
 }
 
+/* The AI app calls by an older tool list: how to have it fetch the new one. */
+.anomalous-ai-task-stale {
+    margin-top: 6px;
+    padding: 6px 10px;
+    border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--amb-warn) 12%, transparent);
+    color: var(--amb-warn-text);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
 /* A way somewhere or something to do under a step: a small button that looks pressable, its icon in the link colour. */
 .anomalous-ai-link {
     display: inline-flex;

@@ -98,5 +98,31 @@ class DailyTests(unittest.TestCase):
         self.assertIn('tool_help(names=["report"])', failed["content"][0]["text"])
 
 
+class StaleListTests(unittest.TestCase):
+    """An app calling by a tool list it fetched before the user switched the set (mcp_directory.stale)."""
+
+    def test_the_rule(self):
+        daily = action_catalog.DAILY | set(mcp_directory.DIRECTORY_TOOLS)
+        full = set(mcp_server.TOOLS) - set(mcp_directory.DIRECTORY_TOOLS)
+        self.assertFalse(mcp_directory.stale("report", False, full))
+        self.assertTrue(mcp_directory.stale("tool_help", False, full), "the full set offers no tool_help")
+        self.assertTrue(mcp_directory.stale("download_model", True, full), "nor use_tool")
+        self.assertFalse(mcp_directory.stale("download_model", True, daily))
+        self.assertTrue(mcp_directory.stale("report", True, daily), "report is offered directly")
+        self.assertTrue(mcp_directory.stale("download_model", False, daily), "a tool the daily list lacks")
+
+    def test_the_ai_and_the_workbench_are_told_until_the_app_fetches_the_list(self):
+        call("begin_task", {"title": "旧列表", "new_task": True})
+        with mock.patch.object(ai_gates, "tool_set", return_value="full"):
+            answer = call("tool_help", {"names": ["report"]})
+            self.assertIn("older list", answer["structuredContent"]["tool_list"])
+            self.assertIn("tool_list", answer["content"][0]["text"], "the text says it too")
+            task = next(item for item in ai_tasks.list_tasks() if item["title"] == "旧列表")
+            self.assertTrue(ai_tasks.get_task(task["id"])["stale_tools"])
+            self.assertNotIn("tool_list", call("report", {"text": "好"})["structuredContent"], "a call by the list offered")
+            rpc("tools/list")
+        self.assertNotIn("stale_tools", ai_tasks.get_task(task["id"]), "fetched again: the note goes")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -238,6 +238,8 @@ async def _call(params, request):
     mcp_directory.attach(result, name, *_directory_specs())
     if via:
         mcp_directory.hinted(result, name)
+    if name not in mcp_apps.APP_TOOLS and mcp_directory.stale(name, via, set(_offered())):
+        await asyncio.to_thread(mcp_directory.tell_stale, result, active_task)
     return ai_outside.tell(result, outside)
 
 
@@ -281,6 +283,7 @@ async def api_mcp(request):
     if method == "ping":
         return _result(id_, {}, modern)
     if method == "tools/list":
+        await asyncio.to_thread(mcp_directory.cleared, ai_callers.client_of(request.headers, params))
         return _result(id_, _tool_list(modern), modern)
     if method == "prompts/list":
         return _result(id_, mcp_prompts.list_prompts(), modern)

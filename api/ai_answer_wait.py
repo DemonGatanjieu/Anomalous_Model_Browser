@@ -5,7 +5,9 @@ the answer to a question still open says whether to wait on with get_answers: un
 user set in the Gates window (ai_gates.answer_wait, from when it asked), and while the user is
 typing an answer (the page posts POST /anomalous/ai_tasks/{id}/typing as they type) until a while
 after their last key. Then the AI ends its turn and the user brings it back with a line to paste
-(web/modules/ai_call_lines.js). Typing is kept in memory only.
+(web/modules/ai_call_lines.js); or, when the user set so (ai_gates.no_answer "recommended"), each
+open choice the AI marked a recommended option for takes it, marked as such for the user and the
+AI (recommended_on_timeout), and the AI goes on. Typing is kept in memory only.
 """
 
 import time
@@ -13,7 +15,25 @@ import time
 from . import ai_gates, ai_panels, ai_tasks
 
 AFTER_TYPING = 60  # the user typed this recently: their answer is on its way
+TOOK = ("The user did not answer in time and set that your recommended option goes then: Anomalous took it for "
+        "them (recommended_on_timeout). Go on with it; a question without a recommended option stays open for the user.")
 _typed = {}  # task id -> time of the user's last key
+
+
+def take_recommended(task_id, step):
+    """Answers each open choice of panel step `step` that has a recommended option with it. Returns how many."""
+    taken = 0
+    for block in step["panel"].get("blocks") or []:
+        picked = [option["id"] for option in block.get("options") or [] if option.get("recommended")]
+        if block.get("type") != "choices" or not picked or block.get("id") in (step.get("answers") or {}):
+            continue
+        try:
+            ai_panels.answer(task_id, step["id"], block["id"], choice=picked if block.get("multiple") else picked[:1],
+                             extra={"recommended_on_timeout": True})
+            taken += 1
+        except ai_panels.PanelError:
+            pass
+    return taken
 
 
 def typing(task_id, now=None):
@@ -34,6 +54,8 @@ def wait_on(panel_id, now=None):
     typed = _typed.get(task["id"], 0)
     left = max(step["at"] + ai_gates.answer_wait(), typed + AFTER_TYPING) - now
     if left <= 0:
+        if ai_gates.no_answer() == "recommended" and take_recommended(task["id"], step):
+            return {"keep_waiting": False, "took_recommended": True, "note": TOOK}
         return {"keep_waiting": False, "note": "You waited as long as the user set: end your turn now. They answer in "
                                                "Anomalous and tell you in your chat to go on."}
     typing_now = now - typed < AFTER_TYPING

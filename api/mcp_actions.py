@@ -15,7 +15,7 @@ import time
 import urllib.error
 import urllib.request
 
-from . import ai_gates, mcp_fill
+from . import ai_gates, mcp_fill, model_advice, run_refusal
 from .lora_info import trains_text_encoder
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import MAX_LIMIT, ToolError, _resolve_model, _schema
@@ -33,12 +33,6 @@ def _page(action, args=None, timeout=30):
 
 def _rel(base_dir, file_path):
     return os.path.relpath(file_path, base_dir).replace(os.sep, "/")
-
-
-def _model_ref(model_id):
-    """{type, path} of a model, as a node's drop-down names it (relative to its folder)."""
-    folder_type, _idx, base_dir, file_path = _resolve_model(model_id)
-    return {"type": folder_type, "path": _rel(base_dir, file_path)}
 
 
 def _local(ctx, method, path, body=None, timeout=20):
@@ -72,17 +66,36 @@ def set_prompt(ctx, text, role="positive", node_id=None, mode="replace"):
     return _page("set_prompt", {"text": str(text), "role": role, "node_id": node_id, "mode": mode})
 
 
+def _base_note(result, folder_type, file_path):
+    """The page's answer without the model line it reports, and base_model_note when a LoRA on that
+    line does not suit its main model (model_advice.py)."""
+    if not isinstance(result, dict):
+        return result
+    line = result.pop("line", None) or {}
+    if folder_type == "loras":
+        note = model_advice.lora_note(file_path, line)
+    else:
+        notes = (model_advice.lora_note(path, {"model": line.get("model")}) for path in model_advice.lora_paths(line.get("loras")))
+        note = next((item for item in notes if item), None)
+    if note:
+        result["base_model_note"] = note
+    return result
+
+
 def set_model(ctx, node_id, model_id):
-    return _page("set_model", {"node_id": node_id, "model": _model_ref(model_id)})
+    folder_type, _idx, base_dir, file_path = _resolve_model(model_id)
+    result = _page("set_model", {"node_id": node_id, "model": {"type": folder_type, "path": _rel(base_dir, file_path)}})
+    return _base_note(result, folder_type, file_path)
 
 
 def add_lora(ctx, model_id, after_node_id=None, strength_model=1.0, strength_clip=1.0):
     folder_type, _idx, base_dir, file_path = _resolve_model(model_id)
     if folder_type != "loras":
         raise ToolError("add_lora takes a model from the loras folder.")
-    return _page("add_lora", {"model": {"type": folder_type, "path": _rel(base_dir, file_path)},
-                              "text_encoder": trains_text_encoder(file_path), "after_node_id": after_node_id,
-                              "strength_model": float(strength_model), "strength_clip": float(strength_clip)})
+    result = _page("add_lora", {"model": {"type": folder_type, "path": _rel(base_dir, file_path)},
+                                "text_encoder": trains_text_encoder(file_path), "after_node_id": after_node_id,
+                                "strength_model": float(strength_model), "strength_clip": float(strength_clip)})
+    return _base_note(result, folder_type, file_path)
 
 
 def place_combo(ctx, name):
@@ -132,9 +145,10 @@ def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, **slots):
     except (PageUnavailable, PageRefused) as error:
         raise ToolError(str(error))
     ids = answer.get("prompt_ids") if isinstance(answer, dict) else None
+    page = answer if isinstance(answer, dict) else {}
     if (not isinstance(ids, list) or not ids or len(ids) > batch
             or any(not isinstance(pid, str) or not pid or len(pid) > 128 for pid in ids) or len(set(ids)) != len(ids)):
-        raise ToolError((answer.get("submission_error") if isinstance(answer, dict) else None)
+        raise ToolError((run_refusal.say(answer.get("refusal")) or answer.get("submission_error") if isinstance(answer, dict) else None)
                         or "No valid submission receipts. Check ComfyUI's queue before retrying; do not repeat automatically.")
     answer = {"prompt_ids": ids, "queued": len(ids), "requested": batch,
               "note": ("If this answer does not say it is done, the user tells you when it is: say it is running and end "
@@ -146,6 +160,9 @@ def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, **slots):
     # Some prompts may have been accepted before validation or a transport failure stopped the batch.
     if len(ids) < batch:
         answer["submission_error"] = f"Only {len(ids)} of {batch} prompts were accepted."
+        told = run_refusal.say(page.get("refusal"))
+        if told:
+            answer["submission_error"] += f" {told}"
     return answer
 
 
@@ -265,11 +282,13 @@ ACTIONS = dict([
                          "node_id": _NODE, "mode": {"type": "string", "enum": ["replace", "append"], "default": "replace"}},
             ["text"], destructive=True),
     _action("set_model", "Swap a node's model",
-            "Puts a model into a loader node (checkpoint, LoRA, VAE…) on the canvas, replacing the one it had.",
+            "Puts a model into a loader node (checkpoint, LoRA, VAE…) on the canvas, replacing the one it had. "
+            "base_model_note in the answer: a LoRA and the main model are for different base models.",
             set_model, {"node_id": _NODE, "model_id": _MODEL}, ["node_id", "model_id"], destructive=True),
     _action("add_lora", "Add a LoRA",
             "Inserts a LoRA loader after after_node_id (default: the main model loader, past its LoRAs) and moves "
-            "what that node fed behind it; the CLIP line too when the LoRA trains the text encoder.",
+            "what that node fed behind it; the CLIP line too when the LoRA trains the text encoder. base_model_note in "
+            "the answer: the LoRA is for another base model than the main model.",
             add_lora, {"model_id": _MODEL, "after_node_id": _NODE,
                        "strength_model": {"type": "number", "default": 1.0}, "strength_clip": {"type": "number", "default": 1.0}},
             ["model_id"]),

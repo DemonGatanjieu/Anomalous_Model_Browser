@@ -239,6 +239,7 @@ def get_model(model_id, include_cover=False):
     detail.update({
         "trigger_words": list(meta.get("trainedWords") or []),
         "civitai_name": meta.get("name") or "",
+        "version": meta.get("version_name") or "",
         "civitai_url": meta.get("civitai_url") or "",
         "download_link": meta.get("source_url") or "",
         "user_notes": meta.get("custom_notes") or "",

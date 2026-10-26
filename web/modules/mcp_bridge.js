@@ -18,7 +18,7 @@ import { canvasBrief } from './mcp_canvas_brief.js';
 import { canvasEditActions } from './mcp_canvas_edit.js';
 import { onTaskTab } from './mcp_task_tab.js';
 import { recordCanvasStep } from './canvas_history.js';
-import { chainEnd, mainModelLoaders, planLoraInsertion, spliceLora } from './graph_splice.js';
+import { chainEnd, loraChain, mainModelLoaders, modelLineStart, planLoraInsertion, spliceLora } from './graph_splice.js';
 import { checkWorkflowModels, fixWorkflowModels, isProblem } from './model_check.js';
 import { downloadFrom, downloadMissing } from './model_download.js';
 import { promptBoxes } from './prompt_boxes.js';
@@ -160,8 +160,15 @@ function setPrompt({ text, role, node_id: nodeId, mode }, getOwner) {
     });
 }
 
+/** The MODEL line through `node` by its drop-down values: its loader's and its LoRAs', for the server's base-model check (model_advice.py). */
+function modelLine(g, node) {
+    const start = modelLineStart(g, node);
+    const value = item => findModelComboWidget(item)?.value || '';
+    return { model: value(start), loras: loraChain(g, start, 'MODEL').map(value).filter(Boolean) };
+}
+
 function setModel({ node_id: nodeId, model }, getOwner) {
-    return recorded(getOwner, 'mcpDidModel', () => {
+    return recorded(getOwner, 'mcpDidModel', (g) => {
         const node = nodeById(nodeId);
         const widget = findModelComboWidget(node);
         if (!widget) throw new Error(`Node ${nodeId} (${node.type}) has no model drop-down.`);
@@ -170,7 +177,7 @@ function setModel({ node_id: nodeId, model }, getOwner) {
         const old = writeWidget(node, widget, value);
         delete node.color;
         delete node.bgcolor;
-        return { node_id: node.id, before: old, after: value, toast: { name: value.split(/[\\/]/).pop() } };
+        return { node_id: node.id, before: old, after: value, line: modelLine(g, node), toast: { name: value.split(/[\\/]/).pop() } };
     });
 }
 
@@ -205,6 +212,7 @@ function addLora({ model, text_encoder: textEncoder, after_node_id: afterId, str
         recordCanvasStep(app);
         return {
             node_id: node.id, node_type: node.type, lora: value, model_from: modelEnd.id, ...(clipEnd ? { clip_from: clipEnd.id } : {}),
+            line: modelLine(g, node),
             ...(textEncoder && !clipEnd ? { note: 'The LoRA has text-encoder weights but no single CLIP source was found; only the model is patched.' } : {}),
             toast: { name: value.split(/[\\/]/).pop() },
         };
