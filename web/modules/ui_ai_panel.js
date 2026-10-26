@@ -61,20 +61,27 @@ export function hasDraft(taskId, stepId, blockId) {
  * new question came, the AI read one), it keeps what the user half typed there, and the focus
  * when it had it; each key tells the server they are typing.
  */
-export function draftField(field, taskId, stepId, blockId) {
+export function draftField(field, taskId, stepId, blockId, surface = 'stage') {
     const key = draftKey(taskId, stepId, blockId);
     field.dataset.draft = key;
+    field.dataset.draftSurface = surface;
     field.value = drafts.get(key) || '';
-    if (field.value && document.activeElement?.dataset?.draft === key) { // the line it replaces is still on the page
+    const previous = document.activeElement;
+    if (previous?.dataset?.draft === key && previous.dataset.draftSurface === surface) {
+        const { selectionStart, selectionEnd, selectionDirection } = previous;
         requestAnimationFrame(() => {
-            if (!field.isConnected || (document.activeElement && document.activeElement !== document.body)) return;
+            if (!field.isConnected || previous.isConnected || (document.activeElement && document.activeElement !== document.body)) return;
             field.focus();
-            field.setSelectionRange(field.value.length, field.value.length);
+            field.setSelectionRange(selectionStart, selectionEnd, selectionDirection);
         });
     }
     field.addEventListener('input', () => {
         if (field.value) drafts.set(key, field.value);
         else drafts.delete(key);
+        // Both the stage and the bottom strip can show this question at once.
+        document.querySelectorAll('input[data-draft], textarea[data-draft]').forEach((peer) => {
+            if (peer !== field && peer.dataset.draft === key) peer.value = field.value;
+        });
         noteTyping(taskId);
     });
 }

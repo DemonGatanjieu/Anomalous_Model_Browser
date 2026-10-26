@@ -32,7 +32,8 @@ from .mcp_model_use import MODEL_TOOLS
 from .mcp_look import LOOK_TOOLS
 from .mcp_situation import SITUATION_TOOLS
 from .mcp_task_tools import TASK_TOOLS
-from .mcp_tools import TOOLS as READ_TOOLS, call_tool
+from .mcp_tools import TOOLS as READ_TOOLS, call_tool, retext
+from .mcp_arguments import prepare_arguments, renaming_note
 
 TOOLS = {**READ_TOOLS, **MODEL_TOOLS, **LOOK_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **SITUATION_TOOLS, **mcp_apps.APP_TOOLS}
 CAPABILITIES = {
@@ -176,6 +177,7 @@ async def _call(params, request):
     task_id = ai_callers.task_of(request.headers, params, arguments)
     if "task" in arguments and "task" not in TOOLS[name]["spec"]["inputSchema"].get("properties", {}):
         arguments.pop("task", None)
+    arguments, renamed = prepare_arguments(TOOLS[name]["spec"]["inputSchema"], arguments)
     ctx = {"base_url": f"{request.scheme}://{request.host}", "client": client, "session": session, "task": task_id}  # loopback, checked in api_mcp
     started = time.time()
     read_only = bool(TOOLS[name]["spec"].get("annotations", {}).get("readOnlyHint", True))
@@ -202,6 +204,8 @@ async def _call(params, request):
             step_ref=step_ref, session=session, task_id=active_task,
         )
         raise
+    if renamed and not result.get("isError") and isinstance(result.get("structuredContent"), dict):
+        retext(result, {**result["structuredContent"], "arguments_note": renaming_note(name, renamed)})
     step = await asyncio.to_thread(
         ai_tasks.finish_step, client, name, arguments, result, started, read_only,
         step_ref=step_ref, session=session, task_id=active_task,

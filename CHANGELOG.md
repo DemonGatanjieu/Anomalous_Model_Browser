@@ -2,6 +2,9 @@
 
 ## v1.62.0 — unreleased
 
+- 参数名自动纠正现在也用于审批和任务记录：你批准后，AI 改用正确参数名重试不再重复问，换模型的结果卡片也不会漏掉。展台和底部提问条同步同一道题的草稿，刷新时保留原来的光标、选区和编辑位置。
+- Corrected argument names now carry through approval and task recording: retrying with the proper name reuses an unused approval, and model changes keep their result cards. The stage and bottom question strip share each answer draft; refresh preserves the caret, selection and editing surface.
+
 - 修复任务接续与等待回答：按你最近一次未读回复接续任务，后台进度更新不再打乱顺序；选择题回答也能接回原任务，仍有工具正在执行的任务不会被新会话自动接走。读取答案不指定面板时也会正确处理超时；到时间自动选择或恰好收到你的回答，都会在当次调用里交给 AI。等选择题时发的留言和图片不再被读走却漏传。
 - Fixed task resumption and answer waiting: resume by the latest unread user reply, including panel answers, rather than background updates; a task with a tool still running is excluded from automatic takeover. Reading answers without a panel now handles expired questions too. Timeout choices and user answers arriving at that boundary reach the AI in the same call; messages and pictures sent while it waits for a question are no longer consumed without delivery.
 

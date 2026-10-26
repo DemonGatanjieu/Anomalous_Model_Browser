@@ -124,7 +124,7 @@ function askCard(task, { step, block }, more, ctx) {
             event.stopPropagation(); // typing here is not the browser's shortcuts
             if (event.key === 'Enter' && !event.isComposing) go.click();
         });
-        draftField(field, task.id, step.id, block.id);
+        draftField(field, task.id, step.id, block.id, 'now');
         line.append(field, go);
         return line;
     };

@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>AI answer draft regression</title>
+<script type="importmap">{"imports":{"/scripts/app.js":"data:text/javascript,export const app = {};","/scripts/api.js":"data:text/javascript,export const api = new EventTarget();"}}</script>
+<pre id="results">Running…</pre>
+<div id="stage"></div><div id="now"></div>
+<script type="module">
+import { renderPanel } from '../web/modules/ui_ai_panel.js';
+import { nowStrip } from '../web/modules/ui_ai_now.js';
+// No real task writes: only this fixture's fake typing/answer boundary is replaced.
+window.fetch = async () => ({ ok: true, json: async () => ({}) });
+const results = document.querySelector('#results');
+const stage = document.querySelector('#stage');
+const strip = nowStrip();
+document.querySelector('#now').append(strip);
+const task = { id: 'draft-test', steps: [{ id: 'q1', kind: 'panel', panel: {
+    id: 'panel1', title: 'Question', blocks: [{ type: 'input', id: 'answer', question: 'Your answer?' }]
+}, answers: {} }] };
+const ctx = { taskId: task.id, changed() {}, refresh() {}, openStage() {}, showStep() {} };
+const redraw = () => stage.replaceChildren(renderPanel(task.steps[0], ctx));
+const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+let failures = 0;
+const check = (condition, text) => { results.textContent += `${condition ? 'PASS' : 'FAIL'} ${text}\n`; if (!condition) failures++; };
+try {
+    results.textContent = '';
+    redraw(); strip.update(task, ctx);
+    let field = stage.querySelector('input');
+    field.value = 'abcdef';
+    field.dispatchEvent(new Event('input'));
+    check(strip.querySelector('input').value === 'abcdef', 'same question shares its draft between stage and bottom strip');
+    field.focus(); field.setSelectionRange(1, 4, 'backward');
+    redraw(); await settle();
+    field = stage.querySelector('input');
+    check(field.value === 'abcdef', 'redraw preserves answer text');
+    check(document.activeElement === field, 'redraw restores focus');
+    check(field.selectionStart === 1 && field.selectionEnd === 4 && field.selectionDirection === 'backward', 'redraw preserves selection instead of jumping to the end');
+    const bottom = strip.querySelector('input');
+    bottom.focus();
+    redraw();
+    task.steps.push({ id: 'q2', kind: 'panel', panel: { id: 'panel2', blocks: [{type: 'input', id: 'answer'}] }, answers: {} });
+    strip.update(task, ctx);
+    await settle();
+    check(document.activeElement === strip.querySelector('input'), 'simultaneous refresh keeps focus on the surface the user was editing');
+    results.textContent += failures ? `${failures} FAILED` : 'ALL PASSED';
+} catch (error) { results.textContent += `FAIL ${error.stack}`; }
+</script>

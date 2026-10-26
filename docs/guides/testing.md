@@ -55,6 +55,8 @@ node tests/third_party_loras.mjs
 页面应显示 `ALL PASSED`，覆盖旧记录、长面板、面板更新、图片加载、翻阅时保留位置和隐藏标签页。
 它加载实际展台模块及样式，只替换不用的 ComfyUI 画布接口；不包含在上面的一键命令中。
 
+同一静态服务器上的 `tests/ai_drafts.html` 验证展台和底部提问条的回答草稿同步、重画保留文字和选区、同时刷新不抢错焦点。它加载实际组件，仅替换网络和宿主边界；页面应显示 `ALL PASSED`，不包含在一键命令中。
+
 - 前端规则测试放 `tests/<名字>.mjs`，用 `node:assert`，直接导入 `web/modules/` 里的真实模块，只替换浏览器和 ComfyUI 这些外部部分。
 - 后端测试放 `tests/test_<名字>.py`，用 `unittest`。文件一律建在 `tempfile` 的临时文件夹里，网络请求用 `unittest.mock` 换掉。
 - 测试里不要写自己电脑上的真实路径、真实模型名或个人信息。

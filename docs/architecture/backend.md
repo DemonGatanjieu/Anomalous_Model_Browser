@@ -335,6 +335,11 @@ supported list. `initialize` selects the legacy shape (2025-03-26 to 2025-11-25)
 session id is minted, so both eras are stateless. Unknown methods are -32601 (404 for
 modern requests).
 
+`api/mcp_arguments.py` owns unambiguous required-argument renaming. The MCP server normalizes
+before recording a step or checking a gate, so the approval signature, displayed arguments,
+execution and result references all use the same names. Direct `mcp_tools.call_tool` callers
+use the same normalization; the successful receipt tells the AI which name was corrected.
+
 The peer must be loopback with no proxy header (`Forwarded`, `X-Forwarded-*`,
 `X-Real-IP`), and the Host and any Origin must name a loopback host; anything else is
 403. ComfyUI's own origin middleware also applies.
