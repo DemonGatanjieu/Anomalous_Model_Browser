@@ -2,6 +2,9 @@
 
 ## v1.62.0 — unreleased
 
+- AI 能拿刚出的图接着改了：搭“在这张图上重画”的工作流时，加载图像节点也认输出文件夹里的图（`xxx.png [output]`，ComfyUI 本来就支持）；以前 input 文件夹里没有这张图就被拦下。左侧栏的“模型”“图库”不再显示成英文 models / gallery。
+- The AI can redraw a picture it just made: a Load Image it builds now takes an output picture (`name.png [output]`, as ComfyUI itself does) instead of being refused when the input folder lacks it. The rail shows Models / Gallery again instead of the raw keys.
+
 - 修复完成后的任务接续：AI 带着原任务 ID 查看结果、补面板，也会留在刚完成的任务里，不会另开空任务或把面板放进另一个任务。错误标记只在对应重试完成并成功后消除；等待审批、仍在运行、已取消，以及另一个节点或设置的成功都不算修好。
 - Fixed follow-ups carrying an explicit task ID: reads and panels immediately after completion stay with that task instead of creating an empty task or placing a panel in another one. Error recovery requires a completed successful retry of the recorded target; pending approval, running or cancelled attempts and success on another node or setting do not clear it.
 

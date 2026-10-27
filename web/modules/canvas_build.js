@@ -36,6 +36,8 @@ export function checkedValue(nodeId, widget, value) {
         const found = choices.find(item => item === value)
             ?? choices.find(item => typeof item === 'string' && typeof value === 'string' && plain(item) === plain(value));
         if (found !== undefined) return found;
+        // A picture from the output (or temp) folder, the way ComfyUI names it: LoadImage takes it, ComfyUI checks the file.
+        if (typeof value === 'string' && / \[(output|input|temp)\]$/.test(value)) return value;
         const name = text => plain(text).split('/').pop().replace(/\.[^.]+$/, '');
         const stem = name(value);
         const close = stem ? choices.filter(item => name(item).includes(stem) || (name(item).length > 2 && stem.includes(name(item)))) : [];
