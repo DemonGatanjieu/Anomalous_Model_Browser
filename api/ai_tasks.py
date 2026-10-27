@@ -36,7 +36,7 @@ import uuid
 import folder_paths
 
 from . import action_catalog, activity_log
-from .ai_task_handoff import just_done, latest_replied, unresolved
+from .ai_task_handoff import just_done, latest_replied, recovery_target, unresolved
 from .path_utils import atomic_write_json
 
 FORMAT = 1
@@ -265,13 +265,21 @@ def active_task_id(client, session="", task_id=None):
         return found if found in tasks else None
 
 
-def current_task(client, now=None, session="", task_id=None, follow_up=False):
+def current_task(client, now=None, session="", task_id=None, follow_up=False, read_only=False):
     """The task this app's calls go to now: an explicit task, one the user started for the next
     AI, else its open one, unless it paused too long. `follow_up`: a panel, question or note, which
-    right after the AI said its task is done is about that task (ai_task_handoff.just_done)."""
+    right after the AI said its task is done is about that task (ai_task_handoff.just_done).
+    `read_only` keeps such a task ended while a follow-up reopens it; both honor an explicit id."""
     now = time.time() if now is None else now
     with _lock:
         tasks = _load()
+        task = tasks.get(task_id or _current.get(_owner_key(client, session)))
+        if (follow_up or read_only) and just_done(task, tasks, tasks.get(_waiting[0]), client, now, explicit=bool(task_id)):
+            _bind_owner(client, session, task["id"])
+            if follow_up:
+                task["ended"] = None
+                _save(task)
+            return task
         picked = _claim_explicit(tasks, task_id, client, session)
         if picked:
             return picked
@@ -285,10 +293,6 @@ def current_task(client, now=None, session="", task_id=None, follow_up=False):
         if task and not task.get("ended"):
             task["ended"] = task.get("updated")
             _save(task)
-        if follow_up and just_done(task, tasks, tasks.get(_waiting[0]), client, now):
-            task["ended"] = None
-            _save(task)
-            return task
         return _take_replied(tasks, client, now, session) or _new_task(client, now=now, session=session)
 
 
@@ -413,9 +417,10 @@ def begin_step(client, tool, arguments, started=None, read_only=False, session="
         args = arguments if isinstance(arguments, dict) else {}
         what = action_catalog.entry(tool, read_only)
         step = {"id": uuid.uuid4().hex[:10], "at": started, "ms": 0, "tool": tool, "kind": what.kind, "stage": what.stage,
-                "ok": True, "state": "running", "summary": summary_of(tool, args), "results": []}
+                "ok": True, "state": "running", "summary": summary_of(tool, args), "results": [],
+                "recovery_target": recovery_target(tool, args)}
         with _lock:
-            task = (read_only and not task_id and _just_done(client, session, started)) or                 current_task(client, started, session=session, task_id=task_id)
+            task = current_task(client, started, session=session, task_id=task_id, read_only=read_only)
             _add_step(task, step)
             _save(task)
         _notify(task["id"])
@@ -423,13 +428,6 @@ def begin_step(client, tool, arguments, started=None, read_only=False, session="
     except Exception:  # noqa: BLE001 - the record must never fail the AI's call
         log.warning("Anomalous AI tasks: begin_step of %s failed", tool, exc_info=True)
         return None
-
-
-def _just_done(client, session, now):
-    """This app's task it said is done moments ago, for a look right after (ai_task_handoff.just_done)."""
-    tasks = _load()
-    task = tasks.get(_current.get(_owner_key(client, session)) or (None if session else _current.get(client)))
-    return just_done(task, tasks, tasks.get(_waiting[0]), client, now)
 
 
 def finish_step(client, tool, arguments, result, started, read_only=False, step_ref=None, session="", task_id=None):
@@ -458,13 +456,14 @@ def finish_step(client, tool, arguments, result, started, read_only=False, step_
                 state = "error" if failed else "done" if gate.get("used") else "allowed"
                 error = (step.get("error") or "你没有允许 / You said no") if failed else ""
             if task is None:
-                task = (read_only and not task_id and _just_done(client, session, started)) or                     current_task(client, started, session=session, task_id=task_id)
+                task = current_task(client, started, session=session, task_id=task_id, read_only=read_only)
             if step is None:
                 step = {"id": uuid.uuid4().hex[:10], "at": started, "ms": ms, "tool": tool, "kind": kind, "stage": what.stage,
                         "ok": not failed, "state": state, "summary": summary, "results": results}
                 _add_step(task, step)
             else:
                 step.update(ms=ms, ok=not failed, state=state, summary=summary, results=results)
+            step["recovery_target"] = recovery_target(tool, args)
             if error:
                 step["error"] = error
             else:
