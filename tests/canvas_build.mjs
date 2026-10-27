@@ -28,6 +28,9 @@ assert.throws(() => checkedValue(3, sampler.widgets[0], 'many'), /takes a number
 assert.equal(checkedValue(4, ckpt, 'sdxl/B.safetensors'), 'SDXL\\b.safetensors', 'a choice by its path, either slash, any case');
 assert.throws(() => checkedValue(3, sampler.widgets[1], 'dpmpp_2m_karras'), /close: dpmpp_2m$/);
 assert.throws(() => checkedValue(3, sampler.widgets[1], 'ddim'), /choices: euler \| dpmpp_2m/);
+const picture = { name: 'image', value: '', options: { values: [] } };
+assert.equal(checkedValue(7, picture, 'ComfyUI_00001_.png [output]'), 'ComfyUI_00001_.png [output]', 'an output picture, with an empty input folder');
+assert.throws(() => checkedValue(7, picture, 'ComfyUI_00001_.png'), /no choices at all/);
 assert.equal(checkedValue(5, note, 'hello'), 'hello');
 assert.throws(() => checkedValue(5, note, 3), /takes text/);
 assert.throws(() => checkedValue(6, flag, 'yes'), /true or false/);
