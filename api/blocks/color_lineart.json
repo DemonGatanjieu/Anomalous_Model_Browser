@@ -1,0 +1,83 @@
+{
+  "job": "follow",
+  "rank": 4,
+  "short": "colour a line drawing",
+  "title": {
+    "zh": "线稿上色",
+    "en": "Colour a line drawing"
+  },
+  "about": {
+    "zh": "你递给 AI 一张黑白线稿，AMB 把线条交给线稿控制网，AI 在提示词里写颜色和画风，按线稿画出彩色的图。SDXL/NoobAI/Illustrious 用 Union 控制网的线稿模式。",
+    "en": "From a black-on-white line drawing you hand the AI, its lines steer a lineart ControlNet while the prompt says the colours and style. SDXL, NoobAI and Illustrious use the union ControlNet's lineart mode."
+  },
+  "source": {
+    "zh": "Union 控制网的线稿模式（参考工作流作者的控制网组用的就是 Union）",
+    "en": "The union ControlNet's lineart mode (the reference workflow's ControlNet group uses a union model)"
+  },
+  "packs": {},
+  "takes": "reference",
+  "control": "lineart",
+  "nodes": {
+    "reference": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "lines": {
+      "class_type": "ImageInvert",
+      "inputs": {
+        "image": [
+          "reference",
+          0
+        ]
+      }
+    },
+    "controlnet": {
+      "class_type": "ControlNetLoader",
+      "inputs": {
+        "control_net_name": "$controlnet"
+      }
+    },
+    "steer": {
+      "class_type": "ControlNetApplyAdvanced",
+      "inputs": {
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "control_net": [
+          "controlnet",
+          0
+        ],
+        "image": [
+          "lines",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "strength": 0.9,
+        "start_percent": 0.0,
+        "end_percent": 0.9
+      },
+      "wire_to": "$sampler"
+    },
+    "look": {
+      "class_type": "PreviewImage",
+      "inputs": {
+        "images": [
+          "lines",
+          0
+        ]
+      }
+    }
+  },
+  "after": "Set the picture's size to the drawing's shape (get_image_info on it; the empty latent's width and height), write the colours and style in the prompt (what is drawn, hair, clothes, background), then run_workflow. Its lines (white on black) are among the run's previews: if they are black on white, the drawing was light lines on dark: remove_nodes the ImageInvert and wire the picture straight in.",
+  "notes": "A drawing is black lines on white; a lineart ControlNet reads white lines on black, hence ImageInvert."
+}

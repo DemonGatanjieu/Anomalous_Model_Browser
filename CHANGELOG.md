@@ -16,6 +16,10 @@
   - **读图出标签**：你递给 AI 一张图，WD14 打标器读出它的 Danbooru 标签，AI 照着写提示词。需要节点包 ComfyUI-WD14-Tagger，第一次用时会下载打标模型（约 1.2GB）。AI 运行后，节点输出的文字（比如这些标签）现在也会带回给它。
   - 装了 KJNodes 时，几种放大都会在最后把颜色对齐到原图（参考工作流的做法），防止放大后颜色跑偏；没装也照常能用，面板上写着"装了 KJNodes 会更好"。
   - 照着姿势画改用 DWPose 读姿势：二次元人物也认得准，连脸和手指都标（原来的 OpenPose 认二次元常认错）。人物挤成一团、画风很浓的图可能认不出，读出的骨架图或深度图会作为预览给 AI 看，空的它就知道换照着构图画。第一次用时会下载 DWPose 的模型（约 350MB）。
+  - **平铺放大**：放大到 1.25 倍，重画时用平铺控制网把画面钉住（强度 0.6，到 80% 的步数，参考作者的参数），所以重画强度可以调到 0.5，细节多得多，构图也不跑。SDXL 用 Union 控制网，NoobAI/Illustrious 优先用 NoobAI 的平铺控制网，Anima 用 Anima 的修复 LLLite（较慢）。
+  - **线稿上色**：你递给 AI 一张黑白线稿，AMB 把线条交给线稿控制网（Union 的线稿模式），AI 在提示词里写颜色和画风，按线稿画出彩色图。
+  - Union（万能）控制网用之前，AMB 会告诉它这次是姿势、深度、平铺还是线稿。还没扫描过的新控制网按它所在的文件夹（SDXL_1.0、NoobAI……）认底模。做法说缺某个模型时，AMB 先把 ComfyUI 的文件列表刷新一次再找：刚下载到子文件夹里的模型，ComfyUI 自己不重启是看不见的。
+  - 放大类的块优先用"够用的最小倍数"的放大模型（放大到 1.25 倍用 2 倍模型，比 4 倍模型再缩回来省事）。
   - 做法会按画布上的底模换搭法：画布上是 Anima 模型时，照着构图画、照着姿势画改用 Anima 专用的 LLLite 控制网，局部重绘·裁切缝合会加上 Anima 的重绘 LLLite。AI 照样只说用哪块。需要节点包 ComfyUI-Anima-LLLite 和 models/controlnet 里的 anima-lllite 模型。Anima 的 LLLite 比 SDXL 的控制网温和，提示词要和参考图说的一致（几个人、在干什么），AI 会被这样提醒。
   - 画布上有好几个采样器时，AI 要指明用哪一个，AMB 不乱猜。
 - AI 工作台右边多了**做法**面板：按"要做的事"分组列出所有做法，每块写着能干什么、从哪学来的。缺节点包或缺模型的变灰，写明缺什么，点缺的节点包会打开 ComfyUI-Manager 去搜它。每块有个开关：关掉的，AI 就看不到，硬要用也会被拒绝。AI 开工时只收到开着又能用的做法，其余的只附一行"装了什么还能用什么"。
@@ -34,6 +38,10 @@
   - **Tags from a picture**: from a picture you hand the AI, the WD14 tagger reads its Danbooru tags for the AI to write the prompt from. Needs ComfyUI-WD14-Tagger; the first time it downloads its model (about 1.2 GB). What a run's nodes show as words (these tags) now reaches the AI with the run.
   - With KJNodes, the upscales match their colours to the original at the end (as the source workflow does), so they don't drift; without it they work as before and the panel says they're better with KJNodes.
   - Follow a pose reads the pose with DWPose: anime characters too, face and fingers included (OpenPose often misread them). A crowded or very stylised picture may come out empty; the pose skeleton or depth map is left as a preview for the AI, which then turns to Follow a layout. The first time, DWPose downloads its models (about 350 MB).
+  - **Upscale held by tile**: 1.25×, a tile ControlNet holding the picture while it is redrawn (strength 0.6 to 80% of the steps, the source's), so the redraw can be stronger (0.5): much more detail, the layout kept. SDXL uses the union ControlNet, NoobAI and Illustrious NoobAI's tile one first, Anima its tile-repair LLLite (slower).
+  - **Colour a line drawing**: from a black-on-white drawing you hand the AI, its lines steer a lineart ControlNet (the union one's lineart mode) while the prompt says the colours and style.
+  - A union ControlNet is told what it follows (pose, depth, tile or lineart). A ControlNet not scanned yet goes by the folder it is in (SDXL_1.0, NoobAI…). When a block lacks a model, Anomalous reads ComfyUI's file lists anew once before saying so: ComfyUI does not see a model just downloaded into a subfolder until it restarts.
+  - The upscales take the least enlarging upscale model that reaches their size (a 2× one for 1.25×, less work than a 4× one scaled back down).
   - A way is built for the canvas's model: on an Anima model, Follow a layout and Follow a pose use Anima's ControlNet-LLLite, and Repaint: crop and stitch adds Anima's repaint LLLite; the AI still only names the way. Needs ComfyUI-Anima-LLLite and anima-lllite models in models/controlnet. Anima's LLLite steers more gently than an SDXL ControlNet, so the prompt has to agree with the picture, and the AI is told so.
   - With several samplers on the canvas the AI has to say which one; nothing is guessed.
 - A **Ways** panel on the right of the AI workbench lists every way by job, what it does and where it came from. Ways missing a node pack or a model are greyed with what they lack; a missing pack opens ComfyUI-Manager searched for it. Each has a switch: one turned off is not offered to the AI, and building it is refused. When it begins, the AI gets only the ways that are on and can run here, with one line on what installing which pack would add.

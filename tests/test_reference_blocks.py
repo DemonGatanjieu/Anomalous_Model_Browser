@@ -108,7 +108,7 @@ class BlockTests(unittest.TestCase):
 
     def test_upscaling_takes_an_upscale_model_and_brings_it_to_a_quarter_larger(self):
         nodes = reference_blocks.nodes_of("upscale", EVERYTHING)
-        self.assertEqual((nodes["upscaler"]["inputs"]["model_name"], nodes["fit"]["inputs"]["scale_by"]), ("4x-UltraSharp.pth", 0.3125))
+        self.assertEqual((nodes["upscaler"]["inputs"]["model_name"], nodes["fit"]["inputs"]["scale_by"]), ("2x-Lite.pth", 0.625), "a 2× one: enough for 1.25×, less work")
         self.assertEqual((nodes["redraw"]["like"], nodes["redraw"]["inputs"]["denoise"]), ("$sampler", 0.35))
         self.assertEqual(nodes["enlarge"]["inputs"]["image"], ["$save.images", "*"], "the saved picture, stitched or not")
         only_2x = {**EVERYTHING, "UpscaleModelLoader": {"input": {"required": {"model_name": [["2x-Lite.pth"]]}}}}
@@ -163,6 +163,23 @@ class BlockTests(unittest.TestCase):
         with self.assertRaisesRegex(reference_blocks.BlockError, "needs ComfyUI-Anima-LLLite"):
             reference_blocks.build("control_pose", without, "ref.png", lambda: "Anima")
 
+    def test_a_union_controlnet_is_told_what_to_follow_and_new_files_go_by_their_folder(self):
+        info = {**EVERYTHING, "SetUnionControlNetType": {}, "ControlNetLoader": {"input": {"required": {"control_net_name": [[
+            "NoobAI/noob-sdxl-controlnet-tile.fp16.safetensors", "SDXL_1.0/xinsir-union-promax.safetensors", "animaTileRepair_v20.safetensors"]]}}}}
+        held = reference_blocks.nodes_of("upscale_tile", info, None, lambda: "NoobAI")
+        self.assertEqual(held["controlnet"]["inputs"]["control_net_name"], "NoobAI/noob-sdxl-controlnet-tile.fp16.safetensors",
+                         "not scanned yet: its NoobAI folder says its base")
+        self.assertNotIn("union_type", held)
+        self.assertEqual((held["redraw"]["inputs"]["positive"], held["redraw"]["inputs"]["denoise"]), (["hold", 0], 0.5))
+        lines = reference_blocks.nodes_of("color_lineart", info, "lines.png", lambda: "Illustrious")
+        self.assertEqual(lines["controlnet"]["inputs"]["control_net_name"], "SDXL_1.0/xinsir-union-promax.safetensors")
+        self.assertEqual((lines["union_type"]["inputs"]["type"], lines["steer"]["inputs"]["control_net"]),
+                         ("canny/lineart/anime_lineart/mlsd", ["union_type", 0]), "the union model told it is lineart")
+        self.assertEqual(lines["lines"]["class_type"], "ImageInvert", "white lines on black, as the ControlNet reads them")
+        anima = reference_blocks.nodes_of("upscale_tile", {**info, "AnimaLLLiteApply_sdscripts": {"input": {"required": {"lllite_name": [[
+            "animaTileRepair_v20.safetensors", "anima-lllite-depth-1.safetensors"]]}}}}, None, lambda: "Anima")
+        self.assertEqual((anima["hold"]["inputs"]["lllite_name"], anima["redraw"]["inputs"]["model"]), ("animaTileRepair_v20.safetensors", ["hold", 0]))
+
     def test_every_link_names_a_node_of_its_block_or_a_role(self):
         for name, block in reference_blocks.BLOCKS.items():
             for key, spec in [item for variant in [block, *(block.get("variants") or {}).values()] for item in variant["nodes"].items()]:
@@ -204,6 +221,17 @@ class AddBlockTests(unittest.TestCase):
         nodes = self.page.call_args[0][1]["nodes"]
         self.assertEqual((nodes["reference"]["inputs"]["image"], nodes["controlnet"]["inputs"]["control_net_name"]),
                          ("anomalous_reference_x.png", "NoobAI/noob-openpose.safetensors"), "Illustrious is of the SDXL family")
+
+    def test_a_model_missing_from_the_lists_is_looked_for_again_after_they_are_read_anew(self):
+        stale = {key: value for key, value in EVERYTHING.items() if key != "UpscaleModelLoader"}
+        self.object_info.side_effect = [stale, EVERYTHING]
+        with mock.patch.object(mcp_canvas_edit.model_download, "forget_file_lists") as forget:
+            mcp_canvas_edit.add_nodes({}, block="upscale")
+        forget.assert_called_once()
+        self.assertEqual(self.page.call_args[0][1]["nodes"]["upscaler"]["inputs"]["model_name"], "2x-Lite.pth")
+        self.object_info.side_effect = [stale, stale]
+        with mock.patch.object(mcp_canvas_edit.model_download, "forget_file_lists"), self.assertRaisesRegex(ToolError, "No upscale model"):
+            mcp_canvas_edit.add_nodes({}, block="upscale")
 
     def test_nodes_or_block_not_both_and_errors_reach_the_ai(self):
         for arguments in ({}, {"nodes": {"a": {"class_type": "LoadImage"}}, "block": "inpaint_basic"}):

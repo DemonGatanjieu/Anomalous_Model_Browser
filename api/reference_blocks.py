@@ -25,8 +25,13 @@ TAKES = {"inpaint": "the picture with the area as its alpha (inpaint_image from 
          "reference": "the picture to follow: one the user handed you (its path, as their message gives it) or one in the input folder",
          "picture": "the picture to work on: one the user handed you (its path, as their message gives it) or one in the input folder"}
 # The words a ControlNet file's name has for what it follows; a union model follows all of them.
-CONTROLS = {"pose": ("openpose", "pose"), "depth": ("depth",)}
+CONTROLS = {"pose": ("openpose", "pose"), "depth": ("depth",), "tile": ("tile",), "lineart": ("lineart", "mangaline", "manga_line")}
 ANY_CONTROL = ("union", "promax")
+# What a union ControlNet is told to follow (ComfyUI's SetUnionControlNetType).
+UNION_TYPES = {"pose": "openpose", "depth": "depth", "tile": "tile", "lineart": "canny/lineart/anime_lineart/mlsd"}
+# A ControlNet whose base model is not known yet (not scanned): its folder or name says it, as Anomalous sorts them.
+NAMED_BASES = (("noob", "NoobAI"), ("illustrious", "Illustrious"), ("pony", "Pony"), ("sd_1.5", "SD 1.5"), ("sd15", "SD 1.5"),
+               ("sdxl", "SDXL 1.0"), ("xl", "SDXL 1.0"))
 # The directory's headings, what an AI wants done; under each, its blocks with a few words apiece.
 JOBS = {"repaint": "Repaint an area", "upscale": "Upscale", "follow": "Follow a given picture",
         "detail": "Fix faces and hands", "process": "Picture work"}
@@ -114,6 +119,10 @@ class BlockError(ValueError):
     pass
 
 
+class MissingModel(BlockError):
+    """A model the block needs is not in ComfyUI's lists (perhaps just downloaded: the lists are read again once)."""
+
+
 def directory(info=None):
     """{job: "block (a few words), …"} for the AI, short enough to stay in the chat: the blocks the
     user has on that this ComfyUI can run (with its node list `info`; without it, all of them), and a
@@ -154,20 +163,22 @@ def _detector(info, prefix):
     found = sorted((name for name in _choices(info, "UltralyticsDetectorProvider", "model_name") if prefix in name.lower()),
                    key=lambda name: ("m." not in name, "s." not in name, name))
     if not found:
-        raise BlockError(f"No {prefix.split('_')[0]} detector model in models/ultralytics/bbox ({prefix}*.pt): "
+        raise MissingModel(f"No {prefix.split('_')[0]} detector model in models/ultralytics/bbox ({prefix}*.pt): "
                          "ask the user to get one (ComfyUI-Manager's model list has them).")
     return found[0]
 
 
-def _upscaler(info):
-    """The upscale model file this ComfyUI has, preferring a 4× one, and how many times it enlarges."""
+def _upscaler(info, wanted=2.0):
+    """The upscale model file this ComfyUI has, the least enlarging one that reaches `wanted` (a 2× one
+    for 1.25×: less work than 4× scaled back down), and how many times it enlarges."""
     files = _choices(info, "UpscaleModelLoader", "model_name")
     if not files:
-        raise BlockError("No upscale model in models/upscale_models: ask the user to get one (4x-UltraSharp, "
+        raise MissingModel("No upscale model in models/upscale_models: ask the user to get one (4x-UltraSharp, "
                          "ComfyUI-Manager's model list has it).")
     times = {name: int(found.group(1) or found.group(2)) for name in files
              if (found := re.search(r"(?<![0-9])([1-8])x|x([1-8])(?![0-9])", name.lower()))}
-    name = sorted(files, key=lambda item: (times.get(item) != 4, item.lower()))[0]
+    enough = lambda item: times.get(item, 4) >= wanted  # noqa: E731
+    name = sorted(files, key=lambda item: (not enough(item), times.get(item, 4) if enough(item) else -times.get(item, 4), item.lower()))[0]
     return name, times.get(name, 4)
 
 
@@ -178,22 +189,34 @@ def _controlnet(info, kind, main, base_of):
     from .model_advice import family
 
     wanted = family(main)
-    files = [name for name in _choices(info, "ControlNetLoader", "control_net_name") if "lllite" not in name.lower()]
+    known = base_of
+    base_of = lambda name: known(name) or next((base for word, base in NAMED_BASES if word in name.lower()), "")  # noqa: E731
+    files = [name for name in _choices(info, "ControlNetLoader", "control_net_name")
+             if "lllite" not in name.lower() and not name.lower().startswith("anima")]
     own = [name for name in files if any(word in name.lower() for word in CONTROLS[kind])]
     union = [name for name in files if any(word in name.lower() for word in ANY_CONTROL) and name not in own]
     fitting = [name for name in own + union if not wanted or family(base_of(name)) == wanted]
     if not fitting:
-        raise BlockError(f"No {kind} ControlNet{f' for {wanted} models' if wanted else ''} in models/controlnet: ask the "
+        raise MissingModel(f"No {kind} ControlNet{f' for {wanted} models' if wanted else ''} in models/controlnet: ask the "
                          "user to get one (Anomalous can download one they pick on Civitai).")
     return min(fitting, key=lambda name: (name in union, base_of(name).lower() != str(main).lower()))
+
+
+def _told_its_type(nodes, kind):
+    """`nodes` with a union ControlNet told what to follow: SetUnionControlNetType after its loader, its takers fed from that."""
+    loader = next(key for key, spec in nodes.items() if spec["class_type"] == "ControlNetLoader")
+    out = {key: {**spec, "inputs": {name: ["union_type", 0] if value == [loader, 0] else value for name, value in spec["inputs"].items()}}
+           for key, spec in nodes.items()}
+    out["union_type"] = {"class_type": "SetUnionControlNetType", "inputs": {"control_net": [loader, 0], "type": kind}}
+    return out
 
 
 def _lllite(info, kind):
     """The Anima ControlNet-LLLite file for `kind` (depth, pose, inpaint) in models/controlnet."""
     found = [name for name in _choices(info, "AnimaLLLiteApply_sdscripts", "lllite_name")
-             if "lllite" in name.lower() and kind in name.lower()]
+             if ("lllite" in name.lower() or name.lower().startswith("anima")) and kind in name.lower()]
     if not found:
-        raise BlockError(f"No Anima {kind} LLLite model in models/controlnet (anima-lllite-{kind}*.safetensors): ask the "
+        raise MissingModel(f"No Anima {kind} LLLite model in models/controlnet (anima-lllite-{kind}*.safetensors): ask the "
                          "user to get one.")
     return sorted(found)[-1]  # the newest version
 
@@ -244,15 +267,18 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "")
     for role, prefix in (block.get("detectors") or {}).items():
         fills[f"${role}"] = _detector(info, prefix)
     if block.get("upscaler"):
-        fills["$upscaler"], times = _upscaler(info)
+        fills["$upscaler"], times = _upscaler(info, block.get("upscale_by", 2.0))
         fills["$fit"] = round(block.get("upscale_by", 1) / times, 4)  # the model's 4× brought back to the block's size
+    nodes = dict(block["nodes"])
     if block.get("control"):
         fills["$controlnet"] = _controlnet(info, block["control"], main(), base_of)
+        if any(word in fills["$controlnet"].lower() for word in ANY_CONTROL) and "SetUnionControlNetType" in info:
+            nodes = _told_its_type(nodes, UNION_TYPES[block["control"]])
     if block.get("lllite"):
         fills["$lllite"] = _lllite(info, block["lllite"])
     # A node of a pack that only makes the block better (ColorMatch after an upscale) goes when the pack
     # is missing; a link "match|decode" takes the first of those nodes still there.
-    nodes = {key: spec for key, spec in block["nodes"].items() if not spec.get("optional") or spec["class_type"] in info}
+    nodes = {key: spec for key, spec in nodes.items() if not spec.get("optional") or spec["class_type"] in info}
     link = lambda value: [next(key for key in value[0].split("|") if key in nodes), value[1]] if "|" in str(value[0]) else value  # noqa: E731
     built = {key: {**{field: value for field, value in spec.items() if field != "optional"},
                    "inputs": {input: fills.get(value, value) if isinstance(value, str) else link(value) if isinstance(value, list) else value

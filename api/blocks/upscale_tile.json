@@ -1,0 +1,304 @@
+{
+  "job": "upscale",
+  "rank": 2,
+  "short": "1.25×, held by a tile ControlNet, more detail",
+  "title": {
+    "zh": "平铺放大",
+    "en": "Upscale held by tile"
+  },
+  "about": {
+    "zh": "和「放大」一样放大到 1.25 倍，但重画时用平铺控制网把画面钉住，所以重画强度可以调到 0.5，细节多得多，构图也不跑。SDXL 用 Union 控制网，NoobAI/Illustrious 用 NoobAI 的平铺控制网；画布上是 Anima 模型时改用 Anima 的修复 LLLite。 Anima 版比较慢（6GB 显存约 10 分钟）。",
+    "en": "Like Upscale to 1.25×, but a tile ControlNet holds the picture while it is redrawn, so the redraw can be stronger (0.5): much more detail, the layout kept. SDXL uses the union ControlNet, NoobAI and Illustrious NoobAI's tile one; on an Anima model, Anima's tile-repair LLLite. The Anima build is slow (about 10 minutes on a 6 GB card)."
+  },
+  "source": {
+    "zh": "参考工作流的「通用放大」组（作者默认开着平铺控制网：强度 0.6，到 80% 的步数）",
+    "en": "The reference workflow's general upscale, with its tile ControlNet on (strength 0.6, to 80% of the steps) as its author sets it"
+  },
+  "packs": {},
+  "upscaler": true,
+  "upscale_by": 1.25,
+  "control": "tile",
+  "extras": {
+    "ColorMatch": "ComfyUI-KJNodes"
+  },
+  "nodes": {
+    "upscaler": {
+      "class_type": "UpscaleModelLoader",
+      "inputs": {
+        "model_name": "$upscaler"
+      }
+    },
+    "enlarge": {
+      "class_type": "ImageUpscaleWithModel",
+      "inputs": {
+        "upscale_model": [
+          "upscaler",
+          0
+        ],
+        "image": [
+          "$save.images",
+          "*"
+        ]
+      }
+    },
+    "fit": {
+      "class_type": "ImageScaleBy",
+      "inputs": {
+        "image": [
+          "enlarge",
+          0
+        ],
+        "upscale_method": "lanczos",
+        "scale_by": "$fit"
+      }
+    },
+    "controlnet": {
+      "class_type": "ControlNetLoader",
+      "inputs": {
+        "control_net_name": "$controlnet"
+      }
+    },
+    "hold": {
+      "class_type": "ControlNetApplyAdvanced",
+      "inputs": {
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "control_net": [
+          "controlnet",
+          0
+        ],
+        "image": [
+          "fit",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "strength": 0.6,
+        "start_percent": 0.0,
+        "end_percent": 0.8
+      }
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": [
+          "fit",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      }
+    },
+    "redraw": {
+      "class_type": "KSampler",
+      "like": "$sampler",
+      "inputs": {
+        "model": [
+          "$sampler.model",
+          "*"
+        ],
+        "positive": [
+          "hold",
+          0
+        ],
+        "negative": [
+          "hold",
+          1
+        ],
+        "latent_image": [
+          "encode",
+          0
+        ],
+        "denoise": 0.5
+      }
+    },
+    "decode": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "redraw",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      }
+    },
+    "match": {
+      "class_type": "ColorMatch",
+      "optional": true,
+      "inputs": {
+        "image_ref": [
+          "fit",
+          0
+        ],
+        "image_target": [
+          "decode",
+          0
+        ],
+        "method": "mkl",
+        "strength": 1.0,
+        "multithread": true
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": [
+          "match|decode",
+          0
+        ],
+        "filename_prefix": "upscaled"
+      }
+    }
+  },
+  "variants": {
+    "anima": {
+      "packs": {
+        "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
+      },
+      "control": null,
+      "lllite": "tile",
+      "nodes": {
+        "upscaler": {
+          "class_type": "UpscaleModelLoader",
+          "inputs": {
+            "model_name": "$upscaler"
+          }
+        },
+        "enlarge": {
+          "class_type": "ImageUpscaleWithModel",
+          "inputs": {
+            "upscale_model": [
+              "upscaler",
+              0
+            ],
+            "image": [
+              "$save.images",
+              "*"
+            ]
+          }
+        },
+        "fit": {
+          "class_type": "ImageScaleBy",
+          "inputs": {
+            "image": [
+              "enlarge",
+              0
+            ],
+            "upscale_method": "lanczos",
+            "scale_by": "$fit"
+          }
+        },
+        "encode": {
+          "class_type": "VAEEncode",
+          "inputs": {
+            "pixels": [
+              "fit",
+              0
+            ],
+            "vae": [
+              "$decode.vae",
+              "*"
+            ]
+          }
+        },
+        "redraw": {
+          "class_type": "KSampler",
+          "like": "$sampler",
+          "inputs": {
+            "model": [
+              "hold",
+              0
+            ],
+            "positive": [
+              "$sampler.positive",
+              "*"
+            ],
+            "negative": [
+              "$sampler.negative",
+              "*"
+            ],
+            "latent_image": [
+              "encode",
+              0
+            ],
+            "denoise": 0.5
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "redraw",
+              0
+            ],
+            "vae": [
+              "$decode.vae",
+              "*"
+            ]
+          }
+        },
+        "match": {
+          "class_type": "ColorMatch",
+          "optional": true,
+          "inputs": {
+            "image_ref": [
+              "fit",
+              0
+            ],
+            "image_target": [
+              "decode",
+              0
+            ],
+            "method": "mkl",
+            "strength": 1.0,
+            "multithread": true
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "match|decode",
+              0
+            ],
+            "filename_prefix": "upscaled"
+          }
+        },
+        "hold": {
+          "class_type": "AnimaLLLiteApply_sdscripts",
+          "inputs": {
+            "model": [
+              "$sampler.model",
+              "*"
+            ],
+            "lllite_name": "$lllite",
+            "image": [
+              "fit",
+              0
+            ],
+            "strength": 0.9,
+            "start_percent": 0.0,
+            "end_percent": 0.8,
+            "preserve_wrapper": true
+          }
+        }
+      },
+      "after": "On this Anima model Anima's tile-repair LLLite holds the picture (0.9, to 80% of the steps) while it is redrawn at denoise 0.5. run_workflow; the larger one is saved beside it (prefix upscaled). It is slow on a small card (about 10 minutes on 6 GB): say so before running it."
+    }
+  },
+  "after": "run_workflow saves the picture as before and the 1.25× one beside it (prefix upscaled): a tile ControlNet holds it (strength 0.6, to 80% of the steps) while it is redrawn at denoise 0.5. Lower the denoise if it changes too much, raise the strength to hold it closer.",
+  "notes": "The source's tile values; denoise 0.5 because the tile holds the picture (the source went to 0.85 with a latent upscale)."
+}

@@ -19,6 +19,12 @@
   },
   "instead": "upscale",
   "upscaler": true,
+  "after": "run_workflow saves the picture as before and the 2× one beside it (prefix upscaled); each tile is redrawn with the sampler's steps and cfg at denoise 0.3 (higher adds more detail, and may add seams).",
+  "extras": {
+    "ColorMatch": "ComfyUI-KJNodes"
+  },
+  "notes": "ColorMatch mkl after the redraw is the source's, optional (KJNodes).",
+  "upscale_by": 2.0,
   "nodes": {
     "upscaler": {
       "class_type": "UpscaleModelLoader",
@@ -87,10 +93,5 @@
         "filename_prefix": "upscaled"
       }
     }
-  },
-  "after": "run_workflow saves the picture as before and the 2× one beside it (prefix upscaled); each tile is redrawn with the sampler's steps and cfg at denoise 0.3 (higher adds more detail, and may add seams).",
-  "extras": {
-    "ColorMatch": "ComfyUI-KJNodes"
-  },
-  "notes": "ColorMatch mkl after the redraw is the source's, optional (KJNodes)."
+  }
 }

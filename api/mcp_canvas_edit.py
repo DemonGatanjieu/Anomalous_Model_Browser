@@ -10,7 +10,7 @@ import json
 import threading
 import time
 
-from . import ai_pictures, ai_tasks, ai_toolbox, mcp_fill, model_advice, reference_blocks
+from . import ai_pictures, ai_tasks, ai_toolbox, mcp_fill, model_advice, model_download, reference_blocks
 from .mcp_actions import _action, _local, _page
 from .mcp_tools import ToolError
 
@@ -231,8 +231,15 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
     if block is not None:
         if reference_blocks.BLOCKS.get(str(block), {}).get("takes") in ("reference", "picture") and image:
             image = ai_pictures.to_input(image)  # the picture to follow or work on, where LoadImage reads
-        try:  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
-            built = reference_blocks.build(str(block), object_info(ctx), image, lambda: _main_base(near_node_id), _base_of)
+        def build():  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
+            return reference_blocks.build(str(block), object_info(ctx), image, lambda: _main_base(near_node_id), _base_of)
+        try:
+            try:
+                built = build()
+            except reference_blocks.MissingModel:  # a model just downloaded into a subfolder: ComfyUI's lists see it once read anew
+                model_download.forget_file_lists()
+                forget_object_info()
+                built = build()
             nodes, replace = built["nodes"], True
         except reference_blocks.BlockError as error:
             raise ToolError(str(error))
