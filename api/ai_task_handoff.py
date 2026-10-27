@@ -77,13 +77,15 @@ def recovery_target(tool, arguments):
 
 
 def unresolved(steps):
-    """Only completed successful calls to the same recorded target resolve an earlier failure.
-    Old records without target metadata can only be compared at tool level with each other."""
-    later_ok, count = set(), 0
+    """Only completed successful calls to the same recorded target resolve an earlier failure. A
+    failure that named no target (its arguments missing or misnamed, as a light model's first try
+    often is) is resolved by any later completed success of the same tool."""
+    later_ok, later_tools, count = set(), set(), 0
     for step in reversed(steps):
         key = (step.get("tool"), step.get("recovery_target"))
         if step.get("ok") and step.get("state") in (None, "done"):
             later_ok.add(key)
-        elif not step.get("ok") and key not in later_ok:
+            later_tools.add(key[0])
+        elif not step.get("ok") and key not in later_ok and not (key[1] is None and key[0] in later_tools):
             count += 1
     return count

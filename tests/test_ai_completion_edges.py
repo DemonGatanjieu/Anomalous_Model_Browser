@@ -52,6 +52,13 @@ class CompletionEdges(unittest.TestCase):
         ai_tasks.record("A", "set_prompt", {"prompt": "x"}, ok({"waiting_for_user": True}), 101)
         self.assertEqual(ai_tasks.list_tasks()[0]["errors"], 1)
 
+    def test_a_retry_with_the_arguments_put_right_resolves_a_failure_that_named_none(self):
+        ai_tasks.record("A", "set_model", {"node": 1, "model": "x"}, failed("Unknown arguments"), 100)
+        ai_tasks.record("A", "get_model", {}, failed("model_id is required"), 101)
+        ai_tasks.record("A", "set_model", {"node_id": 1, "model_id": "x"}, ok({}), 102)
+        ai_tasks.record("A", "get_model", {"model_id": "loras:0:a.safetensors"}, ok({}), 103)
+        self.assertEqual(ai_tasks.list_tasks()[0]["errors"], 0)
+
     def test_success_on_a_different_node_does_not_resolve_a_failure(self):
         ai_tasks.record("A", "set_model", {"node_id": 1, "model_id": "missing"}, failed("Missing model"), 100)
         ai_tasks.record("A", "set_model", {"node_id": 2, "model_id": "found"}, ok({}), 101)
