@@ -188,19 +188,56 @@ def _controlnet(info, kind, main, base_of):
     return min(fitting, key=lambda name: (name in union, base_of(name).lower() != str(main).lower()))
 
 
+def _lllite(info, kind):
+    """The Anima ControlNet-LLLite file for `kind` (depth, pose, inpaint) in models/controlnet."""
+    found = [name for name in _choices(info, "AnimaLLLiteApply_sdscripts", "lllite_name")
+             if "lllite" in name.lower() and kind in name.lower()]
+    if not found:
+        raise BlockError(f"No Anima {kind} LLLite model in models/controlnet (anima-lllite-{kind}*.safetensors): ask the "
+                         "user to get one.")
+    return sorted(found)[-1]  # the newest version
+
+
+def _variant(name, block, main_base):
+    """`block` as it is built for the canvas's model: its variant for that model's family merged over it
+    (on an Anima model an LLLite stands in for the ControlNet), else itself."""
+    variants = block.get("variants") or {}
+    if not variants:
+        return block
+    from .model_advice import family
+
+    kind = family(main_base())
+    return {**block, **variants[kind]} if kind in variants else block
+
+
 def nodes_of(name, info, image=None, main_base=lambda: "", base_of=lambda name: ""):
-    """Block `name` as add_nodes' group, its values filled in, or BlockError saying why not. A control
-    block asks `main_base()` for the canvas's model's base model and `base_of` for each ControlNet's."""
+    """Block `name` as add_nodes' group, its values filled in, or BlockError saying why not."""
+    return build(name, info, image, main_base, base_of)["nodes"]
+
+
+def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: ""):
+    """Block `name` built for this canvas: {nodes (add_nodes' group, its values filled in), roles, after},
+    or BlockError saying why not. A block with variants or a ControlNet asks `main_base()` (once) for
+    the canvas's model's base model, and `base_of` for each ControlNet's."""
     block = BLOCKS.get(name)
     if not block:
         raise BlockError(f"No block {name!r}; there are: {', '.join(BLOCKS)}.")
+    asked = []
+    def main():
+        if not asked:
+            asked.append(main_base())
+        return asked[0]
     if name in turned_off():
         raise BlockError(f"The user turned block {name} off in Anomalous (its 做法 panel): use another way, or ask them.")
-    missing = sorted({pack for kind, pack in block["packs"].items() if kind not in info})
-    if missing:
-        instead = f" Use block {block['instead']} instead, or ask the user to install it with ComfyUI-Manager." if block.get("instead") else \
-            " Ask the user to install it with ComfyUI-Manager."
-        raise BlockError(f"Block {name} needs {', '.join(missing)}, not installed here.{instead}")
+    def packs_here(block):
+        missing = sorted({pack for kind, pack in block["packs"].items() if kind not in info})
+        if missing:
+            instead = f" Use block {block['instead']} instead, or ask the user to install it with ComfyUI-Manager." if block.get("instead") else \
+                " Ask the user to install it with ComfyUI-Manager."
+            raise BlockError(f"Block {name} needs {', '.join(missing)}, not installed here.{instead}")
+    packs_here(block)  # before the page is asked which model the canvas has
+    block = _variant(name, block, main)
+    packs_here(block)
     if block.get("takes") and not (isinstance(image, str) and image.strip()):
         raise BlockError(f"Block {name} needs image: {TAKES[block['takes']]}.")
     fills = {"$image": (image or "").strip()}
@@ -210,20 +247,14 @@ def nodes_of(name, info, image=None, main_base=lambda: "", base_of=lambda name: 
         fills["$upscaler"], times = _upscaler(info)
         fills["$fit"] = round(block.get("upscale_by", 1) / times, 4)  # the model's 4× brought back to the block's size
     if block.get("control"):
-        fills["$controlnet"] = _controlnet(info, block["control"], main_base(), base_of)
+        fills["$controlnet"] = _controlnet(info, block["control"], main(), base_of)
+    if block.get("lllite"):
+        fills["$lllite"] = _lllite(info, block["lllite"])
     # A node of a pack that only makes the block better (ColorMatch after an upscale) goes when the pack
     # is missing; a link "match|decode" takes the first of those nodes still there.
     nodes = {key: spec for key, spec in block["nodes"].items() if not spec.get("optional") or spec["class_type"] in info}
     link = lambda value: [next(key for key in value[0].split("|") if key in nodes), value[1]] if "|" in str(value[0]) else value  # noqa: E731
-    return {key: {**{field: value for field, value in spec.items() if field != "optional"},
-                  "inputs": {input: fills.get(value, value) if isinstance(value, str) else link(value) if isinstance(value, list) else value
-                             for input, value in spec["inputs"].items()}} for key, spec in nodes.items()}
-
-
-def roles_of(name):
-    """The settings block `name` changes on canvas nodes it finds ({role: {setting: value}}), as the page applies them."""
-    return BLOCKS[name].get("roles") or {}
-
-
-def after(name):
-    return BLOCKS[name]["after"]
+    built = {key: {**{field: value for field, value in spec.items() if field != "optional"},
+                   "inputs": {input: fills.get(value, value) if isinstance(value, str) else link(value) if isinstance(value, list) else value
+                              for input, value in spec["inputs"].items()}} for key, spec in nodes.items()}
+    return {"nodes": built, "roles": block.get("roles") or {}, "after": block["after"]}

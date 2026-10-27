@@ -232,18 +232,18 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
         if reference_blocks.BLOCKS.get(str(block), {}).get("takes") in ("reference", "picture") and image:
             image = ai_pictures.to_input(image)  # the picture to follow or work on, where LoadImage reads
         try:  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
-            nodes, replace = reference_blocks.nodes_of(str(block), object_info(ctx), image, lambda: _main_base(near_node_id),
-                                                       _base_of), True
+            built = reference_blocks.build(str(block), object_info(ctx), image, lambda: _main_base(near_node_id), _base_of)
+            nodes, replace = built["nodes"], True
         except reference_blocks.BlockError as error:
             raise ToolError(str(error))
     else:
         _api_nodes(nodes, canvas_refs=True)
     _allowed(ctx, [spec["class_type"] for spec in nodes.values()])
     answer = _next(_page("add_nodes", {"nodes": nodes, "replace": replace,
-                                       "roles": reference_blocks.roles_of(str(block)) if block is not None else {},
+                                       "roles": built["roles"] if block is not None else {},
                                        "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")}, timeout=60))
     if block is not None and isinstance(answer, dict) and not answer.get("unwired") and answer.get("reaches_output") is not False:
-        answer["next"] = reference_blocks.after(str(block))
+        answer["next"] = built["after"]
     return answer
 
 

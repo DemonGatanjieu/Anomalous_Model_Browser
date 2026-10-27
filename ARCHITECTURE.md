@@ -198,7 +198,10 @@ covered by the `styles.css` manifest.
   finds on the canvas by their sockets (the sampler, its decode, the output node its picture
   reaches, what feeds an input upstream; several samplers: near_node_id); a node "like" a role
   takes its settings, one that "replaces" it its links and place too (LanPaint's sampler for the
-  KSampler), before canvas_wiring splices it in (`tests/canvas_roles.mjs`).
+  KSampler), before canvas_wiring splices it in (`tests/canvas_roles.mjs`). A block's "variants"
+  rebuild it for the canvas model's family (`reference_blocks.build`: on Anima an LLLite model
+  patch instead of a ControlNet), and an "optional" node of a pack that only improves it (KJNodes'
+  ColorMatch) goes when the pack is missing.
   `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is

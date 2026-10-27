@@ -7,8 +7,8 @@
     "en": "Repaint: crop and stitch"
   },
   "about": {
-    "zh": "把圈出的地方连同周围一圈裁出来，放大到 1024 重画，再缝回原图，别处一点不动。适合修手、修脸这类小地方。",
-    "en": "Crops the marked area with a margin, repaints it at 1024 and stitches it back; the rest is untouched. For hands, faces, small fixes."
+    "zh": "把圈出的地方连同周围一圈裁出来，放大到 1024 重画，再缝回原图，别处一点不动。适合修手、修脸这类小地方。 画布上是 Anima 模型时，还会加上 Anima 专用的重绘 LLLite，让新画的部分更贴合（需要 ComfyUI-Anima-LLLite）。",
+    "en": "Crops the marked area with a margin, repaints it at 1024 and stitches it back; the rest is untouched. For hands, faces, small fixes. On an Anima model it adds Anima's repaint LLLite too, so the new part fits better (needs ComfyUI-Anima-LLLite)."
   },
   "source": {
     "zh": "参考工作流的「局部重绘」组，和节点包自带的示例一致",
@@ -96,5 +96,108 @@
     }
   },
   "after": "The sampler now repaints only the cropped area, at denoise 0.75 (lower keeps more of the old). Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"), or it paints the whole subject there. Then run_workflow; the saved picture is the whole one, stitched.",
-  "notes": "Denoise 0.75: at 1 a model not made for inpainting paints a whole new subject into the crop. Context factor 2.0 is the source's."
+  "notes": "Denoise 0.75: at 1 a model not made for inpainting paints a whole new subject into the crop. Context factor 2.0 is the source's.",
+  "variants": {
+    "anima": {
+      "packs": {
+        "InpaintCropImproved": "ComfyUI-Inpaint-CropAndStitch",
+        "InpaintStitchImproved": "ComfyUI-Inpaint-CropAndStitch",
+        "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
+      },
+      "lllite": "inpaint",
+      "nodes": {
+        "picture": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "$image"
+          }
+        },
+        "soft": {
+          "class_type": "DifferentialDiffusion",
+          "inputs": {
+            "model": [
+              "$sampler.model",
+              "*"
+            ]
+          }
+        },
+        "patch": {
+          "class_type": "AnimaLLLiteApply_sdscripts",
+          "inputs": {
+            "model": [
+              "soft",
+              0
+            ],
+            "lllite_name": "$lllite",
+            "image": [
+              "crop",
+              "cropped_image"
+            ],
+            "strength": 1.0,
+            "start_percent": 0.0,
+            "end_percent": 1.0,
+            "preserve_wrapper": true,
+            "mask": [
+              "crop",
+              "cropped_mask"
+            ]
+          },
+          "wire_to": "$sampler"
+        },
+        "crop": {
+          "class_type": "InpaintCropImproved",
+          "inputs": {
+            "image": [
+              "picture",
+              0
+            ],
+            "mask": [
+              "picture",
+              1
+            ],
+            "mask_blend_pixels": 32,
+            "context_from_mask_extend_factor": 2.0,
+            "output_resize_to_target_size": true,
+            "output_target_width": 1024,
+            "output_target_height": 1024,
+            "downscale_algorithm": "lanczos",
+            "upscale_algorithm": "lanczos"
+          }
+        },
+        "condition": {
+          "class_type": "InpaintModelConditioning",
+          "inputs": {
+            "vae": [
+              "$decode.vae",
+              "*"
+            ],
+            "pixels": [
+              "crop",
+              "cropped_image"
+            ],
+            "mask": [
+              "crop",
+              "cropped_mask"
+            ]
+          },
+          "wire_to": "$sampler"
+        },
+        "stitch": {
+          "class_type": "InpaintStitchImproved",
+          "inputs": {
+            "stitcher": [
+              "crop",
+              "stitcher"
+            ],
+            "inpainted_image": [
+              "$decode",
+              0
+            ]
+          },
+          "wire_to": "$save"
+        }
+      },
+      "after": "On this Anima model its repaint LLLite guides it too; the sampler now repaints only the cropped area, at denoise 0.75 (lower keeps more of the old). Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"), or it paints the whole subject there. Then run_workflow; the saved picture is the whole one, stitched."
+    }
+  }
 }

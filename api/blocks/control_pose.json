@@ -7,8 +7,8 @@
     "en": "Follow a pose"
   },
   "about": {
-    "zh": "你递给 AI 一张图，AMB 读出人物姿势（OpenPose），用和你底模对得上的控制网让新图摆出这个姿势。 OpenPose 认真人照片和 3D 图准，认二次元人物常常认错，二次元图用「照着构图画」更稳（参考工作流作者也这么说）。",
-    "en": "From a picture you hand the AI, Anomalous reads the pose (OpenPose) and steers the picture with a ControlNet that fits your model. OpenPose reads photos and 3D well and anime characters often wrongly; for anime, Follow a layout is steadier (as the source's author says)."
+    "zh": "你递给 AI 一张图，AMB 读出人物姿势（OpenPose），用和你底模对得上的控制网让新图摆出这个姿势。 OpenPose 认真人照片和 3D 图准，认二次元人物常常认错，二次元图用「照着构图画」更稳（参考工作流作者也这么说）。 画布上是 Anima 模型时，自动改用 Anima 专用的 LLLite 控制网（需要 ComfyUI-Anima-LLLite）。",
+    "en": "From a picture you hand the AI, Anomalous reads the pose (OpenPose) and steers the picture with a ControlNet that fits your model. OpenPose reads photos and 3D well and anime characters often wrongly; for anime, Follow a layout is steadier (as the source's author says). On an Anima model it uses an Anima ControlNet-LLLite instead (needs ComfyUI-Anima-LLLite)."
   },
   "source": {
     "zh": "参考工作流的「底图控制网」组",
@@ -75,5 +75,56 @@
       "wire_to": "$sampler"
     }
   },
-  "after": "run_workflow: the picture now takes that pose (strength 0.8, for the first 80% of the steps; lower either for a looser pose). The prompt still says who and what: change it if it fights the pose. If the picture came out ignoring the pose, OpenPose likely misread an anime picture: try control_depth."
+  "after": "run_workflow: the picture now takes that pose (strength 0.8, for the first 80% of the steps; lower either for a looser pose). The prompt still says who and what: change it if it fights the pose. If the picture came out ignoring the pose, OpenPose likely misread an anime picture: try control_depth.",
+  "variants": {
+    "anima": {
+      "packs": {
+        "OpenposePreprocessor": "comfyui_controlnet_aux",
+        "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
+      },
+      "control": null,
+      "lllite": "pose",
+      "nodes": {
+        "reference": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "$image"
+          }
+        },
+        "pose": {
+          "class_type": "OpenposePreprocessor",
+          "inputs": {
+            "image": [
+              "reference",
+              0
+            ],
+            "detect_hand": "enable",
+            "detect_body": "enable",
+            "detect_face": "enable",
+            "resolution": 1024
+          }
+        },
+        "steer": {
+          "class_type": "AnimaLLLiteApply_sdscripts",
+          "inputs": {
+            "model": [
+              "$sampler.model",
+              "*"
+            ],
+            "lllite_name": "$lllite",
+            "image": [
+              "pose",
+              0
+            ],
+            "strength": 1.0,
+            "start_percent": 0.0,
+            "end_percent": 1.0,
+            "preserve_wrapper": true
+          },
+          "wire_to": "$sampler"
+        }
+      },
+      "after": "On this Anima model an Anima ControlNet-LLLite steers it, more gently than an SDXL ControlNet: say in the prompt what the picture shows (how many people, what they do), or the prompt wins. Strength 1.0 for all the steps; up to 1.5 holds it closer. run_workflow."
+    }
+  }
 }

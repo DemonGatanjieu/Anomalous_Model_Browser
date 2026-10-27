@@ -7,8 +7,8 @@
     "en": "Follow a layout"
   },
   "about": {
-    "zh": "你递给 AI 一张图，AMB 读出远近和形状（深度图），让新图保持这个构图。",
-    "en": "From a picture you hand the AI, Anomalous reads its depth and keeps that layout and those shapes."
+    "zh": "你递给 AI 一张图，AMB 读出远近和形状（深度图），让新图保持这个构图。 画布上是 Anima 模型时，自动改用 Anima 专用的 LLLite 控制网（需要 ComfyUI-Anima-LLLite）。",
+    "en": "From a picture you hand the AI, Anomalous reads its depth and keeps that layout and those shapes. On an Anima model it uses an Anima ControlNet-LLLite instead (needs ComfyUI-Anima-LLLite)."
   },
   "source": {
     "zh": "参考工作流的「底图控制网」组（作者默认用深度）",
@@ -73,5 +73,54 @@
       "wire_to": "$sampler"
     }
   },
-  "after": "run_workflow: the picture now keeps that layout (strength 0.7, for the first 70% of the steps; lower either to let the model change more). The prompt still says what is drawn."
+  "after": "run_workflow: the picture now keeps that layout (strength 0.7, for the first 70% of the steps; lower either to let the model change more). The prompt still says what is drawn.",
+  "variants": {
+    "anima": {
+      "packs": {
+        "DepthAnythingV2Preprocessor": "comfyui_controlnet_aux",
+        "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
+      },
+      "control": null,
+      "lllite": "depth",
+      "nodes": {
+        "reference": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "$image"
+          }
+        },
+        "depth": {
+          "class_type": "DepthAnythingV2Preprocessor",
+          "inputs": {
+            "image": [
+              "reference",
+              0
+            ],
+            "ckpt_name": "depth_anything_v2_vitl.pth",
+            "resolution": 1024
+          }
+        },
+        "steer": {
+          "class_type": "AnimaLLLiteApply_sdscripts",
+          "inputs": {
+            "model": [
+              "$sampler.model",
+              "*"
+            ],
+            "lllite_name": "$lllite",
+            "image": [
+              "depth",
+              0
+            ],
+            "strength": 1.0,
+            "start_percent": 0.0,
+            "end_percent": 1.0,
+            "preserve_wrapper": true
+          },
+          "wire_to": "$sampler"
+        }
+      },
+      "after": "On this Anima model an Anima ControlNet-LLLite steers it, more gently than an SDXL ControlNet: say in the prompt what the picture shows (how many people, what they do), or the prompt wins. Strength 1.0 for all the steps; up to 1.5 holds it closer. run_workflow."
+    }
+  }
 }

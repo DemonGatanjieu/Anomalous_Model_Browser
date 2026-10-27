@@ -23,8 +23,11 @@ CONTROLNETS = {"input": {"required": {"control_net_name": [[
 BASES = {"SD_1.5/control_v11p_sd15_openpose.safetensors": "SD 1.5", "SDXL/union-promax.safetensors": "SDXL 1.0",
          "NoobAI/noob-openpose.safetensors": "NoobAI", "SDXL/xinsir-openpose.safetensors": "SDXL 1.0"}
 base = lambda name: BASES.get(name, "")  # noqa: E731
+LLLITES = {"input": {"required": {"lllite_name": [["SDXL/union-promax.safetensors", "anima-lllite-depth-1.safetensors",
+                                                 "anima-lllite-inpainting-v1.safetensors", "anima-lllite-inpainting-v2.safetensors"]]}}}
 EVERYTHING = {kind: {} for block in reference_blocks.BLOCKS.values() for kind in block["packs"]} | {
-    "UltralyticsDetectorProvider": DETECTORS, "UpscaleModelLoader": UPSCALERS, "ControlNetLoader": CONTROLNETS}
+    "UltralyticsDetectorProvider": DETECTORS, "UpscaleModelLoader": UPSCALERS, "ControlNetLoader": CONTROLNETS,
+    "AnimaLLLiteApply_sdscripts": LLLITES}
 BUILT_IN = {"LoadImage": {}, "KSampler": {}}
 
 
@@ -144,9 +147,25 @@ class BlockTests(unittest.TestCase):
         with self.assertRaisesRegex(reference_blocks.BlockError, "needs image: the picture to follow"):
             reference_blocks.nodes_of("control_pose", EVERYTHING)
 
+    def test_on_an_anima_model_a_block_is_built_with_its_lllite(self):
+        depth = reference_blocks.build("control_depth", EVERYTHING, "ref.png", lambda: "Anima")
+        steer = depth["nodes"]["steer"]
+        self.assertEqual((steer["class_type"], steer["inputs"]["lllite_name"], steer["wire_to"]),
+                         ("AnimaLLLiteApply_sdscripts", "anima-lllite-depth-1.safetensors", "$sampler"))
+        self.assertEqual(set(depth["nodes"]), {"reference", "depth", "steer"}, "no ControlNet loader")
+        self.assertIn("Anima", depth["after"])
+        repaint = reference_blocks.build("inpaint_crop_stitch", EVERYTHING, "a.png", lambda: "Anima")["nodes"]
+        self.assertEqual((repaint["patch"]["inputs"]["lllite_name"], repaint["patch"]["inputs"]["model"], "wire_to" in repaint["soft"]),
+                         ("anima-lllite-inpainting-v2.safetensors", ["soft", 0], False), "the newest, after the soft mask")
+        self.assertEqual(reference_blocks.nodes_of("control_depth", EVERYTHING, "ref.png", lambda: "SDXL 1.0", base)["controlnet"]["inputs"]["control_net_name"],
+                         "SDXL/union-promax.safetensors", "other models: the ControlNet")
+        without = {key: value for key, value in EVERYTHING.items() if key != "AnimaLLLiteApply_sdscripts"}
+        with self.assertRaisesRegex(reference_blocks.BlockError, "needs ComfyUI-Anima-LLLite"):
+            reference_blocks.build("control_pose", without, "ref.png", lambda: "Anima")
+
     def test_every_link_names_a_node_of_its_block_or_a_role(self):
         for name, block in reference_blocks.BLOCKS.items():
-            for key, spec in block["nodes"].items():
+            for key, spec in [item for variant in [block, *(block.get("variants") or {}).values()] for item in variant["nodes"].items()]:
                 for value in spec["inputs"].values():
                     if isinstance(value, list):
                         with self.subTest(block=name, node=key):
