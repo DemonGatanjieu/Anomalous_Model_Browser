@@ -66,5 +66,7 @@
       "denoise": 0.7
     }
   },
-  "after": "The sampler repaints only the area, at denoise 0.7 so it keeps the picture's look (higher changes more). Then run_workflow."
+  "after": "The sampler repaints only the area, at denoise 0.7 so it keeps the picture's look (higher changes more). Then run_workflow.",
+  "models": [],
+  "tested": {}
 }

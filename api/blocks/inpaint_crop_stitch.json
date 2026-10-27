@@ -199,5 +199,25 @@
       },
       "after": "On this Anima model its repaint LLLite guides it too; the sampler now repaints only the cropped area, at denoise 0.75 (lower keeps more of the old). Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"), or it paints the whole subject there. Then run_workflow; the saved picture is the whole one, stitched."
     }
+  },
+  "models": [
+    "anima_lllite_inpainting"
+  ],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-27",
+    "runs": [
+      {
+        "model": "SDXL (Illustrious)",
+        "size": "832×1216",
+        "seconds": null
+      },
+      {
+        "model": "Anima",
+        "size": "1216×832",
+        "seconds": 130
+      }
+    ]
   }
 }

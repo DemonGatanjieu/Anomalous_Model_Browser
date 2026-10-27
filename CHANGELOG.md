@@ -23,6 +23,9 @@
   - 做法会按画布上的底模换搭法：画布上是 Anima 模型时，照着构图画、照着姿势画改用 Anima 专用的 LLLite 控制网，局部重绘·裁切缝合会加上 Anima 的重绘 LLLite。AI 照样只说用哪块。需要节点包 ComfyUI-Anima-LLLite 和 models/controlnet 里的 anima-lllite 模型。Anima 的 LLLite 比 SDXL 的控制网温和，提示词要和参考图说的一致（几个人、在干什么），AI 会被这样提醒。
   - 画布上有好几个采样器时，AI 要指明用哪一个，AMB 不乱猜。
 - AI 工作台右边多了**做法**面板：按"要做的事"分组列出所有做法，每块写着能干什么、从哪学来的。缺节点包或缺模型的变灰，写明缺什么，点缺的节点包会打开 ComfyUI-Manager 去搜它。每块有个开关：关掉的，AI 就看不到，硬要用也会被拒绝。AI 开工时只收到开着又能用的做法，其余的只附一行"装了什么还能用什么"。
+- 做法面板上每块写着怎么测过的：在哪张卡上（目前都是 RTX 4050 笔记本，6GB 显存）、多大的图、整次运行用了多久；参数也是按这张卡定的（比如放大只到 1.25 倍）。AI 用某块时也会收到这句，能提前告诉你大概要等多久。
+- AMB 维护一份做法用到的模型清单（api/block_models.json）：每个模型的下载链接（HuggingFace、Civitai、GitHub）、大小、SHA256、许可证和该放的文件夹。每块做法列出它推荐的模型，面板上已有的打勾（改过名的也认得出），缺的点一下就用 AMB 的下载器下载，下完核对哈希。把做法分享给别人时，对方也能照着这份清单拿到一模一样的文件。
+- 线稿上色在 Anima 模型上改用 Anima 的线稿 LLLite。
 - 每块做法现在是一个单独的数据文件（api/blocks/），里面有它的节点、要的节点包和模型、给 AI 的话、面板上的中英文说明。以后收集到新做法，加一个文件就行。
 - AI has ready-made ways of doing things (reference blocks): a few groups of nodes distilled from workflows that do one job well; the AI names one and Anomalous builds it on the canvas, spliced into your workflow, in one call instead of node by node. The AI gets their list, a line each, when it begins a task.
   - **Repaint, crop and stitch**: crops the marked area with a margin around it, repaints it at 1024 and stitches it back, the rest untouched. Anomalous sets the sampler's denoise to 0.75 and tells the AI to write the prompt for that area only ("a hand, five fingers"), or it paints the whole picture's subject (a whole person) into it. Needs ComfyUI-Inpaint-CropAndStitch.
@@ -45,6 +48,9 @@
   - A way is built for the canvas's model: on an Anima model, Follow a layout and Follow a pose use Anima's ControlNet-LLLite, and Repaint: crop and stitch adds Anima's repaint LLLite; the AI still only names the way. Needs ComfyUI-Anima-LLLite and anima-lllite models in models/controlnet. Anima's LLLite steers more gently than an SDXL ControlNet, so the prompt has to agree with the picture, and the AI is told so.
   - With several samplers on the canvas the AI has to say which one; nothing is guessed.
 - A **Ways** panel on the right of the AI workbench lists every way by job, what it does and where it came from. Ways missing a node pack or a model are greyed with what they lack; a missing pack opens ComfyUI-Manager searched for it. Each has a switch: one turned off is not offered to the AI, and building it is refused. When it begins, the AI gets only the ways that are on and can run here, with one line on what installing which pack would add.
+- The Ways panel says how each way was tried: the card (so far an RTX 4050 laptop, 6 GB), the size, a whole run's time; its settings are for that card (the upscale stops at 1.25×). The AI hears it too when it uses one, so it can say how long to wait.
+- Anomalous keeps a list of the models the ways use (api/block_models.json): each one's links (Hugging Face, Civitai, GitHub), size, SHA256, licence and folder. Each way names the models it recommends; the panel ticks the ones here (renamed ones too) and downloads a missing one with Anomalous's downloader in a click, checking its hash. Someone given a way gets the very same files from the list.
+- Colouring a line drawing uses Anima's lineart LLLite on an Anima model.
 - Each way is now a data file of its own (api/blocks/): its nodes, the packs and models it needs, what the AI is told and the panel's words in both languages, so a way collected later is one more file.
 
 ## v1.62.0 — unreleased

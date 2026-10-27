@@ -129,5 +129,22 @@
   },
   "extras": {
     "ColorMatch": "ComfyUI-KJNodes"
+  },
+  "models": [
+    "2x_animesharp_v4",
+    "4x_ultrasharp",
+    "4x_animesharp"
+  ],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-27",
+    "runs": [
+      {
+        "model": "SDXL (Illustrious)",
+        "size": "832×1216 → 1.25×",
+        "seconds": 43
+      }
+    ]
   }
 }

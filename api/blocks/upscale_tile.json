@@ -300,5 +300,28 @@
     }
   },
   "after": "run_workflow saves the picture as before and the 1.25× one beside it (prefix upscaled): a tile ControlNet holds it (strength 0.6, to 80% of the steps) while it is redrawn at denoise 0.5. Lower the denoise if it changes too much, raise the strength to hold it closer.",
-  "notes": "The source's tile values; denoise 0.5 because the tile holds the picture (the source went to 0.85 with a latent upscale)."
+  "notes": "The source's tile values; denoise 0.5 because the tile holds the picture (the source went to 0.85 with a latent upscale).",
+  "models": [
+    "union_promax_sdxl",
+    "noob_tile",
+    "anima_tile_repair",
+    "2x_animesharp_v4"
+  ],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-27",
+    "runs": [
+      {
+        "model": "SDXL (Illustrious)",
+        "size": "832×1216 → 1.25×",
+        "seconds": 77
+      },
+      {
+        "model": "Anima",
+        "size": "1216×832 → 1.25×",
+        "seconds": 710
+      }
+    ]
+  }
 }

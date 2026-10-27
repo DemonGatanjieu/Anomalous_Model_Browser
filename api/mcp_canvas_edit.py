@@ -251,6 +251,8 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
                                        "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")}, timeout=60))
     if block is not None and isinstance(answer, dict) and not answer.get("unwired") and answer.get("reaches_output") is not False:
         answer["next"] = built["after"]
+        if built["tested"]:
+            answer["tested"] = built["tested"]  # so the AI can say how long it will take
     return answer
 
 

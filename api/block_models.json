@@ -1,0 +1,267 @@
+{
+  "2x_animesharp_v4": {
+    "title": "2x-AnimeSharpV4 (RCAN)",
+    "file": "2x-AnimeSharpV4_RCAN.safetensors",
+    "folder": "upscale_models",
+    "subfolder": "",
+    "size": 31053198,
+    "sha256": "6470bb91d6622d6acdff81132c1a8615b961b919ce2b9a01ce993378500cfbe1",
+    "license": "CC-BY-NC-SA-4.0",
+    "sources": [
+      {
+        "site": "github",
+        "url": "https://github.com/Kim2091/Kim2091-Models/releases/download/2x-AnimeSharpV4/2x-AnimeSharpV4_RCAN.safetensors",
+        "page": "https://openmodeldb.info/models/2x-AnimeSharpV4"
+      }
+    ]
+  },
+  "4x_ultrasharp": {
+    "title": "4x-UltraSharp",
+    "file": "4x-UltraSharp.pth",
+    "folder": "upscale_models",
+    "subfolder": "",
+    "size": 66961958,
+    "sha256": "a5812231fc936b42af08a5edba784195495d303d5b3248c24489ef0c4021fe01",
+    "license": "CC-BY-NC-SA-4.0",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/Kim2091/UltraSharp/resolve/main/4x-UltraSharp.pth",
+        "page": "https://huggingface.co/Kim2091/UltraSharp"
+      },
+      {
+        "site": "civitai",
+        "url": "https://civitai.com/api/download/models/125843?fileId=90900",
+        "page": "https://civitai.com/models/116225"
+      }
+    ]
+  },
+  "4x_animesharp": {
+    "title": "4x-AnimeSharp",
+    "file": "4x-AnimeSharp.pth",
+    "folder": "upscale_models",
+    "subfolder": "",
+    "size": 67010245,
+    "sha256": "e7a7de2dafd7331c1992862bbbcd9e9712a9f9f8e6303f0aaa59b4341d359bab",
+    "license": "CC-BY-NC-SA-4.0",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/Kim2091/AnimeSharp/resolve/main/4x-AnimeSharp.pth",
+        "page": "https://huggingface.co/Kim2091/AnimeSharp"
+      }
+    ]
+  },
+  "face_yolov8m": {
+    "title": "face_yolov8m (face detector)",
+    "file": "face_yolov8m.pt",
+    "folder": "ultralytics_bbox",
+    "subfolder": "",
+    "size": 52026019,
+    "sha256": "717923c19b3f4bbf5250b728f1fa6b2cb72a33aed1d236ea9caf0e21ad943e5f",
+    "license": "Apache-2.0",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8m.pt",
+        "page": "https://huggingface.co/Bingsu/adetailer"
+      }
+    ]
+  },
+  "hand_yolov8s": {
+    "title": "hand_yolov8s (hand detector)",
+    "file": "hand_yolov8s.pt",
+    "folder": "ultralytics_bbox",
+    "subfolder": "",
+    "size": 22507643,
+    "sha256": "70b540063fbc385736d8258970744a4afbc4cbf7932134bae3b24cdadeadec06",
+    "license": "Apache-2.0",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/Bingsu/adetailer/resolve/main/hand_yolov8s.pt",
+        "page": "https://huggingface.co/Bingsu/adetailer"
+      }
+    ]
+  },
+  "union_promax_sdxl": {
+    "title": "xinsir ControlNet Union ProMax (SDXL)",
+    "file": "xinsir-controlnet-union-sdxl-promax.safetensors",
+    "folder": "controlnet",
+    "subfolder": "SDXL_1.0",
+    "size": 2513342408,
+    "sha256": "9fae2e50cb431bfcbe05822b59ec2228df545ef27f711dea8949e9f4ed9f7cdc",
+    "license": "Apache-2.0",
+    "base": "SDXL 1.0",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/xinsir/controlnet-union-sdxl-1.0/resolve/main/diffusion_pytorch_model_promax.safetensors",
+        "page": "https://huggingface.co/xinsir/controlnet-union-sdxl-1.0"
+      },
+      {
+        "site": "civitai",
+        "url": "https://civitai.com/api/download/models/655836?fileId=570909",
+        "page": "https://civitai.com/models/136070"
+      }
+    ]
+  },
+  "noob_tile": {
+    "title": "NoobAI XL tile ControlNet (Eugeoter)",
+    "file": "noob-sdxl-controlnet-tile.fp16.safetensors",
+    "folder": "controlnet",
+    "subfolder": "NoobAI",
+    "size": 2502139136,
+    "sha256": "d6d676f29153357ac8d57727e35b8edc090aa4de57e861b878872ff45c432615",
+    "license": "see the model page",
+    "base": "NoobAI",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/Eugeoter/noob-sdxl-controlnet-tile/resolve/main/diffusion_pytorch_model.fp16.safetensors",
+        "page": "https://huggingface.co/Eugeoter/noob-sdxl-controlnet-tile"
+      },
+      {
+        "site": "civitai",
+        "url": "https://civitai.com/api/download/models/1290048?fileId=1194650",
+        "page": "https://civitai.com/models/136070"
+      }
+    ]
+  },
+  "xinsir_depth_sdxl": {
+    "title": "xinsir ControlNet depth (SDXL)",
+    "file": "controlnetxlCNXL_xinsirDepth.safetensors",
+    "folder": "controlnet",
+    "subfolder": "SDXL_1.0",
+    "size": 2502139104,
+    "sha256": "ea3770af4c33ea8ba8dccc0106ec5d5c5c6e504eb382119a3ccac3c9d973d344",
+    "license": "Apache-2.0",
+    "base": "SDXL 1.0",
+    "sources": [
+      {
+        "site": "civitai",
+        "url": "https://civitai.com/api/download/models/657836?fileId=572833",
+        "page": "https://civitai.com/models/136070"
+      }
+    ]
+  },
+  "noob_openpose": {
+    "title": "NoobAI XL ControlNet openpose",
+    "file": "noobaiXLControlnet_openposeModel.safetensors",
+    "folder": "controlnet",
+    "subfolder": "NoobAI",
+    "size": 2502140008,
+    "sha256": "918cfc4d7def165ea7a06bee10841fe525332515f8a0486c5cb2a171ec40b873",
+    "license": "see the model page",
+    "base": "NoobAI",
+    "sources": [
+      {
+        "site": "civitai",
+        "url": "https://civitai.com/api/download/models/1077649?fileId=982755",
+        "page": "https://civitai.com/models/962537"
+      }
+    ]
+  },
+  "thibauld_openpose_sdxl": {
+    "title": "thibauld openpose LoRA ControlNet (SDXL)",
+    "file": "controlnetxlCNXL_thibauldOpenposeLora.safetensors",
+    "folder": "controlnet",
+    "subfolder": "SDXL_1.0",
+    "size": 774423024,
+    "sha256": "8afa079285bf9384eaf8f6322884cb4f24bbe405da490f91f5540d3bff585e75",
+    "license": "see the model page",
+    "base": "SDXL 1.0",
+    "sources": [
+      {
+        "site": "civitai",
+        "url": "https://civitai.com/api/download/models/255155?fileId=197900",
+        "page": "https://civitai.com/models/136070"
+      }
+    ]
+  },
+  "anima_lllite_depth": {
+    "title": "anima-lllite-depth-1",
+    "file": "anima-lllite-depth-1.safetensors",
+    "folder": "controlnet",
+    "subfolder": "",
+    "size": 7864128,
+    "sha256": "81357e51cd59874b4fbdda1eb3117aa73eafe36cc7efb9cf80a152d6bc8d0602",
+    "license": "CircleStone Labs Non-Commercial License v1.0",
+    "base": "Anima",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/kohya-ss/Anima-LLLite/resolve/main/anima-lllite-depth-1.safetensors",
+        "page": "https://huggingface.co/kohya-ss/Anima-LLLite"
+      }
+    ]
+  },
+  "anima_lllite_pose": {
+    "title": "anima-lllite-pose-1",
+    "file": "anima-lllite-pose-1.safetensors",
+    "folder": "controlnet",
+    "subfolder": "",
+    "size": 23310040,
+    "sha256": "ddb543be5e74ce8ca79ae45807aa0c1328a4888e00706727c6fd7100dde7c864",
+    "license": "CircleStone Labs Non-Commercial License v1.0",
+    "base": "Anima",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/kohya-ss/Anima-LLLite/resolve/main/anima-lllite-pose-1.safetensors",
+        "page": "https://huggingface.co/kohya-ss/Anima-LLLite"
+      }
+    ]
+  },
+  "anima_lllite_inpainting": {
+    "title": "anima-lllite-inpainting-v2",
+    "file": "anima-lllite-inpainting-v2.safetensors",
+    "folder": "controlnet",
+    "subfolder": "",
+    "size": 65772872,
+    "sha256": "5242e677d2be34ee70ca7c97c3b14ff5ee49838c03fc1e60ac4852a180db6ef5",
+    "license": "CircleStone Labs Non-Commercial License v1.0",
+    "base": "Anima",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/kohya-ss/Anima-LLLite/resolve/main/anima-lllite-inpainting-v2.safetensors",
+        "page": "https://huggingface.co/kohya-ss/Anima-LLLite"
+      }
+    ]
+  },
+  "anima_lllite_lineart": {
+    "title": "anima-lllite-lineart-1",
+    "file": "anima-lllite-lineart-1.safetensors",
+    "folder": "controlnet",
+    "subfolder": "",
+    "size": 7787888,
+    "sha256": "1abfde93493445390632788339627c37c69c7792aef1e8104cf15ea5f2d379e9",
+    "license": "CircleStone Labs Non-Commercial License v1.0",
+    "base": "Anima",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/kohya-ss/Anima-LLLite/resolve/main/anima-lllite-lineart-1.safetensors",
+        "page": "https://huggingface.co/kohya-ss/Anima-LLLite"
+      }
+    ]
+  },
+  "anima_tile_repair": {
+    "title": "Anima Tile & Repair ControlNet-LLLite v2",
+    "file": "animaTileRepair_v20.safetensors",
+    "folder": "controlnet",
+    "subfolder": "",
+    "size": 94037744,
+    "sha256": "be5a9ead6527329237a66a0eb234ccea4cddb140c1d1e1b7d0776e43f5ff1330",
+    "license": "Civitai: credit not needed, derivatives allowed",
+    "base": "Anima",
+    "sources": [
+      {
+        "site": "civitai",
+        "url": "https://civitai.com/api/download/models/3068951?fileId=2947687",
+        "page": "https://civitai.com/models/2708551"
+      }
+    ]
+  }
+}

@@ -3,13 +3,17 @@
  * the AI (api/reference_blocks.py, a data file a block), by job: what each does and where it came
  * from, in the user's language; greyed with what it lacks when a node pack or a model is missing
  * (a pack opens ComfyUI-Manager's list searched for it); and a switch the user turns a block off
- * with, so the AI is not offered it. GET /anomalous/ai_blocks, POST {name, on}. Drawn when shown,
+ * with, so the AI is not offered it; how it was tried (the card, a run's time) and the models it recommends
+ * (api/block_models.json), each here or a button downloading it, link and SHA256 from the list.
+ * GET /anomalous/ai_blocks, POST {name, on}. Drawn when shown,
  * the list read again each time the view is opened.
  */
 
 import { resolveLocale, translate as t } from './locales.js';
 import { sideHead } from './ui_ai_side.js';
 import { openManager } from './ui_pack_usage.js';
+import { downloadFrom } from './model_download.js';
+import { formatSize } from './ui_model_download.js';
 
 let reading = null; // the list being read
 let shown = null; // { blocks, jobs } last read, or { error }
@@ -48,6 +52,44 @@ function lacks(block, owner) {
     return box;
 }
 
+/** How the block was tried: the card, and a whole run's time for each model and size. */
+function tested(block) {
+    const record = block.tested || {};
+    const runs = (record.runs || []).filter(run => run.seconds).map(run => t('aiBlocksRun', run));
+    return runs.length ? el('div', 'anomalous-ai-block-source', t('aiBlocksTested', { gpu: record.gpu, vram: record.vram_gb, runs: runs.join(' · ') })) : null;
+}
+
+/** The models the block recommends: each one here, or a button that downloads it (its link and SHA256 from the list). */
+function recommended(block, owner) {
+    if (!block.recommended?.length) return null;
+    const box = el('div', 'anomalous-ai-block-models');
+    box.append(el('span', 'anomalous-ai-block-source', t('aiBlocksModels')));
+    for (const model of block.recommended) {
+        const about = t('aiBlocksModelAbout', { license: model.license, folder: [model.folder, model.subfolder].filter(Boolean).join('/'), base: model.base || '—' });
+        if (model.installed) {
+            const here = el('span', 'anomalous-ai-block-model is-here', `✓ ${model.title}`);
+            here.title = about;
+            box.append(here);
+            continue;
+        }
+        const get = el('button', 'anomalous-ai-block-model', t('aiBlocksDownload', { name: model.title, size: formatSize(model.size) }));
+        get.type = 'button';
+        get.title = about;
+        get.onclick = async () => {
+            get.disabled = true;
+            try {
+                await downloadFrom(owner, { url: model.sources[0].url, hash: model.sha256, type: model.folder, folder: model.subfolder, name: model.file });
+                get.textContent = t('aiBlocksDownloading', { name: model.title });
+            } catch (error) {
+                get.disabled = false;
+                get.textContent = t('aiBlocksDownloadFailed', { name: model.title, error: error.message });
+            }
+        };
+        box.append(get);
+    }
+    return box;
+}
+
 function blockRow(block, owner, redraw) {
     const row = el('div', `anomalous-ai-block${block.usable ? '' : ' is-missing'}${block.on ? '' : ' is-off'}`);
     const body = el('div', 'anomalous-ai-block-body');
@@ -58,6 +100,7 @@ function blockRow(block, owner, redraw) {
     if (!block.usable) body.append(lacks(block, owner));
     if (block.better_with?.length) body.append(el('div', 'anomalous-ai-block-source', t('aiBlocksBetterWith', { names: block.better_with.join(', ') })));
     if (words(block.source)) body.append(el('div', 'anomalous-ai-block-source', t('aiBlocksSource', { source: words(block.source) })));
+    body.append(...[tested(block), recommended(block, owner)].filter(Boolean));
     const toggle = el('input', 'anomalous-ai-block-switch');
     toggle.type = 'checkbox';
     toggle.setAttribute('role', 'switch');

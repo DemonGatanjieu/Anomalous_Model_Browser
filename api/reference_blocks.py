@@ -21,6 +21,8 @@ import re
 import threading
 
 FOLDER = os.path.join(os.path.dirname(__file__), "blocks")
+# The models the ways recommend: where each comes from (links), its size, SHA256 and licence, the folder it goes in.
+MODELS_FILE = os.path.join(os.path.dirname(__file__), "block_models.json")
 TAKES = {"inpaint": "the picture with the area as its alpha (inpaint_image from propose_repaint_area or ask_user's answer)",
          "reference": "the picture to follow: one the user handed you (its path, as their message gives it) or one in the input folder",
          "picture": "the picture to work on: one the user handed you (its path, as their message gives it) or one in the input folder"}
@@ -52,6 +54,43 @@ def _load():
 
 
 BLOCKS = _load()
+with open(MODELS_FILE, encoding="utf-8") as _source:
+    MODELS = json.load(_source)
+
+
+def _installed(model):
+    """Whether recommended `model` is here: a file of its name or of its very size in its folder (a renamed copy)."""
+    try:
+        import folder_paths
+        names = folder_paths.get_filename_list(model["folder"])
+    except Exception:  # noqa: BLE001 - no ComfyUI (tests) or no such folder type
+        return False
+    if any(os.path.basename(name.replace("\\", "/")) == model["file"] for name in names):
+        return True
+    for name in names:
+        path = folder_paths.get_full_path(model["folder"], name)
+        try:
+            if path and os.path.getsize(path) == model["size"]:
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def recommended(block):
+    """Block's recommended models as the panel shows them, each with whether it is here."""
+    return [{"id": key, **{field: MODELS[key][field] for field in ("title", "file", "folder", "subfolder", "size", "sha256", "license", "sources")},
+             "base": MODELS[key].get("base", ""), "installed": _installed(MODELS[key])} for key in block.get("models") or [] if key in MODELS]
+
+
+def tested_words(block):
+    """How the block was tried, in a line for the AI ("about 77 s for SDXL at 832×1216 on a 6 GB card"), or ""."""
+    tested = block.get("tested") or {}
+    runs = [run for run in tested.get("runs") or [] if run.get("seconds")]
+    if not runs:
+        return ""
+    each = "; ".join(f"about {run['seconds']} s for {run['model']} at {run['size']}" for run in runs)
+    return f"Tried on a {tested.get('vram_gb')} GB card ({tested.get('gpu')}), a whole run with the picture made: {each}."
 
 
 def _off_path():
@@ -109,7 +148,7 @@ def status(info):
         extras = sorted({pack for kind, pack in (block.get("extras") or {}).items() if kind not in info})
         out.append({"name": name, "job": block["job"], "title": block["title"], "about": block["about"],
                     "source": block.get("source") or {}, "packs": [{"name": pack, "installed": pack not in lacking} for pack in packs],
-                    "better_with": extras,
+                    "better_with": extras, "recommended": recommended(block), "tested": block.get("tested") or {},
                     "models": models, "usable": not lacking and not models, "on": name not in off,
                     **({"instead": block["instead"]} if block.get("instead") else {})})
     return out
@@ -283,4 +322,4 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "")
     built = {key: {**{field: value for field, value in spec.items() if field != "optional"},
                    "inputs": {input: fills.get(value, value) if isinstance(value, str) else link(value) if isinstance(value, list) else value
                               for input, value in spec["inputs"].items()}} for key, spec in nodes.items()}
-    return {"nodes": built, "roles": block.get("roles") or {}, "after": block["after"]}
+    return {"nodes": built, "roles": block.get("roles") or {}, "after": block["after"], "tested": tested_words(BLOCKS[name])}

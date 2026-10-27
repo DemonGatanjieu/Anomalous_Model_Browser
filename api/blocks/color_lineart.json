@@ -79,5 +79,76 @@
     }
   },
   "after": "Set the picture's size to the drawing's shape (get_image_info on it; the empty latent's width and height), write the colours and style in the prompt (what is drawn, hair, clothes, background), then run_workflow. Its lines (white on black) are among the run's previews: if they are black on white, the drawing was light lines on dark: remove_nodes the ImageInvert and wire the picture straight in.",
-  "notes": "A drawing is black lines on white; a lineart ControlNet reads white lines on black, hence ImageInvert."
+  "notes": "A drawing is black lines on white; a lineart ControlNet reads white lines on black, hence ImageInvert.",
+  "models": [
+    "union_promax_sdxl",
+    "anima_lllite_lineart"
+  ],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-27",
+    "runs": [
+      {
+        "model": "SDXL (Illustrious)",
+        "size": "1216×832",
+        "seconds": 34
+      }
+    ]
+  },
+  "variants": {
+    "anima": {
+      "packs": {
+        "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
+      },
+      "control": null,
+      "lllite": "lineart",
+      "nodes": {
+        "reference": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "$image"
+          }
+        },
+        "lines": {
+          "class_type": "ImageInvert",
+          "inputs": {
+            "image": [
+              "reference",
+              0
+            ]
+          }
+        },
+        "look": {
+          "class_type": "PreviewImage",
+          "inputs": {
+            "images": [
+              "lines",
+              0
+            ]
+          }
+        },
+        "steer": {
+          "class_type": "AnimaLLLiteApply_sdscripts",
+          "inputs": {
+            "model": [
+              "$sampler.model",
+              "*"
+            ],
+            "lllite_name": "$lllite",
+            "image": [
+              "lines",
+              0
+            ],
+            "strength": 1.0,
+            "start_percent": 0.0,
+            "end_percent": 1.0,
+            "preserve_wrapper": true
+          },
+          "wire_to": "$sampler"
+        }
+      },
+      "after": "On this Anima model Anima's lineart LLLite steers it (strength 1.0). Set the picture's size to the drawing's shape (get_image_info on it; the empty latent's width and height), write the colours and style in the prompt (what is drawn, hair, clothes, background), then run_workflow. Its lines (white on black) are among the run's previews: if they are black on white, the drawing was light lines on dark: remove_nodes the ImageInvert and wire the picture straight in."
+    }
+  }
 }

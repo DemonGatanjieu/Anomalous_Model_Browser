@@ -140,5 +140,22 @@
       },
       "after": "On this Anima model an Anima ControlNet-LLLite steers it, more gently than an SDXL ControlNet: say in the prompt what the picture shows (how many people, what they do), or the prompt wins. Strength 1.0 for all the steps; up to 1.5 holds it closer. run_workflow. Its depth map is among the run's previews: if it is empty or wrong (a crowded or very stylised picture), the picture is too hard to read."
     }
+  },
+  "models": [
+    "xinsir_depth_sdxl",
+    "union_promax_sdxl",
+    "anima_lllite_depth"
+  ],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-27",
+    "runs": [
+      {
+        "model": "Anima",
+        "size": "1216×832",
+        "seconds": 115
+      }
+    ]
   }
 }

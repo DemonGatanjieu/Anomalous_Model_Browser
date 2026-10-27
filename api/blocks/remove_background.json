@@ -46,5 +46,18 @@
       }
     }
   },
-  "after": "run_workflow saves it with the background cut away (transparent PNG, prefix nobg). On a canvas that makes pictures those are made too: to cut this one out alone, add the block on a blank tab (new_workflow)."
+  "after": "run_workflow saves it with the background cut away (transparent PNG, prefix nobg). On a canvas that makes pictures those are made too: to cut this one out alone, add the block on a blank tab (new_workflow).",
+  "models": [],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-27",
+    "runs": [
+      {
+        "model": "—",
+        "size": "1280×832",
+        "seconds": 8
+      }
+    ]
+  }
 }

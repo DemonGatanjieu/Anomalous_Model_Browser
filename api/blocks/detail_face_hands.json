@@ -116,5 +116,10 @@
       }
     }
   },
-  "after": "run_workflow saves the picture as before and the detailed one beside it (prefix detailed)."
+  "after": "run_workflow saves the picture as before and the detailed one beside it (prefix detailed).",
+  "models": [
+    "face_yolov8m",
+    "hand_yolov8s"
+  ],
+  "tested": {}
 }

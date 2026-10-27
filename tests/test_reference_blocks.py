@@ -180,6 +180,31 @@ class BlockTests(unittest.TestCase):
             "animaTileRepair_v20.safetensors", "anima-lllite-depth-1.safetensors"]]}}}}, None, lambda: "Anima")
         self.assertEqual((anima["hold"]["inputs"]["lllite_name"], anima["redraw"]["inputs"]["model"]), ("animaTileRepair_v20.safetensors", ["hold", 0]))
 
+    def test_the_models_list_says_where_each_comes_from_and_how_to_check_it(self):
+        from api.download_sources import allowed_download_url
+        for key, model in reference_blocks.MODELS.items():
+            with self.subTest(model=key):
+                self.assertRegex(model["sha256"], r"^[0-9a-f]{64}$")
+                self.assertGreater(model["size"], 0)
+                self.assertTrue(model["license"] and model["file"] and model["folder"])
+                self.assertTrue(model["sources"] and all(allowed_download_url(source["url"]) for source in model["sources"]),
+                                "Anomalous's downloader takes each link")
+        for name, block in reference_blocks.BLOCKS.items():
+            with self.subTest(block=name):
+                self.assertTrue(set(block.get("models") or []) <= set(reference_blocks.MODELS), "recommends only listed models")
+
+    def test_the_panel_and_the_ai_hear_how_a_block_was_tried(self):
+        with mock.patch.object(reference_blocks, "_installed", side_effect=lambda model: model["file"].startswith("2x")):
+            shown = {item["name"]: item for item in reference_blocks.status(EVERYTHING)}
+        upscale = shown["upscale"]
+        self.assertEqual([(item["id"], item["installed"]) for item in upscale["recommended"]][:2],
+                         [("2x_animesharp_v4", True), ("4x_ultrasharp", False)])
+        self.assertEqual(upscale["tested"]["vram_gb"], 6)
+        words = reference_blocks.build("upscale_tile", EVERYTHING, None, lambda: "")["tested"]
+        self.assertIn("6 GB card", words)
+        self.assertIn("about 710 s for Anima", words)
+        self.assertEqual(reference_blocks.build("inpaint_basic", EVERYTHING, "a.png")["tested"], "", "not tried: nothing claimed")
+
     def test_every_link_names_a_node_of_its_block_or_a_role(self):
         for name, block in reference_blocks.BLOCKS.items():
             for key, spec in [item for variant in [block, *(block.get("variants") or {}).values()] for item in variant["nodes"].items()]:

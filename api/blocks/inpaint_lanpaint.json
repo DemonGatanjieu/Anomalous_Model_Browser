@@ -75,5 +75,18 @@
       }
     }
   },
-  "after": "The KSampler is now LanPaint's (same steps, cfg and seed): it samples the whole picture and changes only the area, blending it in. Keep the prompt about the whole picture and add what the area should show (set_prompt mode append: \"a hand, five fingers\"). Then run_workflow; it takes a few times longer than before."
+  "after": "The KSampler is now LanPaint's (same steps, cfg and seed): it samples the whole picture and changes only the area, blending it in. Keep the prompt about the whole picture and add what the area should show (set_prompt mode append: \"a hand, five fingers\"). Then run_workflow; it takes a few times longer than before.",
+  "models": [],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-27",
+    "runs": [
+      {
+        "model": "SDXL (Illustrious)",
+        "size": "832×1216",
+        "seconds": 82
+      }
+    ]
+  }
 }
