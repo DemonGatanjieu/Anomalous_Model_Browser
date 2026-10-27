@@ -152,7 +152,7 @@ class BlockTests(unittest.TestCase):
         steer = depth["nodes"]["steer"]
         self.assertEqual((steer["class_type"], steer["inputs"]["lllite_name"], steer["wire_to"]),
                          ("AnimaLLLiteApply_sdscripts", "anima-lllite-depth-1.safetensors", "$sampler"))
-        self.assertEqual(set(depth["nodes"]), {"reference", "depth", "steer"}, "no ControlNet loader")
+        self.assertEqual(set(depth["nodes"]), {"reference", "depth", "steer", "look"}, "no ControlNet loader; the map left to look at")
         self.assertIn("Anima", depth["after"])
         repaint = reference_blocks.build("inpaint_crop_stitch", EVERYTHING, "a.png", lambda: "Anima")["nodes"]
         self.assertEqual((repaint["patch"]["inputs"]["lllite_name"], repaint["patch"]["inputs"]["model"], "wire_to" in repaint["soft"]),
