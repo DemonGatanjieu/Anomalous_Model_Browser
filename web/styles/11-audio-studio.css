@@ -1255,6 +1255,17 @@
     font-size: 11px;
 }
 
+/* Delete character: orange, so it is found and not pressed by accident. */
+.anomalous-audio-tool-btn.is-danger {
+    color: var(--amb-warn);
+    border-color: color-mix(in srgb, var(--amb-warn) 45%, transparent);
+}
+
+.anomalous-audio-tool-btn.is-danger:hover {
+    color: var(--amb-warn-text);
+    background: color-mix(in srgb, var(--amb-warn) 14%, transparent);
+}
+
 /* ---------- GPT-SoVITS editors (pronunciation, tuning) ---------- */
 .anomalous-tts-editor {
     width: 680px;
