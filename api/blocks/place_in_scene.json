@@ -1,5 +1,6 @@
 {
-  "job": "repaint",
+  "job": "new_background",
+  "want": "given",
   "rank": 5,
   "short": "given place",
   "title": {

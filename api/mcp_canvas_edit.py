@@ -223,11 +223,16 @@ def _base_of(name):
     return model_advice.base_of(path) if path else ""
 
 
-def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None):
+def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None, use=None, want=None):
     if not isinstance(replace, bool):
         raise ToolError("replace must be true or false.")
-    if (nodes is None) == (block is None):
-        raise ToolError("Give either nodes (a group in API form) or block (a ready-made one from begin_task's blocks), one of the two.")
+    if [nodes is not None, block is not None, use is not None].count(True) != 1:
+        raise ToolError("Give one of: use (from begin_task's blocks, with want), block (a ready-made one by name) or nodes (a group in API form).")
+    if use is not None:
+        try:  # the use's best block this ComfyUI can run
+            block = reference_blocks.pick(str(use), None if want is None else str(want), object_info(ctx), bool(scene))
+        except reference_blocks.BlockError as error:
+            raise ToolError(str(error))
     if block is not None:
         if reference_blocks.BLOCKS.get(str(block), {}).get("takes") in ("reference", "picture") and image:
             image = ai_pictures.to_input(image)  # the picture to follow or work on, where LoadImage reads
@@ -324,9 +329,11 @@ CANVAS_TOOLS = dict([
             "\"VAEEncode\", \"inputs\": {\"pixels\": [\"#12\", 0], \"vae\": [\"#4\", \"VAE\"]}}, \"b\": {..., \"inputs\": "
             "{\"samples\": [\"a\", 0]}, \"wire_to\": 15}}. A link names a key of the group or a canvas node \"#id\", and "
             "an output slot or name; wire_to as in add_node. Checked first; one Ctrl+Z step; the answer maps keys "
-            "to node ids. Or block: a ready-made one (begin_task lists them), spliced into the canvas's sampler by "
-            "itself; near_node_id picks the sampler when there are several.",
-            add_nodes, {"nodes": {"type": "object"}, "block": {"type": "string", "enum": list(reference_blocks.BLOCKS)},
+            "to node ids. Or use (and want): a ready-made block for that use (begin_task lists them), the best this "
+            "ComfyUI can run, spliced into the canvas's sampler by itself; near_node_id picks the sampler when there are several.",
+            add_nodes, {"nodes": {"type": "object"}, "use": {"type": "string", "enum": list(reference_blocks.JOBS)},
+                        "want": {"type": "string", "description": "Which kind of the use, as begin_task's blocks name it (best, 2x, pose…)."},
+                        "block": {"type": "string", "enum": list(reference_blocks.BLOCKS)},
                         "image": {"type": "string", "description": "A repaint block's inpaint_image; a control block's picture to follow."},
                         "scene": {"type": "string", "description": "A block's second picture, where it puts the first (place_in_scene)."},
                         "near_node_id": _NODE_ID, "replace": {"type": "boolean"}}),

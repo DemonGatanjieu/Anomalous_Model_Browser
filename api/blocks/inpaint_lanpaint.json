@@ -1,5 +1,6 @@
 {
   "job": "repaint",
+  "want": "best",
   "rank": 2,
   "short": "best blend, slow",
   "title": {

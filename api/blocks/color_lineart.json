@@ -1,5 +1,6 @@
 {
   "job": "follow",
+  "want": "lines",
   "rank": 4,
   "short": "colour lines",
   "title": {

@@ -189,7 +189,7 @@ covered by the `styles.css` manifest.
   out as one block), conflict/cycle checks and rollback on application failure (`tests/canvas_wiring.mjs`).
   `api/reference_blocks.py` holds the ready-made blocks distilled from workflows that do one
   thing well (repaints, upscales, ControlNets, face and hand detailing): begin_task hands the
-  AI their directory by job, a few words a block, `add_nodes(block=…)` builds one, its nodes and
+  AI their directory, a line a use (a block's "job"; "want" words ask for its others), `add_nodes(use=…, want=…)` has `pick` choose the best block this ComfyUI can run and builds it (or `block=` by name), its nodes and
   the settings that workflow used, a block whose pack is missing naming the pack and a stand-in;
   an upscale block takes an upscale model this ComfyUI has, a control block a ControlNet whose
   base model fits the canvas's model (the page's `block_model`, `model_advice.py`) and the

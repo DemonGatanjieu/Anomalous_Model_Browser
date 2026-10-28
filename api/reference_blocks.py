@@ -36,10 +36,11 @@ UNION_TYPES = {"pose": "openpose", "depth": "depth", "tile": "tile", "lineart": 
 # A ControlNet whose base model is not known yet (not scanned): its folder or name says it, as Anomalous sorts them.
 NAMED_BASES = (("noob", "NoobAI"), ("illustrious", "Illustrious"), ("pony", "Pony"), ("sd_1.5", "SD 1.5"), ("sd15", "SD 1.5"),
                ("sdxl", "SDXL 1.0"), ("xl", "SDXL 1.0"))
-# The directory's headings, what an AI wants done; under each, its blocks with a few words apiece.
-JOBS = {"repaint": "Repaint an area", "upscale": "Upscale", "follow": "Follow a given picture",
-        "detail": "Fix faces and hands", "process": "Picture work"}
-DIRECTORY_CHARS = 625  # what begin_task carries of it (its whole text stays under 4000): past this, fewer words, however many are collected
+# The uses an AI asks for (a block's "job"): add_nodes(use=…, want=…) and Anomalous picks the block,
+# the best of that use this ComfyUI can run; a block's "want" is the word that asks for it instead.
+JOBS = {"repaint": "Repaint an area", "new_background": "New background, the character kept", "upscale": "Upscale",
+        "refine": "Redraw with another model", "follow": "Follow a given picture", "detail": "Fix faces and hands",
+        "process": "Picture work"}
 _lock = threading.Lock()
 
 
@@ -165,34 +166,47 @@ class MissingModel(BlockError):
 
 
 def directory(info=None):
-    """{job: "block (a few words), …"} for the AI, short enough to stay in the chat: the blocks the
-    user has on that this ComfyUI can run (with its node list `info`; without it, all of them), and a
-    line for the rest, what they need, so the AI can say what to install."""
+    """{use: "what it does (want: …)"} for the AI, a line a use, short enough to stay in the chat: the
+    uses this ComfyUI can do now (with its node list `info`; without it, all), each with the words that
+    ask for another of its blocks, and a line for the rest by what they need, so the AI can say what to install."""
     off = turned_off()
-    out = {heading: [] for heading in JOBS.values()}
-    later = []
+    ready, later = {}, {}
     for name, block in BLOCKS.items():
         if name in off:
             continue
         lacking = sorted({pack for kind, pack in block["packs"].items() if kind not in info}) if info is not None else []
         models = _missing_models(block, info) if info is not None and not lacking else []
+        label = f"{block['job']} {block['want']}" if block.get("want") else block["job"]
         if lacking or models:
-            later.append((name, ', '.join(lacking) or ', '.join(item['kind'] + ' model' for item in models)))
+            later.setdefault(', '.join(lacking) or ', '.join(item['kind'] + ' model' for item in models), []).append(label)
         else:
-            out.setdefault(JOBS.get(block["job"], "Other"), []).append((name, block["short"]))
+            ready.setdefault(block["job"], []).append(block.get("want"))
+    out = {}
+    for use, heading in JOBS.items():
+        if use in ready:
+            wants = [want for want in ready[use] if want]
+            out[use] = heading + (f" (want: {', '.join(wants)})" if wants else "")
+    if later:
+        out["Not here yet, needs"] = "; ".join(f"{need}: {', '.join(labels)}" for need, labels in later.items())
+    return out
 
-    def lines(words, needs):  # "name (a few words)" while it fits; then the words go, what to install stays, by pack
-        listed = {heading: ", ".join(f"{name} ({why})" if words else name for name, why in names) for heading, names in out.items() if names}
-        by_need = {}
-        for name, why in later:
-            by_need.setdefault(why, []).append(name)
-        rest = ", ".join(f"{name} ({why})" for name, why in later) if words else             "; ".join(f"{why}: {', '.join(names)}" for why, names in by_need.items()) if needs else ", ".join(name for name, _ in later)
-        return {**listed, **({"Not here yet, needs": rest} if later else {})}
-    for words, needs in ((True, True), (False, True)):
-        found = lines(words, needs)
-        if len(json.dumps(found, ensure_ascii=False)) <= DIRECTORY_CHARS:
-            return found
-    return lines(False, False)
+
+def pick(use, want=None, info=None, scene=False):
+    """The block for `use` (and `want`): the first by rank this ComfyUI can run, else the first, whose
+    build then says what it needs. Given a second picture (`scene`), the use's block that takes one."""
+    names = [name for name, block in BLOCKS.items() if block["job"] == use]
+    if not names:
+        raise BlockError(f"No use {use!r}; there are: {', '.join(JOBS)}.")
+    if want is None and scene:
+        want = next((BLOCKS[name].get("want") for name in names if BLOCKS[name].get("scene")), None)
+    chosen = [name for name in names if BLOCKS[name].get("want") == want]
+    if not chosen:
+        wants = [BLOCKS[name]["want"] for name in names if BLOCKS[name].get("want")]
+        raise BlockError(f"{use} takes want: {', '.join(wants)}" + ("" if len(wants) == len(names) else ", or none") + ".")
+    off = turned_off()
+    runs = [name for name in chosen if name not in off and (info is None or (
+        all(kind in info for kind in BLOCKS[name]["packs"]) and not _missing_models(BLOCKS[name], info)))]
+    return (runs or chosen)[0]
 
 
 def _choices(info, kind, name):

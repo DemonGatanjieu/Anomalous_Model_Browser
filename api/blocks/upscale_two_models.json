@@ -1,5 +1,6 @@
 {
   "job": "upscale",
+  "want": "steady",
   "rank": 3,
   "short": "second model",
   "title": {

@@ -1,5 +1,6 @@
 {
   "job": "process",
+  "want": "cut",
   "rank": 1,
   "short": "cut-out",
   "title": {

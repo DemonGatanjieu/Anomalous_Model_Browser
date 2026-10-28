@@ -1,5 +1,6 @@
 {
   "job": "upscale",
+  "want": "2x",
   "rank": 4,
   "short": "2×, in tiles",
   "title": {

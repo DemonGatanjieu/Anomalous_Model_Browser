@@ -58,7 +58,7 @@ def _blocks(ctx):
         info = object_info(ctx) if ctx.get("base_url") else None
     except ToolError:
         info = None
-    return {"note": "add_nodes(block=…) builds one, wired in; prefer it.",
+    return {"note": "add_nodes(use=…, want=…) builds the best one this ComfyUI can run, wired in; prefer it.",
             **reference_blocks.directory(info)}
 
 

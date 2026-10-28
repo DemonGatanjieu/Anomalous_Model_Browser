@@ -1,5 +1,6 @@
 {
   "job": "upscale",
+  "want": "detail",
   "rank": 2,
   "short": "tile-held",
   "title": {

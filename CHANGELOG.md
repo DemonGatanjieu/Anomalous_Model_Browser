@@ -2,8 +2,8 @@
 
 ## v1.63.0 — unreleased
 
-- 做法多了以后，开新任务时交给 AI 的做法目录会自动变短：先只给名字，没装的节点包照样按包列出（"LanPaint: inpaint_lanpaint"），AI 还能告诉你该装什么。以后再加做法也不会把说明撑爆。
-- With more ways, the directory handed to the AI at a new task shortens by itself: names alone first, the missing ones still listed by pack ("LanPaint: inpaint_lanpaint") so the AI can say what to install. More ways no longer overflow it.
+- 做法按用途合并成 7 个：局部重画、换背景、放大、换模型精修、照着画、修脸修手、图片处理。AI 只说"用途 + 想要哪种"（比如"放大，2x"、"照着画，姿势"），AMB 按你装了什么、画布上是什么模型，自动挑能跑的、效果最好的那一块；没装的照样按节点包列出，AI 能告诉你该装什么。开新任务时 AI 只看到 7 行，做法再多也不会变长。
+- The ways are grouped into 7 uses: repaint, new background, upscale, redraw with another model, follow a picture, faces and hands, picture work. The AI names a use and the kind it wants ("upscale, 2x", "follow, pose") and Anomalous picks the best block this ComfyUI can run, by what is installed and the canvas's model; the missing ones are still listed by pack, so the AI can say what to install. A new task's directory is 7 lines, however many ways there are.
 
 - 新做法 **换画风·构图不变**：你递给 AI 一张图，AMB 读出它的轮廓线（ComfyUI 自带的 Canny），用 Union 控制网钉住构图，再按提示词里的新画风整张重画：人物、姿势、位置不变，画法换掉（比如水彩、厚涂、平涂）。实测强度 0.8 只是变亮一点，1.0 才真正换了画风，轮廓线照样守住构图，所以默认 1.0。RTX 4050 6GB、SDXL 832×1216 约 41 秒。
 - New way **New style, same layout**: from a picture handed to the AI, its outlines (ComfyUI's own Canny) hold the layout through the union ControlNet while the whole picture is redrawn in the prompt's new style (watercolour, painterly, flat colours): who, pose and place stay. Tried: at denoise 0.8 it only got lighter, at 1.0 the style changed and the outlines still held the layout, so 1.0 it is. About 41 s for SDXL 832×1216 on an RTX 4050 6 GB.

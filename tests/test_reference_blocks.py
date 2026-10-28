@@ -44,25 +44,30 @@ class BlockTests(unittest.TestCase):
     def setUp(self):
         keep_switches_apart(self)
 
-    def test_the_directory_lists_what_can_run_by_job_and_the_rest_in_a_line(self):
-        with mock.patch.object(reference_blocks, "DIRECTORY_CHARS", 5000):  # room for every word
-            listed = reference_blocks.directory(BUILT_IN)
-            everything = reference_blocks.directory(EVERYTHING)
-        self.assertEqual(listed[reference_blocks.JOBS["repaint"]], "inpaint_basic (built-in nodes)", "only what runs here")
-        self.assertIn("inpaint_lanpaint (LanPaint)", listed["Not here yet, needs"])
-        self.assertIn("upscale (upscaler model)", listed["Not here yet, needs"], "built-in nodes, but no upscale model")
+    def test_the_directory_lists_what_can_run_by_use_and_the_rest_by_what_it_needs(self):
+        listed = reference_blocks.directory(BUILT_IN)
+        self.assertEqual(listed["repaint"], "Repaint an area", "only what runs here: the built-in one, no want to name")
+        self.assertIn("LanPaint: repaint best", listed["Not here yet, needs"], "what to install, by pack")
+        self.assertIn("upscaler model: upscale", listed["Not here yet, needs"], "built-in nodes, but no upscale model")
+        everything = reference_blocks.directory(EVERYTHING)
         self.assertNotIn("Not here yet, needs", everything)
-        text = " ".join(everything.values())
-        self.assertTrue(all(f"{name} (" in text for name in reference_blocks.BLOCKS), "every block is in it")
-        self.assertEqual(set(reference_blocks.directory()), set(reference_blocks.JOBS.values()), "node list unknown: all, nothing claimed")
-        self.assertLess(len(" ".join(everything.values())), 900, "small: it goes with begin_task")
-        tight = reference_blocks.directory(BUILT_IN)
-        self.assertEqual(tight[reference_blocks.JOBS["repaint"]], "inpaint_basic", "short of room: the words go first")
-        self.assertIn("LanPaint: inpaint_lanpaint", tight["Not here yet, needs"], "what to install stays, by pack")
-        with mock.patch.object(reference_blocks, "DIRECTORY_CHARS", 200):
-            names = reference_blocks.directory(EVERYTHING)
-        self.assertEqual(names[reference_blocks.JOBS["repaint"]], "inpaint_crop_stitch, inpaint_lanpaint, inpaint_basic, change_scene, place_in_scene",
-                         "too many to say each: the names alone")
+        self.assertEqual(list(everything), list(reference_blocks.JOBS), "a line a use")
+        self.assertEqual(everything["follow"], "Follow a given picture (want: pose, layout, lines, style)")
+        self.assertEqual(set(reference_blocks.directory()), set(reference_blocks.JOBS), "node list unknown: all, nothing claimed")
+        self.assertLess(len(" ".join(everything.values())), 500, "small: it goes with begin_task")
+
+    def test_a_use_picks_the_best_block_this_comfyui_can_run(self):
+        self.assertEqual(reference_blocks.pick("repaint", None, EVERYTHING), "inpaint_crop_stitch")
+        self.assertEqual(reference_blocks.pick("repaint", None, BUILT_IN), "inpaint_basic", "the pack missing: the built-in one")
+        self.assertEqual(reference_blocks.pick("repaint", "best", BUILT_IN), "inpaint_lanpaint", "asked for: its build says what it needs")
+        self.assertEqual(reference_blocks.pick("upscale", "2x", EVERYTHING), "upscale_tiled")
+        self.assertEqual(reference_blocks.pick("new_background", None, EVERYTHING, scene=True), "place_in_scene", "a second picture given")
+        with self.assertRaisesRegex(reference_blocks.BlockError, "follow takes want: pose, layout, lines, style\."):
+            reference_blocks.pick("follow", None, EVERYTHING)
+        with self.assertRaisesRegex(reference_blocks.BlockError, "repaint takes want: best, or none"):
+            reference_blocks.pick("repaint", "fast", EVERYTHING)
+        with self.assertRaisesRegex(reference_blocks.BlockError, "No use 'paint'"):
+            reference_blocks.pick("paint")
 
     def test_a_block_turned_off_is_not_offered_and_cannot_be_built(self):
         reference_blocks.set_on("inpaint_lanpaint", False)
@@ -123,7 +128,7 @@ class BlockTests(unittest.TestCase):
         self.assertEqual(reference_blocks.nodes_of("upscale", only_2x)["fit"]["inputs"]["scale_by"], 0.625)
         with self.assertRaisesRegex(reference_blocks.BlockError, "No upscale model"):
             reference_blocks.nodes_of("upscale_tiled", {**EVERYTHING, "UpscaleModelLoader": {}})
-        self.assertIn("ComfyUI_UltimateSDUpscale: upscale_tiled", reference_blocks.directory(BUILT_IN)["Not here yet, needs"])
+        self.assertIn("ComfyUI_UltimateSDUpscale: upscale 2x", reference_blocks.directory(BUILT_IN)["Not here yet, needs"])
 
     def test_a_node_only_making_a_block_better_goes_when_its_pack_is_missing(self):
         nodes = reference_blocks.nodes_of("upscale", {**EVERYTHING, "ColorMatch": {}})
@@ -268,19 +273,21 @@ class AddBlockTests(unittest.TestCase):
 
     def test_nodes_or_block_not_both_and_errors_reach_the_ai(self):
         for arguments in ({}, {"nodes": {"a": {"class_type": "LoadImage"}}, "block": "inpaint_basic"}):
-            with self.assertRaisesRegex(ToolError, "either nodes .* or block .*one of the two"):
+            with self.assertRaisesRegex(ToolError, "Give one of: use .* block .* or nodes"):
                 mcp_canvas_edit.add_nodes({}, **arguments)
         self.object_info.return_value = BUILT_IN
         with self.assertRaisesRegex(ToolError, "inpaint_basic instead"):
             mcp_canvas_edit.add_nodes({}, block="inpaint_crop_stitch", image="a.png")
+        with self.assertRaisesRegex(ToolError, "follow takes want"):
+            mcp_canvas_edit.add_nodes({}, use="follow", image="a.png")
         self.assertFalse(self.page.called)
 
     def test_begin_task_hands_the_ai_the_directory(self):
         with mock.patch.object(mcp_task_tools.ai_tasks, "begin_task", return_value={"id": "t", "title": "修手"}), \
                 mock.patch.object(mcp_task_tools.ai_tasks, "get_task", return_value={"id": "t", "steps": []}):
             blocks = mcp_task_tools.begin_task({"client": "A"}, "修手")["blocks"]
-        self.assertIn("add_nodes(block=", blocks["note"])
-        self.assertIn("inpaint_crop_stitch", blocks[reference_blocks.JOBS["repaint"]])  # names alone once there are many
+        self.assertIn("add_nodes(use=", blocks["note"])
+        self.assertIn("Repaint an area", blocks["repaint"])
         self.object_info.side_effect = ToolError("down")
         self.assertNotIn("needs", " ".join(mcp_task_tools._blocks({}).values()), "no node list: the plain directory")
 

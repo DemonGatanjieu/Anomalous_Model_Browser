@@ -1,5 +1,6 @@
 {
   "job": "upscale",
+  "want": "steps",
   "rank": 2,
   "short": "3 steps",
   "title": {

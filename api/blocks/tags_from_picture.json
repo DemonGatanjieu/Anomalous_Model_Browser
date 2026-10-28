@@ -1,5 +1,6 @@
 {
-  "job": "follow",
+  "job": "process",
+  "want": "tags",
   "rank": 3,
   "short": "its tags",
   "title": {
