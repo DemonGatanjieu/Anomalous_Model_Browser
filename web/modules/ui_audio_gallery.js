@@ -1,6 +1,7 @@
 import { t } from './interface_settings.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { parseTaggedSpeech } from './audio_script.js';
+import { renderVoiceTabs } from './ui_voice_tabs.js';
 
 /**
  * Audio Gallery: generated audio in ComfyUI's output folder, shown with the
@@ -288,7 +289,8 @@ function createTrackRow(item, { mode, onDeleted, onSaved, onVoiceAgain }) {
 
 // ---------- sections ----------
 
-function renderGalleryToolbar({ onRefresh, onSearch }) {
+/** Its title, or with `owner` (the browser) the Voices page's view switch in its place. */
+function renderGalleryToolbar({ owner, onRefresh, onSearch }) {
     const bar = el('div', 'anomalous-audio-toolbar');
 
     const left = el('div', 'anomalous-audio-title-group');
@@ -314,7 +316,7 @@ function renderGalleryToolbar({ onRefresh, onSearch }) {
 
     const countBadge = el('span', 'anomalous-track-count');
     right.append(search, countBadge, iconButton('', SVG.REFRESH, t('audioRefresh'), onRefresh));
-    bar.append(left, right);
+    bar.append(owner ? renderVoiceTabs(owner, 'audio-gallery') : left, right);
     return { bar, countBadge };
 }
 
@@ -359,6 +361,7 @@ export async function renderAudioGallery(container, { owner = null } = {}) {
     const listSection = el('div', 'anomalous-track-list-section');
     let loadList = () => {};
     const { bar, countBadge } = renderGalleryToolbar({
+        owner,
         onRefresh: () => renderAudioGallery(container, { owner }),
         onSearch: query => loadList(query),
     });

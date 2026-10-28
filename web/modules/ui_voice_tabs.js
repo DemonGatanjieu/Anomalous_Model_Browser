@@ -1,14 +1,15 @@
 /**
- * The Voices page's two views as one switch at the top of each: Characters (the cards,
- * ui_audio_studio.js, shell page `voices`) and Voice-over (ui_script_page.js, shell page
- * `script`). Both sit under the rail's Voices entry and share the character list.
+ * The Voices page's three views as one switch at the top of each: Characters (the cards,
+ * ui_audio_studio.js, shell page `voices`), Voice-over (ui_script_page.js, shell page
+ * `script`) and Audio (ui_audio_gallery.js, shell page `audio-gallery`). All sit under the
+ * rail's Voices entry and share the list column.
  */
 
 import { t } from './interface_settings.js';
 
-const TABS = [['voices', 'voiceTabCharacters'], ['script', 'scriptDirectorTitle']];
+const TABS = [['voices', 'voiceTabCharacters'], ['script', 'scriptDirectorTitle'], ['audio-gallery', 'shellAudioGallery']];
 
-/** The switch; `active`: 'voices' | 'script'. */
+/** The switch; `active`: 'voices' | 'script' | 'audio-gallery'. */
 export function renderVoiceTabs(owner, active) {
     const bar = document.createElement('div');
     bar.className = 'anomalous-voice-tabs';
