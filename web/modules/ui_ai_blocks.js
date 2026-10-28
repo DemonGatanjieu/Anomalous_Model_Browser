@@ -1,6 +1,6 @@
 /**
  * The side column's Ways view (做法, ui_ai_side_views.js): the ready-made blocks Anomalous builds for
- * the AI (api/reference_blocks.py, a data file a block), by job: what each does and where it came
+ * the AI (api/reference_blocks.py, a data file a block), by use: what each does, and under Details where it came
  * from, in the user's language; greyed with what it lacks when a node pack or a model is missing
  * (a pack opens ComfyUI-Manager's list searched for it); and a switch the user turns a block off
  * with, so the AI is not offered it; how it was tried (the card, a run's time) and the models it recommends
@@ -98,9 +98,13 @@ function blockRow(block, owner, redraw) {
         el('span', `anomalous-ai-block-state${block.usable ? ' is-ready' : ''}`, t(block.usable ? 'aiBlocksReady' : 'aiBlocksMissing')));
     body.append(head, el('div', 'anomalous-ai-block-about', words(block.about)));
     if (!block.usable) body.append(lacks(block, owner));
-    if (block.better_with?.length) body.append(el('div', 'anomalous-ai-block-source', t('aiBlocksBetterWith', { names: block.better_with.join(', ') })));
-    if (words(block.source)) body.append(el('div', 'anomalous-ai-block-source', t('aiBlocksSource', { source: words(block.source) })));
-    body.append(...[tested(block), recommended(block, owner)].filter(Boolean));
+    // Where it came from, how it was tried, its models: folded, the row is a line to read.
+    const more = el('details', 'anomalous-ai-block-more');
+    more.append(el('summary', '', t('aiBlocksDetails')));
+    if (block.better_with?.length) more.append(el('div', 'anomalous-ai-block-source', t('aiBlocksBetterWith', { names: block.better_with.join(', ') })));
+    if (words(block.source)) more.append(el('div', 'anomalous-ai-block-source', t('aiBlocksSource', { source: words(block.source) })));
+    more.append(...[tested(block), recommended(block, owner)].filter(Boolean));
+    if (more.childElementCount > 1) body.append(more);
     const toggle = el('input', 'anomalous-ai-block-switch');
     toggle.type = 'checkbox';
     toggle.setAttribute('role', 'switch');
