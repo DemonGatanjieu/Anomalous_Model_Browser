@@ -1,5 +1,10 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.61.1 (Delete a Character) — 2026-10-28
+
+- 角色卡上加了橘色的 **删除角色** 按钮（Anomalous_TTS 议题 #2）：确认以后，角色的整个文件夹（模型、参考音频、设置）移到系统回收站，需要时能从回收站还原；U 盘、网络盘上没有回收站就不删。设置坏了、读不出来的角色也能删。需要 Anomalous_TTS v1.1.1；旧版 TTS 不显示这个按钮，其他照常。
+- Character cards have an orange Delete character button (Anomalous_TTS issue #2): after a confirm, the character's whole folder (models, reference audio, settings) goes to the Recycle Bin, where it can be restored; on a drive without one nothing is deleted. Broken characters can be deleted too. Needs Anomalous_TTS v1.1.1; with an older one the button is not shown and nothing else changes.
+
 ## v1.61.0 (Quick Search, Canvas Menu, Combos From Pictures, Tidier Model Folders, Multi-Character Voice-over) — 2026-10-25
 
 ### 🔎 Quick search on the canvas: Alt+B (画布快速搜索)
