@@ -55,9 +55,6 @@
 
 ## v1.62.0 — unreleased
 
-- 角色卡上加了橘色的 **删除角色** 按钮（Anomalous_TTS 议题 #2）：确认以后，角色的整个文件夹（模型、参考音频、设置）移到系统回收站，需要时能从回收站还原；U 盘、网络盘上没有回收站就不删。设置坏了、读不出来的角色也能删。需要 Anomalous_TTS v1.1.1。
-- Character cards have an orange Delete character button (Anomalous_TTS issue #2): after a confirm, the character's whole folder (models, reference audio, settings) goes to the Recycle Bin, where it can be restored; on a drive without one nothing is deleted. Broken characters can be deleted too. Needs Anomalous_TTS v1.1.1.
-
 - 音频库搬进了“角色语音”页：页面顶上的标签现在是 **角色 ｜ 配音 ｜ 音频库**，左边栏少了一项。加了 AI 工作台以后左边栏有 10 项，数字键只有 1–9，音频库就没键可按了；现在 9 打开角色语音，并回到你上次停的那个标签。
 - The audio gallery moved into Voices: the tabs at the top read Characters | Voice-over | Audio, and the rail is one entry shorter. With the AI workbench the rail had ten entries for nine number keys, leaving the gallery without one; 9 now opens Voices on the view used last.
 
@@ -370,6 +367,11 @@
 - **Picks**: pictures side by side, each with the AI's reason and **Take this one** (the choice goes to the AI); the AI can mark the one it recommends. Each can also be **put on the canvas** (its saved workflow opens in a new tab, as dropping the picture on ComfyUI does) or dragged onto the canvas.
 - **Diagrams**: boxes and arrows, laid out by Anomalous (in columns or rows), with a label on an arrow; a box naming a canvas node (◎) finds it on the canvas.
 - The AI only sends data (places as fractions of the picture, what connects to what); every shape and line is drawn by Anomalous, so it looks the same whichever AI is connected, and no drawing code of the AI's is taken.
+
+## v1.61.1 (Delete a Character) — 2026-10-28
+
+- 角色卡上加了橘色的 **删除角色** 按钮（Anomalous_TTS 议题 #2）：确认以后，角色的整个文件夹（模型、参考音频、设置）移到系统回收站，需要时能从回收站还原；U 盘、网络盘上没有回收站就不删。设置坏了、读不出来的角色也能删。需要 Anomalous_TTS v1.1.1；旧版 TTS 不显示这个按钮，其他照常。
+- Character cards have an orange Delete character button (Anomalous_TTS issue #2): after a confirm, the character's whole folder (models, reference audio, settings) goes to the Recycle Bin, where it can be restored; on a drive without one nothing is deleted. Broken characters can be deleted too. Needs Anomalous_TTS v1.1.1; with an older one the button is not shown and nothing else changes.
 
 ## v1.61.0 (Quick Search, Canvas Menu, Combos From Pictures, Tidier Model Folders, Multi-Character Voice-over) — 2026-10-25
 
