@@ -701,8 +701,10 @@ covered by the `styles.css` manifest.
   rail and from the 9 key; the rail stays within the nine number keys.
   `ui_audio_studio.js` owns the Characters view: the character cards, preview playback,
   tag copying, dragging a card header onto a node through the shared `bindMaterialDrag`
-  with `targetHint`/`rejectHint` telling the user what releasing does, and each card's
-  "Voice-over" button (`owner.openScript(group)`).
+  with `targetHint`/`rejectHint` telling the user what releasing does, each card's
+  "Voice-over" button (`owner.openScript(group)`), and its Delete character button
+  (node interface 18, local only): after a confirm, `removeGptSovitsCharacter` has the node
+  move the character's folder to the Recycle Bin.
   `ui_script_page.js` owns the Voice-over view: it loads the characters and mounts the
   script director, or shows the install steps or the way to import one when there is
   nothing to voice yet. A character picked in the list speaks there; the audio

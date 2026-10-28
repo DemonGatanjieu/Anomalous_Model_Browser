@@ -2,7 +2,8 @@ import { t } from './interface_settings.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { getActiveAudioFilter, renderAudioSidebar } from './ui_audio_sidebar.js';
 import { bindVoiceDrag } from './audio_voice_drag.js';
-import { TTS_ENGINE, invalidateEngineCache, isTtsInstalled, loadGptSovitsStatus, loadVoices } from './audio_engines.js';
+import { TTS_ENGINE, invalidateEngineCache, isTtsInstalled, loadGptSovitsStatus, loadVoices, removeGptSovitsCharacter } from './audio_engines.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { PRESETS_FORMAT } from './tts_presets_api.js';
 import { openTuningEditor } from './ui_tts_tuning.js';
 import { openGptSovitsEditor } from './ui_audio_tts_editor.js';
@@ -11,6 +12,9 @@ import { bindTtsFileDrop } from './ui_tts_file_drop.js';
 import { openTtsImport } from './ui_tts_import.js';
 import { stopScriptDirectorPreview } from './ui_script_director.js';
 import { renderVoiceTabs } from './ui_voice_tabs.js';
+
+// The node interface that removes a whole character (POST /anomalous_tts/character/remove).
+const REMOVE_CHARACTER_FORMAT = 18;
 
 /**
  * The Voices page's Characters view: GPT-SoVITS character cards (Anomalous_TTS, detected
@@ -37,6 +41,7 @@ const SVG = {
     TUNE: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h12"/><circle cx="18" cy="18" r="2"/></svg>`,
     PRONOUNCE: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h10v2"/><path d="M9 5v14"/><path d="M7 19h4"/><path d="M15 13h6"/><path d="M18 10v9"/></svg>`,
     EDIT: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+    TRASH: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
     REFRESH: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>`,
 };
 
@@ -192,7 +197,7 @@ function renderSliceRow(slice, withTag) {
     return row;
 }
 
-function renderCharacterCard(group, owner, { onChanged, canImport = false, tuning = false } = {}) {
+function renderCharacterCard(group, owner, { onChanged, canImport = false, tuning = false, removable = false } = {}) {
     const card = document.createElement('div');
     card.className = 'anomalous-character-voice-card';
     if (canImport && !group.error) card.dataset.ttsCharacter = group.character; // file drop target
@@ -262,6 +267,12 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false, tunin
             headerRight.append(add);
         }
     }
+    // Also on a broken character: those are the ones most often thrown away.
+    if (removable) {
+        const remove = createToolButton(SVG.TRASH, t('ttsCharacterRemove'), 'is-compact is-danger');
+        remove.onclick = () => requestRemoveCharacter(group, onChanged);
+        headerRight.append(remove);
+    }
     headerRight.append(countBadge);
     header.append(titleGroup, headerRight);
     if (group.has_main) {
@@ -285,6 +296,18 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false, tunin
 
     card.appendChild(sliceList);
     return card;
+}
+
+/** Asks, then moves the character's folder to the Recycle Bin and redraws. */
+async function requestRemoveCharacter(group, onChanged) {
+    if (!await anomalousConfirm(t('ttsCharacterRemoveConfirm', { character: group.character }))) return;
+    try {
+        await removeGptSovitsCharacter(group.character);
+    } catch (e) {
+        await anomalousAlert(t('ttsCharacterRemoveFailed', { error: e.message }));
+        return;
+    }
+    onChanged?.();
 }
 
 // ---- Toolbar ----
@@ -467,6 +490,7 @@ export async function renderAudioStudio(container, { filter = null, owner = null
         return;
     }
     const tuning = Number(ttsStatus?.format) >= PRESETS_FORMAT; // generation settings: Anomalous_TTS 1.1.0+
-    characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner, { onChanged, canImport, tuning })));
+    const removable = canImport && Number(ttsStatus?.format) >= REMOVE_CHARACTER_FORMAT;
+    characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner, { onChanged, canImport, tuning, removable })));
     studioWrapper.lastChild.replaceWith(grid);
 }

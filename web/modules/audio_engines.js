@@ -227,6 +227,21 @@ export async function removeGptSovitsClips(name, paths) {
     return resp.json();
 }
 
+/** Move a whole character's folder (weights, clips, settings) to the Recycle Bin through the node (interface 18). */
+export async function removeGptSovitsCharacter(name) {
+    const resp = await fetch('/anomalous_tts/character/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ character: name }),
+    });
+    if (!resp.ok) {
+        const message = await resp.text().catch(() => '');
+        throw new Error(message || `HTTP ${resp.status}`);
+    }
+    invalidateEngineCache();
+    return resp.json();
+}
+
 /**
  * Replace a character's anomalous_tts.json through the node's API. `settings` must be the
  * full object (unknown fields preserved by the caller). Returns the refreshed group.
