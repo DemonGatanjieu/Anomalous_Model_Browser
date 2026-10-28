@@ -1,0 +1,119 @@
+{
+  "job": "follow",
+  "rank": 5,
+  "short": "new style",
+  "title": {
+    "zh": "换画风·构图不变",
+    "en": "New style, same layout"
+  },
+  "about": {
+    "zh": "你递给 AI 一张图，AMB 读出它的轮廓线（ComfyUI 自带的 Canny），用控制网把构图钉住，再按新画风整张重画（强度 1.0，原图的颜色只当参考）：人物、姿势、位置不变，画法换掉。AI 在提示词里写新画风。SDXL/NoobAI/Illustrious 用 Union 控制网。",
+    "en": "From a picture you hand the AI, its outlines (ComfyUI's own Canny) hold the layout through a ControlNet while the picture is redrawn whole in a new style (1.0, the old colours a hint only): who, pose and place stay, the way it is drawn changes. The prompt says the new style. SDXL, NoobAI and Illustrious use the union ControlNet."
+  },
+  "source": {
+    "zh": "常见的“控制网 + 以图生图”换风格做法，轮廓用 Union 控制网的 canny 模式",
+    "en": "The common ControlNet-plus-img2img restyle, the outlines through the union ControlNet's canny mode"
+  },
+  "packs": {},
+  "takes": "reference",
+  "control": "lineart",
+  "nodes": {
+    "reference": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "edges": {
+      "class_type": "Canny",
+      "inputs": {
+        "image": [
+          "reference",
+          0
+        ],
+        "low_threshold": 0.4,
+        "high_threshold": 0.8
+      }
+    },
+    "controlnet": {
+      "class_type": "ControlNetLoader",
+      "inputs": {
+        "control_net_name": "$controlnet"
+      }
+    },
+    "steer": {
+      "class_type": "ControlNetApplyAdvanced",
+      "inputs": {
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "control_net": [
+          "controlnet",
+          0
+        ],
+        "image": [
+          "edges",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "strength": 0.7,
+        "start_percent": 0.0,
+        "end_percent": 0.8
+      },
+      "wire_to": "$sampler"
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": [
+          "reference",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      },
+      "wire_to": "$sampler"
+    },
+    "look": {
+      "class_type": "PreviewImage",
+      "inputs": {
+        "images": [
+          "edges",
+          0
+        ]
+      }
+    }
+  },
+  "roles": {
+    "sampler": {
+      "denoise": 1.0
+    }
+  },
+  "after": "Write what is in the picture and the new style in the prompt (e.g. watercolor, flat colors, oil painting), or add_lora a style LoRA, then run_workflow. The size is the picture's. Its outlines are among the previews. To keep more of the old colours: lower the denoise to 0.8 (the style then changes less); the layout drifts: raise the ControlNet strength (0.7).",
+  "notes": "Canny outlines through the union ControlNet (its canny/lineart mode); Tried: denoise 0.8 kept the old look (only lighter); 1.0 gave the style, the outlines held the layout.",
+  "models": [
+    "union_promax_sdxl"
+  ],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-28",
+    "runs": [
+      {
+        "model": "SDXL (Illustrious)",
+        "size": "832×1216",
+        "seconds": 41
+      }
+    ]
+  }
+}

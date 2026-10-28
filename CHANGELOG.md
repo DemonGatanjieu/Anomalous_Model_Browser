@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- 新做法 **换画风·构图不变**：你递给 AI 一张图，AMB 读出它的轮廓线（ComfyUI 自带的 Canny），用 Union 控制网钉住构图，再按提示词里的新画风整张重画：人物、姿势、位置不变，画法换掉（比如水彩、厚涂、平涂）。实测强度 0.8 只是变亮一点，1.0 才真正换了画风，轮廓线照样守住构图，所以默认 1.0。RTX 4050 6GB、SDXL 832×1216 约 41 秒。
+- New way **New style, same layout**: from a picture handed to the AI, its outlines (ComfyUI's own Canny) hold the layout through the union ControlNet while the whole picture is redrawn in the prompt's new style (watercolour, painterly, flat colours): who, pose and place stay. Tried: at denoise 0.8 it only got lighter, at 1.0 the style changed and the outlines still held the layout, so 1.0 it is. About 41 s for SDXL 832×1216 on an RTX 4050 6 GB.
+
 - 新做法 **换模型精修**：出完图以后，换另一个模型（可以是别的家族，配它自己的 LoRA）把整张图轻轻重画一遍（强度 0.4），另存一张（文件名以 refined 开头）。一个模型的构图加上另一个模型的画风和细节。新模型有自己的提示词节点，先照抄原来的提示词。实测 RTX 4050 6GB、Illustrious 出图 → NoobAI 精修，832×1216 整次约 66 秒。
 - New way **Refine with another model**: after a picture is made, another model (another family too, with its own LoRAs) redraws it lightly (0.4) and saves it beside it (prefix refined): one model's composition with another's style and detail. The new model has prompts of its own, copied from the first. About 66 s for a whole run, Illustrious then NoobAI at 832×1216, on an RTX 4050 6 GB.
 
