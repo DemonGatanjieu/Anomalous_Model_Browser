@@ -1,7 +1,7 @@
 {
   "job": "upscale",
   "rank": 3,
-  "short": "1.25×, a second model redraws",
+  "short": "second model",
   "title": {
     "zh": "双模型放大",
     "en": "Upscale with a second model"

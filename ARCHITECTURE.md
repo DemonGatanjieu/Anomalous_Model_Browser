@@ -193,7 +193,8 @@ covered by the `styles.css` manifest.
   the settings that workflow used, a block whose pack is missing naming the pack and a stand-in;
   an upscale block takes an upscale model this ComfyUI has, a control block a ControlNet whose
   base model fits the canvas's model (the page's `block_model`, `model_advice.py`) and the
-  picture to follow, copied into the input folder (`ai_pictures.to_input`)
+  picture to follow, copied into the input folder (`ai_pictures.to_input`); a block marked
+  `scene` takes a second picture the same way (`add_nodes(scene=…)`, `$scene`)
   (`tests/test_reference_blocks.py`). Its links name roles that `web/modules/canvas_roles.js`
   finds on the canvas by their sockets (the sampler, its decode, the output node its picture
   reaches, what feeds an input upstream; several samplers: near_node_id); a node "like" a role

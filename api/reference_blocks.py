@@ -26,6 +26,8 @@ MODELS_FILE = os.path.join(os.path.dirname(__file__), "block_models.json")
 TAKES = {"inpaint": "the picture with the area as its alpha (inpaint_image from propose_repaint_area or ask_user's answer)",
          "reference": "the picture to follow: one the user handed you (its path, as their message gives it) or one in the input folder",
          "picture": "the picture to work on: one the user handed you (its path, as their message gives it) or one in the input folder"}
+# A block's second picture ("scene" in add_nodes), for a block that takes two.
+SCENE = "scene: the picture to put it into, given the same ways"
 # The words a ControlNet file's name has for what it follows; a union model follows all of them.
 CONTROLS = {"pose": ("openpose", "pose"), "depth": ("depth",), "tile": ("tile",), "lineart": ("lineart", "mangaline", "manga_line")}
 ANY_CONTROL = ("union", "promax")
@@ -277,7 +279,7 @@ def nodes_of(name, info, image=None, main_base=lambda: "", base_of=lambda name: 
     return build(name, info, image, main_base, base_of)["nodes"]
 
 
-def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: ""):
+def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "", scene=None):
     """Block `name` built for this canvas: {nodes (add_nodes' group, its values filled in), roles, after},
     or BlockError saying why not. A block with variants or a ControlNet asks `main_base()` (once) for
     the canvas's model's base model, and `base_of` for each ControlNet's."""
@@ -302,7 +304,9 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "")
     packs_here(block)
     if block.get("takes") and not (isinstance(image, str) and image.strip()):
         raise BlockError(f"Block {name} needs image: {TAKES[block['takes']]}.")
-    fills = {"$image": (image or "").strip()}
+    if block.get("scene") and not (isinstance(scene, str) and scene.strip()):
+        raise BlockError(f"Block {name} needs {SCENE}.")
+    fills = {"$image": (image or "").strip(), "$scene": (scene or "").strip()}
     for role, prefix in (block.get("detectors") or {}).items():
         fills[f"${role}"] = _detector(info, prefix)
     if block.get("upscaler"):

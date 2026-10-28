@@ -1,7 +1,7 @@
 {
   "job": "upscale",
   "rank": 2,
-  "short": "1.3× in 3 steps",
+  "short": "3 steps",
   "title": {
     "zh": "迭代放大",
     "en": "Iterative upscale"

@@ -1,7 +1,7 @@
 {
   "job": "upscale",
   "rank": 2,
-  "short": "1.25×, tile-held, more detail",
+  "short": "tile-held",
   "title": {
     "zh": "平铺放大",
     "en": "Upscale held by tile"

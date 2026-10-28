@@ -1,0 +1,180 @@
+{
+  "job": "repaint",
+  "rank": 5,
+  "short": "given place",
+  "title": {
+    "zh": "放进另一张图",
+    "en": "Put a character into a picture"
+  },
+  "about": {
+    "zh": "你递给 AI 两张图：一张有人物，一张是背景。AMB 抠出人物，把背景缩放裁切成人物那张图的大小，贴上人物，再把人物以外的地方轻轻重画一遍（强度 0.5），让背景里的光影、地面和人物接上，背景的样子基本不变。",
+    "en": "From two pictures handed to the AI, one with the character and one with the place: the character is cut out, the place scaled and cropped to the character picture's size, the character pasted on it, and everything but the character lightly redrawn (0.5) so the place's light and ground meet the character while the place keeps its look."
+  },
+  "source": {
+    "zh": "常见的“抠图合成再重绘融合”做法：inspyrenet-rembg 抠人物，ComfyUI 自带的节点缩放、贴图和局部重绘",
+    "en": "The common cut-out, composite and blend-by-redrawing way: inspyrenet-rembg finds the character, ComfyUI's own nodes scale, paste and redraw"
+  },
+  "packs": {
+    "InspyrenetRembg": "comfyui-inspyrenet-rembg"
+  },
+  "takes": "picture",
+  "scene": true,
+  "nodes": {
+    "picture": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "place": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$scene"
+      }
+    },
+    "cut": {
+      "class_type": "InspyrenetRembg",
+      "inputs": {
+        "image": [
+          "picture",
+          0
+        ],
+        "torchscript_jit": "default"
+      }
+    },
+    "size": {
+      "class_type": "GetImageSize",
+      "inputs": {
+        "image": [
+          "picture",
+          0
+        ]
+      }
+    },
+    "fit": {
+      "class_type": "ImageScale",
+      "inputs": {
+        "image": [
+          "place",
+          0
+        ],
+        "upscale_method": "lanczos",
+        "width": [
+          "size",
+          0
+        ],
+        "height": [
+          "size",
+          1
+        ],
+        "crop": "center"
+      }
+    },
+    "paste": {
+      "class_type": "ImageCompositeMasked",
+      "inputs": {
+        "destination": [
+          "fit",
+          0
+        ],
+        "source": [
+          "picture",
+          0
+        ],
+        "x": 0,
+        "y": 0,
+        "resize_source": false,
+        "mask": [
+          "cut",
+          1
+        ]
+      }
+    },
+    "background": {
+      "class_type": "InvertMask",
+      "inputs": {
+        "mask": [
+          "cut",
+          1
+        ]
+      }
+    },
+    "edge": {
+      "class_type": "GrowMask",
+      "inputs": {
+        "mask": [
+          "background",
+          0
+        ],
+        "expand": 6,
+        "tapered_corners": true
+      }
+    },
+    "soft": {
+      "class_type": "DifferentialDiffusion",
+      "inputs": {
+        "model": [
+          "$sampler.model",
+          "*"
+        ]
+      },
+      "wire_to": "$sampler"
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": [
+          "paste",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      }
+    },
+    "area": {
+      "class_type": "SetLatentNoiseMask",
+      "inputs": {
+        "samples": [
+          "encode",
+          0
+        ],
+        "mask": [
+          "edge",
+          0
+        ]
+      },
+      "wire_to": "$sampler"
+    },
+    "look": {
+      "class_type": "PreviewImage",
+      "inputs": {
+        "images": [
+          "paste",
+          0
+        ]
+      }
+    }
+  },
+  "roles": {
+    "sampler": {
+      "denoise": 0.5
+    }
+  },
+  "after": "Write both in the prompt, the character (who, hair, clothes) and the place as it looks, then run_workflow. The size is the character picture's; the place is cropped to it. The pasted picture before the redraw is among the previews. The place changes too much: lower the denoise (0.5); the character still looks pasted on: raise it a little.",
+  "notes": "Denoise 0.5 redraws the place lightly around the character, keeping its look; the character itself is not redrawn but for 6 px of its edge.",
+  "models": [],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-28",
+    "runs": [
+      {
+        "model": "SDXL (Illustrious)",
+        "size": "832×1216",
+        "seconds": 40
+      }
+    ]
+  }
+}

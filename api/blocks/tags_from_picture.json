@@ -1,7 +1,7 @@
 {
   "job": "follow",
   "rank": 3,
-  "short": "its tags as words",
+  "short": "its tags",
   "title": {
     "zh": "读图出标签",
     "en": "Tags from a picture"

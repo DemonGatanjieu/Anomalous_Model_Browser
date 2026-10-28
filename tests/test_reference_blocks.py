@@ -57,7 +57,7 @@ class BlockTests(unittest.TestCase):
         self.assertLess(len(" ".join(everything.values())), 900, "small: it goes with begin_task")
         with mock.patch.object(reference_blocks, "DIRECTORY_CHARS", 200):
             names = reference_blocks.directory(EVERYTHING)
-        self.assertEqual(names[reference_blocks.JOBS["repaint"]], "inpaint_crop_stitch, inpaint_lanpaint, inpaint_basic, change_scene",
+        self.assertEqual(names[reference_blocks.JOBS["repaint"]], "inpaint_crop_stitch, inpaint_lanpaint, inpaint_basic, change_scene, place_in_scene",
                          "too many to say each: the names alone")
 
     def test_a_block_turned_off_is_not_offered_and_cannot_be_built(self):
@@ -92,6 +92,10 @@ class BlockTests(unittest.TestCase):
         self.assertIsNot(nodes["picture"]["inputs"], reference_blocks.BLOCKS["inpaint_crop_stitch"]["nodes"]["picture"]["inputs"])
         with self.assertRaisesRegex(reference_blocks.BlockError, "needs image"):
             reference_blocks.nodes_of("inpaint_basic", BUILT_IN)
+        with self.assertRaisesRegex(reference_blocks.BlockError, "needs scene"):
+            reference_blocks.build("place_in_scene", EVERYTHING, "a.png")
+        placed = reference_blocks.build("place_in_scene", EVERYTHING, "a.png", scene="beach.png")["nodes"]
+        self.assertEqual((placed["picture"]["inputs"]["image"], placed["place"]["inputs"]["image"]), ("a.png", "beach.png"))
         with self.assertRaisesRegex(reference_blocks.BlockError, "not installed here. Use block inpaint_basic"):
             reference_blocks.nodes_of("inpaint_crop_stitch", BUILT_IN, "a.png")
         with self.assertRaisesRegex(reference_blocks.BlockError, "there are: inpaint_crop_stitch"):

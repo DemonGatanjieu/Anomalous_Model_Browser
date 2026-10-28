@@ -1,7 +1,7 @@
 {
   "job": "process",
   "rank": 1,
-  "short": "transparent cut-out",
+  "short": "cut-out",
   "title": {
     "zh": "背景移除",
     "en": "Remove the background"

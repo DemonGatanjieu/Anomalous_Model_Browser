@@ -223,7 +223,7 @@ def _base_of(name):
     return model_advice.base_of(path) if path else ""
 
 
-def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None):
+def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None):
     if not isinstance(replace, bool):
         raise ToolError("replace must be true or false.")
     if (nodes is None) == (block is None):
@@ -231,8 +231,10 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
     if block is not None:
         if reference_blocks.BLOCKS.get(str(block), {}).get("takes") in ("reference", "picture") and image:
             image = ai_pictures.to_input(image)  # the picture to follow or work on, where LoadImage reads
+        if reference_blocks.BLOCKS.get(str(block), {}).get("scene") and scene:
+            scene = ai_pictures.to_input(scene)
         def build():  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
-            return reference_blocks.build(str(block), object_info(ctx), image, lambda: _main_base(near_node_id), _base_of)
+            return reference_blocks.build(str(block), object_info(ctx), image, lambda: _main_base(near_node_id), _base_of, scene)
         try:
             try:
                 built = build()
@@ -326,6 +328,7 @@ CANVAS_TOOLS = dict([
             "itself; near_node_id picks the sampler when there are several.",
             add_nodes, {"nodes": {"type": "object"}, "block": {"type": "string", "enum": list(reference_blocks.BLOCKS)},
                         "image": {"type": "string", "description": "A repaint block's inpaint_image; a control block's picture to follow."},
+                        "scene": {"type": "string", "description": "A block's second picture, where it puts the first (place_in_scene)."},
                         "near_node_id": _NODE_ID, "replace": {"type": "boolean"}}),
     _action("connect_nodes", "Wire two nodes",
             "Wires two nodes: every unique matching type, and same-type sockets of the same name (positive to "

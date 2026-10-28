@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- 新做法 **放进另一张图**：你递给 AI 两张图，一张有人物、一张是背景。AMB 抠出人物，把背景缩放裁切成同样大小，贴上人物，再把人物以外的地方轻轻重画一遍（强度 0.5），让脚下的影子、地面和光线接上，背景的样子基本不变。实测 RTX 4050 6GB、SDXL 832×1216 约 40 秒。做法现在可以接第二张图了（`add_nodes` 的 `scene`）。
+- New way **Put a character into a picture**: from two pictures handed to the AI, a character and a place, the character is cut out, the place scaled and cropped to its size, the character pasted on, and everything else lightly redrawn (0.5) so shadow, ground and light meet it while the place keeps its look. About 40 s for SDXL 832×1216 on an RTX 4050 6 GB. A block can take a second picture now (`add_nodes`' `scene`).
+
 - 新做法 **换场景·人物不变**：你递给 AI 一张图，AMB 自动抠出人物（inspyrenet-rembg），只重画人物以外的地方，AI 在提示词里写新场景；人物边缘留 6 像素一起重画，接缝更自然。实测 RTX 4050 6GB、SDXL 832×1216 约 30 秒。人物身上的光还是原图的光，换到光线差别很大的场景时看得出来（以后可以加重新打光）。AI 递给做法的图也认 `名字.png [output]` 这种写法了。
 - New way **New scene, same character**: from a picture handed to the AI, the character is cut out (inspyrenet-rembg) and only the rest is drawn anew from the prompt's new scene; 6 px of its edge are redrawn too for the seam. About 30 s for SDXL 832×1216 on an RTX 4050 6 GB. The character keeps the old picture's light, which shows in a very differently lit scene (relighting may come later). A picture handed to a block may also be written `name.png [output]`.
 
