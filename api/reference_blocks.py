@@ -39,7 +39,7 @@ NAMED_BASES = (("noob", "NoobAI"), ("illustrious", "Illustrious"), ("pony", "Pon
 # The directory's headings, what an AI wants done; under each, its blocks with a few words apiece.
 JOBS = {"repaint": "Repaint an area", "upscale": "Upscale", "follow": "Follow a given picture",
         "detail": "Fix faces and hands", "process": "Picture work"}
-DIRECTORY_CHARS = 800  # what begin_task carries of it: past this, the blocks' names alone, however many are collected
+DIRECTORY_CHARS = 625  # what begin_task carries of it (its whole text stays under 4000): past this, fewer words, however many are collected
 _lock = threading.Lock()
 
 
@@ -181,11 +181,18 @@ def directory(info=None):
         else:
             out.setdefault(JOBS.get(block["job"], "Other"), []).append((name, block["short"]))
 
-    def lines(words):  # "name (a few words)" while it fits, else the names alone
+    def lines(words, needs):  # "name (a few words)" while it fits; then the words go, what to install stays, by pack
         listed = {heading: ", ".join(f"{name} ({why})" if words else name for name, why in names) for heading, names in out.items() if names}
-        return {**listed, **({"Not here yet, needs": ", ".join(f"{name} ({why})" if words else name for name, why in later)} if later else {})}
-    full = lines(True)
-    return full if len(json.dumps(full, ensure_ascii=False)) <= DIRECTORY_CHARS else lines(False)
+        by_need = {}
+        for name, why in later:
+            by_need.setdefault(why, []).append(name)
+        rest = ", ".join(f"{name} ({why})" for name, why in later) if words else             "; ".join(f"{why}: {', '.join(names)}" for why, names in by_need.items()) if needs else ", ".join(name for name, _ in later)
+        return {**listed, **({"Not here yet, needs": rest} if later else {})}
+    for words, needs in ((True, True), (False, True)):
+        found = lines(words, needs)
+        if len(json.dumps(found, ensure_ascii=False)) <= DIRECTORY_CHARS:
+            return found
+    return lines(False, False)
 
 
 def _choices(info, kind, name):
