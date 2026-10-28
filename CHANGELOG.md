@@ -2,6 +2,9 @@
 
 ## v1.62.0 — unreleased
 
+- 音频库搬进了“角色语音”页：页面顶上的标签现在是 **角色 ｜ 配音 ｜ 音频库**，左边栏少了一项。加了 AI 工作台以后左边栏有 10 项，数字键只有 1–9，音频库就没键可按了；现在 9 打开角色语音，并回到你上次停的那个标签。
+- The audio gallery moved into Voices: the tabs at the top read Characters | Voice-over | Audio, and the rail is one entry shorter. With the AI workbench the rail had ten entries for nine number keys, leaving the gallery without one; 9 now opens Voices on the view used last.
+
 - AI 能拿刚出的图接着改了：搭“在这张图上重画”的工作流时，加载图像节点也认输出文件夹里的图（`xxx.png [output]`，ComfyUI 本来就支持）；以前 input 文件夹里没有这张图就被拦下。左侧栏的“模型”“图库”不再显示成英文 models / gallery。
 - The AI can redraw a picture it just made: a Load Image it builds now takes an output picture (`name.png [output]`, as ComfyUI itself does) instead of being refused when the input folder lacks it. The rail shows Models / Gallery again instead of the raw keys.
 

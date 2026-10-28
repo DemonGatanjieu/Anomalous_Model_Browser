@@ -24,8 +24,8 @@ const REMEMBERED = new Set(['home', 'activity', 'ai', 'models', 'gallery', 'prom
 const AUDIO_PAGES = new Set(['voices', 'script', 'audio-gallery']);
 // The audio tab (browser.switchAudioTab) of each audio page.
 const AUDIO_TABS = { voices: 'presets', script: 'script', 'audio-gallery': 'gallery' };
-// Voice-over is a view of the Voices page: same rail entry, same list column.
-const RAIL_OF = { script: 'voices' };
+// Voice-over and Audio are views of the Voices page: same rail entry, same list column.
+const RAIL_OF = { script: 'voices', 'audio-gallery': 'voices' };
 const railOf = page => RAIL_OF[page] || page;
 // Pages with a list column, and where each remembers whether you closed it.
 const LIST_KEYS = {
@@ -36,7 +36,7 @@ const LIST_KEYS = {
 };
 const TITLE_KEYS = {
     home: 'shellHome', activity: 'activityTitle', ai: 'shellAi', models: 'shellTitleModels', gallery: 'gallery', prompts: 'shellPrompts', recipes: 'recipeTitle',
-    combos: 'shellCombos', voices: 'shellVoices', script: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
+    combos: 'shellCombos', voices: 'shellVoices', script: 'shellVoices', 'audio-gallery': 'shellVoices',
     doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle', settings: 'sidebarSettings',
 };
 // Below this width the list covers the page instead of sitting beside it, and starts closed.
@@ -102,7 +102,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         const page = railPageForKey(e, RAIL_PAGES);
         if (!page || dialogOpen()) return;
         e.preventDefault();
-        owner.goTo(page);
+        owner.goTo(page === 'voices' ? lastVoiceView : page);
     });
 
     const toggleList = () => {

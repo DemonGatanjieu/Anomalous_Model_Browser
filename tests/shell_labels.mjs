@@ -15,3 +15,8 @@ assert.ok(titleKeys.includes('gallery'));
 for (const key of new Set([...railKeys, ...titleKeys])) {
     for (const lang of ['zh', 'en']) assert.ok(i18n[lang][key], `${lang} has no '${key}'`);
 }
+
+// Every rail page has a number key (1-9, ui_shell_nav.js): the AI workbench pushed the audio
+// gallery off the keys until it became a view of Voices.
+const railPages = read('ui_shell_rail.js').match(/export const RAIL_PAGES = Object\.freeze\(\[([\s\S]*?)\]\);/)[1];
+assert.ok([...railPages.matchAll(/\{ page: '/g)].length <= 9, 'more rail pages than number keys');

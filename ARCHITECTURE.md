@@ -694,10 +694,11 @@ covered by the `styles.css` manifest.
   `planVoiceDrop` decides every character drop and names the reason for each refusal;
   unlisted nodes are refused, never matched by widget name. Supporting a node
   means adding one entry plus a test.
-- The rail's Voices entry has two views, switched by `ui_voice_tabs.js` at the top of
-  each and sharing the character list: Characters (shell page `voices`) and Voice-over
-  (shell page `script`; `ui_shell_nav.js` keeps the rail on Voices and reopens the view
-  used last).
+- The rail's Voices entry has three views, switched by `ui_voice_tabs.js` at the top of
+  each and sharing the list column: Characters (shell page `voices`), Voice-over (shell
+  page `script`) and Audio (shell page `audio-gallery`, `ui_audio_gallery.js`).
+  `ui_shell_nav.js` keeps the rail on Voices and reopens the view used last, from the
+  rail and from the 9 key; the rail stays within the nine number keys.
   `ui_audio_studio.js` owns the Characters view: the character cards, preview playback,
   tag copying, dragging a card header onto a node through the shared `bindMaterialDrag`
   with `targetHint`/`rejectHint` telling the user what releasing does, and each card's

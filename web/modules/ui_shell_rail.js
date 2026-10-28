@@ -21,12 +21,12 @@ export const PAGE_ICONS = {
     combos: TOOL_ICONS.MATERIALS,
     prompts: icon('<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>'),
     voices: icon('<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>'),
-    // Not a rail entry (Voice-over is a view of Voices); Home's voice-over card uses it.
+    // Not rail entries (Voice-over and Audio are views of Voices); Home's voice-over card uses this one.
     script: icon('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/>'),
     'audio-gallery': icon('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
 };
 
-/** Pages on the rail, top to bottom. `audio`: the page belongs to the audio domain. */
+/** Pages on the rail, top to bottom: no more than the nine number keys. `audio`: the page belongs to the audio domain. */
 export const RAIL_PAGES = Object.freeze([
     { page: 'home', id: 'anomalous-home-btn', labelKey: 'shellHome' },
     { page: 'activity', id: 'anomalous-activity-btn', labelKey: 'shellActivity' },
@@ -36,8 +36,7 @@ export const RAIL_PAGES = Object.freeze([
     { page: 'recipes', id: 'anomalous-notebook-btn', labelKey: 'recipeTitle' },
     { page: 'combos', id: 'anomalous-combos-btn', labelKey: 'shellCombos' },
     { page: 'prompts', id: 'anomalous-prompts-btn', labelKey: 'shellPrompts' }, // Prompt Studio as a page
-    { page: 'voices', id: 'anomalous-voices-btn', labelKey: 'shellVoices', audio: true },
-    { page: 'audio-gallery', id: 'anomalous-audio-gallery-btn', labelKey: 'shellAudioGallery', audio: true },
+    { page: 'voices', id: 'anomalous-voices-btn', labelKey: 'shellVoices', audio: true }, // with Voice-over and Audio as its views
 ]);
 
 const div = className => Object.assign(document.createElement('div'), { className });
