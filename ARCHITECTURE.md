@@ -198,7 +198,7 @@ covered by the `styles.css` manifest.
   (`tests/test_reference_blocks.py`). Its links name roles that `web/modules/canvas_roles.js`
   finds on the canvas by their sockets (the sampler, its decode, the output node its picture
   reaches, what feeds an input upstream; several samplers: near_node_id); a node "like" a role
-  takes its settings, one that "replaces" it its links and place too (LanPaint's sampler for the
+  takes its settings (a path, "$sampler.positive", the node feeding it), one that "replaces" it its links and place too (LanPaint's sampler for the
   KSampler), before canvas_wiring splices it in (`tests/canvas_roles.mjs`). A block's "variants"
   rebuild it for the canvas model's family (`reference_blocks.build`: on Anima an LLLite model
   patch instead of a ControlNet), and an "optional" node of a pack that only improves it (KJNodes'

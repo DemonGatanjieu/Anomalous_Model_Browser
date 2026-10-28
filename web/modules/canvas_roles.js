@@ -107,12 +107,17 @@ export function placeRoles(g, nodes, nearId = null) {
         return path.length ? upstream(g, role(name, value[0]), path, value[0]) : [`#${role(name, value[0]).id}`, value[1]];
     };
     const target = value => (typeof value === 'string' && value.startsWith('$') ? role(value.slice(1), value).id : value);
+    // "like" a path ("$sampler.positive"): the node feeding it (a second prompt with the first one's text).
+    const nodeAt = (ref) => {
+        const [name, ...path] = ref.slice(1).split('.');
+        return path.length ? g.getNodeById(Number(upstream(g, role(name, ref), path, ref)[0].slice(1))) : role(name, ref);
+    };
     const gone = new Set(Object.values(nodes).filter(spec => spec.replaces).map(spec => role(spec.replaces.slice(1), spec.replaces)));
     return Object.fromEntries(Object.entries(nodes).map(([key, { like, replaces, ...spec }]) => {
         const inputs = Object.fromEntries(Object.entries(spec.inputs || {}).map(([name, value]) => [name, link(value)]));
         const placed = { ...spec, inputs,
             ...(spec.wire_to == null ? {} : { wire_to: Array.isArray(spec.wire_to) ? spec.wire_to.map(target) : target(spec.wire_to) }) };
-        const model = like || replaces ? role((like || replaces).slice(1), like || replaces) : null;
+        const model = like || replaces ? nodeAt(like || replaces) : null;
         if (model) placed.carry = settingsOf(model);
         if (replaces) Object.assign(placed, takenOver(g, model, inputs, gone));
         return [key, placed];

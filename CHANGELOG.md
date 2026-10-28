@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- 新做法 **换模型精修**：出完图以后，换另一个模型（可以是别的家族，配它自己的 LoRA）把整张图轻轻重画一遍（强度 0.4），另存一张（文件名以 refined 开头）。一个模型的构图加上另一个模型的画风和细节。新模型有自己的提示词节点，先照抄原来的提示词。实测 RTX 4050 6GB、Illustrious 出图 → NoobAI 精修，832×1216 整次约 66 秒。
+- New way **Refine with another model**: after a picture is made, another model (another family too, with its own LoRAs) redraws it lightly (0.4) and saves it beside it (prefix refined): one model's composition with another's style and detail. The new model has prompts of its own, copied from the first. About 66 s for a whole run, Illustrious then NoobAI at 832×1216, on an RTX 4050 6 GB.
+
 - 新做法 **放进另一张图**：你递给 AI 两张图，一张有人物、一张是背景。AMB 抠出人物，把背景缩放裁切成同样大小，贴上人物，再把人物以外的地方轻轻重画一遍（强度 0.5），让脚下的影子、地面和光线接上，背景的样子基本不变。实测 RTX 4050 6GB、SDXL 832×1216 约 40 秒。做法现在可以接第二张图了（`add_nodes` 的 `scene`）。
 - New way **Put a character into a picture**: from two pictures handed to the AI, a character and a place, the character is cut out, the place scaled and cropped to its size, the character pasted on, and everything else lightly redrawn (0.5) so shadow, ground and light meet it while the place keeps its look. About 40 s for SDXL 832×1216 on an RTX 4050 6 GB. A block can take a second picture now (`add_nodes`' `scene`).
 

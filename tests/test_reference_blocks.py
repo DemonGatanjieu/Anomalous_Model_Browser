@@ -219,7 +219,7 @@ class BlockTests(unittest.TestCase):
                                             or value[0].split(".")[0] in ("$sampler", "$decode", "$save", "$loader"))
                 for field in ("wire_to", "like", "replaces"):
                     if field in spec:
-                        self.assertIn(spec[field], ("$sampler", "$decode", "$save", "$loader"))
+                        self.assertIn(spec[field].split(".")[0], ("$sampler", "$decode", "$save", "$loader"))  # like may follow a path
 
 
 class AddBlockTests(unittest.TestCase):

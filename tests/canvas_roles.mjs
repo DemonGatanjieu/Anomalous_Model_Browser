@@ -111,6 +111,9 @@ function txt2img() {
     assert.deepEqual([placed.d.kept, placed.d.feeds, placed.d.replaces],
         [{ vae: [`#${ckpt.id}`, 2] }, [{ output: 'IMAGE', to: stitch.id, input: 'inpainted_image' }], decode.id]);
     assert.deepEqual(placed.r, { class_type: 'KSampler', inputs: { denoise: 0.35 }, carry: { seed: 7, steps: 30 } }, 'like: settings only');
+    pos.widgets = [{ name: 'text', value: 'a girl' }];
+    assert.deepEqual(placeRoles(g, { p: { class_type: 'CLIPTextEncode', like: '$sampler.positive', inputs: {} } }).p.carry,
+        { text: 'a girl' }, 'like a path: the node feeding it');
 }
 
 console.log('canvas_roles ok');

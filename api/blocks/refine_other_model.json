@@ -1,0 +1,119 @@
+{
+  "job": "upscale",
+  "rank": 6,
+  "short": "other model",
+  "title": {
+    "zh": "换模型精修",
+    "en": "Refine with another model"
+  },
+  "about": {
+    "zh": "出完图以后，换另一个模型（可以是别的家族，配它自己的 LoRA）把整张图轻轻重画一遍（强度 0.4），存成另一张。用来把一个模型的构图和另一个模型的画风、细节拼在一起。新模型有自己的提示词节点，先照抄原来的提示词。",
+    "en": "After a picture is made, another model (another family too, with its own LoRAs) redraws the whole picture lightly (0.4) and saves it beside it: one model's composition with another's style and detail. The new model has prompts of its own, copied from the first."
+  },
+  "source": {
+    "zh": "参考工作流的「Refiner 管线」：精修时可以换一个底模加载器，配一套独立的 LoRA 堆",
+    "en": "The reference workflow's refiner: a base model loader of its own for refining, with a separate LoRA stack"
+  },
+  "packs": {},
+  "nodes": {
+    "second_model": {
+      "class_type": "CheckpointLoaderSimple",
+      "like": "$loader",
+      "inputs": {}
+    },
+    "second_positive": {
+      "class_type": "CLIPTextEncode",
+      "like": "$sampler.positive",
+      "inputs": {
+        "clip": [
+          "second_model",
+          1
+        ]
+      }
+    },
+    "second_negative": {
+      "class_type": "CLIPTextEncode",
+      "like": "$sampler.negative",
+      "inputs": {
+        "clip": [
+          "second_model",
+          1
+        ]
+      }
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": [
+          "$decode",
+          0
+        ],
+        "vae": [
+          "second_model",
+          2
+        ]
+      }
+    },
+    "redraw": {
+      "class_type": "KSampler",
+      "like": "$sampler",
+      "inputs": {
+        "model": [
+          "second_model",
+          0
+        ],
+        "positive": [
+          "second_positive",
+          0
+        ],
+        "negative": [
+          "second_negative",
+          0
+        ],
+        "latent_image": [
+          "encode",
+          0
+        ],
+        "denoise": 0.4
+      }
+    },
+    "decode": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "redraw",
+          0
+        ],
+        "vae": [
+          "second_model",
+          2
+        ]
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": [
+          "decode",
+          0
+        ],
+        "filename_prefix": "refined"
+      }
+    }
+  },
+  "after": "The refine's loader (second_model) starts as the same checkpoint: set_model it to the one the user wants (ask_user, search_models), add_lora its own LoRAs onto it, and write its prompts (second_positive, second_negative, copied from the first) in that model's style. Another family may want other steps, cfg and sampler on redraw. Then run_workflow; the refined one is saved beside it (prefix refined). Denoise 0.4: lower keeps more of the first, higher takes more of the second.",
+  "notes": "The source keeps a separate loader and LoRA stack for refining. Its own CLIP and VAE, so a model of another family works.",
+  "models": [],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-28",
+    "runs": [
+      {
+        "model": "SDXL (Illustrious) → NoobAI",
+        "size": "832×1216",
+        "seconds": 66
+      }
+    ]
+  }
+}
