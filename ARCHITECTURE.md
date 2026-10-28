@@ -378,7 +378,7 @@ covered by the `styles.css` manifest.
   tag copying, dragging a card header onto a node through the shared `bindMaterialDrag`
   with `targetHint`/`rejectHint` telling the user what releasing does, each card's
   "Voice-over" button (`owner.openScript(group)`), and its Delete character button
-  (node interface 18, local only): after a confirm, `removeGptSovitsCharacter` has the node
+  (node interface 19, local only): after a confirm, `removeGptSovitsCharacter` has the node
   move the character's folder to the Recycle Bin.
   `ui_script_page.js` owns the Voice-over view: it loads the characters and mounts the
   script director, or shows the install steps or the way to import one when there is
