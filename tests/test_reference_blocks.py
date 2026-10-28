@@ -57,7 +57,7 @@ class BlockTests(unittest.TestCase):
         self.assertLess(len(" ".join(everything.values())), 900, "small: it goes with begin_task")
         with mock.patch.object(reference_blocks, "DIRECTORY_CHARS", 200):
             names = reference_blocks.directory(EVERYTHING)
-        self.assertEqual(names[reference_blocks.JOBS["repaint"]], "inpaint_crop_stitch, inpaint_lanpaint, inpaint_basic",
+        self.assertEqual(names[reference_blocks.JOBS["repaint"]], "inpaint_crop_stitch, inpaint_lanpaint, inpaint_basic, change_scene",
                          "too many to say each: the names alone")
 
     def test_a_block_turned_off_is_not_offered_and_cannot_be_built(self):
@@ -288,6 +288,7 @@ class ReferencePictureTests(unittest.TestCase):
                     mock.patch.object(folders, "get_input_directory", return_value=input_dir):
                 name = ai_pictures.to_input("ai_inbox/ref.png")
                 self.assertEqual(ai_pictures.to_input("ai_inbox\\ref.png"), name, "the same picture, the same file")
+                self.assertEqual(ai_pictures.to_input("ai_inbox/ref.png [output]"), name, "as Load Image names an output picture")
                 self.assertEqual(ai_pictures.to_input("mine.png"), "mine.png")
                 with self.assertRaises(ToolError):
                     ai_pictures.to_input("ai_inbox/gone.png")

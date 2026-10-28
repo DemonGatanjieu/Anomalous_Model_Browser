@@ -149,6 +149,8 @@ def to_input(image):
     from .mcp_tools import _resolve_folder_image
 
     rel = str(image or "").replace("\\", "/").strip("/")
+    if rel.endswith(" [output]"):  # ComfyUI's mark for an output picture, as Load Image shows it
+        rel = rel[: -len(" [output]")]
     try:
         return _resolve_folder_image(rel, "input")[0]
     except ToolError:

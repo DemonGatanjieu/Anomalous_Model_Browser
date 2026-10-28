@@ -1,0 +1,125 @@
+{
+  "job": "repaint",
+  "rank": 4,
+  "short": "new background",
+  "title": {
+    "zh": "换场景·人物不变",
+    "en": "New scene, same character"
+  },
+  "about": {
+    "zh": "你递给 AI 一张图，AMB 自动抠出人物，只重画人物以外的地方：AI 在提示词里写新场景，人物原样留下。人物边缘留几像素一起重画，让新背景和人物接得上。",
+    "en": "From a picture you hand the AI, the character is cut out automatically and everything else is drawn anew: the prompt says the new scene, the character stays as it was. A few pixels of its edge are redrawn too, so it sits in the new scene."
+  },
+  "source": {
+    "zh": "常见的“抠图换背景”做法：inspyrenet-rembg 抠人物，反选成背景，用 ComfyUI 自带的局部重绘节点只重画背景",
+    "en": "The common cut-out-and-replace-the-background way: inspyrenet-rembg finds the character, its inverse is the background, ComfyUI's own inpainting nodes redraw only that"
+  },
+  "packs": {
+    "InspyrenetRembg": "comfyui-inspyrenet-rembg"
+  },
+  "takes": "picture",
+  "nodes": {
+    "picture": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "$image"
+      }
+    },
+    "cut": {
+      "class_type": "InspyrenetRembg",
+      "inputs": {
+        "image": [
+          "picture",
+          0
+        ],
+        "torchscript_jit": "default"
+      }
+    },
+    "background": {
+      "class_type": "InvertMask",
+      "inputs": {
+        "mask": [
+          "cut",
+          1
+        ]
+      }
+    },
+    "edge": {
+      "class_type": "GrowMask",
+      "inputs": {
+        "mask": [
+          "background",
+          0
+        ],
+        "expand": 6,
+        "tapered_corners": true
+      }
+    },
+    "soft": {
+      "class_type": "DifferentialDiffusion",
+      "inputs": {
+        "model": [
+          "$sampler.model",
+          "*"
+        ]
+      },
+      "wire_to": "$sampler"
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": [
+          "picture",
+          0
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ]
+      }
+    },
+    "area": {
+      "class_type": "SetLatentNoiseMask",
+      "inputs": {
+        "samples": [
+          "encode",
+          0
+        ],
+        "mask": [
+          "edge",
+          0
+        ]
+      },
+      "wire_to": "$sampler"
+    },
+    "look": {
+      "class_type": "PreviewImage",
+      "inputs": {
+        "images": [
+          "cut",
+          0
+        ]
+      }
+    }
+  },
+  "roles": {
+    "sampler": {
+      "denoise": 1.0
+    }
+  },
+  "after": "Write the new scene in the prompt and keep the character's own words (who, hair, clothes) so its edge fits, then run_workflow. The picture's size is the drawing's: the empty latent is no longer used. The kept character (cut out) is among the run's previews: if part of it is missing or the old background clings to it, say so; a halo at its edge: raise the GrowMask expand (6) a little.",
+  "notes": "Denoise 1.0: the background is drawn anew, not changed. GrowMask lets the background reach 6 px into the character so the seam is redrawn.",
+  "models": [],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-10-28",
+    "runs": [
+      {
+        "model": "SDXL (Illustrious)",
+        "size": "832×1216",
+        "seconds": 30
+      }
+    ]
+  }
+}

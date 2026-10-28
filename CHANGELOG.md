@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- 新做法 **换场景·人物不变**：你递给 AI 一张图，AMB 自动抠出人物（inspyrenet-rembg），只重画人物以外的地方，AI 在提示词里写新场景；人物边缘留 6 像素一起重画，接缝更自然。实测 RTX 4050 6GB、SDXL 832×1216 约 30 秒。人物身上的光还是原图的光，换到光线差别很大的场景时看得出来（以后可以加重新打光）。AI 递给做法的图也认 `名字.png [output]` 这种写法了。
+- New way **New scene, same character**: from a picture handed to the AI, the character is cut out (inspyrenet-rembg) and only the rest is drawn anew from the prompt's new scene; 6 px of its edge are redrawn too for the seam. About 30 s for SDXL 832×1216 on an RTX 4050 6 GB. The character keeps the old picture's light, which shows in a very differently lit scene (relighting may come later). A picture handed to a block may also be written `name.png [output]`.
+
 - AI 有了现成的做法可以照着用（参考做法）：从擅长这些活的工作流里提炼出来的几块节点，AI 说一声用哪块，AMB 就在画布上搭好、接进你的工作流里，一次调用，不用 AI 一个个节点地搭。AI 开工时会收到这份清单，每块一行。
   - **局部重绘·裁切缝合**：把圈出的地方连同周围一圈一起裁出来，放大到 1024 重画，再缝回原图，别处一点不动。AMB 顺手把采样强度调到 0.75，并提醒 AI 把提示词改成只写这块地方（比如“一只手，五根手指”），不然它会把整张图的内容（比如一整个人）画进这一小块里。需要节点包 ComfyUI-Inpaint-CropAndStitch。
   - **局部重绘（官方节点）**：没装上面那个包时用它，只用 ComfyUI 自带的节点。
