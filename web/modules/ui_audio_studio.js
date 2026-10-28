@@ -14,7 +14,7 @@ import { stopScriptDirectorPreview } from './ui_script_director.js';
 import { renderVoiceTabs } from './ui_voice_tabs.js';
 
 // The node interface that removes a whole character (POST /anomalous_tts/character/remove).
-const REMOVE_CHARACTER_FORMAT = 18;
+const REMOVE_CHARACTER_FORMAT = 19;
 
 /**
  * The Voices page's Characters view: GPT-SoVITS character cards (Anomalous_TTS, detected

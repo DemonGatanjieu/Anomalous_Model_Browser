@@ -227,7 +227,7 @@ export async function removeGptSovitsClips(name, paths) {
     return resp.json();
 }
 
-/** Move a whole character's folder (weights, clips, settings) to the Recycle Bin through the node (interface 18). */
+/** Move a whole character's folder (weights, clips, settings) to the Recycle Bin through the node (interface 19). */
 export async function removeGptSovitsCharacter(name) {
     const resp = await fetch('/anomalous_tts/character/remove', {
         method: 'POST',
