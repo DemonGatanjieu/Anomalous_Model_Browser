@@ -8,8 +8,8 @@
     "en": "Put a character into a picture"
   },
   "about": {
-    "zh": "你递给 AI 两张图：一张有人物，一张是背景。AMB 抠出人物，把背景缩放裁切成人物那张图的大小，贴上人物，再把人物以外的地方轻轻重画一遍（强度 0.5），让背景里的光影、地面和人物接上，背景的样子基本不变。",
-    "en": "From two pictures handed to the AI, one with the character and one with the place: the character is cut out, the place scaled and cropped to the character picture's size, the character pasted on it, and everything but the character lightly redrawn (0.5) so the place's light and ground meet the character while the place keeps its look."
+    "zh": "把人物抠出来贴进你给的背景图，再轻轻重画让它融进去。",
+    "en": "Pastes the cut-out character into a given picture, then lightly redraws so it fits."
   },
   "source": {
     "zh": "常见的“抠图合成再重绘融合”做法：inspyrenet-rembg 抠人物，ComfyUI 自带的节点缩放、贴图和局部重绘",

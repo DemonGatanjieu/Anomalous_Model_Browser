@@ -8,8 +8,8 @@
     "en": "New style, same layout"
   },
   "about": {
-    "zh": "你递给 AI 一张图，AMB 读出它的轮廓线（ComfyUI 自带的 Canny），用控制网把构图钉住，再按新画风整张重画（强度 1.0，原图的颜色只当参考）：人物、姿势、位置不变，画法换掉。AI 在提示词里写新画风。SDXL/NoobAI/Illustrious 用 Union 控制网。",
-    "en": "From a picture you hand the AI, its outlines (ComfyUI's own Canny) hold the layout through a ControlNet while the picture is redrawn whole in a new style (1.0, the old colours a hint only): who, pose and place stay, the way it is drawn changes. The prompt says the new style. SDXL, NoobAI and Illustrious use the union ControlNet."
+    "zh": "用轮廓线钉住构图，按新画风整张重画。",
+    "en": "Outlines hold the layout while the whole picture is redrawn in a new style."
   },
   "source": {
     "zh": "常见的“控制网 + 以图生图”换风格做法，轮廓用 Union 控制网的 canny 模式",

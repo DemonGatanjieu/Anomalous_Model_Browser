@@ -7,8 +7,8 @@
     "en": "New scene, same character"
   },
   "about": {
-    "zh": "你递给 AI 一张图，AMB 自动抠出人物，只重画人物以外的地方：AI 在提示词里写新场景，人物原样留下。人物边缘留几像素一起重画，让新背景和人物接得上。",
-    "en": "From a picture you hand the AI, the character is cut out automatically and everything else is drawn anew: the prompt says the new scene, the character stays as it was. A few pixels of its edge are redrawn too, so it sits in the new scene."
+    "zh": "自动抠出人物，只按新场景重画背景。",
+    "en": "Cuts the character out and redraws only the background as the new scene."
   },
   "source": {
     "zh": "常见的“抠图换背景”做法：inspyrenet-rembg 抠人物，反选成背景，用 ComfyUI 自带的局部重绘节点只重画背景",

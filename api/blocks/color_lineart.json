@@ -8,8 +8,8 @@
     "en": "Colour a line drawing"
   },
   "about": {
-    "zh": "你递给 AI 一张黑白线稿，AMB 把线条交给线稿控制网，AI 在提示词里写颜色和画风，按线稿画出彩色的图。SDXL/NoobAI/Illustrious 用 Union 控制网的线稿模式。",
-    "en": "From a black-on-white line drawing you hand the AI, its lines steer a lineart ControlNet while the prompt says the colours and style. SDXL, NoobAI and Illustrious use the union ControlNet's lineart mode."
+    "zh": "给黑白线稿上色，颜色和画风写在提示词里。",
+    "en": "Colours a line drawing; the prompt says the colours and style."
   },
   "source": {
     "zh": "Union 控制网的线稿模式（参考工作流作者的控制网组用的就是 Union）",

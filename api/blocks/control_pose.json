@@ -8,8 +8,8 @@
     "en": "Follow a pose"
   },
   "about": {
-    "zh": "你递给 AI 一张图，AMB 读出人物姿势（DWPose），用和你底模对得上的控制网让新图摆出这个姿势。 DWPose 认二次元人物也准，连脸和手指都标；人物挤成一团、画风很浓的图可能认不出，这时用「照着构图画」。 画布上是 Anima 模型时，自动改用 Anima 专用的 LLLite 控制网（需要 ComfyUI-Anima-LLLite）。",
-    "en": "From a picture you hand the AI, Anomalous reads the pose (DWPose) and steers the picture with a ControlNet that fits your model. DWPose reads anime characters too, face and fingers included; a crowded or very stylised picture may come out empty, then use Follow a layout. On an Anima model it uses an Anima ControlNet-LLLite instead (needs ComfyUI-Anima-LLLite)."
+    "zh": "读出参考图的姿势，照着这个姿势画。",
+    "en": "Reads a picture's pose and draws to it."
   },
   "source": {
     "zh": "参考工作流的「底图控制网」组",

@@ -7,8 +7,8 @@
     "en": "Refine with another model"
   },
   "about": {
-    "zh": "出完图以后，换另一个单文件模型（SD1.5、SDXL、Pony、Illustrious、NoobAI 之间都能换，配它自己的 LoRA；Anima 这种分三个文件的模型还不行）把整张图轻轻重画一遍（强度 0.4），存成另一张。用来把一个模型的构图和另一个模型的画风、细节拼在一起。新模型有自己的提示词节点，先照抄原来的提示词。",
-    "en": "After a picture is made, another single-file checkpoint (SD 1.5, SDXL, Pony, Illustrious, NoobAI, any of them, with its own LoRAs; not yet a model in three files like Anima) redraws the whole picture lightly (0.4) and saves it beside it: one model's composition with another's style and detail. The new model has prompts of its own, copied from the first."
+    "zh": "换另一个单文件模型（可以配它的 LoRA）把整张图轻轻重画一遍，另存一张。",
+    "en": "Another single-file checkpoint (with its LoRAs) lightly redraws the whole picture, saved beside it."
   },
   "source": {
     "zh": "参考工作流的「Refiner 管线」：精修时可以换一个底模加载器，配一套独立的 LoRA 堆",

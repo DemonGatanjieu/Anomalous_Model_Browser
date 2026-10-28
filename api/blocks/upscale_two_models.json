@@ -8,8 +8,8 @@
     "en": "Upscale with a second model"
   },
   "about": {
-    "zh": "和「放大」一样，但重画换一个模型：底模放大时不稳（眼睛走样、多出肚脐）就换一个更稳的。新加的模型加载器先是同一个模型，由 AI 按你的意思换。 装了 KJNodes 时，还会把颜色对齐到原图，防止放大后颜色跑偏。",
-    "en": "Like Upscale, but the redraw uses a second model, for a base model that goes wrong when enlarged. The new loader starts as the same model; the AI changes it as you say. With KJNodes, its colours are matched to the original, so they don't drift."
+    "zh": "放大后换一个更稳的模型重画，原模型放大后容易走样时用。",
+    "en": "Redraws the enlarged picture with a steadier model, when the first goes wrong enlarged."
   },
   "source": {
     "zh": "参考工作流的「Refiner/放大」加载器和作者的说明",

@@ -7,8 +7,8 @@
     "en": "Repaint: built-in nodes"
   },
   "about": {
-    "zh": "只用 ComfyUI 自带的节点：整张图一起采样，只有圈出的地方变。没装上面两个包时用。",
-    "en": "ComfyUI's own nodes only: the whole picture is sampled, only the area changes. For when neither pack above is installed."
+    "zh": "只用 ComfyUI 自带的节点重画圈出的地方，没装别的包时用。",
+    "en": "ComfyUI's own nodes only: for when the packs above are missing."
   },
   "source": {
     "zh": "ComfyUI 官方的局部重绘做法",

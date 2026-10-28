@@ -8,8 +8,8 @@
     "en": "Tiled upscale"
   },
   "about": {
-    "zh": "放大 2 倍，按 1024 的小块逐块重画，多大的图都放得下，比「放大」慢。 装了 KJNodes 时，还会把颜色对齐到原图，防止放大后颜色跑偏。",
-    "en": "2×, redrawn in 1024 tiles, so any size fits; slower than Upscale. With KJNodes, its colours are matched to the original, so they don't drift."
+    "zh": "放大 2 倍，按小块逐块重画，多大的图都放得下。",
+    "en": "2×, redrawn tile by tile, for any size."
   },
   "source": {
     "zh": "节点包 UltimateSDUpscale 自带的示例",

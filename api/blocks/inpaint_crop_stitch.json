@@ -7,8 +7,8 @@
     "en": "Repaint: crop and stitch"
   },
   "about": {
-    "zh": "把圈出的地方连同周围一圈裁出来，放大到 1024 重画，再缝回原图，别处一点不动。适合修手、修脸这类小地方。 画布上是 Anima 模型时，还会加上 Anima 专用的重绘 LLLite，让新画的部分更贴合（需要 ComfyUI-Anima-LLLite）。",
-    "en": "Crops the marked area with a margin, repaints it at 1024 and stitches it back; the rest is untouched. For hands, faces, small fixes. On an Anima model it adds Anima's repaint LLLite too, so the new part fits better (needs ComfyUI-Anima-LLLite)."
+    "zh": "把圈出的地方连同周围一圈裁出来放大重画，再贴回去，适合小地方。",
+    "en": "Crops the marked area with a margin, redraws it larger and pastes it back: for small spots."
   },
   "source": {
     "zh": "参考工作流的「局部重绘」组，和节点包自带的示例一致",

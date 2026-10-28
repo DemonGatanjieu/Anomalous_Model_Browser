@@ -8,8 +8,8 @@
     "en": "Repaint: LanPaint"
   },
   "about": {
-    "zh": "把采样器换成 LanPaint 的，每一步多想几遍，新画的部分和周围融合得最好；任何模型都能用，但慢好几倍。",
-    "en": "The sampler becomes LanPaint's, which thinks several times a step, so the new part blends in best; any model, several times slower."
+    "zh": "换成 LanPaint 的采样器，边缘融合最好，但慢。",
+    "en": "LanPaint's sampler: the best blend at the edges, but slow."
   },
   "source": {
     "zh": "节点包 LanPaint 自带的 SDXL 示例",

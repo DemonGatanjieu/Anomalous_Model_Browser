@@ -8,8 +8,8 @@
     "en": "Iterative upscale"
   },
   "about": {
-    "zh": "分 3 小步放大到 1.3 倍，每步轻轻重画一次，比一步到位更稳。另存一张，文件名以 upscaled 开头。 装了 KJNodes 时，还会把颜色对齐到原图，防止放大后颜色跑偏。",
-    "en": "Enlarges to 1.3× in 3 small steps, a light redraw each, steadier than one jump. Saved beside it, prefix upscaled. With KJNodes, its colours are matched to the original, so they don't drift."
+    "zh": "分三步放大到 1.3 倍，每步都重画一遍。",
+    "en": "To 1.3× in three steps, redrawn at each."
   },
   "source": {
     "zh": "参考工作流的「迭代放大」组（作者另加的噪声增强要 ComfyUI Noise，这里没用）",

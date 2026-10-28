@@ -8,8 +8,8 @@
     "en": "Follow a layout"
   },
   "about": {
-    "zh": "你递给 AI 一张图，AMB 读出远近和形状（深度图），让新图保持这个构图。 画布上是 Anima 模型时，自动改用 Anima 专用的 LLLite 控制网（需要 ComfyUI-Anima-LLLite）。",
-    "en": "From a picture you hand the AI, Anomalous reads its depth and keeps that layout and those shapes. On an Anima model it uses an Anima ControlNet-LLLite instead (needs ComfyUI-Anima-LLLite)."
+    "zh": "读出参考图的深度，照着它的构图画。",
+    "en": "Reads a picture's depth and draws to its layout."
   },
   "source": {
     "zh": "参考工作流的「底图控制网」组（作者默认用深度）",

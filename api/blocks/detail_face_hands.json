@@ -7,8 +7,8 @@
     "en": "Face and hand detailing"
   },
   "about": {
-    "zh": "出完图以后找出脸和手，各自放大重画再贴回去。细化后的图另存一张，文件名以 detailed 开头。",
-    "en": "After a picture is made, finds faces and hands, repaints each larger and puts it back. Saved beside it, prefix detailed."
+    "zh": "出图后找出脸和手，各自放大重画再贴回去。",
+    "en": "After a picture is made, faces and hands are found, redrawn larger and pasted back."
   },
   "source": {
     "zh": "参考工作流的「部位细化」组",

@@ -8,8 +8,8 @@
     "en": "Tags from a picture"
   },
   "about": {
-    "zh": "你递给 AI 一张图，WD14 打标器读出它的 Danbooru 标签，AI 照着写提示词。第一次用时会自动下载打标模型（约 1.2GB）。",
-    "en": "From a picture you hand the AI, the WD14 tagger reads its Danbooru tags for the AI to write the prompt from. The first time, it downloads its tagger model (about 1.2 GB)."
+    "zh": "读出一张图的标签，交给 AI 当文字用。",
+    "en": "Reads a picture's tags and hands them to the AI as words."
   },
   "source": {
     "zh": "参考工作流的「图像反推」组",

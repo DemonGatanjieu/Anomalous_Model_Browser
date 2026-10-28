@@ -7,8 +7,8 @@
     "en": "Upscale"
   },
   "about": {
-    "zh": "放大模型放大到 1.25 倍，再用同样的设置轻轻重画一遍（强度 0.35），细节是画出来的而不是糊的。另存一张，文件名以 upscaled 开头。 装了 KJNodes 时，还会把颜色对齐到原图，防止放大后颜色跑偏。",
-    "en": "An upscale model enlarges it to 1.25×, then a light redraw with the same settings (denoise 0.35) makes the detail real. Saved beside it, prefix upscaled. With KJNodes, its colours are matched to the original, so they don't drift."
+    "zh": "用放大模型放到 1.25 倍，再轻轻重画补细节。",
+    "en": "An upscale model to 1.25×, then a light redraw for detail."
   },
   "source": {
     "zh": "参考工作流的「通用放大」组",

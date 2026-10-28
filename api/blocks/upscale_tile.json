@@ -8,8 +8,8 @@
     "en": "Upscale held by tile"
   },
   "about": {
-    "zh": "和「放大」一样放大到 1.25 倍，但重画时用平铺控制网把画面钉住，所以重画强度可以调到 0.5，细节多得多，构图也不跑。SDXL 用 Union 控制网，NoobAI/Illustrious 用 NoobAI 的平铺控制网；画布上是 Anima 模型时改用 Anima 的修复 LLLite。 Anima 版比较慢（6GB 显存约 10 分钟）。",
-    "en": "Like Upscale to 1.25×, but a tile ControlNet holds the picture while it is redrawn, so the redraw can be stronger (0.5): much more detail, the layout kept. SDXL uses the union ControlNet, NoobAI and Illustrious NoobAI's tile one; on an Anima model, Anima's tile-repair LLLite. The Anima build is slow (about 10 minutes on a 6 GB card)."
+    "zh": "放大时用平铺控制网钉住画面，可以重画得更狠，细节最多。",
+    "en": "A tile ControlNet holds the picture so the redraw can be stronger: the most detail."
   },
   "source": {
     "zh": "参考工作流的「通用放大」组（作者默认开着平铺控制网：强度 0.6，到 80% 的步数）",
