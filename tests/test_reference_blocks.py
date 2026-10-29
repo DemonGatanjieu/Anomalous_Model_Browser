@@ -309,6 +309,8 @@ class ReferencePictureTests(unittest.TestCase):
                     ai_pictures.to_input("ai_inbox/gone.png")
             self.assertTrue(name.startswith("anomalous_reference_"))
             self.assertEqual(sorted(os.listdir(input_dir)), sorted(["mine.png", name]))
+            with Image.open(os.path.join(input_dir, name)) as copied:
+                self.assertEqual(copied.mode, "RGBA", "its transparency is LoadImage's MASK")
 
 
 if __name__ == "__main__":

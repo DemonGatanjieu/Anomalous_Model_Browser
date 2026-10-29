@@ -43,7 +43,7 @@ def _next(summary, run, canvas):
         return ("A model or file the workflow names is not on this computer: check_workflow_models says which and what "
                 "can stand in (fix_workflow_models, download_missing_models); do not guess other choices.")
     if canvas.get("errors"):
-        return "ComfyUI refused the last run: fix the nodes in canvas.errors (set_values, connect_nodes), then run_workflow."
+        return "ComfyUI shows errors on the canvas: fix the nodes in canvas.errors (set_values, connect_nodes, run_workflow image=), then run_workflow."
     if canvas.get("unwired"):
         return "Wire canvas.unwired with connect_nodes (fits lists outputs that fit each), then run_workflow."
     if run.get("state") == "done" and run.get("pictures"):

@@ -12,6 +12,8 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
+from PIL import Image  # noqa: E402
+
 from api import ai_gates, ai_task_canvas, ai_tasks, mcp_actions, mcp_fill, mcp_tools  # noqa: E402
 from test_ai_tasks import isolate  # noqa: E402
 
@@ -83,7 +85,7 @@ class FillTests(unittest.TestCase):
 
 
 class PictureTests(unittest.TestCase):
-    def test_input_as_it_is_output_marked(self):
+    def test_input_as_it_is_output_copied_there(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         root = Path(os.path.realpath(temp.name))
@@ -93,9 +95,11 @@ class PictureTests(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
         (root / "input" / "mask.png").write_bytes(b"x")
-        (root / "output" / "result.png").write_bytes(b"x")
+        Image.new("RGB", (4, 4), "red").save(root / "output" / "result.png")
         self.assertEqual(mcp_fill._picture("mask.png"), "mask.png")
-        self.assertEqual(mcp_fill._picture("result.png"), "result.png [output]")
+        copied = mcp_fill._picture("result.png")  # not "result.png [output]": ComfyUI's page flags it as missing later
+        self.assertTrue(copied.startswith("anomalous_reference_"))
+        self.assertTrue((root / "input" / copied).is_file())
         with self.assertRaises(mcp_tools.ToolError):
             mcp_fill._picture("missing.png")
 

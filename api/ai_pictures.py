@@ -144,8 +144,10 @@ def hand(task_id, images, text="", now=None):
 
 def to_input(image):
     """Picture `image` as a file in ComfyUI's input folder, where LoadImage reads (a control block's
-    reference): its name there. One already there stays itself; an output picture the user handed
-    ("subfolder/name.png") is copied, named by its content so the same picture is one file, never over another."""
+    reference, run_workflow's image): its name there. One already there stays itself; an output picture
+    ("subfolder/name.png") is copied, its transparency kept (LoadImage's MASK), named by its content so
+    the same picture is one file, never over another. Not "name.png [output]": ComfyUI's page flags that
+    as a missing file once its run history is gone, though LoadImage reads it."""
     from .mcp_tools import _resolve_folder_image
 
     rel = str(image or "").replace("\\", "/").strip("/")
@@ -162,7 +164,8 @@ def to_input(image):
     if not os.path.isfile(target):
         try:
             with Image.open(io.BytesIO(data)) as picture, open(target, "xb") as out:
-                picture.convert("RGB").save(out, "PNG")
+                clear = "A" in picture.getbands() or "transparency" in picture.info
+                picture.convert("RGBA" if clear else "RGB").save(out, "PNG")
         except FileExistsError:
             pass  # the same picture, copied a moment ago
         except OSError:

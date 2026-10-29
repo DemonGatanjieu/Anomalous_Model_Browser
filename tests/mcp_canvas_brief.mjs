@@ -40,6 +40,9 @@ assert.deepEqual(brief.unwired, [
 ], 'a bypassed node asks for nothing');
 assert.deepEqual(brief.errors, [{ node: 3, error: 'Required input is missing: negative' }]);
 assert.equal(canvasBrief(g).errors, undefined);
+assert.deepEqual(canvasBrief(g, null, [{ nodeId: '7', widgetName: 'image', mediaType: 'image', name: 'b.png [output]', isMissing: true }]).errors,
+    [{ node: 7, error: `ComfyUI's page finds no image "b.png [output]" for image: run_workflow image= sets a copy in the input folder` }],
+    'what the page marks missing reaches the AI too');
 
 const many = graph(Array.from({ length: 35 }, (_, at) => node(at + 1, 'SaveImage', [socket('images', 'IMAGE')], [])), {});
 const long = canvasBrief(many);

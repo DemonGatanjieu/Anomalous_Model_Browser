@@ -2,7 +2,8 @@
  * The canvas in brief for an AI, so a small model need not hold the whole graph in mind:
  * bounded flow chains and node lines (id, type, what feeds each input), the inputs a run
  * needs that nothing feeds yet with the outputs on the canvas that fit them (`unwired`), and the
- * errors ComfyUI gave for the last run it refused. get_situation reads it (mcp_bridge.js
+ * errors ComfyUI gave for the last run it refused or shows on the page now (a picture or video it
+ * finds missing). get_situation reads it (mcp_bridge.js
  * describe_canvas with brief), and every change of the AI's answers with what is still unwired
  * (mcp_canvas_edit.js). Kept short: Antigravity files away answers past about 4,000 characters.
  * Pure: the graph and ComfyUI's errors come in.
@@ -74,17 +75,26 @@ export function unwired(g, limit = MAX_UNWIRED) {
     return { unwired: out, ...(total > out.length ? { more_unwired: total - out.length } : {}) };
 }
 
-/** ComfyUI's errors for the last run it refused (app.lastNodeErrors), a line each. */
-function errorsOf(nodeErrors) {
-    return Object.entries(nodeErrors || {}).flatMap(([id, item]) => (item?.errors || []).map(error => ({
-        node: Number(id) || id, error: [error.message, error.details].filter(Boolean).join(': ').slice(0, 160),
-    }))).slice(0, MAX_ERRORS);
+/**
+ * ComfyUI's errors, a line each: for the last run it refused (app.lastNodeErrors), and the files
+ * its page marks missing now (`missingMedia`: the frontend's candidates, {nodeId, widgetName, mediaType, name}).
+ */
+function errorsOf(nodeErrors, missingMedia) {
+    return [
+        ...Object.entries(nodeErrors || {}).flatMap(([id, item]) => (item?.errors || []).map(error => ({
+            node: Number(id) || id, error: [error.message, error.details].filter(Boolean).join(': ').slice(0, 160),
+        }))),
+        ...(missingMedia || []).map(item => ({
+            node: Number(item.nodeId) || item.nodeId,
+            error: `ComfyUI's page finds no ${item.mediaType || 'file'} "${item.name}" for ${item.widgetName}: run_workflow image= sets a copy in the input folder`.slice(0, 160),
+        })),
+    ].slice(0, MAX_ERRORS);
 }
 
 /** The canvas in brief: `{node_count, chains, lines, unwired, errors}` and omitted counts. */
-export function canvasBrief(g, nodeErrors = null) {
+export function canvasBrief(g, nodeErrors = null, missingMedia = []) {
     const nodes = g._nodes || [];
-    const errors = errorsOf(nodeErrors);
+    const errors = errorsOf(nodeErrors, missingMedia);
     return {
         node_count: nodes.length,
         ...flowChains(g),

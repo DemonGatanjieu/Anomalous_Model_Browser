@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- **AI 交给“加载图像”的图不再被误报“没选图片”**：AI 拿输出文件夹里的图去重画时，AMB 以前在节点里写“名字 [output]”，ComfyUI 重启、运行记录清空后，新版前端会把它标成“缺少图片”，其实图还在。现在和图库右键“放到画布”一样，先把图复制一份进 input 文件夹（同一张图只存一份，透明部分保留）再填进去。ComfyUI 页面上标红的“缺少图片/视频”，AI 用 get_situation 看现状时也能看到，并知道怎么补。
+- **Pictures the AI gives a Load Image are no longer flagged missing**: for an output picture Anomalous used to write "name [output]", which ComfyUI's newer page marks as a missing file once its run history is gone (after a restart), though the file is there. Now it is copied into the input folder first (one copy per picture, transparency kept), as the gallery's "Put on the canvas" does. Files ComfyUI's page marks missing also reach the AI in get_situation, with how to fix them.
+
 - **让 AI 一次出几张时，每张都不一样**：以前种子设成“固定”时，AI 说一次出 4 张，ComfyUI 会把 4 次当成同一个任务，只出 1 张。现在一次出几张时，固定的种子会一张一张往上加（123、124、125…），出完画布上的种子还是原来的数、还是“固定”。修手、修脸这种看运气的活，可以一次出 4 张让你挑。
 - **A batch of tries from the AI gives different pictures**: with a seed set to "fixed", asking for 4 used to queue the same prompt 4 times and ComfyUI made 1 picture. Now a fixed seed counts up for the batch (123, 124, 125…) and is as it was afterwards, still fixed. Hands and faces, which depend on luck, can come 4 at a time for you to pick from.
 

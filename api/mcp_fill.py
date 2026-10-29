@@ -13,6 +13,7 @@ changes, and it is one Ctrl+Z step logged as the AI's.
 """
 
 from . import ai_task_canvas, ai_tasks
+from .ai_pictures import to_input
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import ToolError, _resolve_folder_image, list_workflows
 
@@ -62,13 +63,13 @@ def saved_workflow(name):
 
 def _picture(image):
     """The value a LoadImage takes for picture `image`: in the input folder as it is, from the
-    output folder with ComfyUI's "[output]" mark (it reads it from there)."""
+    output folder its copy there (ai_pictures.to_input)."""
     for folder in ("input", "output"):
         try:
             rel, _path = _resolve_folder_image(image, folder)
         except ToolError:
             continue
-        return rel if folder == "input" else f"{rel} [output]"
+        return rel if folder == "input" else to_input(rel)
     raise ToolError(f"{image} is in neither ComfyUI's input nor its output folder; search_images lists the pictures in the output.")
 
 

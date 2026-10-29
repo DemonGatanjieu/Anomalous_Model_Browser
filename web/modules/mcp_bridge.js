@@ -123,10 +123,16 @@ function describeNode(g, node) {
     };
 }
 
+/** The files ComfyUI's page marks missing (its missingMedia store; none on a frontend without one). */
+function missingMedia() {
+    const store = document.querySelector('#vue-app')?.__vue_app__?.config?.globalProperties?.$pinia?._s?.get('missingMedia');
+    return (store?.missingMediaCandidates || []).filter(item => item?.isMissing !== false);
+}
+
 /** The open workflow's nodes with their settings; `brief`: a line a node and what is unwired (get_situation). */
 function describeCanvas({ brief } = {}) {
     const g = currentGraph();
-    if (brief) return { workflow: workflowName(), ...canvasBrief(g, app.lastNodeErrors) };
+    if (brief) return { workflow: workflowName(), ...canvasBrief(g, app.lastNodeErrors, missingMedia()) };
     const nodes = g._nodes || [];
     return {
         workflow: workflowName(),
