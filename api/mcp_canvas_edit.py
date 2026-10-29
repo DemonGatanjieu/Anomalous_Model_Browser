@@ -12,6 +12,7 @@ import time
 
 from . import ai_pictures, ai_tasks, ai_toolbox, mcp_fill, model_advice, model_download, reference_blocks
 from .mcp_actions import _action, _local, _page
+from .media_routes import picture_size
 from .mcp_tools import ToolError
 
 MAX_FOUND = 20
@@ -239,7 +240,8 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
         if reference_blocks.BLOCKS.get(str(block), {}).get("scene") and scene:
             scene = ai_pictures.to_input(scene)
         def build():  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
-            return reference_blocks.build(str(block), object_info(ctx), image, lambda: _main_base(near_node_id), _base_of, scene)
+            return reference_blocks.build(str(block), object_info(ctx), image, lambda: _main_base(near_node_id), _base_of, scene,
+                                          lambda name: picture_size(ai_tasks.folder_paths.get_annotated_filepath(name)))
         try:
             try:
                 built = build()

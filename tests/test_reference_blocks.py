@@ -127,6 +127,10 @@ class BlockTests(unittest.TestCase):
         self.assertEqual((nodes["picture"]["inputs"]["image"], nodes["bigger"]["inputs"]["scale_by"], nodes["encode"]["wire_to"]),
                          ("elves.png", 1.5, "$sampler"), "the picture, enlarged, in the sampler's place of its latent")
         self.assertEqual(built["roles"], {"sampler": {"denoise": 0.4}})
+        # The smaller the picture, the more it is enlarged: to about 4 megapixels, 1× to 2×.
+        sized = lambda size: reference_blocks.build("fix_hands", EVERYTHING, "elves.png", lambda: "", size_of=lambda name: size)["nodes"]["bigger"]["inputs"]["scale_by"]  # noqa: E731
+        self.assertEqual([sized((1280, 832)), sized((832, 1216)), sized((1536, 1024)), sized((2048, 2048)), sized((640, 480))],
+                         [1.99, 2.0, 1.63, 1.0, 2.0])
         self.assertEqual((nodes["hand_finder"]["inputs"]["model_name"], nodes["hands"]["inputs"]["denoise"], nodes["hands"]["inputs"]["guide_size"]),
                          ("bbox/hand_yolov8s.pt", 0.45, 768))
         self.assertNotIn("turbo", nodes)

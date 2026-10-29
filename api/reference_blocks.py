@@ -17,6 +17,7 @@ and the user has not turned off (user/anomalous/ai_blocks.json), a few words eac
 """
 
 import json
+import math
 import os
 import re
 import threading
@@ -313,10 +314,19 @@ def nodes_of(name, info, image=None, main_base=lambda: "", base_of=lambda name: 
     return build(name, info, image, main_base, base_of)["nodes"]
 
 
-def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "", scene=None):
+def enlargement(rule, size):
+    """How many times a block enlarges a picture of `size` (width, height; None: unknown) so it ends
+    near rule["megapixels"]: never smaller, at most rule["most"], rule["unknown"] without a size."""
+    if not size:
+        return rule["unknown"]
+    return round(min(rule["most"], max(1.0, math.sqrt(rule["megapixels"] * 1_000_000 / (size[0] * size[1])))), 2)
+
+
+def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "", scene=None, size_of=lambda image: None):
     """Block `name` built for this canvas: {nodes (add_nodes' group, its values filled in), roles, after},
     or BlockError saying why not. A block with variants or a ControlNet asks `main_base()` (once) for
-    the canvas's model's base model, and `base_of` for each ControlNet's."""
+    the canvas's model's base model, and `base_of` for each ControlNet's; one that enlarges the picture
+    by its size ("enlarge") asks `size_of(image)`."""
     block = BLOCKS.get(name)
     if not block:
         raise BlockError(f"No block {name!r}; there are: {', '.join(BLOCKS)}.")
@@ -345,6 +355,8 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
         fills[f"${role}"] = _detector(info, prefix)
     for role, prefix in (block.get("loras") or {}).items():
         fills[f"${role}"] = _lora(info, prefix)
+    if block.get("enlarge"):
+        fills["$enlarge"] = enlargement(block["enlarge"], size_of(fills["$image"]))
     if block.get("upscaler"):
         fills["$upscaler"], times = _upscaler(info, block.get("upscale_by", 2.0))
         fills["$fit"] = round(block.get("upscale_by", 1) / times, 4)  # the model's 4× brought back to the block's size
