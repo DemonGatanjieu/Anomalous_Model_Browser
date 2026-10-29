@@ -81,6 +81,19 @@ class EstimateTests(unittest.TestCase):
         self.assertEqual(ai_run_watch.estimate(prompt, 24576)["warnings"], [])
         self.assertEqual(ai_run_watch.estimate(prompt, 6144)["warnings"][0]["kind"], "big_sample")
 
+    def test_a_huge_saved_picture_after_an_upscale_model_is_warned(self):
+        prompt = {"1": {"class_type": "EmptyLatentImage", "inputs": {"width": 5120, "height": 3328, "batch_size": 1}},
+                  "2": {"class_type": "KSampler", "inputs": {"latent_image": ["1", 0], "steps": 35}},
+                  "3": {"class_type": "VAEDecodeTiled", "inputs": {"samples": ["2", 0]}},
+                  "4": {"class_type": "UpscaleModelLoader", "inputs": {"model_name": "4x-UltraSharp.pth"}},
+                  "5": {"class_type": "ImageUpscaleWithModel", "inputs": {"upscale_model": ["4", 0], "image": ["3", 0]}},
+                  "6": {"class_type": "SaveImage", "inputs": {"images": ["5", 0]}, "_meta": {"title": "Save 4x"}},
+                  "7": {"class_type": "SaveImage", "inputs": {"images": ["3", 0]}}}
+        saved = [item for item in ai_run_watch.estimate(prompt, 98304)["warnings"] if item["kind"] == "big_save"]
+        self.assertEqual(saved, [{"kind": "big_save", "node": "6", "title": "Save 4x", "width": 20480, "height": 13312,
+                                  "megapixels": 260, "megabytes": 310.0}])
+        self.assertIn("upscale less", ai_run_watch.warning_words(saved[0]))
+
     def test_odd_prompts_do_not_break_it(self):
         loop = {"1": {"class_type": "X", "inputs": {"image": ["2", 0]}}, "2": {"class_type": "Y", "inputs": {"image": ["1", 0]}},
                 "3": {"class_type": "KSampler", "inputs": {"latent_image": ["1", 0]}}, "4": "junk"}

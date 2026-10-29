@@ -18,6 +18,8 @@ CONSOLE_LINES = 5
 LINE_CHARS = 200
 # Megapixels a sampler can work at comfortably on a 12 GB card; scaled by the card's memory.
 COMFORT_MP_12GB = 4.2
+BIG_SAVE_MP = 64  # a saved picture past this (8192x8192) is heavy for the gallery and the viewers
+PNG_BYTES_PER_PIXEL = 1.2  # what a ComfyUI PNG of a generated picture takes, roughly
 LATENT_INPUTS = ("latent_image", "samples", "latent", "pixels", "image", "images")
 NOT_PICTURES = {"model", "clip", "vae", "upscale_model", "positive", "negative", "conditioning", "control_net",
                 "mask", "sampler", "sigmas", "guider", "noise", "clip_vision", "style_model"}
@@ -204,6 +206,14 @@ def estimate(prompt, vram_total_mb=None, image_size=_image_size):
             if found and found["width"] * found["height"] * found["batch"] / 1048576 > comfort * 2:
                 warnings.append({"kind": "big_decode", "node": str(node_id), "title": title,
                                  "width": round(found["width"]), "height": round(found["height"])})
+        elif "Save" in str(node.get("class_type")) and _linked(inputs.get("images")):
+            # What is finally saved: an upscale model after the last sampler can make it far larger.
+            found = size(inputs["images"][0], set())
+            if found and found["width"] * found["height"] / 1048576 > BIG_SAVE_MP:
+                pixels = found["width"] * found["height"]
+                warnings.append({"kind": "big_save", "node": str(node_id), "title": title, "width": round(found["width"]),
+                                 "height": round(found["height"]), "megapixels": round(pixels / 1048576),
+                                 "megabytes": round(pixels * PNG_BYTES_PER_PIXEL / 1048576, -1)})
     return {"samplers": samplers[:12], "warnings": warnings[:6], "comfort_mp": round(comfort, 1)}
 
 
@@ -215,6 +225,11 @@ def warning_words(warning):
                 "model enlarged the picture: very slow and may not fit in memory. If the user only wants it bigger, the "
                 "upscale model alone (ImageUpscaleWithModel -> SaveImage, no sampler after it) is enough; else sample "
                 "smaller (scale down before VAEEncode), use fewer steps or a lower denoise, or a tiled sampler.")
+    if warning["kind"] == "big_save":
+        return (f"{warning['title']} (node {warning['node']}) saves a {warning['width']}x{warning['height']} picture "
+                f"({warning['megapixels']} megapixels, about {warning['megabytes']:.0f} MB as PNG): heavy to look at in the "
+                "gallery and image viewers. Unless the user asked for that size, upscale less (2x instead of 4x) or start "
+                "from a smaller picture.")
     if warning["kind"] == "big_sample":
         return (f"{where}: {warning['megapixels']} megapixels, more than this card is comfortable with; expect it to be "
                 "very slow or run out of memory. Consider a smaller size and upscaling afterwards.")

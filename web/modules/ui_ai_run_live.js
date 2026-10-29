@@ -129,7 +129,7 @@ export function estimateBox(estimate) {
         const item = el('div', 'anomalous-ai-estimate-warning');
         item.append(icon('alert', 15), el('span', '', t(`aiRunWarn_${warning.kind}`, {
             title: warning.title, width: warning.width, height: warning.height, steps: warning.steps ?? '?',
-            megapixels: warning.megapixels ?? '', comfort: estimate.comfort_mp ?? '',
+            megapixels: warning.megapixels ?? '', megabytes: warning.megabytes ?? '', comfort: estimate.comfort_mp ?? '',
         })));
         box.append(item);
     }

@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- 跑图前的尺寸提醒多算了一步：放大模型之后**最后要存多大**。要存出超过约 6400 万像素的图（比如 5120×3328 再放大 4 倍，存出来 20480×13312、PNG 约 300 MB），时间线上会出现黄色提醒，AI 也会收到，建议放大倍数小一点或者从小一点的图开始放大。
+- The size check before a run now also counts **what is finally saved** after an upscale model: a picture past about 64 megapixels (5120×3328 upscaled 4x is 20480×13312, about 300 MB as PNG) gets a yellow warning on the timeline, and the AI is told, with the advice to upscale less or start from a smaller picture.
+
 - **超大图不再卡住图库**：几亿像素的图（比如把大图再放大 4 倍，存出来几百 MB），以前缩略图做不出来时，AMB 会把整张原图当缩略图发给浏览器，图库和 AI 工作台一翻到它就卡。现在缩略图在后台单独的进程里做一次就存下来（2.7 亿像素的图约 6 秒），不占 ComfyUI 出图的内存；大到连这样也做不了的，卡片上显示尺寸和大小，不再加载原图。卡片角上标“超大图 · 324 MB”。点开看大图、图片详情、AI 工作台里放大看的，都是缩到 4096 像素的预览，下面写着原图多大，要看原图点“打开原图”（在浏览器新标签页里打开）。图片详情读参数也不再把整张图下载下来。
 - **Very large pictures no longer freeze the gallery**: for a picture of hundreds of megapixels (a big one upscaled 4x, hundreds of MB), a card image that could not be made used to be the whole original, sent to the browser every time the gallery or the AI workbench showed it. Now it is made once in a separate background process and kept (about 6 s for 272 megapixels), outside ComfyUI's own memory; one too large even for that shows its size instead, never the original. Its card says "Very large · 324 MB". The large view, the image details and the AI workbench's larger pictures show a 4096 px preview with a note saying how large the original is, and "Open the original" opens it in a new browser tab. Reading a picture's settings in its details no longer downloads the whole file.
 
