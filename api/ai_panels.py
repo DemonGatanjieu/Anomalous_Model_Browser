@@ -10,7 +10,7 @@ table, list, params, choices (buttons; one or several picks) and input (a line o
 progress, divider; and area (the user's repaint area beside the AI's, ai_repaint.py). Nothing the AI sends is run or rendered as markup, and no drawing of its own
 (SVG) is taken: every block is checked here to be one of these shapes, with plain strings and
 numbers of bounded size, pictures only from the output folder and models only from the user's
-folders. The page draws them (ui_ai_panel.js).
+folders (the parts: ai_panel_parts.py). The page draws them (ui_ai_panel.js).
 
 The user's answers come back through POST /anomalous/ai_tasks/{task}/answer and wait in the
 step until the AI asks for them (get_answers, which may wait a while for one) or makes its next
@@ -19,19 +19,18 @@ successful MCP tool call (attach_pending). The user can also write to the AI in 
 the same way.
 """
 
-import os
 import re
 import threading
 import time
 import uuid
 
-import folder_paths
-
 from . import ai_marks, ai_tasks
+from .ai_panel_parts import (  # noqa: F401 - PanelError and the limits are read as ai_panels.*
+    MAX_ITEMS, MAX_NODES, PanelError, _diagram, _image, _list, _model, _text, _zoom,
+)
 from .mcp_tools import tool_text
 
 MAX_BLOCKS = 30
-MAX_ITEMS = 12
 MAX_ROWS = 30
 MAX_COLUMNS = 8
 MAX_WAIT = 55
@@ -45,119 +44,13 @@ INPAINT_NOTE = (
     "and prompt: get_image_info on the picture says them), add_nodes(block=\"inpaint_crop_stitch\", image=inpaint_image) "
     "builds the repaint in one call, wired into its sampler (block inpaint_basic when that one needs a pack not "
     "installed); set_prompt the sampler's prompt to what belongs in the area (\"a hand, five fingers\"), not the "
-    "whole picture, then run_workflow. Say in report what you set and why, ask_user the strength if unsure, and show "
-    "the old and new picture with a slider panel."
+    "whole picture. Keep the block's low denoise (it keeps the thing's size; higher paints a new one filling the whole "
+    "area). run_workflow with batch 4 (each try gets its own seed) and let the user pick in a picks panel zoomed on the "
+    "area (zoom {x, y, w, h} around it), then show the old and new with a slider panel, zoomed the same. Say in "
+    "report what you set and why."
 )
-COLORS = ("red", "green", "blue", "yellow", "purple")
-MAX_MARKS = 8
-MAX_NODES = 24
-MAX_EDGES = 40
 
 _answered = threading.Condition(ai_tasks._lock)
-
-
-class PanelError(ValueError):
-    """What is wrong with a panel, for the AI to fix."""
-
-
-def _text(value, limit, where, required=False):
-    if value is None and not required:
-        return ""
-    if not isinstance(value, (str, int, float)) or isinstance(value, bool):
-        raise PanelError(f"{where} must be text")
-    text = str(value).strip()
-    if required and not text:
-        raise PanelError(f"{where} is empty")
-    return text[:limit]
-
-
-def _list(value, limit, where):
-    if value is None:
-        return []
-    if not isinstance(value, list):
-        raise PanelError(f"{where} must be a list")
-    if len(value) > limit:
-        raise PanelError(f"{where} has more than {limit} items")
-    return value
-
-
-def _fraction(value, where):
-    if not isinstance(value, (int, float)) or isinstance(value, bool) or not 0 <= value <= 1:
-        raise PanelError(f"{where} must be a number from 0 to 1 (a fraction of the picture)")
-    return round(float(value), 4)
-
-
-def _marks(value, where):
-    marks = []
-    for i, mark in enumerate(_list(value, MAX_MARKS, where)):
-        here = f"{where}[{i}]"
-        if not isinstance(mark, dict):
-            raise PanelError(f"{here} must be {{x, y, w, h | r, label, color}}")
-        out = {"x": _fraction(mark.get("x"), f"{here}.x"), "y": _fraction(mark.get("y"), f"{here}.y"),
-               "label": _text(mark.get("label"), 60, f"{here}.label"),
-               "color": mark.get("color") if mark.get("color") in COLORS else "red"}
-        if mark.get("w") is not None or mark.get("h") is not None:
-            out.update(w=_fraction(mark.get("w"), f"{here}.w"), h=_fraction(mark.get("h"), f"{here}.h"))
-        else:
-            out["r"] = _fraction(mark.get("r", 0.06), f"{here}.r")
-        marks.append(out)
-    return marks
-
-
-def _image(item, where):
-    image = item.get("image") if isinstance(item, dict) else item
-    found = ai_tasks._output_media(str(image or ""))
-    if not found:
-        raise PanelError(f"{where}: {image!r} is not a picture in ComfyUI's output folder (subfolder/name.png, as search_images gives it)")
-    out = {**found, "caption": _text(item.get("caption") if isinstance(item, dict) else "", 120, f"{where}.caption")}
-    if isinstance(item, dict) and item.get("marks"):
-        out["marks"] = _marks(item["marks"], f"{where}.marks")
-    return out
-
-
-def _diagram(block, where):
-    nodes, ids = [], set()
-    for i, node in enumerate(_list(block.get("nodes"), MAX_NODES, f"{where}.nodes")):
-        here = f"{where}.nodes[{i}]"
-        if not isinstance(node, dict):
-            raise PanelError(f"{here} must be {{id, label, detail, node_id}}")
-        node_id = _text(node.get("id") or f"n{i + 1}", 40, f"{here}.id")
-        if node_id in ids:
-            raise PanelError(f"{here}.id {node_id!r} twice")
-        ids.add(node_id)
-        out = {"id": node_id, "label": _text(node.get("label"), 40, f"{here}.label", True),
-               "detail": _text(node.get("detail"), 80, f"{here}.detail"),
-               "color": node.get("color") if node.get("color") in COLORS else ""}
-        if node.get("node_id") not in (None, ""):
-            out["node_id"] = _text(node.get("node_id"), 20, f"{here}.node_id")
-        nodes.append(out)
-    if not nodes:
-        raise PanelError(f"{where}.nodes is empty")
-    edges = []
-    for i, edge in enumerate(_list(block.get("edges"), MAX_EDGES, f"{where}.edges")):
-        here = f"{where}.edges[{i}]"
-        if not isinstance(edge, dict) or edge.get("from") not in ids or edge.get("to") not in ids:
-            raise PanelError(f"{here} must be {{from, to, label}} naming two node ids")
-        edges.append({"from": edge["from"], "to": edge["to"], "label": _text(edge.get("label"), 30, f"{here}.label")})
-    return {"nodes": nodes, "edges": edges, "direction": "down" if block.get("direction") == "down" else "right"}
-
-
-def _model(item, where):
-    from .mcp_tools import ToolError, _resolve_model
-    from .model_media import _preview_url_for_model
-
-    model_id = item.get("model_id") if isinstance(item, dict) else item
-    try:
-        folder_type, path_idx, base_dir, file_path = _resolve_model(model_id)
-    except ToolError as error:
-        raise PanelError(f"{where}: {error}")
-    try:
-        cover = _preview_url_for_model(folder_type, path_idx, base_dir, file_path) or ""
-    except Exception:  # noqa: BLE001 - a card without its cover is still a card
-        cover = ""
-    return {"model_id": str(model_id), "folder": folder_type, "path_idx": path_idx,
-            "rel": os.path.relpath(file_path, base_dir).replace(os.sep, "/"), "name": os.path.basename(file_path),
-            "cover": cover, "note": _text(item.get("note") if isinstance(item, dict) else "", 160, f"{where}.note")}
 
 
 def clean_block(block, at, taken):
@@ -182,6 +75,8 @@ def clean_block(block, at, taken):
         out.update(before=_image(block.get("before"), f"{where}.before"), after=_image(block.get("after"), f"{where}.after"),
                    before_label=_text(block.get("before_label"), 40, f"{where}.before_label"),
                    after_label=_text(block.get("after_label"), 40, f"{where}.after_label"))
+        if block.get("zoom"):
+            out["zoom"] = _zoom(block["zoom"], f"{where}.zoom")
     elif kind == "picks":
         items, ids = [], set()
         raw = _list(block.get("items"), MAX_ITEMS, f"{where}.items")
@@ -200,6 +95,8 @@ def clean_block(block, at, taken):
                           "reason": _text(item.get("reason"), 200, f"{here}.reason"), "recommended": item.get("recommended") is True})
         out.update(question=_text(block.get("question"), 200, f"{where}.question"), items=items,
                    multiple=block.get("multiple") is True)
+        if block.get("zoom"):
+            out["zoom"] = _zoom(block["zoom"], f"{where}.zoom")
     elif kind == "run_map":  # a run's real shape (ai_run_map.py), drawn by the page from the step; only show_run_map makes it
         out["step"] = _text(block.get("step"), 20, f"{where}.step", True)
     elif kind == "area":  # the user's repaint area and the AI's, pictures in the task's marks folder; only ai_repaint makes it

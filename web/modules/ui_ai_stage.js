@@ -2,7 +2,7 @@
  * The AI's stage blocks, drawn by Anomalous (ui_ai_panel.js uses them): marks on a picture
  * (circles or boxes with a label; the label zooms there), the slider (two pictures over each
  * other, a line to drag), picks (pictures with a reason, "Take this one", "Put on the canvas"
- * and drag onto the canvas) and the diagram (boxes and arrows laid out by ai_stage_layout.js; a
+ * and drag onto the canvas; both may show only one part of every picture, enlarged: `zoom`) and the diagram (boxes and arrows laid out by ai_stage_layout.js; a
  * box naming a canvas node finds it). The AI sends data only: every element and line here is
  * made by this file, text through textContent, numbers through style.
  */
@@ -11,7 +11,7 @@ import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { arrowEnds, diagramBoxes, markBox } from './ai_stage_layout.js';
-import { isVideo, outputPicture, outputUrl } from './ai_task_view.js';
+import { isVideo, outputPicture, outputUrl, pictureShown } from './ai_task_view.js';
 import { decoratePicture, gonePicture, showPicture } from './ui_ai_images.js';
 import { openParamCompare } from './ui_param_compare.js';
 
@@ -34,13 +34,21 @@ function button(className, label, onClick, title) {
 
 const list = value => (Array.isArray(value) ? value : []);
 
-function media(item) {
+/**
+ * A picture or video of a block; `zoom` {left, top, w, h} (fractions, ai_panels.py) shows only that
+ * part of a picture, enlarged (a hand to compare): from the picture itself, as a thumbnail would blur.
+ */
+function media(item, zoom = null) {
     if (item.gone) return gonePicture(item);
     const node = el(isVideo(item) ? 'video' : 'img');
     if (node.tagName === 'IMG') {
         node.loading = 'lazy';
         node.alt = item.caption || item.label || item.filename;
-        showPicture(node, item);
+        if (zoom) {
+            node.classList.add('is-zoomed');
+            node.style.objectViewBox = `inset(${zoom.top * 100}% ${(1 - zoom.left - zoom.w) * 100}% ${(1 - zoom.top - zoom.h) * 100}% ${zoom.left * 100}%)`;
+            node.src = pictureShown(item);
+        } else showPicture(node, item);
     } else {
         node.src = outputUrl(item);
         node.muted = true;
@@ -92,8 +100,8 @@ export function addMarks(frame, picture, marks, legendHost) {
 export function slider(block) {
     const box = el('div', 'anomalous-ai-slider');
     const stage = el('div', 'anomalous-ai-slider-stage');
-    const before = media(block.before);
-    const after = media(block.after);
+    const before = media(block.before, block.zoom);
+    const after = media(block.after, block.zoom);
     after.classList.add('anomalous-ai-slider-after');
     const line = el('span', 'anomalous-ai-slider-line');
     line.append(el('span', 'anomalous-ai-slider-knob', '⇔'));
@@ -151,7 +159,7 @@ export function picks(block, ctx) {
         const card = el('div', `anomalous-ai-pick${chosen.has(item.id) ? ' is-picked' : ''}${item.recommended ? ' is-recommended' : ''}`);
         card.dataset.id = item.id;
         const frame = button('anomalous-ai-pick-picture', '', () => ctx.openPicture(outputUrl(item), isVideo(item)), t('aiOpenPicture'));
-        const picture = media(item);
+        const picture = media(item, block.zoom);
         picture.draggable = true;
         picture.addEventListener('dragstart', (event) => {
             const url = new URL(outputUrl(item), window.location.href).href;

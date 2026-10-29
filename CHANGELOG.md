@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- **修一处（比如一只手）更容易成**：从 Codex 这几天修手的试验看，重画的力度太大时，新画的手会撑满你圈的范围，于是手越修越大。现在“局部重绘”默认力度降到修东西用的 0.45（官方节点那块 0.5），AI 也会被告知：圈得贴着手、保持低力度、一次出 4 张，再用一个**只放大手那一块**的挑选面板给你挑，挑完用同样放大的前后对比给你看。展台上的“挑一张”和前后对比滑块都能只显示每张图的同一小块。
+- **Fixing one spot (a hand) works more often**: Codex's hand tests showed that with a strong repaint the new hand fills the whole marked area and grows each time. The repaint block's strength is now 0.45 by default, a fix (0.5 for the built-in one), and the AI is told to mark tightly, keep it low, make 4 tries and let you pick in a picks panel **zoomed on the hand**, then show before and after zoomed the same. The stage's picks and slider can show the same small part of every picture.
+
 - **AI 交给“加载图像”的图不再被误报“没选图片”**：AI 拿输出文件夹里的图去重画时，AMB 以前在节点里写“名字 [output]”，ComfyUI 重启、运行记录清空后，新版前端会把它标成“缺少图片”，其实图还在。现在和图库右键“放到画布”一样，先把图复制一份进 input 文件夹（同一张图只存一份，透明部分保留）再填进去。ComfyUI 页面上标红的“缺少图片/视频”，AI 用 get_situation 看现状时也能看到，并知道怎么补。
 - **Pictures the AI gives a Load Image are no longer flagged missing**: for an output picture Anomalous used to write "name [output]", which ComfyUI's newer page marks as a missing file once its run history is gone (after a restart), though the file is there. Now it is copied into the input folder first (one copy per picture, transparency kept), as the gallery's "Put on the canvas" does. Files ComfyUI's page marks missing also reach the AI in get_situation, with how to fix them.
 
@@ -30,7 +33,7 @@
 - New way **New scene, same character**: from a picture handed to the AI, the character is cut out (inspyrenet-rembg) and only the rest is drawn anew from the prompt's new scene; 6 px of its edge are redrawn too for the seam. About 30 s for SDXL 832×1216 on an RTX 4050 6 GB. The character keeps the old picture's light, which shows in a very differently lit scene (relighting may come later). A picture handed to a block may also be written `name.png [output]`.
 
 - AI 有了现成的做法可以照着用（参考做法）：从擅长这些活的工作流里提炼出来的几块节点，AI 说一声用哪块，AMB 就在画布上搭好、接进你的工作流里，一次调用，不用 AI 一个个节点地搭。AI 开工时会收到这份清单，每块一行。
-  - **局部重绘·裁切缝合**：把圈出的地方连同周围一圈一起裁出来，放大到 1024 重画，再缝回原图，别处一点不动。AMB 顺手把采样强度调到 0.75，并提醒 AI 把提示词改成只写这块地方（比如“一只手，五根手指”），不然它会把整张图的内容（比如一整个人）画进这一小块里。需要节点包 ComfyUI-Inpaint-CropAndStitch。
+  - **局部重绘·裁切缝合**：把圈出的地方连同周围一圈一起裁出来，放大到 1024 重画，再缝回原图，别处一点不动。AMB 顺手把采样强度调到 0.45（修东西的力度：再高，新画的东西会撑满你圈的范围，手会变大），并提醒 AI 圈得贴着要修的东西、把提示词改成只写这块地方（比如“一只手，五根手指”），不然它会把整张图的内容（比如一整个人）画进这一小块里；手和脸一次出 4 张让你挑。需要节点包 ComfyUI-Inpaint-CropAndStitch。
   - **局部重绘（官方节点）**：没装上面那个包时用它，只用 ComfyUI 自带的节点。
   - **部位细化（脸和手）**：出完图以后找出脸和手，各自放大重画再贴回去，细化后的图另存一张（文件名以 detailed 开头）。需要 Impact Pack 和 Impact Subpack，以及 models/ultralytics/bbox 里的检测模型。
   - **局部重绘·LanPaint**：把采样器整个换成 LanPaint 的（步数、CFG、种子照搬原来的），它每一步都多想几遍，新画的部分和周围融合得最好，任何模型都能用，不用专门的重绘模型；代价是慢好几倍。需要节点包 LanPaint。
@@ -55,7 +58,7 @@
 - 线稿上色在 Anima 模型上改用 Anima 的线稿 LLLite。
 - 每块做法现在是一个单独的数据文件（api/blocks/），里面有它的节点、要的节点包和模型、给 AI 的话、面板上的中英文说明。以后收集到新做法，加一个文件就行。
 - AI has ready-made ways of doing things (reference blocks): a few groups of nodes distilled from workflows that do one job well; the AI names one and Anomalous builds it on the canvas, spliced into your workflow, in one call instead of node by node. The AI gets their list, a line each, when it begins a task.
-  - **Repaint, crop and stitch**: crops the marked area with a margin around it, repaints it at 1024 and stitches it back, the rest untouched. Anomalous sets the sampler's denoise to 0.75 and tells the AI to write the prompt for that area only ("a hand, five fingers"), or it paints the whole picture's subject (a whole person) into it. Needs ComfyUI-Inpaint-CropAndStitch.
+  - **Repaint, crop and stitch**: crops the marked area with a margin around it, repaints it at 1024 and stitches it back, the rest untouched. Anomalous sets the sampler's denoise to 0.45 (a fix: higher, the new thing fills the whole mark and a hand comes out too big) and tells the AI to mark tightly, write the prompt for that area only ("a hand, five fingers"), or it paints the whole picture's subject (a whole person) into it, and to make 4 of a hand or face for you to pick. Needs ComfyUI-Inpaint-CropAndStitch.
   - **Repaint (built-in nodes)**: for when that pack is not installed, ComfyUI's own nodes only.
   - **Face and hand detailing**: after a picture is made, finds faces and hands, repaints each larger and puts it back, saving the detailed picture beside it (prefix detailed). Needs Impact Pack and Impact Subpack and detector models in models/ultralytics/bbox.
   - **Repaint with LanPaint**: the sampler becomes LanPaint's (same steps, cfg and seed), which thinks several times a step, so the new part blends in best, with any model and no inpainting model; several times slower. Needs LanPaint.

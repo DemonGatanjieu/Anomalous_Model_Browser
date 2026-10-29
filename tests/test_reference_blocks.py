@@ -243,7 +243,7 @@ class AddBlockTests(unittest.TestCase):
         answer = mcp_canvas_edit.add_nodes({}, block="inpaint_crop_stitch", image="a.png", near_node_id=5)
         action, payload = self.page.call_args[0]
         self.assertEqual((action, payload["replace"], payload["near_node_id"]), ("add_nodes", True, 5))
-        self.assertEqual(payload["roles"], {"sampler": {"denoise": 0.75}}, "the sampler's strength set with it")
+        self.assertEqual(payload["roles"], {"sampler": {"denoise": 0.45}}, "the sampler's strength set with it")
         self.assertEqual(payload["nodes"]["picture"]["inputs"]["image"], "a.png")
         self.assertIn("set_prompt it to what belongs in the area", answer["next"], "what to do next with this block")
 

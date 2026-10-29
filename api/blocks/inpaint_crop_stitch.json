@@ -92,11 +92,11 @@
   },
   "roles": {
     "sampler": {
-      "denoise": 0.75
+      "denoise": 0.45
     }
   },
-  "after": "The sampler now repaints only the cropped area, at denoise 0.75 (lower keeps more of the old). Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"), or it paints the whole subject there. Then run_workflow; the saved picture is the whole one, stitched.",
-  "notes": "Denoise 0.75: at 1 a model not made for inpainting paints a whole new subject into the crop. Context factor 2.0 is the source's.",
+  "after": "The sampler now repaints only the cropped area, at denoise 0.45 (lower keeps more of the old). Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"), or it paints the whole subject there. The marked area's size becomes the size of what is painted there: mark tightly around it (a hand, not the arm beside it). Keep denoise 0.35-0.5 to fix something and keep its size and pose; 0.7 and up paints a new thing that fills the whole mark. Hands and faces vary a lot from seed to seed: run_workflow with batch 4 and let the user pick, rather than judging one. Then run_workflow; the saved picture is the whole one, stitched.",
+  "notes": "Denoise 0.45: a fix. At 0.55-0.75 a hand came out the size of its mark (too big, 2026-10-29 Codex tests A-C), at 1 a model not made for inpainting paints a whole new subject into the crop; 0.4 kept the hand's size. Context factor 2.0 is the source's.",
   "variants": {
     "anima": {
       "packs": {
@@ -197,7 +197,7 @@
           "wire_to": "$save"
         }
       },
-      "after": "On this Anima model its repaint LLLite guides it too; the sampler now repaints only the cropped area, at denoise 0.75 (lower keeps more of the old). Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"), or it paints the whole subject there. Then run_workflow; the saved picture is the whole one, stitched."
+      "after": "On this Anima model its repaint LLLite guides it too; the sampler now repaints only the cropped area, at denoise 0.45 (lower keeps more of the old). Its prompt is still the whole picture's: set_prompt it to what belongs in the area (\"a hand, five fingers\"), or it paints the whole subject there. The marked area's size becomes the size of what is painted there: mark tightly around it (a hand, not the arm beside it). Keep denoise 0.35-0.5 to fix something and keep its size and pose; 0.7 and up paints a new thing that fills the whole mark. Hands and faces vary a lot from seed to seed: run_workflow with batch 4 and let the user pick, rather than judging one. Then run_workflow; the saved picture is the whole one, stitched."
     }
   },
   "models": [

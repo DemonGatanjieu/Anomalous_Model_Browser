@@ -63,10 +63,10 @@
   },
   "roles": {
     "sampler": {
-      "denoise": 0.7
+      "denoise": 0.5
     }
   },
-  "after": "The sampler repaints only the area, at denoise 0.7 so it keeps the picture's look (higher changes more). Then run_workflow.",
+  "after": "The sampler repaints only the area, at denoise 0.5 so it keeps the picture's look (higher changes more). The marked area's size becomes the size of what is painted there: mark tightly around it (a hand, not the arm beside it). Keep denoise 0.35-0.5 to fix something and keep its size and pose; 0.7 and up paints a new thing that fills the whole mark. Hands and faces vary a lot from seed to seed: run_workflow with batch 4 and let the user pick, rather than judging one. Then run_workflow.",
   "models": [],
   "tested": {}
 }

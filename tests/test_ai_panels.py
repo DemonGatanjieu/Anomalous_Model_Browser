@@ -91,8 +91,9 @@ class StageTests(unittest.TestCase):
                 {"type": "images", "items": [{"image": "a.png", "marks": [
                     {"x": 0.6, "y": 0.5, "label": "手指修好了", "color": "green"},
                     {"x": 0.2, "y": 0.2, "w": 0.3, "h": 0.2, "label": "光影", "color": "pink"}]}]},
-                {"type": "slider", "before": {"image": "a.png"}, "after": "b.png", "before_label": "改之前", "after_label": "改之后"},
-                {"type": "picks", "id": "lora", "question": "哪个权重？", "items": [
+                {"type": "slider", "before": {"image": "a.png"}, "after": "b.png", "before_label": "改之前", "after_label": "改之后",
+                 "zoom": {"x": 0.95, "y": 0.5, "w": 0.2, "h": 0.1}},
+                {"type": "picks", "id": "lora", "question": "哪个权重？", "zoom": {"x": 0.45, "y": 0.52, "w": 0.1, "h": 0.1}, "items": [
                     {"id": "w06", "image": "a.png", "label": "0.6", "reason": "偏淡"},
                     {"image": "b.png", "label": "0.8", "reason": "推荐", "recommended": True}]},
                 {"type": "diagram", "direction": "sideways", "nodes": [
@@ -103,6 +104,8 @@ class StageTests(unittest.TestCase):
         self.assertEqual(marks[0], {"x": 0.6, "y": 0.5, "label": "手指修好了", "color": "green", "r": 0.06})
         self.assertEqual(marks[1], {"x": 0.2, "y": 0.2, "label": "光影", "color": "red", "w": 0.3, "h": 0.2})
         self.assertEqual((blocks[1]["before"]["filename"], blocks[1]["after"]["filename"]), ("a.png", "b.png"))
+        self.assertEqual(blocks[1]["zoom"], {"left": 0.8, "top": 0.45, "w": 0.2, "h": 0.1}, "kept inside the picture")
+        self.assertEqual(blocks[2]["zoom"], {"left": 0.4, "top": 0.47, "w": 0.1, "h": 0.1})
         self.assertEqual([item["id"] for item in blocks[2]["items"]], ["w06", "p2"])
         self.assertTrue(blocks[2]["items"][1]["recommended"])
         self.assertEqual(blocks[2]["id"], "lora")
@@ -115,6 +118,8 @@ class StageTests(unittest.TestCase):
             [{"type": "images", "items": [{"image": "a.png", "marks": [{"x": 1.5, "y": 0}]}]}],
             [{"type": "images", "items": [{"image": "a.png", "marks": [{"x": 0.1, "y": 0.1}] * 9}]}],
             [{"type": "slider", "before": "a.png"}],
+            [{"type": "slider", "before": "a.png", "after": "b.png", "zoom": {"x": 0.5, "y": 0.5, "w": 0}}],
+            [{"type": "picks", "zoom": "the hand", "items": [{"id": "x", "image": "a.png"}, {"id": "y", "image": "b.png"}]}],
             [{"type": "picks", "items": [{"image": "a.png"}]}],
             [{"type": "picks", "items": [{"id": "x", "image": "a.png"}, {"id": "x", "image": "b.png"}]}],
             [{"type": "diagram", "nodes": []}],
