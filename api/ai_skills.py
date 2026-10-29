@@ -9,12 +9,15 @@ model or its size cannot be told (model_advice.main_params counts them from the 
 begin_task lists the skills on (name and short); get_toolbox(skill=…)
 gives one. The tools' own descriptions only point at a skill, so the list every app holds stays
 small. The user turns a skill off in the panel (user/anomalous/ai_skills.json): the AI is not
-offered it and get_toolbox refuses it.
+offered it and get_toolbox refuses it. Each skill fetched is a step of the AI's task (note_use), with
+the form its advice came in, so the user sees what the AI went by; the run after it says so too.
 """
 
 import json
 import os
 import threading
+import time
+import uuid
 
 FOLDER = os.path.join(os.path.dirname(__file__), "skills")
 NOTE = "Advice: get_toolbox(skill=name) when its job comes up: "
@@ -83,14 +86,14 @@ def by_model(name):
     return bool(SKILLS.get(name, {}).get("by_model"))
 
 
-def _for_model(forms, model):
-    """The lines of `forms` (a skill's by_model) for `model` {name, params}, or the unknown ones."""
+def _form(forms, model):
+    """Which form of `forms` (a skill's by_model) is for `model` {name, params}: large, small or unknown."""
     params = (model or {}).get("params") or 0
-    if not params:
-        return forms["unknown"]
-    size = f"{params / 1e9:.1f} billion"
-    name = os.path.splitext(os.path.basename(str(model.get("name") or "").replace("\\", "/")))[0] or "The model"
-    return [line.format(model=name, size=size) for line in forms["large" if params >= forms["large_from"] else "small"]]
+    return "unknown" if not params else "large" if params >= forms["large_from"] else "small"
+
+
+def _model_name(model):
+    return os.path.splitext(os.path.basename(str((model or {}).get("name") or "").replace("\\", "/")))[0]
 
 
 def get(name, model=None):
@@ -102,6 +105,33 @@ def get(name, model=None):
         raise SkillError(f"The user turned the skill {name!r} off: do the job your own way.")
     skill = SKILLS[name]
     lines = list(skill["text"])
-    if skill.get("by_model"):
-        lines[1:1] = _for_model(skill["by_model"], model)
-    return {"skill": name, "advice": lines}
+    answer = {"skill": name, "advice": lines}
+    forms = skill.get("by_model")
+    if forms:
+        form = _form(forms, model)
+        size = f"{model['params'] / 1e9:.1f} billion" if form != "unknown" else ""
+        lines[1:1] = [line.format(model=_model_name(model) or "The model", size=size) for line in forms[form]]
+        answer["for_model"] = {"form": form, "model": _model_name(model), "billions": round(model["params"] / 1e9, 1) if size else None}
+    return answer
+
+
+def note_use(client, answer, session="", task_id=None, now=None):
+    """Skill `answer` (get's) fetched by the AI, as a step of its task: which skill and, for one that goes
+    by the model, the form it came in. The same skill in the same form again before a run adds nothing."""
+    from . import ai_tasks
+
+    skill = SKILLS[answer["skill"]]
+    now = time.time() if now is None else now
+    step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "use_skill", "kind": "skill", "ok": True, "state": "done",
+            "summary": "use_skill", "skill": answer["skill"], "title": skill["title"], "for_model": answer.get("for_model"), "results": []}
+    with ai_tasks._lock:
+        task = ai_tasks.current_task(client, now, session=session, task_id=task_id)
+        for earlier in reversed(task.get("steps") or []):
+            if earlier.get("tool") == "run_workflow":
+                break
+            if earlier.get("tool") == "use_skill" and earlier.get("skill") == step["skill"] and earlier.get("for_model") == step["for_model"]:
+                return earlier
+        ai_tasks._add_step(task, step)
+        ai_tasks._save(task)
+    ai_tasks._notify(task["id"])
+    return step

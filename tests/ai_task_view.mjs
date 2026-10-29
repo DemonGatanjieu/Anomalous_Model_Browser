@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {
     activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, panelGist, lookTools, newestPicture, outputCount, outputUrl, outputPicture, pictureShown,
-    pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskOutputs, taskResults, taskState, toolKey,
+    pictureKey, picturePreview, uniquePictures, skillsBefore, stepDetail, taskCounts, taskOutputs, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
 const look = (tool, ok = true, state = 'done') => ({ kind: 'look', tool, ok, state, summary: tool });
@@ -126,3 +126,13 @@ assert.deepEqual(newestPicture(outputs), { type: 'output', filename: 'a.png', su
 assert.equal(newestPicture(taskOutputs({ steps: [] })), null);
 assert.equal(outputCount(taskOutputs(null)), 0);
 console.log('ai_task_view: results ok');
+
+// A run says which skills the AI fetched since the run before it.
+const skill = (id, name) => ({ id, tool: 'use_skill', kind: 'skill', skill: name });
+const run = id => ({ id, tool: 'run_workflow', kind: 'run' });
+const timeline = [skill('a', 'old'), run('r1'), skill('b', 'prompt_pose'), look('describe_canvas'), skill('c', 'other'), run('r2'), run('r3')];
+assert.deepEqual(skillsBefore(timeline, timeline[5]).map(step => step.skill), ['prompt_pose', 'other']);
+assert.deepEqual(skillsBefore(timeline, timeline[1]).map(step => step.skill), ['old']);
+assert.deepEqual(skillsBefore(timeline, timeline[6]), [], 'only since the run before');
+assert.deepEqual(skillsBefore(undefined, run('x')), []);
+console.log('ai_task_view: skills ok');

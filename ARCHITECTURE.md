@@ -209,7 +209,7 @@ covered by the `styles.css` manifest.
   `api/ai_skills.py` holds the skills beside them: advice the AI reads for a kind of job (how to
   write a prompt a model draws well), a data file each in `api/skills/`, building nothing.
   begin_task lists the ones on (name and a line), `get_toolbox(skill=…)` gives one, tool
-  descriptions only point at them; advice that depends on the canvas's main model comes in the
+  descriptions only point at them; each one fetched is a "skill" step of the task (`note_use`); advice that depends on the canvas's main model comes in the
   form for its size, its parameters counted from the file's header (`model_kind.diffusion_params`,
   `model_advice.main_params`) (`tests/test_ai_skills.py`).
   `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
@@ -366,7 +366,8 @@ covered by the `styles.css` manifest.
   `api/ai_message_refs.py` checks what the message names and gives each to the AI
   with the message (in full, pictures attached; get_toolbox shares its `lookup`),
   `tests/test_ai_message_refs.py`. `ui_ai_step_body.js` is what a timeline step says under its
-  title (the user's own steps with whether the AI has them, a decision's card, the AI's note, what
+  title (the user's own steps with whether the AI has them, a decision's card, the AI's note, a
+  skill fetched and, under a run, the skills fetched before it (`ai_task_view.skillsBefore`), what
   happened outside Anomalous). `api/ai_outside.py` is that last: when the AI calls (never in the
   background) it looks at the top of the output and input folders, by the files' own times, for
   pictures no ComfyUI run saved and pictures rewritten in place since the AI's previous call

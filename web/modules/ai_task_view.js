@@ -5,7 +5,7 @@
  */
 
 /** The kinds of step, in the order a task's counts name them. */
-export const KINDS = ['panel', 'user', 'decision', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'outside', 'look'];
+export const KINDS = ['panel', 'user', 'decision', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'outside', 'skill', 'look'];
 
 const WORK = new Set(['look', 'canvas', 'decision']); // the AI going about the work, not what the user looks for
 const CHAIN_MIN = 3;
@@ -111,6 +111,16 @@ export function panelGist(panel) {
 /** The locale key naming a step's tool. */
 export function toolKey(tool) {
     return `aiTool_${String(tool || '').replace(/[^a-z_]/g, '')}`;
+}
+
+/** The skills the AI fetched (use_skill steps, api/ai_skills.py) after the run before `step` and before it. */
+export function skillsBefore(steps, step) {
+    const list = steps || [];
+    const found = [];
+    for (let at = list.findIndex(item => item.id === step?.id) - 1; at >= 0 && list[at].tool !== 'run_workflow'; at--) {
+        if (list[at].tool === 'use_skill') found.unshift(list[at]);
+    }
+    return found;
 }
 
 /** What a step was about: its summary without the tool's name ("place_combo: K" → "K"). */

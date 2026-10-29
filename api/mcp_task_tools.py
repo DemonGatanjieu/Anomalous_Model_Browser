@@ -232,9 +232,11 @@ def get_toolbox(ctx, task=None, skill=None):
 
     if skill:
         try:
-            return ai_skills.get(str(skill), _canvas_model() if ai_skills.by_model(str(skill)) else None)
+            answer = ai_skills.get(str(skill), _canvas_model() if ai_skills.by_model(str(skill)) else None)
         except ai_skills.SkillError as error:
             raise ToolError(str(error))
+        ai_skills.note_use(ctx.get("client") or "AI", answer, session=ctx.get("session") or "", task_id=task or ctx.get("task"))
+        return answer
     task_id = task or ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")
     box = ai_toolbox.effective(ai_tasks.get_task(task_id)) if task_id else None
     if not box:

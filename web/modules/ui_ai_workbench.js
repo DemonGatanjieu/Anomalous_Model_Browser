@@ -150,7 +150,7 @@ function stepRow(step, number) {
         text.title = detail;
         line.append(text);
     }
-    body.append(line, ...stepBody(step, { taskId: state.task?.id, owner: state.owner, entries: state.entries, numberOf: id => state.numbers.get(id) }));
+    body.append(line, ...stepBody(step, { taskId: state.task?.id, owner: state.owner, entries: state.entries, numberOf: id => state.numbers.get(id), steps: state.task?.steps }));
     const other = step.reply_to || step.replied;
     if (other) {
         body.append(iconButton(`anomalous-ai-reply-link${step.replied ? ' is-replied' : ''}`, step.replied ? 'chat' : 'undo',

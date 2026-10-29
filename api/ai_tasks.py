@@ -345,7 +345,7 @@ def _add_step(task, step):
     task["steps"].append(step)
     del task["steps"][:-MAX_STEPS]
     task["updated"] = max(task.get("updated", 0), step["at"] + step.get("ms", 0) / 1000)
-    if task.get("title_from") == "auto" and not task.get("title") and step["kind"] not in ("look", "note") and step["ok"]:
+    if task.get("title_from") == "auto" and not task.get("title") and step["kind"] not in ("look", "note", "skill") and step["ok"]:
         task["title"] = step["summary"][:MAX_TITLE]
 
 

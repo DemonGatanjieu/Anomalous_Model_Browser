@@ -3,11 +3,13 @@
  * draws the row around it): the user's own steps (marks on a picture, materials, a change made in
  * Anomalous, pictures handed over, a stop, the canvas mode, a message with the pictures it
  * carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js),
- * what happened outside Anomalous (pictures changed, the AI's own word: api/ai_outside.py), or
+ * what happened outside Anomalous (pictures changed, the AI's own word: api/ai_outside.py), a
+ * skill the AI went by (api/ai_skills.py) and, under a run, the skills fetched before it, or
  * the AI's note laid out (a long one folded until asked).
  */
 
-import { translate as t } from './locales.js';
+import { resolveLocale, translate as t } from './locales.js';
+import { skillsBefore } from './ai_task_view.js';
 import { entrySummary } from './activity_log.js';
 import { changeNodeId } from './activity_diff.js';
 import { noteNode } from './ai_text_format.js';
@@ -27,6 +29,16 @@ function el(tag, className, text) {
 }
 
 const said = text => el('div', 'anomalous-ai-user-text', text);
+const words = value => (resolveLocale() === 'zh' ? value?.zh : value?.en) || value?.en || value?.zh || '';
+
+/** A skill the AI fetched: its name and, for advice that goes by the model, the form it came in. */
+function skillUsed(step) {
+    const model = step.for_model;
+    const box = el('div', 'anomalous-ai-skill-used');
+    box.append(el('strong', '', words(step.title)));
+    if (model) box.append(el('span', '', t(`aiSkillForm_${model.form}`, { model: model.model, billions: model.billions })));
+    return box;
+}
 const FOLD_CHARS = 420;
 const FOLD_LINES = 8;
 
@@ -102,6 +114,12 @@ export function stepBody(step, ctx) {
     case 'user_canvas': return [said(t(step.canvas === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')), deliveryState(step)];
     case 'outside_files': return outsideFiles(step, ctx.owner);
     case 'log_outside': return outsideLog(step);
+    case 'use_skill': return [skillUsed(step)];
+    case 'run_workflow': {
+        const used = skillsBefore(ctx.steps, step).map(item => words(item.title));
+        return [...(used.length ? [el('div', 'anomalous-ai-skill-used', t('aiRunSkills', { names: [...new Set(used)].join(' · ') }))] : []),
+            ...(step.text ? [note(step.text)] : [])];
+    }
     default:
         if (step.kind === 'decision') return [decisionCard(step.decision || {}, ctx.numberOf)];
         if (step.kind === 'user') return [...(step.text ? [said(step.text)] : []), ...namedPictures(step, ctx.owner), deliveryState(step)];

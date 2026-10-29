@@ -64,6 +64,26 @@ class SkillTests(unittest.TestCase):
             self.assertIn("not known", advice(unknown))
         self.assertTrue(advice(None).startswith("For a prompt you write yourself."), "the user's own words first")
 
+    def test_a_skill_fetched_is_a_step_once_until_the_next_run(self):
+        def fetch(params):
+            with mock.patch.object(mcp_task_tools, "_canvas_model", return_value={"name": "Anima/K.safetensors", "params": params}):
+                return mcp_task_tools.get_toolbox(self.ctx, skill="prompt_pose")
+        steps = lambda: [step for step in ai_tasks.get_task(self.ctx["task"])["steps"] if step["tool"] == "use_skill"]
+        self.assertEqual(fetch(2_100_000_000)["for_model"], {"form": "small", "model": "K", "billions": 2.1})
+        fetch(2_100_000_000)
+        self.assertEqual(len(steps()), 1, "the same advice again adds nothing")
+        self.assertEqual((steps()[0]["kind"], steps()[0]["title"]["zh"]), ("skill", "写提示词·动作适合模型"))
+        fetch(12_000_000_000)
+        self.assertEqual([step["for_model"]["form"] for step in steps()], ["small", "large"], "another form is a step")
+        ai_tasks.record("Gemini", "run_workflow", {}, ok({}), time.time(), task_id=self.ctx["task"])
+        fetch(12_000_000_000)
+        self.assertEqual(len(steps()), 3, "after a run it is told again")
+
+    def test_a_skill_does_not_name_a_task(self):
+        task = {"title": "", "title_from": "auto", "steps": []}  # a task the AI began without a title
+        ai_tasks._add_step(task, {"id": "s", "at": time.time(), "tool": "use_skill", "kind": "skill", "ok": True, "summary": "use_skill"})
+        self.assertEqual(task["title"], "")
+
     def test_a_skill_turned_off_is_neither_listed_nor_given(self):
         ai_skills.set_on("prompt_pose", False)
         self.assertFalse(next(item for item in ai_skills.status() if item["name"] == "prompt_pose")["on"])
