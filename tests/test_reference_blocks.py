@@ -119,6 +119,32 @@ class BlockTests(unittest.TestCase):
         with self.assertRaisesRegex(reference_blocks.BlockError, "No face detector model"):
             reference_blocks.nodes_of("detail_face_hands", no_faces)
 
+    def test_fixing_hands_enlarges_the_picture_then_redraws_each_hand(self):
+        self.assertEqual(reference_blocks.pick("detail", "hands", EVERYTHING), "fix_hands")
+        self.assertEqual(reference_blocks.pick("detail", None, EVERYTHING), "detail_face_hands", "the plain use stays as it was")
+        built = reference_blocks.build("fix_hands", EVERYTHING, "elves.png", lambda: "SDXL 1.0")
+        nodes = built["nodes"]
+        self.assertEqual((nodes["picture"]["inputs"]["image"], nodes["bigger"]["inputs"]["scale_by"], nodes["encode"]["wire_to"]),
+                         ("elves.png", 1.5, "$sampler"), "the picture, enlarged, in the sampler's place of its latent")
+        self.assertEqual(built["roles"], {"sampler": {"denoise": 0.4}})
+        self.assertEqual((nodes["hand_finder"]["inputs"]["model_name"], nodes["hands"]["inputs"]["denoise"], nodes["hands"]["inputs"]["guide_size"]),
+                         ("bbox/hand_yolov8s.pt", 0.45, 768))
+        self.assertNotIn("turbo", nodes)
+        self.assertIn("batch 4", built["after"])
+        with self.assertRaisesRegex(reference_blocks.BlockError, "needs image"):
+            reference_blocks.build("fix_hands", EVERYTHING)
+        # On an Anima model the Turbo LoRA, when here, makes both passes 10 steps at CFG 1.
+        loras = {"LoraLoaderModelOnly": {"input": {"required": {"lora_name": [["Tools\\anima-turbo-lora-v0.1.safetensors",
+                                                                                 "Tools\\anima-turbo-lora-v0.2.safetensors", "style.safetensors"]]}}}}
+        anima = reference_blocks.build("fix_hands", {**EVERYTHING, **loras}, "elves.png", lambda: "Anima")
+        turbo, hands = anima["nodes"]["turbo"], anima["nodes"]["hands"]
+        self.assertEqual((turbo["inputs"]["lora_name"], turbo["wire_to"]), ("Tools\\anima-turbo-lora-v0.2.safetensors", "$sampler"), "the newest")
+        self.assertEqual((hands["inputs"]["model"], hands["inputs"]["steps"], hands["inputs"]["cfg"]), (["turbo", 0], 10, 1.0))
+        self.assertEqual(anima["roles"]["sampler"]["steps"], 10)
+        without = reference_blocks.build("fix_hands", EVERYTHING, "elves.png", lambda: "Anima")
+        self.assertNotIn("turbo", without["nodes"], "no Turbo LoRA here: the plain block, which works, only slower")
+        self.assertIn("three times faster", without["after"])
+
     def test_upscaling_takes_an_upscale_model_and_brings_it_to_a_quarter_larger(self):
         nodes = reference_blocks.nodes_of("upscale", EVERYTHING)
         self.assertEqual((nodes["upscaler"]["inputs"]["model_name"], nodes["fit"]["inputs"]["scale_by"]), ("2x-Lite.pth", 0.625), "a 2× one: enough for 1.25×, less work")
@@ -220,11 +246,11 @@ class BlockTests(unittest.TestCase):
 
     def test_every_link_names_a_node_of_its_block_or_a_role(self):
         for name, block in reference_blocks.BLOCKS.items():
-            for key, spec in [item for variant in [block, *(block.get("variants") or {}).values()] for item in variant["nodes"].items()]:
+            for variant, key, spec in [(variant, *item) for variant in [block, *(block.get("variants") or {}).values()] for item in variant["nodes"].items()]:
                 for value in spec["inputs"].values():
                     if isinstance(value, list):
                         with self.subTest(block=name, node=key):
-                            self.assertTrue(all(part in block["nodes"] for part in value[0].split("|"))
+                            self.assertTrue(all(part in variant["nodes"] for part in value[0].split("|"))
                                             or value[0].split(".")[0] in ("$sampler", "$decode", "$save", "$loader"))
                 for field in ("wire_to", "like", "replaces"):
                     if field in spec:

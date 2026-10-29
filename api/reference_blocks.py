@@ -10,7 +10,8 @@ whose links may name roles the page finds on the canvas by their sockets
 latent), "$save" (the output node its picture reaches), "$loader" (the sampler's model loader);
 ["$decode", 0] is that node's output, ["$sampler.positive", "*"] what feeds that input, a path
 ("$sampler.positive.clip") followed upstream. A node "like" a role takes its settings of the same
-name; one that "replaces" a role takes its place, links and settings. The directory
+name; one that "replaces" a role takes its place, links and settings. A block may have a variant for
+a model family (on an Anima model an LLLite, or the Turbo LoRA for fewer steps). The directory
 (directory()) is what the AI is handed when it begins a task: the blocks this ComfyUI can run
 and the user has not turned off (user/anomalous/ai_blocks.json), a few words each, by job.
 """
@@ -283,16 +284,28 @@ def _lllite(info, kind):
     return sorted(found)[-1]  # the newest version
 
 
-def _variant(name, block, main_base):
+def _lora(info, prefix):
+    """The LoRA file whose name has `prefix` this ComfyUI has (the newest version), or None."""
+    found = [name for name in _choices(info, "LoraLoaderModelOnly", "lora_name") if prefix in name.lower().replace("\\", "/").split("/")[-1]]
+    return sorted(found)[-1] if found else None
+
+
+def _variant(name, block, main_base, info):
     """`block` as it is built for the canvas's model: its variant for that model's family merged over it
-    (on an Anima model an LLLite stands in for the ControlNet), else itself."""
+    (on an Anima model an LLLite stands in for the ControlNet), else itself. A variant whose LoRAs
+    ("loras", a speed-up) this ComfyUI lacks gives the block itself, saying what the LoRA would do."""
     variants = block.get("variants") or {}
     if not variants:
         return block
     from .model_advice import family
 
     kind = family(main_base())
-    return {**block, **variants[kind]} if kind in variants else block
+    if kind not in variants:
+        return block
+    variant = variants[kind]
+    if any(_lora(info, prefix) is None for prefix in (variant.get("loras") or {}).values()):
+        return {**block, "after": f"{block['after']} {variant['without_loras']}"}
+    return {**block, **variant}
 
 
 def nodes_of(name, info, image=None, main_base=lambda: "", base_of=lambda name: ""):
@@ -321,7 +334,7 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
                 " Ask the user to install it with ComfyUI-Manager."
             raise BlockError(f"Block {name} needs {', '.join(missing)}, not installed here.{instead}")
     packs_here(block)  # before the page is asked which model the canvas has
-    block = _variant(name, block, main)
+    block = _variant(name, block, main, info)
     packs_here(block)
     if block.get("takes") and not (isinstance(image, str) and image.strip()):
         raise BlockError(f"Block {name} needs image: {TAKES[block['takes']]}.")
@@ -330,6 +343,8 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
     fills = {"$image": (image or "").strip(), "$scene": (scene or "").strip()}
     for role, prefix in (block.get("detectors") or {}).items():
         fills[f"${role}"] = _detector(info, prefix)
+    for role, prefix in (block.get("loras") or {}).items():
+        fills[f"${role}"] = _lora(info, prefix)
     if block.get("upscaler"):
         fills["$upscaler"], times = _upscaler(info, block.get("upscale_by", 2.0))
         fills["$fit"] = round(block.get("upscale_by", 1) / times, 4)  # the model's 4× brought back to the block's size

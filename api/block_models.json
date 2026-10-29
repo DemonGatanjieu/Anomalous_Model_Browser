@@ -263,5 +263,22 @@
         "page": "https://civitai.com/models/2708551"
       }
     ]
+  },
+  "anima_turbo_lora": {
+    "title": "anima-turbo-lora-v0.2 (Anima, fewer steps)",
+    "file": "anima-turbo-lora-v0.2.safetensors",
+    "folder": "loras",
+    "subfolder": "",
+    "size": 148902616,
+    "sha256": "1b55e40bdb1d0e5a78cb498f245fccfdaae97823265db957d2aabdcf4cd3caf1",
+    "license": "CircleStone Labs Non-Commercial License v1.0",
+    "base": "Anima",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/circlestone-labs/Anima-Official-LoRAs/resolve/main/anima-turbo-lora-v0.2.safetensors",
+        "page": "https://huggingface.co/circlestone-labs/Anima-Official-LoRAs"
+      }
+    ]
   }
 }
