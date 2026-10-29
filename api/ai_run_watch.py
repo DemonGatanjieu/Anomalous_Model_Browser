@@ -16,8 +16,10 @@ ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 BAR = re.compile(r"(\d+)/(\d+)\s*\[([^<\]]*)<([^,\]]*),\s*([^,\]]*)(?:,\s*([^\]]*))?\]")
 CONSOLE_LINES = 5
 LINE_CHARS = 200
-# Megapixels a sampler can work at comfortably on a 12 GB card; scaled by the card's memory.
-COMFORT_MP_12GB = 4.2
+# Megapixels a sampler can work at comfortably on a 12 GB card; scaled by the card's memory. 8.4:
+# on 2026-10-29 a 6 GB card (RTX 4050) sampled 4 megapixels (Anima, 10 steps) in about 100 s.
+COMFORT_MP_12GB = 8.4
+DECODE_MP_12GB = 8.4  # what a plain VAEDecode takes comfortably on a 12 GB card, likewise scaled
 BIG_SAVE_MP = 64  # a saved picture past this (8192x8192) is heavy for the gallery and the viewers
 PNG_BYTES_PER_PIXEL = 1.2  # what a ComfyUI PNG of a generated picture takes, roughly
 LATENT_INPUTS = ("latent_image", "samples", "latent", "pixels", "image", "images")
@@ -183,7 +185,8 @@ def estimate(prompt, vram_total_mb=None, image_size=_image_size):
         source = prompt.get(str(inputs["sigmas"][0])) if _linked(inputs.get("sigmas")) else None
         return int(source["inputs"]["steps"]) if source and _number((source.get("inputs") or {}).get("steps")) else None
 
-    comfort = COMFORT_MP_12GB * max(0.5, min(3.0, (vram_total_mb or 12288) / 12288))
+    memory = max(0.5, min(3.0, (vram_total_mb or 12288) / 12288))
+    comfort = COMFORT_MP_12GB * memory
     samplers, warnings = [], []
     for node_id, node in sorted(prompt.items(), key=lambda item: str(item[0])):
         if not isinstance(node, dict):
@@ -203,7 +206,7 @@ def estimate(prompt, vram_total_mb=None, image_size=_image_size):
                                  **entry, "megapixels": round(megapixels, 1)})
         elif node.get("class_type") == "VAEDecode" and _linked(inputs.get("samples")):
             found = size(inputs["samples"][0], set())
-            if found and found["width"] * found["height"] * found["batch"] / 1048576 > comfort * 2:
+            if found and found["width"] * found["height"] * found["batch"] / 1048576 > DECODE_MP_12GB * memory:
                 warnings.append({"kind": "big_decode", "node": str(node_id), "title": title,
                                  "width": round(found["width"]), "height": round(found["height"])})
         elif "Save" in str(node.get("class_type")) and _linked(inputs.get("images")):

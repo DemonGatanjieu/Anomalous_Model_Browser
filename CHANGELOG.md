@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- 跑图前的尺寸提醒放宽一档：6GB 显卡采样到约 420 万像素才提醒（以前 210 万），12GB 约 840 万。今天在 6GB 的笔记本显卡上实测，400 万像素一次约 100 秒，并不吃紧；以前的门槛会让 AI 动不动就问你要不要停。解码大图的提醒不变。
+- The size warning before a run is less eager: on a 6 GB card from about 4.2 megapixels (2.1 before), 8.4 on 12 GB. A 6 GB laptop card sampled 4 megapixels in about 100 s today; the old line had the AI ask you to stop runs that were fine. The warning for decoding a large picture is as before.
+
 - 新做法 **修手·先放大再修**：你递给 AI 一张手画坏的图，AMB 先把整张图放大 1.5 倍轻轻重画一遍，让手变大、模型有地方画手指，再自动找出每只手、放大重画后贴回去。这是照着参考作者的做法，在 6GB 的笔记本显卡上一组组试出来的：只修手不先放大，大约一半能成；先放大再修，大约 4 张里 3 张能成。Anima 模型上有 Anima Turbo LoRA（做法面板里可以下载）时只跑 10 步，1280×832 的图约 75 秒；没有也能用，慢三倍左右。AI 会一次出 4 张，先自己放大看手，把手指数不对、粘在一起、大小不对的去掉，都不行就换种子再来，最多两轮，再让你在只放大手那一块的面板里挑。整张图会有些细小变化（脸、水花），构图不变。
 - New way **Fix hands: enlarge, then fix**: from a picture with bad hands, Anomalous enlarges the whole picture 1.5× and redraws it lightly, so the hands grow and the model has room for fingers, then finds every hand and redraws it larger. Taken from the reference author's workflows and tried step by step on a 6 GB laptop card: the hand pass alone fixed about half the tries, enlarging first about 3 in 4. On an Anima model with the Anima Turbo LoRA (downloadable in the ways panel) it is 10 steps, about 75 s for 1280×832; without it, about three times slower. The AI makes 4 tries, checks the hands itself first, drops wrong finger counts, fused fingers and wrong sizes, tries new seeds at most twice more, and lets you pick in a panel zoomed on the hand. Small things change over the picture (faces, splashes); the layout stays.
 

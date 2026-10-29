@@ -76,7 +76,7 @@ class EstimateTests(unittest.TestCase):
         self.assertEqual(found["warnings"], [])
 
     def test_a_small_card_is_warned_sooner(self):
-        prompt = {"1": {"class_type": "EmptyLatentImage", "inputs": {"width": 2048, "height": 1536, "batch_size": 1}},
+        prompt = {"1": {"class_type": "EmptyLatentImage", "inputs": {"width": 2560, "height": 2048, "batch_size": 1}},
                   "2": {"class_type": "KSampler", "inputs": {"latent_image": ["1", 0], "steps": 20}}}
         self.assertEqual(ai_run_watch.estimate(prompt, 24576)["warnings"], [])
         self.assertEqual(ai_run_watch.estimate(prompt, 6144)["warnings"][0]["kind"], "big_sample")
@@ -97,7 +97,7 @@ class EstimateTests(unittest.TestCase):
     def test_odd_prompts_do_not_break_it(self):
         loop = {"1": {"class_type": "X", "inputs": {"image": ["2", 0]}}, "2": {"class_type": "Y", "inputs": {"image": ["1", 0]}},
                 "3": {"class_type": "KSampler", "inputs": {"latent_image": ["1", 0]}}, "4": "junk"}
-        self.assertEqual(ai_run_watch.estimate(loop), {"samplers": [], "warnings": [], "comfort_mp": 4.2})
+        self.assertEqual(ai_run_watch.estimate(loop), {"samplers": [], "warnings": [], "comfort_mp": 8.4})
 
 
 class StopTests(unittest.TestCase):
