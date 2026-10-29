@@ -160,8 +160,10 @@ def _input_facts(path):
 
 def _image_content(path):
     """An MCP image item: the 512 px thumbnail the gallery uses, or None when too big or unreadable."""
+    thumb = _build_card_thumbnail(path)
+    if not thumb:
+        return None
     try:
-        thumb = _build_card_thumbnail(path)
         with open(thumb, "rb") as source:
             data = source.read(MAX_IMAGE_BYTES + 1)
     except OSError:

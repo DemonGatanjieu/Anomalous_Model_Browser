@@ -4,12 +4,39 @@
  * it when the server could not say. Null for anything that is not such a PNG. No DOM.
  */
 
+/**
+ * The response's bytes up to the first IDAT chunk's header, where the text chunks end: the
+ * download stops there, so a picture of hundreds of megabytes is not fetched whole.
+ */
+async function headBeforePixels(response) {
+    const reader = response.body?.getReader?.();
+    if (!reader) return response.arrayBuffer();
+    let bytes = new Uint8Array(0);
+    let next = 8; // where the next chunk's header starts
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) return bytes.buffer;
+        const joined = new Uint8Array(bytes.length + value.length);
+        joined.set(bytes);
+        joined.set(value, bytes.length);
+        bytes = joined;
+        const view = new DataView(bytes.buffer);
+        while (next + 8 <= bytes.length) {
+            if (view.getUint32(next + 4) === 0x49444154) { // 'IDAT'
+                void reader.cancel();
+                return bytes.buffer;
+            }
+            next += 12 + view.getUint32(next);
+        }
+    }
+}
+
 export async function parsePngMetadataFromUrl(url, options = {}) {
     if (!url) return null;
     try {
         const response = await fetch(url, { cache: 'force-cache', signal: options.signal });
         if (!response.ok) return null;
-        const buffer = await response.arrayBuffer();
+        const buffer = await headBeforePixels(response);
         const view = new DataView(buffer);
         if (view.byteLength < 32) return null;
         // PNG magic bytes: 137, 80, 78, 71, 13, 10, 26, 10

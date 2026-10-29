@@ -123,3 +123,16 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 **以后怎么做**
 - `node tools/check_structure.mjs` 现在会拒绝 `:has()` 里出现 `[style…]`，报出文件和行号。
 - 同一个坑第二次出现，就把它做成检查，不再只补一段经验。
+
+## 2026-10-29 · 一张 2.7 亿像素的图让图库卡死
+
+**现象**：AI 把 5120×3328 的图再放大 4 倍，存成 20480×13312、324 MB 的 PNG。之后 AMB 图库一翻到它就很卡，AI 工作台里也一样。
+
+**根因**：Pillow 默认拒绝打开超过约 1.79 亿像素的图（防“解压炸弹”）。缩略图生成用 `except Exception: return source_path` 兜底，失败时把原图当缩略图发给浏览器；浏览器每次都要下载 324 MB、解开 2.7 亿像素。看大图、AI 时间线放大、图片详情读参数也都直接拿原图。
+
+**怎么发现的**：用户说图库“真的卡”，按文件大小找到这张图，在 ComfyUI 的 Python 里打开它，报 DecompressionBombError。
+
+**以后怎么做**
+- 缩略图失败的兜底只能是“小文件原样”或占位图，永远不是大原图（`media_routes.ORIGINAL_CARD_BYTES`）。
+- 超过 Pillow 上限的图在子进程里缩（`huge_picture.py`），内存用完就还，ComfyUI 进程不碰它。
+- 要比缩略图大的地方用 `/anomalous/output_preview`，不用 `/view` 原图；只有用户点“打开原图”才给原图。

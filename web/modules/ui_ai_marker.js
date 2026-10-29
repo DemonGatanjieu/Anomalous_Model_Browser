@@ -14,7 +14,7 @@
 
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
-import { outputUrl } from './ai_task_view.js';
+import { pictureShown } from './ai_task_view.js';
 import { deliveryState } from './ui_ai_delivery.js';
 
 const TOOLS = [['box', '□'], ['circle', '○'], ['arrow', '↗'], ['pen', '✎'], ['mask', '▧']];
@@ -192,7 +192,7 @@ export function openMarker(image, taskId, sent) {
     const stage = el('div', 'anomalous-ai-marker-stage');
     const picture = el('img', 'anomalous-ai-marker-picture');
     picture.alt = image.filename;
-    picture.src = outputUrl({ ...image, folder: 'output' });
+    picture.src = pictureShown({ ...image, folder: 'output' });
     const canvas = el('canvas', 'anomalous-ai-marker-canvas');
     stage.append(picture, canvas);
 

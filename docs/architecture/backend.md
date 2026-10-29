@@ -104,8 +104,11 @@ live in `material_schema.py`, `material_assets.py`, and `material_store.py`;
 material (deduplicated by node type and values like other parameter materials).
 
 The former mixed utility routes are separated: `media_routes.py` owns card
-thumbnails and model/output media lookups, `gallery_routes.py` owns the bounded
-output snapshot and deletion (searched through `image_search.py`, which reads
+thumbnails and model/output media lookups (a picture past Pillow's pixel limit is shrunk once
+by a child process, `huge_picture.py`; a card is never a large original, a picture with none
+gets an SVG placeholder with its size), `gallery_routes.py` owns the bounded
+output snapshot (with each file's size, and the pixel size of big ones), the viewers'
+`output_preview` (the picture, or a cached 4096 px copy of a very large one) and deletion (searched through `image_search.py`, which reads
 PNG text chunks only and caches per-image records by mtime), `translation_routes.py`
 owns provider fallback, `folder_types.py` owns configured visibility and scan scope, and `audio_catalog.py`
 owns generated audio: the output-audio history, temp Preview Audio results and

@@ -248,6 +248,12 @@ export function uniquePictures(images) {
     });
 }
 
+/** What a view larger than a thumbnail shows of an output picture: itself, or a 4096 px copy of a very large one (gallery_routes.py output_preview). */
+export function pictureShown(result) {
+    const source = outputPicture(result);
+    return source ? `/anomalous/output_preview?${new URLSearchParams({ filename: source.filename, subfolder: source.subfolder })}` : outputUrl(result);
+}
+
 /** Thumbnails for output pictures; other media retain their actual ComfyUI address. */
 export function picturePreview(result) {
     const source = outputPicture(result);

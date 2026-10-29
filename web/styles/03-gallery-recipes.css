@@ -58,7 +58,8 @@
 }
 
 /* A video's card: its first frame, with the format on a ▶ badge (over pictures, so always dark). */
-.anomalous-gallery-video-badge {
+.anomalous-gallery-video-badge,
+.anomalous-gallery-huge-badge {
     position: absolute;
     top: 8px;
     left: 8px;
@@ -76,6 +77,9 @@
     letter-spacing: 0.5px;
     pointer-events: none;
 }
+
+/* A picture of tens of megapixels or more: its card says so (the viewer shows a smaller copy). */
+.anomalous-gallery-huge-badge { background: rgba(180, 83, 9, 0.85); letter-spacing: 0; }
 
 /* Settings → Gallery: each format, pressed while shown. */
 .anomalous-gallery-formats {
@@ -493,6 +497,39 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-gallery-viewer-close:hover {
     color: var(--amb-text-main);
 }
+
+/* Under a very large picture shown smaller (ui_gallery_viewer.js): what it is, and the original in a tab. */
+.anomalous-gallery-viewer-note {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px 12px;
+    max-width: min(92vw, 720px);
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(20, 22, 26, 0.88);
+    color: #e5e7eb;
+    font-size: 13px;
+    transform: translateX(-50%);
+}
+
+.anomalous-gallery-viewer-note[hidden] { display: none; }
+
+.anomalous-gallery-viewer-note button {
+    padding: 4px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.anomalous-gallery-viewer-note button:hover { background: rgba(255, 255, 255, 0.18); }
 
 /* Workflow Recipes: Studio Topbar and Modern Layout System */
 .anomalous-recipe-body {

@@ -534,7 +534,9 @@ covered by the `styles.css` manifest.
   `/anomalous/`; other devices may look), as one middleware, and lets other devices change
   things too when the server has an `allow_remote_changes` file (cloud servers); see backend.md.
 - `api/media_routes.py`, `api/gallery_routes.py`, `api/translation_routes.py`, and
-  `api/folder_types.py` own the formerly mixed utility route families.
+  `api/folder_types.py` own the formerly mixed utility route families. `api/huge_picture.py`
+  is run by `media_routes.shrunk_in_child` as a child process to shrink a picture past Pillow's
+  pixel limit (a card image, or the viewers' 4096 px copy from `gallery_routes` output_preview).
 - `model_policies.py` owns shared backend rename and protected-category policy.
 - `model_sidecars.py` says where a model's side files are, shared with the scanner: beside it,
   or the plugin's own ones (`.info`, `.anomalous.json`, `.civitai_bak.*`) in the folder's hidden
@@ -979,7 +981,7 @@ covered by the `styles.css` manifest.
   `model_location.js`), `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
   styles `styles/31-model-info.css`), and
   `model_widget_path.js` puts a model path into a loader's widget. `ui_gallery.js` (cards in
-  `ui_gallery_card.js`, filters in `gallery_filter.js` / `ui_gallery_filter.js`) and `ui_gallery_detail.js` own generated-output browsing and workbench lifecycle,
+  `ui_gallery_card.js`, filters in `gallery_filter.js` / `ui_gallery_filter.js`, the large view in `ui_gallery_viewer.js`) and `ui_gallery_detail.js` own generated-output browsing and workbench lifecycle,
   with stage interaction in `ui_image_stage.js` and metadata tabs in
   `ui_image_inspector.js`.
 - `ui_recipes.js` / `ui_recipe_detail.js` and `ui_notebooks.js`

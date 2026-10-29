@@ -7,7 +7,7 @@
  * marks the picture for the AI (setMarker: the workbench opens ui_ai_marker.js for its task).
  */
 import { translate as t } from './locales.js';
-import { isVideo, outputPicture, outputUrl, pictureKey, picturePreview, uniquePictures } from './ai_task_view.js';
+import { isVideo, outputPicture, outputUrl, pictureKey, picturePreview, pictureShown, uniquePictures } from './ai_task_view.js';
 import { openParamCompare } from './ui_param_compare.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openKeepMenu } from './ui_keep_menu.js';
@@ -108,12 +108,12 @@ export function compareBar() {
 
 /**
  * Output picture `image` in `img`: its 512 px thumbnail first (quick to load and to draw, so a task
- * opens without waiting for its pictures), then the file itself if the picture shows larger than
- * the thumbnail can be sharp. Other pictures (not in the output folder) as they are.
+ * opens without waiting for its pictures), then the file itself (a smaller copy of a very large one)
+ * if the picture shows larger than the thumbnail can be sharp. Other pictures (not in the output folder) as they are.
  */
 export function showPicture(img, image) {
     const thumbnail = picturePreview(image);
-    const full = outputUrl(image);
+    const full = pictureShown(image);
     img.decoding = 'async';
     if (thumbnail !== full) {
         img.addEventListener('load', () => {

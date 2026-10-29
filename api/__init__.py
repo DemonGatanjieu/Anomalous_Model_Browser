@@ -110,6 +110,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/gallery_images', gallery_routes.api_get_gallery_images)
     app.router.add_post('/anomalous/delete_gallery_image', gallery_routes.api_delete_gallery_image)
     app.router.add_get('/anomalous/output_thumbnail', gallery_routes.api_output_thumbnail)
+    app.router.add_get('/anomalous/output_preview', gallery_routes.api_output_preview)
     app.router.add_get('/anomalous/kept_images', kept_images.api_kept_images)
     app.router.add_get('/anomalous/quick_index', quick_index.api_quick_index)
     app.router.add_get('/anomalous/resolve_hash', model_resolution.api_resolve_hash)

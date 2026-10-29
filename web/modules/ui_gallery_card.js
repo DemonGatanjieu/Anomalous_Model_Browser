@@ -17,9 +17,13 @@ import { keptKey } from './image_keep.js';
 import { isComparePicked, pressCompare } from './ui_param_compare.js';
 import { openGalleryCardMenu } from './gallery_card_menu.js';
 import { isGalleryVideo } from './gallery_filter.js';
+import { formatSize } from './ui_model_download.js';
 
 const DETAILS_ICON = `<svg class="anomalous-gallery-details-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><line x1="2" y1="5" x2="8" y2="5"></line><line x1="12" y1="5" x2="14" y2="5"></line><circle cx="10" cy="5" r="2"></circle><line x1="2" y1="11" x2="4" y2="11"></line><line x1="8" y1="11" x2="14" y2="11"></line><circle cx="6" cy="11" r="2"></circle></svg>`;
 const PLAY_ICON = '<svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+// From these the card says "very large" (as gallery_routes.py's PREVIEW_PIXELS, PREVIEW_BYTES).
+const HUGE_PIXELS = 36_000_000;
+const HUGE_BYTES = 64 * 1024 * 1024;
 const DELETE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
 
 function button(className, title, onClick) {
@@ -161,7 +165,7 @@ function keepButton(owner, image) {
     return star;
 }
 
-/** The card of `imgData` ({ filename, subfolder, media_type } from GET /anomalous/gallery_images). */
+/** The card of `imgData` ({ filename, subfolder, media_type, bytes, width, height } from GET /anomalous/gallery_images). */
 export function createGalleryCard(owner, imgData, { showViewer }) {
     const image = { type: 'output', filename: imgData.filename, subfolder: imgData.subfolder || '' };
     const query = `filename=${encodeURIComponent(image.filename)}&subfolder=${encodeURIComponent(image.subfolder)}`;
@@ -214,6 +218,11 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
     details.append(Object.assign(document.createElement('span'), { textContent: t('materialViewParameters') }));
 
     card.append(img, details, remove);
+    if ((imgData.width || 0) * (imgData.height || 0) > HUGE_PIXELS || imgData.bytes > HUGE_BYTES) {
+        card.append(Object.assign(document.createElement('span'), {
+            className: 'anomalous-gallery-huge-badge', textContent: t('galleryHuge', { bytes: formatSize(imgData.bytes) }),
+        }));
+    }
     // Only PNG outputs carry the workflow that can be kept or compared.
     if (/\.png$/i.test(image.filename)) {
         const compare = button('anomalous-gallery-compare', t('compareCardTitle'), () => pressCompare(owner, image, card));

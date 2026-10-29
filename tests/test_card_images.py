@@ -1,5 +1,7 @@
 """Card images: kept in the user folder, posters for video covers, background warm-up."""
 
+import asyncio
+import json
 import os
 import sys
 import tempfile
@@ -68,6 +70,56 @@ class CardImageTests(unittest.TestCase):
         with open(broken, 'wb') as handle:
             handle.write(b'not a video')
         self.assertIsNone(media_routes._build_video_poster(broken))
+
+    def test_a_picture_past_the_pixel_limit_is_shrunk_by_a_child_never_served_whole(self):
+        picture = os.path.join(self.root, 'upscaled.png')
+        Image.new('RGB', (1600, 1040), (90, 140, 200)).save(picture)
+        self.assertEqual(media_routes.picture_size(picture), (1600, 1040))
+        # Below the size, the same steps as a 20480x13312 upscale past Pillow's limit.
+        with mock.patch.object(Image, 'MAX_IMAGE_PIXELS', 1000):
+            served = media_routes._build_card_thumbnail(picture)
+            self.assertNotEqual(served, picture)
+            with mock.patch.object(Image, 'MAX_IMAGE_PIXELS', None):
+                with Image.open(served) as image:
+                    self.assertEqual((image.format, image.size), ('WEBP', (512, 333)))
+            self.assertEqual(media_routes._build_card_thumbnail(picture), served, 'made once, then kept')
+            other = os.path.join(self.root, 'bigger.png')
+            Image.new('RGB', (2000, 2000)).save(other)
+            with mock.patch.object(media_routes, 'HUGE_PICTURE_PIXELS', 3_000_000):
+                self.assertIsNone(media_routes._build_card_thumbnail(other), 'past what a child decodes: a placeholder')
+        response = media_routes.picture_placeholder(other)
+        self.assertEqual(response.content_type, 'image/svg+xml')
+        self.assertIn('2000 × 2000', response.body.decode('utf-8'))
+
+    def test_an_unreadable_large_file_is_never_the_card(self):
+        broken = os.path.join(self.root, 'broken.png')
+        with open(broken, 'wb') as handle:
+            handle.write(b'\0' * 64)
+        self.assertEqual(media_routes._build_card_thumbnail(broken), broken, 'small: shown as it is')
+        with mock.patch.object(media_routes, 'ORIGINAL_CARD_BYTES', 10):
+            self.assertIsNone(media_routes._build_card_thumbnail(broken))
+
+    def test_viewers_get_a_smaller_copy_of_a_very_large_output(self):
+        from aiohttp.test_utils import make_mocked_request
+        from api import gallery_routes
+        output = os.path.join(self.root, 'output')
+        os.makedirs(output)
+        Image.new('RGB', (900, 600), (1, 2, 3)).save(os.path.join(output, 'big.png'))
+        Image.new('RGB', (300, 200)).save(os.path.join(output, 'small.png'))
+        ask = lambda query: asyncio.run(gallery_routes.api_output_preview(make_mocked_request('GET', f'/anomalous/output_preview?{query}')))
+        with mock.patch.object(gallery_routes.folder_paths, 'get_output_directory', return_value=output), \
+                mock.patch.object(gallery_routes, 'PREVIEW_PIXELS', 400_000), mock.patch.object(gallery_routes, 'PREVIEW_EDGE', 256):
+            info = json.loads(ask('filename=big.png&info=1').body)
+            self.assertEqual(info, {"width": 900, "height": 600, "bytes": os.path.getsize(os.path.join(output, 'big.png')), "preview": True})
+            served = ask('filename=big.png')
+            with Image.open(served._path) as image:
+                self.assertEqual(image.size, (256, 171))
+            self.assertTrue(os.path.samefile(ask('filename=small.png')._path, os.path.join(output, 'small.png')), 'a usual picture is itself')
+            self.assertEqual(ask('filename=..%2Fx.png').status, 400)
+            with mock.patch.object(gallery_routes, 'BIG_FILE_BYTES', 1):
+                listed = {item['filename']: item for item in gallery_routes._collect_gallery_images(output)}
+            self.assertEqual((listed['big.png']['width'], listed['big.png']['height']), (900, 600))
+            self.assertGreater(listed['small.png']['bytes'], 0)
 
     def test_warm_up_makes_the_images_in_the_background(self):
         cover = os.path.join(self.root, 'a.png')

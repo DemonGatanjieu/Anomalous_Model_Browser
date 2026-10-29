@@ -1,7 +1,7 @@
 // The AI workbench's rules (web/modules/ai_task_view.js): folding reads, words, counts, addresses.
 import assert from 'node:assert/strict';
 import {
-    activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, panelGist, lookTools, newestPicture, outputCount, outputUrl, outputPicture,
+    activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, panelGist, lookTools, newestPicture, outputCount, outputUrl, outputPicture, pictureShown,
     pictureKey, picturePreview, uniquePictures, stepDetail, taskCounts, taskOutputs, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
@@ -78,6 +78,8 @@ assert.equal(repeated.length, 2);
 assert.notEqual(pictureKey(repeated[0]), pictureKey(repeated[1]));
 assert.match(picturePreview({ filename: 'a b.png', subfolder: 'x/y' }), /^\/anomalous\/output_thumbnail\?filename=a\+b.png&subfolder=x%2Fy$/);
 assert.equal(picturePreview({ filename: 'a.mp4' }), outputUrl({ filename: 'a.mp4' }));
+assert.equal(pictureShown({ filename: 'a b.png', subfolder: 'x' }), '/anomalous/output_preview?filename=a+b.png&subfolder=x', 'larger views: never the huge original');
+assert.equal(pictureShown({ filename: 'a.png', folder: 'input' }), outputUrl({ filename: 'a.png', folder: 'input' }));
 
 // How long a step took.
 assert.equal(duration(400), null);

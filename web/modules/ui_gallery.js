@@ -1,13 +1,14 @@
 /**
  * ui_gallery.js
  * The output gallery's listing and search (cards: ui_gallery_card.js), a model's generated
- * images, choosing a cover, and the full-size viewer.
+ * images and choosing a cover. Its large view is ui_gallery_viewer.js.
  */
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { createGalleryCard } from './ui_gallery_card.js';
+import { showGalleryViewer } from './ui_gallery_viewer.js';
 import { loadKeptImages } from './image_keep.js';
 import { createSearchChips } from './ui_search_chips.js';
 import { newestCompareButton } from './ui_param_compare.js';
@@ -444,129 +445,4 @@ export function showGallerySelectMode(model) {
         if (!this.galleryLoaded) {
             this.loadGalleryImages(1, true);
         }
-    }
-
-
-
-export function showGalleryViewer(src, isVideo = false) {
-        let viewer = document.getElementById('anomalous-gallery-viewer');
-        if (!viewer) {
-            viewer = document.createElement('dialog');
-            viewer.id = 'anomalous-gallery-viewer';
-            viewer.className = 'anomalous-gallery-viewer';
-
-            const closeBtn = document.createElement('div');
-            closeBtn.className = 'anomalous-gallery-viewer-close';
-            closeBtn.innerHTML = '&times;';
-
-            const img = document.createElement('img');
-            img.id = 'anomalous-gallery-viewer-img';
-
-            const video = document.createElement('video');
-            video.id = 'anomalous-gallery-viewer-video';
-            video.controls = true;
-            video.autoplay = true;
-            video.loop = true;
-            video.style.display = 'none';
-            // Double-click: full screen and back. Some Chrome builds already do this for a video
-            // with controls; the check afterwards keeps it from toggling twice.
-            video.addEventListener('dblclick', () => {
-                const before = Boolean(document.fullscreenElement);
-                setTimeout(() => {
-                    if (Boolean(document.fullscreenElement) !== before) return;
-                    if (before) document.exitFullscreen?.().catch(() => {});
-                    else video.requestFullscreen?.().catch(() => {});
-                }, 200);
-            });
-
-            viewer.appendChild(img);
-            viewer.appendChild(video);
-            viewer.appendChild(closeBtn);
-
-            let scale = 1;
-            let translateX = 0;
-            let translateY = 0;
-            let isDragging = false;
-            let startX = 0, startY = 0;
-
-            const resetTransform = () => {
-                scale = 1; translateX = 0; translateY = 0;
-                img.style.transform = `translate(0px, 0px) scale(1)`;
-                img.style.cursor = 'grab';
-            };
-            viewer.stopVideo = () => {
-                video.pause();
-                video.style.display = 'none';
-                video.removeAttribute('src');
-                video.load(); // drops the file, so its sound cannot go on
-            };
-
-            // However it closes (the ×, a click beside the picture, Esc), the video stops at once.
-            // The dialog's 'close' event comes later (half a second, seen), when another video
-            // may already play in it: it only catches a close nothing else saw.
-            const stop = () => {
-                resetTransform();
-                viewer.stopVideo();
-            };
-            const closeViewer = () => {
-                stop();
-                viewer.close();
-            };
-            viewer.addEventListener('cancel', stop); // Esc
-            viewer.addEventListener('close', () => {
-                if (!viewer.open) stop();
-            });
-            closeBtn.onclick = closeViewer;
-            viewer.onclick = (e) => {
-                if (e.target === viewer) closeViewer();
-            };
-
-            viewer.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const zoomFactor = 0.1;
-                if (e.deltaY < 0) scale += zoomFactor;
-                else scale = Math.max(0.1, scale - zoomFactor);
-                img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-            });
-
-            img.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                isDragging = true;
-                startX = e.clientX - translateX;
-                startY = e.clientY - translateY;
-                img.style.cursor = 'grabbing';
-            });
-
-            window.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                translateX = e.clientX - startX;
-                translateY = e.clientY - startY;
-                img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-            });
-
-            window.addEventListener('mouseup', () => {
-                isDragging = false;
-                img.style.cursor = 'grab';
-            });
-
-            document.body.appendChild(viewer);
-        }
-
-        const img = document.getElementById('anomalous-gallery-viewer-img');
-        const video = document.getElementById('anomalous-gallery-viewer-video');
-
-        if (isVideo) {
-            img.style.display = 'none';
-            video.style.display = 'block';
-            video.src = src;
-            video.play().catch(() => {});
-        } else {
-            viewer.stopVideo();
-            img.style.display = 'block';
-            img.src = src;
-            img.style.transform = `translate(0px, 0px) scale(1)`;
-            img.style.cursor = 'grab';
-        }
-
-        if (!viewer.open) viewer.showModal();
     }

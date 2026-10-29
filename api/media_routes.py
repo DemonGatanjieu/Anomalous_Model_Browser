@@ -3,15 +3,21 @@
 Card images are 512 px WebP copies of the covers (a video cover gets one of its first
 frame, the poster), kept in the user folder so they survive ComfyUI restarts (ComfyUI
 empties its temp folder on every start). Listing a folder queues the covers not made yet
-for one background worker, so scrolling and the next visit find them ready.
+for one background worker, so scrolling and the next visit find them ready. A picture past
+Pillow's pixel limit (a 4x upscale of a big one) is shrunk once in a child process
+(huge_picture.py), so ComfyUI's own memory never holds it; a card never falls back to a large
+original, it gets a placeholder with the picture's size instead.
 """
 
 import asyncio
 import collections
 import hashlib
 import json
+import logging
 import os
 import struct
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -28,6 +34,14 @@ CARD_THUMBNAIL_CACHE_LIMIT = 256 * 1024 * 1024
 CARD_THUMBNAIL_STATIC_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.avif'}
 CARD_POSTER_VIDEO_EXTENSIONS = {'.mp4', '.webm', '.mov', '.avi', '.mkv'}
 CARD_WARM_QUEUE_LIMIT = 512
+ORIGINAL_CARD_BYTES = 8 * 1024 * 1024  # an unreadable picture this small is shown as it is
+HUGE_PICTURE_PIXELS = 400_000_000  # the most a child process decodes (about 1.2 GB as RGB)
+HUGE_DECODE_SECONDS = 180
+_HUGE_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'huge_picture.py')
+_TOO_LARGE = object()  # _build_card_thumbnail_impl: past Pillow's limit, for the child process
+_huge_lock = threading.Lock()  # one child decode at a time
+_huge_failed = set()  # cache paths a child could not make: not tried again for that file
+log = logging.getLogger(__name__)
 _thumbnail_cleanup_lock = threading.Lock()
 _thumbnail_generation_slots = threading.BoundedSemaphore(2)
 _thumbnail_last_cleanup = 0.0
@@ -173,14 +187,34 @@ def _save_card_image(image, cache_dir, cached_path):
     _prune_thumbnail_cache(cache_dir, created=True)
 
 
+def picture_size(path):
+    """(width, height) of a picture from its header without decoding it (past Pillow's pixel
+    limit too, for PNG); None when unknown."""
+    from PIL import Image
+
+    try:
+        with open(path, 'rb') as file:
+            head = file.read(24)
+        if head[:8] == b'\x89PNG\r\n\x1a\n' and head[12:16] == b'IHDR':
+            return struct.unpack('>II', head[16:24])
+        with Image.open(path) as image:
+            return image.size
+    except (OSError, ValueError, Image.DecompressionBombError):
+        return None
+
+
 def _build_card_thumbnail_impl(source_path):
-    """Return a cached 512px WebP card image, or the original on any safe fallback."""
+    """A cached 512px WebP card image; the original when it is small already (or an animation);
+    _TOO_LARGE past Pillow's pixel limit; None when it cannot be read and is not small."""
     try:
         from PIL import Image, ImageOps
 
         cache_dir, cached_path = _cached_card_path(source_path)
         if _reuse_cached(cache_dir, cached_path):
             return cached_path
+        size = picture_size(source_path)
+        if size and size[0] * size[1] > Image.MAX_IMAGE_PIXELS:
+            return _TOO_LARGE
 
         with Image.open(source_path) as image:
             if getattr(image, 'is_animated', False):
@@ -191,13 +225,73 @@ def _build_card_thumbnail_impl(source_path):
             _save_card_image(image, cache_dir, cached_path)
         return cached_path
     except Exception:
-        return source_path
+        try:
+            return source_path if os.path.getsize(source_path) <= ORIGINAL_CARD_BYTES else None
+        except OSError:
+            return None
 
 
 def _build_card_thumbnail(source_path):
+    """The card image of a picture (_build_card_thumbnail_impl), one past Pillow's pixel limit
+    made by a child process (shrunk_in_child). None: show picture_placeholder instead."""
     # Bound simultaneous decodes so opening a large folder cannot monopolize CPU/RAM.
     with _thumbnail_generation_slots:
-        return _build_card_thumbnail_impl(source_path)
+        made = _build_card_thumbnail_impl(source_path)
+    # Outside the slots: a huge decode takes long and must not hold the other cards up.
+    return shrunk_in_child(source_path, CARD_THUMBNAIL_EDGE) if made is _TOO_LARGE else made
+
+
+def shrunk_in_child(source_path, edge, kind=''):
+    """A cached WebP of a very large picture, at most `edge` px, made once by a child process at
+    low priority (its memory goes back when it ends), one at a time. None past
+    HUGE_PICTURE_PIXELS, or when it failed for this file before."""
+    size = picture_size(source_path)
+    if not size or size[0] * size[1] > HUGE_PICTURE_PIXELS:
+        return None
+    try:
+        cache_dir, cached_path = _cached_card_path(source_path, kind)
+    except OSError:
+        return None
+    with _huge_lock:
+        if _reuse_cached(cache_dir, cached_path):
+            return cached_path
+        if cached_path in _huge_failed:
+            return None
+        temp_path = f"{cached_path}.{os.getpid()}.huge.tmp"
+        flags = getattr(subprocess, 'BELOW_NORMAL_PRIORITY_CLASS', 0) | getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+        try:
+            subprocess.run([sys.executable, '-I', _HUGE_SCRIPT, source_path, temp_path, str(edge), str(HUGE_PICTURE_PIXELS)],
+                           check=True, capture_output=True, timeout=HUGE_DECODE_SECONDS, creationflags=flags)
+            os.replace(temp_path, cached_path)
+        except (OSError, subprocess.SubprocessError) as error:
+            _huge_failed.add(cached_path)
+            log.warning("Anomalous: could not shrink the %dx%d picture %s: %s", size[0], size[1],
+                        os.path.basename(source_path), (getattr(error, 'stderr', None) or b'')[-300:] or error)
+            return None
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+    _prune_thumbnail_cache(cache_dir, created=True)
+    return cached_path
+
+
+def picture_placeholder(source_path):
+    """The card of a picture with no card image (too large, unreadable): its pixel size and file
+    size on a plain tile, numbers only (nothing to translate)."""
+    size = picture_size(source_path)
+    try:
+        megabytes = f"{os.path.getsize(source_path) / 1048576:.0f} MB"
+    except OSError:
+        megabytes = ""
+    pixels = f"{size[0]} × {size[1]}" if size else ""
+    svg = ('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">'
+           '<rect width="512" height="512" fill="#2b2f36"/>'
+           '<g fill="none" stroke="#8b93a1" stroke-width="10" stroke-linejoin="round">'
+           '<rect x="176" y="150" width="160" height="130" rx="14"/><path d="m186 262 46-44 34 30 28-22 42 36"/></g>'
+           '<circle cx="226" cy="196" r="14" fill="#8b93a1"/>'
+           f'<text x="256" y="340" fill="#d5d9e0" font-family="sans-serif" font-size="30" text-anchor="middle">{pixels}</text>'
+           f'<text x="256" y="382" fill="#8b93a1" font-family="sans-serif" font-size="26" text-anchor="middle">{megabytes}</text></svg>')
+    return web.Response(body=svg.encode('utf-8'), content_type='image/svg+xml', headers={'Cache-Control': 'no-cache'})
 
 
 def _build_video_poster_impl(source_path):
@@ -313,6 +407,8 @@ async def api_serve_image(request):
     variant = request.query.get('variant')
     if variant == 'card' and ext in CARD_THUMBNAIL_STATIC_EXTENSIONS:
         served_path = await asyncio.to_thread(_build_card_thumbnail, file_path)
+        if served_path is None:
+            return picture_placeholder(file_path)
         if served_path != file_path:
             content_type = 'image/webp'
     elif variant == 'poster':

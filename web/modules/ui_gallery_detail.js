@@ -32,6 +32,7 @@ import {
     materialNodeHeading,
 } from './material_inspector.js';
 import { parsePngMetadataFromUrl } from './png_metadata.js';
+import { shownUrl } from './ui_gallery_viewer.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -247,7 +248,7 @@ async function loadWorkbenchImage(index) {
 
     // 2. Update Image & reset pan/zoom
     if (wb.stageImg) {
-        wb.stageImg.src = item.url;
+        wb.stageImg.src = shownUrl(item.url);
         if (wb.panZoom) wb.panZoom.reset();
     }
 
@@ -481,7 +482,7 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
 
     const img = document.createElement('img');
     img.className = 'anomalous-workbench-stage-img';
-    img.src = items[currentIndex].url;
+    img.src = shownUrl(items[currentIndex].url);
     img.alt = 'Workbench Stage';
     wb.stageImg = img;
     stage.appendChild(img);

@@ -6,7 +6,7 @@
 
 import { translate as t } from './locales.js';
 import { timeLabel } from './activity_log.js';
-import { outputUrl, taskCounts, taskState } from './ai_task_view.js';
+import { picturePreview, taskCounts, taskState } from './ai_task_view.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -34,7 +34,7 @@ export function drawRecentAiTasks(owner, container, { fetchTasks, open }) {
             if (summary.cover) {
                 const image = el('img', 'anomalous-ai-recent-cover');
                 image.loading = 'lazy';
-                image.src = outputUrl(summary.cover);
+                image.src = picturePreview(summary.cover);
                 image.alt = '';
                 row.append(image);
             }
