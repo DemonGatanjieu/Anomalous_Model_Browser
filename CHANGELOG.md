@@ -2,8 +2,8 @@
 
 ## v1.63.0 — unreleased
 
-- AI 写出图提示词时，AMB 的工具说明会建议：姿势可以选时优先选模型容易画清楚的动作，避免不必要的复杂手势；手不是重点时可选自然遮挡或构图不露手。你指定的姿势和提供的文本照你的要求处理。复杂姿势可以用参考姿势或分步修复，并检查结果。
-- When an AI composes an image prompt, AMB's tool descriptions suggest a clear pose suited to the model when the pose is flexible, optionally hiding nonessential hands naturally or framing them out. Explicit poses and supplied text are preserved; pose references or staged repair can help with difficult poses.
+- 新增 **skill**，和做法并列：做法是 AMB 替 AI 搭好的节点，skill 是 AI 遇到某类活时自己去取的建议，不搭节点。第一个是“写提示词·动作适合模型”：AI 自己写出图提示词时，没指定姿势就选模型画得清楚的动作；手不是重点时，可以自然遮挡或构图不露手，但这只是可选，不是规定。你指定的姿势和你给的提示词照原样。AI 开工时只看到 skill 的名字和一句话，要写提示词时才去取全文，工具说明里只留一句提示，给 AI 的工具清单不变长。AI 工作台右边的**做法**面板最下面列着 skill，每个有开关，关掉的 AI 就拿不到。
+- New: **skills**, beside the ways. A way is nodes AMB builds for the AI; a skill is advice the AI fetches when a kind of job comes up, and it builds nothing. The first: "Writing prompts: poses the model can draw". When an AI writes an image prompt itself and no pose was asked for, it picks one the model draws cleanly; when hands are not the point, it may hide them naturally or frame them out, as an option, not a rule. Poses you ask for and prompts you give stay as they are. At the start of a task the AI sees only each skill's name and a line, and fetches the advice when it writes a prompt; the tool descriptions only point at it, so the tool list AI apps hold does not grow. The skills are at the bottom of the **Ways** panel on the right of the AI workbench, each with a switch: the AI can't fetch the ones turned off.
 
 - 跑图前的尺寸提醒放宽一档：6GB 显卡采样到约 420 万像素才提醒（以前 210 万），12GB 约 840 万。今天在 6GB 的笔记本显卡上实测，400 万像素一次约 100 秒，并不吃紧；以前的门槛会让 AI 动不动就问你要不要停。解码大图的提醒不变。
 - The size warning before a run is less eager: on a 6 GB card from about 4.2 megapixels (2.1 before), 8.4 on 12 GB. A 6 GB laptop card sampled 4 megapixels in about 100 s today; the old line had the AI ask you to stop runs that were fine. The warning for decoding a large picture is as before.

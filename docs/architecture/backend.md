@@ -252,10 +252,13 @@ descriptions. Its picks go to `/anomalous/scan_all` as `targets`, like a list pa
 
 ## MCP endpoint
 
-The `prompt` schemas for `set_prompt` and `run_workflow` share concise pose guidance for
-agents composing prompts: choose a model-appropriate pose when flexible, optionally frame or
-obscure nonessential hands naturally, and preserve explicit requests and supplied text. This
-is advice in the MCP tool description; AMB passes text through.
+Skills (`api/ai_skills.py`, one data file each in `api/skills/`) are advice an agent fetches
+for a kind of job, beside the blocks that build nodes. begin_task lists the skills on (name and
+a line), `get_toolbox(skill=…)` returns one, and a skill the user turned off in the Ways panel
+(`user/anomalous/ai_skills.json`) is neither listed nor given. Tool descriptions only point at
+a skill (the `prompt` of `set_prompt` and `run_workflow` at `prompt_pose`: a pose the model
+draws well, nonessential hands optionally hidden, the user's own text and poses kept), so the
+tool list stays within its budget; AMB passes prompt text through unchanged.
 
 `track_run(prompt_ids, task, wait_seconds)` attaches existing submissions from this server to
 an open task without running anything. IDs must exist in its queue/history; each is owned by

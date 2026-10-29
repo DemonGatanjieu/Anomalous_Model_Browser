@@ -4,7 +4,7 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, reference_blocks
+from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_skills, reference_blocks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -33,6 +33,9 @@ def begin_task(ctx, title, new_task=False):
     answer["next"] = ("get_situation shows where things stand; a daily run is one call: run_workflow(workflow: a saved "
                       "one, with the prompt, seed or size to change).")
     answer["blocks"] = _blocks(ctx)
+    skills = ai_skills.directory()
+    if skills:
+        answer["skills"] = skills
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
@@ -224,9 +227,14 @@ def stop_run(ctx, task=None):
     return {**done, "stopped": True, "note": "Stopping: run_status(wait_seconds=10) confirms it ended."}
 
 
-def get_toolbox(ctx, task=None):
+def get_toolbox(ctx, task=None, skill=None):
     from .mcp_canvas_edit import find_nodes
 
+    if skill:
+        try:
+            return ai_skills.get(str(skill))
+        except ai_skills.SkillError as error:
+            raise ToolError(str(error))
     task_id = task or ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")
     box = ai_toolbox.effective(ai_tasks.get_task(task_id)) if task_id else None
     if not box:
@@ -419,12 +427,11 @@ TASK_TOOLS = dict([
                "anyone else's). When run_status warns it is far too big and the user agrees, or when the user asks.",
                stop_run, {"task": _TASK_PROP}),
     _task_tool("get_toolbox", "What the user picked for you",
-               "The node types, whole custom node packs, combos, saved workflows, prompts and models the user picked in "
-               "the AI workbench for this task, in full (inputs and outputs of the nodes, each pack's node types, the "
-               "combos' models and prompts…), and how strictly: prefer (use them first) or only (add_node and "
-               "new_workflow accept only those node types and the packs' besides ComfyUI's built-in ones). "
-               "begin_task says when there are any.",
-               get_toolbox, {"task": _TASK_PROP}),
+               "The node types, node packs, combos, workflows, prompts and models the user picked for this task, in "
+               "full, and how strictly: prefer (use them first) or only (add_node and new_workflow accept only those "
+               "node types, the packs' and ComfyUI's built-in ones). begin_task says when there are any. "
+               "skill: a skill begin_task lists, instead.",
+               get_toolbox, {"task": _TASK_PROP, "skill": {"type": "string"}}),
     _task_tool("get_answers", "Read the user's answers and messages",
                "What the user picked or typed on your panels and wrote to you in the AI workbench since you last "
                "asked, each once (kind=change: something they changed themselves; keep it). panel: one panel. "

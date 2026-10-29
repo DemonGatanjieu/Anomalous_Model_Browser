@@ -5,7 +5,8 @@
  * (a pack opens ComfyUI-Manager's list searched for it); and a switch the user turns a block off
  * with, so the AI is not offered it; how it was tried (the card, a run's time) and the models it recommends
  * (api/block_models.json), each here or a button downloading it, link and SHA256 from the list.
- * GET /anomalous/ai_blocks, POST {name, on}. Drawn when shown,
+ * Under them the skills (api/ai_skills.py): advice the AI fetches for a kind of job, each with its
+ * switch too. GET /anomalous/ai_blocks, POST {name, on} or {skill, on}. Drawn when shown,
  * the list read again each time the view is opened.
  */
 
@@ -90,6 +91,27 @@ function recommended(block, owner) {
     return box;
 }
 
+/** The switch that turns `item` on or off for the AI; `key`: {name} for a block, {skill} for a skill. */
+function onSwitch(item, key, redraw) {
+    const toggle = el('input', 'anomalous-ai-block-switch');
+    toggle.type = 'checkbox';
+    toggle.setAttribute('role', 'switch');
+    toggle.checked = item.on;
+    toggle.title = t(item.on ? 'aiBlocksOnHint' : 'aiBlocksOffHint');
+    toggle.setAttribute('aria-label', t('aiBlocksSwitch', { name: words(item.title) }));
+    toggle.onchange = async () => {
+        toggle.disabled = true;
+        try {
+            shown = await ask({ ...key, on: toggle.checked });
+        } catch (error) {
+            toggle.checked = !toggle.checked;
+            shown = { ...shown, note: error.message };
+        }
+        redraw();
+    };
+    return toggle;
+}
+
 function blockRow(block, owner, redraw) {
     const row = el('div', `anomalous-ai-block${block.usable ? '' : ' is-missing'}${block.on ? '' : ' is-off'}`);
     const body = el('div', 'anomalous-ai-block-body');
@@ -105,24 +127,24 @@ function blockRow(block, owner, redraw) {
     if (words(block.source)) more.append(el('div', 'anomalous-ai-block-source', t('aiBlocksSource', { source: words(block.source) })));
     more.append(...[tested(block), recommended(block, owner)].filter(Boolean));
     if (more.childElementCount > 1) body.append(more);
-    const toggle = el('input', 'anomalous-ai-block-switch');
-    toggle.type = 'checkbox';
-    toggle.setAttribute('role', 'switch');
-    toggle.checked = block.on;
-    toggle.title = t(block.on ? 'aiBlocksOnHint' : 'aiBlocksOffHint');
-    toggle.setAttribute('aria-label', t('aiBlocksSwitch', { name: words(block.title) }));
-    toggle.onchange = async () => {
-        toggle.disabled = true;
-        try {
-            shown = await ask({ name: block.name, on: toggle.checked });
-        } catch (error) {
-            toggle.checked = !toggle.checked;
-            shown = { ...shown, note: error.message };
-        }
-        redraw();
-    };
-    row.append(body, toggle);
+    row.append(body, onSwitch(block, { name: block.name }, redraw));
     return row;
+}
+
+/** The skills: a title, what it advises, its switch. */
+function skillsGroup(skills, redraw) {
+    const group = el('div', 'anomalous-ai-blocks-group');
+    group.append(el('div', 'anomalous-ai-blocks-job', t('aiSkillsHeading')), el('div', 'anomalous-ai-blocks-note', t('aiSkillsNote')));
+    for (const skill of skills) {
+        const row = el('div', `anomalous-ai-block${skill.on ? '' : ' is-off'}`);
+        const body = el('div', 'anomalous-ai-block-body');
+        const head = el('div', 'anomalous-ai-block-head');
+        head.append(el('span', 'anomalous-ai-block-title', words(skill.title)));
+        body.append(head, el('div', 'anomalous-ai-block-about', words(skill.about)));
+        row.append(body, onSwitch(skill, { skill: skill.name }, redraw));
+        group.append(row);
+    }
+    return group;
 }
 
 function listBox(owner, redraw) {
@@ -146,6 +168,7 @@ function listBox(owner, redraw) {
         group.append(el('div', 'anomalous-ai-blocks-job', t(`aiBlocksJob_${job}`)), ...blocks.map(block => blockRow(block, owner, redraw)));
         body.append(group);
     }
+    if (shown.skills?.length) body.append(skillsGroup(shown.skills, redraw));
     return body;
 }
 

@@ -206,6 +206,10 @@ covered by the `styles.css` manifest.
   recommend (links, size, SHA256, licence, folder); a block's "models" names them and its
   "tested" says the card and a run's time, both shown in the Ways panel (a missing model is
   downloaded there with `model_download.downloadFrom`) and the time told to the AI with the block.
+  `api/ai_skills.py` holds the skills beside them: advice the AI reads for a kind of job (how to
+  write a prompt a model draws well), a data file each in `api/skills/`, building nothing.
+  begin_task lists the ones on (name and a line), `get_toolbox(skill=…)` gives one, tool
+  descriptions only point at them (`tests/test_ai_skills.py`).
   `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is
@@ -391,7 +395,8 @@ covered by the `styles.css` manifest.
   (`stage.outputsSeen`). `ui_ai_blocks.js` is the side column's Ways view (做法): the ready-made
   blocks by job (GET /anomalous/ai_blocks, `reference_blocks.status`), each block's words from its
   data file, greyed with the pack (a way into ComfyUI-Manager) or model it lacks, and a switch that
-  keeps it from the AI (POST, `user/anomalous/ai_blocks.json`). For a run the AI did not wait
+  keeps it from the AI (POST, `user/anomalous/ai_blocks.json`); under them the skills
+  (`ai_skills.status`), each with the same switch (`user/anomalous/ai_skills.json`). For a run the AI did not wait
   for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
   and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a card per

@@ -269,22 +269,26 @@ async def api_toolbox(request):
 
 
 async def api_blocks(request):
-    """GET /anomalous/ai_blocks: every ready-made block as the 做法 panel shows it (reference_blocks.status);
-    POST {name, on}: the user turns one on or off for the AI."""
-    from . import mcp_canvas_edit, reference_blocks
+    """GET /anomalous/ai_blocks: every ready-made block and skill as the 做法 panel shows them
+    (reference_blocks.status, ai_skills.status); POST {name, on} or {skill, on}: the user turns one on or off for the AI."""
+    from . import ai_skills, mcp_canvas_edit, reference_blocks
     from .mcp_tools import ToolError
 
     if request.method == "POST":
         body = await _body(request) or {}
         try:
-            reference_blocks.set_on(str(body.get("name") or ""), bool(body.get("on")))
-        except reference_blocks.BlockError as error:
+            if "skill" in body:
+                ai_skills.set_on(str(body.get("skill") or ""), bool(body.get("on")))
+            else:
+                reference_blocks.set_on(str(body.get("name") or ""), bool(body.get("on")))
+        except (reference_blocks.BlockError, ai_skills.SkillError) as error:
             return web.json_response({"error": str(error)}, status=400)
     try:
         info = await asyncio.to_thread(mcp_canvas_edit.object_info, {"base_url": f"{request.scheme}://{request.host}"})
     except ToolError as error:
         return web.json_response({"error": str(error)}, status=502)
-    return web.json_response({"blocks": reference_blocks.status(info), "jobs": list(reference_blocks.JOBS)})
+    return web.json_response({"blocks": reference_blocks.status(info), "jobs": list(reference_blocks.JOBS),
+                              "skills": ai_skills.status()})
 
 
 def register_routes(app):

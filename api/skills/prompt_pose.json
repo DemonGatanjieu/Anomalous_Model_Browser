@@ -1,0 +1,18 @@
+{
+  "short": "before you write an image prompt yourself",
+  "title": {
+    "zh": "写提示词·动作适合模型",
+    "en": "Writing prompts: poses the model can draw"
+  },
+  "about": {
+    "zh": "AI 自己写出图提示词时参考：没指定姿势就选模型画得清楚的动作；手不是重点时，可以自然遮挡或构图不露手（只是可选）。你指定的姿势和你给的提示词照原样。",
+    "en": "For an AI writing an image prompt itself: with no pose asked for, a pose the model draws cleanly; when hands are not the point, they may be naturally hidden or framed out (an option only). Poses you ask for and prompts you give stay as they are."
+  },
+  "text": [
+    "For a prompt you write yourself. Text the user gave you goes in as it is; a pose they asked for is kept, however hard.",
+    "Pose left to you: pick one the model draws cleanly: one clear action, a readable silhouette, few points of contact. Avoid interlocked fingers, hands gripping small things, arms crossed over each other and people touching unless the picture needs them.",
+    "Hands not the point of the picture: you may hide them naturally (behind the back, in pockets or sleeves, behind something held or near) or frame them out (portrait, upper body). An option, not a rule: do not hide hands the user wants to see or a pose needs.",
+    "A hard pose the user wants: follow a pose picture (add_nodes use=follow, want=pose) or fix the hands afterwards (use=detail, want=hands), and look at the result (zoom_image) before you call it done.",
+    "If you chose the pose or hid the hands, say so in report, so the user can ask for another."
+  ]
+}
