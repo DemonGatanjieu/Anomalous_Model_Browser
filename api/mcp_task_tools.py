@@ -232,7 +232,7 @@ def get_toolbox(ctx, task=None, skill=None):
 
     if skill:
         try:
-            return ai_skills.get(str(skill))
+            return ai_skills.get(str(skill), _canvas_model() if ai_skills.by_model(str(skill)) else None)
         except ai_skills.SkillError as error:
             raise ToolError(str(error))
     task_id = task or ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")
@@ -262,6 +262,19 @@ def get_toolbox(ctx, task=None, skill=None):
     if box.get("models"):
         answer["models"] = [ai_message_refs.lookup("models", model_id) or {"model_id": model_id, "missing": True} for model_id in box["models"]]
     return answer
+
+
+def _canvas_model():
+    """The main model the canvas's sampler uses {name, params}, for advice that depends on its size; None when
+    the page cannot tell (no page, several samplers, no loader)."""
+    from .mcp_actions import _page
+    from .model_advice import main_params
+
+    try:
+        name = (_page("block_model", {"near_node_id": None}) or {}).get("model") or ""
+    except ToolError:
+        return None
+    return {"name": name, "params": main_params(name)} if name else None
 
 
 def get_answers(ctx, panel=None, wait_seconds=0, task=None):

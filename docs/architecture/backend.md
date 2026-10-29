@@ -255,7 +255,11 @@ descriptions. Its picks go to `/anomalous/scan_all` as `targets`, like a list pa
 Skills (`api/ai_skills.py`, one data file each in `api/skills/`) are advice an agent fetches
 for a kind of job, beside the blocks that build nodes. begin_task lists the skills on (name and
 a line), `get_toolbox(skill=…)` returns one, and a skill the user turned off in the Ways panel
-(`user/anomalous/ai_skills.json`) is neither listed nor given. Tool descriptions only point at
+(`user/anomalous/ai_skills.json`) is neither listed nor given. A skill's `by_model` advice comes in the
+form for the canvas's main model (the page's `block_model`): `model_advice.main_params` counts its
+drawing model's parameters from the file's header (`model_kind.diffusion_params`; a checkpoint's
+text encoders and VAE left out), "large" from `large_from` (10 billion), else "small", "unknown"
+when there is no page, no single sampler or no countable header. Tool descriptions only point at
 a skill (the `prompt` of `set_prompt` and `run_workflow` at `prompt_pose`: a pose the model
 draws well, nonessential hands optionally hidden, the user's own text and poses kept), so the
 tool list stays within its budget; AMB passes prompt text through unchanged.

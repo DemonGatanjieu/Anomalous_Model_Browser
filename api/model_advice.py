@@ -8,7 +8,8 @@
 - whether a LoRA suits the main model it is put on: add_lora and set_model compare their base
   models (the scan's, else what the file's header tells) and say so when the families differ
   (an SD 1.5 LoRA on an SDXL checkpoint does nothing useful) or, more softly, when two bases of one
-  family differ (a Pony LoRA on an Illustrious checkpoint). A note only: the call is made.
+  family differ (a Pony LoRA on an Illustrious checkpoint). A note only: the call is made;
+- how large the main model is (main_params), for advice that depends on it (ai_skills.py).
 """
 
 import json
@@ -18,6 +19,11 @@ from collections import Counter
 import folder_paths
 
 from . import metadata
+
+try:
+    from ..model_kind import diffusion_params
+except ImportError:  # loaded outside the package (tests)
+    from model_kind import diffusion_params
 
 # Base model names (Civitai's, or what model_kind.py infers) by the architecture their files share.
 FAMILIES = (
@@ -57,6 +63,19 @@ def _main_base(value):
         if path:
             return base_of(path)
     return ""
+
+
+def main_params(value):
+    """How many parameters the drawing model of a main loader's choice (its drop-down value) has, from
+    its header; 0 when it is not found or its header cannot tell."""
+    for folder_type in MAIN_TYPES:
+        try:
+            path = folder_paths.get_full_path(folder_type, value)
+        except (KeyError, TypeError):
+            path = None
+        if path:
+            return diffusion_params(path)
+    return 0
 
 
 def lora_paths(values):

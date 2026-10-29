@@ -7,6 +7,8 @@ ComfyUI, so it is tested on its own.
 
 `classify(fmt, header)` -> {"kind": a ComfyUI folder name or "", "base": base model or "",
 "sure": True when the header names both outright, False when it is a reasoned guess}.
+`diffusion_params(path)` -> how many parameters the file's drawing model has (the tensor shapes
+the header lists), the yardstick for how well a model draws hard things such as hands.
 """
 
 import json
@@ -88,13 +90,13 @@ def _gguf_value(reader, kind):
 
 
 def parse_gguf(data):
-    """{"meta": general.* values, "keys": tensor names} from a .gguf's first bytes; None if
-    not one. What did not fit in `data` is left out."""
+    """{"meta": general.* values, "keys": tensor names, "params": their parameters, 0 when not all
+    were read} from a .gguf's first bytes; None if not one. What did not fit in `data` is left out."""
     if data[:4] != b"GGUF":
         return None
     reader = _Reader(data)
     reader.take(4)
-    meta, keys = {}, []
+    meta, keys, params = {}, [], 0
     try:
         if reader.number("I") < 2:
             return None
@@ -106,11 +108,14 @@ def parse_gguf(data):
                 meta[key] = value
         for _ in range(tensors):
             keys.append(reader.text())
-            dims = reader.number("I")
-            reader.take(8 * dims + 4 + 8)
+            size = 1
+            for _ in range(reader.number("I")):
+                size *= reader.number("Q")
+            params += size
+            reader.take(4 + 8)  # its type and offset
     except (EOFError, ValueError, struct.error):
-        pass
-    return {"meta": meta, "keys": keys}
+        params = 0
+    return {"meta": meta, "keys": keys, "params": params}
 
 
 def read_head(path):
@@ -271,6 +276,33 @@ def classify(fmt, header):
     if base == "SDXL":
         base = _family(meta) or base
     return {"kind": kind, "base": base, "sure": bool(kind) and sure and (base_sure or not base)}
+
+
+# Parts of a checkpoint that are not its drawing model: text encoders, VAE, a kept EMA copy.
+NOT_DRAWING = ("first_stage_model.", "cond_stage_model.", "conditioner.", "text_encoders.", "vae.", "model_ema.")
+
+
+def diffusion_params(path):
+    """How many parameters a model file's drawing model has, from its header (a checkpoint's text
+    encoders and VAE left out); 0 when the header cannot tell."""
+    fmt, header = read_head(path)
+    if fmt == "gguf":
+        return (header or {}).get("params") or 0
+    if not header:
+        return 0
+    tensors = {key: value for key, value in header.items() if key != "__metadata__" and isinstance(value, dict)}
+    if any(key.startswith("model.diffusion_model.") for key in tensors):
+        tensors = {key: value for key, value in tensors.items() if key.startswith("model.diffusion_model.")}
+    total = 0
+    for key, value in tensors.items():
+        shape = value.get("shape")
+        if key.startswith(NOT_DRAWING) or not isinstance(shape, list):
+            continue
+        size = 1
+        for dim in shape:
+            size *= dim if isinstance(dim, int) and dim >= 0 else 0
+        total += size
+    return total
 
 
 def inspect_file(path):

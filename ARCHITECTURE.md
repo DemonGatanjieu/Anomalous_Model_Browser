@@ -209,7 +209,9 @@ covered by the `styles.css` manifest.
   `api/ai_skills.py` holds the skills beside them: advice the AI reads for a kind of job (how to
   write a prompt a model draws well), a data file each in `api/skills/`, building nothing.
   begin_task lists the ones on (name and a line), `get_toolbox(skill=…)` gives one, tool
-  descriptions only point at them (`tests/test_ai_skills.py`).
+  descriptions only point at them; advice that depends on the canvas's main model comes in the
+  form for its size, its parameters counted from the file's header (`model_kind.diffusion_params`,
+  `model_advice.main_params`) (`tests/test_ai_skills.py`).
   `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is

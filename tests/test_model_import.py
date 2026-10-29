@@ -123,6 +123,25 @@ class KindTests(unittest.TestCase):
         self.assertEqual(model_kind.parse_gguf(gguf_bytes("wan")[:70])["meta"].get("general.architecture"), "wan")
         self.assertIsNone(model_kind.parse_gguf(b"not a gguf"))
 
+    def test_the_drawing_models_parameters(self):
+        with tempfile.TemporaryDirectory() as temp:
+            checkpoint = os.path.join(temp, "c.safetensors")  # its text encoder and VAE are not counted
+            Path(checkpoint).write_bytes(safetensors_bytes(tensors(
+                "model.diffusion_model.input_blocks.0.0.weight", "model.diffusion_model.out.2.weight",
+                "cond_stage_model.transformer.x.weight", "first_stage_model.decoder.x.weight",
+                shapes={"model.diffusion_model.input_blocks.0.0.weight": [320, 4, 3, 3], "model.diffusion_model.out.2.weight": [4, 320]},
+                meta={"a": "b"})))
+            self.assertEqual(model_kind.diffusion_params(checkpoint), 320 * 4 * 9 + 4 * 320)
+            unet = os.path.join(temp, "u.safetensors")
+            Path(unet).write_bytes(safetensors_bytes(tensors("double_blocks.0.x.weight", "vae.y.weight", shapes={"double_blocks.0.x.weight": [3072, 3072]})))
+            self.assertEqual(model_kind.diffusion_params(unet), 3072 * 3072)
+            gguf = os.path.join(temp, "g.gguf")
+            Path(gguf).write_bytes(gguf_bytes("flux", ["a.weight", "b.weight"]))
+            self.assertEqual(model_kind.diffusion_params(gguf), 2 * 4 * 4)
+            Path(gguf).write_bytes(gguf_bytes("flux", ["a.weight", "b.weight"])[:-10])  # cut short: not a size to go by
+            self.assertEqual(model_kind.diffusion_params(gguf), 0)
+            self.assertEqual(model_kind.diffusion_params(os.path.join(temp, "missing.safetensors")), 0)
+
     def test_files_on_disk_and_the_scanner(self):
         with tempfile.TemporaryDirectory() as temp:
             lora = os.path.join(temp, "x.safetensors")

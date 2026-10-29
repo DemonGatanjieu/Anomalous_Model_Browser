@@ -5,14 +5,26 @@
     "en": "Writing prompts: poses the model can draw"
   },
   "about": {
-    "zh": "AI 自己写出图提示词时参考：没指定姿势就选模型画得清楚的动作；手不是重点时，可以自然遮挡或构图不露手（只是可选）。你指定的姿势和你给的提示词照原样。",
-    "en": "For an AI writing an image prompt itself: with no pose asked for, a pose the model draws cleanly; when hands are not the point, they may be naturally hidden or framed out (an option only). Poses you ask for and prompts you give stay as they are."
+    "zh": "AI 自己写出图提示词时参考，按画布主模型的大小给建议：100 亿参数以上的大模型（Flux.1、Flux.2、千问图像这类）手和复杂动作画得好，照画面需要写，不用藏手；小模型没指定姿势就选画得清楚的动作，手不是重点时可以自然遮挡或构图不露手（只是可选）。你指定的姿势和你给的提示词照原样。",
+    "en": "For an AI writing an image prompt itself, by the size of the canvas's main model: a large one, 10 billion parameters or more (Flux.1, Flux.2, Qwen-Image and the like), draws hands and hard poses well, so the prompt follows the picture with no hiding; on a smaller one, with no pose asked for, a pose it draws cleanly, and hands that are not the point may be naturally hidden or framed out (an option only). Poses you ask for and prompts you give stay as they are."
   },
   "text": [
     "For a prompt you write yourself. Text the user gave you goes in as it is; a pose they asked for is kept, however hard.",
-    "Pose left to you: pick one the model draws cleanly: one clear action, a readable silhouette, few points of contact. Avoid interlocked fingers, hands gripping small things, arms crossed over each other and people touching unless the picture needs them.",
-    "Hands not the point of the picture: you may hide them naturally (behind the back, in pockets or sleeves, behind something held or near) or frame them out (portrait, upper body). An option, not a rule: do not hide hands the user wants to see or a pose needs.",
-    "A hard pose the user wants: follow a pose picture (add_nodes use=follow, want=pose) or fix the hands afterwards (use=detail, want=hands), and look at the result (zoom_image) before you call it done.",
     "If you chose the pose or hid the hands, say so in report, so the user can ask for another."
-  ]
+  ],
+  "by_model": {
+    "large_from": 10000000000,
+    "large": [
+      "{model} is a large model ({size} parameters): it draws hands and hard poses well. Write the pose the picture wants; do not hide hands or simplify a pose for its sake."
+    ],
+    "small": [
+      "{model} is a smaller model ({size} parameters): hands and hard poses often come out wrong.",
+      "Pose left to you: pick one it draws cleanly: one clear action, a readable silhouette, few points of contact. Avoid interlocked fingers, hands gripping small things, arms crossed over each other and people touching unless the picture needs them.",
+      "Hands not the point of the picture: you may hide them naturally (behind the back, in pockets or sleeves, behind something held or near) or frame them out (portrait, upper body). An option, not a rule: do not hide hands the user wants to see or a pose needs.",
+      "A hard pose the user wants: follow a pose picture (add_nodes use=follow, want=pose) or fix the hands afterwards (use=detail, want=hands), and look at the result (zoom_image) before you call it done."
+    ],
+    "unknown": [
+      "The canvas's main model or its size is not known. Under about 10 billion parameters (SD 1.5, SDXL, Illustrious, Pony, Anima) hands and hard poses often come out wrong: then pick a clear pose when it is left to you, and hands that are not the point may be hidden naturally or framed out (an option only). Larger models (Flux.1, Flux.2, Qwen-Image) draw them well: write the pose the picture wants."
+    ]
+  }
 }

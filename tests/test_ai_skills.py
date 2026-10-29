@@ -24,9 +24,10 @@ class SkillTests(unittest.TestCase):
         isolate()
         if os.path.exists(OFF):
             os.remove(OFF)
-        patcher = mock.patch.object(ai_skills, "_off_path", lambda: OFF)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        for patcher in (mock.patch.object(ai_skills, "_off_path", lambda: OFF),
+                        mock.patch.object(mcp_task_tools, "_canvas_model", return_value=None)):  # no page here
+            patcher.start()
+            self.addCleanup(patcher.stop)
         ai_tasks.record("Gemini", "describe_canvas", {}, ok({}), time.time(), True)
         self.ctx = {"client": "Gemini", "task": ai_tasks.list_tasks()[0]["id"]}
 
@@ -47,6 +48,21 @@ class SkillTests(unittest.TestCase):
         self.assertTrue(any("as it is" in line for line in advice), "the user's own text is kept")
         with self.assertRaises(ToolError):
             mcp_task_tools.get_toolbox(self.ctx, skill="no_such_skill")
+
+    def test_the_advice_goes_by_the_size_of_the_canvas_model(self):
+        def advice(model):
+            with mock.patch.object(mcp_task_tools, "_canvas_model", return_value=model):
+                return " ".join(mcp_task_tools.get_toolbox(self.ctx, skill="prompt_pose")["advice"])
+        large = advice({"name": r"Flux_Kontext\flux1-kontext-dev-Q4_K_S.gguf", "params": 11_900_000_000})
+        self.assertIn("flux1-kontext-dev-Q4_K_S is a large model (11.9 billion parameters)", large)
+        self.assertNotIn("hide them naturally", large)
+        small = advice({"name": "Anima/Kirazuri.safetensors", "params": 2_090_000_000})
+        self.assertIn("Kirazuri is a smaller model (2.1 billion parameters)", small)
+        self.assertIn("hide them naturally", small)
+        self.assertIn("An option, not a rule", small)
+        for unknown in (None, {"name": "x.ckpt", "params": 0}):
+            self.assertIn("not known", advice(unknown))
+        self.assertTrue(advice(None).startswith("For a prompt you write yourself."), "the user's own words first")
 
     def test_a_skill_turned_off_is_neither_listed_nor_given(self):
         ai_skills.set_on("prompt_pose", False)
