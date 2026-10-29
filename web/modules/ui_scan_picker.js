@@ -12,7 +12,7 @@
 import { translate as t } from './locales.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { typeLabel } from './ui_model_types.js';
-import { formatSize } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
 
 const STATES = ['new', 'unmatched', 'damaged', 'matched', 'skip'];
 const STATE_KEYS = {

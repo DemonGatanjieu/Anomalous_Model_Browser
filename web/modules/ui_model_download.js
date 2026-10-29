@@ -9,6 +9,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { formatSize } from './file_size.js';
 import { destinationFor, unsafeFormat } from './download_places.js';
 import {
     cancelDownload, defaultRoot, doneCount, downloadFor, hfSearchUrl, lookupDownloads, rememberRoot, startDownload, syncDownloads,
@@ -34,13 +35,6 @@ function button(className, label, onClick) {
     node.type = 'button';
     node.onclick = onClick;
     return node;
-}
-
-export function formatSize(bytes) {
-    const value = Number(bytes) || 0;
-    if (value >= 1024 ** 3) return `${(value / 1024 ** 3).toFixed(2)} GB`;
-    if (value >= 1024 ** 2) return `${(value / 1024 ** 2).toFixed(1)} MB`;
-    return `${Math.max(1, Math.round(value / 1024))} KB`;
 }
 
 const fileName = (value) => String(value).split(/[\\/]/).pop();

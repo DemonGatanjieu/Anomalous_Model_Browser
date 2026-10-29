@@ -13,7 +13,7 @@ import { resolveLocale, translate as t } from './locales.js';
 import { sideHead } from './ui_ai_side.js';
 import { openManager } from './ui_pack_usage.js';
 import { downloadFrom } from './model_download.js';
-import { formatSize } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
 
 let reading = null; // the list being read
 let shown = null; // { blocks, jobs } last read, or { error }

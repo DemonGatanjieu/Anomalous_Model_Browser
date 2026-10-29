@@ -9,7 +9,7 @@
  */
 
 import { translate as t } from './locales.js';
-import { formatSize } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
 import { openRestoreDownloads } from './ui_backup_downloads.js';
 
 const PARTS = ['recipes', 'combos', 'materials', 'parameters', 'comfy_workflows'];

@@ -8,7 +8,7 @@
 import { translate as t } from './locales.js';
 import { openDialog } from './ui_backup.js';
 import { applyRecipeToCanvas } from './ui_recipe_detail.js';
-import { formatSize } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 function el(tag, className, text) {

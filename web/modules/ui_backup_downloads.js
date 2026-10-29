@@ -8,7 +8,8 @@
 
 import { translate as t } from './locales.js';
 import { defaultRoot, downloadFor, fetchDownloadSettings, hfMirrorOn, startDownload, watchDownloads } from './model_download.js';
-import { errorText, formatSize, jobView } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
+import { errorText, jobView } from './ui_model_download.js';
 import { openDialog } from './ui_backup.js';
 
 const LOOKUP_BATCH = 100; // the lookup route takes this many at once

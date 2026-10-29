@@ -16,7 +16,7 @@ import { imagePrompts } from './image_keep.js';
 import { keepPictureAs } from './ui_keep_menu.js';
 import { anomalousAlert, copyText } from './ui_dialog.js';
 import { showTab } from './mcp_task_tab.js';
-import { formatSize } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
 import { imageResults } from './ui_ai_images.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { openComboNamed, openModel, playButton } from './ui_ai_results.js';

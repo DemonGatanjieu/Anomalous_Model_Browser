@@ -136,3 +136,13 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 - 缩略图失败的兜底只能是“小文件原样”或占位图，永远不是大原图（`media_routes.ORIGINAL_CARD_BYTES`）。
 - 超过 Pillow 上限的图在子进程里缩（`huge_picture.py`），内存用完就还，ComfyUI 进程不碰它。
 - 要比缩略图大的地方用 `/anomalous/output_preview`，不用 `/view` 原图；只有用户点“打开原图”才给原图。
+
+## 2026-10-29 · 为一个小函数引出循环导入，AMB 整个页面加载失败
+
+**现象**：隔离的 ComfyUI 上 AMB 没有加载，`window.anomalousBrowserInstance` 不存在，AI 的每个画布操作都报“页面没有及时回应”。控制台：`Cannot access 'marker' before initialization`。
+
+**根因**：看大图的模块 `ui_gallery_viewer.js` 为了 `formatSize` 去导入 `ui_model_download.js`，后者经设置页、`browser.js`、导航一路导回 `ui_ai_workbench.js`；而 `ui_ai_images.js → ui_gallery_detail.js → ui_gallery_viewer.js` 又在这条链的开头。于是 `ui_ai_workbench.js` 在模块顶层调用 `setMarker` 时，`ui_ai_images.js` 还没执行完。结构检查和测试都只看语法和单个模块，抓不到。8197 上看过的页面恰好没触发这个加载顺序。
+
+**以后怎么做**
+- 底层模块（看图、卡片、纯函数）只从同样底层的模块取工具函数，不从“页面”模块（下载、设置、浏览器主对象）取，哪怕只是一个小函数；需要就挪到没有导入的小文件里（`file_size.js`）。
+- 改了导入关系，在真的 ComfyUI 页面上确认 `window.anomalousBrowserInstance` 存在、控制台没有 `before initialization`，再提交。

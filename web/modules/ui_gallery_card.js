@@ -17,7 +17,7 @@ import { keptKey } from './image_keep.js';
 import { isComparePicked, pressCompare } from './ui_param_compare.js';
 import { openGalleryCardMenu } from './gallery_card_menu.js';
 import { isGalleryVideo } from './gallery_filter.js';
-import { formatSize } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
 
 const DETAILS_ICON = `<svg class="anomalous-gallery-details-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><line x1="2" y1="5" x2="8" y2="5"></line><line x1="12" y1="5" x2="14" y2="5"></line><circle cx="10" cy="5" r="2"></circle><line x1="2" y1="11" x2="4" y2="11"></line><line x1="8" y1="11" x2="14" y2="11"></line><circle cx="6" cy="11" r="2"></circle></svg>`;
 const PLAY_ICON = '<svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>';

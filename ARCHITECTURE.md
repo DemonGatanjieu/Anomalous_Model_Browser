@@ -1096,7 +1096,8 @@ covered by the `styles.css` manifest.
   follows the downloads and puts each finished file into its nodes (the placement rules
   are `download_places.js`, without imports so they are tested alone); `ui_model_download.js`
   is the page's Download buttons, progress and the dialog that shows and changes where
-  each file goes. `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
+  each file goes. `file_size.js` says a file's size in KB/MB/GB, without imports: a module low
+  in the import graph (the gallery's viewer) takes it from there, not from a page module. `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
   insertion, model cards and history), `ui_node_model_picker.js` owns native combo
   replacement, `ui_node_parameters.js` renders the panel's parameters section (each saved
   set as a card with the picture made with it and where it came from, values as bars or

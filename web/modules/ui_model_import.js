@@ -12,7 +12,8 @@ import { defaultRoot, rememberRoot } from './model_download.js';
 import {
     IMPORT_KINDS, afterImport, fetchImportFolders, identifyFile, importDestination, inspectFile, modelFiles, placeFile, uploadFile,
 } from './model_import.js';
-import { formatSize, joinPath } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
+import { joinPath } from './ui_model_download.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openSettingsPage } from './ui_settings_page.js';

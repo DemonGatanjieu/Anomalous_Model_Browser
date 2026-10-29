@@ -6,7 +6,7 @@
 
 import { translate as t } from './locales.js';
 import { recycleModel } from './model_placement.js';
-import { formatSize } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
 import { openSettingsPage } from './ui_settings_page.js';
 import { button, el, lastUsed, notUsedSince, usageSection } from './usage_view.js';
 

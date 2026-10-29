@@ -7,7 +7,7 @@
  */
 
 import { translate as t } from './locales.js';
-import { formatSize } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
 
 /** Where a picture address is shown from: an output picture's (`/view?…&type=output`) through output_preview, others as they are. */
 export function shownUrl(src) {

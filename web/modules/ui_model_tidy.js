@@ -14,7 +14,8 @@ import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
 import { checkPlacement, moveErrorText, moveModel, recycleModel, tidyMisplaced } from './model_placement.js';
 import { fetchImportFolders } from './model_import.js';
-import { formatSize, joinPath } from './ui_model_download.js';
+import { formatSize } from './file_size.js';
+import { joinPath } from './ui_model_download.js';
 import { renderUsageSection } from './ui_model_usage.js';
 
 function el(tag, className, text) {
