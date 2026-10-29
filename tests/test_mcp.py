@@ -274,6 +274,27 @@ class ServerActionTests(unittest.TestCase):
             with mock.patch.object(mcp_actions, "ask_page", return_value=reply), self.assertRaises(mcp_tools.ToolError):
                 mcp_actions.run_workflow(self.CTX, 2)
 
+    def test_several_prompts_are_queued_in_order_as_one_run(self):
+        filled, receipts = [], iter([{"prompt_ids": ["a1", "a2"]}, {"prompt_ids": ["b1", "b2"]}, {"refusal": None}])
+        fill = lambda ctx, workflow, **slots: filled.append((workflow, slots)) or {"prompt": slots.get("prompt")}
+        with mock.patch.object(mcp_actions.mcp_fill, "fill", side_effect=fill),                 mock.patch.object(mcp_actions, "ask_page", side_effect=lambda *a, **k: next(receipts)):
+            got = mcp_actions.run_workflow(self.CTX, 2, workflow="w", prompts=["a cat", "a dog"], seed=7)
+        self.assertEqual(filled, [("w", {"seed": 7, "prompt": "a cat"}), ("w", {"seed": 7, "prompt": "a dog"})])
+        self.assertEqual((got["prompt_ids"], got["requested"]), (["a1", "a2", "b1", "b2"], 4))
+        self.assertEqual(got["by_prompt"], [{"prompt": 1, "prompt_ids": ["a1", "a2"]}, {"prompt": 2, "prompt_ids": ["b1", "b2"]}])
+        self.assertNotIn("submission_error", got)
+        # One refused part way: what was queued stays, and the answer says where it stopped.
+        receipts = iter([{"prompt_ids": ["a1"]}, {"submission_error": "bad node"}])
+        with mock.patch.object(mcp_actions.mcp_fill, "fill", return_value=None),                 mock.patch.object(mcp_actions, "ask_page", side_effect=lambda *a, **k: next(receipts)):
+            got = mcp_actions.run_workflow(self.CTX, prompts=["a", "b", "c"])
+        self.assertEqual(got["prompt_ids"], ["a1"])
+        self.assertIn("Prompt 2 was not queued: bad node", got["submission_error"])
+        for wrong in ({"prompts": []}, {"prompts": ["x", " "]}, {"prompts": ["x"] * 9}, {"prompts": "x"},
+                      {"prompts": ["x"], "prompt": "y"}, {"prompts": ["x"] * 5, "batch": 4}):
+            with self.subTest(wrong=wrong), mock.patch.object(mcp_actions, "ask_page") as ask, self.assertRaises(mcp_tools.ToolError):
+                mcp_actions.run_workflow(self.CTX, **wrong)
+            ask.assert_not_called()
+
     def test_old_page_cannot_claim_a_tracked_run(self):
         server = mock.Mock(sockets={"test": object()})
         server.send_sync.side_effect = lambda event, data: self.assertFalse(mcp_bridge.claim(data["id"]))

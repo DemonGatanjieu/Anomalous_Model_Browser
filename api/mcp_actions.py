@@ -135,34 +135,72 @@ def download_status(ctx):
                                           "failed (error says why; starting it again continues it), cancelled."}
 
 
-def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, **slots):
-    from .ai_run_tracking import checked_wait
-    checked_wait(wait_seconds)  # Reject a wait that is no number before anything can be submitted.
-    batch = max(1, min(8, int(batch)))
-    filled = mcp_fill.fill(ctx, workflow, **slots)  # a saved workflow and its blanks first (mcp_fill.py)
+MAX_PROMPTS = 8
+MAX_TRIES = 16  # prompts x batch in one call
+
+
+def _submit(batch):
+    """Queues what the canvas holds `batch` times: (receipt IDs, the page's answer); IDs are None when no valid receipt came."""
     try:
         answer = ask_page("run_workflow", {"batch": batch}, required_capability="prompt_ids")
     except (PageUnavailable, PageRefused) as error:
         raise ToolError(str(error))
-    ids = answer.get("prompt_ids") if isinstance(answer, dict) else None
     page = answer if isinstance(answer, dict) else {}
+    ids = page.get("prompt_ids")
     if (not isinstance(ids, list) or not ids or len(ids) > batch
             or any(not isinstance(pid, str) or not pid or len(pid) > 128 for pid in ids) or len(set(ids)) != len(ids)):
-        raise ToolError((run_refusal.say(answer.get("refusal")) or answer.get("submission_error") if isinstance(answer, dict) else None)
-                        or "No valid submission receipts. Check ComfyUI's queue before retrying; do not repeat automatically.")
-    answer = {"prompt_ids": ids, "queued": len(ids), "requested": batch,
+        return None, page
+    return ids, page
+
+
+def _refused(page):
+    return (run_refusal.say(page.get("refusal")) or page.get("submission_error")
+            or "No valid submission receipts. Check ComfyUI's queue before retrying; do not repeat automatically.")
+
+
+def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, **slots):
+    from .ai_run_tracking import checked_wait
+    checked_wait(wait_seconds)  # Reject a wait that is no number before anything can be submitted.
+    batch = max(1, min(8, int(batch)))
+    if prompts is not None:  # several prompts, queued in order as one run, each with the call's other blanks
+        if slots.get("prompt") or not isinstance(prompts, list) or not 1 <= len(prompts) <= MAX_PROMPTS                 or any(not isinstance(text, str) or not text.strip() for text in prompts):
+            raise ToolError(f"prompts is a list of 1 to {MAX_PROMPTS} prompts, given instead of prompt.")
+        if len(prompts) * batch > MAX_TRIES:
+            raise ToolError(f"{len(prompts)} prompts x batch {batch} is over {MAX_TRIES} tries in one call.")
+    ids, groups, filled, page, stopped = [], [], None, {}, None
+    for index, text in enumerate(prompts or [None]):
+        try:
+            done = mcp_fill.fill(ctx, workflow, **(slots if text is None else {**slots, "prompt": text}))
+        except ToolError as error:
+            if not ids:
+                raise
+            stopped = f"Prompt {index + 1} was not filled in: {error}"
+            break
+        filled = filled or done
+        got, page = _submit(batch)
+        if got is None:
+            if not ids:
+                raise ToolError(_refused(page))
+            stopped = f"Prompt {index + 1} was not queued: {_refused(page)}"
+            break
+        ids += got
+        groups.append({"prompt": index + 1, "prompt_ids": got})
+        if len(got) < batch:
+            stopped = f"Only {len(got)} of {batch} tries of prompt {index + 1} were accepted. {run_refusal.say(page.get('refusal')) or ''}".strip()
+            break
+    requested = batch * len(prompts or [None])
+    answer = {"prompt_ids": ids, "queued": len(ids), "requested": requested,
               "note": ("If this answer does not say it is done, the user tells you when it is: say it is running and end "
                        "your turn; run_status then brings its pictures." if ai_gates.run_wait() == "call" else
                        "Follow these runs with run_status (wait_seconds up to 55).")
               + " Do not repeat the batch; accepted prompts are already queued."}
+    if prompts is not None:
+        answer["by_prompt"] = groups  # which receipts are which prompt; the canvas keeps the last prompt
     if filled:
         answer["filled"] = filled
     # Some prompts may have been accepted before validation or a transport failure stopped the batch.
-    if len(ids) < batch:
-        answer["submission_error"] = f"Only {len(ids)} of {batch} prompts were accepted."
-        told = run_refusal.say(page.get("refusal"))
-        if told:
-            answer["submission_error"] += f" {told}"
+    if stopped:
+        answer["submission_error"] = stopped
     return answer
 
 
@@ -323,22 +361,22 @@ ACTIONS = dict([
     _action("download_status", "Downloads", "How the downloads of this ComfyUI run are going.", download_status,
             read_only=True),
     _action("run_workflow", "Run the workflow",
-            "Queues the workflow (uses the GPU). In the same call: workflow (a saved one) opens in the task's tab "
-            "once and is reused; prompt, negative, seed (every sampler), width/height (the start latent), image "
-            "(its LoadImage) and values (any setting by name: {\"steps\": 30}, or {\"12\": {\"denoise\": 0.5}} when "
-            "several nodes have it) fill it in; the rest stays. Without workflow they fill the open canvas. Then "
-            "run_status, never the output folder.",
+            "Queues the workflow (uses the GPU). workflow (a saved one) opens once in the task's "
+            "tab; prompt, negative, seed (every sampler), width/height (the start latent), image (its LoadImage) and "
+            "values (any setting by name: {\"steps\": 30}; {\"12\": {\"denoise\": 0.5}} for one node) fill it "
+            "in, else the open canvas. Then run_status, never the output folder.",
             run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1,
                                      "description": "Tries, each its own seed."},
-                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 55,
-                                            "description": "Seconds to wait for it to end."},
+                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 55},
                            "workflow": {"type": "string", "description": "A name from list_workflows."},
                            "prompt": _PROMPT, "negative": {"type": "string"},
+                           "prompts": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_PROMPTS,
+                                       "description": "Instead of prompt: several, queued in order as one run."},
                            "seed": {"type": "integer", "minimum": 0},
                            "width": {"type": "integer", "minimum": 16, "maximum": 16384},
                            "height": {"type": "integer", "minimum": 16, "maximum": 16384},
                            "image": {"type": "string", "description": "subfolder/name.png, output or input folder."},
-                           "image_node": {"type": "integer", "description": "Which LoadImage, when there are several."},
+                           "image_node": {"type": "integer", "description": "Which LoadImage, of several."},
                            "values": {"type": "object", "description": "Other settings by name, any node's."}}),
     _action("open_in_anomalous", "Show a model",
             "Opens Anomalous Model Browser on this model's page, so the user sees its cover and details.",

@@ -317,7 +317,11 @@ An old page's claim fails with a refresh message before dispatch. The server val
 bounded, unique ID list and retains its order; `ai_task_runs.watch` queries only those IDs,
 never a global queue difference. A partial batch continues tracking accepted IDs but finishes
 as an error with its pictures retained. `run_status` includes these IDs. Missing receipts
-cannot trigger guessing or an automatic retry.
+cannot trigger guessing or an automatic retry. `prompts` (1–8, instead of `prompt`, at most 16
+tries with `batch`) fills and submits each prompt in turn with the call's other blanks; all
+receipts form one run, `by_prompt` says which are which, and a prompt that cannot be filled or
+queued stops the rest while the ones queued stay tracked (`submission_error` names it). The canvas
+keeps the last prompt.
 
 While a run goes, its watcher adds `api/ai_run_watch.py`'s readings to the progress: the
 console lines written since the step began (ComfyUI's `app.logger` buffer, `\r` redraws kept
