@@ -252,6 +252,10 @@ descriptions. Its picks go to `/anomalous/scan_all` as `targets`, like a list pa
 
 ## MCP endpoint
 
+The `prompt` schemas for `set_prompt` and `run_workflow` share concise pose guidance for
+agents composing prompts: choose a model-appropriate pose when flexible and preserve explicit
+requests and supplied text. This is advice in the MCP tool description; AMB passes text through.
+
 `track_run(prompt_ids, task, wait_seconds)` attaches existing submissions from this server to
 an open task without running anything. IDs must exist in its queue/history; each is owned by
 one recorded run. Retrying an identical batch returns that run, not the task's newest run.

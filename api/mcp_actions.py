@@ -257,6 +257,10 @@ def speak(ctx, character, text, seed=None, language="auto"):
 
 _NODE = {"type": "integer", "description": "A node id."}
 _MODEL = {"type": "string", "description": "model_id from search_models."}
+_PROMPT = {"type": "string", "description": "When composing a prompt, if the pose is flexible, prefer a clear, "
+           "natural pose suited to the model; avoid unnecessary interlocked hands or complex contact. Preserve "
+           "explicit user requests and supplied text. For difficult requested poses, consider pose references "
+           "or staged repair and inspect the result."}
 
 
 def _action(name, title, description, run, properties=None, required=(), destructive=False, open_world=False,
@@ -278,7 +282,7 @@ ACTIONS = dict([
     _action("set_prompt", "Write a prompt",
             "Writes text into the workflow's positive or negative prompt box (or the one on node_id). "
             "mode=append adds to what is there. One Ctrl+Z step.",
-            set_prompt, {"prompt": {"type": "string"}, "role": {"type": "string", "enum": ["positive", "negative"], "default": "positive"},
+            set_prompt, {"prompt": _PROMPT, "role": {"type": "string", "enum": ["positive", "negative"], "default": "positive"},
                          "node_id": _NODE, "mode": {"type": "string", "enum": ["replace", "append"], "default": "replace"}},
             ["prompt"], destructive=True),
     _action("set_model", "Swap a node's model",
@@ -332,7 +336,7 @@ ACTIONS = dict([
                            "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 55,
                                             "description": "Seconds to wait for it to end."},
                            "workflow": {"type": "string", "description": "A name from list_workflows."},
-                           "prompt": {"type": "string"}, "negative": {"type": "string"},
+                           "prompt": _PROMPT, "negative": {"type": "string"},
                            "seed": {"type": "integer", "minimum": 0},
                            "width": {"type": "integer", "minimum": 16, "maximum": 16384},
                            "height": {"type": "integer", "minimum": 16, "maximum": 16384},

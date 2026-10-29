@@ -103,7 +103,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | find_nodes | 搜索最多五个节点摘要；需要具体参数和选项时，用 `types=[节点类型]` 读取 |
 | add_node / connect_nodes | 添加节点并按唯一类型自动连线，或把节点插进已有路径；见下方例子 |
 | add_nodes | 一次加一组节点：按 ComfyUI 的 API 格式写，组里的节点互相连，也能连画布上已有的节点（写 `"#12"`，输出写编号或名字），排成一块放在空位上，整组算一步撤销 |
-| set_prompt | 改写或追加正向/反向提示词 |
+| set_prompt | 改写或追加正向/反向提示词。AI 自己写提示词时，姿势可以选择的话会优先考虑模型容易画清楚的动作；你指定的姿势和提供的文本仍按你的要求处理。`run_workflow` 的提示词也有同样的建议 |
 | set_model | 换某个加载器节点里的模型 |
 | add_lora | 插入一个 LoRA，默认接在主模型加载器和已有的 LoRA 后面。LoRA 文件里练过文本编码器的（SD1.5、SDXL、Illustrious 的大多是），CLIP 线也接上：从 checkpoint 接，或者从 UNet 工作流里单独的 CLIP 加载器接，正反向提示词一起改接到它后面；没练过的（多数 Flux、Anima 的 LoRA）只接模型线。LoRA 和主模型的底模对不上时（SD 1.5 的 LoRA 用在 SDXL 上），回复里会提醒 AI 并告诉它按底模去找；换模型（set_model）也一样 |
 | place_combo | 把一个搭配作为一组新节点摆到画布上，原有节点不动 |
