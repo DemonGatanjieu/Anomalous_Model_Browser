@@ -68,7 +68,7 @@
 - Colouring a line drawing uses Anima's lineart LLLite on an Anima model.
 - Each way is now a data file of its own (api/blocks/): its nodes, the packs and models it needs, what the AI is told and the panel's words in both languages, so a way collected later is one more file.
 
-## v1.62.0 — unreleased
+## v1.62.0 (AI Workbench, AI Builds Workflows on the Canvas, Repaint an Area, Materials Side Panel) — 2026-10-29
 
 - 音频库搬进了“角色语音”页：页面顶上的标签现在是 **角色 ｜ 配音 ｜ 音频库**，左边栏少了一项。加了 AI 工作台以后左边栏有 10 项，数字键只有 1–9，音频库就没键可按了；现在 9 打开角色语音，并回到你上次停的那个标签。
 - The audio gallery moved into Voices: the tabs at the top read Characters | Voice-over | Audio, and the rail is one entry shorter. With the AI workbench the rail had ten entries for nine number keys, leaving the gallery without one; 9 now opens Voices on the view used last.
