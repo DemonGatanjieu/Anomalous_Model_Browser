@@ -159,9 +159,9 @@ async def api_output_thumbnail(request):
         if served is None:
             return picture_placeholder(file_path)
     elif ext in CARD_POSTER_VIDEO_EXTENSIONS:
-        poster = await asyncio.to_thread(_build_video_poster, file_path)
-        if poster:
-            served = poster
+        served = await asyncio.to_thread(_build_video_poster, file_path)
+        if not served:  # no first frame (a broken file, no decoder): never the video itself as a picture
+            return picture_placeholder(file_path)
     # Revalidate (cheap 304s): an output file can be replaced under the same name.
     return web.FileResponse(served, headers={'Cache-Control': 'no-cache'})
 

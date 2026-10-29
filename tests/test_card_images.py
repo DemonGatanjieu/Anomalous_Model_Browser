@@ -121,6 +121,22 @@ class CardImageTests(unittest.TestCase):
             self.assertEqual((listed['big.png']['width'], listed['big.png']['height']), (900, 600))
             self.assertGreater(listed['small.png']['bytes'], 0)
 
+    def test_a_video_without_a_first_frame_gets_a_placeholder_not_itself(self):
+        from aiohttp.test_utils import make_mocked_request
+        from api import gallery_routes
+        output = os.path.join(self.root, 'output')
+        os.makedirs(output)
+        with open(os.path.join(output, 'broken.mp4'), 'wb') as handle:
+            handle.write(b'not a video' * 1000)
+        write_video(os.path.join(output, 'good.mp4'))
+        ask = lambda name: asyncio.run(gallery_routes.api_output_thumbnail(make_mocked_request('GET', f'/anomalous/output_thumbnail?filename={name}')))
+        with mock.patch.object(gallery_routes.folder_paths, 'get_output_directory', return_value=output):
+            broken = ask('broken.mp4')
+            self.assertEqual(broken.content_type, 'image/svg+xml')
+            self.assertIn('0 MB', broken.body.decode('utf-8'))
+            with Image.open(ask('good.mp4')._path) as poster:
+                self.assertEqual(poster.format, 'WEBP')
+
     def test_warm_up_makes_the_images_in_the_background(self):
         cover = os.path.join(self.root, 'a.png')
         Image.new('RGB', (900, 900)).save(cover)
