@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- **让 AI 一次出几张时，每张都不一样**：以前种子设成“固定”时，AI 说一次出 4 张，ComfyUI 会把 4 次当成同一个任务，只出 1 张。现在一次出几张时，固定的种子会一张一张往上加（123、124、125…），出完画布上的种子还是原来的数、还是“固定”。修手、修脸这种看运气的活，可以一次出 4 张让你挑。
+- **A batch of tries from the AI gives different pictures**: with a seed set to "fixed", asking for 4 used to queue the same prompt 4 times and ComfyUI made 1 picture. Now a fixed seed counts up for the batch (123, 124, 125…) and is as it was afterwards, still fixed. Hands and faces, which depend on luck, can come 4 at a time for you to pick from.
+
 - 跑图前的尺寸提醒多算了一步：放大模型之后**最后要存多大**。要存出超过约 6400 万像素的图（比如 5120×3328 再放大 4 倍，存出来 20480×13312、PNG 约 300 MB），时间线上会出现黄色提醒，AI 也会收到，建议放大倍数小一点或者从小一点的图开始放大。
 - The size check before a run now also counts **what is finally saved** after an upscale model: a picture past about 64 megapixels (5120×3328 upscaled 4x is 20480×13312, about 300 MB as PNG) gets a yellow warning on the timeline, and the AI is told, with the advice to upscale less or start from a smaller picture.
 

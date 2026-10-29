@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { queueTracked } from '../web/modules/mcp_run.js';
+import { queueTracked, varySeeds } from '../web/modules/mcp_run.js';
 
 // Only the host is substituted: its queue drains batches, emits request IDs, and calls widgets around submissions.
 function host({ failAt = 0, manual = false, refuse = null } = {}) {
@@ -101,3 +101,37 @@ for (const manual of [false, true]) {
         details: 'model', input: 'model', value: undefined }]);
 }
 console.log('mcp_run: exact receipts, manual interleaving, partial failure, busy guard and cleanup passed');
+
+// A batch of tries with a seed held fixed: it counts up while queued (N pictures, not one), then is as it was.
+{
+    const seedNode = (control, value = 7) => {
+        const seed = { name: 'seed', value };
+        seed.linkedWidgets = [{ name: 'control_after_generate', value: control }];
+        return { widgets: [seed, { name: 'steps', value: 20 }] };
+    };
+    const held = seedNode('fixed');
+    const random = seedNode('randomize');
+    const { app, api } = host();
+    app.graph = { _nodes: [held, random] };
+    const seen = [];
+    const submit = api.queuePrompt;
+    api.queuePrompt = async (...args) => {
+        seen.push(held.widgets[0].linkedWidgets[0].value);
+        held.widgets[0].value += 1; // what the native 'increment' control does after each prompt
+        return submit(...args);
+    };
+    await queueTracked(app, api, 3);
+    assert.deepEqual(seen, ['increment', 'increment', 'increment']);
+    assert.deepEqual([held.widgets[0].value, held.widgets[0].linkedWidgets[0].value], [7, 'fixed'], 'the canvas keeps its seed');
+    assert.equal(random.widgets[0].linkedWidgets[0].value, 'randomize', 'a seed that changes anyway is left alone');
+    const undo = varySeeds({ _nodes: [held] });
+    assert.equal(held.widgets[0].linkedWidgets[0].value, 'increment');
+    undo();
+    assert.equal(held.widgets[0].linkedWidgets[0].value, 'fixed');
+    const single = host();
+    single.app.graph = { _nodes: [held] };
+    single.api.queuePrompt = async (...args) => { seen.push(held.widgets[0].linkedWidgets[0].value); return { prompt_id: 'one' }; };
+    await queueTracked(single.app, single.api, 1);
+    assert.equal(seen.at(-1), 'fixed', 'one run keeps the seed it was given');
+}
+console.log('mcp_run: seeds ok');

@@ -327,7 +327,8 @@ ACTIONS = dict([
             "(its LoadImage) and values (any setting by name: {\"steps\": 30}, or {\"12\": {\"denoise\": 0.5}} when "
             "several nodes have it) fill it in; the rest stays. Without workflow they fill the open canvas. Then "
             "run_status, never the output folder.",
-            run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1},
+            run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1,
+                                     "description": "Tries, each its own seed."},
                            "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 55,
                                             "description": "Seconds to wait for it to end."},
                            "workflow": {"type": "string", "description": "A name from list_workflows."},
