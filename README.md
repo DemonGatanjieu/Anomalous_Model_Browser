@@ -87,7 +87,7 @@ Every page has an icon on the rail at the left of the window.
 | :--- | :--- |
 | **🏠 Home** | Pick what you want to do: a card per task, first steps (scan your model folders, a guided tour of the interface) and your latest activity. |
 | **🕘 Activity** | Everything the plugin changed, by day: on the canvas (which node settings changed from what to what, nodes added or removed, workflows opened) and in files (models, covers, workflows, materials, notes, images, audio). **Find on canvas** jumps to the node; a canvas change can be undone with **Undo** until something changes it again, the rest is recorded only. Your own edits are not listed. |
-| **📦 Models** | Your models with covers, trigger words and base model. Chips at the top switch between types (Checkpoint, LoRA, VAE…) and list a whole type, subfolders included; the folder list narrows it to one folder. **+** adds a loader node to the canvas; edit a model's name, notes and cover, or scan just that model. |
+| **📦 Models** | Your models with covers, trigger words and base model. Chips at the top switch between types (Checkpoint, LoRA, VAE…) and list a whole type, subfolders included; the folder list narrows it to one folder. **+** adds a loader node to the canvas; edit a model's name, notes and cover, or scan just that model.<br>Versions of one Civitai model share a card: its version label switches between them, and the details list every version on Civitai to download the others. |
 | **🖼️ Gallery** | Your ComfyUI `output` folder. Search by prompt, model, LoRA, seed, file name or model hash; open an image to see the parameters it was made with, or drag it onto the canvas to get its workflow back. **☆** keeps a good one as a whole workflow, a combo (model, LoRAs, prompt) or just its prompts. |
 | **🪡 Workflows** | Saved workflows: save a whole workflow or a part of one together with its models, cover, notes and parameters. Each card shows whether the models are on this computer; drag it onto the canvas to load it. Versions can be compared and restored. A card's export button makes a **recipe package** (.zip) to give to someone; dropped into their ⇅, it becomes a workflow card. |
 | **🧩 Combos** | A main model, a few LoRAs and a prompt you like, kept together. **Put on canvas** (or dragging the card onto the canvas) lays them out as a wired group of nodes; nothing already on the canvas changes. |
@@ -199,7 +199,7 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 | :--- | :--- |
 | **🏠 主页** | 想做什么就点哪张卡片。还有上手第一步（扫描模型文件夹、界面导览）和最近的操作记录。 |
 | **🕘 记录** | 按天列出插件做过的每一处改动。<br>画布上：哪个节点的设置从什么改成了什么、加了或删了哪些节点、打开了哪个工作流。<br>文件上：模型、封面、工作流、素材、笔记、图片、音频。<br>**在画布上找到** 可以直接跳到那个节点；画布上的改动在没被再改过之前可以点 **撤销**，其余只记录。你自己在画布上的修改不会记进来。 |
-| **📦 模型** | 模型带封面、触发词和底模信息。<br>顶部标签切换类型（Checkpoint、LoRA、VAE…），连同子文件夹一起列出；左侧文件夹列表可以只看某个文件夹。<br>**+** 一键在画布上创建加载节点；也可以改名、写备注、换封面，或只扫描这一个模型。 |
+| **📦 模型** | 模型带封面、触发词和底模信息。<br>顶部标签切换类型（Checkpoint、LoRA、VAE…），连同子文件夹一起列出；左侧文件夹列表可以只看某个文件夹。<br>**+** 一键在画布上创建加载节点；也可以改名、写备注、换封面，或只扫描这一个模型。<br>同一个 Civitai 模型的几个版本合成一张卡片，点卡片上的版本名切换；详情里能列出 Civitai 上的全部版本，下载其他版本。 |
 | **🖼️ 图库** | 读取 ComfyUI 的 `output` 文件夹。<br>可以按提示词、模型、LoRA、seed、文件名或模型哈希搜索。<br>点开图片能看到生成参数；拖到画布上可以还原当时的工作流。<br>觉得好就点 **☆**：存成整个工作流、搭配（模型 + LoRA + 提示词），或者只存提示词。 |
 | **🪡 工作流** | 存下的工作流：把完整工作流或其中一段，连同模型、封面、备注和参数一起存下来。<br>卡片会显示这台电脑上模型是否齐全；拖到画布上即可载入。<br>可以比较、恢复历史版本。<br>卡片上的导出按钮能打成**配方包**（压缩包）发给别人，对方拖进 ⇅ 就多一张工作流卡片。 |
 | **🧩 搭配** | 把常用的主模型、几个 LoRA 和一段提示词存成一个搭配。<br>按 **放到画布**（或把卡片拖到画布上），就放出一组连好线的节点；画布上原有的东西不动。 |

@@ -179,9 +179,10 @@ export async function downloadMissing(owner, names = []) {
 /**
  * For AI apps (MCP download_model): downloads one model named by a Civitai / Hugging Face /
  * GitHub file link or a Civitai hash into the `type` folder: `folder` (relative) when given,
- * else the download settings' folder ({base} filled in); `name` (the site's when empty).
+ * else the download settings' folder ({base} filled in); `name` (the site's when empty); `root`: the
+ * index of the models folder to put it in, else the one downloads usually go to.
  */
-export async function downloadFrom(owner, { url = '', hash = '', type = '', folder = null, name = '' }) {
+export async function downloadFrom(owner, { url = '', hash = '', type = '', folder = null, name = '', root: rootIndex = null }) {
     const settings = await fetchDownloadSettings();
     const data = await post('/anomalous/download/lookup', {
         items: [{ key: '0', hash: String(hash || ''), url: String(url || ''), value: String(name || ''), types: [String(type)] }],
@@ -191,7 +192,7 @@ export async function downloadFrom(owner, { url = '', hash = '', type = '', fold
     if (!result.type) throw new Error(`"${type}" is not a model folder type of this ComfyUI (loras, checkpoints, vae…).`);
     if (!result.found) throw new Error(`No file to download: ${result.reason || 'not_found'}.`);
     const info = { ...result, roots: data.roots?.[result.type] || [] };
-    const root = defaultRoot(info.type, info.roots);
+    const root = info.roots.find(item => item.index === rootIndex && item.exists) || defaultRoot(info.type, info.roots);
     const file = fileName(name || info.file_name);
     const dir = folder !== null && folder !== undefined
         ? slashes(folder).split('/').filter(Boolean).join('/')

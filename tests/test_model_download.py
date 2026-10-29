@@ -68,6 +68,26 @@ class SourceTests(unittest.TestCase):
             self.assertFalse(download_sources.find_source(url="https://civitai.com/models/123?modelVersionId=456",
                                                           file_hash="cd" * 32)["found"])
 
+    def test_a_model_pages_versions_newest_first_with_their_files(self):
+        older = {**civitai_version(), "id": 400, "name": "v0", "publishedAt": "2025-01-02T00:00:00Z"}
+        page = {"id": 123, "name": "Cool", "nsfw": False, "modelVersions": [older, {**civitai_version(), "publishedAt": "2026-03-04T00:00:00Z"},
+                                                                           {"id": 999, "name": "no files", "files": []}]}
+        asked = []
+        with mock.patch.object(download_sources, "_get_json", side_effect=lambda url, headers: asked.append(url) or page):
+            found = download_sources.civitai_versions(123)
+        self.assertTrue(asked[0].endswith("/api/v1/models/123"))
+        self.assertEqual(found["name"], "Cool")
+        self.assertEqual([version["id"] for version in found["versions"]], [999, 456, 400])
+        self.assertEqual(found["versions"][1], {"id": 456, "name": "v1", "base_model": "SDXL 1.0", "published": "2026-03-04",
+                                                "file_name": "cool.safetensors", "size": len(DATA), "sha256": SHA,
+                                                "page": "https://civitai.com/models/123?modelVersionId=456"})
+        self.assertEqual(found["versions"][0]["file_name"], "", "a version with nothing to download says so")
+        with mock.patch.object(download_sources, "_get_json", return_value=None):  # a 404
+            self.assertIsNone(download_sources.civitai_versions(123))
+        with mock.patch.object(download_sources, "_get_json", side_effect=download_sources.SourceUnreachable("timed out")):
+            with self.assertRaises(download_sources.SourceUnreachable):
+                download_sources.civitai_versions(123)
+
     def test_a_file_name_alone_is_never_a_source(self):
         self.assertEqual(download_sources.find_source("", "", "cool.safetensors"), {"found": False, "reason": "no_source"})
 

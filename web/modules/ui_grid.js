@@ -13,6 +13,8 @@ import { renderModelSourcesView } from './ui_model_sources.js';
 import { renderModelTidyView } from './ui_model_tidy.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { MODEL_LOADERS } from './quick_search_data.js';
+import { groupByPage } from './model_versions.js';
+import { chosenVersion, versionSwitch } from './ui_model_versions.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -35,6 +37,155 @@ function modelCardDisplayName(model) {
 }
 
 
+
+/** A model's card; `versions`: the versions of its model here, newest first (model_versions.js), itself alone without others. */
+function modelCard(owner, model, index, versions) {
+    const card = document.createElement('div');
+    card.className = 'anomalous-card';
+    if (model.preview_url) {
+        const isVideo = model.preview_url.match(/\.mp4(?:&|$)/i) || model.preview_url.match(/\.webm(?:&|$)/i);
+        if (isVideo) {
+            const video = document.createElement('video');
+            video.dataset.anomalousSrc = model.preview_url;
+            video.muted = true; video.loop = true; video.playsInline = true;
+            // Nothing of the video is fetched until it plays; the poster shows meanwhile.
+            video.preload = 'none';
+            video.poster = cardPosterUrl(model.preview_url);
+            const ensureVideoSource = () => {
+                if (!video.getAttribute('src')) video.src = video.dataset.anomalousSrc;
+            };
+            if (owner.energySaving) {
+                video.pause();
+                card.addEventListener('mouseenter', () => {
+                    ensureVideoSource();
+                    video.play().catch(() => {});
+                });
+                card.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
+            } else {
+                video.dataset.anomalousAutoplay = 'true';
+            }
+            if (owner._modelMediaObserver) {
+                owner._modelMediaObserver.observe(video);
+            } else {
+                ensureVideoSource();
+                if (!owner.energySaving) video.autoplay = true;
+            }
+            card.appendChild(video);
+        } else {
+            const img = document.createElement('img');
+            const early = index < EAGER_CARDS;
+            img.loading = early ? 'eager' : 'lazy';
+            if (early) img.fetchPriority = 'high';
+            img.decoding = 'async';
+            img.className = 'anomalous-skeleton-shimmer';
+            img.onload = () => { img.classList.remove('anomalous-skeleton-shimmer'); };
+            img.onerror = () => { img.classList.remove('anomalous-skeleton-shimmer'); };
+            img.src = cardPreviewUrl(model.preview_url, owner.cardThumbnailMode);
+            card.appendChild(img);
+        }
+    } else {
+        const ph = document.createElement('div');
+        ph.className = 'anomalous-card-placeholder';
+        ph.style.display = 'flex';
+        ph.style.flexDirection = 'column';
+        ph.style.alignItems = 'center';
+        ph.style.justifyContent = 'center';
+        ph.style.height = '100%';
+        ph.style.minHeight = '180px';
+        ph.style.color = 'var(--amb-lt-muted, #888)';
+        ph.style.userSelect = 'none';
+        ph.innerHTML = `
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35;margin-bottom:6px;">
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                <circle cx="9" cy="9" r="2"/>
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </svg>
+            <div style="font-size:0.85em;font-weight:500;opacity:0.7;">${t('noPreview')}</div>
+        `;
+        card.appendChild(ph);
+    }
+    const badge = renderSourceBadge(model);
+    if (badge) card.appendChild(badge);
+    const labels = document.createElement('div');
+    labels.className = 'anomalous-card-labels';
+    // Civitai's version name: versions of one model often share a file name. With other versions
+    // downloaded it is a switch, and the card shows the one picked.
+    if (versions.length > 1) {
+        labels.appendChild(versionSwitch(model, versions, other => {
+            stopMediaInContainer(card);
+            card.replaceWith(modelCard(owner, other, index, versions));
+        }));
+    } else if (model.metadata?.version_name) {
+        const version = document.createElement('span');
+        version.className = 'anomalous-card-version';
+        version.textContent = model.metadata.version_name;
+        labels.appendChild(version);
+    }
+    const title = document.createElement('div');
+    title.className = 'anomalous-card-title';
+    title.textContent = modelCardDisplayName(model);
+    labels.appendChild(title);
+
+    const physicalName = document.createElement('div');
+    physicalName.className = 'anomalous-card-filename';
+    physicalName.textContent = model.filename;
+    physicalName.removeAttribute('title');
+    labels.appendChild(physicalName);
+    card.appendChild(labels);
+
+    card.onclick = () => { 
+        owner.recipeModelReturn = null;
+        focusModel(owner, model);
+        owner.historyStack = []; 
+        owner.currentDetailModel = model; 
+        owner.showDetail(model); 
+    };
+
+    const applyBtn = document.createElement('button');
+    applyBtn.type = 'button';
+    applyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+    applyBtn.className = 'anomalous-card-action-btn action-apply anomalous-tooltip-target';
+    applyBtn.removeAttribute('title');
+    applyBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '一键发布到画布' : 'Add Node to Canvas');
+    applyBtn.setAttribute('data-tooltip-pos', 'bottom');
+    applyBtn.onclick = (e) => {
+        e.stopPropagation();
+        focusModel(owner, model);
+        owner.applyModelToCanvas(owner.currentType, owner.currentSubfolder, model);
+    };
+    card.appendChild(applyBtn);
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
+    editBtn.className = 'anomalous-card-action-btn action-edit anomalous-tooltip-target';
+    editBtn.removeAttribute('title');
+    editBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '编辑模型信息' : 'Edit Model Info');
+    editBtn.setAttribute('data-tooltip-pos', 'bottom');
+    editBtn.onclick = (e) => {
+        e.stopPropagation();
+        focusModel(owner, model);
+        owner.showEditModal(model);
+    };
+    card.appendChild(editBtn);
+
+    const singleScanBtn = document.createElement('button');
+    singleScanBtn.type = 'button';
+    singleScanBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
+    singleScanBtn.className = 'anomalous-card-action-btn action-scan anomalous-tooltip-target';
+    singleScanBtn.removeAttribute('title');
+    singleScanBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '立即精准扫描此模型' : 'Scan Model Directly');
+    singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
+    singleScanBtn.onclick = (e) => {
+        e.stopPropagation();
+        focusModel(owner, model);
+        owner.scanSingleModel(model, singleScanBtn);
+    };
+    card.appendChild(singleScanBtn);
+
+
+    return card;
+}
 
 export async function loadModels() {
         try {
@@ -108,155 +259,19 @@ export async function loadModels() {
                 return;
             }
 
+            // One card a model: the versions of one model page together (model_versions.js).
+            const entries = groupByPage(data.models, chosenVersion);
             let renderIndex = 0;
             const renderChunk = () => {
                 if (this._modelRenderGeneration !== renderGeneration) return;
                 const fragment = document.createDocumentFragment();
-                const end = Math.min(renderIndex + 40, data.models.length);
+                const end = Math.min(renderIndex + 40, entries.length);
                 for (; renderIndex < end; renderIndex++) {
-                const model = data.models[renderIndex];
-                const card = document.createElement('div');
-                card.className = 'anomalous-card';
-                if (model.preview_url) {
-                    const isVideo = model.preview_url.match(/\.mp4(?:&|$)/i) || model.preview_url.match(/\.webm(?:&|$)/i);
-                    if (isVideo) {
-                        const video = document.createElement('video');
-                        video.dataset.anomalousSrc = model.preview_url;
-                        video.muted = true; video.loop = true; video.playsInline = true;
-                        // Nothing of the video is fetched until it plays; the poster shows meanwhile.
-                        video.preload = 'none';
-                        video.poster = cardPosterUrl(model.preview_url);
-                        const ensureVideoSource = () => {
-                            if (!video.getAttribute('src')) video.src = video.dataset.anomalousSrc;
-                        };
-                        if (this.energySaving) {
-                            video.pause();
-                            card.addEventListener('mouseenter', () => {
-                                ensureVideoSource();
-                                video.play().catch(() => {});
-                            });
-                            card.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
-                        } else {
-                            video.dataset.anomalousAutoplay = 'true';
-                        }
-                        if (this._modelMediaObserver) {
-                            this._modelMediaObserver.observe(video);
-                        } else {
-                            ensureVideoSource();
-                            if (!this.energySaving) video.autoplay = true;
-                        }
-                        card.appendChild(video);
-                    } else {
-                        const img = document.createElement('img');
-                        const early = renderIndex < EAGER_CARDS;
-                        img.loading = early ? 'eager' : 'lazy';
-                        if (early) img.fetchPriority = 'high';
-                        img.decoding = 'async';
-                        img.className = 'anomalous-skeleton-shimmer';
-                        img.onload = () => { img.classList.remove('anomalous-skeleton-shimmer'); };
-                        img.onerror = () => { img.classList.remove('anomalous-skeleton-shimmer'); };
-                        img.src = cardPreviewUrl(model.preview_url, this.cardThumbnailMode);
-                        card.appendChild(img);
-                    }
-                } else {
-                    const ph = document.createElement('div');
-                    ph.className = 'anomalous-card-placeholder';
-                    ph.style.display = 'flex';
-                    ph.style.flexDirection = 'column';
-                    ph.style.alignItems = 'center';
-                    ph.style.justifyContent = 'center';
-                    ph.style.height = '100%';
-                    ph.style.minHeight = '180px';
-                    ph.style.color = 'var(--amb-lt-muted, #888)';
-                    ph.style.userSelect = 'none';
-                    ph.innerHTML = `
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35;margin-bottom:6px;">
-                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                            <circle cx="9" cy="9" r="2"/>
-                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
-                        </svg>
-                        <div style="font-size:0.85em;font-weight:500;opacity:0.7;">${t('noPreview')}</div>
-                    `;
-                    card.appendChild(ph);
-                }
-                const badge = renderSourceBadge(model);
-                if (badge) card.appendChild(badge);
-                const labels = document.createElement('div');
-                labels.className = 'anomalous-card-labels';
-                // Civitai's version name: versions of one model often share a file name.
-                if (model.metadata?.version_name) {
-                    const version = document.createElement('span');
-                    version.className = 'anomalous-card-version';
-                    version.textContent = model.metadata.version_name;
-                    labels.appendChild(version);
-                }
-                const title = document.createElement('div');
-                title.className = 'anomalous-card-title';
-                title.textContent = modelCardDisplayName(model);
-                labels.appendChild(title);
-
-                const physicalName = document.createElement('div');
-                physicalName.className = 'anomalous-card-filename';
-                physicalName.textContent = model.filename;
-                physicalName.removeAttribute('title');
-                labels.appendChild(physicalName);
-                card.appendChild(labels);
-
-                card.onclick = () => { 
-                    this.recipeModelReturn = null;
-                    focusModel(this, model);
-                    this.historyStack = []; 
-                    this.currentDetailModel = model; 
-                    this.showDetail(model); 
-                };
-
-                const applyBtn = document.createElement('button');
-                applyBtn.type = 'button';
-                applyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-                applyBtn.className = 'anomalous-card-action-btn action-apply anomalous-tooltip-target';
-                applyBtn.removeAttribute('title');
-                applyBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '一键发布到画布' : 'Add Node to Canvas');
-                applyBtn.setAttribute('data-tooltip-pos', 'bottom');
-                applyBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    focusModel(this, model);
-                    this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
-                };
-                card.appendChild(applyBtn);
-
-                const editBtn = document.createElement('button');
-                editBtn.type = 'button';
-                editBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
-                editBtn.className = 'anomalous-card-action-btn action-edit anomalous-tooltip-target';
-                editBtn.removeAttribute('title');
-                editBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '编辑模型信息' : 'Edit Model Info');
-                editBtn.setAttribute('data-tooltip-pos', 'bottom');
-                editBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    focusModel(this, model);
-                    this.showEditModal(model);
-                };
-                card.appendChild(editBtn);
-
-                const singleScanBtn = document.createElement('button');
-                singleScanBtn.type = 'button';
-                singleScanBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
-                singleScanBtn.className = 'anomalous-card-action-btn action-scan anomalous-tooltip-target';
-                singleScanBtn.removeAttribute('title');
-                singleScanBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '立即精准扫描此模型' : 'Scan Model Directly');
-                singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
-                singleScanBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    focusModel(this, model);
-                    this.scanSingleModel(model, singleScanBtn);
-                };
-                card.appendChild(singleScanBtn);
-
-
-                fragment.appendChild(card);
+                const { model, versions } = entries[renderIndex];
+                fragment.appendChild(modelCard(this, model, renderIndex, versions));
                 }
                 this.grid.appendChild(fragment);
-                if (renderIndex < data.models.length) requestAnimationFrame(renderChunk);
+                if (renderIndex < entries.length) requestAnimationFrame(renderChunk);
             };
             requestAnimationFrame(renderChunk);
         } catch (e) {

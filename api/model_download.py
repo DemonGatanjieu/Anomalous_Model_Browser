@@ -6,6 +6,8 @@ POST /anomalous/download/lookup  {items: [{key, hash, url, value, types}]} -> wh
 POST /anomalous/download/start   {download_url, type, root, rel, sha256, size, ...} -> {id}
 GET  /anomalous/download/status  -> {jobs}
 POST /anomalous/download/cancel  {id}
+GET  /anomalous/download/versions?model_id= -> a Civitai model page's versions
+    (download_sources.civitai_versions), for the versions not downloaded yet; asks Civitai, so this computer only.
 GET/POST /anomalous/download/settings -> where downloads go ({place, folder}), kept in
     user/anomalous/download_settings.json; imported models (model_import.py) follow the same folder.
 
@@ -32,7 +34,8 @@ import folder_paths
 from . import hf_card, manager_catalog
 from .activity_log import add_entry, log_path
 from .download_sources import (
-    SHA256, USER_AGENT, allowed_download_url, find_source, host_of, is_civitai, same_file, _load_api_key,
+    SHA256, USER_AGENT, SourceUnreachable, allowed_download_url, civitai_versions, find_source, host_of, is_civitai,
+    same_file, _load_api_key,
 )
 from .path_utils import atomic_write_json, resolve_within
 
@@ -435,10 +438,24 @@ async def api_cancel(request):
     return web.json_response(_public(job))
 
 
+async def api_versions(request):
+    model_id = request.query.get("model_id", "")
+    if not model_id.isdigit() or int(model_id) <= 0:
+        return web.json_response({"error": "bad_request"}, status=400)
+    try:
+        found = await asyncio.to_thread(civitai_versions, int(model_id))
+    except SourceUnreachable as error:
+        return web.json_response({"error": "unreachable", "message": str(error)}, status=502)
+    if found is None:
+        return web.json_response({"error": "not_found"}, status=404)
+    return web.json_response(found)
+
+
 def register_routes(app):
     app.router.add_post("/anomalous/download/lookup", api_lookup)
     app.router.add_post("/anomalous/download/start", api_start)
     app.router.add_get("/anomalous/download/status", api_status)
     app.router.add_post("/anomalous/download/cancel", api_cancel)
+    app.router.add_get("/anomalous/download/versions", api_versions)
     app.router.add_get("/anomalous/download/settings", api_settings)
     app.router.add_post("/anomalous/download/settings", api_settings)

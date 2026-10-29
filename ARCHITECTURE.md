@@ -498,7 +498,9 @@ covered by the `styles.css` manifest.
   existing file; also where downloads go by default (`download_settings.json`).
   `api/download_sources.py` finds the one exact file: Civitai by hash, a Civitai version
   link, or a Hugging Face / GitHub file link the workflow carries, else a file of the same
-  name in ComfyUI-Manager's model list (`api/manager_catalog.py`), checked by the hash.
+  name in ComfyUI-Manager's model list (`api/manager_catalog.py`), checked by the hash;
+  `civitai_versions` lists a Civitai model page's versions with their files
+  (`GET /anomalous/download/versions`, this computer only, asked from a model's details).
   `api/hf_card.py` gives a model downloaded from Hugging Face its model card's example image
   as cover and its trigger words and example prompts as notes (never over the user's).
 - `api/model_import.py` puts model files the user drops on the models page into the right
@@ -986,7 +988,13 @@ covered by the `styles.css` manifest.
   Add node / Edit / Folder / Outputs; the foot with the path, Copy and Delete, and Show in folder, in
   `model_location.js`), `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
   styles `styles/31-model-info.css`), and
-  `model_widget_path.js` puts a model path into a loader's widget. `ui_gallery.js` (cards in
+  `model_widget_path.js` puts a model path into a loader's widget. Versions of one model:
+  `model_versions.js` (pure) groups the listed files by their Civitai model page (metadata
+  `model_id`, never a file name), newest version first, so the grid draws one card a model;
+  `ui_model_versions.js` makes its version label a switch (the shared `action_menu.js`; the
+  version picked is kept in this browser) and the details' row of the versions here;
+  `ui_civitai_versions.js` lists the page's versions on Civitai when asked, each opened or
+  downloaded beside this one (`tests/model_versions.mjs`, styles `styles/49-model-versions.css`). `ui_gallery.js` (cards in
   `ui_gallery_card.js`, filters in `gallery_filter.js` / `ui_gallery_filter.js`, the large view in `ui_gallery_viewer.js`) and `ui_gallery_detail.js` own generated-output browsing and workbench lifecycle,
   with stage interaction in `ui_image_stage.js` and metadata tabs in
   `ui_image_inspector.js`.

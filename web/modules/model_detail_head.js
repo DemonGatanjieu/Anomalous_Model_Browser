@@ -5,7 +5,8 @@
  * Edit, Folder (its tooltip shows the path), Outputs, Change type (ui_model_retype.js: filed under
  * the wrong type, it moves to another) and Hand to AI (ui_ai_handoff.js). The path, Copy and Delete are at the
  * foot of the details (model_location.js). Where the page is too narrow for the cover column,
- * a small cover sits beside the name instead.
+ * a small cover sits beside the name instead. Under the name, the other versions of the model
+ * downloaded here (ui_model_versions.js), `onOpen(model)` showing one.
  */
 
 import { translate as t } from './locales.js';
@@ -15,6 +16,7 @@ import { cardPosterUrl, cardPreviewUrl } from './ui_grid.js';
 import { typeLabel } from './ui_model_types.js';
 import { handModelToAi } from './ui_ai_handoff.js';
 import { openRetype } from './ui_model_retype.js';
+import { detailVersionRow } from './ui_model_versions.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -51,8 +53,8 @@ function smallCover(owner, model) {
     return cover;
 }
 
-/** `onBack()` leads back (ui_detail.js owns where to). */
-export function createDetailHead(owner, model, onBack) {
+/** `onBack()` leads back and `onOpen(model)` shows another version (ui_detail.js owns both). */
+export function createDetailHead(owner, model, onBack, onOpen) {
     const meta = model.metadata || {};
     const where = { type: owner.currentType, path_idx: owner.currentPathIdx, subfolder: owner.currentSubfolder };
     const head = el('div', 'anomalous-detail-head');
@@ -72,6 +74,8 @@ export function createDetailHead(owner, model, onBack) {
     renderSourceLine(line, model, meta);
     facts.append(line, renderDetailLinks(meta));
     title.append(name, facts);
+    const versions = detailVersionRow(owner, model, onOpen);
+    if (versions) title.append(versions);
     named.append(title);
 
     const actions = el('div', 'anomalous-detail-actions');

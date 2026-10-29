@@ -166,6 +166,28 @@ def civitai_by_link(url, name, file_hash=""):
     return _from_civitai_version(version, file_hash, name) if version else None
 
 
+MAX_VERSIONS = 60  # a model page's versions listed, newest first
+
+
+def civitai_versions(model_id):
+    """Every version on Civitai model page `model_id`, newest first, with its primary file to download:
+    {name, versions: [{id, name, base_model, published, file_name, size, sha256, page}]}; None on 404.
+    Raises SourceUnreachable when Civitai could not be asked."""
+    data = _civitai_json(f"/api/v1/models/{int(model_id)}")
+    if not isinstance(data, dict):
+        return None
+    versions = []
+    for version in (data.get("modelVersions") or [])[:MAX_VERSIONS]:
+        if not isinstance(version, dict) or not str(version.get("id", "")).isdigit():
+            continue
+        found = _from_civitai_version({**version, "modelId": data.get("id"), "model": {"nsfw": data.get("nsfw")}}) or {}
+        versions.append({"id": int(version["id"]), "name": version.get("name") or "", "base_model": version.get("baseModel") or "",
+                         "published": str(version.get("publishedAt") or version.get("createdAt") or "")[:10],
+                         **{key: found.get(key, "") for key in ("file_name", "size", "sha256", "page")}})
+    versions.sort(key=lambda item: item["id"], reverse=True)
+    return {"name": data.get("name") or "", "versions": versions}
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
         return None

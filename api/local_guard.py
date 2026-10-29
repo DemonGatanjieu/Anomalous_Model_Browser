@@ -36,6 +36,7 @@ LOCAL_GETS = frozenset({
     "/anomalous/tts_version/releases",
     "/anomalous/import/folders",
     "/anomalous/civitai_check",
+    "/anomalous/download/versions",  # asks Civitai
     "/anomalous/usage/check",  # reads every output and saved workflow
 })
 # Routes that answer other devices themselves (MCP replies in JSON-RPC).

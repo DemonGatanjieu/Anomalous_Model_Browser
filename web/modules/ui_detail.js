@@ -9,6 +9,7 @@ import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
 import { renderInferredNote } from './model_source.js';
 import { createModelFileFoot } from './model_location.js';
 import { createDetailHead } from './model_detail_head.js';
+import { civitaiVersionsBox } from './ui_civitai_versions.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -164,7 +165,13 @@ export function showDetail(model) {
 
         const m = model.metadata || {};
 
-        rightPanel.appendChild(createDetailHead(this, model, goBack));
+        const openVersion = other => { // another version of this model, in its place
+            this.currentDetailModel = other;
+            this.showDetail(other);
+        };
+        rightPanel.appendChild(createDetailHead(this, model, goBack, openVersion));
+        const onCivitai = civitaiVersionsBox(this, model, openVersion);
+        if (onCivitai) rightPanel.appendChild(onCivitai);
         const inferredNote = renderInferredNote(m, () => this.showEditModal(model));
         if (inferredNote) rightPanel.appendChild(inferredNote);
 

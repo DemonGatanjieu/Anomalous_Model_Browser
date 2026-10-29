@@ -1,0 +1,83 @@
+/* Versions of one model (ui_model_versions.js, ui_civitai_versions.js): the card's version switch
+   (its menu is the shared action menu), the details' row of the versions here and the box listing
+   the versions on Civitai. */
+
+.anomalous-card-version.is-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    pointer-events: auto; /* the labels over the cover let clicks through to the card; this one is its own */
+}
+.anomalous-card-version.is-switch:hover,
+.anomalous-card-version.is-switch[aria-expanded="true"] { border-color: var(--amb-accent); }
+.anomalous-card-version-name { overflow: hidden; text-overflow: ellipsis; }
+.anomalous-card-version-count { flex: none; color: var(--amb-text-muted); font-weight: 500; }
+.anomalous-card-version-count::after { content: " ▾"; }
+
+.anomalous-detail-versions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.anomalous-detail-versions-label { color: var(--amb-text-muted); font-size: 0.85em; }
+.anomalous-detail-version {
+    max-width: 220px;
+    padding: 2px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: none;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+.anomalous-detail-version:hover { border-color: var(--amb-accent); }
+.anomalous-detail-version.is-current { border-color: var(--amb-accent); background: color-mix(in srgb, var(--amb-accent) 16%, transparent); cursor: default; }
+
+.anomalous-civitai-versions { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 12px; }
+.anomalous-civitai-versions-ask {
+    align-self: flex-start;
+    padding: 4px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: none;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+.anomalous-civitai-versions-ask:hover:not(:disabled) { border-color: var(--amb-accent); }
+.anomalous-civitai-versions-ask:disabled { opacity: 0.6; cursor: default; }
+.anomalous-civitai-versions-list { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; }
+.anomalous-civitai-version {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+}
+.anomalous-civitai-version.is-here { border-color: color-mix(in srgb, var(--amb-accent) 45%, var(--amb-border)); }
+.anomalous-civitai-version-about { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.anomalous-civitai-version-name { color: var(--amb-text-main); font-weight: 600; overflow-wrap: anywhere; }
+.anomalous-civitai-version-facts,
+.anomalous-civitai-version-note { color: var(--amb-text-muted); font-size: 0.85em; line-height: 1.5; }
+.anomalous-civitai-version-note.is-error { color: var(--amb-warn); }
+.anomalous-civitai-version-action {
+    flex: none;
+    max-width: 50%;
+    padding: 3px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: none;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 0.85em;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+.anomalous-civitai-version-action:hover:not(:disabled) { border-color: var(--amb-accent); }
+.anomalous-civitai-version-action:disabled { opacity: 0.6; cursor: default; }
