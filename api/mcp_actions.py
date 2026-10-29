@@ -259,8 +259,9 @@ _NODE = {"type": "integer", "description": "A node id."}
 _MODEL = {"type": "string", "description": "model_id from search_models."}
 _PROMPT = {"type": "string", "description": "When composing a prompt, if the pose is flexible, prefer a clear, "
            "natural pose suited to the model; avoid unnecessary interlocked hands or complex contact. Preserve "
-           "explicit user requests and supplied text. For difficult requested poses, consider pose references "
-           "or staged repair and inspect the result."}
+           "explicit user requests and supplied text. If hands are not important, natural occlusion or framing "
+           "them out is optional. For difficult requested poses, consider pose references or staged repair and "
+           "inspect the result."}
 
 
 def _action(name, title, description, run, properties=None, required=(), destructive=False, open_world=False,

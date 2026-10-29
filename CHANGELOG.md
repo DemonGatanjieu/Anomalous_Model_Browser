@@ -2,8 +2,8 @@
 
 ## v1.63.0 — unreleased
 
-- AI 写出图提示词时，AMB 的工具说明会建议：姿势可以选时优先选模型容易画清楚的动作，避免不必要的复杂手势；你指定的姿势和提供的文本照你的要求处理。复杂姿势可以用参考姿势或分步修复，并检查结果。
-- When an AI composes an image prompt, AMB's tool descriptions suggest a clear pose suited to the model when the pose is flexible. Explicit poses and supplied text are preserved; pose references or staged repair can help with difficult poses.
+- AI 写出图提示词时，AMB 的工具说明会建议：姿势可以选时优先选模型容易画清楚的动作，避免不必要的复杂手势；手不是重点时可选自然遮挡或构图不露手。你指定的姿势和提供的文本照你的要求处理。复杂姿势可以用参考姿势或分步修复，并检查结果。
+- When an AI composes an image prompt, AMB's tool descriptions suggest a clear pose suited to the model when the pose is flexible, optionally hiding nonessential hands naturally or framing them out. Explicit poses and supplied text are preserved; pose references or staged repair can help with difficult poses.
 
 - 跑图前的尺寸提醒放宽一档：6GB 显卡采样到约 420 万像素才提醒（以前 210 万），12GB 约 840 万。今天在 6GB 的笔记本显卡上实测，400 万像素一次约 100 秒，并不吃紧；以前的门槛会让 AI 动不动就问你要不要停。解码大图的提醒不变。
 - The size warning before a run is less eager: on a 6 GB card from about 4.2 megapixels (2.1 before), 8.4 on 12 GB. A 6 GB laptop card sampled 4 megapixels in about 100 s today; the old line had the AI ask you to stop runs that were fine. The warning for decoding a large picture is as before.
