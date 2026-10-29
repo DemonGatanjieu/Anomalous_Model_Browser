@@ -2,15 +2,15 @@
   "job": "detail",
   "want": "hands",
   "rank": 2,
-  "short": "enlarge, then hands",
+  "short": "enlarge, then hands (fallback)",
   "enlarge": {
     "megapixels": 4.2,
     "most": 2.0,
     "unknown": 1.5
   },
   "title": {
-    "zh": "修手·先放大再修",
-    "en": "Fix hands: enlarge, then fix"
+    "zh": "修手·先放大再修（备选）",
+    "en": "Fix hands: enlarge, then fix (fallback)"
   },
   "about": {
     "zh": "整张图放大到约 400 万像素（小图 2 倍）轻轻重画，让手变大；再找出每只手，放大重画后贴回去。",
@@ -124,7 +124,7 @@
       }
     }
   },
-  "after": "The picture is enlarged to about 4 megapixels (2× for one of about 1 megapixel, at most 2×, not at all for a large one) and drawn again lightly (the sampler now takes it, at denoise 0.4), then every hand found is redrawn larger (hands, denoise 0.45) and saved with prefix hands_fixed; the enlarged one is saved too, without the hand pass. About 3 tries in 4 give a good hand: run_workflow with batch 4 (each try its own seed), then check them before the user does: zoom_image each hands_fixed picture on the hand, compare_with the old picture, and drop a hand with the wrong number of fingers, fused or melted fingers, or one far bigger or smaller than its arm. None good: run_workflow batch 4 again, at most twice. Then a picks panel zoomed on the hand lets the user choose among the good ones.",
+  "after": "A fallback: a FLUX-Fill redraw of one square crop around each hand did better in the user's tests; use that when you have it. The picture is enlarged to about 4 megapixels (2× for one of about 1 megapixel, at most 2×, not at all for a large one) and drawn again lightly (the sampler now takes it, at denoise 0.4), then every hand found is redrawn larger (hands, denoise 0.45) and saved with prefix hands_fixed; the enlarged one is saved too, without the hand pass. About 3 tries in 4 give a good hand: run_workflow with batch 4 (each try its own seed), then check them before the user does: zoom_image each hands_fixed picture on the hand, compare_with the old picture, and drop a hand with the wrong number of fingers, fused or melted fingers, or one far bigger or smaller than its arm. None good: run_workflow batch 4 again, at most twice. Then a picks panel zoomed on the hand lets the user choose among the good ones.",
   "notes": "Tried on the Codex test picture (1280×832, three characters, the hand about 110×78 px): the hand pass alone gave a good hand in about half the seeds whatever its size (512 or 768) and denoise (0.45 or 0.55); enlarging 1.5× first gave good hands in 3 of 4, 2× gave sharper fingers in the same seeds (about 105 s instead of 75 s). Denoise 0.4 for the enlarged redraw kept the layout; faces and splashes change a little.",
   "models": [
     "hand_yolov8s",
@@ -264,7 +264,7 @@
           }
         }
       },
-      "after": "On this Anima model the Anima Turbo LoRA (0.7) makes both passes 10 steps at CFG 1, about 105 s for 1280×832 (2×) on a 6 GB card. The picture is enlarged to about 4 megapixels (2× for one of about 1 megapixel, at most 2×, not at all for a large one) and drawn again lightly (the sampler now takes it, at denoise 0.4), then every hand found is redrawn larger (hands, denoise 0.45) and saved with prefix hands_fixed; the enlarged one is saved too, without the hand pass. About 3 tries in 4 give a good hand: run_workflow with batch 4 (each try its own seed), then check them before the user does: zoom_image each hands_fixed picture on the hand, compare_with the old picture, and drop a hand with the wrong number of fingers, fused or melted fingers, or one far bigger or smaller than its arm. None good: run_workflow batch 4 again, at most twice. Then a picks panel zoomed on the hand lets the user choose among the good ones."
+      "after": "A fallback: a FLUX-Fill redraw of one square crop around each hand did better in the user's tests; use that when you have it. On this Anima model the Anima Turbo LoRA (0.7) makes both passes 10 steps at CFG 1, about 105 s for 1280×832 (2×) on a 6 GB card. The picture is enlarged to about 4 megapixels (2× for one of about 1 megapixel, at most 2×, not at all for a large one) and drawn again lightly (the sampler now takes it, at denoise 0.4), then every hand found is redrawn larger (hands, denoise 0.45) and saved with prefix hands_fixed; the enlarged one is saved too, without the hand pass. About 3 tries in 4 give a good hand: run_workflow with batch 4 (each try its own seed), then check them before the user does: zoom_image each hands_fixed picture on the hand, compare_with the old picture, and drop a hand with the wrong number of fingers, fused or melted fingers, or one far bigger or smaller than its arm. None good: run_workflow batch 4 again, at most twice. Then a picks panel zoomed on the hand lets the user choose among the good ones."
     }
   }
 }
