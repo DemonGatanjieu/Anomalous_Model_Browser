@@ -23,7 +23,7 @@ async function json(url, options) {
 
 const post = (url, body) => json(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
-/** { misplaced, duplicates, unchecked }; `deep` also reads same-size files never scanned. */
+/** { misplaced, duplicates, shared, unchecked }; `deep` also reads same-size files never scanned. */
 export const checkPlacement = (deep = false, signal) => json(`/anomalous/placement/check${deep ? '?deep=1' : ''}`, { signal });
 
 /** { models, packs, seen, now }: what was not used lately (api/model_usage.py); reads every output. */

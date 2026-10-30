@@ -101,17 +101,22 @@ class KindTests(unittest.TestCase):
         self.assertEqual(control["kind"], "controlnet")
         # Model patches: ControlNets by name, but only "Load Model Patch" reads them (models/model_patches).
         lllite = kind_of(tensors("lllite_conditioning1.conv1.weight", "lllite_modules.0.down.weight"))
-        self.assertEqual(lllite, {"kind": "model_patches", "base": "", "sure": True})
+        self.assertEqual(lllite, {"kind": "model_patches", "base": "", "sure": True, "form": "lllite"})
         blockwise = kind_of(tensors("controlnet_blocks.0.y_rms.weight", "controlnet_blocks.0.img_mod.weight", "img_in.weight"))
-        self.assertEqual(blockwise["kind"], "model_patches")
+        self.assertEqual((blockwise["kind"], blockwise["form"]), ("model_patches", ""))
+        # An IP-Adapter carrying LoRA layers of its own (the Anima IP-Adapter) is no LoRA.
+        anima_ip = kind_of(tensors("blocks.0.adaln_ip.1.weight", "blocks.0.ip_k_proj.weight",
+                                   "lora.base_model.model.blocks.0.cross_attn.k_proj.lora_A.weight"))
+        self.assertEqual(anima_ip["kind"], "ipadapter")
+        self.assertEqual(kind_of(tensors("image_proj.proj.weight", "ip_adapter.1.to_k_ip.weight"))["kind"], "ipadapter")
 
     def test_embeddings(self):
-        self.assertEqual(kind_of(tensors("clip_l", "clip_g")), {"kind": "embeddings", "base": "SDXL", "sure": True})
+        self.assertEqual(kind_of(tensors("clip_l", "clip_g")), {"kind": "embeddings", "base": "SDXL", "sure": True, "form": ""})
         sd15 = kind_of(tensors("emb_params", shapes={"emb_params": [8, 768]}))
         self.assertEqual((sd15["kind"], sd15["base"]), ("embeddings", "SD 1.5"))
 
     def test_unknown_files_are_not_guessed(self):
-        self.assertEqual(kind_of(tensors("something.weight")), {"kind": "", "base": "", "sure": False})
+        self.assertEqual(kind_of(tensors("something.weight")), {"kind": "", "base": "", "sure": False, "form": ""})
         self.assertEqual(model_kind.classify(None, None), {"kind": "", "base": "", "sure": False})
 
     def test_gguf(self):

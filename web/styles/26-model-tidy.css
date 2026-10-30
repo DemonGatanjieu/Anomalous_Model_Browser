@@ -388,6 +388,15 @@
     font-weight: 600;
 }
 
+.anomalous-tidy-shared {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border: 1px dashed var(--amb-border);
+    border-radius: 8px;
+}
+
 .anomalous-tidy-unchecked {
     display: flex;
     flex-wrap: wrap;

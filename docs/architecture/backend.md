@@ -519,9 +519,12 @@ real paths deduplicated) and reads each header through `model_kind.inspect_file`
 memory per path, size and time. A file whose header names another type than its folder, only
 when `sure`, is misplaced; it goes to the same relative path in a folder of that type, on the
 same drive when one exists. `works` marks a whole checkpoint in the diffusion models folder,
-which still loads there. Identical files are grouped by SHA-256: the scan's (metadata) hash, or
+which still loads there. A file a node pack here reads from its folder (`PACK_READERS`: an
+Anima LLLite, `form` "lllite", in controlnet while ComfyUI-Anima-LLLite's node is loaded) is
+not misplaced. Identical files are grouped by SHA-256: the scan's (metadata) hash, or
 one computed earlier this run; files of one size whose hash is unknown are only counted
-(`unchecked`) unless `deep=1` reads them. `POST /anomalous/placement/move` (local only) moves the model with
+(`unchecked`) unless `deep=1` reads them. A group whose copies sit one per folder type, each
+loading there, is `shared` (one copy per loader, none extra), not a duplicate. `POST /anomalous/placement/move` (local only) moves the model with
 `model_import.destination` and `move_into` (never over a file: " (2)") and then its sidecars
 (`SIDECAR_SUFFIXES`; none when another model in the folder shares the stem), reports those that
 could not follow (`left`), clears the file-list caches and logs `model_move`. Removing a copy is

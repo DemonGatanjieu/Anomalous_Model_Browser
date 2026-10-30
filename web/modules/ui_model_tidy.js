@@ -202,6 +202,18 @@ function duplicateCard(owner, group) {
     return card;
 }
 
+/** Identical files each loading in its own folder (one per loader): said once, nothing to do. */
+function sharedNote(groups) {
+    const note = el('div', 'anomalous-tidy-shared');
+    note.append(el('div', 'anomalous-tidy-why', t('tidySharedWhy')));
+    for (const group of groups) {
+        note.append(el('div', 'anomalous-tidy-file', t('tidySharedItem', {
+            name: group.files[0].name, places: group.files.map(file => place(file.type, file.rel)).join(t('tidySharedJoin')),
+        })));
+    }
+    return note;
+}
+
 function step(number, titleKey, count) {
     const head = el('div', 'anomalous-tidy-step');
     head.append(el('span', 'anomalous-tidy-step-number', String(number)), el('h3', '', t(titleKey, { count })));
@@ -237,6 +249,7 @@ export function renderModelTidyView(owner, grid) {
         if (data.duplicates.length) {
             parts.push(step(misplaced.length ? 2 : 1, 'tidyStepDuplicates', data.duplicates.length), ...data.duplicates.map(group => duplicateCard(owner, group)));
         }
+        if (data.shared?.length) parts.push(sharedNote(data.shared));
         if (data.unchecked?.groups) {
             const more = el('div', 'anomalous-tidy-unchecked');
             more.append(el('span', 'anomalous-download-note', t('tidyUnchecked', { groups: data.unchecked.groups, size: formatSize(data.unchecked.bytes) })),

@@ -26,10 +26,10 @@ except ImportError:  # loaded outside the package (tests)
 MAX_ENTRIES = 50000  # about 6 MB on disk; a library has far fewer models
 MAX_BYTES = 64 * 1024 * 1024  # a cache file larger than this is not read (nor written)
 SAVE_AFTER_S = 5
-FIELDS = ("kind", "base", "sure", "format")
+FIELDS = ("kind", "base", "sure", "format", "form")  # a cache of other fields is read again
 
 _lock = threading.Lock()
-_heads = None  # {real path: [size, mtime_ns, last used (days), kind, base, sure, format]}
+_heads = None  # {real path: [size, mtime_ns, last used (days), kind, base, sure, format, form]}
 _timer = None
 _on_disk = False
 

@@ -1,13 +1,16 @@
 """Models in the wrong models folder, and identical copies (the models page's Tidy view,
 ui_model_tidy.js).
 
-GET  /anomalous/placement/check[?deep=1] -> {misplaced, duplicates, unchecked}
+GET  /anomalous/placement/check[?deep=1] -> {misplaced, duplicates, shared, unchecked}
     misplaced: models whose header (model_kind.py, only when sure) names another type than
     the folder they are in, with where they belong (the same subfolder in a folder of that
     type, on the same drive when there is one) and whether they still load where they are.
+    A file a node pack here reads from its folder (PACK_READERS) is not misplaced.
     duplicates: files with the same SHA-256 — known from scans, else read now for files of
-    the same size (small ones always, large ones with deep). unchecked: the same-size large
-    files a deep check would still read.
+    the same size (small ones always, large ones with deep). shared: identical files each in
+    a folder of its own type where it loads (one per loader, e.g. an Anima LLLite in
+    model_patches and in controlnet): both are used, none is extra. unchecked: the same-size
+    large files a deep check would still read.
 GET  /anomalous/placement/look?type&root&rel -> {kind, sure, base}: what one model's header says
     it is, even when unsure (the models page's "Change type", ui_model_retype.js).
 POST /anomalous/placement/move {type, root, rel, to_type, to_root, to_rel} -> moves a model
@@ -45,6 +48,10 @@ from .path_utils import model_reference_within
 
 # (folder type, what the file is): it loads there all the same.
 WORKS_ANYWAY = {("diffusion_models", "checkpoints")}
+# Node packs that read a kind of file from another folder than ComfyUI's own loader:
+# (folder type, kind, form) -> the pack's node. Anima LLLite: ComfyUI's "Load Model Patch"
+# reads model_patches, the ComfyUI-Anima-LLLite pack reads controlnet.
+PACK_READERS = {("controlnet", "model_patches", "lllite"): "AnimaLLLiteApply_sdscripts"}
 # Same-size files up to this are read at once (LoRAs, embeddings); larger ones on "Compare".
 AUTO_HASH = 256 * 1024 * 1024
 CACHE_LIMIT = 5000
@@ -132,12 +139,27 @@ def home_for(item, kind):
     return {"type": kind, "root": index, "rel": item["rel"]}
 
 
+def _node_here(name):
+    import nodes  # ComfyUI's registry, filled once ComfyUI has loaded the packs
+    return name in getattr(nodes, "NODE_CLASS_MAPPINGS", {})
+
+
+def loads_here(folder_type, found):
+    """Whether a file whose header says `found` loads from a `folder_type` folder: it is of
+    that type (or the header cannot tell), or a node pack here reads it from there."""
+    kind = found.get("kind")
+    if not kind or kind == folder_type:
+        return True
+    node = PACK_READERS.get((folder_type, kind, found.get("form")))
+    return bool(node) and _node_here(node)
+
+
 def misplaced(files):
     found = []
     for item in files:
         result = _cached(_heads, item["path"], item["stat"], inspect_file)
         kind = result.get("kind")
-        if not kind or not result.get("sure") or kind == item["type"] or kind not in import_types():
+        if not result.get("sure") or kind not in import_types() or loads_here(item["type"], result):
             continue
         home = home_for(item, kind)
         if home:
@@ -174,13 +196,14 @@ def _known_hash(item):
 def _copy(item):
     """One of identical files: where it is, how it shows, whether its folder fits what it is
     (the copy to keep, when only one does)."""
-    kind = _cached(_heads, item["path"], item["stat"], inspect_file).get("kind")
+    found = _cached(_heads, item["path"], item["stat"], inspect_file)
     return {"type": item["type"], "root": item["root"], "rel": item["rel"],
-            "fits": not kind or kind == item["type"], **_card(item)}
+            "fits": loads_here(item["type"], found), **_card(item)}
 
 
 def duplicates(files, deep=False):
-    """(groups of identical files, {groups, bytes} still to read for a deep check)."""
+    """(groups of identical files, groups whose every copy loads in a folder of its own type,
+    {groups, bytes} still to read for a deep check)."""
     by_size = {}
     for item in files:
         if item["size"]:
@@ -200,15 +223,20 @@ def duplicates(files, deep=False):
                 sha = _cached(_hashes, item["path"], item["stat"], file_sha256)
             if sha:
                 groups.setdefault(sha, []).append(item)
-    found = [{"sha256": sha, "size": items[0]["size"], "files": [_copy(item) for item in items]}
-             for sha, items in groups.items() if len(items) > 1]
-    return found, unchecked
+    found, shared = [], []
+    for sha, items in groups.items():
+        if len(items) < 2:
+            continue
+        group = {"sha256": sha, "size": items[0]["size"], "files": [_copy(item) for item in items]}
+        one_each = len({item["type"] for item in items}) == len(items)
+        (shared if one_each and all(file["fits"] for file in group["files"]) else found).append(group)
+    return found, shared, unchecked
 
 
 def check(deep=False):
     files = library()
-    found, unchecked = duplicates(files, deep)
-    return {"misplaced": misplaced(files), "duplicates": found, "unchecked": unchecked, "checked": len(files)}
+    found, shared, unchecked = duplicates(files, deep)
+    return {"misplaced": misplaced(files), "duplicates": found, "shared": shared, "unchecked": unchecked, "checked": len(files)}
 
 
 def _sidecars(path):

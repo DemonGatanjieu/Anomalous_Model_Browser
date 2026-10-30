@@ -6,7 +6,8 @@ scanner's offline base model (model_identity.infer_base_model_from_header). No i
 ComfyUI, so it is tested on its own.
 
 `classify(fmt, header)` -> {"kind": a ComfyUI folder name or "", "base": base model or "",
-"sure": True when the header names both outright, False when it is a reasoned guess}.
+"sure": True when the header names both outright, False when it is a reasoned guess, "form":
+"lllite" for an Anima LLLite model patch (a node pack reads those from controlnet), else ""}.
 `diffusion_params(path)` -> how many parameters the file's drawing model has (the tensor shapes
 the header lists), the yardstick for how well a model draws hard things such as hands.
 """
@@ -37,6 +38,8 @@ CONTROL_MARKS = ("control_model_", "input_hint_block", "controlnet_cond_embeddin
 # are called ControlNets, but the ControlNet loader cannot read them.
 PATCH_KEYS = {"lllite_conditioning1.conv1.weight", "controlnet_blocks.0.y_rms.weight", "feature_embedder.mid_layer_norm.bias",
               "control_all_x_embedder.2-1.weight", "controlnet_patch_embedding.weight"}
+# Image-prompt layers in a model's blocks (the Anima IP-Adapter, beside LoRA layers of its own).
+IPADAPTER_MARKS = (".ip_k_proj.", ".adaln_ip.")
 DIFFUSION_STARTS = ("double_blocks.", "single_blocks.", "joint_blocks.", "transformer_blocks.",
                     "single_transformer_blocks.", "input_blocks.", "blocks.0.self_attn", "net.blocks.", "net.x_embedder.")
 
@@ -228,12 +231,13 @@ def _kind(keys, raw, text):
     # A whole model first: some merged checkpoints still carry a LoRA's keys.
     if diffusion and any(key.startswith(("first_stage_model.", "vae.")) for key in keys):
         return "checkpoints", True
+    # Before LoRA: some IP-Adapters carry LoRA layers too.
+    if any(key.startswith(("image_proj.", "ip_adapter.")) for key in keys) or any(mark in raw for mark in IPADAPTER_MARKS):
+        return "ipadapter", True
     if any(mark in raw for mark in LORA_MARKS):
         return "loras", True
     if diffusion:
         return "diffusion_models", True
-    if any(key.startswith(("image_proj.", "ip_adapter.")) for key in keys):
-        return "ipadapter", True
     if any(mark in text for mark in ("encoder_down_0_block", "decoder_up_0_block", "encoder_down_blocks_0",
                                      "encoder_downsamples", "first_stage_model_encoder")):
         return "vae", True
@@ -275,7 +279,8 @@ def classify(fmt, header):
             base, base_sure = _base_from_keys(header, text)
     if base == "SDXL":
         base = _family(meta) or base
-    return {"kind": kind, "base": base, "sure": bool(kind) and sure and (base_sure or not base)}
+    form = "lllite" if kind == "model_patches" and any(key.startswith("lllite_") for key in keys) else ""
+    return {"kind": kind, "base": base, "sure": bool(kind) and sure and (base_sure or not base), "form": form}
 
 
 # Parts of a checkpoint that are not its drawing model: text encoders, VAE, a kept EMA copy.

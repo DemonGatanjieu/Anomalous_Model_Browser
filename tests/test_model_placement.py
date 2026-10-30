@@ -48,6 +48,7 @@ class PlacementTests(unittest.TestCase):
             mock.patch.object(model_placement, "add_entry"),
             mock.patch.object(model_placement, "forget_file_lists"),
             mock.patch.object(model_placement, "get_metadata", side_effect=lambda path: {"hash": self.hashes.get(path, "")}),
+            mock.patch.object(model_placement, "_node_here", return_value=False),  # no node packs loaded
         ]
         for patch in self.patches:
             patch.start()
@@ -88,6 +89,24 @@ class PlacementTests(unittest.TestCase):
         self.assertFalse(home["works"])
         moved = self.put("model_patches", "ok.safetensors", LLLITE)
         self.assertIsNone(model_placement.belongs(model_placement.one("model_patches", 0, "ok.safetensors", moved)))
+
+    def test_a_pack_that_reads_lllite_from_controlnet(self):
+        path = self.put("controlnet", "anima-lllite-depth.safetensors", LLLITE)
+        self.put("model_patches", "anima-lllite-depth.safetensors", LLLITE)
+        blockwise = self.put("controlnet", "qwen-blockwise.safetensors", safetensors("controlnet_blocks.0.y_rms.weight"))
+        with mock.patch.object(model_placement, "_node_here", side_effect=lambda name: name == "AnimaLLLiteApply_sdscripts"):
+            self.assertIsNone(model_placement.belongs(model_placement.one("controlnet", 0, "anima-lllite-depth.safetensors", path)))
+            # Another model patch: the pack cannot read it, so it is still misplaced.
+            self.assertIsNotNone(model_placement.belongs(model_placement.one("controlnet", 0, "qwen-blockwise.safetensors", blockwise)))
+            data = model_placement.check()
+        # One copy per loader: both are used, none is extra.
+        self.assertEqual(data["duplicates"], [])
+        self.assertEqual([{file["type"] for file in group["files"]} for group in data["shared"]], [{"controlnet", "model_patches"}])
+        model_placement._heads.clear()
+        with mock.patch.object(model_placement, "_node_here", return_value=False):
+            data = model_placement.check()
+        self.assertEqual(data["shared"], [])
+        self.assertEqual({file["type"]: file["fits"] for file in data["duplicates"][0]["files"]}, {"controlnet": False, "model_patches": True})
 
     def test_what_one_model_looks_like(self):
         self.put("controlnet", "Anima/depth.safetensors", LLLITE)
