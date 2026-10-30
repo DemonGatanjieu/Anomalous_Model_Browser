@@ -13,8 +13,8 @@ import { renderModelSourcesView } from './ui_model_sources.js';
 import { renderModelTidyView } from './ui_model_tidy.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { MODEL_LOADERS } from './quick_search_data.js';
-import { groupByPage } from './model_versions.js';
-import { chosenVersion, versionSwitch } from './ui_model_versions.js';
+import { groupByPage, pageId } from './model_versions.js';
+import { chosenVersion, isOpen, moveCards, openAllSwitch, setOpen, versionLabel, versionPin, versionsTab } from './ui_model_versions.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -38,10 +38,14 @@ function modelCardDisplayName(model) {
 
 
 
-/** A model's card; `versions`: the versions of its model here, newest first (model_versions.js), itself alone without others. */
-function modelCard(owner, model, index, versions) {
+// The model each card shows, so that moving cards can tell one across a redraw.
+const cardModels = new WeakMap();
+
+/** A model's card; `pin`: the version pin of an open model (ui_model_versions.js), beside its version name. */
+function modelCard(owner, model, index, pin = null) {
     const card = document.createElement('div');
     card.className = 'anomalous-card';
+    cardModels.set(card, model);
     if (model.preview_url) {
         const isVideo = model.preview_url.match(/\.mp4(?:&|$)/i) || model.preview_url.match(/\.webm(?:&|$)/i);
         if (isVideo) {
@@ -108,18 +112,16 @@ function modelCard(owner, model, index, versions) {
     if (badge) card.appendChild(badge);
     const labels = document.createElement('div');
     labels.className = 'anomalous-card-labels';
-    // Civitai's version name: versions of one model often share a file name. With other versions
-    // downloaded it is a switch, and the card shows the one picked.
-    if (versions.length > 1) {
-        labels.appendChild(versionSwitch(model, versions, other => {
-            stopMediaInContainer(card);
-            card.replaceWith(modelCard(owner, other, index, versions));
-        }));
-    } else if (model.metadata?.version_name) {
+    // Civitai's version name: versions of one model often share a file name.
+    if (pin || model.metadata?.version_name) {
+        const row = document.createElement('div');
+        row.className = 'anomalous-card-version-row';
         const version = document.createElement('span');
         version.className = 'anomalous-card-version';
-        version.textContent = model.metadata.version_name;
-        labels.appendChild(version);
+        version.textContent = versionLabel(model);
+        row.appendChild(version);
+        if (pin) row.appendChild(pin);
+        labels.appendChild(row);
     }
     const title = document.createElement('div');
     title.className = 'anomalous-card-title';
@@ -185,6 +187,44 @@ function modelCard(owner, model, index, versions) {
 
 
     return card;
+}
+
+/**
+ * The cards of one list entry (model_versions.js): a model alone; a model with other versions folded,
+ * one card with a tab to open them; or open, its versions side by side, the shown one first, the
+ * tab on the last to fold them. Opening, folding and pinning redraw only these cards, moving the rest.
+ */
+function entryCards(owner, entry, index) {
+    const { versions } = entry;
+    if (versions.length < 2) return [modelCard(owner, entry.model, index)];
+    const page = pageId(entry.model);
+    let cards = [];
+    const redraw = (update, leaving = []) => moveCards(owner.grid, leaving, () => {
+        update();
+        const next = draw();
+        cards.forEach(stopMediaInContainer);
+        cards[0].replaceWith(...next);
+        cards.slice(1).forEach(card => card.remove());
+        cards = next;
+    }, card => cardModels.get(card));
+    const draw = () => {
+        const open = isOpen(page);
+        const shown = entry.model;
+        const members = open ? [shown, ...versions.filter(model => model !== shown)] : [shown];
+        return members.map((model, at) => {
+            const pin = open && versionPin(model, model === shown, () => redraw(() => { entry.model = model; }));
+            const card = modelCard(owner, model, index + at, pin || null);
+            card.classList.add(open ? 'is-version-open' : 'is-version-folded');
+            if (!open || at === members.length - 1) {
+                card.classList.add('has-versions-tab');
+                card.appendChild(versionsTab(open, versions.length,
+                    () => redraw(() => setOpen(page, !open), open ? cards.slice(1) : [])));
+            }
+            return card;
+        });
+    };
+    cards = draw();
+    return cards;
 }
 
 export async function loadModels() {
@@ -259,16 +299,22 @@ export async function loadModels() {
                 return;
             }
 
-            // One card a model: the versions of one model page together (model_versions.js).
+            // One entry a model: the versions of one model page together (model_versions.js).
             const entries = groupByPage(data.models, chosenVersion);
+            if (entries.some(entry => entry.versions.length > 1)) {
+                const bar = bases || this.grid.appendChild(Object.assign(document.createElement('div'), { className: 'anomalous-model-bases' }));
+                bar.appendChild(openAllSwitch(() => this.loadModels()));
+            }
             let renderIndex = 0;
+            let cardIndex = 0;
             const renderChunk = () => {
                 if (this._modelRenderGeneration !== renderGeneration) return;
                 const fragment = document.createDocumentFragment();
                 const end = Math.min(renderIndex + 40, entries.length);
                 for (; renderIndex < end; renderIndex++) {
-                const { model, versions } = entries[renderIndex];
-                fragment.appendChild(modelCard(this, model, renderIndex, versions));
+                    const cards = entryCards(this, entries[renderIndex], cardIndex);
+                    cardIndex += cards.length;
+                    fragment.append(...cards);
                 }
                 this.grid.appendChild(fragment);
                 if (renderIndex < entries.length) requestAnimationFrame(renderChunk);

@@ -1,17 +1,19 @@
 /**
- * Switching between the versions of one model (model_versions.js groups them by their Civitai page):
- * on a card the version label becomes a switch whose menu lists the versions downloaded here,
- * and the details show them as a row to go from one to another. The version last picked on a card
- * is kept in this browser (localStorage, a convenience only: without it the newest is shown).
- * The versions not downloaded yet are listed on demand by ui_civitai_versions.js.
+ * The versions of one model on the cards and in the details (model_versions.js groups them by their
+ * Civitai page). Folded, a model is one card with a tab on its right edge; open, its versions are
+ * cards side by side, the shown one first, each with a pin to make it the one shown when folded.
+ * Which version is shown and which models stay open are kept in this browser (localStorage, a
+ * convenience only: without it the newest is shown, folded). Moving the cards is animated here
+ * (moveCards); ui_grid.js draws them. The versions not downloaded yet are listed on demand by
+ * ui_civitai_versions.js.
  */
 
 import { translate as t } from './locales.js';
-import { openActionMenu } from './action_menu.js';
 import { formatSize } from './file_size.js';
 import { pageId, versionId, versionsOf } from './model_versions.js';
 
-const KEY = 'anomalous.modelVersions'; // { pageId: versionId } picked on the cards
+const SHOWN_KEY = 'anomalous.modelVersions'; // { pageId: versionId } shown when folded
+const OPEN_KEY = 'anomalous.modelVersionsOpen'; // { all: true|false, pageId: true|false } models left open
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -20,24 +22,41 @@ function el(tag, className, text) {
     return node;
 }
 
-function picked() {
+function stored(key) {
     try {
-        const value = JSON.parse(localStorage.getItem(KEY) || '{}');
+        const value = JSON.parse(localStorage.getItem(key) || '{}');
         return value && typeof value === 'object' ? value : {};
     } catch {
         return {};
     }
 }
 
-/** The version id last picked for model page `page` on a card, or 0. */
-export const chosenVersion = page => Number(picked()[page]) || 0;
-
-function rememberVersion(model) {
-    const page = pageId(model);
-    if (!page) return;
+function store(key, value) {
     try {
-        localStorage.setItem(KEY, JSON.stringify({ ...picked(), [page]: versionId(model) }));
-    } catch { /* storage off: the newest is shown next time */ }
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch { /* storage off: the defaults next time */ }
+}
+
+/** The version id shown for model page `page` when folded, or 0 (the newest). */
+export const chosenVersion = page => Number(stored(SHOWN_KEY)[page]) || 0;
+
+/** Whether every model starts open ("Open all versions"). */
+export const allOpen = () => stored(OPEN_KEY).all === true;
+
+/** Whether model page `page` is open: its own choice, else the "open all" switch. */
+export function isOpen(page) {
+    const open = stored(OPEN_KEY);
+    return typeof open[page] === 'boolean' ? open[page] : open.all === true;
+}
+
+/** Opens or folds one model page; it stays so until changed again or "open all" is switched. */
+export function setOpen(page, open) {
+    store(OPEN_KEY, { ...stored(OPEN_KEY), [page]: open });
+}
+
+/** "Open all versions" on or off; the models' own choices are forgotten. */
+export function setAllOpen(open) {
+    store(OPEN_KEY, { all: open });
 }
 
 /** How a version is called: its Civitai name, else its file's. */
@@ -47,34 +66,90 @@ function versionFacts(model) {
     return [model.metadata?.baseModel, model.size_bytes ? formatSize(model.size_bytes) : ''].filter(Boolean).join(' · ');
 }
 
-/** A card's version label as a switch over `versions` (more than one); `onPick(model)` shows that one on the card. */
-export function versionSwitch(model, versions, onPick) {
-    const node = el('button', 'anomalous-card-version is-switch');
-    node.type = 'button';
-    node.setAttribute('aria-haspopup', 'menu');
-    node.setAttribute('aria-expanded', 'false');
-    node.append(el('span', 'anomalous-card-version-name', versionLabel(model)),
-        el('span', 'anomalous-card-version-count', t('modelVersionsCount', { count: versions.length })));
-    node.title = t('modelVersionsSwitch');
-    let close = null; // the menu while it is open
-    node.onclick = event => {
+const CHEVRON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
+const PIN = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
+
+/** The tab on a card's right edge: folded it opens the `count` versions, open (on the last one) it folds them. */
+export function versionsTab(open, count, onToggle) {
+    const tab = el('button', 'anomalous-card-versions-tab');
+    tab.type = 'button';
+    tab.setAttribute('aria-expanded', String(open));
+    tab.innerHTML = CHEVRON;
+    if (!open) tab.append(el('span', 'anomalous-card-versions-count', count));
+    tab.title = open ? t('modelVersionsFold') : t('modelVersionsOpen', { count });
+    tab.onclick = event => {
         event.stopPropagation();
-        if (close) {
-            close();
-            return;
-        }
-        node.setAttribute('aria-expanded', 'true');
-        close = openActionMenu(node, versions.map(version => ({
-            icon: version === model ? '✓' : '',
-            label: [versionLabel(version), versionFacts(version)].filter(Boolean).join(' · '),
-            run: () => {
-                if (version === model) return;
-                rememberVersion(version);
-                onPick(version);
-            },
-        })), { onClose: () => { close = null; node.setAttribute('aria-expanded', 'false'); } });
+        onToggle();
     };
-    return node;
+    return tab;
+}
+
+/** An open model's pin: pressed on the version shown when folded; pressing another makes it that one. */
+export function versionPin(model, shown, onPin) {
+    const pin = el('button', 'anomalous-card-version-pin');
+    pin.type = 'button';
+    pin.setAttribute('aria-pressed', String(shown));
+    pin.innerHTML = PIN;
+    pin.title = shown ? t('modelVersionsShown') : t('modelVersionsPin');
+    pin.onclick = event => {
+        event.stopPropagation();
+        if (shown) return;
+        store(SHOWN_KEY, { ...stored(SHOWN_KEY), [pageId(model)]: versionId(model) });
+        onPin();
+    };
+    return pin;
+}
+
+/** The "Open all versions" switch; `onChange` redraws the list. */
+export function openAllSwitch(onChange) {
+    const chip = el('button', 'anomalous-model-base-chip anomalous-versions-all', t('modelVersionsAll'));
+    chip.type = 'button';
+    chip.setAttribute('aria-pressed', String(allOpen()));
+    chip.title = t('modelVersionsAllHint');
+    chip.onclick = () => {
+        setAllOpen(!allOpen());
+        onChange();
+    };
+    return chip;
+}
+
+const quiet = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+/**
+ * Runs `change` (which replaces some of `grid`'s cards) and slides the cards that stayed from their
+ * old place to the new one; `leaving` cards shrink away first, cards new to the grid grow in after.
+ * `keyOf(card)` names a card across the change (the same model). Only cards near the view move.
+ */
+export async function moveCards(grid, leaving, change, keyOf) {
+    if (quiet() || !grid.animate) {
+        change();
+        return;
+    }
+    await Promise.all(leaving.map(card => card.animate(
+        [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-24px) scale(0.92)' }],
+        { duration: 140, easing: 'ease-in', fill: 'forwards' }).finished.catch(() => {})));
+    const view = grid.getBoundingClientRect();
+    const near = rect => rect.bottom > view.top - 400 && rect.top < view.bottom + 400;
+    const before = new Map();
+    for (const card of grid.querySelectorAll('.anomalous-card')) {
+        const rect = card.getBoundingClientRect();
+        if (near(rect)) before.set(keyOf(card), rect);
+    }
+    change();
+    let entering = 0;
+    for (const card of grid.querySelectorAll('.anomalous-card')) {
+        const rect = card.getBoundingClientRect();
+        if (!near(rect)) continue;
+        const old = before.get(keyOf(card));
+        if (!old) {
+            card.animate([{ opacity: 0, transform: 'translateX(-28px) scale(0.92)' }, { opacity: 1, transform: 'none' }],
+                { duration: 320, delay: 40 * entering++, easing: EASE, fill: 'backwards' });
+        } else if (old.left !== rect.left || old.top !== rect.top) {
+            card.animate([{ transform: `translate(${old.left - rect.left}px, ${old.top - rect.top}px)` }, { transform: 'none' }],
+                { duration: 360, easing: EASE });
+        }
+    }
 }
 
 /** The details' row of the versions downloaded here (`owner.models`), `onOpen(model)` going to one; null without others. */

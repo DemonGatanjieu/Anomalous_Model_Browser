@@ -993,9 +993,10 @@ covered by the `styles.css` manifest.
   styles `styles/31-model-info.css`), and
   `model_widget_path.js` puts a model path into a loader's widget. Versions of one model:
   `model_versions.js` (pure) groups the listed files by their Civitai model page (metadata
-  `model_id`, never a file name), newest version first, so the grid draws one card a model;
-  `ui_model_versions.js` makes its version label a switch (the shared `action_menu.js`; the
-  version picked is kept in this browser) and the details' row of the versions here;
+  `model_id`, never a file name), newest version first, so the grid folds a model into one card;
+  `ui_model_versions.js` draws the card's tab that opens the versions side by side, the pins and
+  "Open all versions" (the shown version and the open models are kept in this browser), animates
+  the cards moving, and draws the details' row of the versions here;
   `ui_civitai_versions.js` lists the page's versions on Civitai when asked, each opened or
   downloaded beside this one (`tests/model_versions.mjs`, styles `styles/49-model-versions.css`). `ui_gallery.js` (cards in
   `ui_gallery_card.js`, filters in `gallery_filter.js` / `ui_gallery_filter.js`, the large view in `ui_gallery_viewer.js`) and `ui_gallery_detail.js` own generated-output browsing and workbench lifecycle,

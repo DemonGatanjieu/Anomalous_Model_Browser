@@ -1,22 +1,96 @@
-/* Versions of one model (ui_model_versions.js, ui_civitai_versions.js): the card's version switch
-   (its menu is the shared action menu), the details' row of the versions here and the box listing
-   the versions on Civitai. */
+/* Versions of one model (ui_model_versions.js, ui_civitai_versions.js): a folded model's card (a
+   stack, with a tab on its right edge), an open model's cards side by side (one colour, a pin each,
+   the tab on the last), the "open all" switch, the details' row of the versions here and the box
+   listing the versions on Civitai. */
 
-.anomalous-card-version.is-switch {
+.anomalous-card-version-row { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.anomalous-card-version-row .anomalous-card-version { min-width: 0; }
+
+.anomalous-card.is-version-folded {
+    box-shadow: 5px -5px 0 -1px var(--amb-bg-card), 5px -5px 0 0 var(--amb-border-strong), 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.anomalous-card.is-version-folded:hover {
+    box-shadow: 5px -5px 0 -1px var(--amb-bg-card), 5px -5px 0 0 var(--amb-border-strong), 0 8px 24px rgba(0, 0, 0, 0.58);
+}
+.anomalous-card.is-version-open { border-color: color-mix(in srgb, var(--amb-accent) 60%, var(--amb-border)); }
+.anomalous-card.is-version-open::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: var(--amb-accent);
+    z-index: 6;
+    pointer-events: none;
+}
+.anomalous-card.has-versions-tab .anomalous-card-labels { padding-right: 28px; }
+
+/* The labels over the cover let clicks through to the card; the tab and the pin are their own. */
+.anomalous-card-versions-tab {
+    position: absolute;
+    top: 42px;
+    bottom: 8px;
+    right: 0;
+    width: 20px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 1px solid var(--amb-border-strong);
+    border-right: none;
+    border-radius: 7px 0 0 7px;
+    background: rgba(16, 16, 18, 0.72);
+    backdrop-filter: blur(6px);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 7;
+    transition: width 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.anomalous-card-versions-tab svg { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.anomalous-card-versions-tab[aria-expanded="true"] svg { transform: rotate(180deg); }
+.anomalous-card-versions-tab:hover,
+.anomalous-card-versions-tab:focus-visible {
+    width: 26px;
+    border-color: var(--amb-accent);
+    background: color-mix(in srgb, var(--amb-accent) 38%, rgba(16, 16, 18, 0.8));
+}
+.anomalous-card-versions-tab:hover svg { transform: translateX(2px); }
+.anomalous-card-versions-tab[aria-expanded="true"]:hover svg { transform: rotate(180deg) translateX(2px); }
+.anomalous-card-versions-count { font-variant-numeric: tabular-nums; }
+
+.anomalous-card-version-pin {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    padding: 0;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font: inherit;
-    font-size: 0.7rem;
-    font-weight: 600;
+    justify-content: center;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    color: var(--amb-text-muted);
     cursor: pointer;
-    pointer-events: auto; /* the labels over the cover let clicks through to the card; this one is its own */
+    pointer-events: auto;
+    opacity: 0.55;
+    transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-.anomalous-card-version.is-switch:hover,
-.anomalous-card-version.is-switch[aria-expanded="true"] { border-color: var(--amb-accent); }
-.anomalous-card-version-name { overflow: hidden; text-overflow: ellipsis; }
-.anomalous-card-version-count { flex: none; color: var(--amb-text-muted); font-weight: 500; }
-.anomalous-card-version-count::after { content: " ▾"; }
+.anomalous-card:hover .anomalous-card-version-pin { opacity: 1; }
+.anomalous-card-version-pin:hover { color: var(--amb-text-main); border-color: var(--amb-accent); }
+.anomalous-card-version-pin[aria-pressed="true"] {
+    opacity: 1;
+    border-color: var(--amb-accent);
+    background: var(--amb-accent);
+    color: #fff;
+    cursor: default;
+}
+
+.anomalous-versions-all { margin-left: auto; }
+.anomalous-versions-all[aria-pressed="true"] { cursor: pointer; }
 
 .anomalous-detail-versions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
 .anomalous-detail-versions-label { color: var(--amb-text-muted); font-size: 0.85em; }
