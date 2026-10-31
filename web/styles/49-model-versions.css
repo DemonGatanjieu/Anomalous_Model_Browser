@@ -30,7 +30,8 @@ html.amb-theme-light .anomalous-card.is-version-open:hover {
     z-index: 6;
     pointer-events: none;
 }
-.anomalous-card.has-versions-tab .anomalous-card-labels { padding-right: 28px; }
+/* The compact views set the labels' padding with !important: the tab's room has to outrank it. */
+#anomalous-container .anomalous-card.has-versions-tab .anomalous-card-labels { padding-right: 28px !important; }
 
 /* The labels over the cover let clicks through to the card; the tab and the pin are their own. */
 .anomalous-card-versions-tab {
