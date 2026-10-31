@@ -136,7 +136,7 @@ html.amb-theme-light {
 /* The image viewer (the gallery's workbench) stays dark in the light theme, like ComfyUI's own,
    and so do the labels and buttons laid over pictures: the dark tokens again, no light-only ones. */
 html.amb-theme-light :is(.anomalous-workbench-overlay, .anomalous-gallery-viewer,
-    .anomalous-card-labels, .anomalous-card-action-btn, .anomalous-card-badge.is-unscanned,
+    .anomalous-card-labels, .anomalous-card-action-btn, .anomalous-card-badge.is-unscanned, .anomalous-card-versions-tab,
     .anomalous-gallery-details, .anomalous-gallery-keep, .anomalous-gallery-compare, .anomalous-recipe-model-preview small) {
     --amb-bg-page: #131315;
     --amb-bg-panel: #1a1a1d;
