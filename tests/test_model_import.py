@@ -110,6 +110,56 @@ class KindTests(unittest.TestCase):
         self.assertEqual(anima_ip["kind"], "ipadapter")
         self.assertEqual(kind_of(tensors("image_proj.proj.weight", "ip_adapter.1.to_k_ip.weight"))["kind"], "ipadapter")
 
+    def test_layouts_once_taken_for_another_kind(self):
+        # Found against ComfyUI-Manager's model list (real headers) and the loaders' own formats.
+        hunyuan_dit = kind_of(tensors("model.blocks.0.attn1.Wqkv.weight", "text_encoders.mt5xl.transformer.shared.weight",
+                                      "vae.encoder.down.0.block.0.conv1.weight"))
+        self.assertEqual(hunyuan_dit["kind"], "checkpoints")  # not its VAE
+        no_vae = kind_of(tensors("model.diffusion_model.input_blocks.0.0.weight",
+                                 "cond_stage_model.transformer.text_model.encoder.layers.0.mlp.fc1.weight"))
+        self.assertEqual(no_vae["kind"], "checkpoints")  # saved without its VAE: still a checkpoint
+        comfy_lora = kind_of(tensors("diffusion_model.input_blocks.0.0.lora_up.weight",
+                                     "text_encoders.clip_l.transformer.text_model.encoder.layers.0.mlp.fc1.lora_up.weight"))
+        self.assertEqual(comfy_lora["kind"], "loras")
+        lbm = kind_of(tensors("denoiser.down_blocks.0.resnets.0.conv1.weight", "vae.vae_model.encoder.down_blocks.0.resnets.0.conv1.weight"))
+        self.assertEqual((lbm["kind"], lbm["sure"]), ("", False))  # a VAE inside another model: not a VAE file
+        supir = kind_of(tensors("model.control_model.input_hint_block.0.weight", "model.diffusion_model.input_blocks.0.0.weight",
+                                "first_stage_model.denoise_encoder.conv_in.weight"))
+        self.assertEqual((supir["kind"], supir["sure"]), ("model_patches", False))  # read from model_patches or checkpoints
+        whole_clip = kind_of(tensors("vision_model.encoder.layers.0.mlp.fc1.weight", "text_model.encoder.layers.0.mlp.fc1.weight"))
+        self.assertEqual((whole_clip["kind"], whole_clip["sure"]), ("clip_vision", False))
+        xlabs_lora = kind_of(tensors("double_blocks.0.processor.proj_lora1.down.weight", "double_blocks.0.processor.qkv_lora1.up.weight"))
+        self.assertEqual(xlabs_lora["kind"], "loras")
+        xlabs_ip = kind_of(tensors("double_blocks.0.processor.ip_adapter_double_stream_k_proj.weight", "ip_adapter_proj_model.proj.weight"))
+        self.assertEqual(xlabs_ip["kind"], "ipadapter")
+        for names in (("diffusion_model.blocks.0.self_attn.q.diff", "diffusion_model.blocks.0.self_attn.q.diff_b"),
+                      ("lora_unet_down_blocks_0_attentions_0_proj_in.oft_blocks",),
+                      ("lora_unet_x.a1.weight", "lora_unet_x.b1.weight")):  # weight differences, OFT, GLoRA
+            self.assertEqual(kind_of(tensors(*names))["kind"], "loras", names)
+        photomaker = kind_of(tensors("id_encoder.vision_model.encoder.layers.0.mlp.fc1.weight", "lora_weights.unet.x.lora.down.weight"))
+        self.assertEqual(photomaker["kind"], "")
+        hunyuan_video = kind_of(tensors("model.model.double_blocks.0.img_attn.qkv.weight", "model.model.txt_in.input_embedder.weight"))
+        self.assertEqual(hunyuan_video["kind"], "diffusion_models")
+
+    def test_kinds_once_not_told(self):
+        # Told now, rather than "kind not told" (which the scan page offers to skip).
+        unet = ("conv_in.weight", "down_blocks.0.resnets.0.conv1.weight", "mid_block.attentions.0.proj_in.weight",
+                "up_blocks.0.resnets.0.conv1.weight", "time_embedding.linear_1.weight")  # diffusers: IC-Light, Kolors
+        self.assertEqual(kind_of(tensors(*unet))["kind"], "diffusion_models")
+        motion = kind_of(tensors("down_blocks.0.motion_modules.0.temporal_transformer.proj_in.weight",
+                                 "mid_block.motion_modules.0.temporal_transformer.proj_in.weight", "time_embedding.linear_1.weight"))
+        self.assertEqual(motion["kind"], "")  # AnimateDiff, not a diffusion model
+        vae = kind_of(tensors("encoder.down_blocks.0.resnets.0.conv1.weight", "decoder.mid_block.resnets.0.conv1.weight"))
+        self.assertEqual(vae["kind"], "vae")
+        cascade = kind_of(tensors("down_blocks.0.0.channelwise.0.weight", "down_downscalers.1.1.weight", "clf.1.weight"))
+        self.assertEqual(cascade["kind"], "diffusion_models")
+        self.assertEqual(kind_of(tensors("adapter.body.0.resnets.0.block1.weight", "adapter.conv_in.weight"))["kind"], "controlnet")
+        for names in (("head.0.weight", "body.0.body.0.body.0.weight", "tail.0.0.weight"),  # RCAN
+                      ("conv_1.sk.weight", "block_1.c1_r.sk.weight"),  # SPAN
+                      ("body.0.weight", "body.1.weight", "body.2.bias")):  # compact Real-ESRGAN
+            found = kind_of(tensors(*names))
+            self.assertEqual((found["kind"], found["sure"]), ("upscale_models", False), names)
+
     def test_embeddings(self):
         self.assertEqual(kind_of(tensors("clip_l", "clip_g")), {"kind": "embeddings", "base": "SDXL", "sure": True, "form": ""})
         sd15 = kind_of(tensors("emb_params", shapes={"emb_params": [8, 768]}))

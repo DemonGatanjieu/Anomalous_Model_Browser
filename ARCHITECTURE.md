@@ -563,7 +563,9 @@ covered by the `styles.css` manifest.
   formats that can carry code) and says which models folder the file belongs in and its base
   model (model patches such as Anima LLLite go to `model_patches`, not `controlnet`, though a
   node pack may read them there: `form`; an IP-Adapter carrying LoRA layers stays an
-  IP-Adapter); model import and the scanner's offline base model use it.
+  IP-Adapter; a file two loaders read from different folders, such as SUPIR or a whole CLIP,
+  is never `sure`); model import and the scanner's offline base model use it. Its rules are
+  checked in `tests/test_model_import.py`, layouts once misread included.
 - `recycle_bin.py` is the only way the plugin deletes the user's files (models, covers,
   outputs, recipes, materials, notes, audio): to the system Recycle Bin, together, or not
   at all (`TrashUnavailable` on drives without one). `api/trash.py` is the API's import of it

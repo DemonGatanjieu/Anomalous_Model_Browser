@@ -46,8 +46,9 @@ from .model_download import MODEL_EXTENSIONS, clean_folder, forget_file_lists
 from .model_import import Refused, destination, import_types, move_into
 from .path_utils import model_reference_within
 
-# (folder type, what the file is): it loads there all the same.
-WORKS_ANYWAY = {("diffusion_models", "checkpoints")}
+# (folder type, what the file is): it loads there all the same. The checkpoint loader reads a
+# file of only the drawing model too (as a diffusion model, without VAE and text encoders).
+WORKS_ANYWAY = {("diffusion_models", "checkpoints"), ("checkpoints", "diffusion_models")}
 # Node packs that read a kind of file from another folder than ComfyUI's own loader:
 # (folder type, kind, form) -> the pack's node. Anima LLLite: ComfyUI's "Load Model Patch"
 # reads model_patches, the ComfyUI-Anima-LLLite pack reads controlnet.

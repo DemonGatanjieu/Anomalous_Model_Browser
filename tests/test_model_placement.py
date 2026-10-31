@@ -76,7 +76,8 @@ class PlacementTests(unittest.TestCase):
         found = {item["rel"]: item for item in data["misplaced"]}
         self.assertEqual(set(found), {"Anima/realskin.safetensors", "Flux/flux-fp8.safetensors"})
         anima = found["Anima/realskin.safetensors"]
-        self.assertEqual((anima["kind"], anima["base"], anima["works"]), ("diffusion_models", "Anima", False))
+        # The checkpoint loader reads a lone drawing model as a diffusion model: it loads there.
+        self.assertEqual((anima["kind"], anima["base"], anima["works"]), ("diffusion_models", "Anima", True))
         self.assertEqual(anima["to"], {"type": "diffusion_models", "root": 0, "rel": "Anima/realskin.safetensors"})
         self.assertEqual((anima["name"], anima["version"], anima["preview_url"]), ("realskin", "", ""))
         # A whole checkpoint in the diffusion models folder still loads there.

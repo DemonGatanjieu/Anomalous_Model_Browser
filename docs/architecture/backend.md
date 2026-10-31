@@ -205,12 +205,14 @@ user's own layer, which scans never write; `model_identity.scan_choice`). A scan
 folder skips it and the scan summary counts it apart (`excluded`), not in the other counts;
 picked by hand (`targets`) it is scanned all the same. `"scan": "scan"` records that the user
 was asked and kept it. Nothing decides this alone: the summary only marks new models whose
-safetensors header reads but names no drawing model kind (`model_kind.inspect_file`, kind "",
-a voice model say) as `not_drawing`, and the scan page asks. Those headers are read
+safetensors header reads but names no kind (`model_kind.inspect_file`, kind "": a voice model
+say, or a format the rules do not know) as `not_drawing`, shown as "kind not told", and the
+scan page asks. Those headers are read
 `HEAD_READERS` (16) at a time, since on a network drive each read waits on the network (1041
 new models on a cloud server's model disk took 79 s one after another), through
 `get_metadata`, which reads headers through `api/model_heads.py`: each file's answer is kept
-by real path with its size and time in user/anomalous/model_heads.json (at most 50,000 files,
+by real path with its size and time in user/anomalous/model_heads.json (with `model_kind.RULES`:
+answers of older rules are read again) (at most 50,000 files,
 the longest unused dropped first, written a few seconds after the last change, and only once
 `setup_routes` called `keep_on_disk`, so tests stay in memory), so a header is read once per
 file version, also after a restart. The last summary is kept too (`_last`, and
@@ -518,8 +520,9 @@ walks every import type's folders once (a folder listed under two types counts f
 real paths deduplicated) and reads each header through `model_kind.inspect_file`, kept in
 memory per path, size and time. A file whose header names another type than its folder, only
 when `sure`, is misplaced; it goes to the same relative path in a folder of that type, on the
-same drive when one exists. `works` marks a whole checkpoint in the diffusion models folder,
-which still loads there. A file a node pack here reads from its folder (`PACK_READERS`: an
+same drive when one exists. `works` marks a whole checkpoint in the diffusion models folder
+and a lone drawing model in the checkpoints folder (the checkpoint loader reads it as a
+diffusion model), which still load there. A file a node pack here reads from its folder (`PACK_READERS`: an
 Anima LLLite, `form` "lllite", in controlnet while ComfyUI-Anima-LLLite's node is loaded) is
 not misplaced. Identical files are grouped by SHA-256: the scan's (metadata) hash, or
 one computed earlier this run; files of one size whose hash is unknown are only counted

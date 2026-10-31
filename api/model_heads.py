@@ -18,10 +18,10 @@ from .path_utils import atomic_write_json
 
 try:
     from ..model_identity import read_json
-    from ..model_kind import inspect_file
+    from ..model_kind import RULES, inspect_file
 except ImportError:  # loaded outside the package (tests)
     from model_identity import read_json
-    from model_kind import inspect_file
+    from model_kind import RULES, inspect_file
 
 MAX_ENTRIES = 50000  # about 6 MB on disk; a library has far fewer models
 MAX_BYTES = 64 * 1024 * 1024  # a cache file larger than this is not read (nor written)
@@ -51,6 +51,8 @@ def _load():
             data = read_json(cache_path()) if _on_disk and os.path.getsize(cache_path()) <= MAX_BYTES else None
         except OSError:
             data = None
+        if not isinstance(data, dict) or data.get("rules") != RULES:  # answers of older rules: read again
+            data = None
         _heads = {key: value for key, value in (data or {}).items()
                   if isinstance(key, str) and isinstance(value, list) and len(value) == 3 + len(FIELDS)}
     return _heads
@@ -65,7 +67,7 @@ def save():
         if len(heads) > MAX_ENTRIES:
             for key in sorted(heads, key=lambda name: heads[name][2])[:len(heads) - MAX_ENTRIES]:
                 del heads[key]
-        snapshot = dict(heads)
+        snapshot = {"rules": RULES, **heads}
     try:
         atomic_write_json(cache_path(), snapshot, max_bytes=MAX_BYTES)
     except (OSError, ValueError) as error:

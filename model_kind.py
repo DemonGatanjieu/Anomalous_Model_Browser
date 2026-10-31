@@ -17,6 +17,8 @@ import struct
 
 MAX_HEADER = 100 * 1024 * 1024
 GGUF_READ = 16 * 1024 * 1024
+# Raised whenever a rule changes: answers kept on disk (api/model_heads.py) are then read again.
+RULES = 2
 
 # Cross-attention width (the text encoder's output) -> base model, for the SD family.
 CONTEXT_WIDTH = {768: "SD 1.5", 1024: "SD 2.1", 2048: "SDXL"}
@@ -30,7 +32,11 @@ GGUF_TEXT = ("t5", "t5encoder", "umt5", "llama", "qwen2", "qwen2vl", "qwen3", "g
 EMBEDDING_KEYS = {"emb_params", "clip_l", "clip_g", "string_to_param", "string_to_token", "name", "step",
                   "sd_checkpoint", "sd_checkpoint_name"}
 LORA_MARKS = ("lora_up.", "lora_down.", "lora_a.", "lora_b.", "lora.up.", "lora.down.", "hada_w1_a",
-              "lokr_w1", ".lora_linear_layer.", "dora_scale")
+              "lokr_w1", ".lora_linear_layer.", "dora_scale", "oft_blocks", "oft_diag", "boft_blocks",
+              ".proj_lora", ".qkv_lora")  # the last two: XLabs' Flux LoRAs
+# kohya's names (any LoRA kind, GLoRA and weight differences too); ".diff"/".diff_b": full-weight differences.
+LORA_PREFIXES = ("lora_unet_", "lora_te_", "lora_te1_", "lora_te2_", "lora_te3_")
+LORA_ENDS = (".diff", ".diff_b")
 CONTROL_MARKS = ("control_model_", "input_hint_block", "controlnet_cond_embedding", "controlnet_blocks",
                  "controlnet_x_embedder", "zero_convs", "controlnet_mid_block")
 # Tensors only a model patch has (ComfyUI's "Load Model Patch" node, models/model_patches): Anima
@@ -38,10 +44,17 @@ CONTROL_MARKS = ("control_model_", "input_hint_block", "controlnet_cond_embeddin
 # are called ControlNets, but the ControlNet loader cannot read them.
 PATCH_KEYS = {"lllite_conditioning1.conv1.weight", "controlnet_blocks.0.y_rms.weight", "feature_embedder.mid_layer_norm.bias",
               "control_all_x_embedder.2-1.weight", "controlnet_patch_embedding.weight"}
-# Image-prompt layers in a model's blocks (the Anima IP-Adapter, beside LoRA layers of its own).
-IPADAPTER_MARKS = (".ip_k_proj.", ".adaln_ip.")
+# Image-prompt layers in a model's blocks: the Anima IP-Adapter (beside LoRA layers of its own),
+# XLabs' Flux IP-Adapter.
+IPADAPTER_MARKS = (".ip_k_proj.", ".adaln_ip.", "ip_adapter_")
+# The parts of a whole model besides its drawing part (a checkpoint's VAE and text encoders).
+VAE_PARTS = ("first_stage_model.", "vae.")
+TEXT_PARTS = ("cond_stage_model.", "conditioner.", "text_encoders.")
+DIFFUSION_PREFIXES = ("model.diffusion_model.", "diffusion_model.", "model.model.")
 DIFFUSION_STARTS = ("double_blocks.", "single_blocks.", "joint_blocks.", "transformer_blocks.",
-                    "single_transformer_blocks.", "input_blocks.", "blocks.0.self_attn", "net.blocks.", "net.x_embedder.")
+                    "single_transformer_blocks.", "input_blocks.", "blocks.0.self_attn", "net.blocks.", "net.x_embedder.",
+                    "noise_refiner.", "context_refiner.", "double_stream_blocks.",  # Lumina 2 / Z-Image, HiDream
+                    "down_downscalers.")  # Stable Cascade's stages B and C
 
 
 def parse_safetensors(data):
@@ -225,28 +238,50 @@ def _kind(keys, raw, text):
         return "embeddings", True
     if names & PATCH_KEYS:
         return "model_patches", True
+    # SUPIR: SDXL with a control model. ComfyUI's "Load Model Patch" reads it from model_patches,
+    # the ComfyUI-SUPIR pack from checkpoints: no folder is sure.
+    if any(key.startswith("model.control_model.") for key in keys):
+        return "model_patches", False
     if any(mark in text for mark in CONTROL_MARKS):
         return "controlnet", True
-    diffusion = any(key.startswith(("model.diffusion_model.", "diffusion_model.") + DIFFUSION_STARTS) for key in keys)
-    # A whole model first: some merged checkpoints still carry a LoRA's keys.
-    if diffusion and any(key.startswith(("first_stage_model.", "vae.")) for key in keys):
+    diffusion = any(key.startswith(DIFFUSION_PREFIXES + DIFFUSION_STARTS) for key in keys)
+    vae = any(key.startswith(VAE_PARTS) for key in keys)
+    encoders = any(key.startswith(TEXT_PARTS) for key in keys)
+    # A whole model first: some merged checkpoints still carry a LoRA's keys. Its drawing part may
+    # have names not listed here (Hunyuan-DiT's "model.blocks"): a VAE and text encoders tell then.
+    if vae and (diffusion or encoders):
         return "checkpoints", True
+    if any(key.startswith("id_encoder.") for key in keys):  # PhotoMaker (its own folder), LoRA layers inside
+        return "", False
     # Before LoRA: some IP-Adapters carry LoRA layers too.
     if any(key.startswith(("image_proj.", "ip_adapter.")) for key in keys) or any(mark in raw for mark in IPADAPTER_MARKS):
         return "ipadapter", True
-    if any(mark in raw for mark in LORA_MARKS):
+    if any(mark in raw for mark in LORA_MARKS) or any(key.startswith(LORA_PREFIXES) or key.endswith(LORA_ENDS) for key in keys):
         return "loras", True
+    # A checkpoint saved without its VAE: the checkpoint loader reads it all the same.
+    if diffusion and encoders:
+        return "checkpoints", True
     if diffusion:
         return "diffusion_models", True
+    if any(key.startswith("adapter.body.") for key in keys):  # a T2I-Adapter (diffusers)
+        return "controlnet", True
+    # A UNet saved by diffusers (IC-Light, Kolors, Lotus): its own blocks at the top, no VAE's
+    # "encoder."; AnimateDiff's motion modules have the same block names.
+    if "motion_modules" not in raw and any(key.startswith("mid_block.") for key in keys)             and any(key.startswith(("time_embedding.", "class_embedding.")) for key in keys):
+        return "diffusion_models", True
+    # A VAE inside a model of another kind (LBM's relighting model): not a VAE file.
+    if vae and any(not key.startswith(VAE_PARTS) for key in keys):
+        return "", False
     if any(mark in text for mark in ("encoder_down_0_block", "decoder_up_0_block", "encoder_down_blocks_0",
                                      "encoder_downsamples", "first_stage_model_encoder")):
         return "vae", True
-    if "vision_model_encoder_layers" in text and "text_model" not in text:
-        return "clip_vision", True
+    # A whole CLIP (text and vision): the clip vision loader reads it, so does a text encoder loader.
+    if "vision_model_encoder_layers" in text:
+        return "clip_vision", "text_model" not in text
     if "text_model_encoder_layers" in text or "encoder_block_0_layer_0_selfattention" in text \
             or ("model_layers_0_self_attn" in text and "embed_tokens" in text):
         return "text_encoders", True
-    if "conv_first_weight" in text or "body_0_rdb1" in text or ("model_0_weight" in text and "model_1_sub" in text):
+    if "conv_first_weight" in text or "body_0_rdb1" in text or ("model_0_weight" in text and "model_1_sub" in text)             or "body_0_body_0_body_0" in text or "block_1_c1_r" in text             or (keys and all(key.startswith("body.") and key.count(".") == 2 for key in keys)):  # RCAN, SPAN, compact ESRGAN
         return "upscale_models", False
     return "", False
 

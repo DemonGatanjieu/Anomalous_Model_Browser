@@ -62,11 +62,21 @@ class ModelHeadsTests(unittest.TestCase):
         model_heads.inspect(str(model))
         self.assertEqual(len(self.reads), 2)
 
+    def test_answers_of_older_rules_are_read_again(self):
+        model = self.dir / "style.safetensors"
+        write_model(model)
+        model_heads.inspect(str(model))
+        model_heads.save()
+        model_heads._heads = None
+        with mock.patch.object(model_heads, "RULES", model_heads.RULES + 1):  # the rules changed
+            model_heads.inspect(str(model))
+        self.assertEqual(len(self.reads), 2)
+
     def test_the_longest_unused_files_go_first_when_there_are_too_many(self):
-        model_heads._heads = {"old": [1, 1, 10, "", "", False, None], "new": [1, 1, 20, "", "", False, None]}
+        model_heads._heads = {"old": [1, 1, 10, "", "", False, None, ""], "new": [1, 1, 20, "", "", False, None, ""]}
         with mock.patch.object(model_heads, "MAX_ENTRIES", 1):
             model_heads.save()
-        self.assertEqual(list(json.loads(Path(self.cache).read_text(encoding="utf-8"))), ["new"])
+        self.assertEqual(list(json.loads(Path(self.cache).read_text(encoding="utf-8"))), ["rules", "new"])
 
     def test_nothing_is_written_before_the_plugin_starts(self):
         model_heads._on_disk = False
