@@ -13,6 +13,14 @@
     box-shadow: 5px -5px 0 -1px var(--amb-bg-card), 5px -5px 0 0 var(--amb-border-strong), 0 8px 24px rgba(0, 0, 0, 0.58);
 }
 .anomalous-card.is-version-open { border-color: color-mix(in srgb, var(--amb-accent) 60%, var(--amb-border)); }
+/* On a light page a thin pale orange edge goes unseen: the whole accent, doubled by a ring. */
+html.amb-theme-light .anomalous-card.is-version-open {
+    border-color: var(--amb-accent);
+    box-shadow: 0 0 0 1px var(--amb-accent), 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+html.amb-theme-light .anomalous-card.is-version-open:hover {
+    box-shadow: 0 0 0 1px var(--amb-accent), 0 8px 24px rgba(0, 0, 0, 0.58);
+}
 .anomalous-card.is-version-open::before {
     content: "";
     position: absolute;
