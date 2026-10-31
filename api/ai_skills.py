@@ -10,7 +10,8 @@ begin_task lists the skills on (name and short); get_toolbox(skill=…)
 gives one. The tools' own descriptions only point at a skill, so the list every app holds stays
 small. The user turns a skill off in the panel (user/anomalous/ai_skills.json): the AI is not
 offered it and get_toolbox refuses it. A skill marked private_only is for private tasks
-(ai_privacy.py): begin_task points at it there instead of listing the others. A by_model skill's
+(ai_privacy.py) and is all a private task gets: begin_task points at it there instead of listing
+the others, and get refuses each kind in the other kind of task. A by_model skill's
 for_user words say the same to the user, on the prompt box of a private task. Each skill fetched is a step of the AI's task (note_use), with
 the form its advice came in, so the user sees what the AI went by; the run after it says so too.
 """
@@ -98,13 +99,17 @@ def _model_name(model):
     return os.path.splitext(os.path.basename(str((model or {}).get("name") or "").replace("\\", "/")))[0]
 
 
-def get(name, model=None):
+def get(name, model=None, private=False):
     """The advice of skill `name`, for get_toolbox; `model`: the canvas's main model {name, params},
-    for a skill whose advice depends on it."""
+    for a skill whose advice depends on it; `private`: the task is private (only its skills)."""
     if name not in SKILLS:
         raise SkillError(f"No skill {name!r}; begin_task lists them: {', '.join(SKILLS)}.")
     if name in turned_off():
         raise SkillError(f"The user turned the skill {name!r} off: do the job your own way.")
+    if private and not SKILLS[name].get("private_only"):
+        raise SkillError("This task is private: the user writes the prompts. Its skill is get_toolbox(skill=\"privacy\").")
+    if not private and SKILLS[name].get("private_only"):
+        raise SkillError(f"The skill {name!r} is for private tasks; this one is not.")
     skill = SKILLS[name]
     lines = list(skill["text"])
     answer = {"skill": name, "advice": lines}

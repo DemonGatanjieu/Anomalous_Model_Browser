@@ -124,10 +124,18 @@ class SealedTests(unittest.TestCase):
         self.assertNotIn("canarypos", step["text"])
         self.assertIn("a.safetensors -> b.safetensors", step["text"], "the models it may know")
 
-    def test_the_skill_for_private_tasks_is_not_listed_elsewhere(self):
+    def test_a_private_task_gets_its_own_skill_only(self):
         from api import ai_skills
         self.assertNotIn("privacy", ai_skills.directory())
-        self.assertIn("prompts", " ".join(ai_skills.get("privacy")["advice"]))
+        ctx = {"client": "test", "task": self.task}
+        self.assertIn("prompts", " ".join(mcp_task_tools.get_toolbox(ctx, skill="privacy")["advice"]))
+        with self.assertRaisesRegex(mcp_task_tools.ToolError, "privacy"):
+            mcp_task_tools.get_toolbox(ctx, skill="prompt_pose")
+        ai_privacy.set_private(self.task, False)
+        with self.assertRaises(mcp_task_tools.ToolError):
+            mcp_task_tools.get_toolbox(ctx, skill="privacy")
+        self.assertIn("advice", mcp_task_tools.get_toolbox(ctx, skill="prompt_pose"))
+        ai_privacy.set_private(self.task, True)
         self.assertEqual(mcp_task_tools.begin_task({"client": "test", "task": self.task}, "private")["privacy"], ai_privacy.NOTE)
 
 

@@ -410,7 +410,8 @@ covered by the `styles.css` manifest.
   blocks by job (GET /anomalous/ai_blocks, `reference_blocks.status`), each block's words from its
   data file, greyed with the pack (a way into ComfyUI-Manager) or model it lacks, and a switch that
   keeps it from the AI (POST, `user/anomalous/ai_blocks.json`); under them the skills
-  (`ai_skills.status`), each with the same switch (`user/anomalous/ai_skills.json`). For a run the AI did not wait
+  (`ai_skills.status`), each with the same switch (`user/anomalous/ai_skills.json`), those of the
+  task's kind only (a private task's, else the others), as the AI gets. For a run the AI did not wait
   for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
   and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a card per

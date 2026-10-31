@@ -6,7 +6,7 @@
  * with, so the AI is not offered it; how it was tried (the card, a run's time) and the models it recommends
  * (api/block_models.json), each here or a button downloading it, link and SHA256 from the list.
  * Under them the skills (api/ai_skills.py): advice the AI fetches for a kind of job, each with its
- * switch too. GET /anomalous/ai_blocks, POST {name, on} or {skill, on}. Drawn when shown,
+ * switch too; for a private task only the private task's skill, as that is all its AI gets. GET /anomalous/ai_blocks, POST {name, on} or {skill, on}. Drawn when shown,
  * the list read again each time the view is opened.
  */
 
@@ -131,11 +131,12 @@ function blockRow(block, owner, redraw) {
     return row;
 }
 
-/** The skills: a title, what it advises, its switch. */
-function skillsGroup(skills, redraw) {
+/** The skills of the task's kind (`private`): a title, what it advises, its switch. */
+function skillsGroup(skills, redraw, isPrivate) {
     const group = el('div', 'anomalous-ai-blocks-group');
-    group.append(el('div', 'anomalous-ai-blocks-job', t('aiSkillsHeading')), el('div', 'anomalous-ai-blocks-note', t('aiSkillsNote')));
-    for (const skill of skills) {
+    group.append(el('div', 'anomalous-ai-blocks-job', t('aiSkillsHeading')),
+        el('div', 'anomalous-ai-blocks-note', t(isPrivate ? 'aiSkillsNotePrivate' : 'aiSkillsNote')));
+    for (const skill of skills.filter(item => Boolean(item.private_only) === isPrivate)) {
         const row = el('div', `anomalous-ai-block${skill.on ? '' : ' is-off'}`);
         const body = el('div', 'anomalous-ai-block-body');
         const head = el('div', 'anomalous-ai-block-head');
@@ -147,7 +148,7 @@ function skillsGroup(skills, redraw) {
     return group;
 }
 
-function listBox(owner, redraw) {
+function listBox(owner, redraw, isPrivate) {
     const body = el('div', 'anomalous-ai-stage-body anomalous-ai-blocks');
     if (!shown) {
         body.append(el('div', 'anomalous-ai-stage-empty', t('aiBlocksReading')));
@@ -168,13 +169,16 @@ function listBox(owner, redraw) {
         group.append(el('div', 'anomalous-ai-blocks-job', t(`aiBlocksJob_${job}`)), ...blocks.map(block => blockRow(block, owner, redraw)));
         body.append(group);
     }
-    if (shown.skills?.length) body.append(skillsGroup(shown.skills, redraw));
+    if (shown.skills?.length) body.append(skillsGroup(shown.skills, redraw, isPrivate));
     return body;
 }
 
-/** The view into `pane`; `ctx`: {close, owner}. `fresh`: the view was just opened, so the list is read again. */
-export function renderBlocksView(pane, ctx, fresh = false) {
-    const redraw = () => pane.replaceChildren(sideHead(t('aiSideBlocks'), ctx.close), listBox(ctx.owner, redraw));
+/**
+ * The view into `pane`; `ctx`: {close, owner}; `isPrivate`: the task shown is private (its skills only).
+ * `fresh`: the view was just opened, so the list is read again.
+ */
+export function renderBlocksView(pane, ctx, fresh = false, isPrivate = false) {
+    const redraw = () => pane.replaceChildren(sideHead(t('aiSideBlocks'), ctx.close), listBox(ctx.owner, redraw, isPrivate));
     if ((fresh || !shown) && !reading) {
         reading = ask().then(data => { shown = data; }, error => { shown = { error: error.message }; })
             .finally(() => { reading = null; redraw(); });

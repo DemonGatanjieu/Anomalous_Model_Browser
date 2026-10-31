@@ -224,7 +224,12 @@ export function drawSide(box, task, side, ctx, pickTab, arrived = null) {
     if (side.view === 'map') renderMapView(panes.map, task, side, ctx);
     if (side.view === 'decisions') renderDecisionsView(panes.decisions, task, ctx);
     if (side.view === 'outputs') renderOutputsView(panes.outputs, task, ctx);
-    if (side.view === 'blocks' && (opened || !panes.blocks.childElementCount)) renderBlocksView(panes.blocks, ctx, opened);
+    // The ways and skills, drawn again when the view comes up or the task's privacy mode changed (its skills differ).
+    const privacy = String(task.private === true);
+    if (side.view === 'blocks' && (opened || !panes.blocks.childElementCount || panes.blocks.dataset.private !== privacy)) {
+        panes.blocks.dataset.private = privacy;
+        renderBlocksView(panes.blocks, ctx, opened, task.private === true);
+    }
 }
 
 /**
