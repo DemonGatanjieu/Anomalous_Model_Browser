@@ -33,9 +33,10 @@ class PrivacyTests(unittest.TestCase):
             os.remove(os.path.join(ai_tasks.tasks_dir(), name))
         if os.path.exists(SETTING):
             os.remove(SETTING)
-        patcher = mock.patch.object(ai_privacy, "_path", lambda: SETTING)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        for patcher in (mock.patch.object(ai_privacy, "_path", lambda: SETTING),
+                        mock.patch.object(mcp_server, "_node_list", return_value={})):  # no ComfyUI here
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def task(self, private=None):
         task = ai_tasks.begin_task("test", "a private picture", new_task=True)

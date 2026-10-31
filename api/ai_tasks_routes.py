@@ -80,8 +80,9 @@ async def api_change(request):
 
 
 async def api_answer(request):
-    """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text | skip: true} - the user's answer on a panel."""
-    from . import ai_panels, ai_repaint
+    """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text | prompts, negative, pictures | skip: true} -
+    the user's answer on a panel; a prompt box's texts are sealed and the AI gets tokens (ai_sealed.py)."""
+    from . import ai_panels, ai_repaint, ai_sealed
 
     try:
         body = await request.json()
@@ -91,9 +92,12 @@ async def api_answer(request):
         return web.json_response({"error": "Expected {step, block, choice | text}"}, status=400)
     task_id, step_id, skip = request.match_info["task_id"], str(body.get("step")), body.get("skip") is True
     try:
-        # A repaint area picked: its picture is made first (outside the lock), so the AI gets it with the answer.
-        extra = await asyncio.to_thread(ai_repaint.prepare, task_id, step_id, body.get("choice"), body.get("text"), skip)
-    except ai_repaint.RepaintError as error:
+        if "prompts" in body and not skip:
+            extra = await asyncio.to_thread(ai_sealed.seal_answer, task_id, body["prompts"], body.get("negative"), body.get("pictures"))
+        else:
+            # A repaint area picked: its picture is made first (outside the lock), so the AI gets it with the answer.
+            extra = await asyncio.to_thread(ai_repaint.prepare, task_id, step_id, body.get("choice"), body.get("text"), skip)
+    except (ai_repaint.RepaintError, ValueError) as error:
         return web.json_response({"error": str(error)}, status=400)
     try:
         answers = ai_panels.answer(task_id, step_id, str(body.get("block")), body.get("choice"), body.get("text"), skip=skip, extra=extra)

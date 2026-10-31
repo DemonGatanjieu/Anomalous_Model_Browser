@@ -598,3 +598,24 @@
     font-size: 16px;
     cursor: pointer;
 }
+
+/* The prompt box of a private task (ui_ai_prompt_box.js). */
+.anomalous-ai-prompt-advice { margin: 2px 0 8px; padding: 6px 10px; border-left: 3px solid var(--amb-accent); border-radius: 4px; background: color-mix(in srgb, var(--amb-accent) 8%, transparent); color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
+.anomalous-ai-prompt-fields { display: flex; flex-direction: column; gap: 6px; }
+.anomalous-ai-prompt-field { width: 100%; box-sizing: border-box; resize: vertical; padding: 7px 9px; border: 1px solid var(--amb-border-strong); border-radius: 7px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 13px; line-height: 1.5; }
+.anomalous-ai-prompt-box > .anomalous-ai-prompt-field { margin-top: 6px; }
+.anomalous-ai-prompt-more, .anomalous-ai-prompt-pick { align-self: flex-start; margin-top: 6px; padding: 3px 10px; border: 1px dashed var(--amb-border-strong); border-radius: 6px; background: none; color: var(--amb-text-soft); font: inherit; font-size: 12.5px; cursor: pointer; }
+.anomalous-ai-prompt-more:hover, .anomalous-ai-prompt-pick:hover { border-color: var(--amb-accent); color: var(--amb-text-main); }
+.anomalous-ai-prompt-pics { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 8px; }
+.anomalous-ai-prompt-tray { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-ai-prompt-pic { position: relative; display: inline-block; width: 52px; height: 52px; border-radius: 6px; overflow: hidden; background: rgba(var(--amb-ink-rgb), 0.06); }
+.anomalous-ai-prompt-pic img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-ai-prompt-pic-remove { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 12px; line-height: 18px; cursor: pointer; }
+.anomalous-ai-prompt-label { color: var(--amb-text-soft); font-size: 12.5px; }
+.anomalous-ai-prompt-hint { color: var(--amb-text-muted); font-size: 12px; }
+.anomalous-ai-prompt-private { margin: 8px 0 6px; color: var(--amb-text-muted); font-size: 12px; line-height: 1.5; }
+.anomalous-ai-prompt-given { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.anomalous-ai-prompt-given-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 13px; line-height: 1.5; }
+.anomalous-ai-prompt-given-pic { display: inline-flex; align-items: center; gap: 4px; }
+.anomalous-ai-prompt-token { padding: 0 5px; border-radius: 4px; background: color-mix(in srgb, var(--amb-warn) 14%, transparent); color: var(--amb-warn); font-size: 12px; }
+.anomalous-ai-prompt-text { flex: 1 1 200px; min-width: 0; color: var(--amb-text-main); overflow-wrap: anywhere; white-space: pre-wrap; }

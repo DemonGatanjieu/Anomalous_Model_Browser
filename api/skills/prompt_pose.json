@@ -25,6 +25,20 @@
     ],
     "unknown": [
       "The canvas's main model or its size is not known. Under about 10 billion parameters (SD 1.5, SDXL, Illustrious, Pony, Anima) hands and hard poses often come out wrong: then pick a clear pose when it is left to you, and hands that are not the point may be hidden naturally or framed out (an option only). Larger models (Flux.1, Flux.2, Qwen-Image) draw them well: write the pose the picture wants."
-    ]
+    ],
+    "for_user": {
+      "large": {
+        "zh": "画布上的 {model}（{billions}B）是大模型，手和复杂动作画得好，照你想要的写就行。",
+        "en": "{model} on the canvas ({billions}B) is a large model: it draws hands and hard poses well, so write what you want."
+      },
+      "small": {
+        "zh": "画布上的 {model}（{billions}B）是小模型，手和复杂动作容易画坏：姿势没想好时，选一个简单清楚的动作更稳；手不是重点时，可以让它自然遮住或不入画（只是可选）。",
+        "en": "{model} on the canvas ({billions}B) is a smaller model: hands and hard poses often come out wrong. With no pose in mind, one clear simple action is safer; hands that are not the point may be naturally hidden or left out of the picture (an option only)."
+      },
+      "unknown": {
+        "zh": "认不出画布主模型的大小。100 亿参数以下的模型（SD1.5、SDXL、Illustrious、Anima 这类）手和复杂动作容易画坏，可以选简单动作，或让手自然遮住（只是可选）。",
+        "en": "The canvas's main model could not be sized. Under about 10 billion parameters (SD 1.5, SDXL, Illustrious, Anima…) hands and hard poses often come out wrong: a simple pose, or hands naturally hidden, may help (an option only)."
+      }
+    }
   }
 }

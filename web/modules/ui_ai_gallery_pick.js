@@ -126,9 +126,10 @@ export function pictureGrid({ picked, pick }) {
 
 /**
  * The panel for message box `box`; `room()` says how many more pictures the message takes;
- * `button`, the one that opens it, is lit while it is open. Returns {toggle(), close()}.
+ * `button`, the one that opens it, is lit while it is open; `words`: other locale keys for its hint,
+ * full note and add button (the prompt box's). Returns {toggle(), close()}.
  */
-export function galleryPicker(box, room, onPick, button) {
+export function galleryPicker(box, room, onPick, button, words = { hint: 'aiPicsHint', full: 'aiPicsFull', add: 'aiPicsAdd' }) {
     let panel = null;
     let stop = null; // ends the open panel's listeners and requests
 
@@ -145,10 +146,10 @@ export function galleryPicker(box, room, onPick, button) {
         const chosen = new Map();
         const max = () => Math.max(0, room());
         const count = el('span', 'anomalous-ai-pics-count');
-        const add = el('button', 'anomalous-ai-panel-send', t('aiPicsAdd'));
+        const add = el('button', 'anomalous-ai-panel-send', t(words.add));
         add.type = 'button';
         const drawCount = () => {
-            count.textContent = chosen.size ? t('aiPicsPicked', { count: chosen.size, max: max() }) : t(max() ? 'aiPicsHint' : 'aiPicsFull', { max: max() });
+            count.textContent = chosen.size ? t('aiPicsPicked', { count: chosen.size, max: max() }) : t(max() ? words.hint : words.full, { max: max() });
             add.disabled = !chosen.size;
         };
         const pictures = pictureGrid({

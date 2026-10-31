@@ -20,7 +20,7 @@ import { panelGist, panelPassed } from './ai_task_view.js';
 import { renderPanel } from './ui_ai_panel.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 
-export const QUESTIONS = ['choices', 'input', 'picks'];
+export const QUESTIONS = ['choices', 'input', 'picks', 'prompts'];
 const BOTTOM_PX = 60;
 const AUTO_KEY = 'anomalous_ai_stage_auto';
 const inView = new Set(); // the panels in view on the stage now: their cards in the timeline say so
@@ -243,13 +243,13 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
     steps.forEach((step, at) => {
         // An AI's progress bar the task went past is old numbers, drawn as such (ui_ai_panel.js).
         const passed = (step.panel.blocks || []).some(block => block?.type === 'progress') ? panelPassed(task, step) : 0;
-        const key = JSON.stringify([step.panel, step.answers, passed]);
+        const key = JSON.stringify([step.panel, step.answers, passed, step.prompt_advice]);
         const there = body.children[at];
         if (there?.dataset.panelKey === key) return;
         const item = el('section', 'anomalous-ai-stage-item');
         item.dataset.panelKey = key;
         item.dataset.panelId = step.panel.id;
-        item.append(el('div', 'anomalous-ai-stage-item-step', t('aiStageStep', { number: ctx.numberOf(step.id) })), renderPanel(step, { ...ctx, passed }));
+        item.append(el('div', 'anomalous-ai-stage-item-step', t('aiStageStep', { number: ctx.numberOf(step.id) })), renderPanel(step, { ...ctx, passed, sealed: task.sealed }));
         if (there) {
             box.inView?.unobserve(there);
             there.replaceWith(item);

@@ -2,8 +2,8 @@
  * A panel the AI drew in its task (api/ai_panels.py), drawn here from its blocks: headings,
  * text, pictures (a row, a grid or side by side to compare, with marks), the slider, picks and
  * the diagram (ui_ai_stage.js), the user's models as cards with their covers, tables, lists,
- * settings, a progress bar, and questions: buttons (one pick or several), picks and a line of
- * text, whose answers (or "let the AI decide") go back to the server for the AI to read, each
+ * settings, a progress bar, and questions: buttons (one pick or several), picks, a line of
+ * text and the prompt box of a private task (ui_ai_prompt_box.js), whose answers (or "let the AI decide") go back to the server for the AI to read, each
  * with a pill saying whether the AI has it yet (ui_ai_delivery.js). A question says that one
  * press sends; a line of one's own beside the options stays folded until asked for. Only
  * text is ever written into the page (textContent); the blocks were checked by the server and
@@ -19,6 +19,7 @@ import { runMapBox } from './ui_ai_run_map.js';
 import { decoratePicture, gonePicture, showPicture } from './ui_ai_images.js';
 import { deliveryState } from './ui_ai_delivery.js';
 import { icon } from './ui_ai_icons.js';
+import { promptBox } from './ui_ai_prompt_box.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -419,6 +420,7 @@ const DRAW = {
     slider,
     diagram,
     run_map: (block, ctx) => runMapBox(ctx.stepOf?.(block.step), ctx, true) || el('p', 'anomalous-ai-panel-text', t('aiMapGone')),
+    prompts: (block, ctx) => promptBox(block, ctx, { sendAnswer, askHead, skipButton, answerNote, draftField }),
     picks: (block, ctx) => picks(block, {
         ...ctx,
         send: async (ids, note) => {
@@ -434,7 +436,7 @@ const DRAW = {
 
 /**
  * The panel of a panel step. `ctx`: `{ taskId, owner, openPicture(url, video), openModel(item),
- * locateNode(id), stepOf(id), changed(), passed }` (changed: an answer went in, draw the task again;
+ * locateNode(id), stepOf(id), changed(), passed, sealed }` (sealed: the task's texts behind its tokens, for the prompt box) (changed: an answer went in, draw the task again;
  * stepOf: the task's step of that id, for a run_map block; passed: when the AI wrote its progress
  * bars if the task went past them since, else 0).
  */
@@ -444,12 +446,12 @@ export function renderPanel(step, ctx) {
     const titleRow = el('div', 'anomalous-ai-panel-title-row');
     titleRow.append(el('div', 'anomalous-ai-panel-title', panel.title || ''));
     card.append(titleRow);
-    const blockCtx = { ...ctx, stepId: step.id, answers: step.answers || {}, closed: Boolean(panel.closed), titleRow };
+    const blockCtx = { ...ctx, stepId: step.id, answers: step.answers || {}, closed: Boolean(panel.closed), titleRow, advice: step.prompt_advice };
     for (const block of list(panel.blocks)) {
         const draw = DRAW[block?.type];
         if (draw) card.append(draw(block, blockCtx));
     }
-    const asks = list(panel.blocks).some(block => ['choices', 'input', 'picks'].includes(block?.type));
+    const asks = list(panel.blocks).some(block => ['choices', 'input', 'picks', 'prompts'].includes(block?.type));
     if (asks) card.append(el('div', 'anomalous-ai-panel-foot', t(panel.closed ? 'aiPanelClosed' : 'aiPanelHow')));
     return card;
 }

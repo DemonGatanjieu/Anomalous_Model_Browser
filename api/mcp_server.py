@@ -24,15 +24,15 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
+from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
-from .mcp_canvas_edit import CANVAS_TOOLS
+from .mcp_canvas_edit import CANVAS_TOOLS, object_info
 from .mcp_model_use import MODEL_TOOLS
 from .mcp_look import LOOK_TOOLS
 from .mcp_situation import SITUATION_TOOLS
 from .mcp_task_tools import TASK_TOOLS
-from .mcp_tools import TOOLS as READ_TOOLS, call_tool, retext
+from .mcp_tools import TOOLS as READ_TOOLS, ToolError, call_tool, retext
 from .mcp_arguments import prepare_arguments, renaming_note
 
 TOOLS = {**READ_TOOLS, **MODEL_TOOLS, **LOOK_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **SITUATION_TOOLS, **mcp_apps.APP_TOOLS}
@@ -191,12 +191,16 @@ async def _call(params, request):
     if name not in mcp_apps.APP_TOOLS:  # the card's own calls do not reach the AI
         outside = await asyncio.to_thread(ai_outside.check, active_task or ai_tasks.active_task_id(client, session))
     canvas_call = ai_task_canvas.begin_call(active_task)  # the page works on the task's own tab
+    # A private task's tokens become their texts for the tool only; the record keeps the tokens (ai_privacy.py).
+    privacy_task = active_task or ai_tasks.active_task_id(client, session=session)
+    private = await asyncio.to_thread(ai_privacy.applies, privacy_task)
+    call_arguments = await asyncio.to_thread(ai_sealed.expand, privacy_task, arguments)  # tokens from a prompt box work in any task
     try:
         # The user's gate first (ai_gates.py): it may wait for their OK, or answer for them.
         result = await asyncio.to_thread(ai_gates.check, name, arguments, step_ref)
         if result is None:
             async with _slots:
-                result = await asyncio.to_thread(call_tool, TOOLS, name, arguments, ctx)
+                result = await asyncio.to_thread(call_tool, TOOLS, name, call_arguments, ctx)
     except BaseException as error:
         failed_result = {"content": [{"type": "text", "text": f"{name} failed: {error}"}], "isError": True}
         await asyncio.to_thread(
@@ -226,9 +230,20 @@ async def _call(params, request):
     mcp_directory.attach(result, name, {key: tool["spec"] for key, tool in TOOLS.items() if key not in mcp_apps.APP_TOOLS})
     if name not in mcp_apps.APP_TOOLS and mcp_directory.stale(client, _tools()):
         await asyncio.to_thread(mcp_directory.tell_stale, result, active_task)
-    # Last: a private task's pictures never leave, whatever put them in (ai_privacy.py).
-    private = await asyncio.to_thread(ai_privacy.applies, active_task or ai_tasks.active_task_id(client, session=session))
-    return ai_privacy.guard(ai_outside.tell(result, outside), private)
+    # Last: a private task's pictures and prompts never leave, whatever put them in (ai_privacy.py).
+    final_task = active_task or ai_tasks.active_task_id(client, session=session)
+    if final_task != privacy_task and await asyncio.to_thread(ai_privacy.applies, final_task):
+        private, privacy_task = True, final_task
+    info = await asyncio.to_thread(_node_list, ctx) if private else None
+    return await asyncio.to_thread(ai_privacy.guard, ai_outside.tell(result, outside), private, privacy_task, info, name)
+
+
+def _node_list(ctx):
+    """ComfyUI's node list, for telling which node inputs are text a private task keeps; {} when unreadable."""
+    try:
+        return object_info(ctx)
+    except ToolError:
+        return {}
 
 
 async def api_mcp(request):

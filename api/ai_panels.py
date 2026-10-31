@@ -7,6 +7,7 @@ at places given as fractions of the picture), slider (two pictures over each oth
 drag between them), picks (pictures with a reason and "take this one"), models (the user's, by
 model_id), diagram (boxes and arrows, laid out by the page; a box can name a canvas node),
 table, list, params, choices (buttons; one or several picks) and input (a line of text),
+prompts (the user's prompt box: texts and reference pictures the AI gets as tokens, ai_sealed.py),
 progress, divider; and area (the user's repaint area beside the AI's, ai_repaint.py). Nothing the AI sends is run or rendered as markup, and no drawing of its own
 (SVG) is taken: every block is checked here to be one of these shapes, with plain strings and
 numbers of bounded size, pictures only from the output folder and models only from the user's
@@ -36,7 +37,8 @@ MAX_COLUMNS = 8
 MAX_WAIT = 55
 TONES = ("normal", "muted", "tip", "warning")
 LAYOUTS = ("row", "grid", "compare")
-INTERACTIVE = ("choices", "input", "picks")
+INTERACTIVE = ("choices", "input", "picks", "prompts")
+MAX_PROMPT_BOXES = 8
 INPAINT_NOTE = (
     "inpaint_image is the picture with the area to repaint as its alpha, already in ComfyUI's input folder: do not "
     "check it with a command (get_image_info(image=inpaint_image, folder='input', include_image=true) shows it). "
@@ -156,6 +158,12 @@ def clean_block(block, at, taken):
     elif kind == "input":
         out.update(question=_text(block.get("question"), 200, f"{where}.question", True),
                    placeholder=_text(block.get("placeholder"), 80, f"{where}.placeholder"))
+    elif kind == "prompts":  # filled in Anomalous only: the texts are sealed and the AI gets tokens
+        count = block.get("count", 1)
+        if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= MAX_PROMPT_BOXES:
+            raise PanelError(f"{where}.count: 1 to {MAX_PROMPT_BOXES} prompts")
+        out.update(question=_text(block.get("question"), 200, f"{where}.question"), count=count,
+                   negative=block.get("negative") is True, pictures=block.get("pictures") is True)
     elif kind == "progress":
         value, top = block.get("value"), block.get("max", 100)
         if not all(isinstance(n, (int, float)) and not isinstance(n, bool) for n in (value, top)) or top <= 0:
@@ -165,7 +173,7 @@ def clean_block(block, at, taken):
         pass
     else:
         raise PanelError(f"{where}.type {kind!r} is not one of heading, text, images, slider, picks, models, diagram, "
-                         "table, list, params, choices, input, progress, divider")
+                         "table, list, params, choices, input, prompts, progress, divider")
     if kind in INTERACTIVE or block.get("id") is not None:
         block_id = _text(block.get("id") or f"q{at + 1}", 40, f"{where}.id")
         if block_id in taken:
@@ -294,6 +302,9 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
             entry["skipped"] = True
         elif block["type"] == "choices" and block.get("other") and not choice and isinstance(text, str) and text.strip():
             entry.update(choice=["other"], labels=["other"], text=_text(text, 2000, "text", True))
+        elif block["type"] == "prompts":
+            if not (extra or {}).get("prompts"):
+                raise PanelError("Prompts are written in Anomalous's prompt box")
         elif block["type"] in ("choices", "picks"):
             picked = choice if isinstance(choice, list) else [choice]
             options = block["options"] if block["type"] == "choices" else block["items"]
@@ -412,7 +423,7 @@ def _collect(client, panel_id, task_id=None):
                 given.update(delivered=True, delivered_at=time.time())
                 changed.add(task["id"])
                 item = {"panel": panel["id"], "question": block["id"], "asked": block.get("question", "")}
-                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout") if key in given})
+                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout", "prompts", "negative", "pictures") if key in given})
                 out.append(item)
     for tid in changed:
         ai_tasks._save(tasks[tid])

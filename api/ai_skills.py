@@ -9,7 +9,9 @@ model or its size cannot be told (model_advice.main_params counts them from the 
 begin_task lists the skills on (name and short); get_toolbox(skill=…)
 gives one. The tools' own descriptions only point at a skill, so the list every app holds stays
 small. The user turns a skill off in the panel (user/anomalous/ai_skills.json): the AI is not
-offered it and get_toolbox refuses it. Each skill fetched is a step of the AI's task (note_use), with
+offered it and get_toolbox refuses it. A skill marked private_only is for private tasks
+(ai_privacy.py): begin_task points at it there instead of listing the others. A by_model skill's
+for_user words say the same to the user, on the prompt box of a private task. Each skill fetched is a step of the AI's task (note_use), with
 the form its advice came in, so the user sees what the AI went by; the run after it says so too.
 """
 
@@ -70,14 +72,14 @@ def set_on(name, on):
 def status():
     """Every skill as the user's panel shows it."""
     off = turned_off()
-    return [{"name": name, "title": skill["title"], "about": skill["about"], "on": name not in off}
-            for name, skill in SKILLS.items()]
+    return [{"name": name, "title": skill["title"], "about": skill["about"], "on": name not in off,
+             "private_only": skill.get("private_only") is True} for name, skill in SKILLS.items()]
 
 
 def directory():
     """The skills on, "name (short)" each after a note on fetching them, a line for begin_task; "" when none is on."""
     off = turned_off()
-    listed = [f"{name} ({skill['short']})" for name, skill in SKILLS.items() if name not in off]
+    listed = [f"{name} ({skill['short']})" for name, skill in SKILLS.items() if name not in off and not skill.get("private_only")]
     return NOTE + "; ".join(listed) if listed else ""
 
 
@@ -113,6 +115,17 @@ def get(name, model=None):
         lines[1:1] = [line.format(model=_model_name(model) or "The model", size=size) for line in forms[form]]
         answer["for_model"] = {"form": form, "model": _model_name(model), "billions": round(model["params"] / 1e9, 1) if size else None}
     return answer
+
+
+def for_user(model, name="prompt_pose"):
+    """Skill `name`'s words for the user on `model` {name, params} (its for_user form, {zh, en}); None when it is off."""
+    skill = SKILLS.get(name) or {}
+    forms = (skill.get("by_model") or {}).get("for_user")
+    if not forms or name in turned_off():
+        return None
+    form = _form(skill["by_model"], model)
+    billions = f"{model['params'] / 1e9:.1f}" if form != "unknown" else ""
+    return {lang: text.format(model=_model_name(model), billions=billions) for lang, text in forms[form].items()}
 
 
 def note_use(client, answer, session="", task_id=None, now=None):

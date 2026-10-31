@@ -1,12 +1,14 @@
-"""Privacy mode (隐私模式): a task the user keeps private sends the AI none of its pictures. The AI still
-builds and runs workflows and knows the models; it hears how many pictures came out and whether the
-run went well, and the user looks at them in Anomalous. Each task has its switch (task["privacy"],
+"""Privacy mode (隐私模式): a task the user keeps private sends the AI none of its pictures and no prompt
+text. The AI still builds and runs workflows and knows the models; it hears how many pictures came out
+and whether the run went well, and the user looks at them in Anomalous. Prompts and picture names
+reach it as tokens it passes on (ai_sealed.py); the user writes prompts in a prompt box. Each task has its switch (task["privacy"],
 in the task's header); new tasks follow the default the user sets in the Gates window
 (user/anomalous/ai_privacy.json). Turning it on or off is a step the AI is told of, and one of the
 task's decisions (ai_decisions.py).
 
-All of it happens at one place: mcp_server.py hands every tool result to guard() before it leaves,
-whatever tool or later step (run pictures, the user's messages) put a picture in it. A call that
+All of it happens at one place: mcp_server.py puts the texts back into a call's arguments
+(ai_sealed.expand) and hands every tool result to guard() before it leaves, whatever tool or later
+step (run pictures, the user's messages) put a picture or a prompt in it. A call that
 cannot be tied to a task is private while the default is on or any private task is unfinished:
 when in doubt, nothing is shown. The card in the AI app (mcp_apps.py) shows no pictures either.
 """
@@ -16,10 +18,11 @@ import os
 import time
 import uuid
 
-from . import ai_tasks
+from . import ai_sealed, ai_tasks
 from .path_utils import atomic_write_json
 
-NOTE = "Privacy mode: no pictures reach you, only how many and whether they came out. The user looks at them: ask with ask_user."
+NOTE = ("Privacy mode: no pictures or prompt text reach you, only tokens like [P1] and [img1] to pass on as they "
+        "are. get_toolbox(skill=\"privacy\") first.")
 
 
 def _path():
@@ -85,15 +88,15 @@ def applies(task_id):
         return any(item.get("privacy") is True and not item.get("ended") for item in ai_tasks._load().values())
 
 
-def guard(result, private):
-    """`result` as it may leave: a private call's pictures taken out, with a word on why."""
+def guard(result, private, task_id=None, info=None, tool=""):
+    """`result` as it may leave: a private call's pictures taken out (with a word on why), its prompt
+    text and picture names as tokens (ai_sealed.mask; `info`: ComfyUI's node list)."""
     if not private or not isinstance(result, dict):
         return result
     content = [item for item in result.get("content") or [] if not (isinstance(item, dict) and item.get("type") == "image")]
-    if len(content) == len(result.get("content") or []):
-        return result
-    content.append({"type": "text", "text": NOTE})
-    result["content"] = content
-    if isinstance(result.get("structuredContent"), dict):
-        result["structuredContent"] = {**result["structuredContent"], "privacy": NOTE}
-    return result
+    if len(content) != len(result.get("content") or []):
+        content.append({"type": "text", "text": NOTE})
+        result["content"] = content
+        if isinstance(result.get("structuredContent"), dict):
+            result["structuredContent"] = {**result["structuredContent"], "privacy": NOTE}
+    return ai_sealed.mask(result, task_id, info, tool)

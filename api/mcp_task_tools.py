@@ -104,10 +104,13 @@ def log_decision(ctx, title, decision, reason="", rejected=None, by="user", rela
 
 
 def show_panel(ctx, title, blocks, task=None):
+    # A prompt box tells the user what suits the canvas's model (the prompt_pose skill's words for them).
+    boxed = isinstance(blocks, list) and any(isinstance(block, dict) and block.get("type") == "prompts" for block in blocks)
+    advice = ai_skills.for_user(_canvas_model()) if boxed else None
     try:
         panel = ai_panels.show(
             ctx.get("client") or "AI", title, blocks,
-            session=ctx.get("session") or "", task_id=task or ctx.get("task"),
+            session=ctx.get("session") or "", task_id=task or ctx.get("task"), extra={"prompt_advice": advice} if advice else None,
         )
     except ai_panels.PanelError as error:
         raise ToolError(str(error))

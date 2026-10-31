@@ -75,7 +75,8 @@ def _questions(step):
     panel = step["panel"]
     out = []
     for block in panel["blocks"]:
-        if block["type"] not in ai_panels.INTERACTIVE or block["id"] in step.get("answers", {}) or panel.get("closed"):
+        if (block["type"] not in ai_panels.INTERACTIVE or block["type"] == "prompts"  # prompts are written in Anomalous only
+                or block["id"] in step.get("answers", {}) or panel.get("closed")):
             continue
         options = block.get("options") or [{"id": item["id"], "label": item.get("label") or item["id"]} for item in block.get("items", [])]
         out.append({"panel": panel["id"], "block": block["id"], "type": block["type"], "question": block.get("question", ""),

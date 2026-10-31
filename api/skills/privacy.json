@@ -1,0 +1,19 @@
+{
+  "short": "how to work on a private task",
+  "private_only": true,
+  "title": {
+    "zh": "隐私模式·怎么干活",
+    "en": "Privacy mode: how to work"
+  },
+  "about": {
+    "zh": "只给隐私任务的 AI：用 AMB 的提示词框请你写提示词、加参考图，它只拿到 [P1]、[img1] 这样的代号，原样传给跑图；图由你来看和挑。",
+    "en": "Only for an AI on a private task: it asks you for prompts and reference pictures with Anomalous's prompt box, gets only tokens like [P1] and [img1] to pass on to the run, and you look at the pictures and pick."
+  },
+  "text": [
+    "This task is private: Anomalous sends you no pictures and no prompt text, only tokens. You still build, change and run workflows and know the models.",
+    "Ask the user for prompts with a prompt box: show_panel(blocks=[{\"type\": \"prompts\", \"id\": \"p\", \"question\": \"what to write\", \"count\": 1 to 8, \"negative\": true, \"pictures\": true}]); pictures lets them add reference pictures. Then get_answers (wait_seconds 55): you get prompts [\"[P1]\", …], negative \"[P2]\" and pictures [\"[img1]\"], never the text. Never ask for prompt text in the chat.",
+    "Write a token where its text goes and Anomalous puts the text back: run_workflow(prompts=[\"[P1]\", \"[P3]\"], negative=\"[P2]\"), set_prompt(prompt=\"[P1]\"), image=\"[img1]\". You may add words of your own around a token (\"[P1], masterpiece\").",
+    "Other prompt text and picture names come as tokens too (the canvas, picture info, saved prompts, the user's changes): pass them on as they are; never guess what they say.",
+    "You cannot see the pictures, but the user can: show them with tokens (a picks panel, items [{\"image\": \"[img4]\"}]) and ask which to keep or what to change."
+  ]
+}

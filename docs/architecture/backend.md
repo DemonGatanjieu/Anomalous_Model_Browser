@@ -254,13 +254,20 @@ descriptions. Its picks go to `/anomalous/scan_all` as `targets`, like a list pa
 
 ## MCP endpoint
 
-Every tools/call result passes `ai_privacy.guard` last, after the run's pictures, the user's
-messages and the outside check were added: for a private task (ai_privacy.py) image content
-items are removed and the answer says why. Privacy is per task (`task["privacy"]`, else the
+A call's arguments pass `ai_sealed.expand` first (tokens back to their texts, for the tool only;
+the record keeps the tokens), and every tools/call result passes `ai_privacy.guard` last, after
+the run's pictures, the user's messages and the outside check were added: for a private task
+(ai_privacy.py) image content items are removed and the answer says why, then `ai_sealed.mask`
+turns prompt text and picture names into tokens (a node's STRING inputs by ComfyUI's node list,
+prompt fields, picture file names, and any text already sealed, also in the text content).
+A "prompts" panel block is the user's prompt box: answered only through the answer route with
+`seal_answer`, never as plain text (the card in the AI app leaves it out); show_panel stores the
+prompt_pose skill's words for the canvas's model on its step (`prompt_advice`). Privacy is per task (`task["privacy"]`, else the
 Gates default; turning the default off pins the tasks it covered); a call with no task is
 private while the default is on or a private task is unfinished. The card's `app_task_view`
 gives a private task no pictures. `tests/test_ai_privacy.py` calls every tool with a picture
-in its result and checks none leaves.
+in its result and checks none leaves; `tests/test_ai_sealed.py` does the same with canary
+prompts and picture names.
 
 Skills (`api/ai_skills.py`, one data file each in `api/skills/`) are advice an agent fetches
 for a kind of job, beside the blocks that build nodes. begin_task lists the skills on (name and

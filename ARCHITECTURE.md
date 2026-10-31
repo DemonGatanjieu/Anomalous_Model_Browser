@@ -93,11 +93,16 @@ covered by the `styles.css` manifest.
   change; `web/modules/ui_ai_task_canvas.js` is the header's chip saying which ("AI edits a
   copy ▾", opening the two to pick from with what each means) and the copy's "Show the copy".
   `api/ai_privacy.py` is privacy mode: a task kept private (its own switch, else the Gates
-  window's default for new tasks) sends the AI none of its pictures. mcp_server.py hands every
-  result to `guard` last, so no tool or later addition (run pictures, the user's messages) can
-  put one through; a call tied to no task is private while the default is on or a private task
-  is unfinished; the card shows none. `web/modules/ui_ai_privacy.js` is the header's lock
-  (`tests/test_ai_privacy.py`).
+  window's default for new tasks) sends the AI none of its pictures and no prompt text. mcp_server.py
+  hands every result to `guard` last, so no tool or later addition (run pictures, the user's
+  messages) can put one through; a call tied to no task is private while the default is on or a
+  private task is unfinished; the card shows none. `api/ai_sealed.py` seals prompt text and
+  picture names as tokens ("[P1]", "[img1]", kept in task["sealed"]): `mask` on the way out (a
+  node's STRING inputs by ComfyUI's node list, prompt fields, picture names, any sealed text),
+  `expand` on a call's arguments, `seal_answer` for the user's prompt box (a "prompts" panel block,
+  `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model;
+  the privacy skill tells the AI how to work). `web/modules/ui_ai_privacy.js` is the header's lock
+  (`tests/test_ai_privacy.py`, `tests/test_ai_sealed.py`).
   `ai_pictures.mark_gone` marks a task's pictures no longer in the output folder (`gone`) on its
   `GET`, which `ui_ai_images.gonePicture` shows instead of a broken picture.
   `api/ai_pictures.py` hands the AI output pictures (gallery card menu, the inspector's ✦): a
