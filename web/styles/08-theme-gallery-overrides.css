@@ -792,5 +792,9 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     overflow: hidden;
     background: var(--amb-bg-page);
     position: relative;
+    /* It fills the page like Combos: none of a pop-up's frame (its dark shadow showed in the light theme). */
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
 }
 
