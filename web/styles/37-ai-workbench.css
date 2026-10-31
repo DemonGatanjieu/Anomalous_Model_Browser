@@ -319,6 +319,7 @@
 
 .anomalous-ai-tool:hover { border-color: var(--amb-border-strong); background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
 .anomalous-ai-tool.is-icon { width: 30px; padding: 0; justify-content: center; }
+.anomalous-ai-privacy.is-on { border-color: color-mix(in srgb, var(--amb-warn) 55%, transparent); color: var(--amb-warn); background: color-mix(in srgb, var(--amb-warn) 10%, transparent); }
 /* Where the AI works on the canvas (ui_ai_task_canvas.js): a copy or the open canvas, the list to pick from, and the copy's tab. */
 .anomalous-ai-canvas { position: relative; display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
 .anomalous-ai-canvas-mode[aria-expanded="true"] { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 12%, transparent); }

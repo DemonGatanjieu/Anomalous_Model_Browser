@@ -55,6 +55,7 @@ import { taskLinks } from './ui_ai_task_links.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewLabel } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
+import { privacyToggle } from './ui_ai_privacy.js';
 import { syncRows } from './sync_rows.js';
 import { forgetTask, keptTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
 import {
@@ -230,7 +231,7 @@ function renderTask() {
     titleLine.append(button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => { state.narrowView = 'list'; layout(); }),
         el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled')), stateChip(status));
     const tools = el('div', 'anomalous-ai-task-tools');
-    tools.append(executionStatus(task, refresh), canvasControls(task, () => void refresh(), () => state.owner?.close?.()));
+    tools.append(executionStatus(task, refresh), canvasControls(task, () => void refresh(), () => state.owner?.close?.()), privacyToggle(task, () => void refresh()));
     if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
         tools.append(iconButton('anomalous-ai-tool', 'undo', t('aiUndoAll'), () => undoAll(task)));
     }

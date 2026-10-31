@@ -1,7 +1,7 @@
 /**
  * What a step of the AI workbench's timeline says under its title, by what it is (ui_ai_workbench.js
  * draws the row around it): the user's own steps (marks on a picture, materials, a change made in
- * Anomalous, pictures handed over, a stop, the canvas mode, a message with the pictures it
+ * Anomalous, pictures handed over, a stop, the canvas mode, privacy mode, a message with the pictures it
  * carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js),
  * what happened outside Anomalous (pictures changed, the AI's own word: api/ai_outside.py), a
  * skill the AI went by (api/ai_skills.py) and, under a run, the skills fetched before it, or
@@ -112,6 +112,7 @@ export function stepBody(step, ctx) {
     case 'user_pictures': return [said(step.text || t('aiPicturesStep', { count: (step.results || []).length })), deliveryState(step, 'aiPicturesSeen')];
     case 'user_stop': return [said(t('aiRunStoppedByYou')), deliveryState(step)];
     case 'user_canvas': return [said(t(step.canvas === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')), deliveryState(step)];
+    case 'user_privacy': return [said(t(step.privacy ? 'aiPrivacyChoseOn' : 'aiPrivacyChoseOff')), deliveryState(step)];
     case 'outside_files': return outsideFiles(step, ctx.owner);
     case 'log_outside': return outsideLog(step);
     case 'use_skill': return [skillUsed(step)];

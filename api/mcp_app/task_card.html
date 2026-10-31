@@ -53,6 +53,7 @@
     openAmb: ['Open in Anomalous', '在 AMB 里看'], send: ['Send', '发送'], refresh: ['Refresh', '刷新'],
     picked: ['I picked in the card: ', '我在卡片里选了：'], typed: ['My answer in the card: ', '我在卡片里回答：'],
     youAnswered: ['You answered: ', '你回答了：'], none: ['No task to show yet.', '还没有任务可看。'],
+    private: ['Privacy mode: the pictures are only shown in Anomalous.', '隐私模式：图只在 AMB 里看。'],
   };
   const t = key => words[key][zh ? 1 : 0];
   const card = document.getElementById('card');
@@ -147,6 +148,7 @@
       }
       parts.push(pictures);
     }
+    if (view.private) parts.push(el('div', 'note', t('private')));
     for (const item of view.answered || []) parts.push(el('div', 'note', `${t('youAnswered')}${item.question ? `${item.question} ` : ''}${item.answer}`));
     for (const question of view.questions || []) parts.push(questionBox(question));
     if (view.asking?.length) {

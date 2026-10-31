@@ -67,6 +67,7 @@ function described(item) {
     case 'gate': return [t(toolKey(item.tool)), [t(item.allowed ? 'aiDecisionAllowed' : 'aiDecisionRefused'), item.text].filter(Boolean).join('：')];
     case 'toolbox': return [t('aiDecisionToolbox'), item.count ? t('aiDecisionToolboxText', { count: item.count, mode: t(`aiTbMode_${item.mode}`) }) : t('aiToolboxCleared')];
     case 'canvas': return [t('aiDecisionCanvas'), t(item.mode === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')];
+    case 'privacy': return [t('aiPrivacy'), t(item.on ? 'aiPrivacyChoseOn' : 'aiPrivacyChoseOff')];
     default: return [t('aiDecisionStop'), t('aiRunStoppedByYou')];
     }
 }

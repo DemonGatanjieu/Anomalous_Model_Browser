@@ -65,6 +65,8 @@ def decisions(task):
             out.append({"type": "toolbox", "step": step["id"], "at": step["at"], "mode": box.get("mode", "prefer"), "count": count})
         elif tool == "user_canvas":
             out.append({"type": "canvas", "step": step["id"], "at": step["at"], "mode": step.get("canvas")})
+        elif tool == "user_privacy":
+            out.append({"type": "privacy", "step": step["id"], "at": step["at"], "on": bool(step.get("privacy"))})
         elif tool == "user_stop":
             out.append({"type": "stop", "step": step["id"], "at": step["at"]})
     return sorted(out, key=lambda item: item["at"])
@@ -96,6 +98,8 @@ def lines(task, limit=12):
             words.append(f"The user handed over {item['count']} materials ({item['mode']})")
         elif item["type"] == "canvas":
             words.append("The user set the canvas mode to " + ("the task's own tab" if item["mode"] == "new" else "their open canvas"))
+        elif item["type"] == "privacy":
+            words.append("The user turned privacy mode " + ("on: no pictures reach you" if item["on"] else "off"))
         else:
             words.append("The user stopped a run")
     return words

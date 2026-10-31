@@ -8,7 +8,7 @@ import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
+from . import activity_log, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -37,6 +37,7 @@ async def api_get(request):
     task = ai_tasks.get_task(request.match_info["task_id"])
     if task:
         task["canvas_mode"] = ai_task_canvas.mode_of(task)  # the task's own choice, else the user's default
+        task["private"] = ai_privacy.is_private(task)  # the same for privacy mode
         task["decisions"], task["decisions_gap"] = ai_decisions.decisions(task), ai_decisions.gap(task)
         task["links"] = ai_task_links.links(task["id"])  # the task it goes on from, those going on from it
         ai_pictures.mark_gone(task)  # pictures deleted since: the page says so
@@ -45,7 +46,8 @@ async def api_get(request):
 
 async def api_change(request):
     """POST /anomalous/ai_tasks/{id}: {"title": "…"} renames it, {"remove": true} takes it off the list,
-    {"canvas": "new" | "current"} sets whether the AI works in a tab of the task's own, {"from": id | null}
+    {"canvas": "new" | "current"} sets whether the AI works in a tab of the task's own, {"privacy": bool}
+    whether its pictures are kept from the AI (ai_privacy.py), {"from": id | null}
     links it to the task it goes on from (or takes the link off)."""
     task_id = request.match_info["task_id"]
     try:
@@ -59,6 +61,11 @@ async def api_change(request):
     if "canvas" in body:
         try:
             return web.json_response({"canvas": ai_task_canvas.set_mode(task_id, body["canvas"])})
+        except ValueError as error:
+            return web.json_response({"error": str(error)}, status=400)
+    if "privacy" in body:
+        try:
+            return web.json_response({"privacy": ai_privacy.set_private(task_id, body["privacy"])})
         except ValueError as error:
             return web.json_response({"error": str(error)}, status=400)
     if "from" in body:
@@ -146,11 +153,12 @@ async def api_gate(request):
 async def api_gates(request):
     """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools}; POST {gate, policy} changes one,
     POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py),
+    POST {privacy: bool} whether new tasks are private (ai_privacy.py),
     POST {runs: call | wait}
     how the AI waits for a run (ai_gates.run_wait), POST {answer_wait: 60 | 180 | 600} for the user's answer,
     POST {no_answer: stop | recommended} what happens when that time runs out."""
     def settings():
-        return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(),
+        return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "privacy": ai_privacy.default_on(),
                 "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait(), "no_answer": ai_gates.no_answer()}
 
     if request.method == "GET":
@@ -159,6 +167,8 @@ async def api_gates(request):
     try:
         if "canvas_tab" in (body or {}):
             ai_task_canvas.set_default(body["canvas_tab"])
+        elif "privacy" in (body or {}):
+            ai_privacy.set_default(body["privacy"])
         elif "runs" in (body or {}):
             ai_gates.set_run_wait(body["runs"])
         elif "answer_wait" in (body or {}):

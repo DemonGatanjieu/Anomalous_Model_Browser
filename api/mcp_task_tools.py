@@ -4,7 +4,7 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_skills, reference_blocks
+from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, reference_blocks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -33,9 +33,10 @@ def begin_task(ctx, title, new_task=False):
     answer["next"] = ("get_situation shows where things stand; a daily run is one call: run_workflow(workflow: a saved "
                       "one, with the prompt, seed or size to change).")
     answer["blocks"] = _blocks(ctx)
-    skills = ai_skills.directory()
-    if skills:
-        answer["skills"] = skills
+    if ai_privacy.is_private(ai_tasks.get_task(task["id"])):
+        answer["privacy"] = ai_privacy.NOTE  # the user writes the prompts and looks at the pictures: no skill for those
+    elif ai_skills.directory():
+        answer["skills"] = ai_skills.directory()
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)

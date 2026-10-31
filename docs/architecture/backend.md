@@ -254,6 +254,14 @@ descriptions. Its picks go to `/anomalous/scan_all` as `targets`, like a list pa
 
 ## MCP endpoint
 
+Every tools/call result passes `ai_privacy.guard` last, after the run's pictures, the user's
+messages and the outside check were added: for a private task (ai_privacy.py) image content
+items are removed and the answer says why. Privacy is per task (`task["privacy"]`, else the
+Gates default; turning the default off pins the tasks it covered); a call with no task is
+private while the default is on or a private task is unfinished. The card's `app_task_view`
+gives a private task no pictures. `tests/test_ai_privacy.py` calls every tool with a picture
+in its result and checks none leaves.
+
 Skills (`api/ai_skills.py`, one data file each in `api/skills/`) are advice an agent fetches
 for a kind of job, beside the blocks that build nodes. begin_task lists the skills on (name and
 a line), `get_toolbox(skill=…)` returns one, and a skill the user turned off in the Ways panel

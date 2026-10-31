@@ -8,12 +8,12 @@ them from the AI; an AI that calls them anyway only reads its own task or answer
 question). Their results go to the card, not the AI. The card never answers a gate:
 an OK for what an AI may do is only given in Anomalous (ai_gates.py), so a tool the AI could
 reach can never grant it. The pictures it shows are the gallery's thumbnails, inline (the frame
-loads nothing from this server).
+loads nothing from this server); a private task's are not shown (ai_privacy.py).
 """
 
 import os
 
-from . import ai_panels, ai_tasks
+from . import ai_panels, ai_privacy, ai_tasks
 from .mcp_tools import ToolError, _image_content, _resolve_image, _schema
 
 EXTENSION = "io.modelcontextprotocol/ui"
@@ -92,7 +92,8 @@ def task_view(ctx, panel=None, task=None):
     if not record:
         raise ToolError("No task to show.")
     steps = [step for step in record["steps"] if step.get("kind") != "look"]
-    pictures = [result for step in record["steps"] for result in step.get("results") or [] if result.get("type") == "image"]
+    private = ai_privacy.is_private(record)  # its pictures stay in Anomalous
+    pictures = [] if private else [result for step in record["steps"] for result in step.get("results") or [] if result.get("type") == "image"]
     seen, shown = set(), []
     for result in reversed(pictures):
         key = (result.get("subfolder"), result.get("filename"))
@@ -107,7 +108,7 @@ def task_view(ctx, panel=None, task=None):
         "steps": [{"tool": step["tool"], "kind": step["kind"], "state": step.get("state", "done"), "ok": step.get("ok", True),
                    "stage": step.get("stage"), "text": _words(step)}
                   for step in steps[-MAX_STEPS:]],
-        "pictures": list(reversed(shown)),
+        "pictures": list(reversed(shown)), "private": private,
         "questions": [question for step in record["steps"] if step.get("kind") == "panel" for question in _questions(step)],
         "answered": [item for step in record["steps"] if step.get("kind") == "panel" for item in _answered(step)][-3:],
         "asking": [step.get("gate", {}).get("gate") for step in record["steps"] if step.get("state") == "asking"],

@@ -24,7 +24,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_callers, ai_gates, ai_outside, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
+from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS
@@ -226,7 +226,9 @@ async def _call(params, request):
     mcp_directory.attach(result, name, {key: tool["spec"] for key, tool in TOOLS.items() if key not in mcp_apps.APP_TOOLS})
     if name not in mcp_apps.APP_TOOLS and mcp_directory.stale(client, _tools()):
         await asyncio.to_thread(mcp_directory.tell_stale, result, active_task)
-    return ai_outside.tell(result, outside)
+    # Last: a private task's pictures never leave, whatever put them in (ai_privacy.py).
+    private = await asyncio.to_thread(ai_privacy.applies, active_task or ai_tasks.active_task_id(client, session=session))
+    return ai_privacy.guard(ai_outside.tell(result, outside), private)
 
 
 async def api_mcp(request):

@@ -139,6 +139,8 @@ export async function openGates() {
     }
     body.append(choiceRow('canvasTab', ['new', 'current'], known.canvas_tab || 'new', mode => t(`aiCanvasTab_${mode}`),
         async mode => (await save({ canvas_tab: mode })).canvas_tab),
+    choiceRow('privacy', [false, true], known.privacy === true, on => t(`aiPrivacyDefault_${on}`),
+        async on => (await save({ privacy: on })).privacy),
     choiceRow('answerWait', [60, 180, 600], known.answer_wait || 180, seconds => t(`aiAnswerWait_${seconds}`),
         async seconds => (await save({ answer_wait: seconds })).answer_wait),
     choiceRow('noAnswer', ['stop', 'recommended'], known.no_answer || 'stop', mode => t(`aiNoAnswer_${mode}`),
