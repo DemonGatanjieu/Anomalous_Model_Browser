@@ -1,6 +1,7 @@
 /**
  * What a step of an AI task made, and where it leads (ui_ai_workbench.js draws the task): the
- * pictures (the viewer), its models (their page), the combo, the spoken audio (▶), the canvas
+ * pictures (the viewer) and, under a finished run's, the user's word on it (ui_ai_verdict.js),
+ * its models (their page), the combo, the spoken audio (▶), the canvas
  * change (found on the canvas, undone while it can be), the scan; and a run's progress while it
  * goes with its stop button and size warnings (ui_ai_run_live.js, kept live by
  * updateRunProgress from the server's events). The task's Results view (ui_ai_outputs.js) uses
@@ -22,6 +23,7 @@ import { canvasChanges } from './ui_canvas_changes.js';
 import { estimateBox, runProgress } from './ui_ai_run_live.js';
 import { runMapBox } from './ui_ai_run_map.js';
 import { iconButton } from './ui_ai_icons.js';
+import { verdictRow } from './ui_ai_verdict.js';
 
 export const shared = { owner: null, taskId: null, entries: new Map(), player: null, openMap: null }; // openMap: ui_ai_workbench.js
 
@@ -115,6 +117,7 @@ export function resultLinks(step, changed = () => {}) {
     if (shape) box.append(shape);
     const pictures = (step.results || []).filter(result => result.type === 'image');
     if (pictures.length) box.append(imageResults(pictures, shared.owner));
+    if (step.tool === 'run_workflow' && step.state === 'done' && pictures.length && shared.taskId) box.append(verdictRow(step, shared.taskId));
     const links = el('div', 'anomalous-ai-links');
     const note = el('span', 'anomalous-ai-link-note');
     for (const result of step.results || []) {

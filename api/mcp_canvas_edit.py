@@ -10,7 +10,7 @@ import json
 import threading
 import time
 
-from . import ai_pictures, ai_tasks, ai_toolbox, mcp_fill, model_advice, model_download, reference_blocks
+from . import ai_evidence, ai_gates, ai_pictures, ai_tasks, ai_toolbox, mcp_fill, model_advice, model_download, reference_blocks
 from .mcp_actions import _action, _local, _page
 from .media_routes import picture_size
 from .mcp_tools import ToolError
@@ -70,10 +70,22 @@ def _picked(ctx):
 
 
 def _allowed(ctx, types):
-    """Refuses node types the user's "only" picks leave out, before the page is asked."""
-    if not ctx.get("task"):
+    """Refuses node types the user's "only" picks leave out, and, while the user lets custom nodes in only
+    by the ways (ai_gates.node_rule), those of no way the task did not pick either, before the page is asked."""
+    ways_only = ai_gates.node_rule() == "ways"
+    if not ctx.get("task") and not ways_only:
         return
     info = object_info(ctx)
+    if ways_only:
+        box = ai_toolbox.effective(ai_tasks.get_task(ctx["task"])) if ctx.get("task") else None
+        ways = reference_blocks.node_types()
+        outside = sorted({name for name in types if name in info and not ai_toolbox.builtin(info[name])
+                          and name not in ways and not ai_toolbox.chosen(box, name, info[name])})
+        if outside:
+            raise ToolError(f"The user lets custom nodes in only by the ready-made ways (add_nodes use=…): not {', '.join(outside)}. "
+                            "Use a way or ComfyUI's built-in nodes, or ask the user in the AI workbench (show_panel).")
+    if not ctx.get("task"):
+        return
     refused = ai_toolbox.refused(ctx["task"], types, info)
     if refused:
         box = ai_toolbox.effective(ai_tasks.get_task(ctx["task"])) or {}
@@ -230,8 +242,9 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
     if [nodes is not None, block is not None, use is not None].count(True) != 1:
         raise ToolError("Give one of: use (from begin_task's blocks, with want), block (a ready-made one by name) or nodes (a group in API form).")
     if use is not None:
-        try:  # the use's best block this ComfyUI can run
-            block = reference_blocks.pick(str(use), None if want is None else str(want), object_info(ctx), bool(scene))
+        try:  # the use's best block this ComfyUI can run, the one that did best on the canvas's model first
+            block = reference_blocks.pick(str(use), None if want is None else str(want), object_info(ctx), bool(scene),
+                                          lambda names: ai_evidence.order("way", names, lambda: _main_base(near_node_id)))
         except reference_blocks.BlockError as error:
             raise ToolError(str(error))
     if block is not None:
@@ -262,7 +275,27 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
         answer["next"] = built["after"]
         if built["tested"]:
             answer["tested"] = built["tested"]  # so the AI can say how long it will take
+    if isinstance(answer, dict):
+        if block is not None:
+            answer["way"] = str(block)  # the step keeps it: the runs with it count for it
+        record = _record(ctx, block, [spec["class_type"] for spec in nodes.values()])
+        if record:
+            answer["record"] = record
     return answer
+
+
+def _record(ctx, block, types):
+    """How block `block`, or the custom node packs of node types `types`, did in this computer's runs (ai_evidence.py)."""
+    if block is not None:
+        words = ai_evidence.words("way", str(block))
+        return f"Your runs with this way: {words}" if words else ""
+    found = ai_evidence.tally()
+    if not found["pack"]:
+        return ""
+    info = object_info(ctx)
+    packs = sorted({ai_toolbox.source_of(info[kind]) for kind in types if kind in info and not ai_toolbox.builtin(info[kind])} - {"api"})
+    lines = [f"{pack}: {words}" for pack in packs if (words := ai_evidence.words("pack", pack, found))]
+    return f"Your runs with these node packs: {'; '.join(lines)}" if lines else ""
 
 
 def connect_nodes(ctx, from_node_id, to_node_id, input=None, output=None, replace=None):

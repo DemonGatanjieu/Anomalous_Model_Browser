@@ -281,6 +281,24 @@ a skill (the `prompt` of `set_prompt` and `run_workflow` at `prompt_pose`: a pos
 draws well, nonessential hands optionally hidden, the user's own text and poses kept), so the
 tool list stays within its budget; AMB passes prompt text through unchanged.
 
+The record of what works (`api/ai_evidence.py`, `user/anomalous/ai_evidence.json`, the last
+2000 runs) is the ways, skills and custom node packs each run used, by the base model of the
+run's main model (followed from its first sampler's model input to the loader). A way counts
+for a run when the task added it (`add_nodes` answers `way`, the step keeps it as a result) and
+the run still has its nodes; a skill when it was fetched before the run in the task; a pack when
+one of the run's nodes is from it. Only the run's end is written (a stopped one is not, nor one
+of ComfyUI's own nodes only); how it went is never asked for: a picture picked in a picks panel
+(`ai_panels.answer`) or kept in the gallery (`kept_images.kept_keys`, read when the record is
+summed up) counts it good, its pictures passed over in a picks panel "not chosen", and the
+user's word under it (`POST /anomalous/ai_tasks/{id}/runs/{step}/verdict`, a user step the AI
+gets) goes over both. Names only, never prompt text; picture names stay on this computer. The
+AI reads it in begin_task and get_toolbox (`record`, at most a few hundred characters, nothing
+while nothing ran), with a way in add_nodes' answer and with a skill in get_toolbox's, with the
+AI apps that ran it so the next one knows what is untried. `add_nodes(use=…)` puts the use's
+runnable ways in order by their record on the canvas's base model (asked of the page only when
+one has a record). With the Gates' "custom nodes: only the ways'" (`ai_tools.json` `nodes`),
+`mcp_canvas_edit._allowed` refuses a custom node no way builds and the task did not pick.
+
 `track_run(prompt_ids, task, wait_seconds)` attaches existing submissions from this server to
 an open task without running anything. IDs must exist in its queue/history; each is owned by
 one recorded run. Retrying an identical batch returns that run, not the task's newest run.

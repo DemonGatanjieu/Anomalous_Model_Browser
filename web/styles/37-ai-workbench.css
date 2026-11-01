@@ -474,6 +474,27 @@
 .anomalous-ai-outside-who { margin-top: 6px; color: var(--amb-text-dim); font-size: 12px; }
 .anomalous-ai-skill-used { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; color: var(--amb-text-soft); font-size: 13px; line-height: 1.5; }
 .anomalous-ai-skill-used strong { color: var(--amb-text-main); font-weight: 600; }
+
+/* The user's word on a finished run (ui_ai_verdict.js), under its pictures. */
+.anomalous-ai-verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.anomalous-ai-verdict-ask { color: var(--amb-text-soft); font-size: 12.5px; }
+.anomalous-ai-verdict-pick {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.anomalous-ai-verdict-pick:hover { color: var(--amb-text-main); }
+.anomalous-ai-verdict-pick:disabled { cursor: progress; opacity: 0.7; }
+.anomalous-ai-verdict-pick.is-good.is-chosen { border-color: var(--amb-ok); background: color-mix(in srgb, var(--amb-ok) 16%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-verdict-pick.is-bad.is-chosen { border-color: var(--amb-warn); background: color-mix(in srgb, var(--amb-warn) 16%, transparent); color: var(--amb-text-main); }
 .anomalous-ai-outside-log { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; margin: 4px 0 0; font-size: 13px; line-height: 1.5; }
 .anomalous-ai-outside-log dt { color: var(--amb-text-dim); }
 .anomalous-ai-outside-log dd { margin: 0; color: var(--amb-text-main); white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -1,10 +1,11 @@
 /**
  * What a step of the AI workbench's timeline says under its title, by what it is (ui_ai_workbench.js
  * draws the row around it): the user's own steps (marks on a picture, materials, a change made in
- * Anomalous, pictures handed over, a stop, the canvas mode, privacy mode, a message with the pictures it
- * carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js),
+ * Anomalous, pictures handed over, a stop, the canvas mode, privacy mode, their word on a run, a message
+ * with the pictures it carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js),
  * what happened outside Anomalous (pictures changed, the AI's own word: api/ai_outside.py), a
- * skill the AI went by (api/ai_skills.py) and, under a run, the skills fetched before it, or
+ * skill the AI went by (api/ai_skills.py) and, under a run, the ways it used (api/ai_evidence.py)
+ * and the skills fetched before it, or
  * the AI's note laid out (a long one folded until asked).
  */
 
@@ -115,10 +116,13 @@ export function stepBody(step, ctx) {
     case 'user_privacy': return [said(t(step.privacy ? 'aiPrivacyChoseOn' : 'aiPrivacyChoseOff')), deliveryState(step)];
     case 'outside_files': return outsideFiles(step, ctx.owner);
     case 'log_outside': return outsideLog(step);
+    case 'user_verdict': return [said(t(`aiVerdictSaid_${step.verdict}`)), deliveryState(step)];
     case 'use_skill': return [skillUsed(step)];
     case 'run_workflow': {
         const used = skillsBefore(ctx.steps, step).map(item => words(item.title));
-        return [...(used.length ? [el('div', 'anomalous-ai-skill-used', t('aiRunSkills', { names: [...new Set(used)].join(' · ') }))] : []),
+        const ways = (step.used?.ways || []).map(way => words(way.title));
+        return [...(ways.length ? [el('div', 'anomalous-ai-skill-used', t('aiRunWays', { names: ways.join(' · ') }))] : []),
+            ...(used.length ? [el('div', 'anomalous-ai-skill-used', t('aiRunSkills', { names: [...new Set(used)].join(' · ') }))] : []),
             ...(step.text ? [note(step.text)] : [])];
     }
     default:

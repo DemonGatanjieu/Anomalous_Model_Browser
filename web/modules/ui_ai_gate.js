@@ -147,6 +147,8 @@ export async function openGates() {
         async mode => (await save({ no_answer: mode })).no_answer),
     choiceRow('runs', ['call', 'wait'], known.runs || 'call', mode => t(`aiRunWait_${mode}`),
         async mode => (await save({ runs: mode })).runs),
+    choiceRow('nodes', ['any', 'ways'], known.nodes || 'any', mode => t(`aiNodeRule_${mode}`),
+        async mode => (await save({ nodes: mode })).nodes),
     el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
     aiWindow(t('aiGates'), body);
 }

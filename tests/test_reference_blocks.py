@@ -276,6 +276,8 @@ class AddBlockTests(unittest.TestCase):
         self.assertEqual(payload["roles"], {"sampler": {"denoise": 0.45}}, "the sampler's strength set with it")
         self.assertEqual(payload["nodes"]["picture"]["inputs"]["image"], "a.png")
         self.assertIn("set_prompt it to what belongs in the area", answer["next"], "what to do next with this block")
+        self.assertEqual(answer["way"], "inpaint_crop_stitch", "the step keeps it: its runs count for it (ai_evidence.py)")
+        self.assertNotIn("record", answer, "it never ran here")
 
     def test_a_control_block_asks_the_page_for_the_model_and_copies_the_picture_to_input(self):
         answers = {"block_model": {"model": "noob.safetensors", "loras": []}, "add_nodes": {"nodes": {}, "reaches_output": True}}

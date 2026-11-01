@@ -6,7 +6,9 @@
  * with, so the AI is not offered it; how it was tried (the card, a run's time) and the models it recommends
  * (api/block_models.json), each here or a button downloading it, link and SHA256 from the list.
  * Under them the skills (api/ai_skills.py): advice the AI fetches for a kind of job, each with its
- * switch too; for a private task only the private task's skill, as that is all its AI gets. GET /anomalous/ai_blocks, POST {name, on} or {skill, on}. Drawn when shown,
+ * switch too; for a private task only the private task's skill, as that is all its AI gets. Each way
+ * and skill says how it did in the runs here, by model (api/ai_evidence.py), or that it never ran here.
+ * GET /anomalous/ai_blocks, POST {name, on} or {skill, on}. Drawn when shown,
  * the list read again each time the view is opened.
  */
 
@@ -58,6 +60,26 @@ function tested(block) {
     const record = block.tested || {};
     const runs = (record.runs || []).filter(run => run.seconds).map(run => t('aiBlocksRun', run));
     return runs.length ? el('div', 'anomalous-ai-block-source', t('aiBlocksTested', { gpu: record.gpu, vram: record.vram_gb, runs: runs.join(' · ') })) : null;
+}
+
+/**
+ * How a way or skill did in the runs here (api/ai_evidence.py), by the base model of the run's model:
+ * how often it ran, how many turned out well or not, which AI apps ran it; or that it never ran here.
+ */
+function record(bases) {
+    const box = el('div', 'anomalous-ai-block-record');
+    const lines = Object.entries(bases || {}).sort((a, b) => b[1].runs - a[1].runs);
+    if (!lines.length) {
+        box.append(el('div', 'anomalous-ai-block-record-none', t('aiRecordNone')));
+        return box;
+    }
+    for (const [base, count] of lines) {
+        const parts = ['good', 'bad', 'passed', 'failed'].filter(key => count[key]).map(key => t(`aiRecord_${key}`, { n: count[key] }));
+        const line = el('div', 'anomalous-ai-block-record-line', t('aiRecordLine', { base: base || t('aiRecordOther'), runs: count.runs, parts: parts.join('') }));
+        if (count.clients?.length) line.title = t('aiRecordBy', { names: count.clients.join(', ') });
+        box.append(line);
+    }
+    return box;
 }
 
 /** The models the block recommends: each one here, or a button that downloads it (its link and SHA256 from the list). */
@@ -118,7 +140,7 @@ function blockRow(block, owner, redraw) {
     const head = el('div', 'anomalous-ai-block-head');
     head.append(el('span', 'anomalous-ai-block-title', words(block.title)),
         el('span', `anomalous-ai-block-state${block.usable ? ' is-ready' : ''}`, t(block.usable ? 'aiBlocksReady' : 'aiBlocksMissing')));
-    body.append(head, el('div', 'anomalous-ai-block-about', words(block.about)));
+    body.append(head, el('div', 'anomalous-ai-block-about', words(block.about)), record(shown.record?.way?.[block.name]));
     if (!block.usable) body.append(lacks(block, owner));
     // Where it came from, how it was tried, its models: folded, the row is a line to read.
     const more = el('details', 'anomalous-ai-block-more');
@@ -141,7 +163,7 @@ function skillsGroup(skills, redraw, isPrivate) {
         const body = el('div', 'anomalous-ai-block-body');
         const head = el('div', 'anomalous-ai-block-head');
         head.append(el('span', 'anomalous-ai-block-title', words(skill.title)));
-        body.append(head, el('div', 'anomalous-ai-block-about', words(skill.about)));
+        body.append(head, el('div', 'anomalous-ai-block-about', words(skill.about)), record(shown.record?.skill?.[skill.name]));
         row.append(body, onSwitch(skill, { skill: skill.name }, redraw));
         group.append(row);
     }
@@ -159,7 +181,8 @@ function listBox(owner, redraw, isPrivate) {
         return body;
     }
     const offered = shown.blocks.filter(block => block.usable && block.on).length;
-    body.append(el('div', 'anomalous-ai-blocks-note', t('aiBlocksNote', { count: offered, total: shown.blocks.length })));
+    body.append(el('div', 'anomalous-ai-blocks-note', t('aiBlocksNote', { count: offered, total: shown.blocks.length })),
+        el('div', 'anomalous-ai-blocks-note', t('aiRecordNote')));
     if (shown.note) body.append(el('div', 'anomalous-ai-blocks-note is-error', shown.note));
     for (const job of [...shown.jobs, ...new Set(shown.blocks.map(block => block.job))]) {
         const blocks = shown.blocks.filter(block => block.job === job);

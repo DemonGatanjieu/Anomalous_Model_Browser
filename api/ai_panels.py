@@ -25,7 +25,7 @@ import threading
 import time
 import uuid
 
-from . import ai_marks, ai_tasks
+from . import ai_evidence, ai_marks, ai_tasks
 from .ai_panel_parts import (  # noqa: F401 - PanelError and the limits are read as ai_panels.*
     MAX_ITEMS, MAX_NODES, PanelError, _diagram, _image, _list, _model, _text, _zoom,
 )
@@ -322,6 +322,8 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
         _answered.notify_all()
         answers = dict(step["answers"])
     ai_tasks._notify(task_id)
+    if block["type"] == "picks" and not skip:
+        ai_evidence.note_picks(block["items"], entry["choice"])  # the runs whose pictures the user picked did well
     return answers
 
 

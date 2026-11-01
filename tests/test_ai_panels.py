@@ -14,10 +14,11 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_answer_wait, ai_gates, ai_panels, ai_tasks, mcp_task_tools  # noqa: E402
+from api import ai_answer_wait, ai_evidence, ai_gates, ai_panels, ai_tasks, mcp_task_tools  # noqa: E402
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_panels_")
 OUTPUT = tempfile.mkdtemp(prefix="amb_ai_panels_out_")
+EVIDENCE = os.path.join(tempfile.mkdtemp(prefix="amb_ai_panels_evidence_"), "ai_evidence.json")
 Path(OUTPUT, "a.png").write_bytes(b"png")
 Path(OUTPUT, "b.png").write_bytes(b"png")
 
@@ -29,6 +30,10 @@ def isolate():
     ai_tasks._waiting[0] = None
     for name in os.listdir(TMP):
         os.remove(os.path.join(TMP, name))
+    ai_evidence._path = lambda: EVIDENCE
+    ai_evidence._cache["path"] = ""
+    if os.path.exists(EVIDENCE):
+        os.remove(EVIDENCE)
 
 
 CHOICES = {"type": "choices", "id": "pick", "question": "选哪张？", "options": [{"id": "a", "label": "左边"}, {"id": "b", "label": "右边"}]}

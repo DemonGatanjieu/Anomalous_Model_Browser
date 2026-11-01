@@ -379,6 +379,8 @@ def results_of(tool, arguments, data):
         out.append(_model_result(arguments["model_id"]))
     if tool == "place_combo" and arguments.get("name"):
         out.append({"type": "combo", "name": _short(arguments["name"], 120)})
+    if tool == "add_nodes" and isinstance(data.get("way"), str):
+        out.append({"type": "way", "name": _short(data["way"], 80)})  # a ready-made block: its runs count for it (ai_evidence.py)
     if isinstance(data.get("_activity"), str):
         out.append({"type": "canvas", "activity": data["_activity"]})
     if tool == "speak":

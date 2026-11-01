@@ -4,7 +4,7 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, reference_blocks
+from . import ai_answer_wait, ai_decisions, ai_evidence, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, reference_blocks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -37,6 +37,9 @@ def begin_task(ctx, title, new_task=False):
         answer["privacy"] = ai_privacy.NOTE  # the user writes the prompts and looks at the pictures: no skill for those
     elif ai_skills.directory():
         answer["skills"] = ai_skills.directory()
+    record = ai_evidence.overview()
+    if record:
+        answer["record"] = record  # what ran here how often and how it went, by model: any AI's runs
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
@@ -242,11 +245,15 @@ def get_toolbox(ctx, task=None, skill=None):
         except ai_skills.SkillError as error:
             raise ToolError(str(error))
         ai_skills.note_use(ctx.get("client") or "AI", answer, session=ctx.get("session") or "", task_id=task or ctx.get("task"))
+        record = ai_evidence.words("skill", str(skill))
+        if record:
+            answer["record"] = f"Runs here after it: {record}"  # how runs went with this advice, by model
         return answer
     box = ai_toolbox.effective(ai_tasks.get_task(task_id)) if task_id else None
+    record = ai_evidence.overview()
     if not box:
-        return {"picked": False, "note": "The user picked nothing for this task; use what fits."}
-    answer = {"picked": True, "mode": box["mode"], "note": ai_toolbox.words(box)}
+        return {"picked": False, "note": "The user picked nothing for this task; use what fits.", **({"record": record} if record else {})}
+    answer = {"picked": True, "mode": box["mode"], "note": ai_toolbox.words(box), **({"record": record} if record else {})}
     if box.get("nodes"):
         found = find_nodes(ctx, types=box["nodes"])
         answer["nodes"] = found["nodes"]
