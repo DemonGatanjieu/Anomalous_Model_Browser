@@ -9,14 +9,13 @@ run_status with it, waiting for the end when asked. tell() puts the same news in
 other answers: where the run stands while it goes, and once that it ended. The console's lines,
 the time left and the card's memory join the progress, and the size each sampler works at with
 its warnings is the step's "estimate" (ai_run_watch.py), the run's shape in boxes its "map" with
-what changed since the task's run before it (ai_run_map.py), and what it used (its main model, ways,
-skills and packs) its "used", which goes into the record of what works when it ends (ai_evidence.py);
-a run the user or the AI stopped (ai_run_control.py) ends "cancelled"."""
+what changed since the task's run before it (ai_run_map.py); a run the user or the AI stopped
+(ai_run_control.py) ends "cancelled"."""
 
 import threading
 import time
 
-from . import ai_evidence, ai_gates, ai_run_map, ai_run_watch, ai_tasks, ai_training
+from . import ai_gates, ai_run_map, ai_run_watch, ai_tasks
 from .mcp_tools import ToolError, _image_content, _resolve_image, retext, tool_text
 
 RUN_POLL_SECONDS = 2.0
@@ -175,9 +174,6 @@ def _finish_run(task_id, step_id, prompts, history, queued=None):
             task["updated"] = max(task["updated"], time.time())
         ai_tasks._save(task)
     ai_tasks._notify(task_id)
-    if done >= len(prompts):
-        ai_evidence.note_run(task_id, step_id)  # what it used and how it went, in the record of what works
-        ai_training.note_run(task_id, step_id)  # a trial of a training round, when it fits one
     return done >= len(prompts)
 
 
@@ -263,7 +259,6 @@ def _estimate(task_id, step_id, item):
     try:
         found = ai_run_watch.estimate(item[2], (memory or {}).get("total_mb"))
         shape = ai_run_map.map_of(item[2])
-        ran = ai_evidence.ran(item[2])
     except Exception:  # noqa: BLE001 - an odd prompt leaves the run without an estimate, nothing more
         return True
     with ai_tasks._lock:
@@ -273,7 +268,7 @@ def _estimate(task_id, step_id, item):
         if at is None:
             return True
         before = next((entry["map"] for entry in reversed(steps[:at]) if entry.get("tool") == "run_workflow" and entry.get("map")), None)
-        steps[at].update(estimate=found, map=shape, changes=ai_run_map.changes(before, shape), used=ai_evidence.used(ran, steps[:at]))
+        steps[at].update(estimate=found, map=shape, changes=ai_run_map.changes(before, shape))
         ai_tasks._save(task)
     ai_tasks._notify(task_id)
     return True

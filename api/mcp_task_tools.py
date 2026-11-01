@@ -4,7 +4,7 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_answer_wait, ai_decisions, ai_evidence, ai_gates, ai_marks, ai_training, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, reference_blocks
+from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, reference_blocks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -37,11 +37,6 @@ def begin_task(ctx, title, new_task=False):
         answer["privacy"] = ai_privacy.NOTE  # the user writes the prompts and looks at the pictures: no skill for those
     elif ai_skills.directory():
         answer["skills"] = ai_skills.directory()
-    record = ai_evidence.overview() if ai_gates.record_shown(task["id"]) else ""
-    if record:
-        answer["record"] = record  # what ran here how often and how it went, by model: any AI's runs (when the user shows it)
-    if task.get("training"):
-        answer["training"] = ai_training.brief(ai_tasks.get_task(task["id"]))  # a round the user started in the training network
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
@@ -90,10 +85,10 @@ def report(ctx, text="", images=None, done=False, reply_to=None, task=None):
     return answer
 
 
-def log_outside(ctx, what, why="", files=None, task=None, external_skill=None):
+def log_outside(ctx, what, why="", files=None, task=None):
     try:
         step = ai_outside.log(ctx.get("client") or "AI", what, why, files, session=ctx.get("session") or "",
-                              task_id=task or ctx.get("task"), external_skill=external_skill)
+                              task_id=task or ctx.get("task"))
     except ValueError as error:
         raise ToolError(str(error))
     return {"logged": True, "step": step["id"]}
@@ -247,15 +242,11 @@ def get_toolbox(ctx, task=None, skill=None):
         except ai_skills.SkillError as error:
             raise ToolError(str(error))
         ai_skills.note_use(ctx.get("client") or "AI", answer, session=ctx.get("session") or "", task_id=task or ctx.get("task"))
-        record = ai_evidence.words("skill", str(skill)) if ai_gates.record_shown(task_id) else ""
-        if record:
-            answer["record"] = f"Runs here after it: {record}"  # how runs went with this advice, by model
         return answer
     box = ai_toolbox.effective(ai_tasks.get_task(task_id)) if task_id else None
-    record = ai_evidence.overview() if ai_gates.record_shown(task_id) else ""
     if not box:
-        return {"picked": False, "note": "The user picked nothing for this task; use what fits.", **({"record": record} if record else {})}
-    answer = {"picked": True, "mode": box["mode"], "note": ai_toolbox.words(box), **({"record": record} if record else {})}
+        return {"picked": False, "note": "The user picked nothing for this task; use what fits."}
+    answer = {"picked": True, "mode": box["mode"], "note": ai_toolbox.words(box)}
     if box.get("nodes"):
         found = find_nodes(ctx, types=box["nodes"])
         answer["nodes"] = found["nodes"]
@@ -372,11 +363,9 @@ TASK_TOOLS = dict([
                         "task": _TASK_PROP}),
     _task_tool("log_outside", "Say what you did outside Anomalous",
                "Right after using a tool that is not Anomalous's (a command, a script, files, another server): what "
-               "you ran, why, and the files it touched, for the task's timeline. If you actually used an external "
-               "agent skill, set external_skill to its identifier before the runs it guides; this is self-reported.",
+               "you ran, why, and the files it touched, for the task's timeline. Prefer Anomalous's tools.",
                log_outside, {"what": {"type": "string"}, "why": {"type": "string"},
                              "files": {"type": "array", "items": {"type": "string"}, "maxItems": ai_outside.MAX_FILES},
-                             "external_skill": {"type": "string", "description": "Optional external skill identifier, lowercase letters, digits, dot, underscore or hyphen; not a path."},
                              "task": _TASK_PROP},
                ["what"]),
     _task_tool("log_decision", "Record a decision",

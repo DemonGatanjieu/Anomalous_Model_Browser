@@ -281,51 +281,6 @@ a skill (the `prompt` of `set_prompt` and `run_workflow` at `prompt_pose`: a pos
 draws well, nonessential hands optionally hidden, the user's own text and poses kept), so the
 tool list stays within its budget; AMB passes prompt text through unchanged.
 
-The record of what works (`api/ai_evidence.py`, `user/anomalous/ai_evidence.json`, the last
-2000 runs) is the ways, skills and custom node packs each run used, by the base model of the
-run's main model (followed from its first sampler's model input to the loader). A way counts
-for a run when the task added it (`add_nodes` answers `way`, the step keeps it as a result) and
-the run still has its nodes; a skill when it was fetched before the run in the task; a pack when
-one of the run's nodes is from it. Only the run's end is written (a stopped one is not, nor one
-of ComfyUI's own nodes only); how it went is never asked for: a picture picked in a picks panel
-(`ai_panels.answer`) or kept in the gallery (`kept_images.kept_keys`, read when the record is
-summed up) counts it good, its pictures passed over in a picks panel "not chosen", and the
-user's word under it (`POST /anomalous/ai_tasks/{id}/runs/{step}/verdict`, a user step the AI
-gets) goes over both. Names only, never prompt text; picture names stay on this computer. Once
-the user shows it (Gates "training network record", `ai_tools.json` `record`, hidden by default;
-a training round's task always shows it: `ai_gates.record_shown`) the AI reads it in begin_task and get_toolbox (`record`, at most a few hundred characters, nothing
-while nothing ran), with a way in add_nodes' answer and with a skill in get_toolbox's, with the
-AI apps that ran it so the next one knows what is untried. Shown or not, `add_nodes(use=…)` puts the use's
-runnable ways in order by their record on the canvas's base model (asked of the page only when
-one has a record). With the Gates' "custom nodes: only the ways'" (`ai_tools.json` `nodes`),
-`mcp_canvas_edit._allowed` refuses a custom node no way builds and the task did not pick.
-A picks panel answer also records the AI's judgement: the items it marked recommended count as
-its pick (`ai_picked`), the others shown as passed over by it; when the user left the panel to the
-AI (`no_answer` "recommended", `ai_answer_wait.take_recommended`, now for picks blocks too) the
-choice is the AI's only, and nothing is counted as the user's.
-
-An agent may identify a skill it actually used outside AMB with `log_outside(external_skill=…)`
-before the runs it guides. The identifier is a bounded slug, never a path; the task step is the
-agent's declaration, and later runs in that task count it under `external:<identifier>`.
-The network shows these as AI-reported external skills, not runnable AMB skills or user ratings.
-
-Training rounds (`api/ai_training.py`, `GET/POST /anomalous/ai_training`): the network's data is
-the record summed up (`ai_evidence.tally`, with each pair's last pictures), each main model's runs
-(`ai_evidence.by_model`, by file name), the main models here with their base models (`models()`, at
-most 400, read from their metadata), the ways with whether they take a picture, the skills and the
-rounds started here (`rounds()`, the newest 30, with how many trials ran). `GET
-/anomalous/ai_training/runs?kind&name&base` lists one pair's runs, newest first, at most 40
-(`ai_evidence.runs_of`: model, AI app, how the user judged it and by what, the AI's pick, pictures,
-task). A round is a skill (trials without it first, as a skill
-counts for every run after it is fetched, then with it) or the ways of one use that run here,
-on 1-4 main models, 1-3 pictures each with the same seeds; it is started as a waiting task
-(`ai_tasks.start_task`, the models as `about`) carrying `training` {kind, items, models, seeds,
-subject, picture, trials}. When a run of that task ends (`ai_task_runs._finish_run`), the first
-open trial whose model file and item fit its `used` takes it; `tell` (in `mcp_server._call`
-after the run's pictures) puts the progress into the AI's answer once the count of done trials
-changed: the next trial, or, when a model's trials are all done, the picks panel to show with
-its pictures and its own pick marked recommended (asked once a model), then the report.
-
 `track_run(prompt_ids, task, wait_seconds)` attaches existing submissions from this server to
 an open task without running anything. IDs must exist in its queue/history; each is owned by
 one recorded run. Retrying an identical batch returns that run, not the task's newest run.
@@ -358,6 +313,14 @@ allowed or cancelled steps. New receipts keep a compact `recovery_target` (expli
 connection, workflow or resource, and setting names for `set_values`), so another target's
 success does not hide the failure. Legacy receipts lacking this identity retain tool-level
 matching with each other; no targets are guessed or migrated into historical records.
+The Gates' custom-node rule (`ai_tools.json` `nodes`, `ai_gates.node_rule`): with "ways",
+`mcp_canvas_edit._allowed` refuses a custom node no ready-made way builds
+(`reference_blocks.node_types`) and the task did not pick; ComfyUI's own nodes stay allowed. A
+picks block the user left to the AI (`no_answer` "recommended") takes the item it marked
+recommended, as a choice does (`ai_answer_wait.take_recommended`). The user's word on a finished
+run (`POST /anomalous/ai_tasks/{id}/runs/{step}/verdict`, `ai_run_control.set_verdict`) stays on
+the run's step and reaches the AI as a `user_verdict` step; nothing else keeps it.
+
 `ai_answer_wait.collect` is shared by `get_answers` and question tools: after the bounded wait,
 typing/deadline checks, automatic choices and a final nonblocking collection share the task
 lock. A user answer that won the race is returned in that call, without a stale stop note.

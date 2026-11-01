@@ -13,7 +13,8 @@ from pathlib import Path
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import ai_gates, ai_panels, ai_tasks  # noqa: E402
+from api import ai_gates, ai_panels, ai_tasks, mcp_canvas_edit  # noqa: E402
+from api.mcp_tools import ToolError  # noqa: E402
 from test_ai_tasks import isolate, ok  # noqa: E402
 
 GATES = tempfile.mkdtemp(prefix="amb_ai_gates_")
@@ -78,6 +79,23 @@ class GateTests(unittest.TestCase):
         self.assertEqual(ai_gates.run_wait(), "call", "a broken file: the defaults")
         with self.assertRaises(ValueError):
             ai_gates.set_run_wait("soon")
+
+    def test_custom_nodes_only_by_the_ways_when_the_user_says_so(self):
+        ai_gates._tools_path = lambda: os.path.join(GATES, "ai_tools.json")
+        if os.path.exists(ai_gates._tools_path()):
+            os.remove(ai_gates._tools_path())
+        info = {"LanPaint_KSampler": {"python_module": "custom_nodes.LanPaint"}, "KJThing": {"python_module": "custom_nodes.ComfyUI-KJNodes"},
+                "KSampler": {"python_module": "nodes"}}
+        ctx = {"client": "Claude", "task": ai_tasks.begin_task("Claude", "Test")["id"]}
+        with mock.patch.object(mcp_canvas_edit, "object_info", return_value=info):
+            self.assertEqual(ai_gates.node_rule(), "any")
+            mcp_canvas_edit._allowed(ctx, ["KJThing"])
+            ai_gates.set_node_rule("ways")
+            with self.assertRaisesRegex(ToolError, "only by the ready-made ways"):
+                mcp_canvas_edit._allowed(ctx, ["KJThing"])
+            mcp_canvas_edit._allowed(ctx, ["LanPaint_KSampler", "KSampler"])  # a way's node, ComfyUI's own
+        with self.assertRaises(ValueError):
+            ai_gates.set_node_rule("some")
 
     def test_auto_and_never(self):
         self.assertIsNone(self.call("set_prompt", {"prompt": "x"})[1])

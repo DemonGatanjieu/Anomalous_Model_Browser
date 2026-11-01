@@ -4,8 +4,7 @@
  * Anomalous, pictures handed over, a stop, the canvas mode, privacy mode, their word on a run, a message
  * with the pictures it carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js),
  * what happened outside Anomalous (pictures changed, the AI's own word: api/ai_outside.py), a
- * skill the AI went by (api/ai_skills.py) and, under a run, the ways it used (api/ai_evidence.py)
- * and the skills fetched before it, or
+ * skill the AI went by (api/ai_skills.py) and, under a run, the skills fetched before it, or
  * the AI's note laid out (a long one folded until asked).
  */
 
@@ -120,9 +119,7 @@ export function stepBody(step, ctx) {
     case 'use_skill': return [skillUsed(step)];
     case 'run_workflow': {
         const used = skillsBefore(ctx.steps, step).map(item => words(item.title));
-        const ways = (step.used?.ways || []).map(way => words(way.title));
-        return [...(ways.length ? [el('div', 'anomalous-ai-skill-used', t('aiRunWays', { names: ways.join(' · ') }))] : []),
-            ...(used.length ? [el('div', 'anomalous-ai-skill-used', t('aiRunSkills', { names: [...new Set(used)].join(' · ') }))] : []),
+        return [...(used.length ? [el('div', 'anomalous-ai-skill-used', t('aiRunSkills', { names: [...new Set(used)].join(' · ') }))] : []),
             ...(step.text ? [note(step.text)] : [])];
     }
     default:

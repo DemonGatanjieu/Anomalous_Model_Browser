@@ -59,8 +59,8 @@ export function closeWorkspace() {
     restoreWorkspaceReturnPanel(this);
 }
 
-// The back buttons of the pages one level down: a model's details, one combo, one recipe, the AI's training network.
-const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-wfd-back, .anomalous-sd-tune-back, .anomalous-ai-netx-back, .anomalous-ai-back';
+// The back buttons of the pages one level down: a model's details, one combo, one recipe.
+const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-wfd-back, .anomalous-sd-tune-back, .anomalous-ai-back';
 
 /**
  * Esc on the browser: a page one level down (a model's details, one combo or one recipe) goes

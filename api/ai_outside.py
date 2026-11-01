@@ -16,7 +16,6 @@ log() is the AI's own word: what it ran or changed outside Anomalous, why, and w
 """
 
 import os
-import re
 import threading
 import time
 import uuid
@@ -178,7 +177,7 @@ def _line(value, limit, what):
     return value
 
 
-def log(client, what, why="", files=None, now=None, session="", task_id=None, external_skill=None):
+def log(client, what, why="", files=None, now=None, session="", task_id=None):
     """The AI's word on what it did outside Anomalous, as a step of its task. Returns the step."""
     what = _line(what, MAX_TEXT, "what")
     if not what:
@@ -186,15 +185,10 @@ def log(client, what, why="", files=None, now=None, session="", task_id=None, ex
     if files is not None and not isinstance(files, list):
         raise ValueError("files is a list of the files you read, wrote or changed.")
     named = [_line(item, MAX_FILE, "a file") for item in (files or [])[:MAX_FILES] if str(item or "").strip()]
-    if external_skill is not None and (not isinstance(external_skill, str) or
-                                       not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,79}", external_skill)):
-        raise ValueError("external_skill must be a short lowercase skill identifier, not a path.")
     now = time.time() if now is None else now
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "log_outside", "kind": "outside", "ok": True,
             "state": "done", "summary": f"log_outside: {what[:80]}", "what": what, "why": _line(why, MAX_TEXT, "why"),
             "files": named, "results": []}
-    if external_skill:
-        step["external_skill"] = external_skill
     with ai_tasks._lock:
         task = ai_tasks.current_task(client, now, session=session, task_id=task_id)
         ai_tasks._add_step(task, step)

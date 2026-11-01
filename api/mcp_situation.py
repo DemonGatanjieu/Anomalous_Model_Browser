@@ -9,7 +9,7 @@ and the task's history. Unread messages of the user's come with it as with every
 (ai_panels.attach_pending).
 """
 
-from . import ai_decisions, ai_task_runs, ai_tasks, ai_training
+from . import ai_decisions, ai_task_runs, ai_tasks
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import _schema, tool_text
 
@@ -64,8 +64,6 @@ def get_situation(ctx, task=None):
                           "asked": _last_asked(record), "waiting_for_user": summary["asks"],
                           "decisions": ai_decisions.lines(record, limit=4), "pictures": pictures[-3:],
                           "outside_anomalous": summary["kinds"].get("outside", 0)}
-        if record.get("training"):
-            answer["task"]["training"] = ai_training.progress(record)  # a training round: how far, what next
         status = ai_task_runs.status(client, session, task_id)
         run = {key: status[key] for key in ("state", "summary", "pictures") if status.get(key)}
     else:

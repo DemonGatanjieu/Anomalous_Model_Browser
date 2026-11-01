@@ -1,4 +1,4 @@
-"""A run's console, time left and size warnings (ai_run_watch.py), and stopping it (ai_run_control.py)."""
+"""A run's console, time left and size warnings (ai_run_watch.py), stopping it and the user's word on it (ai_run_control.py)."""
 import time
 import unittest
 from datetime import datetime
@@ -134,6 +134,21 @@ class StopTests(unittest.TestCase):
         with self.assertRaises(ai_run_control.RunControlError):
             ai_run_control.stop("nope", "user", self.task)
         self.queue.delete_queue_item.assert_not_called()
+
+    def test_the_users_word_on_a_finished_run_goes_to_the_ai(self):
+        with self.assertRaises(ai_run_control.RunControlError):
+            ai_run_control.set_verdict(self.task, self.step["id"], "good")  # still running
+        ai_task_runs._finish_run(self.task, self.step["id"], ["running", "waiting"],
+                                 {"running": {"status": {"completed": True}}, "waiting": {"status": {"completed": True}}})
+        self.assertEqual(ai_run_control.set_verdict(self.task, self.step["id"], "bad"), "bad")
+        steps = ai_tasks.get_task(self.task)["steps"]
+        told = [item for item in steps if item["tool"] == "user_verdict"]
+        self.assertEqual(steps[0]["verdict"], "bad")
+        self.assertTrue(told and not told[0]["delivered"] and "did not turn out well" in told[0]["text"], "the AI is told")
+        ai_run_control.set_verdict(self.task, self.step["id"], None)
+        self.assertNotIn("verdict", ai_tasks.get_task(self.task)["steps"][0], "taken back")
+        with self.assertRaises(ai_run_control.RunControlError):
+            ai_run_control.set_verdict(self.task, self.step["id"], "great")
 
     def test_the_ai_hears_the_warnings_while_its_run_waits_or_goes(self):
         warning = {"kind": "big_sample", "node": "2", "title": "KSampler", "width": 4096, "height": 4096, "megapixels": 16.0}

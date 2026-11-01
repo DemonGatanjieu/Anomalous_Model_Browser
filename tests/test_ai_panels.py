@@ -14,11 +14,10 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_answer_wait, ai_evidence, ai_gates, ai_panels, ai_tasks, mcp_task_tools  # noqa: E402
+from api import ai_answer_wait, ai_gates, ai_panels, ai_tasks, mcp_task_tools  # noqa: E402
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_panels_")
 OUTPUT = tempfile.mkdtemp(prefix="amb_ai_panels_out_")
-EVIDENCE = os.path.join(tempfile.mkdtemp(prefix="amb_ai_panels_evidence_"), "ai_evidence.json")
 Path(OUTPUT, "a.png").write_bytes(b"png")
 Path(OUTPUT, "b.png").write_bytes(b"png")
 
@@ -30,10 +29,6 @@ def isolate():
     ai_tasks._waiting[0] = None
     for name in os.listdir(TMP):
         os.remove(os.path.join(TMP, name))
-    ai_evidence._path = lambda: EVIDENCE
-    ai_evidence._cache["path"] = ""
-    if os.path.exists(EVIDENCE):
-        os.remove(EVIDENCE)
 
 
 CHOICES = {"type": "choices", "id": "pick", "question": "选哪张？", "options": [{"id": "a", "label": "左边"}, {"id": "b", "label": "右边"}]}
@@ -456,6 +451,16 @@ class AskUserTests(unittest.TestCase):
         item = answer["answers"][0]
         self.assertEqual((item["labels"], item["recommended_on_timeout"]), (["只重画手指"], True))
         self.assertIn("in time", ai_decisions.lines(ai_tasks.get_task(task_id))[-1], "the decisions say how it was answered")
+
+    def test_a_picks_block_left_to_the_ai_takes_its_recommended_picture(self):
+        with mock.patch.object(ai_tasks.folder_paths, "get_output_directory", return_value=OUTPUT):
+            shown = ai_panels.show("Claude", "Which?", [{"type": "picks", "id": "p", "question": "Which?", "items": [
+                {"id": "a", "image": "a.png"}, {"id": "b", "image": "b.png", "recommended": True}]}])
+        task_id = ai_tasks.list_tasks()[0]["id"]
+        step = next(item for item in ai_tasks.get_task(task_id)["steps"] if item.get("panel", {}).get("id") == shown["id"])
+        self.assertEqual(ai_answer_wait.take_recommended(task_id, step), 1)
+        answered = next(item for item in ai_tasks.get_task(task_id)["steps"] if item["id"] == step["id"])
+        self.assertEqual(answered["answers"]["p"]["choice"], ["b"])
 
     def test_the_recommended_option_taken_on_time_comes_in_the_same_call(self):
         options = [{"label": "只重画手指", "recommended": True}, {"label": "整张重画"}]

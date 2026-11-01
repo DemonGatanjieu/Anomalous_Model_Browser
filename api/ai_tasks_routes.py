@@ -1,14 +1,14 @@
 """The AI workbench's routes over ai_tasks.py (the record) and ai_panels.py (panels, answers,
 messages): the list and one task (reads, open like the other pages), and the writes the page
 makes - start a task, rename or remove one, answer a panel, write to the AI, answer a gate and
-set the gates' policies (ai_gates.py), stop a run (ai_run_control.py), say how a run turned out
-(ai_evidence.py), start a training round (ai_training.py), hand the AI pictures (ai_pictures.py) - (local_guard.py keeps the writes to this computer)."""
+set the gates' policies (ai_gates.py), stop a run or say how it turned out (ai_run_control.py),
+hand the AI pictures (ai_pictures.py) - (local_guard.py keeps the writes to this computer)."""
 
 import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_decisions, ai_evidence, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
+from . import activity_log, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -161,12 +161,11 @@ async def api_gates(request):
     POST {runs: call | wait}
     how the AI waits for a run (ai_gates.run_wait), POST {answer_wait: 60 | 180 | 600} for the user's answer,
     POST {no_answer: stop | recommended} what happens when that time runs out,
-    POST {nodes: any | ways} which custom nodes the AI adds itself (ai_gates.node_rule),
-    POST {record: hidden | shown} whether the AI is told the record of what worked (ai_gates.record_view)."""
+    POST {nodes: any | ways} which custom nodes the AI adds itself (ai_gates.node_rule)."""
     def settings():
         return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "privacy": ai_privacy.default_on(),
                 "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait(), "no_answer": ai_gates.no_answer(),
-                "nodes": ai_gates.node_rule(), "record": ai_gates.record_view()}
+                "nodes": ai_gates.node_rule()}
 
     if request.method == "GET":
         return web.json_response(settings())
@@ -184,8 +183,6 @@ async def api_gates(request):
             ai_gates.set_no_answer(body["no_answer"])
         elif "nodes" in (body or {}):
             ai_gates.set_node_rule(body["nodes"])
-        elif "record" in (body or {}):
-            ai_gates.set_record_view(body["record"])
         else:
             ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
     except ValueError as error:
@@ -272,13 +269,13 @@ async def api_stop(request):
 
 
 async def api_verdict(request):
-    """POST /anomalous/ai_tasks/{id}/runs/{step}/verdict {verdict: good | bad | null} - the user's word on a run (ai_evidence.py)."""
+    """POST /anomalous/ai_tasks/{id}/runs/{step}/verdict {verdict: good | bad | null} - the user's word on a run, told to the AI."""
     from . import ai_panels
 
     body = await _body(request) or {}
     try:
-        verdict = await asyncio.to_thread(ai_evidence.set_verdict, request.match_info["task_id"], request.match_info["step_id"], body.get("verdict"))
-    except ValueError as error:
+        verdict = await asyncio.to_thread(ai_run_control.set_verdict, request.match_info["task_id"], request.match_info["step_id"], body.get("verdict"))
+    except ai_run_control.RunControlError as error:
         return web.json_response({"error": str(error)}, status=400)
     ai_panels.wake()
     return web.json_response({"verdict": verdict})
@@ -304,8 +301,7 @@ async def api_toolbox(request):
 
 async def api_blocks(request):
     """GET /anomalous/ai_blocks: every ready-made block and skill as the 做法 panel shows them
-    (reference_blocks.status, ai_skills.status) with how each did in the runs here (ai_evidence.tally);
-    POST {name, on} or {skill, on}: the user turns one on or off for the AI."""
+    (reference_blocks.status, ai_skills.status); POST {name, on} or {skill, on}: the user turns one on or off for the AI."""
     from . import ai_skills, mcp_canvas_edit, reference_blocks
     from .mcp_tools import ToolError
 
@@ -323,46 +319,7 @@ async def api_blocks(request):
     except ToolError as error:
         return web.json_response({"error": str(error)}, status=502)
     return web.json_response({"blocks": reference_blocks.status(info), "jobs": list(reference_blocks.JOBS),
-                              "skills": ai_skills.status(), "record": await asyncio.to_thread(ai_evidence.tally)})
-
-
-async def api_training(request):
-    """GET /anomalous/ai_training: the training network (ai_training.py): the record summed up by base model,
-    the main models here and each one's runs, the ways and skills, the rounds, whether the AI is told it; POST {title, skill | use, models, each, subject?, picture?}
-    starts a training round, a task for the next AI that calls."""
-    from . import ai_skills, ai_training, mcp_canvas_edit, reference_blocks
-    from .mcp_tools import ToolError
-
-    try:
-        info = await asyncio.to_thread(mcp_canvas_edit.object_info, {"base_url": f"{request.scheme}://{request.host}"})
-    except ToolError as error:
-        return web.json_response({"error": str(error)}, status=502)
-    if request.method == "POST":
-        body = await _body(request) or {}
-        try:
-            task = await asyncio.to_thread(ai_training.start, str(body.get("title") or ""), body.get("models"), body.get("skill") or "",
-                                           body.get("use") or "", body.get("each", 2), body.get("subject") or "", body.get("picture") or "", info)
-        except ai_training.TrainingError as error:
-            return web.json_response({"error": str(error)}, status=400)
-        return web.json_response({"task": ai_tasks.task_summary(task)})
-    blocks = [{**{key: block[key] for key in ("name", "job", "title", "usable", "on")},
-               "takes": bool(reference_blocks.BLOCKS[block["name"]].get("takes"))} for block in reference_blocks.status(info)]
-    skills = [skill for skill in ai_skills.status() if not skill["private_only"]]
-    return web.json_response({"record": await asyncio.to_thread(ai_evidence.tally), "models": await asyncio.to_thread(ai_training.models),
-                              "blocks": blocks, "skills": skills, "jobs": list(reference_blocks.JOBS),
-                              "by_model": await asyncio.to_thread(ai_evidence.by_model), "rounds": await asyncio.to_thread(ai_training.rounds),
-                              "shown_to_ai": ai_gates.record_view() == "shown"})
-
-
-async def api_training_runs(request):
-    """GET /anomalous/ai_training/runs?kind=way|skill|pack&name=…[&base=…]: each run of one item (on one base
-    model) in the training network, newest first (ai_evidence.runs_of)."""
-    query = request.query
-    try:
-        runs = await asyncio.to_thread(ai_evidence.runs_of, query.get("kind", ""), query.get("name", ""), query.get("base"))
-    except ValueError as error:
-        return web.json_response({"error": str(error)}, status=400)
-    return web.json_response({"runs": runs})
+                              "skills": ai_skills.status()})
 
 
 def register_routes(app):
@@ -387,8 +344,5 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_toolbox/favorites", api_toolbox)
     app.router.add_get("/anomalous/ai_blocks", api_blocks)
     app.router.add_post("/anomalous/ai_blocks", api_blocks)
-    app.router.add_get("/anomalous/ai_training", api_training)
-    app.router.add_post("/anomalous/ai_training", api_training)
-    app.router.add_get("/anomalous/ai_training/runs", api_training_runs)
     app.router.add_get("/anomalous/ai_gates", api_gates)
     app.router.add_post("/anomalous/ai_gates", api_gates)

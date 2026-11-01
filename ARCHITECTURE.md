@@ -79,7 +79,9 @@ covered by the `styles.css` manifest.
   the queued prompt, with warnings (an upscaled picture sampled again, a size past the card,
   a huge decode). `api/ai_run_control.py` stops a run (`stop_run`, the workbench's stop
   button): only its own prompts leave the queue or are interrupted; the step ends `cancelled`
-  and a user's stop reaches the AI as a `stop` message. `tests/test_ai_run_watch.py`.
+  and a user's stop reaches the AI as a `stop` message. It also keeps the user's word on a
+  finished run (`set_verdict`; the buttons under its pictures are `web/modules/ui_ai_verdict.js`),
+  told to the AI as a `user_verdict` step. `tests/test_ai_run_watch.py`.
 - `api/ai_run_map.py` reads a run's shape from the prompt ComfyUI queued (plumbing wired
   through; boxes with a role and facts, links with ComfyUI's types) and what changed since the
   task's run before; `ai_task_runs.py` keeps both on the run step, `show_run_map` puts it on the
@@ -223,26 +225,6 @@ covered by the `styles.css` manifest.
   descriptions only point at them; each one fetched is a "skill" step of the task (`note_use`); advice that depends on the canvas's main model comes in the
   form for its size, its parameters counted from the file's header (`model_kind.diffusion_params`,
   `model_advice.main_params`) (`tests/test_ai_skills.py`).
-  `api/ai_evidence.py` is the record of what works here: a run the AI started counts for the ways
-  it still has, the skills fetched before it and the custom node packs of its nodes, by the base
-  model of its main model (`ai_task_runs._estimate` puts that on the step as `used`; its end makes an
-  entry of `user/anomalous/ai_evidence.json`), and how it went comes from what the user does anyway:
-  a picture picked in a picks panel or kept in the gallery (`kept_images.py`), passed over, or their
-  word under the run (`web/modules/ui_ai_verdict.js`, told to the AI). Once the user shows it (the
-  Gates' `record` view, `ai_gates.record_shown`; hidden by default, always shown in a training round)
-  begin_task and get_toolbox give the AI the record in a few words, add_nodes a way's or the node
-  packs' own; of a use's ways
-  that can run, the one that did best on the canvas's model is picked (`reference_blocks.pick(order=…)`);
-  the Gates' `nodes` rule (`ai_gates.node_rule`) lets custom nodes in only by the ways
-  (`tests/test_ai_evidence.py`). A picks panel keeps the AI's own pick (the item it marked
-  recommended, taken for the user when they leave it to the AI: `ai_answer_wait.take_recommended`)
-  apart from the user's. `api/ai_training.py` is the training rounds: the user picks a skill (the
-  AI's prompts with its advice and without) or the ways of one use, the main models (`models()`,
-  by base model) and the pictures each, and it becomes a task for the next AI with its plan
-  (`task["training"]`, the models as `about`); a run that ends fills the trial it fits by what it
-  used, and the AI is told what is next and, once a model's trials are done, to compare them in a
-  picks panel with its own pick marked (`tell`, in every answer once it changed; `brief` in
-  begin_task, `progress` in get_situation) (`tests/test_ai_training.py`).
   `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is
@@ -428,23 +410,10 @@ covered by the `styles.css` manifest.
   keep menu's own `keepPictureAs`; its button counts what came since it was last seen
   (`stage.outputsSeen`). `ui_ai_blocks.js` is the side column's Ways view (做法): the ready-made
   blocks by job (GET /anomalous/ai_blocks, `reference_blocks.status`), each block's words from its
-  data file, greyed with the pack (a way into ComfyUI-Manager) or model it lacks, its record here by
-  model (`ai_evidence.tally`), and a switch that
+  data file, greyed with the pack (a way into ComfyUI-Manager) or model it lacks, and a switch that
   keeps it from the AI (POST, `user/anomalous/ai_blocks.json`); under them the skills
   (`ai_skills.status`), each with the same switch (`user/anomalous/ai_skills.json`), those of the
-  task's kind only (a private task's, else the others), as the AI gets. `ui_ai_network.js` is the
-  training network (GET /anomalous/ai_training), opened by the side switch over the whole AI page
-  (closed by its back button, Esc or another view): its head, the numbers (runs, judged, pairs that
-  could be tried, rounds), which items to show, the drawing and the detail column. Its data
-  (`ui_ai_network_data.js`): the items, base models, pairs that ran and how each turned out (the
-  user's word first, else the AI's), the pairs that could be tried. `ui_ai_network_graph.js` draws it
-  as a graph (base models left, items right, a line per pair over the two columns from where their
-  nodes are, redrawn by a ResizeObserver released on close) or as a table (a cell per pair, "+"
-  where it could be tried); `ui_ai_network_detail.js` shows what is picked: the rounds when nothing
-  is (each opens its task), a base model's models here with their runs, an item's base models, a
-  pair's counts and each run (GET /anomalous/ai_training/runs: when, model, AI app, how it was judged,
-  pictures, task). `ui_ai_training_setup.js` is the form starting a round (POST), in place of the
-  drawing, ending in the sentence to paste to the AI app. For a run the AI did not wait
+  task's kind only (a private task's, else the others), as the AI gets. For a run the AI did not wait
   for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
   and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a card per

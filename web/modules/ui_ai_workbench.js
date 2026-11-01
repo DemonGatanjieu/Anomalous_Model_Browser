@@ -327,7 +327,6 @@ function drawStage(task, arrived = null) {
         changed: () => void refresh(),
         numberOf: id => state.numbers.get(id) || '',
         showCanvas: () => state.owner?.close?.(),
-        openTask: id => void select(id),
         close: () => {
             state.stage.hidden = true;
             state.stage.tab = 'timeline';

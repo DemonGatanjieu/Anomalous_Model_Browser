@@ -1,7 +1,6 @@
 /**
- * The user's word on a finished run (api/ai_evidence.py), under its pictures: turned out well, or
- * not; a click again takes it back. It goes into the record of what works here (the ways, skills and
- * node packs the run used, by its model, shown in the Ways view) and to the AI as their message.
+ * The user's word on a finished run (api/ai_run_control.py set_verdict), under its pictures: turned
+ * out well, or not; a click again takes it back. It goes to the AI as their message.
  * POST /anomalous/ai_tasks/{task}/runs/{step}/verdict {verdict: good | bad | null}; the task's update
  * draws it chosen.
  */

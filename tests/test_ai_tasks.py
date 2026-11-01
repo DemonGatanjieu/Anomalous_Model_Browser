@@ -13,14 +13,13 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import action_catalog, activity_log, ai_callers, ai_evidence, ai_panels, ai_task_changes, ai_task_runs, ai_tasks, ai_tasks_routes, mcp_task_tools  # noqa: E402
+from api import action_catalog, activity_log, ai_callers, ai_panels, ai_task_changes, ai_task_runs, ai_tasks, ai_tasks_routes, mcp_task_tools  # noqa: E402
 from api.mcp_server import TOOLS  # noqa: E402
 from api.ai_task_handoff import AFTER_DONE, REPLY_FRESH
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_tasks_")
 LOG = tempfile.mkdtemp(prefix="amb_ai_activity_")
 OUTPUT = tempfile.mkdtemp(prefix="amb_ai_output_")
-EVIDENCE = os.path.join(tempfile.mkdtemp(prefix="amb_ai_evidence_"), "ai_evidence.json")
 
 
 def isolate():
@@ -36,10 +35,6 @@ def isolate():
     activity_log.add_listener(ai_task_changes.note_activity)
     if os.path.exists(activity_log.log_path()):
         os.remove(activity_log.log_path())
-    ai_evidence._path = lambda: EVIDENCE  # the record of what works (beside the tasks, which TMP's parent is not)
-    ai_evidence._cache["path"] = ""
-    if os.path.exists(EVIDENCE):
-        os.remove(EVIDENCE)
 
 
 def ok(data):

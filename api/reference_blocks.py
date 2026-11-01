@@ -13,9 +13,7 @@ latent), "$save" (the output node its picture reaches), "$loader" (the sampler's
 name; one that "replaces" a role takes its place, links and settings. A block may have a variant for
 a model family (on an Anima model an LLLite, or the Turbo LoRA for fewer steps). The directory
 (directory()) is what the AI is handed when it begins a task: the blocks this ComfyUI can run
-and the user has not turned off (user/anomalous/ai_blocks.json), a few words each, by job. How each
-did in this computer's runs, by model, is ai_evidence.py's record; of a use's blocks that can run,
-the one that did best on the canvas's model is picked.
+and the user has not turned off (user/anomalous/ai_blocks.json), a few words each, by job.
 """
 
 import json
@@ -202,10 +200,9 @@ def node_types():
     return {spec["class_type"] for group in groups for spec in group.values()} | {"SetUnionControlNetType"}
 
 
-def pick(use, want=None, info=None, scene=False, order=None):
+def pick(use, want=None, info=None, scene=False):
     """The block for `use` (and `want`): the first by rank this ComfyUI can run, else the first, whose
-    build then says what it needs. Given a second picture (`scene`), the use's block that takes one.
-    `order(names)`: several of them can run, best first by how they did here (ai_evidence.order)."""
+    build then says what it needs. Given a second picture (`scene`), the use's block that takes one."""
     names = [name for name, block in BLOCKS.items() if block["job"] == use]
     if not names:
         raise BlockError(f"No use {use!r}; there are: {', '.join(JOBS)}.")
@@ -218,8 +215,6 @@ def pick(use, want=None, info=None, scene=False, order=None):
     off = turned_off()
     runs = [name for name in chosen if name not in off and (info is None or (
         all(kind in info for kind in BLOCKS[name]["packs"]) and not _missing_models(BLOCKS[name], info)))]
-    if order and len(runs) > 1:
-        runs = order(runs)
     return (runs or chosen)[0]
 
 
