@@ -16,7 +16,7 @@ a run the user or the AI stopped (ai_run_control.py) ends "cancelled"."""
 import threading
 import time
 
-from . import ai_evidence, ai_gates, ai_run_map, ai_run_watch, ai_tasks
+from . import ai_evidence, ai_gates, ai_run_map, ai_run_watch, ai_tasks, ai_training
 from .mcp_tools import ToolError, _image_content, _resolve_image, retext, tool_text
 
 RUN_POLL_SECONDS = 2.0
@@ -177,6 +177,7 @@ def _finish_run(task_id, step_id, prompts, history, queued=None):
     ai_tasks._notify(task_id)
     if done >= len(prompts):
         ai_evidence.note_run(task_id, step_id)  # what it used and how it went, in the record of what works
+        ai_training.note_run(task_id, step_id)  # a trial of a training round, when it fits one
     return done >= len(prompts)
 
 

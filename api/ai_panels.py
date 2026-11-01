@@ -323,7 +323,8 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
         answers = dict(step["answers"])
     ai_tasks._notify(task_id)
     if block["type"] == "picks" and not skip:
-        ai_evidence.note_picks(block["items"], entry["choice"])  # the runs whose pictures the user picked did well
+        # The runs whose pictures the user picked did well; the AI's recommended pick is its judgement.
+        ai_evidence.note_picks(block["items"], entry["choice"], bool((extra or {}).get("recommended_on_timeout")))
     return answers
 
 

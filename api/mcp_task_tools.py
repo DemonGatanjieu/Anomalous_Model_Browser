@@ -4,7 +4,7 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_answer_wait, ai_decisions, ai_evidence, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, reference_blocks
+from . import ai_answer_wait, ai_decisions, ai_evidence, ai_marks, ai_training, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, reference_blocks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -40,6 +40,8 @@ def begin_task(ctx, title, new_task=False):
     record = ai_evidence.overview()
     if record:
         answer["record"] = record  # what ran here how often and how it went, by model: any AI's runs
+    if task.get("training"):
+        answer["training"] = ai_training.brief(ai_tasks.get_task(task["id"]))  # a round the user started in the training network
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)

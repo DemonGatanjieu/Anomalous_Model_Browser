@@ -10,7 +10,9 @@ the ComfyUI user folder, the last MAX_RUNS), with the AI app that ran it. How it
 the user does anyway, nothing to note down by hand: a picture of it picked in a picks panel or kept in
 the gallery (a recipe, a combo or a prompt made from it, kept_images.py), or their word on the run
 (set_verdict, told to the AI too), counts it good; their word "not good" counts it so; its pictures
-passed over in a picks panel count it "not chosen". The record keeps model, way, skill and pack
+passed over in a picks panel count it "not chosen". The AI's own pick in that panel (the picture it
+marked recommended, ai_training.py asks for one) is kept apart as the AI's judgement, as is a pick
+the user left to it (ai_answer_wait takes the recommended one). The record keeps model, way, skill and pack
 names, never a prompt; its pictures' names stay on this computer, to match the user's picks.
 """
 
@@ -26,6 +28,7 @@ from .path_utils import atomic_write_json
 MAX_RUNS = 2000
 MAX_PICTURES = 8
 MAX_BASES = 4  # base models in one item's line for the AI
+MAX_SHOWN = 6  # pictures of one item on one base model the network shows
 OVERVIEW_CHARS = 300
 KINDS = ("way", "skill", "pack")
 VERDICTS = ("good", "bad")
@@ -138,20 +141,28 @@ def note_run(task_id, step_id):
         _save(runs)
 
 
-def note_picks(items, picked):
-    """A picks panel answered (its pictures `items`, the ids `picked`): a run with a picture picked counts
-    good, one whose pictures were only passed over "not chosen"."""
+def note_picks(items, picked, taken=False):
+    """A picks panel answered (its pictures `items`, the ids `picked`): a run with a picture the user picked
+    counts good, one whose pictures they only passed over "not chosen"; the items the AI marked recommended
+    count the same way as its own judgement. `taken`: the user left it to the AI (its pick was taken for them):
+    the AI's judgement only."""
     key = lambda item: (str(item.get("subfolder") or ""), str(item.get("filename") or ""))  # noqa: E731
-    chosen = {key(item) for item in items if item.get("id") in picked}
     shown = {key(item) for item in items}
+    chosen = set() if taken else {key(item) for item in items if item.get("id") in picked}
+    advised = {key(item) for item in items if item.get("recommended")}
     with _lock:
         runs, changed = _runs(), False
         for entry in runs.values():
             pictures = {tuple(picture) for picture in entry.get("pictures") or []}
-            if pictures & chosen and not entry.get("picked"):
-                entry["picked"], changed = True, True
-            elif pictures & shown and not pictures & chosen and not entry.get("picked") and not entry.get("passed"):
-                entry["passed"], changed = True, True
+            if not pictures & shown:
+                continue
+            marks = {}
+            if not taken:
+                marks["picked" if pictures & chosen else "passed"] = True
+            if advised:
+                marks["ai_picked" if pictures & advised else "ai_passed"] = True
+            for mark in [mark for mark in marks if not entry.get(mark)]:
+                entry[mark], changed = True, True
         if changed:
             _save(runs)
 
@@ -192,7 +203,8 @@ def set_verdict(task_id, step_id, verdict):
 
 
 def tally():
-    """The record summed up: {kind: {name: {base: {runs, good, bad, passed, failed, clients}}}}."""
+    """The record summed up: {kind: {name: {base: {runs, good, bad, passed, failed, ai_good, ai_passed, clients,
+    pictures (the last few, [subfolder, filename])}}}}."""
     out = {kind: {} for kind in KINDS}
     with _lock:
         entries = list(_runs().values())
@@ -209,12 +221,15 @@ def tally():
         for kind in KINDS:
             for name in entry.get(f"{kind}s") or []:
                 count = out[kind].setdefault(name, {}).setdefault(entry.get("base") or "", {
-                    "runs": 0, "good": 0, "bad": 0, "passed": 0, "failed": 0, "clients": []})
+                    "runs": 0, "good": 0, "bad": 0, "passed": 0, "failed": 0, "ai_good": 0, "ai_passed": 0, "clients": [], "pictures": []})
                 count["runs"] += 1
                 count["good"] += good
                 count["bad"] += verdict == "bad"
                 count["passed"] += not good and verdict != "bad" and bool(entry.get("passed"))
                 count["failed"] += entry.get("state") == "error"
+                count["ai_good"] += bool(entry.get("ai_picked"))
+                count["ai_passed"] += bool(entry.get("ai_passed")) and not entry.get("ai_picked")
+                count["pictures"] = (count["pictures"] + [list(picture) for picture in entry.get("pictures") or []][:2])[-MAX_SHOWN:]
                 if entry.get("client") and entry["client"] not in count["clients"]:
                     count["clients"].append(entry["client"])
     return out
@@ -222,7 +237,9 @@ def tally():
 
 def _line(base, count):
     parts = [f"{count[key]} {label}" for key, label in COUNTS if count[key]]
-    return f"{base or 'other models'} {count['runs']} runs: {', '.join(parts) or 'none judged yet'}"
+    ai = [f"{count[key]} {label}" for key, label in (("ai_good", "picked"), ("ai_passed", "passed over")) if count[key]]
+    return (f"{base or 'other models'} {count['runs']} runs: {', '.join(parts) or 'none judged by the user yet'}"
+            + (f" (the AI's own judgement: {', '.join(ai)})" if ai else ""))
 
 
 def words(kind, name, found=None):

@@ -1,0 +1,124 @@
+/* The side column's training network (ui_ai_network.js): models left, ways and skills right, the
+   lines between them coloured by how they turned out; the training round's form under it
+   (ui_ai_training_setup.js). */
+
+.anomalous-ai-net { display: flex; flex-direction: column; gap: 12px; }
+.anomalous-ai-net-train {
+    align-self: flex-start;
+    padding: 6px 14px;
+    border: none;
+    border-radius: var(--amb-radius-control, 7px);
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.anomalous-ai-net-train:hover { background: var(--amb-btn-primary-hover); }
+.anomalous-ai-net-train:disabled { cursor: progress; opacity: 0.7; }
+.anomalous-ai-net-train.is-small { padding: 4px 11px; font-size: 12.5px; }
+
+.anomalous-ai-net-graph {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 40%) minmax(40px, 1fr) minmax(0, 44%);
+}
+.anomalous-ai-net-lines { position: absolute; inset: 0; z-index: 0; overflow: visible; pointer-events: none; }
+.anomalous-ai-net-col { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.anomalous-ai-net-col.is-bases { grid-column: 1; }
+.anomalous-ai-net-col.is-items { grid-column: 3; }
+.anomalous-ai-net-head { margin-bottom: 2px; color: var(--amb-text-soft); font-size: 12px; font-weight: 600; }
+.anomalous-ai-net-node {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-width: 0;
+    padding: 6px 9px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-bg-card);
+    color: var(--amb-text-main);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: opacity 0.15s, border-color 0.15s;
+}
+.anomalous-ai-net-node:hover { border-color: var(--amb-border-hover); }
+.anomalous-ai-net-node.is-chosen { border-color: var(--amb-link); box-shadow: 0 0 0 1px var(--amb-link); }
+.anomalous-ai-net-node.is-dim { opacity: 0.45; }
+.anomalous-ai-net-node-name { max-width: 100%; overflow: hidden; font-size: 12.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-net-node-sub { max-width: 100%; overflow: hidden; color: var(--amb-text-dim); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+
+.anomalous-ai-net-line { fill: none; stroke-linecap: round; opacity: 0.85; transition: opacity 0.15s; }
+.anomalous-ai-net-line.is-good { stroke: var(--amb-ok); }
+.anomalous-ai-net-line.is-fair { stroke: var(--amb-warn); }
+.anomalous-ai-net-line.is-bad { stroke: var(--amb-danger); }
+.anomalous-ai-net-line.is-ran { stroke: rgba(var(--amb-ink-rgb), 0.35); }
+.anomalous-ai-net-line.is-ai { stroke-dasharray: 2 4; }
+.anomalous-ai-net-line.is-untried { stroke: rgba(var(--amb-ink-rgb), 0.3); stroke-dasharray: 5 5; opacity: 1; }
+.anomalous-ai-net-line.is-dim { opacity: 0.12; }
+.anomalous-ai-net-line.is-chosen { opacity: 1; filter: drop-shadow(0 0 2px currentColor); }
+.anomalous-ai-net-hit { fill: none; stroke: transparent; stroke-width: 12px; pointer-events: stroke; cursor: pointer; }
+
+/* Kept in sight at the column's foot while the graph scrolls. */
+.anomalous-ai-net-detail {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: none;
+    max-height: 40vh;
+    overflow-y: auto;
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 9px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.18);
+}
+.anomalous-ai-net-hint { color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
+.anomalous-ai-net-detail-title { color: var(--amb-text-main); font-size: 13.5px; font-weight: 600; }
+.anomalous-ai-net-detail-line { color: var(--amb-text-main); font-size: 12.5px; line-height: 1.5; }
+.anomalous-ai-net-detail-line.is-soft { color: var(--amb-text-soft); }
+.anomalous-ai-net-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 4px 8px;
+    border: none;
+    border-left: 3px solid rgba(var(--amb-ink-rgb), 0.3);
+    border-radius: 0;
+    background: none;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-net-row:hover { background: rgba(var(--amb-ink-rgb), 0.05); }
+.anomalous-ai-net-row.is-good { border-left-color: var(--amb-ok); }
+.anomalous-ai-net-row.is-fair { border-left-color: var(--amb-warn); }
+.anomalous-ai-net-row.is-bad { border-left-color: var(--amb-danger); }
+.anomalous-ai-net-row.is-ai { border-left-style: dashed; }
+.anomalous-ai-net-row-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-net-row-count { flex: none; color: var(--amb-text-soft); }
+
+/* The training round's form. */
+.anomalous-ai-train { display: flex; flex-direction: column; gap: 10px; }
+.anomalous-ai-train-back { align-self: flex-start; padding: 0; border: none; background: none; color: var(--amb-link); font: inherit; font-size: 12.5px; cursor: pointer; }
+.anomalous-ai-train-field { display: flex; flex-direction: column; gap: 5px; }
+.anomalous-ai-train-field[hidden] { display: none; }
+.anomalous-ai-train-label { color: var(--amb-text-soft); font-size: 12px; font-weight: 600; }
+.anomalous-ai-train-select { padding: 5px 8px; border: 1px solid var(--amb-border-strong); border-radius: 7px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 13px; }
+.anomalous-ai-train-models { display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow-y: auto; padding: 4px 8px; border: 1px solid var(--amb-border); border-radius: 8px; }
+.anomalous-ai-train-base { margin-top: 4px; color: var(--amb-text-dim); font-size: 11.5px; font-weight: 600; }
+.anomalous-ai-train-model { display: flex; align-items: center; gap: 6px; color: var(--amb-text-main); font-size: 12.5px; cursor: pointer; }
+.anomalous-ai-train-model input { accent-color: var(--amb-link); }
+.anomalous-ai-train-picture { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.anomalous-ai-train-seg { align-self: flex-start; }
+.anomalous-ai-train-sum { color: var(--amb-text-main); font-size: 12.5px; }
+.anomalous-ai-train-note { color: var(--amb-warn); font-size: 12.5px; }
+.anomalous-ai-train-note:empty { display: none; }
+.anomalous-ai-train-done { display: flex; flex-direction: column; gap: 10px; }

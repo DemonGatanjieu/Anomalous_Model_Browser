@@ -232,7 +232,15 @@ covered by the `styles.css` manifest.
   give the AI the record in a few words, add_nodes a way's or the node packs' own; of a use's ways
   that can run, the one that did best on the canvas's model is picked (`reference_blocks.pick(order=…)`);
   the Gates' `nodes` rule (`ai_gates.node_rule`) lets custom nodes in only by the ways
-  (`tests/test_ai_evidence.py`).
+  (`tests/test_ai_evidence.py`). A picks panel keeps the AI's own pick (the item it marked
+  recommended, taken for the user when they leave it to the AI: `ai_answer_wait.take_recommended`)
+  apart from the user's. `api/ai_training.py` is the training rounds: the user picks a skill (the
+  AI's prompts with its advice and without) or the ways of one use, the main models (`models()`,
+  by base model) and the pictures each, and it becomes a task for the next AI with its plan
+  (`task["training"]`, the models as `about`); a run that ends fills the trial it fits by what it
+  used, and the AI is told what is next and, once a model's trials are done, to compare them in a
+  picks panel with its own pick marked (`tell`, in every answer once it changed; `brief` in
+  begin_task, `progress` in get_situation) (`tests/test_ai_training.py`).
   `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is
@@ -422,7 +430,13 @@ covered by the `styles.css` manifest.
   model (`ai_evidence.tally`), and a switch that
   keeps it from the AI (POST, `user/anomalous/ai_blocks.json`); under them the skills
   (`ai_skills.status`), each with the same switch (`user/anomalous/ai_skills.json`), those of the
-  task's kind only (a private task's, else the others), as the AI gets. For a run the AI did not wait
+  task's kind only (a private task's, else the others), as the AI gets. `ui_ai_network.js` is the
+  side column's training network (GET /anomalous/ai_training): base models left, ways, skills and
+  node packs right, a line for each pair that ran, coloured by how it turned out (the user's word
+  first, else the AI's, dashed), drawn over the two columns from where their nodes are (a
+  ResizeObserver redraws it); a node or line picked shows its record, last pictures and untried
+  pairs, and `ui_ai_training_setup.js` is the form starting a round (POST), ending in the sentence to
+  paste to the AI app. For a run the AI did not wait
   for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
   and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a card per

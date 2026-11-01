@@ -74,7 +74,7 @@ function record(bases) {
         return box;
     }
     for (const [base, count] of lines) {
-        const parts = ['good', 'bad', 'passed', 'failed'].filter(key => count[key]).map(key => t(`aiRecord_${key}`, { n: count[key] }));
+        const parts = ['good', 'bad', 'passed', 'failed', 'ai_good'].filter(key => count[key]).map(key => t(`aiRecord_${key}`, { n: count[key] }));
         const line = el('div', 'anomalous-ai-block-record-line', t('aiRecordLine', { base: base || t('aiRecordOther'), runs: count.runs, parts: parts.join('') }));
         if (count.clients?.length) line.title = t('aiRecordBy', { names: count.clients.join(', ') });
         box.append(line);

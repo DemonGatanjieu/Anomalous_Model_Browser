@@ -2,7 +2,7 @@
 messages): the list and one task (reads, open like the other pages), and the writes the page
 makes - start a task, rename or remove one, answer a panel, write to the AI, answer a gate and
 set the gates' policies (ai_gates.py), stop a run (ai_run_control.py), say how a run turned out
-(ai_evidence.py), hand the AI pictures (ai_pictures.py) - (local_guard.py keeps the writes to this computer)."""
+(ai_evidence.py), start a training round (ai_training.py), hand the AI pictures (ai_pictures.py) - (local_guard.py keeps the writes to this computer)."""
 
 import asyncio
 
@@ -323,6 +323,32 @@ async def api_blocks(request):
                               "skills": ai_skills.status(), "record": await asyncio.to_thread(ai_evidence.tally)})
 
 
+async def api_training(request):
+    """GET /anomalous/ai_training: the training network (ai_training.py): the record summed up by base model,
+    the main models here, the ways and skills; POST {title, skill | use, models, each, subject?, picture?}
+    starts a training round, a task for the next AI that calls."""
+    from . import ai_skills, ai_training, mcp_canvas_edit, reference_blocks
+    from .mcp_tools import ToolError
+
+    try:
+        info = await asyncio.to_thread(mcp_canvas_edit.object_info, {"base_url": f"{request.scheme}://{request.host}"})
+    except ToolError as error:
+        return web.json_response({"error": str(error)}, status=502)
+    if request.method == "POST":
+        body = await _body(request) or {}
+        try:
+            task = await asyncio.to_thread(ai_training.start, str(body.get("title") or ""), body.get("models"), body.get("skill") or "",
+                                           body.get("use") or "", body.get("each", 2), body.get("subject") or "", body.get("picture") or "", info)
+        except ai_training.TrainingError as error:
+            return web.json_response({"error": str(error)}, status=400)
+        return web.json_response({"task": ai_tasks.task_summary(task)})
+    blocks = [{**{key: block[key] for key in ("name", "job", "title", "usable", "on")},
+               "takes": bool(reference_blocks.BLOCKS[block["name"]].get("takes"))} for block in reference_blocks.status(info)]
+    skills = [skill for skill in ai_skills.status() if not skill["private_only"]]
+    return web.json_response({"record": await asyncio.to_thread(ai_evidence.tally), "models": await asyncio.to_thread(ai_training.models),
+                              "blocks": blocks, "skills": skills, "jobs": list(reference_blocks.JOBS)})
+
+
 def register_routes(app):
     activity_log.add_listener(ai_task_changes.note_activity)  # the user's changes while an AI works
     app.router.add_get("/anomalous/ai_tasks", api_list)
@@ -345,5 +371,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_toolbox/favorites", api_toolbox)
     app.router.add_get("/anomalous/ai_blocks", api_blocks)
     app.router.add_post("/anomalous/ai_blocks", api_blocks)
+    app.router.add_get("/anomalous/ai_training", api_training)
+    app.router.add_post("/anomalous/ai_training", api_training)
     app.router.add_get("/anomalous/ai_gates", api_gates)
     app.router.add_post("/anomalous/ai_gates", api_gates)

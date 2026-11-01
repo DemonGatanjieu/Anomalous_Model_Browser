@@ -6,7 +6,7 @@ user set in the Gates window (ai_gates.answer_wait, from when it asked), and whi
 typing an answer (the page posts POST /anomalous/ai_tasks/{id}/typing as they type) until a while
 after their last key. Then the AI ends its turn and the user brings it back with a line to paste
 (web/modules/ai_call_lines.js); or, when the user set so (ai_gates.no_answer "recommended"), each
-open choice the AI marked a recommended option for takes it, marked as such for the user and the
+open choice or picks block the AI marked a recommended option for takes it, marked as such for the user and the
 AI (recommended_on_timeout), and the AI goes on; not once the user began writing (typed since the
 question came): they stepped away mid-answer, and it waits for them. Typing is kept in memory only.
 """
@@ -25,11 +25,11 @@ _typed = {}  # task id -> time of the user's last key
 
 
 def take_recommended(task_id, step):
-    """Answers each open choice of panel step `step` that has a recommended option with it. Returns how many."""
+    """Answers each open choice or picks block of panel step `step` that has a recommended option with it. Returns how many."""
     taken = 0
     for block in step["panel"].get("blocks") or []:
-        picked = [option["id"] for option in block.get("options") or [] if option.get("recommended")]
-        if block.get("type") != "choices" or not picked or block.get("id") in (step.get("answers") or {}):
+        picked = [option["id"] for option in block.get("options") or block.get("items") or [] if option.get("recommended")]
+        if block.get("type") not in ("choices", "picks") or not picked or block.get("id") in (step.get("answers") or {}):
             continue
         try:
             ai_panels.answer(task_id, step["id"], block["id"], choice=picked if block.get("multiple") else picked[:1],

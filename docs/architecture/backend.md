@@ -298,6 +298,23 @@ AI apps that ran it so the next one knows what is untried. `add_nodes(use=…)` 
 runnable ways in order by their record on the canvas's base model (asked of the page only when
 one has a record). With the Gates' "custom nodes: only the ways'" (`ai_tools.json` `nodes`),
 `mcp_canvas_edit._allowed` refuses a custom node no way builds and the task did not pick.
+A picks panel answer also records the AI's judgement: the items it marked recommended count as
+its pick (`ai_picked`), the others shown as passed over by it; when the user left the panel to the
+AI (`no_answer` "recommended", `ai_answer_wait.take_recommended`, now for picks blocks too) the
+choice is the AI's only, and nothing is counted as the user's.
+
+Training rounds (`api/ai_training.py`, `GET/POST /anomalous/ai_training`): the network's data is
+the record summed up (`ai_evidence.tally`, with each pair's last pictures), the main models here
+with their base models (`models()`, at most 400, read from their metadata), the ways with whether
+they take a picture, and the skills. A round is a skill (trials without it first, as a skill
+counts for every run after it is fetched, then with it) or the ways of one use that run here,
+on 1-4 main models, 1-3 pictures each with the same seeds; it is started as a waiting task
+(`ai_tasks.start_task`, the models as `about`) carrying `training` {kind, items, models, seeds,
+subject, picture, trials}. When a run of that task ends (`ai_task_runs._finish_run`), the first
+open trial whose model file and item fit its `used` takes it; `tell` (in `mcp_server._call`
+after the run's pictures) puts the progress into the AI's answer once the count of done trials
+changed: the next trial, or, when a model's trials are all done, the picks panel to show with
+its pictures and its own pick marked recommended (asked once a model), then the report.
 
 `track_run(prompt_ids, task, wait_seconds)` attaches existing submissions from this server to
 an open task without running anything. IDs must exist in its queue/history; each is owned by
