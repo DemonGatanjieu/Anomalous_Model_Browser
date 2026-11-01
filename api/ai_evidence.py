@@ -29,6 +29,7 @@ MAX_RUNS = 2000
 MAX_PICTURES = 8
 MAX_BASES = 4  # base models in one item's line for the AI
 MAX_SHOWN = 6  # pictures of one item on one base model the network shows
+MAX_LISTED = 40  # runs of one pair the network lists
 OVERVIEW_CHARS = 300
 KINDS = ("way", "skill", "pack")
 VERDICTS = ("good", "bad")
@@ -114,7 +115,10 @@ def used(found, steps):
             and any(need <= types for need in _needs(reference_blocks.BLOCKS[name]))]
     return {"model": found["model"], "base": found["base"], "packs": found["packs"],
             "ways": [{"name": name, "title": reference_blocks.BLOCKS[name]["title"]} for name in ways],
-            "skills": list(dict.fromkeys(step["skill"] for step in steps if step.get("tool") == "use_skill" and step.get("skill")))}
+            "skills": list(dict.fromkeys(
+                [step["skill"] for step in steps if step.get("tool") == "use_skill" and step.get("skill")]
+                + ["external:" + step["external_skill"] for step in steps
+                   if step.get("tool") == "log_outside" and step.get("external_skill")]))}
 
 
 def note_run(task_id, step_id):
@@ -202,6 +206,29 @@ def set_verdict(task_id, step_id, verdict):
     return verdict
 
 
+def _kept():
+    try:
+        return kept_images.kept_keys()
+    except (OSError, ValueError):  # a store unreadable: the gallery's keeps are left out of the count
+        return set()
+
+
+def _judge(entry, kept):
+    """How a run turned out for the user, and by what: ("good" | "bad" | "passed" | "", "word" | "pick" |
+    "keep" | ""): their word first, then a pick in a picks panel or a keep in the gallery, then passed over."""
+    if entry.get("verdict") in VERDICTS:
+        return entry["verdict"], "word"
+    if entry.get("picked"):
+        return "good", "pick"
+    if {tuple(picture) for picture in entry.get("pictures") or []} & kept:
+        return "good", "keep"
+    return ("passed", "pick") if entry.get("passed") else ("", "")
+
+
+def _ai(entry):
+    return "picked" if entry.get("ai_picked") else "passed" if entry.get("ai_passed") else ""
+
+
 def tally():
     """The record summed up: {kind: {name: {base: {runs, good, bad, passed, failed, ai_good, ai_passed, clients,
     pictures (the last few, [subfolder, filename])}}}}."""
@@ -210,28 +237,59 @@ def tally():
         entries = list(_runs().values())
     if not entries:
         return out
-    try:
-        kept = kept_images.kept_keys()
-    except (OSError, ValueError):  # a store unreadable: the gallery's keeps are left out of the count
-        kept = set()
+    kept = _kept()
     for entry in entries:
-        pictures = {tuple(picture) for picture in entry.get("pictures") or []}
-        verdict = entry.get("verdict")
-        good = verdict == "good" or verdict != "bad" and bool(entry.get("picked") or pictures & kept)
+        judged = _judge(entry, kept)[0]
         for kind in KINDS:
             for name in entry.get(f"{kind}s") or []:
                 count = out[kind].setdefault(name, {}).setdefault(entry.get("base") or "", {
                     "runs": 0, "good": 0, "bad": 0, "passed": 0, "failed": 0, "ai_good": 0, "ai_passed": 0, "clients": [], "pictures": []})
                 count["runs"] += 1
-                count["good"] += good
-                count["bad"] += verdict == "bad"
-                count["passed"] += not good and verdict != "bad" and bool(entry.get("passed"))
+                count["good"] += judged == "good"
+                count["bad"] += judged == "bad"
+                count["passed"] += judged == "passed"
                 count["failed"] += entry.get("state") == "error"
-                count["ai_good"] += bool(entry.get("ai_picked"))
-                count["ai_passed"] += bool(entry.get("ai_passed")) and not entry.get("ai_picked")
-                count["pictures"] = (count["pictures"] + [list(picture) for picture in entry.get("pictures") or []][:2])[-MAX_SHOWN:]
+                count["ai_good"] += _ai(entry) == "picked"
+                count["ai_passed"] += _ai(entry) == "passed"
+                count["pictures"] = (count["pictures"] + [list(picture) for picture in entry.get("pictures") or []])[-MAX_SHOWN:]
                 if entry.get("client") and entry["client"] not in count["clients"]:
                     count["clients"].append(entry["client"])
+    return out
+
+
+def by_model():
+    """Each main model's runs: {model file: {runs, good, bad, passed, ai (the AI judged it)}}."""
+    with _lock:
+        entries = list(_runs().values())
+    kept = _kept() if entries else set()
+    out = {}
+    for entry in entries:
+        if entry.get("model"):
+            count = out.setdefault(entry["model"], {"runs": 0, "good": 0, "bad": 0, "passed": 0, "ai": 0})
+            judged = _judge(entry, kept)[0]
+            count["runs"] += 1
+            count["ai"] += bool(_ai(entry))
+            if judged:
+                count[judged] += 1
+    return out
+
+
+def runs_of(kind, name, base=None, limit=MAX_LISTED):
+    """The runs with item `name` (a way, skill or pack), on base model `base` when it is given, newest first:
+    [{id, at, task, client, model, base, state, judged, by, ai, pictures}] (judged, by: _judge; ai: the AI's pick)."""
+    if kind not in KINDS:
+        raise ValueError("kind is way, skill or pack")
+    with _lock:
+        found = [(key, dict(entry)) for key, entry in _runs().items() if name in (entry.get(f"{kind}s") or [])
+                 and (base is None or (entry.get("base") or "") == base)]
+    found.sort(key=lambda item: -item[1].get("at", 0))
+    kept = _kept() if found else set()
+    out = []
+    for key, entry in found[:limit]:
+        judged, by = _judge(entry, kept)
+        out.append({"id": key, "at": entry.get("at", 0), "task": entry.get("task") or "", "client": entry.get("client") or "",
+                    "model": entry.get("model") or "", "base": entry.get("base") or "", "state": entry.get("state") or "",
+                    "judged": judged, "by": by, "ai": _ai(entry), "pictures": entry.get("pictures") or []})
     return out
 
 

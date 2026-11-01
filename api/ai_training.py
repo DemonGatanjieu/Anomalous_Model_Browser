@@ -21,6 +21,7 @@ MAX_MODELS = 4
 MAX_EACH = 3  # pictures of one trial set (seeds)
 MAX_LISTED = 400  # main models the network lists
 MAX_SUBJECT = 300
+MAX_ROUNDS = 30  # rounds the network lists
 WITHOUT = ""  # a skill's trials without it
 
 
@@ -41,6 +42,20 @@ def models():
         if len(out) >= MAX_LISTED:
             break
     return out
+
+
+def rounds(limit=MAX_ROUNDS):
+    """The training rounds started here, newest first: [{id, title, started, kind, target, models (names),
+    done, total (trials), taken (an AI took it), ended}]."""
+    with ai_tasks._lock:
+        tasks = sorted((task for task in ai_tasks._load().values() if isinstance(task.get("training"), dict)),
+                       key=lambda task: -(task.get("started") or 0))[:limit]
+        return [{"id": task["id"], "title": task.get("title") or "", "started": task.get("started") or 0,
+                 "kind": task["training"].get("kind") or "", "target": task["training"].get("skill") or task["training"].get("use") or "",
+                 "models": [model.get("name") or "" for model in task["training"].get("models") or []],
+                 "done": sum(1 for trial in task["training"].get("trials") or [] if trial.get("run")),
+                 "total": len(task["training"].get("trials") or []), "taken": not task.get("waiting"), "ended": bool(task.get("ended"))}
+                for task in tasks]
 
 
 def _model(model_id):

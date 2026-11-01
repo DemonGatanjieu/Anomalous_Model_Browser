@@ -68,6 +68,29 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(found["skill"]["prompt_pose"]["Illustrious"]["clients"], ["Gemini"])
         self.assertEqual(found["pack"]["LanPaint"]["Illustrious"]["good"], 0, "nobody said how it went yet")
 
+    def test_external_skill_is_self_reported_for_later_runs_only(self):
+        before = self.run_with(PROMPT, "a.png")
+        mcp_task_tools.log_outside({"client": "Gemini"}, "Used the external repair skill", task=self.task,
+                                   external_skill="comfyui-flux-hand-repair")
+        after = self.run_with(PROMPT, "b.png")
+        steps = {step["id"]: step for step in ai_tasks.get_task(self.task)["steps"]}
+        name = "external:comfyui-flux-hand-repair"
+        self.assertNotIn(name, steps[before]["used"]["skills"])
+        self.assertIn(name, steps[after]["used"]["skills"])
+        count = ai_evidence.tally()["skill"][name]["Illustrious"]
+        self.assertEqual((count["runs"], count["good"], count["bad"]), (1, 0, 0))
+        with self.assertRaises(ToolError):
+            mcp_task_tools.log_outside({"client": "Gemini"}, "x", task=self.task, external_skill="../not-a-skill")
+
+    def test_network_keeps_before_after_and_full_image(self):
+        step = ai_tasks.record("Gemini", "run_workflow", {}, ok({"queued": 1}), time.time(), task_id=self.task)
+        ai_task_runs._estimate(self.task, step["id"], [0, "p1", PROMPT, {}, []])
+        outputs = {str(i): {"images": [{"filename": name, "subfolder": "repair", "type": "output"}]}
+                   for i, name in enumerate(("before.png", "after.png", "full.png"))}
+        ai_task_runs._finish_run(self.task, step["id"], ["p1"], {"p1": {"status": {"completed": True}, "outputs": outputs}})
+        pictures = ai_evidence.tally()["skill"]["prompt_pose"]["Illustrious"]["pictures"]
+        self.assertEqual(pictures, [["repair", "before.png"], ["repair", "after.png"], ["repair", "full.png"]])
+
     def test_a_way_taken_off_the_canvas_does_not_count(self):
         plain = {key: node for key, node in PROMPT.items() if not node["class_type"].startswith("LanPaint")}
         plain["3"] = {"class_type": "KSampler", "inputs": {"model": ["10", 0], "positive": ["6", 0], "negative": ["6", 0], "latent_image": ["6", 0]}}

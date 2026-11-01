@@ -433,12 +433,18 @@ covered by the `styles.css` manifest.
   keeps it from the AI (POST, `user/anomalous/ai_blocks.json`); under them the skills
   (`ai_skills.status`), each with the same switch (`user/anomalous/ai_skills.json`), those of the
   task's kind only (a private task's, else the others), as the AI gets. `ui_ai_network.js` is the
-  side column's training network (GET /anomalous/ai_training): base models left, ways, skills and
-  node packs right, a line for each pair that ran, coloured by how it turned out (the user's word
-  first, else the AI's, dashed), drawn over the two columns from where their nodes are (a
-  ResizeObserver redraws it); a node or line picked shows its record, last pictures and untried
-  pairs, and `ui_ai_training_setup.js` is the form starting a round (POST), ending in the sentence to
-  paste to the AI app. For a run the AI did not wait
+  training network (GET /anomalous/ai_training), opened by the side switch over the whole AI page
+  (closed by its back button, Esc or another view): its head, the numbers (runs, judged, pairs that
+  could be tried, rounds), which items to show, the drawing and the detail column. Its data
+  (`ui_ai_network_data.js`): the items, base models, pairs that ran and how each turned out (the
+  user's word first, else the AI's), the pairs that could be tried. `ui_ai_network_graph.js` draws it
+  as a graph (base models left, items right, a line per pair over the two columns from where their
+  nodes are, redrawn by a ResizeObserver released on close) or as a table (a cell per pair, "+"
+  where it could be tried); `ui_ai_network_detail.js` shows what is picked: the rounds when nothing
+  is (each opens its task), a base model's models here with their runs, an item's base models, a
+  pair's counts and each run (GET /anomalous/ai_training/runs: when, model, AI app, how it was judged,
+  pictures, task). `ui_ai_training_setup.js` is the form starting a round (POST), in place of the
+  drawing, ending in the sentence to paste to the AI app. For a run the AI did not wait
   for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
   and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a card per

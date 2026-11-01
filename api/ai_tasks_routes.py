@@ -328,7 +328,7 @@ async def api_blocks(request):
 
 async def api_training(request):
     """GET /anomalous/ai_training: the training network (ai_training.py): the record summed up by base model,
-    the main models here, the ways and skills, whether the AI is told it; POST {title, skill | use, models, each, subject?, picture?}
+    the main models here and each one's runs, the ways and skills, the rounds, whether the AI is told it; POST {title, skill | use, models, each, subject?, picture?}
     starts a training round, a task for the next AI that calls."""
     from . import ai_skills, ai_training, mcp_canvas_edit, reference_blocks
     from .mcp_tools import ToolError
@@ -350,7 +350,19 @@ async def api_training(request):
     skills = [skill for skill in ai_skills.status() if not skill["private_only"]]
     return web.json_response({"record": await asyncio.to_thread(ai_evidence.tally), "models": await asyncio.to_thread(ai_training.models),
                               "blocks": blocks, "skills": skills, "jobs": list(reference_blocks.JOBS),
+                              "by_model": await asyncio.to_thread(ai_evidence.by_model), "rounds": await asyncio.to_thread(ai_training.rounds),
                               "shown_to_ai": ai_gates.record_view() == "shown"})
+
+
+async def api_training_runs(request):
+    """GET /anomalous/ai_training/runs?kind=way|skill|pack&name=…[&base=…]: each run of one item (on one base
+    model) in the training network, newest first (ai_evidence.runs_of)."""
+    query = request.query
+    try:
+        runs = await asyncio.to_thread(ai_evidence.runs_of, query.get("kind", ""), query.get("name", ""), query.get("base"))
+    except ValueError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    return web.json_response({"runs": runs})
 
 
 def register_routes(app):
@@ -377,5 +389,6 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_blocks", api_blocks)
     app.router.add_get("/anomalous/ai_training", api_training)
     app.router.add_post("/anomalous/ai_training", api_training)
+    app.router.add_get("/anomalous/ai_training/runs", api_training_runs)
     app.router.add_get("/anomalous/ai_gates", api_gates)
     app.router.add_post("/anomalous/ai_gates", api_gates)

@@ -304,10 +304,19 @@ its pick (`ai_picked`), the others shown as passed over by it; when the user lef
 AI (`no_answer` "recommended", `ai_answer_wait.take_recommended`, now for picks blocks too) the
 choice is the AI's only, and nothing is counted as the user's.
 
+An agent may identify a skill it actually used outside AMB with `log_outside(external_skill=…)`
+before the runs it guides. The identifier is a bounded slug, never a path; the task step is the
+agent's declaration, and later runs in that task count it under `external:<identifier>`.
+The network shows these as AI-reported external skills, not runnable AMB skills or user ratings.
+
 Training rounds (`api/ai_training.py`, `GET/POST /anomalous/ai_training`): the network's data is
-the record summed up (`ai_evidence.tally`, with each pair's last pictures), the main models here
-with their base models (`models()`, at most 400, read from their metadata), the ways with whether
-they take a picture, and the skills. A round is a skill (trials without it first, as a skill
+the record summed up (`ai_evidence.tally`, with each pair's last pictures), each main model's runs
+(`ai_evidence.by_model`, by file name), the main models here with their base models (`models()`, at
+most 400, read from their metadata), the ways with whether they take a picture, the skills and the
+rounds started here (`rounds()`, the newest 30, with how many trials ran). `GET
+/anomalous/ai_training/runs?kind&name&base` lists one pair's runs, newest first, at most 40
+(`ai_evidence.runs_of`: model, AI app, how the user judged it and by what, the AI's pick, pictures,
+task). A round is a skill (trials without it first, as a skill
 counts for every run after it is fetched, then with it) or the ways of one use that run here,
 on 1-4 main models, 1-3 pictures each with the same seeds; it is started as a waiting task
 (`ai_tasks.start_task`, the models as `about`) carrying `training` {kind, items, models, seeds,

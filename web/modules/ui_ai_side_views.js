@@ -4,8 +4,8 @@
  * shape of a run at full size (ui_ai_run_map.js; the newest run, or one picked from the list or
  * from its step in the timeline), the task's decisions (ui_ai_decisions.js), the materials
  * picker (ui_ai_toolbox.js) docked there, what the task made (ui_ai_outputs.js), the ready-made
- * ways the AI may use (ui_ai_blocks.js), or the training network (ui_ai_network.js).
- * Picking the view that is shown closes the column. Each view keeps its own pane, so going back
+ * ways the AI may use (ui_ai_blocks.js). The switch's training network (ui_ai_network.js) opens over
+ * the whole page instead, and picking another view closes it. Picking the view that is shown closes the column. Each view keeps its own pane, so going back
  * finds it as it was: a scrolled stage, materials picked but not handed over yet. The column is a
  * card of its own beside the timeline; its left edge drags it wider or narrower (kept on this
  * browser, the timeline keeps room; the whole gap beside the card catches the pointer, and the
@@ -23,7 +23,7 @@ import { openQuestions, panelSteps, renderStage, sideHead, tabBar } from './ui_a
 import { renderDecisionsView } from './ui_ai_decisions.js';
 import { renderOutputsView } from './ui_ai_outputs.js';
 import { renderBlocksView } from './ui_ai_blocks.js';
-import { renderNetworkView } from './ui_ai_network.js';
+import { closeNetwork, openNetwork, setNetworkContext } from './ui_ai_network.js';
 
 const WIDTH_KEY = 'anomalous.aiSideWidth';
 const WIDTH = { min: 340, start: 440 };
@@ -90,6 +90,11 @@ export function sideSwitch(side, shown, badges, onPick) {
  * The materials view opens the picker first when it is not open (it comes in through its host).
  */
 export function pickView(side, view, shown, task, redraw, changed) {
+    if (view === 'network') {
+        openNetwork();
+        return;
+    }
+    closeNetwork();
     if (shown && side.view === view && side.tab === 'stage') {
         side.hidden = true;
         side.tab = 'timeline';
@@ -105,7 +110,7 @@ export function pickView(side, view, shown, task, redraw, changed) {
 /** Whether the column is on screen: not closed, and its view has something (the stage: panels, or
  * the user asked for it, and sees it is empty; the picker: open). */
 export function sideShown(side, task) {
-    if (side.view === 'toolbox' && !toolboxOpenFor(task.id)) side.view = 'stage';
+    if ((side.view === 'toolbox' && !toolboxOpenFor(task.id)) || side.view === 'network') side.view = 'stage';
     return !side.hidden && (side.view !== 'stage' || panelSteps(task).length > 0 || Boolean(side.asked));
 }
 
@@ -163,7 +168,7 @@ function grip(box) {
 /** The side column's panes into `box` (once): the narrow window's tabs, the grip, then one pane per view. */
 function sidePanes(box) {
     if (!box.querySelector(':scope > .anomalous-ai-side-pane')) {
-        box.replaceChildren(el('div', 'anomalous-ai-tabs'), grip(box), ...Object.keys(VIEWS).map(view => {
+        box.replaceChildren(el('div', 'anomalous-ai-tabs'), grip(box), ...Object.keys(VIEWS).filter(view => view !== 'network').map(view => {
             const pane = el('div', `anomalous-ai-side-pane is-${view}`);
             pane.dataset.view = view;
             return pane;
@@ -213,7 +218,7 @@ export function drawSide(box, task, side, ctx, pickTab, arrived = null) {
     const panes = sidePanes(box);
     if (panes.toolbox.dataset.task && panes.toolbox.dataset.task !== task.id) closeToolbox();
     const opened = panes.blocks.hidden && side.view === 'blocks'; // the ways are read again when the view comes up
-    const netOpened = panes.network.hidden && side.view === 'network'; // so is the training network
+    setNetworkContext(ctx);
     for (const [view, pane] of Object.entries(panes)) pane.hidden = view !== side.view;
     const asks = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
     box.querySelector(':scope > .anomalous-ai-tabs').replaceWith(tabBar(side, asks, pickTab, viewLabel(side.view)));
@@ -232,7 +237,6 @@ export function drawSide(box, task, side, ctx, pickTab, arrived = null) {
         panes.blocks.dataset.private = privacy;
         renderBlocksView(panes.blocks, ctx, opened, task.private === true);
     }
-    if (side.view === 'network' && (netOpened || !panes.network.childElementCount)) renderNetworkView(panes.network, ctx, netOpened);
 }
 
 /**

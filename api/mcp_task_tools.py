@@ -90,10 +90,10 @@ def report(ctx, text="", images=None, done=False, reply_to=None, task=None):
     return answer
 
 
-def log_outside(ctx, what, why="", files=None, task=None):
+def log_outside(ctx, what, why="", files=None, task=None, external_skill=None):
     try:
         step = ai_outside.log(ctx.get("client") or "AI", what, why, files, session=ctx.get("session") or "",
-                              task_id=task or ctx.get("task"))
+                              task_id=task or ctx.get("task"), external_skill=external_skill)
     except ValueError as error:
         raise ToolError(str(error))
     return {"logged": True, "step": step["id"]}
@@ -372,9 +372,11 @@ TASK_TOOLS = dict([
                         "task": _TASK_PROP}),
     _task_tool("log_outside", "Say what you did outside Anomalous",
                "Right after using a tool that is not Anomalous's (a command, a script, files, another server): what "
-               "you ran, why, and the files it touched, for the task's timeline. Prefer Anomalous's tools.",
+               "you ran, why, and the files it touched, for the task's timeline. If you actually used an external "
+               "agent skill, set external_skill to its identifier before the runs it guides; this is self-reported.",
                log_outside, {"what": {"type": "string"}, "why": {"type": "string"},
                              "files": {"type": "array", "items": {"type": "string"}, "maxItems": ai_outside.MAX_FILES},
+                             "external_skill": {"type": "string", "description": "Optional external skill identifier, lowercase letters, digits, dot, underscore or hyphen; not a path."},
                              "task": _TASK_PROP},
                ["what"]),
     _task_tool("log_decision", "Record a decision",
