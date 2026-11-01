@@ -228,8 +228,10 @@ covered by the `styles.css` manifest.
   model of its main model (`ai_task_runs._estimate` puts that on the step as `used`; its end makes an
   entry of `user/anomalous/ai_evidence.json`), and how it went comes from what the user does anyway:
   a picture picked in a picks panel or kept in the gallery (`kept_images.py`), passed over, or their
-  word under the run (`web/modules/ui_ai_verdict.js`, told to the AI). begin_task and get_toolbox
-  give the AI the record in a few words, add_nodes a way's or the node packs' own; of a use's ways
+  word under the run (`web/modules/ui_ai_verdict.js`, told to the AI). Once the user shows it (the
+  Gates' `record` view, `ai_gates.record_shown`; hidden by default, always shown in a training round)
+  begin_task and get_toolbox give the AI the record in a few words, add_nodes a way's or the node
+  packs' own; of a use's ways
   that can run, the one that did best on the canvas's model is picked (`reference_blocks.pick(order=…)`);
   the Gates' `nodes` rule (`ai_gates.node_rule`) lets custom nodes in only by the ways
   (`tests/test_ai_evidence.py`). A picks panel keeps the AI's own pick (the item it marked

@@ -1,7 +1,8 @@
 """The record of what works (api/ai_evidence.py): a run counts for the ways it still has, the skills
 fetched before it and the packs of its nodes, by its main model's base model; the user's picks,
-keeps and word say how it went; the AI is told it in begin_task, get_toolbox and add_nodes, a use's
-way that did best is picked first, and the user can let custom nodes in only by the ways.
+keeps and word say how it went; the AI is told it in begin_task, get_toolbox and add_nodes once the
+user shows it or in a training round, a use's way that did best is picked first, and the user can
+let custom nodes in only by the ways.
 Temporary folders only."""
 import os
 import sys
@@ -98,6 +99,7 @@ class EvidenceTests(unittest.TestCase):
         self.assertNotIn("record", mcp_task_tools.begin_task({"client": "Gemini", "task": self.task}, "repaint"), "nothing ran yet")
         step_id = self.run_with(PROMPT)
         ai_evidence.set_verdict(self.task, step_id, "good")
+        ai_gates.set_record_view("shown")
         begun = mcp_task_tools.begin_task({"client": "Gemini", "task": self.task}, "repaint")
         self.assertIn("inpaint_lanpaint (way) Illustrious: 1 good of 1", begun["record"])
         self.assertLessEqual(len(begun["record"]), ai_evidence.OVERVIEW_CHARS + 100, "a few words in begin_task")
@@ -106,6 +108,24 @@ class EvidenceTests(unittest.TestCase):
         self.assertIn("Illustrious 1 runs: 1 good", fetched["record"])
         self.assertIn("(run by Gemini)", fetched["record"], "which AI ran it, for the next one to go on from")
         self.assertIn("record", mcp_task_tools.get_toolbox({"client": "Gemini", "task": self.task}))
+
+    def test_hidden_from_the_ai_until_the_user_shows_it_or_starts_a_round(self):
+        ai_evidence.set_verdict(self.task, self.run_with(PROMPT), "good")
+        self.assertEqual(ai_gates.record_view(), "hidden", "hidden by default")
+        self.assertNotIn("record", mcp_task_tools.begin_task({"client": "Gemini", "task": self.task}, "repaint"))
+        with mock.patch.object(mcp_task_tools, "_canvas_model", return_value=None):
+            fetched = mcp_task_tools.get_toolbox({"client": "Gemini", "task": self.task}, skill="prompt_pose")
+        self.assertNotIn("record", fetched, "the skill's advice alone")
+        self.assertNotIn("record", mcp_task_tools.get_toolbox({"client": "Gemini", "task": self.task}))
+        self.assertEqual(mcp_canvas_edit._record({"task": self.task}, "inpaint_lanpaint", []), "")
+        self.assertEqual(ai_evidence.order("way", ["inpaint_basic", "inpaint_lanpaint"], lambda: "Illustrious"),
+                         ["inpaint_lanpaint", "inpaint_basic"], "the way that did best still comes first")
+        with mock.patch.object(ai_gates.ai_tasks, "get_task", return_value={"training": {"kind": "skill"}}):
+            self.assertTrue(ai_gates.record_shown(self.task), "a training round the user started shows it")
+        ai_gates.set_record_view("shown")
+        self.assertIn("Your runs with this way", mcp_canvas_edit._record({"task": self.task}, "inpaint_lanpaint", []))
+        with self.assertRaises(ValueError):
+            ai_gates.set_record_view("some")
 
     def test_the_way_that_did_best_on_the_model_comes_first(self):
         asked = []

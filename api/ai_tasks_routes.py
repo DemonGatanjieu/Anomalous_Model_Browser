@@ -161,11 +161,12 @@ async def api_gates(request):
     POST {runs: call | wait}
     how the AI waits for a run (ai_gates.run_wait), POST {answer_wait: 60 | 180 | 600} for the user's answer,
     POST {no_answer: stop | recommended} what happens when that time runs out,
-    POST {nodes: any | ways} which custom nodes the AI adds itself (ai_gates.node_rule)."""
+    POST {nodes: any | ways} which custom nodes the AI adds itself (ai_gates.node_rule),
+    POST {record: hidden | shown} whether the AI is told the record of what worked (ai_gates.record_view)."""
     def settings():
         return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "privacy": ai_privacy.default_on(),
                 "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait(), "no_answer": ai_gates.no_answer(),
-                "nodes": ai_gates.node_rule()}
+                "nodes": ai_gates.node_rule(), "record": ai_gates.record_view()}
 
     if request.method == "GET":
         return web.json_response(settings())
@@ -183,6 +184,8 @@ async def api_gates(request):
             ai_gates.set_no_answer(body["no_answer"])
         elif "nodes" in (body or {}):
             ai_gates.set_node_rule(body["nodes"])
+        elif "record" in (body or {}):
+            ai_gates.set_record_view(body["record"])
         else:
             ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
     except ValueError as error:
@@ -325,7 +328,7 @@ async def api_blocks(request):
 
 async def api_training(request):
     """GET /anomalous/ai_training: the training network (ai_training.py): the record summed up by base model,
-    the main models here, the ways and skills; POST {title, skill | use, models, each, subject?, picture?}
+    the main models here, the ways and skills, whether the AI is told it; POST {title, skill | use, models, each, subject?, picture?}
     starts a training round, a task for the next AI that calls."""
     from . import ai_skills, ai_training, mcp_canvas_edit, reference_blocks
     from .mcp_tools import ToolError
@@ -346,7 +349,8 @@ async def api_training(request):
                "takes": bool(reference_blocks.BLOCKS[block["name"]].get("takes"))} for block in reference_blocks.status(info)]
     skills = [skill for skill in ai_skills.status() if not skill["private_only"]]
     return web.json_response({"record": await asyncio.to_thread(ai_evidence.tally), "models": await asyncio.to_thread(ai_training.models),
-                              "blocks": blocks, "skills": skills, "jobs": list(reference_blocks.JOBS)})
+                              "blocks": blocks, "skills": skills, "jobs": list(reference_blocks.JOBS),
+                              "shown_to_ai": ai_gates.record_view() == "shown"})
 
 
 def register_routes(app):

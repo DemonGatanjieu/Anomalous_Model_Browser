@@ -237,6 +237,7 @@ function draw(pane, ctx, redraw) {
         body.append(trainingSetup(shown, setup, { back: () => { setup = null; redraw(); }, openTask: ctx.openTask }));
     } else {
         body.append(el('div', 'anomalous-ai-blocks-note', t('aiNetIntro')),
+            el('div', 'anomalous-ai-blocks-note', t(`aiNetSeen_${shown.shown_to_ai === true}`)),
             button('anomalous-ai-net-train', t('aiNetTrain'), () => { setup = {}; redraw(); }), ...graphBox(shown, ctx, redraw));
     }
     pane.replaceChildren(sideHead(t('aiSideNetwork'), ctx.close), body);

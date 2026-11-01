@@ -285,7 +285,10 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
 
 
 def _record(ctx, block, types):
-    """How block `block`, or the custom node packs of node types `types`, did in this computer's runs (ai_evidence.py)."""
+    """How block `block`, or the custom node packs of node types `types`, did in this computer's runs (ai_evidence.py),
+    when the user shows the AI the record (ai_gates.record_shown)."""
+    if not ai_gates.record_shown(ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")):
+        return ""
     if block is not None:
         words = ai_evidence.words("way", str(block))
         return f"Your runs with this way: {words}" if words else ""

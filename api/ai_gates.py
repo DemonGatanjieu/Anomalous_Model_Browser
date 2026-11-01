@@ -14,7 +14,9 @@ workbench gives them a line to paste), or "wait", it waits with run_status; how 
 AI waits for the user's answer to its question (answer_wait, ai_answer_wait.py), and what happens
 when that time runs out (no_answer): "stop", the AI ends its turn and waits for the user, or
 "recommended", a choice the AI marked a recommended option for takes it (never a gate's question);
-and which custom nodes the AI may add itself (node_rule): any, or only those of the ready-made ways.
+which custom nodes the AI may add itself (node_rule): any, or only those of the ready-made ways;
+and whether the AI is told the record of what worked here (record_view, ai_evidence.py): hidden
+unless the user shows it, while a training round they started always shows it (record_shown).
 """
 
 import json
@@ -28,6 +30,7 @@ from .path_utils import atomic_write_json
 POLICIES = ("auto", "ask", "never")
 RUN_WAITS = ("call", "wait")
 NODE_RULES = ("any", "ways")
+RECORD_VIEWS = ("hidden", "shown")
 ANSWER_WAITS = (60, 180, 600)  # seconds; the first call waits 30-55 s, get_answers the rest
 NO_ANSWERS = ("stop", "recommended")
 DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
@@ -104,6 +107,27 @@ def set_node_rule(mode):
     if mode not in NODE_RULES:
         raise ValueError("nodes is any or ways")
     return _set_tool_setting("nodes", mode)
+
+
+def record_view():
+    """Whether the AI is told the record of what worked (ai_evidence.py): "hidden" until the user shows it,
+    so it goes by the ready-made ways and skills alone (add_nodes still picks the way that did best)."""
+    chosen = _tool_settings().get("record")
+    return chosen if chosen in RECORD_VIEWS else "hidden"
+
+
+def set_record_view(mode):
+    if mode not in RECORD_VIEWS:
+        raise ValueError("record is hidden or shown")
+    return _set_tool_setting("record", mode)
+
+
+def record_shown(task_id):
+    """The record goes to the AI when the user shows it, or in task `task_id` when it is a training round."""
+    if record_view() == "shown":
+        return True
+    task = ai_tasks.get_task(task_id) if task_id else None
+    return bool((task or {}).get("training"))
 
 
 def answer_wait():

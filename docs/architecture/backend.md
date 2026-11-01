@@ -291,10 +291,11 @@ of ComfyUI's own nodes only); how it went is never asked for: a picture picked i
 (`ai_panels.answer`) or kept in the gallery (`kept_images.kept_keys`, read when the record is
 summed up) counts it good, its pictures passed over in a picks panel "not chosen", and the
 user's word under it (`POST /anomalous/ai_tasks/{id}/runs/{step}/verdict`, a user step the AI
-gets) goes over both. Names only, never prompt text; picture names stay on this computer. The
-AI reads it in begin_task and get_toolbox (`record`, at most a few hundred characters, nothing
+gets) goes over both. Names only, never prompt text; picture names stay on this computer. Once
+the user shows it (Gates "training network record", `ai_tools.json` `record`, hidden by default;
+a training round's task always shows it: `ai_gates.record_shown`) the AI reads it in begin_task and get_toolbox (`record`, at most a few hundred characters, nothing
 while nothing ran), with a way in add_nodes' answer and with a skill in get_toolbox's, with the
-AI apps that ran it so the next one knows what is untried. `add_nodes(use=…)` puts the use's
+AI apps that ran it so the next one knows what is untried. Shown or not, `add_nodes(use=…)` puts the use's
 runnable ways in order by their record on the canvas's base model (asked of the page only when
 one has a record). With the Gates' "custom nodes: only the ways'" (`ai_tools.json` `nodes`),
 `mcp_canvas_edit._allowed` refuses a custom node no way builds and the task did not pick.
