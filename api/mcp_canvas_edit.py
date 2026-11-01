@@ -346,7 +346,7 @@ CANVAS_TOOLS = dict([
             "to node ids. Or use (and want): a ready-made block for that use (begin_task lists them), the best this "
             "ComfyUI can run, spliced into the canvas's sampler by itself; near_node_id picks the sampler when there are several.",
             add_nodes, {"nodes": {"type": "object"}, "use": {"type": "string", "enum": list(reference_blocks.JOBS)},
-                        "want": {"type": "string", "description": "Which kind of the use, as begin_task's blocks name it (best, 2x, pose…)."},
+                        "want": {"type": "string", "description": "Kind from begin_task (best, 2x, pose…)."},
                         "block": {"type": "string", "enum": list(reference_blocks.BLOCKS)},
                         "image": {"type": "string", "description": "A repaint block's inpaint_image; a control block's picture to follow."},
                         "scene": {"type": "string", "description": "A block's second picture, where it puts the first (place_in_scene)."},

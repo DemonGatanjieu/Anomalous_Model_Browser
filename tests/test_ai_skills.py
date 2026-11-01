@@ -49,6 +49,18 @@ class SkillTests(unittest.TestCase):
         with self.assertRaises(ToolError):
             mcp_task_tools.get_toolbox(self.ctx, skill="no_such_skill")
 
+    def test_anima_recipe_is_discovered_and_points_to_the_buildable_tile_way(self):
+        with mock.patch.object(mcp_task_tools, "_blocks", lambda ctx: {}):
+            listed = mcp_task_tools.begin_task(self.ctx, "Anima illustration")["skills"]
+        self.assertIn("anima_illustration", listed)
+        advice = " ".join(mcp_task_tools.get_toolbox(self.ctx, skill="anima_illustration")["advice"])
+        self.assertIn('add_nodes(block="upscale_anima_tile")', advice)
+        self.assertIn("Preserve the user's text", advice)
+        ai_skills.set_on("anima_illustration", False)
+        self.assertNotIn("anima_illustration", ai_skills.directory())
+        with self.assertRaises(ai_skills.SkillError):
+            ai_skills.get("anima_illustration")
+
     def test_the_advice_goes_by_the_size_of_the_canvas_model(self):
         def advice(model):
             with mock.patch.object(mcp_task_tools, "_canvas_model", return_value=model):

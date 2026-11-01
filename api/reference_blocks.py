@@ -138,6 +138,11 @@ def _missing_models(block, info):
         if not any(any(word in name.lower() for word in words) and "lllite" not in name.lower()
                    for name in _choices(info, "ControlNetLoader", "control_net_name")):
             missing.append({"kind": "controlnet", "what": block["control"]})
+    if block.get("lllite"):
+        try:
+            _lllite(info, block["lllite"])
+        except MissingModel:
+            missing.append({"kind": "controlnet", "what": "anima " + block["lllite"]})
     return missing
 
 
@@ -285,9 +290,11 @@ def _told_its_type(nodes, kind):
 def _lllite(info, kind):
     """The Anima ControlNet-LLLite file for `kind` (depth, pose, inpaint) in models/controlnet."""
     found = [name for name in _choices(info, "AnimaLLLiteApply_sdscripts", "lllite_name")
-             if ("lllite" in name.lower() or name.lower().startswith("anima")) and kind in name.lower()]
+             if (os.path.basename(name.replace("\\", "/")).lower() == "animatilerepair_v20.safetensors" if kind == "tile"
+                 else ("lllite" in name.lower() or name.lower().startswith("anima")) and kind in name.lower())]
     if not found:
-        raise MissingModel(f"No Anima {kind} LLLite model in models/controlnet (anima-lllite-{kind}*.safetensors): ask the "
+        pattern = "animaTileRepair_v20.safetensors" if kind == "tile" else f"anima-lllite-{kind}*.safetensors"
+        raise MissingModel(f"No Anima {kind} LLLite model in models/controlnet ({pattern}): ask the "
                          "user to get one.")
     return sorted(found)[-1]  # the newest version
 
@@ -353,6 +360,10 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
     packs_here(block)  # before the page is asked which model the canvas has
     block = _variant(name, block, main, info)
     packs_here(block)
+    if block.get("requires_family"):
+        from .model_advice import family
+        if family(main()) != block["requires_family"]:
+            raise BlockError(f"Block {name} requires a confirmed {block['requires_family']} model; check the canvas model first.")
     if block.get("takes") and not (isinstance(image, str) and image.strip()):
         raise BlockError(f"Block {name} needs image: {TAKES[block['takes']]}.")
     if block.get("scene") and not (isinstance(scene, str) and scene.strip()):

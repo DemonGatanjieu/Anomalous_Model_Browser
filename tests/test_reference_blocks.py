@@ -24,7 +24,8 @@ BASES = {"SD_1.5/control_v11p_sd15_openpose.safetensors": "SD 1.5", "SDXL/union-
          "NoobAI/noob-openpose.safetensors": "NoobAI", "SDXL/xinsir-openpose.safetensors": "SDXL 1.0"}
 base = lambda name: BASES.get(name, "")  # noqa: E731
 LLLITES = {"input": {"required": {"lllite_name": [["SDXL/union-promax.safetensors", "anima-lllite-depth-1.safetensors",
-                                                 "anima-lllite-inpainting-v1.safetensors", "anima-lllite-inpainting-v2.safetensors"]]}}}
+                                                 "anima-lllite-inpainting-v1.safetensors", "anima-lllite-inpainting-v2.safetensors",
+                                                 "animaTileRepair_v20.safetensors"]]}}}
 EVERYTHING = {kind: {} for block in reference_blocks.BLOCKS.values() for kind in block["packs"]} | {
     "UltralyticsDetectorProvider": DETECTORS, "UpscaleModelLoader": UPSCALERS, "ControlNetLoader": CONTROLNETS,
     "AnimaLLLiteApply_sdscripts": LLLITES}
@@ -159,6 +160,23 @@ class BlockTests(unittest.TestCase):
         with self.assertRaisesRegex(reference_blocks.BlockError, "No upscale model"):
             reference_blocks.nodes_of("upscale_tiled", {**EVERYTHING, "UpscaleModelLoader": {}})
         self.assertIn("ComfyUI_UltimateSDUpscale: upscale 2x", reference_blocks.directory(BUILT_IN)["Not here yet, needs"])
+
+    def test_anima_tile_upscale_needs_its_model_and_builds_a_separate_guided_pass(self):
+        info = {**EVERYTHING, "ColorMatch": {}}
+        self.assertEqual(reference_blocks.pick("upscale", "anima tile", info), "upscale_anima_tile")
+        nodes = reference_blocks.build("upscale_anima_tile", info, main_base=lambda: "Anima")["nodes"]
+        self.assertEqual(nodes["tile"]["inputs"]["lllite_name"], "animaTileRepair_v20.safetensors")
+        self.assertEqual(nodes["tile"]["inputs"]["image"], ["$save.images", "*"])
+        self.assertEqual(nodes["redraw"]["inputs"]["model"], ["tile", 0])
+        self.assertEqual((nodes["enlarge"]["inputs"]["scale_by"], nodes["redraw"]["inputs"]["denoise"]), (1.22, 0.85))
+        self.assertEqual(nodes["match"]["inputs"]["image_ref"], ["$save.images", "*"])
+        for family in ("", "SDXL 1.0"):
+            with self.assertRaisesRegex(reference_blocks.BlockError, "requires a confirmed anima"):
+                reference_blocks.build("upscale_anima_tile", info, main_base=lambda: family)
+        missing = {**info, "AnimaLLLiteApply_sdscripts": LLLITES | {"input": {"required": {"lllite_name": [["anima-lllite-depth-1.safetensors"]]}}}}
+        self.assertFalse(next(item for item in reference_blocks.status(missing) if item["name"] == "upscale_anima_tile")["usable"])
+        with self.assertRaises(reference_blocks.MissingModel):
+            reference_blocks.build("upscale_anima_tile", missing, main_base=lambda: "Anima")
 
     def test_a_node_only_making_a_block_better_goes_when_its_pack_is_missing(self):
         nodes = reference_blocks.nodes_of("upscale", {**EVERYTHING, "ColorMatch": {}})

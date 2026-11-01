@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- 新增按需 skill **Anima 插画·底图与 Tile 细化**，以及自动接入的 **Anima Tile 放大细化** 做法：保留底图，以 1.22 倍潜空间放大和 Tile 引导高降噪细化，检查模型架构与必需权重，结果另存供对比。参数来自三组本机对照，不保证修手或复刻原图。
+- New on-demand **Anima illustration: base and Tile detail** skill and **Anima Tile detail upscale** way: retain the base and save a guided 1.22× latent redraw separately, checking the model family and required weight. Settings come from three local comparisons and do not guarantee hand repair or reproduction.
+
 - 跑完的图下面新增 **效果好 / 不太行** 两个按钮，点了直接告诉 AI（点“不太行”它就换做法、设置或提示词再跑），再点一下收回。**关卡** 里新增 **第三方节点**：选“只用做法里的”，AI 自己加节点时只能用做法里搭好的组合和你给任务挑的，ComfyUI 自带的节点照常能用。等不到回答时设成按推荐的继续，挑图面板里 AI 推荐的那张也会替你选上。
 - Under a finished run's pictures, **Turned out well / Not quite** tells the AI at once (with "Not quite" it changes the way, a setting or the prompt before running again); a click again takes it back. The **Gates** window has a new **Custom nodes** row: with "Only the ways'" the AI may add only the nodes of the ready-made ways and what you picked for the task; ComfyUI's built-in nodes stay allowed. With "go on with the recommended" for unanswered questions, a picks panel takes the picture the AI recommended too.
 - 新增 **隐私模式**：任务标题栏的 **🔒** 一点，这个任务的**图和提示词原文**都不会发给 AI。图一张都不给（放大看图、图片信息、跑完的预览、你递给它的图、AI 软件里任务卡片上的图都一样），它只知道出了几张、成没成功；提示词和图片文件名换成 **[P1]**、**[img1]** 这样的代号：画布上、图片信息里、提示词库、搭配、模型的触发词和介绍、你自己改画布的记录里都一样（只有节点的“文字输入”被换掉，模型名、数字、选项照常给，第三方节点也一样）。AI 拿代号去跑图、写提示词、放挑图面板，AMB 再换回原文，所以它照样能干活，你那边看到的也都是原样。要新的提示词时，AI 会放一个 **提示词框**：你在里面写几条提示词、反向提示词，可以从图库选或拖进参考图，原文只存在 AMB 里；框上方还会按画布主模型的大小提醒你（小模型手容易画坏，可以选简单动作或藏手，只是可选）。新增 skill“隐私模式·怎么干活”，隐私任务里的 AI 开工时会被指过去；隐私任务里 AI 只拿得到这一个 skill，**做法** 面板的 skill 一栏也只显示它，关掉隐私后才换回普通的 skill。**关卡** 窗口里设新任务默认开不开；打开、关掉都记在时间线上并告诉 AI。所有工具的结果出门前都过同一道关，测试会在每个工具的结果里埋“暗号”提示词和图片名，确认一个都漏不出去。
