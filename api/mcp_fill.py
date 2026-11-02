@@ -1,6 +1,7 @@
 """run_workflow's blanks: a daily run in one call, so a small model need not read and edit the canvas.
 
-With `workflow` (a saved workflow's name) the run opens it in the task's tab the first time and
+With `workflow` (a saved workflow's name, or one of its 方案 as "workflow / plan": a parameter set saved
+under it, applied as its Apply button does) the run opens it in the task's tab the first time and
 reuses that tab after (the page marks a tab open_workflow opened with the workflow's file); what
 the AI fills in goes into it first (web/modules/mcp_canvas_edit.js fill_slots): the positive and
 negative prompt boxes, the seed of every sampler, the empty latent's width and height, the
@@ -15,7 +16,7 @@ changes, and it is one Ctrl+Z step logged as the AI's.
 from . import ai_task_canvas, ai_tasks
 from .ai_pictures import to_input
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
-from .mcp_tools import ToolError, _resolve_folder_image, list_workflows
+from .mcp_tools import ToolError, _resolve_folder_image, plans
 
 SLOTS = ("prompt", "negative", "seed", "width", "height", "image", "image_node", "values")
 MAX_VALUES = 60
@@ -50,15 +51,21 @@ def node_values(values):
 
 
 def saved_workflow(name):
-    """(file name, name) of the user's saved workflow called `name`."""
+    """(file name, name, plan) of the user's saved workflow called `name`, or of its 方案 "workflow / plan"
+    (plan: the parameter set's file name, else None)."""
     from .recipe_store import _list_recipes, get_recipes_dir
 
     name = str(name or "").strip()
-    if not name or not any(item["name"] == name for item in list_workflows(name, 50)["workflows"]):
-        raise ToolError(f"No saved workflow called {name}; list_workflows names them.")
-    filename = next((recipe["filename"] for recipe in _list_recipes(get_recipes_dir())
-                     if (recipe["data"].get("name") or recipe["filename"]) == name), None)
-    return filename, name
+    files = {}
+    for recipe in _list_recipes(get_recipes_dir()):
+        files.setdefault(recipe["data"].get("name") or recipe["filename"], recipe["filename"])
+    if name and name in files:
+        return files[name], name, None
+    workflow, _, plan = name.rpartition(" / ")
+    found = next((file for file, plan_name in plans().get(files.get(workflow), []) if plan_name == plan), None)
+    if not found:
+        raise ToolError(f"No saved workflow or plan called {name}; list_workflows names them.")
+    return files[workflow], name, found
 
 
 def _picture(image):
@@ -89,15 +96,16 @@ def fill(ctx, workflow=None, **slots):
         slots["image"] = _picture(slots["image"])
     if "values" in slots:
         node_values(slots["values"])
-    filename = name = None
+    filename = name = plan = None
     if workflow:
-        filename, name = saved_workflow(workflow)
+        filename, name, plan = saved_workflow(workflow)
+    opened = f"{filename}#{plan}" if plan else filename  # what the page marks the tab with
     task = ai_tasks.get_task(ctx.get("task")) if ctx.get("task") else None
     no_tab_yet = bool(task) and ai_task_canvas.mode_of(task) == "new" and not (task.get("canvas") or {}).get("tab")
-    filled = None if workflow and no_tab_yet else _page("fill_slots", {"filename": filename, **slots})
+    filled = None if workflow and no_tab_yet else _page("fill_slots", {"filename": opened, **slots})
     if workflow and (filled is None or filled.get("needs_open")):
-        _page("open_workflow", {"filename": filename, "name": name}, timeout=60)
-        filled = _page("fill_slots", {"filename": filename, **slots})
+        _page("open_workflow", {"filename": filename, "name": name, "plan": plan}, timeout=60)
+        filled = _page("fill_slots", {"filename": opened, **slots})
         if filled.get("needs_open"):
             raise ToolError(f"The saved workflow {name} did not open; nothing was run.")
     return {**({"workflow": name} if name else {}), **(filled.get("set") or {})}

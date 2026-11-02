@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- AI 能用工作流卡里的 **参数方案** 了：一张工作流卡一套节点，存几个参数方案（比如同一套两段放大，放大时换不换模型、半途换不换模型），`list_workflows` 会列出每张卡的方案，写成“工作流名 / 方案名”；`run_workflow` 带上它，AMB 先打开工作流，再像点“应用到当前画布”一样套上那个方案，然后填题材、种子出图。AI 只要选哪个方案，改数值的事由 AMB 做。
+- AI apps can use a workflow card's **parameter sets** (方案): one card, one set of nodes, several saved sets of values (the same two-pass upscale with or without a model change, say). `list_workflows` lists each card's sets as "workflow / set"; with that name `run_workflow` opens the workflow, applies the set as its Apply button does, then fills in the subject and seed. The AI only picks the set; Anomalous changes the values.
 - 新增 **Anima Tile 放大细化** 做法：保留底图，以 1.22 倍潜空间放大和 Tile 引导高降噪细化，检查模型架构与必需权重，结果另存供对比；参数来自三组本机对照，不保证修手或复刻原图。配套的按需 skill **Anima 插画·底图与 Tile 细化** 只写怎么判断（先出底图给你看、再用这块做法、你存过这条路线的工作流或搭配就直接用、你没选的画风和 LoRA 不加），具体模型和数值留在做法和你自己的搭配里。
 - New **Anima Tile detail upscale** way: retain the base and save a guided 1.22× latent redraw separately, checking the model family and required weight; settings come from three local comparisons and do not guarantee hand repair or reproduction. Its on-demand skill **Anima illustration: base and Tile detail** holds judgment only (show the base first, then this way; a workflow or combo you saved for this route is used as it is; no style or LoRA you did not pick); the models and values stay in the way and in your own combos.
 

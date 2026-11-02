@@ -34,6 +34,7 @@ from .mcp_arguments import prepare_arguments, renaming_note
 from .model_catalog import _iter_search_models
 from .model_constants import MEDIA_EXTENSIONS, MODEL_EXTENSIONS, PREVIEW_SUFFIXES
 from .notebooks import _list_notebooks
+from .parameters import _read_parameter_notebooks, get_parameters_dir
 from .path_utils import model_file_within, resolve_folder_subdir, resolve_within
 from .recipe_store import _list_recipes, get_recipes_dir
 from .scan_report import last_scan_path
@@ -42,6 +43,7 @@ from .scan_summary import _summarize
 MAX_LIMIT = 50
 MAX_SEARCH_PICTURES = 6  # search_images(with_pictures): the first few attached
 MAX_TEXT = 1500
+MAX_PLANS = 12  # 方案 listed for one workflow
 MAX_IMAGE_BYTES = 1_500_000
 IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
 SOURCES = {"civitai": "civitai", "local": "inferred_from_file", "": "not_scanned"}
@@ -429,18 +431,33 @@ def list_combos(query="", limit=20, *, exact_name=False):
     return {"total_matches": len(found), "combos": found[:_limit(limit)]}
 
 
+def plans():
+    """Each saved workflow's 方案: the parameter sets saved under it with values unlike its own (saving a workflow
+    keeps one equal to them, which the Workflows page leaves out too): {workflow file name: [(set file name, set name)]}."""
+    own = {recipe["filename"]: (recipe["data"].get("parameter_signature") or {}).get("value") for recipe in _list_recipes(get_recipes_dir())}
+    out = {}
+    for notebook in _read_parameter_notebooks(get_parameters_dir()):
+        workflow = notebook["data"].get("recipe_filename")
+        if workflow in own and not (own[workflow] and (notebook["data"].get("parameter_signature") or {}).get("value") == own[workflow]):
+            out.setdefault(workflow, []).append((notebook["filename"], notebook["name"]))
+    return out
+
+
 def list_workflows(query="", limit=20, *, exact_name=False):
-    terms, found = _terms(query), []
+    terms, found, saved_plans = _terms(query), [], plans()
     for recipe in _list_recipes(get_recipes_dir()):
         data = recipe.get("data") or {}
+        name = data.get("name") or recipe["filename"]
         params = json.dumps(data.get("params") or {}, ensure_ascii=False)
-        if exact_name and (data.get("name") or recipe["filename"]) != query:
+        own = [f"{name} / {plan}" for _file, plan in saved_plans.get(recipe["filename"], [])][:MAX_PLANS]
+        if exact_name and name != query:
             continue
-        if not exact_name and not _matches(terms, data.get("name"), " ".join(data.get("tags") or []), data.get("notes"), params):
+        if not exact_name and not _matches(terms, name, " ".join(data.get("tags") or []), data.get("notes"), params, " ".join(own)):
             continue
-        found.append({"name": data.get("name") or recipe["filename"], "tags": data.get("tags") or [],
+        found.append({"name": name, "tags": data.get("tags") or [],
                       "notes": _text(data.get("notes"), 500), "saved": _when((data.get("timestamp") or 0) / 1000),
-                      "settings": params if len(params) <= MAX_TEXT else params[:MAX_TEXT] + "…"})
+                      "settings": params if len(params) <= MAX_TEXT else params[:MAX_TEXT] + "…",
+                      **({"plans": own} if own else {})})  # run_workflow(workflow=one of them) runs it with that set
     return {"total_matches": len(found), "workflows": found[:_limit(limit)]}
 
 
@@ -517,7 +534,7 @@ TOOLS = dict([
           "structure\") model nodes and text nodes saved from the canvas with their links, listed by slot.", list_combos,
           {"query": _QUERY, "limit": _LIMIT}),
     _tool("list_workflows", "Workflow recipes",
-          "The user's saved workflow recipes with tags, notes and their main settings.", list_workflows,
+          "The user's saved workflow recipes with tags, notes, main settings and plans.", list_workflows,
           {"query": _QUERY, "limit": _LIMIT}),
     _tool("list_saved_prompts", "Saved prompts",
           "Prompts the user saved in the Prompt Studio, with positive and negative text.", list_saved_prompts,

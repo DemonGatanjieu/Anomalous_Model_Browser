@@ -368,7 +368,7 @@ ACTIONS = dict([
             run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1,
                                      "description": "Tries, each its own seed."},
                            "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 55},
-                           "workflow": {"type": "string", "description": "A name from list_workflows."},
+                           "workflow": {"type": "string", "description": "A name or plan from list_workflows."},
                            "prompt": _PROMPT, "negative": {"type": "string"},
                            "prompts": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_PROMPTS,
                                        "description": "Instead of prompt: several, queued in order as one run."},

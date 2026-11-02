@@ -238,8 +238,10 @@ covered by the `styles.css` manifest.
   themselves: Antigravity reads a tool's file before its first call); the module also keeps which
   list each app fetched last (`anomalous/ai_tool_lists.json`), so a call from an app still holding
   the list of an older Anomalous is told so and the task header says how to reconnect it.
-  `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow
-  opened in the task's tab once and reused (the page marks the tab with the workflow's file),
+  `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow, or
+  one of its 方案 ("workflow / plan": a saved parameter set of it, `mcp_tools.plans`, which
+  list_workflows lists; the page opens the workflow and applies the set as its Apply button does),
+  opened in the task's tab once and reused (the page marks the tab with the workflow's file, and the set's),
   then the prompts, seed, size and the picture a LoadImage reads filled in by the page's
   `fill_slots`, planned by `web/modules/mcp_fill.js` (pure). Any other setting goes by its name
   (`values`, also set_values without a node): the one node that has it, else the AI names the

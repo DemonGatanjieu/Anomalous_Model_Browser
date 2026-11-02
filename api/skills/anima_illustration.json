@@ -10,7 +10,7 @@
   },
   "text": [
     "Use for an Anima illustration the user wants refined in two passes, not as a default for other models or styles. Preserve the user's text, requested character and pose; add a style, artist or LoRA only when the user picked it (a combo or saved prompt of theirs).",
-    "If the user saved this route as a workflow (list_workflows) or a combo (list_combos), use it: run_workflow with their subject and seed is the daily run. Its models and values are theirs: do not change them.",
+    "If the user saved this route as a workflow (list_workflows lists it with its plans) or a combo (list_combos), use it: run_workflow(workflow=\"name\" or \"name / plan\") with their subject and seed is the daily run. Its models and values are theirs: do not change them; pick another plan instead when the user wants the other route.",
     "Run the base first and show it; when the user wants to choose, let them pick it before the second pass. Then add_nodes(block=\"upscale_anima_tile\") on the Anima canvas: the way carries the tested second-pass values and checks the model family and the Tile weight. Report a missing node or model; never swap in a look-alike.",
     "What to expect: a high-denoise second pass without Tile tends to change the pose and ornaments; with Tile the composition holds better, but faces, hands and small details are still redrawn. Keep the base, compare, and lower the denoise when keeping more matters to the user.",
     "Changing models between the passes: only within one family sharing the text encoder and VAE; otherwise say it is untried. These findings come from a few single-seed comparisons: say what ran and what changed, and do not promise a reproduction or repaired hands."

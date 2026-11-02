@@ -14,6 +14,7 @@ import { recordCanvasStep } from './canvas_history.js';
 import { apiLinks, freeSpot, layered, placedBlock, typesFit, valuePlan } from './canvas_build.js';
 import { fedBy, linkOf, sockets, unwired } from './mcp_canvas_brief.js';
 import { fillPlan, valuesPlan } from './mcp_fill.js';
+import { applyRecipeParametersToCanvas } from './recipe_actions.js';
 import { translate as t } from './locales.js';
 import { setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
@@ -275,17 +276,28 @@ export function canvasEditActions({ recorded, nodeById }) {
     }
 
     /** One of the user's saved workflows (a recipe), in a new tab named after it; the open one stays. */
-    async function openWorkflow({ filename, name }, getOwner) {
+    async function openWorkflow({ filename, name, plan }, getOwner) {
         const response = await fetch(`/anomalous/recipe_full?filename=${encodeURIComponent(filename || '')}`);
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload.data?.workflow) throw new Error(`The saved workflow ${name} could not be read.`);
         const tab = tabName(name);
         getOwner()?.flushCanvasActivity?.();
         await app.loadGraphData(structuredClone(payload.data.workflow), true, true, tab);
+        if (plan) await applyPlan(filename, plan, name);
         showWorkbenchToast(t('mcpDidOpenWorkflow', { name }));
         const g = app.canvas?.graph || app.graph;
-        if (g) g.extra = { ...(g.extra || {}), anomalous_saved: filename }; // run_workflow with this workflow reuses the tab
+        // run_workflow with this workflow (or this plan of it) reuses the tab
+        if (g) g.extra = { ...(g.extra || {}), anomalous_saved: plan ? `${filename}#${plan}` : filename };
         return { opened: tab, node_count: (g?._nodes || []).length, note: 'describe_canvas shows its nodes; add_node, connect_nodes and set_values change it.' };
+    }
+
+    /** A 方案 of saved workflow `filename` (its parameter set `plan`) onto the tab just opened, as its Apply button writes it. */
+    async function applyPlan(filename, plan, name) {
+        const response = await fetch(`/anomalous/parameters?recipe_filename=${encodeURIComponent(filename)}`);
+        const payload = await response.json().catch(() => ({}));
+        const set = (payload.notebooks || []).find(item => item.filename === plan);
+        if (!response.ok || !set) throw new Error(`The plan ${name} could not be read.`);
+        applyRecipeParametersToCanvas(set.data);
     }
 
     /** run_workflow's blanks (api/mcp_fill.py); `needs_open` when the canvas is not saved workflow `filename`. */

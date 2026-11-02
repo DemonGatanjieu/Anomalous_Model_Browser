@@ -1,6 +1,7 @@
-"""run_workflow's blanks (api/mcp_fill.py): a saved workflow opened for the task once and reused,
-the blanks filled before the run, a picture from the input or output folder, and the gate a run
-that changes the canvas asks at. The page is stood in for; folders and tasks are temporary."""
+"""run_workflow's blanks (api/mcp_fill.py): a saved workflow, or one of its 方案, opened for the task
+once and reused, the blanks filled before the run, a picture from the input or output folder, and
+the gate a run that changes the canvas asks at. The page is stood in for; folders and tasks are temporary."""
+import json
 import os
 import sys
 import tempfile
@@ -31,7 +32,7 @@ class FillTests(unittest.TestCase):
             self.calls.append((action, dict(args)))
             return self.answers.pop(0)
         for patcher in (mock.patch.object(mcp_fill, "ask_page", side_effect=page),
-                        mock.patch.object(mcp_fill, "saved_workflow", return_value=("海边.json", "海边"))):
+                        mock.patch.object(mcp_fill, "saved_workflow", return_value=("海边.json", "海边", None))):
             patcher.start()
             self.addCleanup(patcher.stop)
 
@@ -55,6 +56,13 @@ class FillTests(unittest.TestCase):
         self.calls, self.answers = [], [{"needs_open": True}, {"opened": "海边"}, {"needs_open": True}]
         with self.assertRaises(mcp_tools.ToolError):
             mcp_fill.fill(self.ctx, "海边")
+
+    def test_a_plan_opens_its_workflow_with_that_set_and_has_a_tab_of_its_own(self):
+        with mock.patch.object(mcp_fill, "saved_workflow", return_value=("海边.json", "海边 / 夕阳", "params_1.json")):
+            self.answers = [{"opened": "海边 / 夕阳"}, {"set": {}}]
+            self.assertEqual(mcp_fill.fill(self.ctx, "海边 / 夕阳"), {"workflow": "海边 / 夕阳"})
+        self.assertEqual(self.calls[0], ("open_workflow", {"filename": "海边.json", "name": "海边 / 夕阳", "plan": "params_1.json"}))
+        self.assertEqual(self.calls[1], ("fill_slots", {"filename": "海边.json#params_1.json"}), "the plan's tab, not the workflow's own")
 
     def test_blanks_alone_and_nothing_at_all(self):
         self.assertIsNone(mcp_fill.fill(self.ctx, None, prompt=""))
@@ -118,6 +126,38 @@ class GateTests(unittest.TestCase):
         blocked = ai_gates.check("run_workflow", {"prompt": "少女"}, ref)
         self.assertTrue(blocked["isError"])
         self.assertIn("canvas", blocked["content"][0]["text"])
+
+
+class SavedTests(unittest.TestCase):
+    """Saved workflows and their 方案 as list_workflows lists them and run_workflow finds them."""
+
+    def setUp(self):
+        user = tempfile.mkdtemp(prefix="amb_fill_saved_")
+        patcher = mock.patch.object(mcp_tools.folder_paths, "get_user_directory", return_value=user)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        own = {"parameter_signature": {"value": "own"}}
+        for folder, name, data in (("anomalous_recipes", "recipe_a.json", {"name": "Anima 两段", "timestamp": 2, **own}),
+                                   ("anomalous_recipes", "recipe_b.json", {"name": "海边", "timestamp": 1}),
+                                   ("anomalous_parameters", "params_1.json", {"name": "左", "recipe_filename": "recipe_a.json", "timestamp": 1}),
+                                   ("anomalous_parameters", "params_2.json", {"name": "中", "recipe_filename": "recipe_a.json", "timestamp": 2}),
+                                   ("anomalous_parameters", "params_0.json", {"name": "Anima 两段", "recipe_filename": "recipe_a.json",
+                                                                              "timestamp": 3, **own})):
+            os.makedirs(os.path.join(user, "workflows", folder), exist_ok=True)
+            with open(os.path.join(user, "workflows", folder, name), "w", encoding="utf-8") as target:
+                json.dump(data, target)
+
+    def test_each_workflow_lists_its_plans_and_a_run_finds_them(self):
+        listed = {item["name"]: item for item in mcp_tools.list_workflows()["workflows"]}
+        self.assertEqual(listed["Anima 两段"]["plans"], ["Anima 两段 / 中", "Anima 两段 / 左"],
+                         "newest first, named for run_workflow; the set equal to the workflow's own values is left out")
+        self.assertNotIn("plans", listed["海边"])
+        self.assertEqual([item["name"] for item in mcp_tools.list_workflows("左")["workflows"]], ["Anima 两段"], "found by a plan's name")
+        self.assertEqual(mcp_fill.saved_workflow("海边"), ("recipe_b.json", "海边", None))
+        self.assertEqual(mcp_fill.saved_workflow("Anima 两段 / 左"), ("recipe_a.json", "Anima 两段 / 左", "params_1.json"))
+        for wrong in ("Anima 两段 / 右", "海边 / 左", "nothing", ""):
+            with self.assertRaises(mcp_tools.ToolError, msg=wrong):
+                mcp_fill.saved_workflow(wrong)
 
 
 if __name__ == "__main__":
