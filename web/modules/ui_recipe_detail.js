@@ -163,7 +163,8 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
 
     const gallery = { status: 'idle', images: [], scanned: 0 };
     const parameterGallery = { status: 'idle', images: [], scanned: 0, requestId: 0 };
-    const parameterState = { status: 'idle', notebooks: [], selectedFilename: null, editor: null, refresh: null };
+    // flowPick: the node picked in the flow (ui_recipe_flow.js), kept across presets until the details close
+    const parameterState = { status: 'idle', notebooks: [], selectedFilename: null, editor: null, refresh: null, flowPick: null };
     // The view: { kind: 'set' | 'gallery' | 'versions', filename } (a set's file, null for the workflow's own).
     const legacyTabs = { overview: 'set', parameters: 'set' };
     const viewState = {
