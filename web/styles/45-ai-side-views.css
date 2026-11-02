@@ -55,7 +55,8 @@
     color: var(--amb-text-dim);
     font-weight: 500;
 }
-@media (max-width: 1100px) {
+/* The AMB window's width (#anomalous-container), not the browser's: docked it is narrow in a wide browser. */
+@container (max-width: 1100px) {
     .anomalous-ai-side-btn-label { display: none; }
 }
 
