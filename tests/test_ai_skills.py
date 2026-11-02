@@ -59,6 +59,7 @@ class SkillTests(unittest.TestCase):
         self.assertIn("may cross families", advice)
         self.assertIn("add_lora it onto the second model", advice)
         self.assertIn("Never add a style, artist or LoRA the user did not pick", advice)
+        self.assertIn("Hold the base's seed", advice)
         ai_skills.set_on("staged_picture", False)
         self.assertNotIn("staged_picture", ai_skills.directory())
         with self.assertRaises(ai_skills.SkillError):

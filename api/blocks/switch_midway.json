@@ -67,8 +67,8 @@
       }
     }
   },
-  "after": "The canvas's sampler became two: the first runs steps 0 to 21 on the canvas's model, the second (second_model, a new loader that starts as the same model) from step 21 to the end, and the picture goes on to the decode as before. set_model second_model to the other model the user wants, of the same family (it reuses the prompts). A LoRA on the first model (a style) is not on the second: add_lora it onto second_model too when the user wants it kept. 21 is 60% of 35 steps: with other steps set the first sampler's end_at_step and the second's start_at_step both to about 60% (earlier: more of the second model, later: more of the first). er_sde does not split (the picture comes out grainy): on er_sde set both to dpmpp_2m_sde_gpu or euler. For a picture drawn from an empty latent; then run_workflow.",
-  "notes": "KSampler Advanced: the first part returns its leftover noise, the second adds none and finishes it, so the two parts make one run of the steps. er_sde does not resume mid-way (grain all over, the same model in both parts too); dpmpp_2m_sde_gpu and euler do. Tested on the user's route: Harem 1.5 for steps 0-21, Realskin 1.3 for 21-35, its style LoRA on both, 35 steps dpmpp_2m_sde_gpu beta.",
+  "after": "The canvas's sampler became two: the first runs steps 0 to 21 on the canvas's model, the second (second_model, a new loader that starts as the same model) from step 21 to the end, and the picture goes on to the decode as before. set_model second_model to the other model the user wants, of the same family (it reuses the prompts). A LoRA on the first model (a style) is not on the second: add_lora it onto second_model too when the user wants it kept. 21 is 60% of 35 steps: with other steps set the first sampler's end_at_step and the second's start_at_step both to about 60% (earlier: more of the second model, later: more of the first). er_sde split cleanly on one SDXL model but came out grainy on Anima: on another family's er_sde, dpmpp_2m_sde_gpu or euler is the safe choice for both. For a picture drawn from an empty latent; then run_workflow.",
+  "notes": "KSampler Advanced: the first part returns its leftover noise, the second adds none and finishes it, so the two parts make one run of the steps. er_sde split, the same model in both parts, one seed each: grainy on two Anima models (Kirazuri all over, Harem 1.5 blotchy), clean on Nova Anime XL (SDXL); dpmpp_2m_sde_gpu and euler split cleanly. Tested on the user's route: Harem 1.5 for steps 0-21, Realskin 1.3 for 21-35, its style LoRA on both, 35 steps dpmpp_2m_sde_gpu beta; on SDXL: Nova Anime XL for steps 0-18, MiaoMiao Harem v2.0 for 18-30, dpmpp_2m_sde_gpu beta.",
   "models": [],
   "tested": {
     "gpu": "RTX 4050 Laptop",
@@ -78,9 +78,14 @@
         "model": "Anima (Kirazuri → Realskin 1.3 at step 21)",
         "size": "1216×832",
         "seconds": 79
+      },
+      {
+        "model": "SDXL (Nova Anime XL → MiaoMiao Harem v2.0 at step 18 of 30)",
+        "size": "832×1216",
+        "seconds": 41
       }
     ],
-    "date": "2026-11-02"
+    "date": "2026-11-03"
   },
   "variants": {
     "anima": {
@@ -141,7 +146,7 @@
           }
         }
       },
-      "after": "The canvas's sampler became two, with the tested Anima sampling (35 steps, dpmpp_2m_sde_gpu, beta): the first runs steps 0 to 21 on the canvas's model, the second (second_model, a new UNET loader that starts as the same model) from step 21 to the end, and the picture goes on to the decode as before. set_model second_model to the other Anima model the user wants (it reuses the text encoder and prompts). A LoRA on the first model (a style) is not on the second: add_lora it onto second_model too when the user wants it kept (the tested route did). Move the switch with the first sampler's end_at_step and the second's start_at_step together (earlier: more of the second model, later: more of the first). Keep dpmpp_2m_sde_gpu: er_sde comes out grainy when split. For a picture drawn from an empty latent; then run_workflow."
+      "after": "The canvas's sampler became two, with the tested Anima sampling (35 steps, dpmpp_2m_sde_gpu, beta): the first runs steps 0 to 21 on the canvas's model, the second (second_model, a new UNET loader that starts as the same model) from step 21 to the end, and the picture goes on to the decode as before. set_model second_model to the other Anima model the user wants (it reuses the text encoder and prompts). A LoRA on the first model (a style) is not on the second: add_lora it onto second_model too when the user wants it kept (the tested route did). Move the switch with the first sampler's end_at_step and the second's start_at_step together (earlier: more of the second model, later: more of the first). Keep dpmpp_2m_sde_gpu: er_sde came out grainy split on two Anima models. For a picture drawn from an empty latent; then run_workflow."
     }
   }
 }
