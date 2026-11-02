@@ -229,8 +229,9 @@ function applyRows(entries, fromKey) {
  * Opens the comparison of `left` and `right`, each { image: { filename, subfolder, type? } },
  * { workflow, label } (a recipe or one of its parameter sets) or { canvas: true }. `focus`: a
  * workflow's focus values (recipe_focus.js focusTest), listed first with the starred ones.
+ * `nodeId`: a canvas node's id, to compare that node alone with its match on the other side.
  */
-export function openParamCompare(left, right, { focus = null } = {}) {
+export function openParamCompare(left, right, { focus = null, nodeId = null } = {}) {
     openWindow?.close();
     const controller = new AbortController();
     const sides = [left, right];
@@ -265,8 +266,9 @@ export function openParamCompare(left, right, { focus = null } = {}) {
         const [a, b] = read;
         const starred = keyParamTest();
         const isKey = (type, widget, ...ids) => starred(type, widget) || Boolean(focus?.(type, widget, ...ids));
-        const result = compareParams(a, b, { isKey, includeSame: showSame });
         const canvasKey = sides[0].canvas ? 'a' : (sides[1].canvas ? 'b' : null);
+        const only = nodeId !== null && canvasKey ? { side: canvasKey, id: String(nodeId) } : null;
+        const result = compareParams(a, b, { isKey, includeSame: showSame, only });
         const fromKey = canvasKey === 'a' ? 'b' : 'a';
         sidesRow.replaceChildren(sideCard(sides[0], 'A'), button('anomalous-compare-swap', '⇄', () => {
             sides.reverse();
@@ -314,8 +316,9 @@ export function openParamCompare(left, right, { focus = null } = {}) {
         if (result.onlyB.length) body.append(nodeList(t('compareOnlyIn', { side: 'B' }), result.onlyB));
         if (result.rewired.length) body.append(nodeList(t('compareRewired'), result.rewired));
 
+        // One node compared: the whole workflow's structure is beside the point.
         summary.replaceChildren(
-            el('span', `anomalous-compare-badge ${result.sameStructure ? 'is-same' : 'is-other'}`, t(result.sameStructure ? 'compareSameStructure' : 'compareOtherStructure')),
+            ...(only ? [] : [el('span', `anomalous-compare-badge ${result.sameStructure ? 'is-same' : 'is-other'}`, t(result.sameStructure ? 'compareSameStructure' : 'compareOtherStructure'))]),
             document.createTextNode(t('compareSummary', { diff: diffCount, same: result.sameCount })),
             sameToggle(),
         );

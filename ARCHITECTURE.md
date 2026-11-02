@@ -1147,7 +1147,7 @@ covered by the `styles.css` manifest.
   each file goes. `file_size.js` says a file's size in KB/MB/GB, without imports: a module low
   in the import graph (the gallery's viewer) takes it from there, not from a page module. `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
   insertion, model cards and history), `ui_node_model_picker.js` owns native combo
-  replacement, `ui_node_parameters.js` renders the panel's parameters section (each saved
+  replacement (its cards are the models page's card face, `ui_grid.js` `modelCardFace`), `ui_node_parameters.js` renders the panel's parameters section (each saved
   set as a card with the picture made with it and where it came from, values as bars or
   old → new, or all sets side by side), and
   `node_parameter_sets.js` merges the node type's saved values (material files and recipe

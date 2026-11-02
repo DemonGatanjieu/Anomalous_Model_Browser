@@ -85,6 +85,7 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 **以后怎么做**
 - 标题、标签栏下面的滚动框一律加 `clip-path: inset(0)`（它对点击判断也生效）。`overflow` 本身裁不住这种情况。
 - 新页面或新内容放进滚动框后，用上面的办法扫一遍：每个滚动框分步滚到底，检查每个可见按钮都能拿到自己的点击。
+- 2026-11-03 第三次：当前节点 →「查看全部」打开的历史生成图库，滚下去后点“关闭图库”点到了图片。它的样式写在代码里（`ui_gallery.js`），搜 CSS 找不到，所以上次没扫到。现在它和模型选择器的卡片区都加了 `clip-path: inset(0)`；扫的时候连写在代码里的滚动框一起扫（在页面上找 `overflow-y` 是 auto 或 scroll 的元素，不只搜 CSS 文件）。
 
 ---
 

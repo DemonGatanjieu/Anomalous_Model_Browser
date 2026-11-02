@@ -41,11 +41,14 @@ function modelCardDisplayName(model) {
 // The model each card shows, so that moving cards can tell one across a redraw.
 const cardModels = new WeakMap();
 
-/** A model's card; `pin`: the version pin of an open model (ui_model_versions.js), beside its version name. */
-function modelCard(owner, model, index, pin = null) {
+/**
+ * A model's card face: its cover (a video's still until it plays), the base or source badge, the
+ * version, the name and the file name. The models page and the model picker (ui_node_model_picker.js)
+ * both show it; `pin`: the version pin of an open model (ui_model_versions.js), beside its version name.
+ */
+export function modelCardFace(owner, model, index, pin = null) {
     const card = document.createElement('div');
     card.className = 'anomalous-card';
-    cardModels.set(card, model);
     if (model.preview_url) {
         const isVideo = model.preview_url.match(/\.mp4(?:&|$)/i) || model.preview_url.match(/\.webm(?:&|$)/i);
         if (isVideo) {
@@ -134,8 +137,14 @@ function modelCard(owner, model, index, pin = null) {
     physicalName.removeAttribute('title');
     labels.appendChild(physicalName);
     card.appendChild(labels);
+    return card;
+}
 
-    card.onclick = () => { 
+/** A model's card on the models page: its face, opening the details, with add, edit and scan. */
+function modelCard(owner, model, index, pin = null) {
+    const card = modelCardFace(owner, model, index, pin);
+    cardModels.set(card, model);
+    card.onclick = () => {
         owner.recipeModelReturn = null;
         focusModel(owner, model);
         owner.historyStack = []; 

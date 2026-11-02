@@ -3,9 +3,10 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from "./locales.js";
 import { planLoraInsertion, spliceLora } from "./graph_splice.js";
-import { collectMainModelContextRequests, formatModelTypeLabel, getBaseModelFamily, inferPickerModelType } from "./model_picker.js";
+import { collectMainModelContextRequests, getBaseModelFamily, inferPickerModelType } from "./model_picker.js";
 import { escapeHtml } from "./safe_dom.js";
 import { recordCanvasStep } from "./canvas_history.js";
+import { modelCardFace } from "./ui_grid.js";
 
 const t = (key, params) => translate(key, params);
 
@@ -189,9 +190,10 @@ export function _openGalleryReplacer(node, w, options = {}) {
         loadingText.textContent = t('pickerLoadingCovers');
         loadingText.style.cssText = 'color:var(--amb-text-muted);font-size:13px;padding:10px 14px 0;';
         const gridScroll = document.createElement('div');
-        gridScroll.style.cssText = 'overflow:auto;min-height:0;flex:1;padding:14px;';
+        // clip-path: cards scrolled up under the toolbar must not take its clicks (lessons.md, 2026-10-12).
+        gridScroll.style.cssText = 'overflow:auto;min-height:0;flex:1;padding:14px;clip-path:inset(0);';
         const grid = document.createElement('div');
-        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;align-content:start;';
+        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;align-content:start;';
         gridScroll.appendChild(grid);
         content.append(loadingText, gridScroll);
         body.append(folderPanel, content);
@@ -318,9 +320,11 @@ export function _openGalleryReplacer(node, w, options = {}) {
         const paintCard = (card) => {
             const path = card.dataset.path;
             const isSelected = path === selectedPath;
-            card.style.borderColor = isSelected ? '#6ea8ff' : path === currentPath ? '#e9b949' : 'rgba(var(--amb-ink-rgb), 0.09)';
-            card.style.boxShadow = isSelected ? '0 0 0 2px rgba(88,151,255,0.22),0 14px 28px rgba(0,0,0,0.28)' : '0 8px 20px rgba(0,0,0,0.16)';
+            card.style.borderColor = isSelected ? '#6ea8ff' : path === currentPath ? '#e9b949' : '';
+            card.style.boxShadow = isSelected ? '0 0 0 2px rgba(88,151,255,0.35),0 14px 28px rgba(0,0,0,0.28)' : '';
         };
+        // The models page's card face; a video cover shows its still and plays while pointed at.
+        const cardOwner = { energySaving: true, cardThumbnailMode: this.cardThumbnailMode };
         renderCards = () => {
             const term = searchInput.value.trim().toLowerCase();
             const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
@@ -345,67 +349,15 @@ export function _openGalleryReplacer(node, w, options = {}) {
                 const end = Math.min(index + 40, paths.length);
                 for (; index < end; index += 1) {
                     const path = paths[index];
-                    const isCurrent = currentPath === path;
-                    const info = modelInfo[path] || {};
-                    const baseModel = info.metadata?.baseModel || '';
-                    const card = document.createElement('div');
+                    const info = modelInfo[path] || { filename: getName(path), metadata: {} };
+                    const card = modelCardFace(cardOwner, { ...info, preview_url: info.preview_url || previews[path] || '' }, index);
+                    card.classList.add('anomalous-picker-card');
                     card.tabIndex = 0;
                     card.setAttribute('role', 'button');
                     card.dataset.path = path;
-                    card.style.cssText = 'position:relative;background:linear-gradient(160deg,var(--amb-bg-card-hover),var(--amb-bg-card));border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid transparent;transition:transform 0.12s,box-shadow 0.12s;min-width:0;';
+                    card.title = normalizePath(path);
                     paintCard(card);
-                    const previewBox = document.createElement('div');
-                    previewBox.style.cssText = 'height:150px;background:radial-gradient(circle at 50% 15%,var(--amb-lt-card-hover,#2b3041),var(--amb-bg-page) 72%);display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
-                    const previewUrl = info.preview_url || previews[path];
-                    if (/\.(mp4|webm)(?:$|\?|&|#)/i.test(previewUrl || '')) {
-                        const video = document.createElement('video');
-                        video.src = previewUrl;
-                        video.muted = true;
-                        video.loop = true;
-                        video.playsInline = true;
-                        video.preload = 'metadata';
-                        video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-                        previewBox.appendChild(video);
-                    } else if (previewUrl) {
-                        const image = document.createElement('img');
-                        image.src = previewUrl;
-                        image.alt = '';
-                        image.loading = 'lazy';
-                        image.decoding = 'async';
-                        image.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-                        previewBox.appendChild(image);
-                    } else {
-                        previewBox.innerHTML = '<span style="display:inline-block;opacity:0.25;"><svg style="width:28px;height:28px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>';
-                    }
-                    if (isCurrent) {
-                        const badge = document.createElement('span');
-                        badge.textContent = t('pickerCurrent');
-                        badge.style.cssText = 'position:absolute;top:6px;left:6px;background:rgba(255,193,7,0.92);color:#111;padding:3px 6px;border-radius:4px;font-size:10px;font-weight:800;';
-                        previewBox.appendChild(badge);
-                    }
-                    const badgeStack = document.createElement('div');
-                    badgeStack.style.cssText = 'position:absolute;top:6px;right:6px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;max-width:76%;';
-                    const categoryBadge = document.createElement('span');
-                    categoryBadge.textContent = formatModelTypeLabel(info.type, pickerType.label);
-                    categoryBadge.style.cssText = 'padding:3px 6px;border-radius:5px;background:var(--amb-lt-chip,rgba(25,34,54,0.9));border:1px solid color-mix(in srgb, var(--amb-link) 28%, transparent);color:var(--amb-lt-accent-text,#b8d0ff);font-size:9px;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
-                    badgeStack.appendChild(categoryBadge);
-                    if (baseModel) {
-                        const baseBadge = document.createElement('span');
-                        baseBadge.textContent = baseModel;
-                        baseBadge.title = `${t('pickerBaseModel')}: ${baseModel}`;
-                        baseBadge.style.cssText = 'max-width:100%;padding:3px 6px;border-radius:5px;background:var(--amb-lt-ok-chip,rgba(7,50,43,0.9));border:1px solid rgba(70,220,185,0.25);color:var(--amb-lt-ok,#8ce1cf);font-size:9px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
-                        badgeStack.appendChild(baseBadge);
-                    }
-                    previewBox.appendChild(badgeStack);
-                    const name = document.createElement('div');
-                    name.textContent = getName(path);
-                    name.title = normalizePath(path);
-                    name.style.cssText = 'padding:9px 9px 3px;font-size:12px;color:var(--amb-lt-text,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;';
-                    const folder = document.createElement('div');
-                    folder.textContent = getFolder(path) || t('pickerRoot');
-                    folder.title = getFolder(path);
-                    folder.style.cssText = 'padding:0 9px 9px;font-size:9px;color:var(--amb-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-                    card.append(previewBox, name, folder);
+                    if (currentPath === path) card.appendChild(Object.assign(document.createElement('span'), { className: 'anomalous-picker-current', textContent: t('pickerCurrent') }));
                     const choose = () => {
                         selectedPath = path;
                         updateSelection();
@@ -417,14 +369,6 @@ export function _openGalleryReplacer(node, w, options = {}) {
                             event.preventDefault();
                             choose();
                         }
-                    };
-                    card.onmouseenter = () => {
-                        card.style.transform = 'translateY(-2px)';
-                        card.querySelector('video')?.play?.().catch(() => {});
-                    };
-                    card.onmouseleave = () => {
-                        card.style.transform = 'none';
-                        card.querySelector('video')?.pause?.();
                     };
                     fragment.appendChild(card);
                 }

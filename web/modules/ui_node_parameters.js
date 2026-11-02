@@ -5,8 +5,8 @@
  * came from: a workflow's parameter set (Open shows it there), a kept picture (open it), or
  * saved here, with the day. Then each value it would change as a picture (numbers as two bars,
  * choices as old → new) and what stays and why (seeds, model files, choices this computer does
- * not have); "Show all" lists the equal values too. ⇄ compares the whole workflow with the
- * canvas; one press puts the changes in (the receipt undoes it); saved values (not a
+ * not have); "Show all" lists the equal values too. ⇄ opens the comparison window on this node
+ * alone, its values beside the set's; one press puts the changes in (the receipt undoes it); saved values (not a
  * recipe's) can be deleted. Side by side: the current values and every set in columns, the
  * ones a set would change marked. "Save these values" keeps the node's values for the next
  * node of its kind. On top, one line on where the node's values came from: the set last put
@@ -111,23 +111,16 @@ function openSet(owner, source) {
     return opening;
 }
 
-/** Compares the whole workflow behind the entry with the canvas: a recipe set's, else the kept picture's. */
-async function compareWithCanvas(entry) {
-    const set = entry.sources.find(source => source.kind === 'recipe' && source.setFile);
-    if (!set) {
-        const kept = entry.sources.find(source => source.image);
-        openParamCompare({ image: { ...kept.image, type: 'output' } }, { canvas: true });
-        return;
-    }
-    try {
-        const response = await fetch(`/anomalous/parameters?recipe_filename=${encodeURIComponent(set.recipeFile)}`, { cache: 'no-store' });
-        const notebooks = response.ok ? (await response.json()).notebooks || [] : [];
-        const workflow = notebooks.find(notebook => notebook.filename === set.setFile)?.data?.workflow;
-        if (!workflow) throw new Error('no workflow');
-        openParamCompare({ workflow, label: set.setName || entry.name }, { canvas: true });
-    } catch (error) {
-        showWorkbenchToast(t('currentNodeCompareFailed'));
-    }
+/**
+ * Compares `node` with the entry's values, that node alone: a copy of it holding those values
+ * and nothing wired, under the node's id so the two pair.
+ */
+function compareWithCanvas(entry, node) {
+    const copy = node.serialize();
+    copy.widgets_values = entry.values;
+    copy.inputs = (copy.inputs || []).map(input => ({ ...input, link: null }));
+    copy.outputs = (copy.outputs || []).map(output => ({ ...output, links: [] }));
+    openParamCompare({ workflow: { nodes: [copy], links: [], groups: [] }, label: entry.name }, { canvas: true }, { nodeId: node.id });
 }
 
 /** One line on where the values came from: an icon, what, the day, and a way to open it. */
@@ -277,11 +270,9 @@ function entryCard(node, entry, ctx) {
         }));
     }
     actions.append(el('span', 'anomalous-node-param-gap'));
-    if (entry.sources.some(source => (source.kind === 'recipe' && source.setFile) || source.image)) {
-        const compare = button('anomalous-node-param-secondary', t('currentNodeCompare'), () => compareWithCanvas(entry));
-        compare.title = t('currentNodeCompareHint');
-        actions.append(compare);
-    }
+    const compare = button('anomalous-node-param-secondary', t('currentNodeCompare'), () => compareWithCanvas(entry, node));
+    compare.title = t('currentNodeCompareHint');
+    actions.append(compare);
     // Values saved here or kept from images can be deleted; a recipe's sets belong to the recipe.
     const saved = [...new Set(entry.sources.filter(source => source.kind === 'material' && source.filename).map(source => source.filename))];
     if (saved.length) actions.append(button('anomalous-node-param-delete', t('currentNodeDelete'), () => ctx.remove(entry, saved)));

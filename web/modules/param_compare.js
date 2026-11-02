@@ -83,17 +83,20 @@ function pairsByType(leftovers, others) {
  * muted on one side only, { name: '', mode: true, a, b }. Values `isKey(type, widget, bId, aId)` stars are
  * not in `nodes` but in `keys` ([{ node, row }], equal ones too); with `includeSame` the other
  * equal values are in `nodes` too (`same: true`). `sameCount` counts the values equal on both
- * sides, `compared` all values set side by side (none: nothing could be paired).
+ * sides, `compared` all values set side by side (none: nothing could be paired). `only`
+ * ({ side: 'a' | 'b', id }) keeps one node: every node still pairs, but the values, the counts
+ * and onlyA / onlyB are that node's alone, without `rewired` (`sameStructure` stays the whole workflow's).
  */
-export function compareParams(a, b, { isKey = () => false, includeSame = false } = {}) {
+export function compareParams(a, b, { isKey = () => false, includeSame = false, only = null } = {}) {
     const nodes = [];
     const keys = [];
     const rewired = [];
     let sameCount = 0;
     let differing = 0;
     const pair = (left, right) => {
-        const values = compareValues(left, right, isKey, includeSame);
         const node = { id: right.id, aId: left.id, bId: right.id, type: right.type, title: right.title };
+        if (only && node[`${only.side}Id`] !== only.id) return;
+        const values = compareValues(left, right, isKey, includeSame);
         sameCount += values.same;
         differing += [...values.rows, ...values.keys].filter(row => !row.same).length;
         if (values.rows.length) nodes.push({ ...node, rows: values.rows });
@@ -115,10 +118,14 @@ export function compareParams(a, b, { isKey = () => false, includeSame = false }
         pair(left, right);
         paired.add(left).add(right);
     }
+    const mine = (side, refs) => (only ? refs.filter(ref => side === only.side && ref.id === only.id) : refs);
     const onlyA = leftovers.filter(node => !paired.has(node)).map(nodeRef);
     const onlyB = others.filter(node => !paired.has(node)).map(nodeRef);
     const sameStructure = !leftovers.length && !others.length && !rewired.length;
-    return { sameStructure, nodes, keys, onlyA, onlyB, rewired, sameCount, compared: sameCount + differing };
+    return {
+        sameStructure, nodes, keys, onlyA: mine('a', onlyA), onlyB: mine('b', onlyB), rewired: only ? [] : rewired,
+        sameCount, compared: sameCount + differing,
+    };
 }
 
 const tagsOf = text => String(text).split(/[,，\n]/).map(tag => tag.trim()).filter(Boolean);

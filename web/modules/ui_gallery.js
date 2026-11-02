@@ -211,6 +211,8 @@ export async function showGeneratedGallery(model) {
             contentCont.id = 'anomalous-generated-gallery-content';
             contentCont.style.flex = '1';
             contentCont.style.overflowY = 'auto';
+            // Pictures scrolled up under the header still took the close button's clicks (lessons.md, 2026-10-12).
+            contentCont.style.clipPath = 'inset(0)';
             contentCont.style.padding = '20px';
             contentCont.style.display = 'grid';
             contentCont.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';

@@ -722,6 +722,25 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     transform: scale(1.02);
 }
 
+/* The model picker (ui_node_model_picker.js) shows these cards a little shorter; "current" sits top right. */
+.anomalous-picker-card {
+    height: 250px;
+}
+
+.anomalous-picker-current {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: rgba(255, 193, 7, 0.92);
+    color: #111;
+    font-size: 0.68rem;
+    font-weight: 800;
+    pointer-events: none;
+}
+
 #anomalous-container.anomalous-sidebar-closed #anomalous-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px;

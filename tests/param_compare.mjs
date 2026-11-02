@@ -70,6 +70,18 @@ assert.deepEqual(other.nodes.map(n => [n.aId, n.bId, n.id, n.rows[0].aText, n.ro
 assert.deepEqual([other.onlyA.map(n => n.id), other.onlyB.map(n => n.id), other.compared], [['6', '7'], ['71', '72'], 1]);
 assert.equal(compareParams(readParams(graph([node(1, 'A', {})])), readParams(graph([node(2, 'B', {})]))).compared, 0);
 
+// One node alone (the current node's ⇄): its pair only, though every node still pairs.
+const one = compareParams(readParams(imageA), readParams(imageB), { only: { side: 'b', id: '6' } });
+assert.deepEqual(one.nodes.map(n => [n.id, n.rows.map(r => r.name)]), [['6', ['text']]]);
+assert.deepEqual([one.sameCount, one.compared, one.keys], [0, 1, []]);
+const renumbered = compareParams(readParams(imageA), readParams(graph([node(70, 'KSampler', { steps: 30 })])), { only: { side: 'b', id: '70' } });
+assert.deepEqual(renumbered.nodes.map(n => [n.aId, n.bId]), [['3', '70']], 'paired by type, then kept');
+assert.deepEqual([renumbered.onlyA, renumbered.onlyB], [[], []], 'the other unpaired nodes are not this one');
+const alone = compareParams(readParams(imageA), readParams(imageC), { only: { side: 'a', id: '6' } });
+assert.deepEqual([alone.nodes, alone.onlyA.map(n => n.id), alone.onlyB, alone.rewired], [[], ['6'], [], []]);
+const rewiredOne = compareParams(readParams(imageA), readParams(imageC), { only: { side: 'a', id: '3' } });
+assert.deepEqual([rewiredOne.nodes.map(n => n.id), rewiredOne.rewired], [['3'], []], 'one node: its values, not its wiring');
+
 // Prompts as tags: the tags only one side has, each once.
 assert.deepEqual(textDifference('1girl, red dress, smile, red dress', '1girl, smile, white dress, hat'),
     { tags: true, onlyA: ['red dress'], onlyB: ['white dress', 'hat'] });
