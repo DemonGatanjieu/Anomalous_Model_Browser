@@ -144,6 +144,13 @@ class BuildToolTests(unittest.TestCase):
         mcp_canvas_edit.new_workflow({})
         self.assertIsNone(self.page.call_args[0][1]["nodes"], "a blank tab")
 
+    def test_a_saved_workflow_or_one_of_its_sets_opens(self):
+        for workflow, found in (("海边", ("recipe_b.json", "海边", None)),
+                                ("海边 / 夕阳", ("recipe_b.json", "海边 / 夕阳", "params_1.json"))):
+            with mock.patch.object(mcp_fill, "saved_workflow", return_value=found):
+                mcp_canvas_edit.open_workflow({}, workflow)
+            self.assertEqual(self.page.call_args, mock.call("open_workflow", {"filename": found[0], "name": found[1], "plan": found[2]}, timeout=60))
+
     def test_bad_arguments_never_reach_the_page(self):
         bad = [
             lambda: mcp_canvas_edit.add_node({}, ""),

@@ -314,8 +314,8 @@ def new_workflow(ctx, name="", nodes=None):
 
 
 def open_workflow(ctx, workflow):
-    filename, name = mcp_fill.saved_workflow(workflow)
-    return _page("open_workflow", {"filename": filename, "name": name}, timeout=60)
+    filename, name, plan = mcp_fill.saved_workflow(workflow)
+    return _page("open_workflow", {"filename": filename, "name": name, "plan": plan}, timeout=60)
 
 
 _NODE_ID = {"type": "integer", "description": "A node id."}
