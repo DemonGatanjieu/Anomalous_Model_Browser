@@ -759,3 +759,56 @@
     .anomalous-wfd-info { grid-template-columns: 96px minmax(0, 1fr); }
     .anomalous-wfd-tip { flex-wrap: wrap; }
 }
+
+/* The flow on top of a workflow's details (ui_recipe_flow.js): its stages, then its presets. */
+.anomalous-wfd-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--amb-ok) 35%, var(--amb-border));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--amb-ok) 7%, var(--amb-bg-panel));
+}
+.anomalous-wfd-flow-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; }
+.anomalous-wfd-flow-arrow { display: flex; align-items: center; color: var(--amb-text-dim); font-size: 18px; }
+.anomalous-wfd-flow-stage {
+    display: flex;
+    flex: 1 1 120px;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 100px;
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 10px;
+    background: var(--amb-bg-card);
+}
+.anomalous-wfd-flow-stage.is-save { flex: 0 0 auto; min-width: 0; padding: 10px; }
+.anomalous-wfd-flow-stage.is-changed { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 12%, var(--amb-bg-card)); }
+.anomalous-wfd-flow-stage.is-skipped .anomalous-wfd-flow-model { color: var(--amb-text-dim); text-decoration: line-through; }
+.anomalous-wfd-flow-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; color: var(--amb-text-main); font-size: 14px; font-weight: 600; }
+.anomalous-wfd-flow-tag { padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--amb-link) 16%, transparent); color: var(--amb-text-main); font-size: 11px; font-weight: 500; }
+.anomalous-wfd-flow-model { overflow: hidden; color: var(--amb-text-main); font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-wfd-flow-facts { color: var(--amb-text-soft); font-size: 12px; }
+.anomalous-wfd-flow-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.anomalous-wfd-flow-preset {
+    display: flex;
+    flex: 0 1 200px;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 120px;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, #8f86e8 45%, var(--amb-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, #8f86e8 10%, var(--amb-bg-card));
+    color: var(--amb-text-main);
+    font: inherit;
+    cursor: pointer;
+}
+.anomalous-wfd-flow-preset:hover { border-color: #8f86e8; }
+.anomalous-wfd-flow-preset.is-active { border-color: var(--amb-link); box-shadow: 0 0 0 1px var(--amb-link); }
+.anomalous-wfd-flow-preset-name { max-width: 100%; overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-wfd-flow-preset-note { color: var(--amb-text-soft); font-size: 12px; }
+.anomalous-wfd-flow-hint { margin: 0; color: var(--amb-text-soft); font-size: 12px; }

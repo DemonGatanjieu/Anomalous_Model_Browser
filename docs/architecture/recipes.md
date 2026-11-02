@@ -28,7 +28,7 @@ no half recipe.
 ## Product and data model
 
 Workspace contains Combos (formerly Prompt Notes) and Workflow Recipes.
-Recipe Parameter Notebooks are presented as Parameter Sets (参数方案). Internal
+Recipe Parameter Notebooks are presented as presets (预设). Internal
 notebook route and property names may remain stable for compatibility even when
 the user-facing presentation changes.
 

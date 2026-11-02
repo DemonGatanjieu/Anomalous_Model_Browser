@@ -1034,7 +1034,13 @@ covered by the `styles.css` manifest.
   (Back, the name, the models' state, Open, ⋯ edit and export), then `ui_recipe_sets.js`'s left
   column (the workflow's own values, the saved sets unlike them with their key values, Save the
   canvas, New; then all pictures and versions) and the chosen view on the right.
-  `ui_recipe_set_view.js` is one set: Apply to canvas, ⇄ (with the workflow's own or the canvas),
+  `ui_recipe_flow.js` draws the workflow's flow on top of it: one stage per sampler in the order
+  they run (base, goes on, enlarge and redraw; the main model through its LoRAs and patches, the
+  steps or the part of a split it runs, the redraw strength), then the saves; under it the presets
+  with the stages each changes, the one shown lit with its changed stages marked; the stages are read
+  from the saved graph alone by `recipe_flow.js` (`flowStages`, `changedNodes`; `tests/recipe_flow.mjs`).
+  `ui_recipe_set_view.js` is one set: Apply to canvas, ✦ hand it to the AI (`workflow / preset`),
+  ⇄ (with the workflow's own or the canvas),
   ⋯ (copy as a new set, rename, delete); the cover, notes and tags for the workflow's own
   (`ui_recipe_info.js`, which also holds the name and the models' state); the workflow's focus
   values (重点参数: `recipe_focus.js` keeps them in the recipe's params and tells comparisons which

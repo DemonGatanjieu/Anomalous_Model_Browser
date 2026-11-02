@@ -22,6 +22,8 @@ import { openParamCompare } from './ui_param_compare.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 import { focusTest } from './recipe_focus.js';
 import { drawFocus, focusStars } from './ui_recipe_focus.js';
+import { renderFlow } from './ui_recipe_flow.js';
+import { handWorkflowToAi } from './ui_ai_handoff.js';
 
 const t = (key, params) => translate(key, params);
 const FOLDS_KEY = 'anomalous_wfd_folds';
@@ -149,6 +151,10 @@ function setHead(main, ctx, notebook, source) {
     apply.onclick = () => applyToCanvas(source, apply, status);
     const own = { workflow: recipe.workflow, label: t('workflowOwnValues') };
     const mine = { workflow: source.workflow, label: name };
+    const hand = button(actions, `✦ ${t('aiHand')}`, 'anomalous-wf-filter');
+    hand.title = t('workflowHandHint');
+    // the AI runs it by name: run_workflow(workflow="workflow / preset") applies the preset (api/mcp_fill.py)
+    hand.onclick = () => void handWorkflowToAi(ctx.owner, notebook ? `${recipe.name} / ${notebook.name}` : recipe.name);
     const compare = button(actions, `⇄ ${t('workflowCompare')}`, 'anomalous-wf-filter');
     compare.onclick = () => {
         store(COMPARE_TIP_KEY, true);
@@ -240,6 +246,8 @@ export function renderSetView(main, ctx) {
         return;
     }
     const source = notebook?.data?.workflow ? notebook.data : recipe;
+    const flow = renderFlow(ctx, notebook);
+    if (flow) main.appendChild(flow);
     const sides = setHead(main, ctx, notebook, source);
     if (notebook) compareTip(main);
     else if (parameterState.status === 'ready' && !listedSets(recipe, parameterState.notebooks).length) noSetsTip(main, ctx);
