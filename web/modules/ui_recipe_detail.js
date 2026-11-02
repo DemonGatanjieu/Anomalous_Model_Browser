@@ -1,7 +1,8 @@
 /**
- * A workflow's details: the bar (Back, its name edited in place, the models' state, Open and
- * ⋯), then its values on the left (the workflow's own, the saved sets, all its pictures, its
- * versions; ui_recipe_sets.js) and the chosen one on the right (ui_recipe_set_view.js, or the
+ * A workflow's details: the bar (Back, its name edited in place, the models' state, Open and ⋯),
+ * then, one column, its flow (ui_recipe_flow.js, with the preset shown), the row of tabs under it
+ * (its own values, each preset, all its pictures, its versions; ui_recipe_sets.js, staying in view
+ * while the rest scrolls) and the tab chosen in a panel under them (ui_recipe_set_view.js, or the
  * pictures or versions). Opening on the canvas, editing and model detail end the session.
  */
 
@@ -13,8 +14,9 @@ import { appendText, button } from './ui_recipe_detail_dom.js';
 import { renderVersions } from './ui_recipe_versions.js';
 import { renderRecipeGallery } from './ui_recipe_gallery.js';
 import { recipeCanvasActionLabel, renderInlineTitle, renderReadiness } from './ui_recipe_info.js';
-import { renderDetailNav, listedSets } from './ui_recipe_sets.js';
+import { renderPresetTabs, listedSets } from './ui_recipe_sets.js';
 import { renderSetView } from './ui_recipe_set_view.js';
+import { renderFlow } from './ui_recipe_flow.js';
 import { exportRecipePackage } from './ui_recipe_package.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 import { loadCurrentPreviews, openLocalModel } from './ui_recipe_models.js';
@@ -176,11 +178,9 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const { bar, status } = detailBar(owner, recipe, references, finish);
     const body = document.createElement('div');
     body.className = 'anomalous-wfd-body';
-    const nav = document.createElement('nav');
-    nav.className = 'anomalous-wfd-nav';
     const main = document.createElement('div');
     main.className = 'anomalous-wfd-main';
-    body.append(nav, main);
+    body.append(main);
 
     const openModel = (reference) => openRecipeModel(owner, reference, finish);
     const ctx = {
@@ -194,12 +194,17 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         if (owner.recipeDetailView !== view) return;
         owner.recipeDetailActiveTab = viewState.kind;
         owner.recipeDetailSelectedSet = viewState.filename;
-        renderDetailNav(nav, ctx);
         main.replaceChildren();
+        const panel = document.createElement('div');
+        panel.className = 'anomalous-wfd-panel';
         try {
-            if (viewState.kind === 'gallery') renderRecipeGallery(main, owner, recipe, gallery, refreshGallery);
-            else if (viewState.kind === 'versions') renderVersions(main, owner, recipe, history, finish);
-            else renderSetView(main, ctx);
+            const flow = renderFlow(ctx, viewState.kind === 'set' && !parameterState.editor ? ctx.notebook : null);
+            if (flow) main.appendChild(flow);
+            renderPresetTabs(appendText(main, 'div', '', 'anomalous-wfd-tabrow'), ctx);
+            main.appendChild(panel);
+            if (viewState.kind === 'gallery') renderRecipeGallery(panel, owner, recipe, gallery, refreshGallery);
+            else if (viewState.kind === 'versions') renderVersions(panel, owner, recipe, history, finish);
+            else renderSetView(panel, ctx);
         } catch (error) {
             console.error('Could not draw the workflow details:', error);
             appendText(main, 'p', `${t('recipeLoadError')} ${error?.message || ''}`, 'anomalous-recipe-dialog-error');
@@ -260,13 +265,16 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         const setChanged = kind === 'set' && file !== viewState.filename;
         viewState.kind = kind;
         if (kind === 'set') viewState.filename = file || null;
-        main.scrollTop = 0;
         if (setChanged) {
             parameterGallery.status = 'idle';
             void refreshParameterGallery();
         }
         if (kind === 'gallery') void refreshGallery();
         render();
+        // scrolled past the new panel's top: back to it, under the tabs that stay in view; else the flow stays where it was
+        const panel = main.querySelector('.anomalous-wfd-panel');
+        const tabs = main.querySelector('.anomalous-wfd-tabrow');
+        if (panel && tabs) main.scrollTop = Math.min(main.scrollTop, panel.offsetTop - tabs.offsetHeight);
     };
 
     view.append(bar, body);

@@ -1,7 +1,8 @@
 /**
- * The box picked in a workflow's flow, under it (ui_recipe_flow.js): what it is with its full file
- * name, whether it runs with the values shown, and every value of its node, a value the preset
- * changed struck out as the workflow's own with the preset's after it. A stage that runs names its
+ * The box picked in a workflow's flow, under it (ui_recipe_flow.js), nothing while none is: what it
+ * is with its full file name, whether it runs with the values shown, × to close, and every value of
+ * its node, a value the preset changed struck out as the workflow's own with the preset's after it
+ * (both orange). A stage that runs names its
  * other nodes that changed (its model, a LoRA), each a button to that one; a box unused with these
  * values names the presets that use it, each a button to that preset.
  */
@@ -34,13 +35,10 @@ function links(card, label, entries) {
  * ([{label, filename, flow}], the own values first), pick(id).
  */
 export function renderInspector(panel, ctx, { flow, shown, changed, current, presets, pick }) {
-    const card = appendText(panel, 'div', '', 'anomalous-wfd-flow-inspect');
     const id = ctx.parameterState.flowPick;
     const item = id && (flow.stages.find(stage => stage.sampler === id) || flow.parts.find(part => part.ids.includes(id)));
-    if (!item) {
-        appendText(card, 'p', t('workflowFlowPickHint'), 'anomalous-wfd-muted');
-        return;
-    }
+    if (!item) return;
+    const card = appendText(panel, 'div', '', 'anomalous-wfd-flow-inspect');
     const node = nodeIn(shown, id);
     const used = usedIn(flow, id);
     const head = appendText(card, 'div', '', 'anomalous-wfd-flow-inspect-head');
@@ -48,6 +46,9 @@ export function renderInspector(panel, ctx, { flow, shown, changed, current, pre
     appendText(titles, 'strong', roleOf(item), 'anomalous-wfd-flow-inspect-title');
     appendText(titles, 'div', item.file || node?.title || node?.type || '', 'anomalous-wfd-flow-inspect-file');
     appendText(head, 'span', t(stateKey(item, used)), `anomalous-wfd-flow-state${used ? ' is-on' : ''}`);
+    const close = button(head, '×', 'anomalous-wf-icon-btn');
+    close.title = t('workflowFlowClose');
+    close.onclick = () => pick(id);
     if (item.ids?.length > 1) appendText(card, 'small', t('workflowFlowNodes', { count: item.ids.length, ids: item.ids.map(other => `#${other}`).join(' ') }), 'anomalous-wfd-muted');
     if (!used) {
         const where = presets().filter(preset => preset.filename !== current && usedIn(preset.flow, id));

@@ -1,7 +1,8 @@
 /**
- * The right side of a workflow's details for one set of values (the workflow's own, or a saved
- * set): its name with Apply to canvas, ⇄ and ⋯; for the workflow's own, its cover, notes and
- * tags; its focus values (重点参数, ui_recipe_focus.js; each node value has a ☆ to mark one);
+ * The panel under a workflow's preset tabs for one set of values (the workflow's own, or a saved
+ * preset): its name with Apply to canvas, ✦, ⇄ and ⋯, and for a preset how many values it sets
+ * unlike the workflow's own (orange in the flow above); for the workflow's own, its cover, notes
+ * and tags; its focus values (重点参数, ui_recipe_focus.js; each node value has a ☆ to mark one);
  * the main values (steps, CFG, sampler…, the model and LoRAs); the prompts; the pictures
  * made with these values (each ⇄ to compare); the models (the workflow's own only) and every
  * node's values, folded (this browser remembers which the viewer left open). A tip says what a
@@ -17,12 +18,11 @@ import { renderParameterNotebookEditor, renderPromptSection, renderRawNodesLazy 
 import { renderImageGrid } from './ui_recipe_gallery.js';
 import { renderRecipeInfo } from './ui_recipe_info.js';
 import { modelDisplayName, renderRecipeModels } from './ui_recipe_models.js';
-import { deleteSet, editNewSet, listedSets, renameSet, saveCanvasAsSet } from './ui_recipe_sets.js';
+import { deleteSet, differenceNote, editNewSet, listedSets, renameSet, saveCanvasAsSet } from './ui_recipe_sets.js';
 import { openParamCompare } from './ui_param_compare.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 import { focusTest } from './recipe_focus.js';
 import { drawFocus, focusStars } from './ui_recipe_focus.js';
-import { renderFlow } from './ui_recipe_flow.js';
 import { handWorkflowToAi } from './ui_ai_handoff.js';
 
 const t = (key, params) => translate(key, params);
@@ -142,7 +142,9 @@ function setHead(main, ctx, notebook, source) {
     const titles = document.createElement('div');
     titles.className = 'anomalous-wfd-set-titles';
     appendText(titles, 'h2', name, 'anomalous-wfd-set-title');
-    appendText(titles, 'small', notebook ? dateText(notebook.timestamp) : t('workflowOwnValuesHint'), 'anomalous-wfd-muted');
+    const meta = appendText(titles, 'small', notebook ? dateText(notebook.timestamp) : t('workflowOwnValuesHint'), 'anomalous-wfd-muted');
+    const differs = notebook && differenceNote(notebook, recipe);
+    if (differs?.differs) appendText(meta, 'span', t('workflowPresetMarked', { count: differs.count }), 'anomalous-wfd-set-differs');
     const actions = document.createElement('div');
     actions.className = 'anomalous-wfd-actions';
     const status = document.createElement('small');
@@ -246,8 +248,6 @@ export function renderSetView(main, ctx) {
         return;
     }
     const source = notebook?.data?.workflow ? notebook.data : recipe;
-    const flow = renderFlow(ctx, notebook);
-    if (flow) main.appendChild(flow);
     const sides = setHead(main, ctx, notebook, source);
     if (notebook) compareTip(main);
     else if (parameterState.status === 'ready' && !listedSets(recipe, parameterState.notebooks).length) noSetsTip(main, ctx);

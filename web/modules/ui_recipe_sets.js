@@ -1,8 +1,8 @@
 /**
- * The left column of a workflow's details: its values (the workflow's own, then each saved
- * set unlike them, newest first) and two more views, all its pictures and its versions. A set
- * shows its key values and how many values differ (ui_param_set_keys.js); Save the canvas and
- * New add one; a set's ⋯ renames or deletes it.
+ * The presets of a workflow's details: the row of tabs under the flow (the workflow's own values,
+ * then each saved preset unlike them, newest first, each with how many values it changes; + to add
+ * one; all its pictures and its versions at the end) and the preset actions (save the canvas, new,
+ * rename, delete).
  */
 
 import { app } from '../../../scripts/app.js';
@@ -12,7 +12,7 @@ import { assertRecipeSkeleton } from './recipe_actions.js';
 import { captureRecipeDraft } from './recipe_parser.js';
 import { appendText, button, dateText } from './ui_recipe_detail_dom.js';
 import { cloneJson } from './ui_recipe_parameter_utils.js';
-import { decorateParameterSet, nextSetName } from './ui_param_set_keys.js';
+import { nextSetName, setDifferences } from './ui_param_set_keys.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 
 const t = (key, params) => translate(key, params);
@@ -97,79 +97,56 @@ export async function deleteSet(ctx, notebook) {
     }
 }
 
-function navItem(list, label, active, onClick, className = '') {
-    const item = button(list, label, `anomalous-wfd-nav-item ${className}${active ? ' is-active' : ''}`);
+/** One tab of the row: `name` over `note`; `className` adds is-own, is-active and the like. */
+function tab(row, name, note, className, onClick) {
+    const item = button(row, '', `anomalous-wfd-tab ${className}`.trim());
+    appendText(item, 'span', name, 'anomalous-wfd-tab-name').title = name;
+    if (note) appendText(item, 'span', note.text, `anomalous-wfd-tab-note${note.differs ? ' is-differs' : ''}`);
+    item.setAttribute('role', 'tab');
+    item.setAttribute('aria-selected', String(className.includes('is-active')));
     item.onclick = onClick;
     return item;
 }
 
-/** A saved set's row: name and date, its key values (added by decorateParameterSet), ⇄ and ⋯ on hover. */
-function setRow(list, ctx, notebook, active) {
-    const row = document.createElement('div');
-    row.className = `anomalous-wfd-set${active ? ' is-active' : ''}`;
-    row.onclick = () => {
-        ctx.parameterState.editor = null;
-        ctx.select('set', notebook.filename);
-    };
-    const main = document.createElement('div');
-    main.className = 'anomalous-wfd-set-main';
-    const name = appendText(main, 'div', notebook.name || t('recipeParameterUntitled'), 'anomalous-wfd-set-name');
-    name.title = name.textContent;
-    appendText(main, 'div', dateText(notebook.timestamp), 'anomalous-wfd-set-date');
-    const actions = document.createElement('div');
-    actions.className = 'anomalous-wfd-set-actions';
-    const more = button(actions, '⋯', 'anomalous-preset-item-btn');
-    more.title = t('notebookMore');
-    more.onclick = (event) => {
-        event.stopPropagation();
-        openPopupMenu(more, [
-            { label: t('recipeParameterRename'), run: () => renameSet(ctx, notebook) },
-            { label: t('workflowSetCopy'), run: () => editNewSet(ctx, notebook.data) },
-            { label: t('recipeParameterDelete'), danger: true, run: () => deleteSet(ctx, notebook) },
-        ]);
-    };
-    row.append(main, actions);
-    list.appendChild(row);
-    decorateParameterSet(row, notebook, ctx.recipe);
+/** A preset's line under its name: how many values it sets unlike the workflow's own ({ text, differs, count }). */
+export function differenceNote(notebook, recipe) {
+    const count = setDifferences(notebook, recipe);
+    if (count === null) return { text: dateText(notebook.timestamp), count };
+    return count ? { text: t('workflowPresetDiffers', { count }), differs: true, count } : { text: t('paramSetSame'), count };
 }
 
-/** Draws the column into `nav` for the current view ({ kind: 'set' | 'gallery' | 'versions', filename }). */
-export function renderDetailNav(nav, ctx) {
+/**
+ * Draws the row of tabs under the flow into `row` for the current view ({ kind: 'set' | 'gallery' |
+ * 'versions', filename }): the workflow's own values, then each preset unlike them, newest first,
+ * then + (save the canvas, or a new one from the preset shown); at the end all pictures and versions.
+ */
+export function renderPresetTabs(row, ctx) {
     const { recipe, parameterState, gallery, history, view } = ctx;
-    nav.replaceChildren();
-    const head = document.createElement('div');
-    head.className = 'anomalous-wfd-nav-head';
-    appendText(head, 'span', t('recipeParameterSnapshots'));
-    const fromCanvas = button(head, `+ ${t('workflowSetFromCanvas')}`, 'anomalous-wfd-nav-add');
-    fromCanvas.title = t('recipeParameterReadCurrent');
-    fromCanvas.onclick = async () => {
-        fromCanvas.disabled = true;
-        await saveCanvasAsSet(ctx);
-        fromCanvas.disabled = false;
-    };
-    nav.appendChild(head);
-
-    const list = document.createElement('div');
-    list.className = 'anomalous-wfd-set-list';
-    const own = navItem(list, t('workflowOwnValues'), view.kind === 'set' && !view.filename && !parameterState.editor, () => {
+    row.replaceChildren();
+    const tabs = appendText(row, 'div', '', 'anomalous-wfd-tabs');
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', t('recipeParameterSnapshots'));
+    const showing = filename => view.kind === 'set' && view.filename === filename && !parameterState.editor;
+    const choose = filename => () => {
         parameterState.editor = null;
-        ctx.select('set', null);
-    }, 'is-own');
-    own.title = t('workflowOwnValuesHint');
-    if (parameterState.status === 'loading') appendText(list, 'p', t('recipeParameterLoading'), 'anomalous-wfd-muted');
-    else if (parameterState.status === 'error') appendText(list, 'p', t('recipeParameterLoadError'), 'anomalous-wfd-muted');
+        ctx.select('set', filename);
+    };
+    tab(tabs, t('workflowOwnValues'), { text: t('workflowOwnValuesShort') }, `is-own${showing(null) ? ' is-active' : ''}`, choose(null)).title = t('workflowOwnValuesHint');
+    if (parameterState.status === 'loading') appendText(tabs, 'span', t('recipeParameterLoading'), 'anomalous-wfd-muted');
+    else if (parameterState.status === 'error') appendText(tabs, 'span', t('recipeParameterLoadError'), 'anomalous-wfd-muted');
     for (const notebook of listedSets(recipe, parameterState.notebooks)) {
-        setRow(list, ctx, notebook, view.kind === 'set' && view.filename === notebook.filename && !parameterState.editor);
+        tab(tabs, notebook.name || t('recipeParameterUntitled'), differenceNote(notebook, recipe), showing(notebook.filename) ? 'is-active' : '', choose(notebook.filename));
     }
-    if (parameterState.editor) navItem(list, `${parameterState.editor.name} · ${t('workflowSetEditing')}`, true, () => {}, 'is-editing');
-    const add = button(list, `+ ${t('recipeParameterNew')}`, 'anomalous-wfd-nav-new');
-    add.onclick = () => editNewSet(ctx, parameterState.notebooks.find(item => item.filename === view.filename)?.data);
-    nav.appendChild(list);
-
-    const more = document.createElement('div');
-    more.className = 'anomalous-wfd-nav-more';
+    if (parameterState.editor) tab(tabs, parameterState.editor.name, { text: t('workflowSetEditing') }, 'is-active is-editing', () => {});
+    const add = button(tabs, `+ ${t('workflowPresetAdd')}`, 'anomalous-wfd-tab-add');
+    add.onclick = () => openPopupMenu(add, [
+        { label: t('recipeParameterReadCurrent'), run: () => saveCanvasAsSet(ctx) },
+        { label: t('workflowPresetFromShown'), run: () => editNewSet(ctx, parameterState.notebooks.find(item => item.filename === view.filename)?.data) },
+    ]);
+    const more = appendText(row, 'div', '', 'anomalous-wfd-views');
     const pictures = gallery.status === 'ready' ? ` (${gallery.images.length})` : '';
-    navItem(more, `${t('workflowAllPictures')}${pictures}`, view.kind === 'gallery', () => ctx.select('gallery'));
-    navItem(more, `${t('recipeDetailVersions')} (${(history || []).length})`, view.kind === 'versions', () => ctx.select('versions'));
-    nav.appendChild(more);
+    for (const [kind, label] of [['gallery', `${t('workflowAllPictures')}${pictures}`], ['versions', `${t('recipeDetailVersions')} (${(history || []).length})`]]) {
+        const item = button(more, label, `anomalous-wfd-view${view.kind === kind ? ' is-active' : ''}`);
+        item.onclick = () => ctx.select(kind);
+    }
 }

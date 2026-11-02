@@ -1,6 +1,10 @@
-/* A workflow's details (ui_recipe_detail.js and its parts): the bar, the left column of values
-   (ui_recipe_sets.js), the chosen set (ui_recipe_set_view.js), the pictures (ui_recipe_gallery.js).
-   Matches the Workflows page (28-workflows.css). */
+/* A workflow's details (ui_recipe_detail.js and its parts): the bar, the flow (ui_recipe_flow.js),
+   the preset tabs (ui_recipe_sets.js) and the panel of the tab chosen (ui_recipe_set_view.js, the
+   pictures in ui_recipe_gallery.js). Matches the Workflows page (28-workflows.css). Orange is
+   what the preset shown sets unlike the workflow's own. */
+
+.anomalous-recipe-detail-view { --wfd-orange: #fb923c; }
+html.amb-theme-light .anomalous-recipe-detail-view { --wfd-orange: #ea580c; }
 
 .anomalous-wfd-bar {
     display: flex;
@@ -109,140 +113,136 @@
 .anomalous-wfd-primary:disabled { opacity: 0.6; cursor: default; }
 
 .anomalous-wfd-body {
-    display: grid;
+    display: flex;
     flex: 1;
-    grid-template-columns: clamp(200px, 26%, 280px) minmax(0, 1fr);
+    flex-direction: column;
     min-height: 0;
 }
 
-/* The left column. */
-.anomalous-wfd-nav {
+/* The tabs under the flow, staying in view while the panel scrolls: the workflow's own values, each
+   preset with how many values it changes, +; all pictures and versions at the end. The tab chosen
+   opens into the panel under it. */
+.anomalous-wfd-tabrow {
+    position: sticky;
+    top: -16px;
+    z-index: 2;
     display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+    padding-top: 8px;
+    background: var(--amb-bg-card);
+    box-shadow: inset 0 -1px 0 var(--amb-border-strong); /* the chosen tab covers it */
+}
+
+.anomalous-wfd-tabs {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+.anomalous-wfd-tab {
+    display: flex;
+    flex: 0 1 auto;
     flex-direction: column;
-    gap: 6px;
-    min-height: 0;
-    padding: 12px 10px;
-    overflow-y: auto;
-    border-right: 1px solid var(--amb-border);
-}
-
-.anomalous-wfd-nav-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    padding: 0 4px 4px;
-    color: var(--amb-text-dim);
-    font-size: 11.5px;
-    font-weight: 600;
-}
-
-.anomalous-wfd-nav-add,
-.anomalous-wfd-nav-new {
-    padding: 3px 8px;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--amb-text-soft);
-    font-size: 11.5px;
-    cursor: pointer;
-}
-
-.anomalous-wfd-nav-add:hover,
-.anomalous-wfd-nav-new:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
-.anomalous-wfd-nav-new { align-self: flex-start; margin: 4px 4px 0; border-style: dashed; }
-
-.anomalous-wfd-set-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.anomalous-wfd-nav-item,
-.anomalous-wfd-set {
-    position: relative;
-    display: flex;
-    gap: 6px;
-    width: 100%;
-    padding: 8px 10px;
-    box-sizing: border-box;
+    gap: 2px;
+    min-width: 92px;
+    max-width: 260px;
+    padding: 7px 14px 8px;
     border: 1px solid transparent;
-    border-radius: var(--amb-radius-card);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
     background: transparent;
     color: var(--amb-text-soft);
-    font-size: 13px;
+    font: inherit;
     text-align: left;
     cursor: pointer;
 }
 
-.anomalous-wfd-nav-item:hover,
-.anomalous-wfd-set:hover { background: var(--amb-bg-card-hover); }
+.anomalous-wfd-tab:hover { background: var(--amb-bg-card-hover); color: var(--amb-text-main); }
 
-.anomalous-wfd-nav-item.is-active,
-.anomalous-wfd-set.is-active {
+.anomalous-wfd-tab.is-active {
     border-color: var(--amb-border-strong);
-    background: var(--amb-bg-card-hover);
-    color: var(--amb-text-main);
-    box-shadow: inset 3px 0 0 var(--amb-link);
-}
-
-.anomalous-wfd-nav-item.is-own { font-weight: 600; }
-.anomalous-wfd-nav-item.is-editing { color: var(--amb-link); }
-
-.anomalous-wfd-set-main {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.anomalous-wfd-set-name {
-    display: -webkit-box;
-    overflow: hidden;
-    font-weight: 500;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-}
-
-.anomalous-wfd-set-date {
-    color: var(--amb-text-dim);
-    font-size: 11px;
-}
-
-.anomalous-wfd-set-actions {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    display: flex;
-    gap: 4px;
-    padding: 2px;
-    border-radius: var(--amb-radius-control);
     background: var(--amb-bg-panel);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease;
+    color: var(--amb-text-main);
+    box-shadow: inset 0 2px 0 var(--amb-link);
 }
 
-.anomalous-wfd-set:hover .anomalous-wfd-set-actions,
-.anomalous-wfd-set:focus-within .anomalous-wfd-set-actions {
-    opacity: 1;
-    pointer-events: auto;
+.anomalous-wfd-tab-name {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.anomalous-wfd-nav-more {
+.anomalous-wfd-tab-note { color: var(--amb-text-dim); font-size: 11px; white-space: nowrap; }
+.anomalous-wfd-tab-note.is-differs { color: var(--wfd-orange); }
+.anomalous-wfd-tab.is-editing .anomalous-wfd-tab-note { color: var(--amb-link); }
+
+.anomalous-wfd-tab-add {
+    flex: 0 0 auto;
+    align-self: center;
+    margin-left: 6px;
+    padding: 4px 10px;
+    border: 1px dashed var(--amb-border-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-wfd-tab-add:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+
+.anomalous-wfd-views {
+    display: flex;
+    flex: 0 0 auto;
+    align-self: center;
+    gap: 2px;
+    padding-left: 10px;
+    border-left: 1px solid var(--amb-border);
+}
+
+.anomalous-wfd-view {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-size: 12.5px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-wfd-view:hover { background: var(--amb-bg-card-hover); color: var(--amb-text-main); }
+.anomalous-wfd-view.is-active { background: var(--amb-bg-card-hover); color: var(--amb-text-main); font-weight: 600; }
+
+/* The panel the chosen tab opens into. */
+.anomalous-wfd-panel {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid var(--amb-border);
+    gap: 14px;
+    margin-top: -14px;
+    padding: 16px;
+    border: 1px solid var(--amb-border-strong);
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+    background: var(--amb-bg-panel);
 }
 
-/* The right side. */
+.anomalous-wfd-set-differs { color: var(--wfd-orange); }
+.anomalous-wfd-set-differs::before { content: '\00B7'; margin: 0 6px; color: var(--amb-text-dim); }
+
+/* The one column under the bar. */
 .anomalous-wfd-main {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -699,151 +699,97 @@
 .anomalous-wfd-section .anomalous-compare-bar { margin: 0; }
 
 .theme-abyssal-scarlet .anomalous-wfd-section { background: rgba(18, 10, 26, 0.88); }
-.theme-abyssal-scarlet .anomalous-wfd-set.is-active,
-.theme-abyssal-scarlet .anomalous-wfd-nav-item.is-active { box-shadow: inset 3px 0 0 #dc143c; }
+.theme-abyssal-scarlet .anomalous-wfd-tab.is-active { box-shadow: inset 0 2px 0 #dc143c; }
 
-/* Narrow details (docked, or a small window): the left column becomes one row of pills over the values. */
+/* Narrow details (docked, or a small window): tighter, the tabs scroll sideways. */
 @container wfd (max-width: 760px) {
     .anomalous-wfd-bar { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
-    .anomalous-wfd-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-
-    .anomalous-wfd-nav {
-        flex-direction: row;
-        align-items: center;
-        padding: 8px 12px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        border-right: none;
-        border-bottom: 1px solid var(--amb-border);
-        scrollbar-width: thin;
-    }
-
-    .anomalous-wfd-set-list { flex: 0 0 auto; flex-direction: row; align-items: center; }
-    .anomalous-wfd-nav-head { flex: 0 0 auto; order: 1; padding: 0; }
-    .anomalous-wfd-nav-head > span,
-    .anomalous-wfd-set-date,
-    .anomalous-wfd-set .anomalous-preset-item-keys,
-    .anomalous-wfd-set-actions { display: none; }
-
-    .anomalous-wfd-nav-item,
-    .anomalous-wfd-set {
-        flex: 0 0 auto;
-        width: auto;
-        max-width: 170px;
-        padding: 5px 12px;
-        border-color: var(--amb-border);
-        border-radius: 999px;
-        white-space: nowrap;
-    }
-
-    .anomalous-wfd-set-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    .anomalous-wfd-nav-item.is-active,
-    .anomalous-wfd-set.is-active,
-    .theme-abyssal-scarlet .anomalous-wfd-nav-item.is-active,
-    .theme-abyssal-scarlet .anomalous-wfd-set.is-active { border-color: var(--amb-link); box-shadow: none; }
-
-    .anomalous-wfd-nav-new { flex: 0 0 auto; margin: 0; }
-
-    .anomalous-wfd-nav-more {
-        flex: 0 0 auto;
-        flex-direction: row;
-        order: 2;
-        margin: 0 0 0 4px;
-        padding: 0 0 0 10px;
-        border-top: none;
-        border-left: 1px solid var(--amb-border);
-    }
-
     .anomalous-wfd-main { padding: 12px 12px 20px; }
+    .anomalous-wfd-tabrow { top: -12px; }
+    .anomalous-wfd-tab { flex: 0 0 auto; min-width: 0; max-width: 150px; padding: 6px 10px 7px; }
+    .anomalous-wfd-panel { padding: 12px; }
     .anomalous-wfd-info { grid-template-columns: 96px minmax(0, 1fr); }
     .anomalous-wfd-tip { flex-wrap: wrap; }
 }
 
-/* The flow on top of a workflow's details (ui_recipe_flow.js): the models and LoRAs, the stages
-   with their control models, what comes after; blue stages, violet models, green control and
-   finishing, amber what a preset changed, dashed what it leaves unused; the picked box's card. */
+/* The flow on top of a workflow's details (ui_recipe_flow.js): small boxes, only the structure.
+   Lanes of model files and LoRAs (violet) and control models (green) over the stages (blue) they
+   feed, then the finishing nodes (green) and the saves; orange what the preset shown sets unlike
+   the workflow's own, dashed what it does not run or use; the picked box's values under it. */
 .anomalous-wfd-flow {
     --wfd-flow-violet: #a78bfa;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-bottom: 16px;
-    padding: 12px 14px;
+    padding: 10px 12px;
     border: 1px solid var(--amb-border);
-    border-radius: 14px;
+    border-radius: 12px;
     background: var(--amb-bg-panel);
 }
-.anomalous-wfd-flow-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--amb-text-soft); font-size: 11.5px; }
-.anomalous-wfd-flow-legend > span { display: inline-flex; align-items: center; gap: 5px; }
-.anomalous-wfd-flow-dot { width: 9px; height: 9px; border: 1px solid transparent; border-radius: 50%; }
-.anomalous-wfd-flow-dot.is-stage { background: var(--amb-link); }
-.anomalous-wfd-flow-dot.is-supply { background: var(--wfd-flow-violet); }
-.anomalous-wfd-flow-dot.is-guard { background: var(--amb-ok); }
-.anomalous-wfd-flow-dot.is-changed { background: var(--amb-warn); }
-.anomalous-wfd-flow-dot.is-off { border: 1px dashed var(--amb-text-soft); }
-.anomalous-wfd-flow-supply { display: flex; flex-wrap: wrap; gap: 8px; }
-.anomalous-wfd-flow-supply:empty { display: none; }
-.anomalous-wfd-flow-supply > .anomalous-wfd-flow-box { flex: 0 1 230px; }
-.anomalous-wfd-flow-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
-.anomalous-wfd-flow-arrow { display: flex; align-items: center; color: var(--amb-text-dim); font-size: 18px; }
-.anomalous-wfd-flow-col { display: flex; flex: 1 1 150px; flex-direction: column; gap: 6px; min-width: 130px; }
-.anomalous-wfd-flow-col > .anomalous-wfd-flow-box.is-stage { flex: 1; }
-.anomalous-wfd-flow-col.is-branch { padding: 6px; border: 1px dashed var(--amb-border-strong); border-radius: 12px; }
-.anomalous-wfd-flow-col.is-end { flex: 0 1 170px; }
-.anomalous-wfd-flow-through {
-    padding: 3px 8px;
-    border: 1px solid color-mix(in srgb, var(--amb-link) 45%, var(--amb-border));
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
-    color: var(--amb-text-main);
-    font-size: 11.5px;
-    text-align: center;
-}
-.anomalous-wfd-flow-box {
+.anomalous-wfd-flow-grid { display: grid; align-items: center; gap: 6px 22px; padding: 2px 2px 4px; overflow-x: auto; scrollbar-width: thin; }
+.anomalous-wfd-flow-lane { margin-right: -10px; color: var(--amb-text-dim); font-size: 11px; white-space: nowrap; }
+.anomalous-wfd-flow-box,
+.anomalous-wfd-flow-save {
     --wfd-flow-tint: var(--amb-text-soft);
+    position: relative;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 6px;
     min-width: 0;
-    padding: 8px 10px;
+    height: 28px;
+    padding: 0 9px;
+    box-sizing: border-box;
     border: 1px solid color-mix(in srgb, var(--wfd-flow-tint) 45%, var(--amb-border));
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--wfd-flow-tint) 10%, var(--amb-bg-card));
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--wfd-flow-tint) 12%, var(--amb-bg-card));
     color: var(--amb-text-main);
     font: inherit;
+    font-size: 12px;
     text-align: left;
-    cursor: pointer;
 }
+.anomalous-wfd-flow-box { cursor: pointer; }
 .anomalous-wfd-flow-box:hover { border-color: var(--wfd-flow-tint); }
 .anomalous-wfd-flow-box:focus-visible { outline: 2px solid var(--amb-link); outline-offset: 1px; }
-.anomalous-wfd-flow-box.is-stage { --wfd-flow-tint: var(--amb-link); }
+.anomalous-wfd-flow-box.is-stage { --wfd-flow-tint: var(--amb-link); height: 32px; font-size: 12.5px; font-weight: 600; }
 .anomalous-wfd-flow-box.is-supply { --wfd-flow-tint: var(--wfd-flow-violet); }
 .anomalous-wfd-flow-box.is-guard { --wfd-flow-tint: var(--amb-ok); }
-.anomalous-wfd-flow-box.is-changed { --wfd-flow-tint: var(--amb-warn); border-width: 2px; padding: 7px 9px; }
-.anomalous-wfd-flow-box.is-off { border-style: dashed; background: transparent; opacity: 0.6; }
+.anomalous-wfd-flow-save { height: 32px; background: var(--amb-bg-card); }
+.anomalous-wfd-flow-box.is-changed {
+    --wfd-flow-tint: var(--wfd-orange);
+    border-color: var(--wfd-orange);
+    background: color-mix(in srgb, var(--wfd-orange) 22%, var(--amb-bg-card));
+    color: color-mix(in srgb, var(--wfd-orange) 65%, var(--amb-text-main));
+}
+.anomalous-wfd-flow-box.is-off { border-style: dashed; background: transparent; opacity: 0.55; }
 .anomalous-wfd-flow-box.is-off:hover { opacity: 0.9; }
 .anomalous-wfd-flow-box.is-picked { box-shadow: 0 0 0 2px var(--amb-link); opacity: 1; }
-.anomalous-wfd-flow-role { display: flex; align-items: center; justify-content: space-between; gap: 6px; color: var(--amb-text-soft); font-size: 11.5px; }
-.anomalous-wfd-flow-box.is-stage .anomalous-wfd-flow-role { color: var(--amb-text-main); font-size: 13.5px; font-weight: 600; }
-.anomalous-wfd-flow-badge { padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--amb-warn) 22%, transparent); color: var(--amb-text-main); font-size: 10.5px; font-weight: 500; }
-.anomalous-wfd-flow-model { overflow: hidden; font-size: 12.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-wfd-flow-box.is-off.is-stage .anomalous-wfd-flow-model { color: var(--amb-text-dim); text-decoration: line-through; }
-.anomalous-wfd-flow-facts { color: var(--amb-text-soft); font-size: 12px; }
-.anomalous-wfd-flow-save { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--amb-border-strong); border-radius: 10px; background: var(--amb-bg-card); }
+.anomalous-wfd-flow-box.is-step::before,
+.anomalous-wfd-flow-save.is-step::before {
+    content: '\2192';
+    position: absolute;
+    top: 50%;
+    left: -17px;
+    color: var(--amb-text-dim);
+    font-size: 13px;
+    font-weight: 400;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+.anomalous-wfd-flow-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-wfd-flow-tag { flex: 0 0 auto; color: var(--amb-text-soft); font-size: 10.5px; font-weight: 500; }
 .anomalous-wfd-flow-inspect { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px dashed var(--amb-border); }
-.anomalous-wfd-flow-inspect > p { margin: 0; font-size: 12px; }
-.anomalous-wfd-flow-inspect-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.anomalous-wfd-flow-inspect-title { color: var(--amb-text-main); font-size: 14px; }
+.anomalous-wfd-flow-inspect-head { display: flex; align-items: flex-start; gap: 8px; }
+.anomalous-wfd-flow-inspect-head > div { flex: 1; min-width: 0; }
+.anomalous-wfd-flow-inspect-title { color: var(--amb-text-main); font-size: 13.5px; }
 .anomalous-wfd-flow-inspect-file { color: var(--amb-text-soft); font-size: 12px; word-break: break-all; }
 .anomalous-wfd-flow-state { padding: 2px 10px; border: 1px solid var(--amb-border); border-radius: 999px; color: var(--amb-text-soft); font-size: 11.5px; white-space: nowrap; }
 .anomalous-wfd-flow-state.is-on { border-color: color-mix(in srgb, var(--amb-ok) 45%, var(--amb-border)); background: color-mix(in srgb, var(--amb-ok) 12%, transparent); color: var(--amb-text-main); }
 .anomalous-wfd-flow-links { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--amb-text-soft); font-size: 12px; }
 .anomalous-wfd-flow-link { padding: 2px 10px; border: 1px solid color-mix(in srgb, var(--amb-link) 45%, var(--amb-border)); border-radius: 999px; background: transparent; color: var(--amb-text-main); font: inherit; cursor: pointer; }
 .anomalous-wfd-flow-link:hover { border-color: var(--amb-link); }
-.anomalous-wfd-flow-values { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
-.anomalous-wfd-flow-value { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 6px 8px; border: 1px solid var(--amb-border); border-radius: 8px; background: var(--amb-bg-card); }
+.anomalous-wfd-flow-values { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.anomalous-wfd-flow-value { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 5px 8px; border: 1px solid var(--amb-border); border-radius: 8px; background: var(--amb-bg-card); }
 .anomalous-wfd-flow-value > span { color: var(--amb-text-soft); font-size: 11px; }
 .anomalous-wfd-flow-value > strong { color: var(--amb-text-main); font-size: 12px; font-weight: 600; word-break: break-all; }
-.anomalous-wfd-flow-value.is-changed { border-color: var(--amb-warn); background: color-mix(in srgb, var(--amb-warn) 10%, var(--amb-bg-card)); }
+.anomalous-wfd-flow-value.is-changed { border-color: var(--wfd-orange); background: color-mix(in srgb, var(--wfd-orange) 10%, var(--amb-bg-card)); }
 .anomalous-wfd-flow-was { color: var(--amb-text-dim); font-weight: 400; text-decoration: line-through; }

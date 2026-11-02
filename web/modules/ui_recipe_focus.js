@@ -3,15 +3,14 @@
  * a set (each value large with its node, its note, and for a saved set the workflow's own value
  * when it differs), a line on how to mark one while there are none, and the ☆ on each node
  * value under 全部节点参数. A star turns at once and the save follows (a failed save turns it
- * back); then the section, the other stars and the sets' rows are drawn again, the value just
- * marked fading in.
+ * back); then the section and the other stars are drawn again, the value just marked fading in.
  */
 
 import { translate } from './locales.js';
 import { anomalousAlert, anomalousPrompt } from './ui_dialog.js';
 import { appendText, button } from './ui_recipe_detail_dom.js';
 
-import { redrawParameterSets, workflowParams } from './ui_param_set_keys.js';
+import { workflowParams } from './ui_param_set_keys.js';
 import { shownValue } from './param_compare.js';
 import { MAX_FOCUS, focusEntries, notedFocus, toggledFocus } from './recipe_focus.js';
 
@@ -78,7 +77,6 @@ function change(ctx, next, after, undo) {
             return;
         }
         after();
-        redrawParameterSets();
     });
     return queue;
 }

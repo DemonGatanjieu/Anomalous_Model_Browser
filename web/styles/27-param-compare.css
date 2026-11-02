@@ -520,35 +520,6 @@
     color: var(--amb-text-main);
 }
 
-/* A parameter set's card: its key values, marked where they differ from the recipe's. */
-.anomalous-preset-item-keys {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
-    margin-top: 5px;
-}
-
-.anomalous-preset-key-chip {
-    padding: 1px 6px;
-    border-radius: 999px;
-    background: var(--amb-bg-sunken);
-    color: var(--amb-text-muted);
-    font-size: 11px;
-}
-
-.anomalous-preset-key-chip.is-differs {
-    background: color-mix(in srgb, var(--amb-warn) 18%, transparent);
-    color: var(--amb-warn-text);
-}
-
-.anomalous-preset-key-chip.is-focus { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amb-link) 55%, transparent); }
-
-.anomalous-preset-key-count {
-    color: var(--amb-text-dim);
-    font-size: 11px;
-}
-
 @media (max-width: 560px) {
     .anomalous-compare-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .anomalous-compare-name { grid-column: 1 / -1; }

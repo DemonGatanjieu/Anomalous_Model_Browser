@@ -2,7 +2,7 @@
 // in the order they run, the model each is fed, a split's steps, an enlargement, whether it runs; the
 // model files, LoRAs, control models and picture nodes around them; and which stages a preset changes.
 import assert from 'node:assert/strict';
-import { changedNodes, nodeValues, readFlow, touched, usedIn } from '../web/modules/recipe_flow.js';
+import { changedNodes, flowLanes, nodeValues, readFlow, touched, usedIn } from '../web/modules/recipe_flow.js';
 
 const NAMES = {
     UNETLoader: ['unet_name', 'weight_dtype'], LoraLoader: ['lora_name', 'strength_model', 'strength_clip'],
@@ -67,6 +67,14 @@ assert.deepEqual([part(flow, 'control', 'animaTileRepair_v20').strength, part(fl
 assert.deepEqual(flow.parts.filter(item => item.kind === 'post').map(item => [item.name, item.ids]), [['ColorMatch', ['21']]],
     'after the samplers: the colour match, not the decoders or saves');
 assert.equal(flow.saves, 2);
+const lanes = flowLanes(flow).map(lane => [lane.kind, lane.rows.map(row => row.map(bar => `${bar.part.name} ${bar.from}-${bar.to}`))]);
+assert.deepEqual(lanes, [['model', [['harem 1-1', 'realskin 2-3']]], ['lora', [['style 1-3']]], ['control', [['animaTileRepair_v20 3-3']]]],
+    'two models over different stages share a row; each part spans the stages it feeds');
+const crossed = flowLanes({ parts: [
+    { kind: 'model', name: 'a', stages: [1, 3] }, { kind: 'model', name: 'b', stages: [2, 3] }, { kind: 'post', name: 'c', stages: [] },
+] });
+assert.deepEqual(crossed.map(lane => lane.rows.map(row => row.map(bar => `${bar.part.name} ${bar.from}-${bar.to}`))), [[['a 1-1', 'a 3-3'], ['b 2-3']]],
+    'stages apart are bars apart; overlapping parts take another row; finishing nodes are no lane');
 
 const plain = workflow({ second: 'Anima/harem.safetensors', switchAt: 35 });
 const own = readFlow(plain, names);

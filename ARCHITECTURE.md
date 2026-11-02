@@ -931,9 +931,9 @@ covered by the `styles.css` manifest.
   only one side has, seeds apart), writing ticked image values onto the canvas as one Ctrl+Z
   step with Undo; `param_compare.js` reads and compares the two sides without DOM.
   `key_params.js` keeps the starred key parameters (node type + widget name, a hidden ComfyUI
-  setting); the window shows them first. `ui_param_set_keys.js` puts parameter sets in view: a
-  recipe card's ▤ N chip (first in its specs line) (`GET /anomalous/parameters/signatures`; sets equal to the recipe not counted) opens its Parameters tab,
-  and each set there shows its key values, how many values differ from the recipe, and ⇄.
+  setting); the window shows them first. `ui_param_set_keys.js` puts presets in view: a
+  recipe card's ▤ N chip (first in its specs line) (`GET /anomalous/parameters/signatures`; sets equal to the recipe not counted) opens its details,
+  and `setDifferences` counts the values a preset sets unlike the recipe (its tab and head say so).
   `ui_keep_menu.js` is the star's keep menu (also the workbench's Keep): the whole workflow, the combo or the prompts,
   each saying where it goes, opening what was kept already or removing it (to the Recycle Bin through the recipe,
   notebook or material delete route); `image_keep.js` does the keeping (an image as a combo,
@@ -1031,15 +1031,16 @@ covered by the `styles.css` manifest.
   `notebook_canvas.js` puts a combo on the canvas as a new wired group of nodes (following the pointer, or at a dropped
   card's position; Esc takes a following group off again); it never changes nodes already there. Combos are a rail page. `ui_recipe_detail.js`
   is a workflow's details, built around its values (styles `styles/29-workflow-detail.css`): a bar
-  (Back, the name, the models' state, Open, ⋯ edit and export), then `ui_recipe_sets.js`'s left
-  column (the workflow's own values, the saved sets unlike them with their key values, Save the
-  canvas, New; then all pictures and versions) and the chosen view on the right.
-  `ui_recipe_flow.js` draws the workflow's flow on top of it, for the values shown: the model files
-  and LoRAs (strength, the stages they feed), one stage per sampler in the order they run under the
-  control models patched into it (base, goes on, enlarge and redraw; its model, the steps or the
-  part of a split it runs, the redraw strength; one these values do not run hangs dashed beside a
-  straight line), the picture nodes after the samplers (a colour match) and the saves; what the
-  preset changes from the workflow's own marked, what it leaves unused dashed. Every box opens its
+  (Back, the name, the models' state, Open, ⋯ edit and export), then one column: the flow, the row
+  of tabs under it (`ui_recipe_sets.js`: the workflow's own values, each preset unlike them with how
+  many values it changes, + to save the canvas or copy the one shown; all pictures and versions at
+  the end; the row stays in view while the rest scrolls) and the tab chosen in a panel joined to it.
+  `ui_recipe_flow.js` draws the flow small, only its structure, for the values shown: the stages in
+  the order they run (base, goes on, enlarge and redraw; one these values do not run dashed, "not
+  run"), the picture nodes after the samplers (a colour match) and the saves; over the stages one
+  lane each for the model files, the LoRAs and the control models, each a bar over the stages it
+  feeds (`flowLanes`); a box's values (steps, split, strength) are its tooltip; what the preset
+  changes from the workflow's own orange, what it leaves unused dashed. Every box opens its
   node's values under it (`ui_recipe_flow_inspect.js`: changed values against the workflow's own,
   the presets that use an unused box). All of it is read from the saved graph alone by
   `recipe_flow.js` (`readFlow`, `changedNodes`, `touched`; `tests/recipe_flow.mjs`).
@@ -1053,7 +1054,8 @@ covered by the `styles.css` manifest.
   prompts; the pictures made with these values; the models (the fold says whether all are here)
   and every node's values, folded, each opening as the viewer last left it (this browser's
   storage); a tip while the workflow has no set, and one pointing at ⇄ on a set until it is used.
-  Narrow (docked) details turn the left column into one row of pills (a container query). A new
+  Narrow (docked) details keep the tabs at a readable width and scroll them sideways, as the flow
+  (a container query). A new
   set is named after the workflow with the next number (`nextSetName`). `ui_recipe_parameters.js`
   holds what the views share: prompt roles (automatic or set by hand) and their boxes, every node's
   values (unnamed ones labelled by their node type's widgets, `comfyWidgetLabels`), the new set's editor.

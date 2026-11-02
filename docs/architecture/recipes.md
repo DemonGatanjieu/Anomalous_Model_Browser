@@ -88,16 +88,16 @@ as a manual candidate at most.
 Inspection failure never blocks the workflow snapshot from being saved.
 
 The details are built around the recipe's values: a bar (Back, the name, the models'
-state, Open, ⋯ edit and export), a left column (the recipe's own values, then its saved sets
-whose value signature differs from the recipe's, newest first; all pictures; versions) and the
-chosen view on the right. The recipe's own values show its cover, notes and tags first; each set
+state, Open, ⋯ edit and export), the recipe's flow (its structure, the preset shown's changes in
+orange), a row of tabs (the recipe's own values, then its saved presets whose value signature
+differs from the recipe's, newest first; all pictures; versions) and the tab chosen in a panel under it. The recipe's own values show its cover, notes and tags first; each set
 shows Apply to canvas, ⇄ (with the recipe's values or the canvas), its main values, prompts,
 the pictures made with those values, and, folded, the models (own values only) and every node. Compact cards may ellipsize bounded values while preserving their
 full copy value. Detail rows provide visible expand/collapse and copy controls
 for long values and prompts; they do not silently truncate authoritative data.
 
 `ui_recipe_detail.js` coordinates the detail session (the view: a set, all pictures or versions)
-and the bar; `ui_recipe_sets.js` the left column and the set actions (save the canvas, new,
+and the bar; `ui_recipe_sets.js` the tabs and the set actions (save the canvas, new,
 rename, delete); `ui_recipe_set_view.js` one set; `ui_recipe_info.js` the name, notes, tags and
 models' state (styles in `styles/29-workflow-detail.css`); `ui_recipe_parameters.js` prompt roles,
 raw nodes and the new set's editor; and `ui_recipe_models.js`

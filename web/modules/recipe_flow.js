@@ -7,7 +7,8 @@
  * muted sampler is off). Its parts around the stages: the model files and LoRAs the stages are fed,
  * the control models patched in (a Tile LLLite, a ControlNet) and the picture nodes after the
  * samplers (a colour match), each with the stages it feeds and whether it is used. And which nodes
- * two saved workflows set differently, and which stages that changes. ui_recipe_flow.js draws it.
+ * two saved workflows set differently, and which stages that changes. The parts laid in lanes over
+ * the stages they feed (flowLanes) are what ui_recipe_flow.js draws.
  * Widget names come from ComfyUI's node types when there are some (`names` stands in for them in tests).
  */
 
@@ -232,6 +233,35 @@ export const touched = (stages, changed, base) => stages.filter((stage) => {
     const before = base.find(item => item.sampler === stage.sampler);
     return !before || before.state !== stage.state || (stage.state === 'run' && [...stage.nodes].some(id => changed.has(id)));
 }).map(stage => stage.n);
+
+const LANES = ['model', 'lora', 'control'];
+
+/** Stage numbers as runs of neighbours: [[from, to], …]. */
+const runsOf = numbers => [...numbers].sort((a, b) => a - b).reduce((runs, n) => {
+    const last = runs[runs.length - 1];
+    if (last && last[1] === n - 1) last[1] = n;
+    else runs.push([n, n]);
+    return runs;
+}, []);
+
+/**
+ * The parts of `flow` laid over its stages: one lane per kind (model files, LoRAs, control models),
+ * each in as few rows as fit, a part as one bar per run of neighbouring stages it feeds.
+ * [{kind, rows: [[{part, from, to}]]}], kinds without parts left out.
+ */
+export function flowLanes(flow) {
+    return LANES.map((kind) => {
+        const rows = [];
+        for (const part of flow.parts.filter(item => item.kind === kind && item.stages.length)) {
+            const bars = runsOf(part.stages).map(([from, to]) => ({ part, from, to }));
+            const fits = row => bars.every(bar => row.every(other => bar.to < other.from || bar.from > other.to));
+            const row = rows.find(fits);
+            if (row) row.push(...bars);
+            else rows.push(bars);
+        }
+        return { kind, rows: rows.map(row => row.sort((a, b) => a.from - b.from)) };
+    }).filter(lane => lane.rows.length);
+}
 
 /** Whether node `id` is used in `flow`: the sampler of a stage that runs, or in a part used. */
 export const usedIn = (flow, id) => flow.stages.some(stage => stage.sampler === id && stage.state === 'run')
