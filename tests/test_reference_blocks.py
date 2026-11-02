@@ -150,6 +150,31 @@ class BlockTests(unittest.TestCase):
         self.assertNotIn("turbo", without["nodes"], "no Turbo LoRA here: the plain block, which works, only slower")
         self.assertIn("three times faster", without["after"])
 
+    def test_with_sam3_here_the_hands_it_finds_by_word_are_redrawn_before_the_detectors(self):
+        sam = {"SAM3_Detect": {}, "MaskToSEGS": {}, "DetailerForEach": {}, "CLIPTextEncode": {},
+               "CheckpointLoaderSimple": {"input": {"required": {"ckpt_name": [["SDXL/nova.safetensors", "SAM3/sam3.1_multiplex_fp16.safetensors"]]}}}}
+        nodes = reference_blocks.nodes_of("fix_hands", {**EVERYTHING, **sam}, "elves.png")
+        self.assertEqual(nodes["hand_seeker"]["inputs"]["ckpt_name"], "SAM3/sam3.1_multiplex_fp16.safetensors")
+        self.assertEqual((nodes["hand_words"]["inputs"]["text"], nodes["hand_shapes"]["inputs"]["image"]), ("hand:8", ["$decode", 0]), "up to 8 hands, not the first only")
+        self.assertEqual(nodes["shaped_hands"]["inputs"]["segs"], ["hand_areas", 0])
+        self.assertEqual(nodes["hands"]["inputs"]["image"], ["shaped_hands", 0], "the detector's pass mends what SAM3's left")
+        self.assertNotIn("optional", nodes["shaped_hands"])
+        no_model = {**sam, "CheckpointLoaderSimple": {"input": {"required": {"ckpt_name": [["SDXL/nova.safetensors"]]}}}}
+        for here in ({**EVERYTHING, **no_model}, {**EVERYTHING, **{key: value for key, value in sam.items() if key != "SAM3_Detect"}}):
+            plain = reference_blocks.nodes_of("fix_hands", here, "elves.png")
+            self.assertFalse({"hand_seeker", "hand_words", "hand_shapes", "hand_areas", "shaped_hands"} & set(plain), "the pass goes whole")
+            self.assertEqual(plain["hands"]["inputs"]["image"], ["$decode", 0])
+        loras = {"LoraLoaderModelOnly": {"input": {"required": {"lora_name": [["anima-turbo-lora-v0.2.safetensors"]]}}}}
+        anima = reference_blocks.nodes_of("fix_hands", {**EVERYTHING, **sam, **loras}, "elves.png", lambda: "Anima")
+        self.assertEqual((anima["shaped_hands"]["inputs"]["model"], anima["shaped_hands"]["inputs"]["steps"]), (["turbo", 0], 10))
+
+    def test_switching_mid_way_says_how_to_enlarge_at_the_switch(self):
+        for family in ("SDXL 1.0", "Anima"):
+            after = reference_blocks.build("switch_midway", EVERYTHING, None, lambda: family)["after"]
+            self.assertIn("LatentUpscaleBy insert_after=first", after)
+            self.assertIn('first {"return_with_leftover_noise": "disable"}, second {"add_noise": "enable"}', after,
+                          "enlarged with its leftover noise, the picture breaks into coloured blocks")
+
     def test_upscaling_takes_an_upscale_model_and_brings_it_to_a_quarter_larger(self):
         nodes = reference_blocks.nodes_of("upscale", EVERYTHING)
         self.assertEqual((nodes["upscaler"]["inputs"]["model_name"], nodes["fit"]["inputs"]["scale_by"]), ("2x-Lite.pth", 0.625), "a 2× one: enough for 1.25×, less work")
@@ -272,8 +297,8 @@ class BlockTests(unittest.TestCase):
                 for value in spec["inputs"].values():
                     if isinstance(value, list):
                         with self.subTest(block=name, node=key):
-                            self.assertTrue(all(part in variant["nodes"] for part in value[0].split("|"))
-                                            or value[0].split(".")[0] in ("$sampler", "$decode", "$save", "$loader"))
+                            self.assertTrue(all(part in variant["nodes"] or part.split(".")[0] in ("$sampler", "$decode", "$save", "$loader")
+                                                for part in value[0].split("|")))
                 for field in ("wire_to", "like", "replaces"):
                     if field in spec:
                         self.assertIn(spec[field].split(".")[0], ("$sampler", "$decode", "$save", "$loader"))  # like may follow a path

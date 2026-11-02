@@ -214,8 +214,9 @@ covered by the `styles.css` manifest.
   takes its settings (a path, "$sampler.positive", the node feeding it), one that "replaces" it its links and place too (LanPaint's sampler for the
   KSampler), before canvas_wiring splices it in (`tests/canvas_roles.mjs`). A block's "variants"
   rebuild it for the canvas model's family (`reference_blocks.build`: on Anima an LLLite model
-  patch instead of a ControlNet), and an "optional" node of a pack that only improves it (KJNodes'
-  ColorMatch) goes when the pack is missing. `api/block_models.json` lists the models the blocks
+  patch instead of a ControlNet), and an "optional" node that only improves it (KJNodes'
+  ColorMatch, the SAM3 pass before the hand detector) goes when its pack or its model (a block's
+  "checkpoints") is missing, with the nodes it fed and fed on. `api/block_models.json` lists the models the blocks
   recommend (links, size, SHA256, licence, folder); a block's "models" names them and its
   "tested" says the card and a run's time, both shown in the Ways panel (a missing model is
   downloaded there with `model_download.downloadFrom`) and the time told to the AI with the block.

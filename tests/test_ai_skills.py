@@ -60,6 +60,7 @@ class SkillTests(unittest.TestCase):
         self.assertIn("add_lora it onto the second model", advice)
         self.assertIn("Never add a style, artist or LoRA the user did not pick", advice)
         self.assertIn("Hold the base's seed", advice)
+        self.assertIn("the switch may also enlarge the picture", advice)
         ai_skills.set_on("staged_picture", False)
         self.assertNotIn("staged_picture", ai_skills.directory())
         with self.assertRaises(ai_skills.SkillError):

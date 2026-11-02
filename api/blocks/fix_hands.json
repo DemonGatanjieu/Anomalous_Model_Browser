@@ -13,12 +13,12 @@
     "en": "Fix hands: enlarge, then fix (fallback)"
   },
   "about": {
-    "zh": "整张图放大到约 400 万像素（小图 2 倍）轻轻重画，让手变大；再找出每只手，放大重画后贴回去。",
-    "en": "The whole picture is enlarged to about 4 megapixels (2× for a small one) and redrawn lightly, so the hands grow; then each hand is found, redrawn larger and pasted back."
+    "zh": "整张图放大到约 400 万像素（小图 2 倍）轻轻重画，让手变大；再把每只手放大重画后贴回去：有 SAM3 模型时先按文字找出贴着手形的轮廓重画一遍，再用手部检测框补修一遍。",
+    "en": "The whole picture is enlarged to about 4 megapixels (2× for a small one) and redrawn lightly, so the hands grow; then each hand is redrawn larger and pasted back: with the SAM3 model here, first inside the outline it finds by the word, then once more in the box the hand detector finds."
   },
   "source": {
-    "zh": "参考作者的「先放大重画」和「手部精修」两步合在一起，2026-10-29 在 RTX 4050 上试出这组数",
-    "en": "The reference author's light redraw after enlarging and his hand detailing, put together; these numbers tried on an RTX 4050 on 2026-10-29"
+    "zh": "参考作者的「先放大重画」和「手部精修」两步合在一起，2026-10-29 在 RTX 4050 上试出这组数；SAM3 按文字找手那一轮照他的连法，2026-11-03 加入",
+    "en": "The reference author's light redraw after enlarging and his hand detailing, put together; these numbers tried on an RTX 4050 on 2026-10-29; the SAM3 pass finding hands by the word follows his wiring, added on 2026-11-03"
   },
   "packs": {
     "FaceDetailer": "ComfyUI-Impact-Pack",
@@ -27,6 +27,9 @@
   "takes": "picture",
   "detectors": {
     "hand": "hand_yolov8"
+  },
+  "checkpoints": {
+    "sam3": "sam3"
   },
   "roles": {
     "sampler": {
@@ -65,6 +68,109 @@
       },
       "wire_to": "$sampler"
     },
+    "hand_seeker": {
+      "class_type": "CheckpointLoaderSimple",
+      "optional": true,
+      "_meta": {
+        "title": "SAM3"
+      },
+      "inputs": {
+        "ckpt_name": "$sam3"
+      }
+    },
+    "hand_words": {
+      "class_type": "CLIPTextEncode",
+      "optional": true,
+      "_meta": {
+        "title": "SAM3: what to find"
+      },
+      "inputs": {
+        "text": "hand:8",
+        "clip": [
+          "hand_seeker",
+          1
+        ]
+      }
+    },
+    "hand_shapes": {
+      "class_type": "SAM3_Detect",
+      "optional": true,
+      "inputs": {
+        "model": [
+          "hand_seeker",
+          0
+        ],
+        "image": [
+          "$decode",
+          0
+        ],
+        "conditioning": [
+          "hand_words",
+          0
+        ],
+        "threshold": 0.5,
+        "refine_iterations": 2,
+        "individual_masks": false
+      }
+    },
+    "hand_areas": {
+      "class_type": "MaskToSEGS",
+      "optional": true,
+      "inputs": {
+        "mask": [
+          "hand_shapes",
+          0
+        ],
+        "combined": false,
+        "crop_factor": 2.0,
+        "bbox_fill": false,
+        "drop_size": 10,
+        "contour_fill": false
+      }
+    },
+    "shaped_hands": {
+      "class_type": "DetailerForEach",
+      "like": "$sampler",
+      "optional": true,
+      "inputs": {
+        "image": [
+          "$decode",
+          0
+        ],
+        "segs": [
+          "hand_areas",
+          0
+        ],
+        "model": [
+          "$sampler.model",
+          "*"
+        ],
+        "clip": [
+          "$sampler.positive.clip",
+          "*"
+        ],
+        "vae": [
+          "$decode.vae",
+          "*"
+        ],
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "guide_size": 768,
+        "max_size": 1024,
+        "denoise": 0.45,
+        "feather": 5,
+        "noise_mask": true,
+        "force_inpaint": true,
+        "noise_mask_feather": 10,
+        "wildcard": "detailed hand"
+      }
+    },
     "hand_finder": {
       "class_type": "UltralyticsDetectorProvider",
       "inputs": {
@@ -76,7 +182,7 @@
       "like": "$sampler",
       "inputs": {
         "image": [
-          "$decode",
+          "shaped_hands|$decode",
           0
         ],
         "model": [
@@ -124,21 +230,27 @@
       }
     }
   },
-  "after": "A fallback: a FLUX-Fill redraw of one square crop around each hand did better in the user's tests; use that when you have it. The picture is enlarged to about 4 megapixels (2× for one of about 1 megapixel, at most 2×, not at all for a large one) and drawn again lightly (the sampler now takes it, at denoise 0.4), then every hand found is redrawn larger (hands, denoise 0.45) and saved with prefix hands_fixed; the enlarged one is saved too, without the hand pass. About 3 tries in 4 give a good hand: run_workflow with batch 4 (each try its own seed), then check them before the user does: zoom_image each hands_fixed picture on the hand, compare_with the old picture, and drop a hand with the wrong number of fingers, fused or melted fingers, or one far bigger or smaller than its arm. None good: run_workflow batch 4 again, at most twice. Then a picks panel zoomed on the hand lets the user choose among the good ones.",
-  "notes": "Tried on the Codex test picture (1280×832, three characters, the hand about 110×78 px): the hand pass alone gave a good hand in about half the seeds whatever its size (512 or 768) and denoise (0.45 or 0.55); enlarging 1.5× first gave good hands in 3 of 4, 2× gave sharper fingers in the same seeds (about 105 s instead of 75 s). Denoise 0.4 for the enlarged redraw kept the layout; faces and splashes change a little.",
+  "after": "A fallback: a FLUX-Fill redraw of one square crop around each hand did better in the user's tests; use that when you have it. The picture is enlarged to about 4 megapixels (2× for one of about 1 megapixel, at most 2×, not at all for a large one) and drawn again lightly (the sampler now takes it, at denoise 0.4), then the hands are redrawn larger: with SAM3 here, first each hand it finds by the word inside its own outline (shaped_hands), then each hand the detector finds, in its box (hands, denoise 0.45), saved with prefix hands_fixed (without SAM3, which the user can get in the ways panel, only the detector's pass); the enlarged one is saved too, without the hand pass. About 3 tries in 4 give a good hand: run_workflow with batch 4 (each try its own seed), then check them before the user does: zoom_image each hands_fixed picture on the hand, compare_with the old picture, and drop a hand with the wrong number of fingers, fused or melted fingers, or one far bigger or smaller than its arm. None good: run_workflow batch 4 again, at most twice. Then a picks panel zoomed on the hand lets the user choose among the good ones.",
+  "notes": "Tried on the Codex test picture (1280×832, three characters, the hand about 110×78 px): the hand pass alone gave a good hand in about half the seeds whatever its size (512 or 768) and denoise (0.45 or 0.55); enlarging 1.5× first gave good hands in 3 of 4, 2× gave sharper fingers in the same seeds (about 105 s instead of 75 s). Denoise 0.4 for the enlarged redraw kept the layout; faces and splashes change a little. The SAM3 pass (2026-11-03): its word says how many it takes, \"hand\" alone only the likeliest hand, \"hand:8\" up to eight; on a 832×1216 picture of a girl waving both hands (enlarged 2×) it outlined both hands closely at threshold 0.5 (0.2 found no more), about 112 s with both passes on Anima with the Turbo LoRA.",
   "models": [
     "hand_yolov8s",
+    "sam3_1",
     "anima_turbo_lora"
   ],
   "tested": {
     "gpu": "RTX 4050 Laptop",
     "vram_gb": 6,
-    "date": "2026-10-29",
+    "date": "2026-11-03",
     "runs": [
       {
         "model": "Anima (Kirazuri v4, Turbo LoRA)",
         "size": "1280×832 → 2560×1664",
         "seconds": 105
+      },
+      {
+        "model": "Anima (MiaoMiao Harem 1.5, Turbo LoRA, SAM3 pass)",
+        "size": "832×1216 → 1664×2432",
+        "seconds": 112
       }
     ]
   },
@@ -201,6 +313,113 @@
           },
           "wire_to": "$sampler"
         },
+        "hand_seeker": {
+          "class_type": "CheckpointLoaderSimple",
+          "optional": true,
+          "_meta": {
+            "title": "SAM3"
+          },
+          "inputs": {
+            "ckpt_name": "$sam3"
+          }
+        },
+        "hand_words": {
+          "class_type": "CLIPTextEncode",
+          "optional": true,
+          "_meta": {
+            "title": "SAM3: what to find"
+          },
+          "inputs": {
+            "text": "hand:8",
+            "clip": [
+              "hand_seeker",
+              1
+            ]
+          }
+        },
+        "hand_shapes": {
+          "class_type": "SAM3_Detect",
+          "optional": true,
+          "inputs": {
+            "model": [
+              "hand_seeker",
+              0
+            ],
+            "image": [
+              "$decode",
+              0
+            ],
+            "conditioning": [
+              "hand_words",
+              0
+            ],
+            "threshold": 0.5,
+            "refine_iterations": 2,
+            "individual_masks": false
+          }
+        },
+        "hand_areas": {
+          "class_type": "MaskToSEGS",
+          "optional": true,
+          "inputs": {
+            "mask": [
+              "hand_shapes",
+              0
+            ],
+            "combined": false,
+            "crop_factor": 2.0,
+            "bbox_fill": false,
+            "drop_size": 10,
+            "contour_fill": false
+          }
+        },
+        "shaped_hands": {
+          "class_type": "DetailerForEach",
+          "like": "$sampler",
+          "optional": true,
+          "inputs": {
+            "image": [
+              "$decode",
+              0
+            ],
+            "segs": [
+              "hand_areas",
+              0
+            ],
+            "model": [
+              "turbo",
+              0
+            ],
+            "clip": [
+              "$sampler.positive.clip",
+              "*"
+            ],
+            "vae": [
+              "$decode.vae",
+              "*"
+            ],
+            "positive": [
+              "$sampler.positive",
+              "*"
+            ],
+            "negative": [
+              "$sampler.negative",
+              "*"
+            ],
+            "guide_size": 768,
+            "max_size": 1024,
+            "steps": 10,
+            "cfg": 1.0,
+            "sampler_name": "euler_ancestral",
+            "scheduler": "normal",
+            "denoise": 0.45,
+            "feather": 5,
+            "noise_mask": true,
+            "force_inpaint": true,
+            "noise_mask_feather": 10,
+            "wildcard": "detailed hand"
+          }
+        },
         "hand_finder": {
           "class_type": "UltralyticsDetectorProvider",
           "inputs": {
@@ -212,7 +431,7 @@
           "like": "$sampler",
           "inputs": {
             "image": [
-              "$decode",
+              "shaped_hands|$decode",
               0
             ],
             "model": [
@@ -264,7 +483,7 @@
           }
         }
       },
-      "after": "A fallback: a FLUX-Fill redraw of one square crop around each hand did better in the user's tests; use that when you have it. On this Anima model the Anima Turbo LoRA (0.7) makes both passes 10 steps at CFG 1, about 105 s for 1280×832 (2×) on a 6 GB card. The picture is enlarged to about 4 megapixels (2× for one of about 1 megapixel, at most 2×, not at all for a large one) and drawn again lightly (the sampler now takes it, at denoise 0.4), then every hand found is redrawn larger (hands, denoise 0.45) and saved with prefix hands_fixed; the enlarged one is saved too, without the hand pass. About 3 tries in 4 give a good hand: run_workflow with batch 4 (each try its own seed), then check them before the user does: zoom_image each hands_fixed picture on the hand, compare_with the old picture, and drop a hand with the wrong number of fingers, fused or melted fingers, or one far bigger or smaller than its arm. None good: run_workflow batch 4 again, at most twice. Then a picks panel zoomed on the hand lets the user choose among the good ones."
+      "after": "A fallback: a FLUX-Fill redraw of one square crop around each hand did better in the user's tests; use that when you have it. On this Anima model the Anima Turbo LoRA (0.7) makes both passes 10 steps at CFG 1, about 105 s for 1280×832 (2×) on a 6 GB card. The picture is enlarged to about 4 megapixels (2× for one of about 1 megapixel, at most 2×, not at all for a large one) and drawn again lightly (the sampler now takes it, at denoise 0.4), then the hands are redrawn larger: with SAM3 here, first each hand it finds by the word inside its own outline (shaped_hands), then each hand the detector finds, in its box (hands, denoise 0.45), saved with prefix hands_fixed (without SAM3, which the user can get in the ways panel, only the detector's pass); the enlarged one is saved too, without the hand pass. About 3 tries in 4 give a good hand: run_workflow with batch 4 (each try its own seed), then check them before the user does: zoom_image each hands_fixed picture on the hand, compare_with the old picture, and drop a hand with the wrong number of fingers, fused or melted fingers, or one far bigger or smaller than its arm. None good: run_workflow batch 4 again, at most twice. Then a picks panel zoomed on the hand lets the user choose among the good ones."
     }
   }
 }

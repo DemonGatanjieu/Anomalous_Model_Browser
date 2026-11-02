@@ -305,6 +305,12 @@ def _lora(info, prefix):
     return sorted(found)[-1] if found else None
 
 
+def _checkpoint(info, prefix):
+    """The checkpoint file whose name has `prefix` this ComfyUI has (the newest version: SAM3.1 before SAM3), or None."""
+    found = [name for name in _choices(info, "CheckpointLoaderSimple", "ckpt_name") if prefix in name.lower().replace("\\", "/").split("/")[-1]]
+    return sorted(found)[-1] if found else None
+
+
 def _variant(name, block, main_base, info):
     """`block` as it is built for the canvas's model: its variant for that model's family merged over it
     (on an Anima model an LLLite stands in for the ControlNet), else itself. A variant whose LoRAs
@@ -373,6 +379,8 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
         fills[f"${role}"] = _detector(info, prefix)
     for role, prefix in (block.get("loras") or {}).items():
         fills[f"${role}"] = _lora(info, prefix)
+    for role, prefix in (block.get("checkpoints") or {}).items():  # only optional nodes take one (SAM3 before the hand detector)
+        fills[f"${role}"] = _checkpoint(info, prefix)
     if block.get("enlarge"):
         fills["$enlarge"] = enlargement(block["enlarge"], size_of(fills["$image"]))
     if block.get("upscaler"):
@@ -385,10 +393,19 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
             nodes = _told_its_type(nodes, UNION_TYPES[block["control"]])
     if block.get("lllite"):
         fills["$lllite"] = _lllite(info, block["lllite"])
-    # A node of a pack that only makes the block better (ColorMatch after an upscale) goes when the pack
-    # is missing; a link "match|decode" takes the first of those nodes still there.
-    nodes = {key: spec for key, spec in nodes.items() if not spec.get("optional") or spec["class_type"] in info}
-    link = lambda value: [next(key for key in value[0].split("|") if key in nodes), value[1]] if "|" in str(value[0]) else value  # noqa: E731
+    # A node that only makes the block better (ColorMatch after an upscale, SAM3 finding hands before the
+    # detector) goes when its pack or its model is missing, or a node it takes from went, or nothing
+    # takes from it any more; a link "match|decode" takes the first of those nodes still there, or the role.
+    def kept(key, spec):
+        return not spec.get("optional") or spec["class_type"] in info and all(
+            fills.get(value, "") is not None if isinstance(value, str) else
+            "|" in value[0] or value[0].startswith("$") or value[0] in nodes
+            for value in spec["inputs"].values() if isinstance(value, (str, list))) and (
+            "wire_to" in spec or any(key in value[0].split("|") for other in nodes.values()
+                                     for value in other["inputs"].values() if isinstance(value, list)))
+    while any(not kept(key, spec) for key, spec in nodes.items()):
+        nodes = {key: spec for key, spec in nodes.items() if kept(key, spec)}
+    link = lambda value: [next(key for key in value[0].split("|") if key in nodes or key.startswith("$")), value[1]] if "|" in str(value[0]) else value  # noqa: E731
     built = {key: {**{field: value for field, value in spec.items() if field != "optional"},
                    "inputs": {input: fills.get(value, value) if isinstance(value, str) else link(value) if isinstance(value, list) else value
                               for input, value in spec["inputs"].items()}} for key, spec in nodes.items()}

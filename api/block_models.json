@@ -84,6 +84,22 @@
       }
     ]
   },
+  "sam3_1": {
+    "title": "SAM 3.1 (finds things by words)",
+    "file": "sam3.1_multiplex_fp16.safetensors",
+    "folder": "checkpoints",
+    "subfolder": "SAM3",
+    "size": 1745546848,
+    "sha256": "9ba99c92703c2e8b4f47de2d34a539bb8e18923049e238b780d70dbe6368eb03",
+    "license": "SAM License",
+    "sources": [
+      {
+        "site": "huggingface",
+        "url": "https://huggingface.co/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors",
+        "page": "https://huggingface.co/Comfy-Org/sam3.1"
+      }
+    ]
+  },
   "union_promax_sdxl": {
     "title": "xinsir ControlNet Union ProMax (SDXL)",
     "file": "xinsir-controlnet-union-sdxl-promax.safetensors",
