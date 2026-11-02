@@ -8,8 +8,8 @@
     "en": "Upscale with a second model"
   },
   "about": {
-    "zh": "放大后换一个更稳的模型重画，原模型放大后容易走样时用。",
-    "en": "Redraws the enlarged picture with a steadier model, when the first goes wrong enlarged."
+    "zh": "放大后换一个模型重画（Anima 上用 Tile 锁图），原模型放大容易走样或想换画风时用。",
+    "en": "Redraws the enlarged picture with another model (held by Tile on Anima), when the first goes wrong enlarged or another look is wanted."
   },
   "source": {
     "zh": "参考工作流的「Refiner/放大」加载器和作者的说明",
@@ -143,13 +143,153 @@
   "tested": {
     "gpu": "RTX 4050 Laptop",
     "vram_gb": 6,
-    "date": "2026-10-27",
+    "date": "2026-11-02",
     "runs": [
       {
         "model": "SDXL (Illustrious)",
         "size": "832×1216 → 1.25×",
         "seconds": 44
+      },
+      {
+        "model": "Anima (Kirazuri → Realskin 1.3, Tile)",
+        "size": "1216×832 → 1.22×",
+        "seconds": 127
       }
     ]
+  },
+  "variants": {
+    "anima": {
+      "packs": {
+        "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
+      },
+      "upscaler": false,
+      "lllite": "tile",
+      "nodes": {
+        "second_model": {
+          "class_type": "UNETLoader",
+          "like": "$loader",
+          "inputs": {}
+        },
+        "encode": {
+          "class_type": "VAEEncodeTiled",
+          "inputs": {
+            "pixels": [
+              "$save.images",
+              "*"
+            ],
+            "vae": [
+              "$decode.vae",
+              "*"
+            ],
+            "tile_size": 512,
+            "overlap": 64,
+            "temporal_size": 64,
+            "temporal_overlap": 8
+          }
+        },
+        "enlarge": {
+          "class_type": "LatentUpscaleBy",
+          "inputs": {
+            "samples": [
+              "encode",
+              0
+            ],
+            "upscale_method": "bislerp",
+            "scale_by": 1.22
+          }
+        },
+        "tile": {
+          "class_type": "AnimaLLLiteApply_sdscripts",
+          "inputs": {
+            "model": [
+              "second_model",
+              0
+            ],
+            "lllite_name": "$lllite",
+            "image": [
+              "$save.images",
+              "*"
+            ],
+            "strength": 0.7,
+            "start_percent": 0.0,
+            "end_percent": 0.8,
+            "preserve_wrapper": true
+          }
+        },
+        "redraw": {
+          "class_type": "KSampler",
+          "like": "$sampler",
+          "inputs": {
+            "model": [
+              "tile",
+              0
+            ],
+            "positive": [
+              "$sampler.positive",
+              "*"
+            ],
+            "negative": [
+              "$sampler.negative",
+              "*"
+            ],
+            "latent_image": [
+              "enlarge",
+              0
+            ],
+            "steps": 30,
+            "cfg": 4.4,
+            "sampler_name": "dpmpp_2m_sde_gpu",
+            "scheduler": "sgm_uniform",
+            "denoise": 0.85
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecodeTiled",
+          "inputs": {
+            "samples": [
+              "redraw",
+              0
+            ],
+            "vae": [
+              "$decode.vae",
+              "*"
+            ],
+            "tile_size": 512,
+            "overlap": 64,
+            "temporal_size": 64,
+            "temporal_overlap": 8
+          }
+        },
+        "match": {
+          "class_type": "ColorMatch",
+          "optional": true,
+          "inputs": {
+            "image_ref": [
+              "$save.images",
+              "*"
+            ],
+            "image_target": [
+              "decode",
+              0
+            ],
+            "method": "mkl",
+            "strength": 1.0,
+            "multithread": true
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "match|decode",
+              0
+            ],
+            "filename_prefix": "upscaled"
+          }
+        }
+      },
+      "after": "On this Anima model the picture is enlarged 1.22× in latent space and redrawn at denoise 0.85 by the redraw's own model (second_model, a new UNET loader that starts as the canvas's model), held by Anima's tile-repair LLLite (0.7, to 80% of the steps). set_model second_model to the other Anima model the user wants. A LoRA on the first model (a style) is not on it: add_lora it onto second_model too when the user wants that look kept (the tested route did). Then run_workflow; the larger one is saved beside it (prefix upscaled). Compare face, hands and clothes with the base: Tile guides, it does not guarantee.",
+      "notes": "The user's tested route: Harem 1.5 base, Realskin 1.3 for the Tile upscale, its style LoRA on both, 832×1216 → 1016×1480, 116 s for the upscale on 6 GB. ColorMatch (KJNodes) is left out without the pack."
+    }
   }
 }

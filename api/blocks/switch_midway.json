@@ -1,0 +1,147 @@
+{
+  "job": "refine",
+  "want": "midway",
+  "rank": 7,
+  "short": "switch mid-way",
+  "title": {
+    "zh": "半途换模型接着画",
+    "en": "Switch models mid-way"
+  },
+  "about": {
+    "zh": "前面的步数用原模型定下构图，后面的步数换另一个模型接着画完，画风和细节跟着它走。",
+    "en": "The first steps keep the model's composition, then another model draws the rest, with its look and detail."
+  },
+  "source": {
+    "zh": "复现 Aaalice 双模型路线时用的接力（两个 KSampler Advanced 分段），本机三组对比验证过",
+    "en": "The relay used to reproduce the Aaalice two-model route (two KSampler Advanced parts), checked in three local comparisons"
+  },
+  "packs": {},
+  "nodes": {
+    "second_model": {
+      "class_type": "CheckpointLoaderSimple",
+      "like": "$loader",
+      "inputs": {}
+    },
+    "first": {
+      "class_type": "KSamplerAdvanced",
+      "like": "$sampler",
+      "inputs": {
+        "model": [
+          "$sampler.model",
+          "*"
+        ],
+        "positive": [
+          "$sampler.positive",
+          "*"
+        ],
+        "negative": [
+          "$sampler.negative",
+          "*"
+        ],
+        "latent_image": [
+          "$sampler.latent_image",
+          "*"
+        ],
+        "add_noise": "enable",
+        "start_at_step": 0,
+        "end_at_step": 21,
+        "return_with_leftover_noise": "enable"
+      }
+    },
+    "second": {
+      "class_type": "KSamplerAdvanced",
+      "replaces": "$sampler",
+      "inputs": {
+        "model": [
+          "second_model",
+          0
+        ],
+        "latent_image": [
+          "first",
+          0
+        ],
+        "add_noise": "disable",
+        "start_at_step": 21,
+        "end_at_step": 10000,
+        "return_with_leftover_noise": "disable"
+      }
+    }
+  },
+  "after": "The canvas's sampler became two: the first runs steps 0 to 21 on the canvas's model, the second (second_model, a new loader that starts as the same model) from step 21 to the end, and the picture goes on to the decode as before. set_model second_model to the other model the user wants, of the same family (it reuses the prompts). A LoRA on the first model (a style) is not on the second: add_lora it onto second_model too when the user wants it kept. 21 is 60% of 35 steps: with other steps set the first sampler's end_at_step and the second's start_at_step both to about 60% (earlier: more of the second model, later: more of the first). er_sde does not split (the picture comes out grainy): on er_sde set both to dpmpp_2m_sde_gpu or euler. For a picture drawn from an empty latent; then run_workflow.",
+  "notes": "KSampler Advanced: the first part returns its leftover noise, the second adds none and finishes it, so the two parts make one run of the steps. er_sde does not resume mid-way (grain all over, the same model in both parts too); dpmpp_2m_sde_gpu and euler do. Tested on the user's route: Harem 1.5 for steps 0-21, Realskin 1.3 for 21-35, its style LoRA on both, 35 steps dpmpp_2m_sde_gpu beta.",
+  "models": [],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "runs": [
+      {
+        "model": "Anima (Kirazuri → Realskin 1.3 at step 21)",
+        "size": "1216×832",
+        "seconds": 79
+      }
+    ],
+    "date": "2026-11-02"
+  },
+  "variants": {
+    "anima": {
+      "nodes": {
+        "second_model": {
+          "class_type": "UNETLoader",
+          "like": "$loader",
+          "inputs": {}
+        },
+        "first": {
+          "class_type": "KSamplerAdvanced",
+          "like": "$sampler",
+          "inputs": {
+            "model": [
+              "$sampler.model",
+              "*"
+            ],
+            "positive": [
+              "$sampler.positive",
+              "*"
+            ],
+            "negative": [
+              "$sampler.negative",
+              "*"
+            ],
+            "latent_image": [
+              "$sampler.latent_image",
+              "*"
+            ],
+            "add_noise": "enable",
+            "start_at_step": 0,
+            "end_at_step": 21,
+            "return_with_leftover_noise": "enable",
+            "steps": 35,
+            "sampler_name": "dpmpp_2m_sde_gpu",
+            "scheduler": "beta"
+          }
+        },
+        "second": {
+          "class_type": "KSamplerAdvanced",
+          "replaces": "$sampler",
+          "inputs": {
+            "model": [
+              "second_model",
+              0
+            ],
+            "latent_image": [
+              "first",
+              0
+            ],
+            "add_noise": "disable",
+            "start_at_step": 21,
+            "end_at_step": 10000,
+            "return_with_leftover_noise": "disable",
+            "steps": 35,
+            "sampler_name": "dpmpp_2m_sde_gpu",
+            "scheduler": "beta"
+          }
+        }
+      },
+      "after": "The canvas's sampler became two, with the tested Anima sampling (35 steps, dpmpp_2m_sde_gpu, beta): the first runs steps 0 to 21 on the canvas's model, the second (second_model, a new UNET loader that starts as the same model) from step 21 to the end, and the picture goes on to the decode as before. set_model second_model to the other Anima model the user wants (it reuses the text encoder and prompts). A LoRA on the first model (a style) is not on the second: add_lora it onto second_model too when the user wants it kept (the tested route did). Move the switch with the first sampler's end_at_step and the second's start_at_step together (earlier: more of the second model, later: more of the first). Keep dpmpp_2m_sde_gpu: er_sde comes out grainy when split. For a picture drawn from an empty latent; then run_workflow."
+    }
+  }
+}

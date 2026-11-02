@@ -349,7 +349,7 @@ CANVAS_TOOLS = dict([
                         "want": {"type": "string", "description": "Kind from begin_task (best, 2x, pose…)."},
                         "block": {"type": "string", "enum": list(reference_blocks.BLOCKS)},
                         "image": {"type": "string", "description": "A repaint block's inpaint_image; a control block's picture to follow."},
-                        "scene": {"type": "string", "description": "A block's second picture, where it puts the first (place_in_scene)."},
+                        "scene": {"type": "string", "description": "The picture place_in_scene puts it into."},
                         "near_node_id": _NODE_ID, "replace": {"type": "boolean"}}),
     _action("connect_nodes", "Wire two nodes",
             "Wires two nodes: every unique matching type, and same-type sockets of the same name (positive to "

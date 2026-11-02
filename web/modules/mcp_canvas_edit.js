@@ -23,6 +23,7 @@ import { workflowKey } from './canvas_undo.js';
 import { findRoles, placeRoles } from './canvas_roles.js';
 
 const BLANK = { last_node_id: 0, last_link_id: 0, nodes: [], links: [], groups: [], config: {}, extra: {}, version: 0.4 };
+const SAME_SETTING = { seed: 'noise_seed', noise_seed: 'seed' };
 
 /** Socket details when a node was added without wiring; wired receipts already say what changed. */
 function shape(g, node) {
@@ -90,9 +91,11 @@ function prepare(nodes) {
         } catch (error) {
             throw new Error(`Node ${key}: ${error.message}`);
         }
-        // Settings it takes from the node it is like (canvas_roles.js), where it has them and the value fits.
-        for (const [name, value] of Object.entries(spec?.carry || {})) {
-            if (name in values) continue;
+        // Settings it takes from the node it is like (canvas_roles.js), where it has them and the value fits;
+        // a sampler's seed is noise_seed on KSampler Advanced and the other way round.
+        for (const [carried, value] of Object.entries(spec?.carry || {})) {
+            const name = [carried, SAME_SETTING[carried]].find(item => item && (node.widgets || []).some(widget => widget.name === item));
+            if (!name || name in values) continue;
             try { plans[key].push(...valuePlan(node, { [name]: value })); } catch { /* not a setting of this node */ }
         }
         made[key] = node;

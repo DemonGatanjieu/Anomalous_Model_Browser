@@ -7,8 +7,8 @@
     "en": "Refine with another model"
   },
   "about": {
-    "zh": "换另一个单文件模型（可以配它的 LoRA）把整张图轻轻重画一遍，另存一张。",
-    "en": "Another single-file checkpoint (with its LoRAs) lightly redraws the whole picture, saved beside it."
+    "zh": "换另一个模型把整张图轻轻重画一遍，另存一张（单文件模型和 Anima 都行）。",
+    "en": "Another model lightly redraws the whole picture, saved beside it (a single-file checkpoint or an Anima model)."
   },
   "source": {
     "zh": "参考工作流的「Refiner 管线」：精修时可以换一个底模加载器，配一套独立的 LoRA 堆",
@@ -102,18 +102,94 @@
     }
   },
   "after": "The refine's loader (second_model) starts as the same checkpoint: set_model it to the one the user wants (ask_user, search_models), add_lora its own LoRAs onto it, and write its prompts (second_positive, second_negative, copied from the first) in that model's style. Another family may want other steps, cfg and sampler on redraw. Then run_workflow; the refined one is saved beside it (prefix refined). Denoise 0.4: lower keeps more of the first, higher takes more of the second.",
-  "notes": "The source keeps a separate loader and LoRA stack for refining. Its own CLIP and VAE, so a checkpoint of another family works; a model loaded as separate UNET, CLIP and VAE files (Anima) does not fit this loader.",
+  "notes": "The source keeps a separate loader and LoRA stack for refining. Its own CLIP and VAE, so a checkpoint of another family works. On an Anima model (UNET, text encoder and VAE in separate files) its variant loads only another UNET and reuses the canvas's text encoder and VAE: another Anima model.",
   "models": [],
   "tested": {
     "gpu": "RTX 4050 Laptop",
     "vram_gb": 6,
-    "date": "2026-10-28",
+    "date": "2026-11-02",
     "runs": [
       {
         "model": "SDXL (Illustrious) → NoobAI",
         "size": "832×1216",
         "seconds": 66
+      },
+      {
+        "model": "Anima (Kirazuri → Realskin 1.3, denoise 0.4, with the base)",
+        "size": "1216×832",
+        "seconds": 148
       }
     ]
+  },
+  "variants": {
+    "anima": {
+      "nodes": {
+        "second_model": {
+          "class_type": "UNETLoader",
+          "like": "$loader",
+          "inputs": {}
+        },
+        "encode": {
+          "class_type": "VAEEncode",
+          "inputs": {
+            "pixels": [
+              "$decode",
+              0
+            ],
+            "vae": [
+              "$decode.vae",
+              "*"
+            ]
+          }
+        },
+        "redraw": {
+          "class_type": "KSampler",
+          "like": "$sampler",
+          "inputs": {
+            "model": [
+              "second_model",
+              0
+            ],
+            "positive": [
+              "$sampler.positive",
+              "*"
+            ],
+            "negative": [
+              "$sampler.negative",
+              "*"
+            ],
+            "latent_image": [
+              "encode",
+              0
+            ],
+            "denoise": 0.4
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "redraw",
+              0
+            ],
+            "vae": [
+              "$decode.vae",
+              "*"
+            ]
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "decode",
+              0
+            ],
+            "filename_prefix": "refined"
+          }
+        }
+      },
+      "after": "On this Anima model the refine's loader (second_model) is a UNET loader that starts as the canvas's model; it reuses the canvas's text encoder, VAE and prompts. set_model it to the other Anima model the user wants (ask_user, search_models); a LoRA on the first model is not on it: add_lora it onto second_model when the user wants that look kept. Then run_workflow; the refined one is saved beside it (prefix refined). Denoise 0.4: lower keeps more of the first, higher takes more of the second."
+    }
   }
 }
