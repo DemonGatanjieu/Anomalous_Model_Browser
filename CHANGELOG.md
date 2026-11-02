@@ -2,8 +2,8 @@
 
 ## v1.63.0 — unreleased
 
-- 新增按需 skill **Anima 插画·底图与 Tile 细化**，以及自动接入的 **Anima Tile 放大细化** 做法：保留底图，以 1.22 倍潜空间放大和 Tile 引导高降噪细化，检查模型架构与必需权重，结果另存供对比。参数来自三组本机对照，不保证修手或复刻原图。
-- New on-demand **Anima illustration: base and Tile detail** skill and **Anima Tile detail upscale** way: retain the base and save a guided 1.22× latent redraw separately, checking the model family and required weight. Settings come from three local comparisons and do not guarantee hand repair or reproduction.
+- 新增 **Anima Tile 放大细化** 做法：保留底图，以 1.22 倍潜空间放大和 Tile 引导高降噪细化，检查模型架构与必需权重，结果另存供对比；参数来自三组本机对照，不保证修手或复刻原图。配套的按需 skill **Anima 插画·底图与 Tile 细化** 只写怎么判断（先出底图给你看、再用这块做法、你存过这条路线的工作流或搭配就直接用、你没选的画风和 LoRA 不加），具体模型和数值留在做法和你自己的搭配里。
+- New **Anima Tile detail upscale** way: retain the base and save a guided 1.22× latent redraw separately, checking the model family and required weight; settings come from three local comparisons and do not guarantee hand repair or reproduction. Its on-demand skill **Anima illustration: base and Tile detail** holds judgment only (show the base first, then this way; a workflow or combo you saved for this route is used as it is; no style or LoRA you did not pick); the models and values stay in the way and in your own combos.
 
 - 跑完的图下面新增 **效果好 / 不太行** 两个按钮，点了直接告诉 AI（点“不太行”它就换做法、设置或提示词再跑），再点一下收回。**关卡** 里新增 **第三方节点**：选“只用做法里的”，AI 自己加节点时只能用做法里搭好的组合和你给任务挑的，ComfyUI 自带的节点照常能用。等不到回答时设成按推荐的继续，挑图面板里 AI 推荐的那张也会替你选上。
 - Under a finished run's pictures, **Turned out well / Not quite** tells the AI at once (with "Not quite" it changes the way, a setting or the prompt before running again); a click again takes it back. The **Gates** window has a new **Custom nodes** row: with "Only the ways'" the AI may add only the nodes of the ready-made ways and what you picked for the task; ComfyUI's built-in nodes stay allowed. With "go on with the recommended" for unanswered questions, a picks panel takes the picture the AI recommended too.

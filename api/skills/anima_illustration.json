@@ -1,16 +1,18 @@
 {
-  "short": "Anima illustration with a high-detail Tile-guided second pass",
-  "title": {"zh": "Anima 插画·底图与 Tile 细化", "en": "Anima illustration: base and Tile detail"},
+  "short": "Anima illustration: base first, then the Tile way",
+  "title": {
+    "zh": "Anima 插画·底图与 Tile 细化",
+    "en": "Anima illustration: base and Tile detail"
+  },
   "about": {
-    "zh": "按已测试的 Anima 插画路线先出底图，再用 Tile 控制网放大细化；先确认模型、LoRA 和结果，不保证原图复刻。",
-    "en": "Make an Anima illustration and refine a selected base with Tile guidance, checking models, LoRA and results; not a promise to reproduce a reference."
+    "zh": "Anima 插画分两步时怎么判断：先出底图给你看，再用“Anima Tile 放大细化”这块做法细化；你存过这条路线的工作流或搭配就直接用；你没选的画风、LoRA、画师词不加。具体数值在做法和你自己的搭配里，这里不写。",
+    "en": "How to judge an Anima illustration in two passes: show the base first, then refine it with the \"Anima Tile detail upscale\" way; a workflow or combo you saved for this route is used as it is; no style, LoRA or artist you did not pick. The values live in the way and in your own combos, not here."
   },
   "text": [
-    "Use for an explicitly requested Anima illustration or this Tile-guided two-pass recipe, not as a default for unrelated models or styles. Preserve the user's text, requested character and pose; do not add an artist, style, LoRA or hidden hands unless the user asks or accepts it.",
-    "Starting point tested on RTX 4050 Laptop 6 GB: MiaoMiao Harem Anima 1.5, compatible Qwen 3 0.6B text encoder and Qwen image VAE, optional Chen bin style LoRA at model/CLIP 1.0. Verify models and LoRA compatibility; filename similarity is not file identity. The separately named MiaoMiao text encoder was not compared. Use the user's chosen model or style when specified.",
-    "Base pass: 832x1216 batch 1, 35 steps, CFG 4.4, dpmpp_2m_sde_gpu/beta, denoise 1.0, with tiled VAE if needed. Preserve and show the base; let the user select it before a further pass when selection was requested. Do not force a long second pass on an unwanted base.",
-    "For an Anima canvas with the tested Anima Tile Repair v2.0 weight and ComfyUI-Anima-LLLite available, add_nodes(block=\"upscale_anima_tile\") builds the second pass: tiled VAE encode, bislerp 1.22, 30 steps, CFG 4.4, dpmpp_2m_sde_gpu/sgm_uniform, denoise 0.85, Tile 0.7 from 0 to 0.8 using the base image, tiled decode and optional ColorMatch mkl. It saves a separate result. Check the canvas and missing nodes/models first; do not silently substitute another Tile model or attach to a non-Anima model.",
-    "Use a modest single-image size and avoid simultaneous large jobs on 6 GB. 0.85 redraws substantially even with Tile: compare base and result, zoom in on important details and hands, keep the original, and let the user choose; lower denoise if preservation matters more. Three locally tested SFW base/Tiled comparisons suggest stronger composition retention, not guaranteed hand repair or a general success rate. The original reference graph also contains a Tile preprocessor that was not used in this test; its actual runtime and exact reference reproduction are unproven.",
-    "If the user asks for a controlled comparison, use the same saved base, prompt, size, seed, sampler and color matching with and without Tile. Report what actually ran, missing models, choices, and visual changes. Do not claim the LoRA alone caused the style: no weight ablation has been done."
+    "Use for an Anima illustration the user wants refined in two passes, not as a default for other models or styles. Preserve the user's text, requested character and pose; add a style, artist or LoRA only when the user picked it (a combo or saved prompt of theirs).",
+    "If the user saved this route as a workflow (list_workflows) or a combo (list_combos), use it: run_workflow with their subject and seed is the daily run. Its models and values are theirs: do not change them.",
+    "Run the base first and show it; when the user wants to choose, let them pick it before the second pass. Then add_nodes(block=\"upscale_anima_tile\") on the Anima canvas: the way carries the tested second-pass values and checks the model family and the Tile weight. Report a missing node or model; never swap in a look-alike.",
+    "What to expect: a high-denoise second pass without Tile tends to change the pose and ornaments; with Tile the composition holds better, but faces, hands and small details are still redrawn. Keep the base, compare, and lower the denoise when keeping more matters to the user.",
+    "Changing models between the passes: only within one family sharing the text encoder and VAE; otherwise say it is untried. These findings come from a few single-seed comparisons: say what ran and what changed, and do not promise a reproduction or repaired hands."
   ]
 }
