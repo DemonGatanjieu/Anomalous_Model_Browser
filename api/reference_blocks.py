@@ -10,7 +10,8 @@ whose links may name roles the page finds on the canvas by their sockets
 latent), "$save" (the output node its picture reaches), "$loader" (the sampler's model loader);
 ["$decode", 0] is that node's output, ["$sampler.positive", "*"] what feeds that input, a path
 ("$sampler.positive.clip") followed upstream. A node "like" a role takes its settings of the same
-name; one that "replaces" a role takes its place, links and settings. A block may have a variant for
+name; one that "replaces" a role takes its place, links and settings; one "copy_of" a path
+("$sampler.model") is a copy of the canvas's model line there, loader and LoRAs (a redraw's own model). A block may have a variant for
 a model family (on an Anima model an LLLite, or the Turbo LoRA for fewer steps). The directory
 (directory()) is what the AI is handed when it begins a task: the blocks this ComfyUI can run
 and the user has not turned off (user/anomalous/ai_blocks.json), a few words each, by job.

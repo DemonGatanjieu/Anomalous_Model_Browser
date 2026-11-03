@@ -186,22 +186,22 @@ class BlockTests(unittest.TestCase):
             reference_blocks.nodes_of("upscale_tiled", {**EVERYTHING, "UpscaleModelLoader": {}})
         self.assertIn("ComfyUI_UltimateSDUpscale: upscale 2x", reference_blocks.directory(BUILT_IN)["Not here yet, needs"])
 
-    def test_anima_tile_upscale_needs_its_model_and_builds_a_separate_guided_pass(self):
+    def test_the_tile_upscale_redraws_on_its_own_copy_of_the_model(self):
         info = {**EVERYTHING, "ColorMatch": {}}
-        self.assertEqual(reference_blocks.pick("upscale", "anima tile", info), "upscale_anima_tile")
-        nodes = reference_blocks.build("upscale_anima_tile", info, main_base=lambda: "Anima")["nodes"]
-        self.assertEqual(nodes["tile"]["inputs"]["lllite_name"], "animaTileRepair_v20.safetensors")
-        self.assertEqual(nodes["tile"]["inputs"]["image"], ["$save.images", "*"])
-        self.assertEqual(nodes["redraw"]["inputs"]["model"], ["tile", 0])
-        self.assertEqual((nodes["enlarge"]["inputs"]["scale_by"], nodes["redraw"]["inputs"]["denoise"]), (1.22, 0.85))
+        self.assertEqual(reference_blocks.pick("upscale", "detail", info), "upscale_tile")
+        with self.assertRaisesRegex(reference_blocks.BlockError, "upscale takes want: detail, 2x, or none"):
+            reference_blocks.pick("upscale", "steady", info)
+        nodes = reference_blocks.build("upscale_tile", info, main_base=lambda: "Anima")["nodes"]
+        self.assertEqual(nodes["own"], {"class_type": "UNETLoader", "copy_of": "$sampler.model", "_meta": {"title": "Upscale model"}, "inputs": {}},
+                         "the canvas's model line copied: the base's model and LoRAs, one swap for a second model")
+        self.assertEqual((nodes["tile"]["inputs"]["model"], nodes["tile"]["inputs"]["lllite_name"]), (["own", 0], "animaTileRepair_v20.safetensors"))
+        self.assertEqual((nodes["enlarge"]["inputs"]["scale_by"], nodes["redraw"]["inputs"]["denoise"]), (1.22, 0.85), "the tested route")
         self.assertEqual(nodes["match"]["inputs"]["image_ref"], ["$save.images", "*"])
-        for family in ("", "SDXL 1.0"):
-            with self.assertRaisesRegex(reference_blocks.BlockError, "requires a confirmed anima"):
-                reference_blocks.build("upscale_anima_tile", info, main_base=lambda: family)
+        sdxl = reference_blocks.build("upscale_tile", info, main_base=lambda: "Illustrious")["nodes"]
+        self.assertEqual((sdxl["own"]["class_type"], sdxl["redraw"]["inputs"]["model"]), ("CheckpointLoaderSimple", ["own", 0]))
         missing = {**info, "AnimaLLLiteApply_sdscripts": LLLITES | {"input": {"required": {"lllite_name": [["anima-lllite-depth-1.safetensors"]]}}}}
-        self.assertFalse(next(item for item in reference_blocks.status(missing) if item["name"] == "upscale_anima_tile")["usable"])
         with self.assertRaises(reference_blocks.MissingModel):
-            reference_blocks.build("upscale_anima_tile", missing, main_base=lambda: "Anima")
+            reference_blocks.build("upscale_tile", missing, main_base=lambda: "Anima")
 
     def test_a_node_only_making_a_block_better_goes_when_its_pack_is_missing(self):
         nodes = reference_blocks.nodes_of("upscale", {**EVERYTHING, "ColorMatch": {}})
@@ -264,7 +264,7 @@ class BlockTests(unittest.TestCase):
         self.assertEqual(lines["lines"]["class_type"], "ImageInvert", "white lines on black, as the ControlNet reads them")
         anima = reference_blocks.nodes_of("upscale_tile", {**info, "AnimaLLLiteApply_sdscripts": {"input": {"required": {"lllite_name": [[
             "animaTileRepair_v20.safetensors", "anima-lllite-depth-1.safetensors"]]}}}}, None, lambda: "Anima")
-        self.assertEqual((anima["hold"]["inputs"]["lllite_name"], anima["redraw"]["inputs"]["model"]), ("animaTileRepair_v20.safetensors", ["hold", 0]))
+        self.assertEqual((anima["tile"]["inputs"]["lllite_name"], anima["redraw"]["inputs"]["model"]), ("animaTileRepair_v20.safetensors", ["tile", 0]))
 
     def test_the_models_list_says_where_each_comes_from_and_how_to_check_it(self):
         from api.download_sources import allowed_download_url
@@ -288,7 +288,7 @@ class BlockTests(unittest.TestCase):
         self.assertEqual(upscale["tested"]["vram_gb"], 6)
         words = reference_blocks.build("upscale_tile", EVERYTHING, None, lambda: "")["tested"]
         self.assertIn("6 GB card", words)
-        self.assertIn("about 710 s for Anima", words)
+        self.assertIn("about 127 s for Anima", words)
         self.assertEqual(reference_blocks.build("inpaint_basic", EVERYTHING, "a.png")["tested"], "", "not tried: nothing claimed")
 
     def test_every_link_names_a_node_of_its_block_or_a_role(self):

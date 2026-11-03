@@ -9,6 +9,10 @@
  * name (a second sampler with the first one's steps and cfg); one that "replaces" a role also
  * takes its links in and out, and the old node goes (LanPaint's sampler in the KSampler's place).
  * "$loader" is the node the sampler's model comes from, past its LoRAs (a second model loader "like" it).
+ * A node "copy_of" a path ("$sampler.model") is a copy of the model line feeding it: its loader and
+ * LoRAs as new nodes with their settings, past bypassed nodes and control patches (a Tile on the first
+ * pass is not the second's); the block's key is the copy's last node, its loader titled as the node is
+ * (a redraw's own model, which the AI swaps for a second one with set_model, the LoRAs kept).
  * Several samplers: near_node_id names the one, else nothing changes and they are listed.
  */
 
@@ -16,6 +20,7 @@ import { linkOf } from './mcp_canvas_brief.js';
 
 const SAMPLER_INPUTS = ['model', 'positive', 'negative', 'latent_image'];
 const OFF = new Set([2, 4]); // muted, bypassed
+const CONTROL = /lllite|controlnet|t2iadapter|ipadapter/i;
 
 const upper = type => String(type ?? '').toUpperCase();
 const inputNamed = (node, name) => (node?.inputs || []).find(item => String(item.name).toLowerCase() === name.toLowerCase());
@@ -113,15 +118,38 @@ export function placeRoles(g, nodes, nearId = null) {
         return path.length ? g.getNodeById(Number(upstream(g, role(name, ref), path, ref)[0].slice(1))) : role(name, ref);
     };
     const gone = new Set(Object.values(nodes).filter(spec => spec.replaces).map(spec => role(spec.replaces.slice(1), spec.replaces)));
-    return Object.fromEntries(Object.entries(nodes).map(([key, { like, replaces, ...spec }]) => {
+    return Object.fromEntries(Object.entries(nodes).flatMap(([key, { like, replaces, copy_of: copyOf, ...spec }]) => {
+        if (copyOf) return modelCopy(g, key, nodeAt(copyOf), spec._meta?.title, copyOf);
         const inputs = Object.fromEntries(Object.entries(spec.inputs || {}).map(([name, value]) => [name, link(value)]));
         const placed = { ...spec, inputs,
             ...(spec.wire_to == null ? {} : { wire_to: Array.isArray(spec.wire_to) ? spec.wire_to.map(target) : target(spec.wire_to) }) };
         const model = like || replaces ? nodeAt(like || replaces) : null;
         if (model) placed.carry = settingsOf(model);
         if (replaces) Object.assign(placed, takenOver(g, model, inputs, gone));
-        return [key, placed];
+        return [[key, placed]];
     }));
+}
+
+/** The model line ending at `last` as group entries [[key, spec]], loader first, the last one under `key`. */
+function modelCopy(g, key, last, title, ref) {
+    const line = [];
+    for (let at = last, hop = 0; at && hop < 30; hop++) {
+        if (!OFF.has(at.mode) && !CONTROL.test(at.type)) line.unshift(at);
+        const id = inputNamed(at, 'model')?.link;
+        const link = id == null ? null : linkOf(g, id);
+        at = link ? g.getNodeById(link.origin_id) : null;
+    }
+    if (!line.length || inputNamed(line[0], 'model')) throw new Error(`${ref}: no model loader feeds it on the canvas. Nothing added.`);
+    const keys = line.map((node, at) => (at === line.length - 1 ? key : `${key}_${at + 1}`));
+    return line.map((node, at) => {
+        const inputs = {};
+        for (const input of node.inputs || []) {
+            const link = input.link == null ? null : linkOf(g, input.link);
+            if (String(input.name).toLowerCase() === 'model') inputs[input.name] = [keys[at - 1], 0];
+            else if (link) inputs[input.name] = [`#${link.origin_id}`, link.origin_slot];
+        }
+        return [keys[at], { class_type: node.type, inputs, carry: settingsOf(node), ...(at === 0 && title ? { _meta: { title } } : {}) }];
+    });
 }
 
 /** What a node replacing `old` takes from it: the links into it the block does not give (`kept`,

@@ -2,18 +2,18 @@
   "job": "upscale",
   "want": "detail",
   "rank": 2,
-  "short": "tile-held",
+  "short": "held by Tile, own model",
   "title": {
-    "zh": "平铺放大",
-    "en": "Upscale held by tile"
+    "zh": "Tile 锁图放大",
+    "en": "Upscale held by Tile"
   },
   "about": {
-    "zh": "放大时用平铺控制网钉住画面，可以重画得更狠，细节最多。",
-    "en": "A tile ControlNet holds the picture so the redraw can be stronger: the most detail."
+    "zh": "放大时用 Tile 钉住画面，重画得更狠、细节更多。放大这一段有自己的一份模型（默认和底图同一个，LoRA 一起带上），想换第二个模型只要换这一格；Anima 上用 Anima 的 Tile LLLite。",
+    "en": "A Tile holds the picture while it is enlarged and redrawn, so the redraw can go stronger: more detail. The redraw has its own copy of the model (the base's, its LoRAs too); a second model is one swap of that loader. On Anima, Anima's Tile LLLite holds it."
   },
   "source": {
-    "zh": "参考工作流的「通用放大」组（作者默认开着平铺控制网：强度 0.6，到 80% 的步数）",
-    "en": "The reference workflow's general upscale, with its tile ControlNet on (strength 0.6, to 80% of the steps) as its author sets it"
+    "zh": "参考工作流的「通用放大」组（平铺控制网 0.6，到 80% 的步数）和它的放大加载器；Anima 是你验证过的两段放大卡（潜空间 1.22 倍 + Tile LLLite，降噪 0.85）",
+    "en": "The reference workflow's general upscale (tile ControlNet 0.6, to 80% of the steps) and its upscale loader; on Anima the user's tested two-pass card (latent 1.22x, Tile LLLite, denoise 0.85)"
   },
   "packs": {},
   "upscaler": true,
@@ -23,6 +23,14 @@
     "ColorMatch": "ComfyUI-KJNodes"
   },
   "nodes": {
+    "own": {
+      "class_type": "CheckpointLoaderSimple",
+      "copy_of": "$sampler.model",
+      "_meta": {
+        "title": "Upscale model"
+      },
+      "inputs": {}
+    },
     "upscaler": {
       "class_type": "UpscaleModelLoader",
       "inputs": {
@@ -105,8 +113,8 @@
       "like": "$sampler",
       "inputs": {
         "model": [
-          "$sampler.model",
-          "*"
+          "own",
+          0
         ],
         "positive": [
           "hold",
@@ -169,50 +177,62 @@
       "packs": {
         "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
       },
+      "upscaler": false,
       "control": null,
       "lllite": "tile",
       "nodes": {
-        "upscaler": {
-          "class_type": "UpscaleModelLoader",
-          "inputs": {
-            "model_name": "$upscaler"
-          }
-        },
-        "enlarge": {
-          "class_type": "ImageUpscaleWithModel",
-          "inputs": {
-            "upscale_model": [
-              "upscaler",
-              0
-            ],
-            "image": [
-              "$save.images",
-              "*"
-            ]
-          }
-        },
-        "fit": {
-          "class_type": "ImageScaleBy",
-          "inputs": {
-            "image": [
-              "enlarge",
-              0
-            ],
-            "upscale_method": "lanczos",
-            "scale_by": "$fit"
-          }
+        "own": {
+          "class_type": "UNETLoader",
+          "copy_of": "$sampler.model",
+          "_meta": {
+            "title": "Upscale model"
+          },
+          "inputs": {}
         },
         "encode": {
-          "class_type": "VAEEncode",
+          "class_type": "VAEEncodeTiled",
           "inputs": {
             "pixels": [
-              "fit",
-              0
+              "$save.images",
+              "*"
             ],
             "vae": [
               "$decode.vae",
               "*"
-            ]
+            ],
+            "tile_size": 512,
+            "overlap": 64,
+            "temporal_size": 64,
+            "temporal_overlap": 8
+          }
+        },
+        "enlarge": {
+          "class_type": "LatentUpscaleBy",
+          "inputs": {
+            "samples": [
+              "encode",
+              0
+            ],
+            "upscale_method": "bislerp",
+            "scale_by": 1.22
+          }
+        },
+        "tile": {
+          "class_type": "AnimaLLLiteApply_sdscripts",
+          "inputs": {
+            "model": [
+              "own",
+              0
+            ],
+            "lllite_name": "$lllite",
+            "image": [
+              "$save.images",
+              "*"
+            ],
+            "strength": 0.7,
+            "start_percent": 0.0,
+            "end_percent": 0.8,
+            "preserve_wrapper": true
           }
         },
         "redraw": {
@@ -220,7 +240,7 @@
           "like": "$sampler",
           "inputs": {
             "model": [
-              "hold",
+              "tile",
               0
             ],
             "positive": [
@@ -232,14 +252,18 @@
               "*"
             ],
             "latent_image": [
-              "encode",
+              "enlarge",
               0
             ],
-            "denoise": 0.5
+            "steps": 30,
+            "cfg": 4.4,
+            "sampler_name": "dpmpp_2m_sde_gpu",
+            "scheduler": "sgm_uniform",
+            "denoise": 0.85
           }
         },
         "decode": {
-          "class_type": "VAEDecode",
+          "class_type": "VAEDecodeTiled",
           "inputs": {
             "samples": [
               "redraw",
@@ -248,7 +272,11 @@
             "vae": [
               "$decode.vae",
               "*"
-            ]
+            ],
+            "tile_size": 512,
+            "overlap": 64,
+            "temporal_size": 64,
+            "temporal_overlap": 8
           }
         },
         "match": {
@@ -256,8 +284,8 @@
           "optional": true,
           "inputs": {
             "image_ref": [
-              "fit",
-              0
+              "$save.images",
+              "*"
             ],
             "image_target": [
               "decode",
@@ -277,41 +305,24 @@
             ],
             "filename_prefix": "upscaled"
           }
-        },
-        "hold": {
-          "class_type": "AnimaLLLiteApply_sdscripts",
-          "inputs": {
-            "model": [
-              "$sampler.model",
-              "*"
-            ],
-            "lllite_name": "$lllite",
-            "image": [
-              "fit",
-              0
-            ],
-            "strength": 0.9,
-            "start_percent": 0.0,
-            "end_percent": 0.8,
-            "preserve_wrapper": true
-          }
         }
       },
-      "after": "On this Anima model Anima's tile-repair LLLite holds the picture (0.9, to 80% of the steps) while it is redrawn at denoise 0.5. run_workflow; the larger one is saved beside it (prefix upscaled). It is slow on a small card (about 10 minutes on 6 GB): say so before running it."
+      "after": "On this Anima model the picture is enlarged 1.22x in latent space and redrawn at denoise 0.85, held by Anima's Tile LLLite (0.7, to 80% of the steps), with its own copy of the canvas's model and LoRAs (the loader titled Upscale model). For a second model (steadier, other skin or texture), set_model that loader to another Anima model; the LoRAs stay. Then run_workflow; the larger one is saved beside it (prefix upscaled). Compare face, hands and clothes with the base: Tile guides, it does not guarantee."
     }
   },
-  "after": "run_workflow saves the picture as before and the 1.25× one beside it (prefix upscaled): a tile ControlNet holds it (strength 0.6, to 80% of the steps) while it is redrawn at denoise 0.5. Lower the denoise if it changes too much, raise the strength to hold it closer.",
-  "notes": "The source's tile values; denoise 0.5 because the tile holds the picture (the source went to 0.85 with a latent upscale).",
+  "after": "run_workflow saves the picture as before and the 1.25x one beside it (prefix upscaled): a tile ControlNet holds it (strength 0.6, to 80% of the steps) while it is redrawn at denoise 0.5 with its own copy of the canvas's model and LoRAs (the loader titled Upscale model). For a second model (steadier, another look), set_model that loader to one of the same family (it reuses the first model's prompts); the LoRAs stay. Lower the denoise if it changes too much, raise the strength to hold it closer.",
+  "notes": "The source's tile values; denoise 0.5 because the tile holds the picture. The redraw's own model line replaced the separate second-model way (2026-11-04): same model by default, one swap for another. On Anima the user's tested route: Harem 1.5 base, Realskin 1.3 for the Tile upscale, its style LoRA on both, 832x1216 to 1016x1480, 116 s for the upscale on 6 GB.",
   "models": [
     "union_promax_sdxl",
     "noob_tile",
     "anima_tile_repair",
-    "2x_animesharp_v4"
+    "2x_animesharp_v4",
+    "4x_ultrasharp"
   ],
   "tested": {
     "gpu": "RTX 4050 Laptop",
     "vram_gb": 6,
-    "date": "2026-10-27",
+    "date": "2026-11-02",
     "runs": [
       {
         "model": "SDXL (Illustrious)",
@@ -319,9 +330,9 @@
         "seconds": 77
       },
       {
-        "model": "Anima",
-        "size": "1216×832 → 1.25×",
-        "seconds": 710
+        "model": "Anima (Kirazuri → Realskin 1.3, Tile)",
+        "size": "1216×832 → 1.22×",
+        "seconds": 127
       }
     ]
   }

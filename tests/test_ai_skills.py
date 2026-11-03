@@ -54,7 +54,7 @@ class SkillTests(unittest.TestCase):
             listed = mcp_task_tools.begin_task(self.ctx, "a picture in two passes")["skills"]
         self.assertIn("staged_picture", listed)
         advice = " ".join(mcp_task_tools.get_toolbox(self.ctx, skill="staged_picture")["advice"])
-        for way in ('want="midway"', 'want="steady"', 'want="anima tile"', 'use="refine"'):
+        for way in ('want="midway"', 'want=\"detail\"', 'use="refine"', "its own copy of the model"):
             self.assertIn(way, advice)
         self.assertIn("may cross families", advice)
         self.assertIn("add_lora it onto the second model", advice)

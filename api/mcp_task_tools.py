@@ -405,7 +405,7 @@ TASK_TOOLS = dict([
                "picture (x, y its top left), or none to keep the marks; grow: pixels added around; feather: pixels of "
                "soft edge. The user sees theirs and yours side by side and picks one, or marks again; with an area "
                "picked the answer has inpaint_image (the picture with that area as its alpha, in ComfyUI's input "
-               "folder) and inpaint_note: add_nodes(block=\"inpaint_crop_stitch\", image=inpaint_image) builds the repaint. "
+               "folder) and inpaint_note: add_nodes(use=\"repaint\", image=inpaint_image) builds the repaint. "
                "Waits like ask_user.",
                _question_with_images(propose_repaint_area), {"title": {"type": "string", "description": "A few words, in the user's language."},
                                       "marks": {"type": "string"},

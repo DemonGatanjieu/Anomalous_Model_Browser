@@ -116,4 +116,34 @@ function txt2img() {
         { text: 'a girl' }, 'like a path: the node feeding it');
 }
 
+// copy_of the sampler's model line: its loader and LoRAs as new nodes with their settings, a bypassed one and a
+// control patch left out, the loader titled; the block links to the copy's last node by its own key.
+{
+    const { g, ckpt, sampler } = txt2img();
+    const lora = g.node('LoraLoader', [['model', 'MODEL'], ['clip', 'CLIP']], [['MODEL', 'MODEL'], ['CLIP', 'CLIP']]);
+    const skipped = g.node('LoraLoader', [['model', 'MODEL'], ['clip', 'CLIP']], [['MODEL', 'MODEL'], ['CLIP', 'CLIP']]);
+    const tile = g.node('AnimaLLLiteApply_sdscripts', [['model', 'MODEL'], ['image', 'IMAGE']], [['MODEL', 'MODEL']]);
+    sampler.inputs[0].link = null;
+    ckpt.outputs[0].links = [];
+    g.wire(ckpt, 0, lora, 'model'); g.wire(ckpt, 1, lora, 'clip');
+    g.wire(lora, 0, skipped, 'model'); g.wire(lora, 1, skipped, 'clip');
+    g.wire(skipped, 0, tile, 'model'); g.wire(tile, 0, sampler, 'model');
+    skipped.mode = 4;
+    ckpt.widgets = [{ name: 'ckpt_name', value: 'base.safetensors' }];
+    lora.widgets = [{ name: 'lora_name', value: 'style.safetensors' }, { name: 'strength_model', value: 0.8 }];
+    const placed = placeRoles(g, {
+        own: { class_type: 'CheckpointLoaderSimple', copy_of: '$sampler.model', _meta: { title: 'Upscale model' }, inputs: {} },
+        redraw: { class_type: 'KSampler', inputs: { model: ['own', 0] } },
+    });
+    assert.deepEqual(Object.keys(placed), ['own_1', 'own', 'redraw']);
+    assert.deepEqual(placed.own_1, { class_type: 'CheckpointLoaderSimple', inputs: {}, carry: { ckpt_name: 'base.safetensors' },
+        _meta: { title: 'Upscale model' } }, 'the loader, titled, with its file');
+    assert.deepEqual(placed.own, { class_type: 'LoraLoader', inputs: { model: ['own_1', 0], clip: [`#${ckpt.id}`, 1] },
+        carry: { lora_name: 'style.safetensors', strength_model: 0.8 } }, 'the LoRA on the copy, its clip from the canvas');
+    assert.deepEqual(placed.redraw.inputs.model, ['own', 0]);
+    g.links = {};
+    sampler.inputs[0].link = null;
+    assert.throws(() => placeRoles(g, { own: { class_type: 'X', copy_of: '$sampler.model', inputs: {} } }), /nothing is wired/);
+}
+
 console.log('canvas_roles ok');
