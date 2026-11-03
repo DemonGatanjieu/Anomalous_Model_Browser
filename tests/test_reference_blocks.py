@@ -108,7 +108,7 @@ class BlockTests(unittest.TestCase):
         self.assertEqual((placed["picture"]["inputs"]["image"], placed["place"]["inputs"]["image"]), ("a.png", "beach.png"))
         with self.assertRaisesRegex(reference_blocks.BlockError, "not installed here. Use block inpaint_basic"):
             reference_blocks.nodes_of("inpaint_crop_stitch", BUILT_IN, "a.png")
-        with self.assertRaisesRegex(reference_blocks.BlockError, "there are: inpaint_crop_stitch"):
+        with self.assertRaisesRegex(reference_blocks.BlockError, "there are: picture, inpaint_crop_stitch"):
             reference_blocks.nodes_of("nope", EVERYTHING)
 
     def test_detailing_takes_the_detector_models_this_comfyui_has(self):
@@ -202,6 +202,24 @@ class BlockTests(unittest.TestCase):
         missing = {**info, "AnimaLLLiteApply_sdscripts": LLLITES | {"input": {"required": {"lllite_name": [["anima-lllite-depth-1.safetensors"]]}}}}
         with self.assertRaises(reference_blocks.MissingModel):
             reference_blocks.build("upscale_tile", missing, main_base=lambda: "Anima")
+
+    def test_a_picture_from_words_is_built_by_the_model_family_on_the_model_picked(self):
+        anima = {**EVERYTHING, "CLIPLoader": {"input": {"required": {"clip_name": [["clip_l.safetensors", "Anima/qwen_3_06b_base.safetensors"]]}}},
+                 "VAELoader": {"input": {"required": {"vae_name": [["sdxl_vae.safetensors", "Anima/qwenImageGGUF_vae.safetensors"]]}}}}
+        self.assertEqual(reference_blocks.pick("picture", None, anima), "picture")
+        with self.assertRaisesRegex(reference_blocks.BlockError, "needs the model to draw with"):
+            reference_blocks.build("picture", anima, main_base=lambda: "Anima")
+        nodes = reference_blocks.build("picture", anima, main_base=lambda: "Anima", model="Anima\harem.safetensors")["nodes"]
+        self.assertEqual((nodes["model"]["class_type"], nodes["model"]["inputs"]["unet_name"]), ("UNETLoader", "Anima\harem.safetensors"))
+        self.assertEqual((nodes["text_encoder"]["inputs"]["clip_name"], nodes["vae"]["inputs"]["vae_name"]),
+                         ("Anima/qwen_3_06b_base.safetensors", "Anima/qwenImageGGUF_vae.safetensors"), "its own files beside it")
+        self.assertEqual([nodes["sampler"]["inputs"][key] for key in ("steps", "cfg", "sampler_name", "scheduler")], [35, 4.4, "dpmpp_2m_sde_gpu", "beta"])
+        no_encoder = {**anima, "CLIPLoader": {"input": {"required": {"clip_name": [["clip_l.safetensors"]]}}}}
+        with self.assertRaisesRegex(reference_blocks.BlockError, "needs a CLIPLoader file named like qwen_3_06b"):
+            reference_blocks.build("picture", no_encoder, main_base=lambda: "Anima", model="Anima\harem.safetensors")
+        sdxl = reference_blocks.build("picture", anima, main_base=lambda: "Illustrious", model="SDXL/nova.safetensors")["nodes"]
+        self.assertEqual((sdxl["model"]["inputs"]["ckpt_name"], sdxl["decode"]["inputs"]["vae"]), ("SDXL/nova.safetensors", ["model", 2]))
+        self.assertNotIn("text_encoder", sdxl)
 
     def test_a_node_only_making_a_block_better_goes_when_its_pack_is_missing(self):
         nodes = reference_blocks.nodes_of("upscale", {**EVERYTHING, "ColorMatch": {}})

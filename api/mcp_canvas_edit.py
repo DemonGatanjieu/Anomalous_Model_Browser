@@ -7,13 +7,14 @@ from its own /object_info. Arguments are checked here for shape and size; the pa
 them against the nodes themselves before anything changes."""
 
 import json
+import os
 import threading
 import time
 
 from . import ai_gates, ai_pictures, ai_tasks, ai_toolbox, mcp_fill, model_advice, model_download, reference_blocks
 from .mcp_actions import _action, _local, _page
 from .media_routes import picture_size
-from .mcp_tools import ToolError
+from .mcp_tools import ToolError, _resolve_model
 
 MAX_FOUND = 20
 MAX_SEARCH = 5
@@ -236,7 +237,40 @@ def _base_of(name):
     return model_advice.base_of(path) if path else ""
 
 
-def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None, use=None, want=None):
+def _picture_model(ctx, model_id, info):
+    """(loader value, base model) of the model a standalone block draws with: `model_id`, else the first main
+    model the user picked for the task. Among diffusion-model files only Anima's text encoder and VAE are known."""
+    if not model_id:
+        task = ai_tasks.get_task(ctx["task"]) if ctx.get("task") else None
+        model_id = next((item for item in (ai_toolbox.effective(task) or {}).get("models") or []
+                         if item.split(":", 1)[0] in model_advice.MAIN_TYPES), None)
+    if not model_id:
+        raise ToolError("use picture needs the model to draw with: model (a model_id from search_models; ask_user which), "
+                        "or the one the user picks for the task.")
+    kind, _index, root, path = _resolve_model(model_id)
+    base = model_advice.base_of(path)
+    loader = {"checkpoints": ("CheckpointLoaderSimple", "ckpt_name")}.get(kind, ("UNETLoader", "unet_name"))
+    if kind not in model_advice.MAIN_TYPES or (loader[0] == "UNETLoader" and model_advice.family(base) != "anima"):
+        raise ToolError(f"{model_id} is no model use picture draws with: a checkpoint, or an Anima diffusion model "
+                        "(its text encoder and VAE are known). Open a saved workflow for it instead (list_workflows).")
+    wanted = os.path.relpath(path, root).replace("\\", "/")
+    value = next((name for name in reference_blocks._choices(info, *loader) if name.replace("\\", "/") == wanted), None)
+    if value is None:
+        raise ToolError(f"ComfyUI's {loader[0]} does not list {wanted}: is it in that model folder?")
+    return value, base
+
+
+def _empty_canvas():
+    """Refuses a standalone block on a canvas that already makes a picture: it would run as a second one."""
+    try:
+        _page("block_model", {"near_node_id": None})
+    except ToolError as error:
+        if "No sampler" in str(error):
+            return
+    raise ToolError("The canvas already makes a picture: run it, or new_workflow (blank) first for a separate one.")
+
+
+def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None, use=None, want=None, model=None):
     if not isinstance(replace, bool):
         raise ToolError("replace must be true or false.")
     if [nodes is not None, block is not None, use is not None].count(True) != 1:
@@ -247,13 +281,17 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
         except reference_blocks.BlockError as error:
             raise ToolError(str(error))
     if block is not None:
+        loader, base = None, None
+        if reference_blocks.BLOCKS.get(str(block), {}).get("standalone"):  # a picture from words: the model it draws with, an empty canvas
+            loader, base = _picture_model(ctx, model, object_info(ctx))
+            _empty_canvas()
         if reference_blocks.BLOCKS.get(str(block), {}).get("takes") in ("reference", "picture") and image:
             image = ai_pictures.to_input(image)  # the picture to follow or work on, where LoadImage reads
         if reference_blocks.BLOCKS.get(str(block), {}).get("scene") and scene:
             scene = ai_pictures.to_input(scene)
         def build():  # a ready-made block (reference_blocks.py): its roles are found on the canvas, what it cannot splice it replaces
-            return reference_blocks.build(str(block), object_info(ctx), image, lambda: _main_base(near_node_id), _base_of, scene,
-                                          lambda name: picture_size(ai_tasks.folder_paths.get_annotated_filepath(name)))
+            return reference_blocks.build(str(block), object_info(ctx), image, (lambda: base) if loader else lambda: _main_base(near_node_id),
+                                          _base_of, scene, lambda name: picture_size(ai_tasks.folder_paths.get_annotated_filepath(name)), loader)
         try:
             try:
                 built = build()
@@ -350,7 +388,8 @@ CANVAS_TOOLS = dict([
                         "block": {"type": "string"},
                         "image": {"type": "string", "description": "A repaint block's inpaint_image; a control block's picture to follow."},
                         "scene": {"type": "string", "description": "The picture place_in_scene puts it into."},
-                        "near_node_id": _NODE_ID, "replace": {"type": "boolean"}}),
+                        "near_node_id": _NODE_ID, "replace": {"type": "boolean"},
+                        "model": {"type": "string", "description": "use=picture: a model_id, else the task's picked one."}}),
     _action("connect_nodes", "Wire two nodes",
             "Wires two nodes: every unique matching type, and same-type sockets of the same name (positive to "
             "positive). Anything ambiguous (a lone CONDITIONING into positive or negative, wildcards) changes "

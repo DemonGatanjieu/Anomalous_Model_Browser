@@ -1,0 +1,246 @@
+{
+  "job": "picture",
+  "rank": 1,
+  "short": "a picture from words",
+  "standalone": true,
+  "title": {
+    "zh": "出图",
+    "en": "Make a picture"
+  },
+  "about": {
+    "zh": "在空画布上按模型的家族搭好出图的节点：SDXL 一类是一个 checkpoint，Anima 是模型、文本编码器、VAE 三个文件；设置用验证过的那一套。",
+    "en": "Builds the nodes that make a picture on an empty canvas, by the model's family: one checkpoint for SDXL and its kin, the model, text encoder and VAE files for Anima; with the tested settings."
+  },
+  "source": {
+    "zh": "ComfyUI 的默认出图流程；Anima 的设置来自你验证过的两段放大卡的底图那一段",
+    "en": "ComfyUI's default text-to-image graph; Anima's settings from the base pass of the user's tested two-pass card"
+  },
+  "packs": {},
+  "nodes": {
+    "model": {
+      "class_type": "CheckpointLoaderSimple",
+      "_meta": {
+        "title": "Model"
+      },
+      "inputs": {
+        "ckpt_name": "$model"
+      }
+    },
+    "positive": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "text": "",
+        "clip": [
+          "model",
+          1
+        ]
+      }
+    },
+    "negative": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "text": "",
+        "clip": [
+          "model",
+          1
+        ]
+      }
+    },
+    "size": {
+      "class_type": "EmptyLatentImage",
+      "inputs": {
+        "width": 832,
+        "height": 1216,
+        "batch_size": 1
+      }
+    },
+    "sampler": {
+      "class_type": "KSampler",
+      "inputs": {
+        "model": [
+          "model",
+          0
+        ],
+        "positive": [
+          "positive",
+          0
+        ],
+        "negative": [
+          "negative",
+          0
+        ],
+        "latent_image": [
+          "size",
+          0
+        ],
+        "steps": 28,
+        "cfg": 5.5,
+        "sampler_name": "euler_ancestral",
+        "scheduler": "normal",
+        "denoise": 1.0
+      }
+    },
+    "decode": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "sampler",
+          0
+        ],
+        "vae": [
+          "model",
+          2
+        ]
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": [
+          "decode",
+          0
+        ],
+        "filename_prefix": "picture"
+      }
+    }
+  },
+  "variants": {
+    "anima": {
+      "files": {
+        "$text_encoder": [
+          "CLIPLoader",
+          "clip_name",
+          [
+            "qwen_3_06b",
+            "qwen3_06b"
+          ]
+        ],
+        "$vae": [
+          "VAELoader",
+          "vae_name",
+          [
+            "qwenimage",
+            "qwen_image"
+          ]
+        ]
+      },
+      "nodes": {
+        "model": {
+          "class_type": "UNETLoader",
+          "_meta": {
+            "title": "Model"
+          },
+          "inputs": {
+            "unet_name": "$model",
+            "weight_dtype": "default"
+          }
+        },
+        "text_encoder": {
+          "class_type": "CLIPLoader",
+          "inputs": {
+            "clip_name": "$text_encoder",
+            "type": "stable_diffusion"
+          }
+        },
+        "vae": {
+          "class_type": "VAELoader",
+          "inputs": {
+            "vae_name": "$vae"
+          }
+        },
+        "positive": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "",
+            "clip": [
+              "text_encoder",
+              0
+            ]
+          }
+        },
+        "negative": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "",
+            "clip": [
+              "text_encoder",
+              0
+            ]
+          }
+        },
+        "size": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 832,
+            "height": 1216,
+            "batch_size": 1
+          }
+        },
+        "sampler": {
+          "class_type": "KSampler",
+          "inputs": {
+            "model": [
+              "model",
+              0
+            ],
+            "positive": [
+              "positive",
+              0
+            ],
+            "negative": [
+              "negative",
+              0
+            ],
+            "latent_image": [
+              "size",
+              0
+            ],
+            "steps": 35,
+            "cfg": 4.4,
+            "sampler_name": "dpmpp_2m_sde_gpu",
+            "scheduler": "beta",
+            "denoise": 1.0
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "sampler",
+              0
+            ],
+            "vae": [
+              "vae",
+              0
+            ]
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "decode",
+              0
+            ],
+            "filename_prefix": "picture"
+          }
+        }
+      },
+      "after": "The picture's nodes are on the canvas, on the Anima model picked (the loader titled Model), with its text encoder and VAE and the tested sampling (35 steps, dpmpp_2m_sde_gpu, beta, cfg 4.4, 832x1216). run_workflow with prompt and negative fills them in. A style LoRA the user picked: add_lora. A second pass after it (enlarge, another model): add_nodes with that use."
+    }
+  },
+  "after": "The picture's nodes are on the canvas, on the checkpoint picked (the loader titled Model), with common SDXL settings (28 steps, euler_ancestral, cfg 5.5, 832x1216; get_model's author_examples has what the model's author used). run_workflow with prompt and negative fills them in. A style LoRA the user picked: add_lora. A second pass after it (enlarge, another model): add_nodes with that use.",
+  "notes": "SDXL's values are common ones, not tested per model here; Anima's are the base pass of the user's tested two-pass card.",
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-11-03",
+    "runs": [
+      {
+        "model": "Anima (MiaoMiao Harem 1.5)",
+        "size": "832×1216",
+        "seconds": 78
+      }
+    ]
+  }
+}

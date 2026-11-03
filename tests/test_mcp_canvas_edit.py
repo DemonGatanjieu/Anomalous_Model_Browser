@@ -177,6 +177,52 @@ class BuildToolTests(unittest.TestCase):
         self.page.assert_not_called()
 
 
+class PictureTests(unittest.TestCase):
+    """add_nodes(use="picture"): the model picked for the task, an empty canvas, the family's files beside it."""
+
+    INFO = {"UNETLoader": {"input": {"required": {"unet_name": [["Anima\harem.safetensors"]]}}},
+            "CLIPLoader": {"input": {"required": {"clip_name": [["Anima\qwen_3_06b_base.safetensors"]]}}},
+            "VAELoader": {"input": {"required": {"vae_name": [["Anima\qwenImageGGUF_vae.safetensors"]]}}}}
+
+    def setUp(self):
+        self.canvas = None  # what the page's sampler reads: None, an empty canvas
+
+        def page(action, args=None, timeout=30):
+            if action == "block_model":
+                if self.canvas is None:
+                    raise ToolError("No sampler (KSampler) on the canvas: open a workflow that makes the picture first.")
+                return {"model": self.canvas}
+            return {"ok": True}
+        self.page = mock.MagicMock(side_effect=page)
+        root = str(Path("/models/diffusion_models"))
+        for patcher in (mock.patch.object(mcp_canvas_edit, "_page", self.page),
+                        mock.patch.object(mcp_canvas_edit, "object_info", return_value=self.INFO),
+                        mock.patch.object(mcp_canvas_edit, "_resolve_model",
+                                          return_value=("diffusion_models", 0, root, str(Path(root, "Anima", "harem.safetensors")))),
+                        mock.patch.object(mcp_canvas_edit.model_advice, "base_of", return_value="Anima"),
+                        mock.patch.object(mcp_canvas_edit.ai_tasks, "get_task", return_value={}),
+                        mock.patch.object(mcp_canvas_edit.ai_toolbox, "effective",
+                                          return_value={"models": ["loras:0:style.safetensors", "diffusion_models:0:Anima/harem.safetensors"]})):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_the_picked_model_on_an_empty_canvas(self):
+        mcp_canvas_edit.add_nodes({"task": "t"}, use="picture")
+        nodes = next(call[0][1]["nodes"] for call in self.page.call_args_list if call[0][0] == "add_nodes")
+        self.assertEqual((nodes["model"]["inputs"]["unet_name"], nodes["text_encoder"]["inputs"]["clip_name"]),
+                         ("Anima\harem.safetensors", "Anima\qwen_3_06b_base.safetensors"), "as ComfyUI lists them")
+
+    def test_a_canvas_that_makes_a_picture_or_no_model_is_refused(self):
+        self.canvas = "Anima\harem.safetensors"
+        with self.assertRaisesRegex(ToolError, "already makes a picture"):
+            mcp_canvas_edit.add_nodes({"task": "t"}, use="picture")
+        self.canvas = None
+        with mock.patch.object(mcp_canvas_edit.ai_toolbox, "effective", return_value=None):
+            with self.assertRaisesRegex(ToolError, "needs the model to draw with"):
+                mcp_canvas_edit.add_nodes({"task": "t"}, use="picture")
+        self.assertFalse(any(call[0][0] == "add_nodes" for call in self.page.call_args_list), "nothing built")
+
+
 class RegistryTests(unittest.TestCase):
     def test_served_with_their_place_in_the_flow(self):
         for name in mcp_canvas_edit.CANVAS_TOOLS:

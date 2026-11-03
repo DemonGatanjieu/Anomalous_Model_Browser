@@ -41,7 +41,7 @@ NAMED_BASES = (("noob", "NoobAI"), ("illustrious", "Illustrious"), ("pony", "Pon
                ("sdxl", "SDXL 1.0"), ("xl", "SDXL 1.0"))
 # The uses an AI asks for (a block's "job"): add_nodes(use=…, want=…) and Anomalous picks the block,
 # the best of that use this ComfyUI can run; a block's "want" is the word that asks for it instead.
-JOBS = {"repaint": "Repaint an area", "new_background": "New background, the character kept", "upscale": "Upscale",
+JOBS = {"picture": "Text to picture", "repaint": "Repaint an area", "new_background": "New background, the character kept", "upscale": "Upscale",
         "refine": "Redraw with another model", "follow": "Follow a given picture", "detail": "Fix faces and hands",
         "process": "Picture work"}
 _lock = threading.Lock()
@@ -306,6 +306,13 @@ def _lora(info, prefix):
     return sorted(found)[-1] if found else None
 
 
+def _file_like(info, kind, field, marks):
+    """The first file node `kind`'s `field` offers whose name has one of `marks` (case, "_" and "-" aside), or None."""
+    plain = lambda text: re.sub(r"[_\-\s]", "", str(text).lower())  # noqa: E731
+    return next((name for name in _choices(info, kind, field)
+                 if any(plain(mark) in plain(name.replace("\\", "/").split("/")[-1]) for mark in marks)), None)
+
+
 def _checkpoint(info, prefix):
     """The checkpoint file whose name has `prefix` this ComfyUI has (the newest version: SAM3.1 before SAM3), or None."""
     found = [name for name in _choices(info, "CheckpointLoaderSimple", "ckpt_name") if prefix in name.lower().replace("\\", "/").split("/")[-1]]
@@ -343,11 +350,11 @@ def enlargement(rule, size):
     return round(min(rule["most"], max(1.0, math.sqrt(rule["megapixels"] * 1_000_000 / (size[0] * size[1])))), 2)
 
 
-def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "", scene=None, size_of=lambda image: None):
+def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "", scene=None, size_of=lambda image: None, model=None):
     """Block `name` built for this canvas: {nodes (add_nodes' group, its values filled in), roles, after},
     or BlockError saying why not. A block with variants or a ControlNet asks `main_base()` (once) for
-    the canvas's model's base model, and `base_of` for each ControlNet's; one that enlarges the picture
-    by its size ("enlarge") asks `size_of(image)`."""
+    the canvas's model's base model (a standalone one's: `model`'s, the loader value it is built on),
+    and `base_of` for each ControlNet's; one that enlarges the picture by its size ("enlarge") asks `size_of(image)`."""
     block = BLOCKS.get(name)
     if not block:
         raise BlockError(f"No block {name!r}; there are: {', '.join(BLOCKS)}.")
@@ -375,7 +382,14 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
         raise BlockError(f"Block {name} needs image: {TAKES[block['takes']]}.")
     if block.get("scene") and not (isinstance(scene, str) and scene.strip()):
         raise BlockError(f"Block {name} needs {SCENE}.")
-    fills = {"$image": (image or "").strip(), "$scene": (scene or "").strip()}
+    if block.get("standalone") and not model:
+        raise BlockError(f"Block {name} needs the model to draw with: model (a model_id from search_models), or one the user picked for the task.")
+    fills = {"$image": (image or "").strip(), "$scene": (scene or "").strip(), "$model": model or ""}
+    for role, (kind, field, marks) in (block.get("files") or {}).items():  # files a family needs beside its model (Anima's text encoder, VAE)
+        fills[role] = _file_like(info, kind, field, marks)
+        if fills[role] is None:
+            raise BlockError(f"Block {name} needs a {kind} file named like {marks[0]} on this model; there is none here. "
+                             "Ask the user to download it (search_models finds what is installed).")
     for role, prefix in (block.get("detectors") or {}).items():
         fills[f"${role}"] = _detector(info, prefix)
     for role, prefix in (block.get("loras") or {}).items():

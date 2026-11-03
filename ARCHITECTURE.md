@@ -212,7 +212,10 @@ covered by the `styles.css` manifest.
   finds on the canvas by their sockets (the sampler, its decode, the output node its picture
   reaches, what feeds an input upstream; several samplers: near_node_id); a node "like" a role
   takes its settings (a path, "$sampler.positive", the node feeding it), one that "replaces" it its links and place too (LanPaint's sampler for the
-  KSampler), before canvas_wiring splices it in (`tests/canvas_roles.mjs`). A block's "variants"
+  KSampler), one "copy_of" "$sampler.model" is a copy of the canvas's model line, loader and LoRAs (a redraw's own model,
+  swapped with set_model), before canvas_wiring splices it in (`tests/canvas_roles.mjs`). A "standalone" block (the
+  picture from words) names no role: it is built on the model `add_nodes(model=…)` names or the task's picked one, its
+  family's own files found beside it ("files": Anima's text encoder and VAE), and only on a canvas making no picture. A block's "variants"
   rebuild it for the canvas model's family (`reference_blocks.build`: on Anima an LLLite model
   patch instead of a ControlNet), and an "optional" node that only improves it (KJNodes'
   ColorMatch, the SAM3 pass before the hand detector) goes when its pack or its model (a block's
