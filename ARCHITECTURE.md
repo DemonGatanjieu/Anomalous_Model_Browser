@@ -241,7 +241,9 @@ covered by the `styles.css` manifest.
   the list of an older Anomalous is told so and the task header says how to reconnect it.
   `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow, or
   one of its 方案 ("workflow / plan": a saved parameter set of it, `mcp_tools.plans`, which
-  list_workflows lists; the page opens the workflow and applies the set as its Apply button does),
+  list_workflows lists, each card with its route in one line from `api/workflow_route.py`: its passes,
+  models, enlargement, control models and finishing nodes, read from the saved graph as `recipe_flow.js`
+  reads it on the page; the page opens the workflow and applies the set as its Apply button does),
   opened in the task's tab once and reused (the page marks the tab with the workflow's file, and the set's),
   then the prompts, seed, size and the picture a LoadImage reads filled in by the page's
   `fill_slots`, planned by `web/modules/mcp_fill.js` (pure). Any other setting goes by its name
