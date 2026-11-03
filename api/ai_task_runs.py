@@ -15,7 +15,7 @@ what changed since the task's run before it (ai_run_map.py); a run the user or t
 import threading
 import time
 
-from . import ai_gates, ai_run_map, ai_run_watch, ai_tasks
+from . import ai_bases, ai_gates, ai_run_map, ai_run_watch, ai_tasks
 from .mcp_tools import ToolError, _image_content, _resolve_image, retext, tool_text
 
 RUN_POLL_SECONDS = 2.0
@@ -208,6 +208,9 @@ def watch(step_id, receipt):
         if not step:
             return  # The user may remove the task while its submission is returning.
         step["prompt_ids"] = list(prompts)
+        for key, value in (("bases", receipt.get("base_only")), ("base_check", receipt.get("base_check"))):
+            if value:
+                step[key] = value  # ai_bases.py: bases to offer when it ends, or the picked one to compare
         step_at = step["at"]
         for other in task.get("steps", []):  # a new run: no line to paste for an older one any more
             if other is not step:
@@ -235,6 +238,8 @@ def watch(step_id, receipt):
                 estimated = _estimate(task_id, step_id, item)
             if _finish_run(task_id, step_id, prompts, {k: v for k, v in history.items() if v},
                            None if queued is None else set(queued)):
+                ai_bases.offer(task_id, step_id, prompts, history)
+                ai_bases.check(task_id, step_id, prompts, history)
                 return
             try:
                 progress = progress_of(prompts)
@@ -326,7 +331,8 @@ def summary(run):
         pictures = [item["filename"] for item in run.get("results") or [] if item.get("type") == "image"]
         made = f"{len(pictures)} picture(s): {', '.join(pictures[:8])}" if pictures else "no pictures"
         words = f" and words from {len(run['texts'])} node(s) (texts)" if run.get("texts") else ""
-        return f"Your run finished in {round(run.get('ms', 0) / 1000)} s with {made}{words}."
+        base = ai_bases.words(run)
+        return f"Your run finished in {round(run.get('ms', 0) / 1000)} s with {made}{words}.{' ' + base if base else ''}"
     if state in ("asking", "allowed"):
         return "Your run waits for the user's OK in Anomalous; it has not started."
     return f"Your run did not finish: {run.get('error') or state}."
@@ -454,7 +460,8 @@ def status(client, session="", task_id=None, wait_seconds=0, step_id=None):
                     if ai_gates.run_wait() == "call" else
                     "run_status(wait_seconds=55): it is still running; do not guess it is done or run it again."),
         "allowed": "run_status(wait_seconds=55): it is about to run.",
-        "done": ("The first answer telling you it ended has its pictures attached (pictures_attached): look at them, "
+        "done": "get_answers(wait_seconds=55): the user picks a base on Anomalous's panel." if run.get("bases") else
+                ("The first answer telling you it ended has its pictures attached (pictures_attached): look at them, "
                  "then report what came out with images= its pictures; show_panel only to compare or ask. "
                  "zoom_image looks closer.") if pictures or not run.get("texts") else
                 ("It made no pictures: texts has what its nodes showed (a tagger's tags); use them (set_prompt), then report."),

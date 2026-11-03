@@ -444,7 +444,7 @@ export function renderPanel(step, ctx) {
     const panel = step.panel || {};
     const card = el('div', `anomalous-ai-panel${panel.closed ? ' is-closed' : ''}`);
     const titleRow = el('div', 'anomalous-ai-panel-title-row');
-    titleRow.append(el('div', 'anomalous-ai-panel-title', panel.title || ''));
+    titleRow.append(el('div', 'anomalous-ai-panel-title', panel.title_key ? t(panel.title_key) : panel.title || ''));
     card.append(titleRow);
     const blockCtx = { ...ctx, stepId: step.id, answers: step.answers || {}, closed: Boolean(panel.closed), titleRow, advice: step.prompt_advice };
     for (const block of list(panel.blocks)) {

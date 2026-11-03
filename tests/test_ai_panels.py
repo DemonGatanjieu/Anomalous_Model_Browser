@@ -120,7 +120,7 @@ class StageTests(unittest.TestCase):
             [{"type": "slider", "before": "a.png"}],
             [{"type": "slider", "before": "a.png", "after": "b.png", "zoom": {"x": 0.5, "y": 0.5, "w": 0}}],
             [{"type": "picks", "zoom": "the hand", "items": [{"id": "x", "image": "a.png"}, {"id": "y", "image": "b.png"}]}],
-            [{"type": "picks", "items": [{"image": "a.png"}]}],
+            [{"type": "picks", "items": []}],
             [{"type": "picks", "items": [{"id": "x", "image": "a.png"}, {"id": "x", "image": "b.png"}]}],
             [{"type": "diagram", "nodes": []}],
             [{"type": "diagram", "nodes": [{"id": "a", "label": "A"}], "edges": [{"from": "a", "to": "zz"}]}],

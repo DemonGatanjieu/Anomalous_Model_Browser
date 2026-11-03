@@ -144,7 +144,7 @@ export function panelLine(step, onOpen) {
     line.title = t('aiStageOpen');
     line.onclick = onOpen;
     const words = el('span', 'anomalous-ai-panel-line-words');
-    words.append(el('span', 'anomalous-ai-panel-line-title', step.panel.title || t('aiStage')));
+    words.append(el('span', 'anomalous-ai-panel-line-title', (step.panel.title_key && t(step.panel.title_key)) || step.panel.title || t('aiStage')));
     if (gist.parts.length) words.append(el('span', 'anomalous-ai-panel-line-gist', gist.parts.map(part => t(part.key, part.values)).join(' · ')));
     line.append(icon(gist.icon, 18, 'anomalous-ai-panel-line-icon'), words);
     if (asks) line.append(el('span', 'anomalous-ai-panel-line-asks', t('aiState_asks')));

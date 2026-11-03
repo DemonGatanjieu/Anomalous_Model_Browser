@@ -146,7 +146,7 @@ async function putOnCanvas(item, owner) {
  */
 export function picks(block, ctx) {
     const box = el('div', 'anomalous-ai-picks');
-    if (block.question) box.append(el('div', 'anomalous-ai-panel-question', block.question));
+    if (block.question) box.append(el('div', 'anomalous-ai-panel-question', block.question_key ? t(block.question_key) : block.question));
     const answer = ctx.answers[block.id];
     const chosen = new Set(answer?.choice || []);
     const grid = el('div', 'anomalous-ai-picks-grid');

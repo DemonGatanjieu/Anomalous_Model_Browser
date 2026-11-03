@@ -64,9 +64,11 @@ def _marks(value, where):
 
 def _image(item, where):
     image = item.get("image") if isinstance(item, dict) else item
-    found = ai_tasks._output_media(str(image or ""))
+    temp = isinstance(item, dict) and item.get("folder") == "temp"  # a run's preview (run_status previews)
+    found = ai_tasks._output_media(str(image or ""), "temp" if temp else "output")
     if not found:
-        raise PanelError(f"{where}: {image!r} is not a picture in ComfyUI's output folder (subfolder/name.png, as search_images gives it)")
+        raise PanelError(f"{where}: {image!r} is not a picture in ComfyUI's {'temp' if temp else 'output'} folder "
+                         "(subfolder/name.png, as search_images or run_status gives it)")
     out = {**found, "caption": _text(item.get("caption") if isinstance(item, dict) else "", 120, f"{where}.caption")}
     if isinstance(item, dict) and item.get("marks"):
         out["marks"] = _marks(item["marks"], f"{where}.marks")

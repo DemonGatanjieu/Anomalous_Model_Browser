@@ -94,7 +94,7 @@ function statusLine(task, ctx) {
 function askCard(task, { step, block }, more, ctx) {
     const card = el('div', 'anomalous-ai-now-ask');
     const head = el('div', 'anomalous-ai-now-ask-head');
-    head.append(icon('question', 15), el('span', 'anomalous-ai-now-question', block.question || step.panel.title || t('aiNowAsk')));
+    head.append(icon('question', 15), el('span', 'anomalous-ai-now-question', (block.question_key && t(block.question_key)) || block.question || step.panel.title || t('aiNowAsk')));
     if (more) head.append(button('anomalous-ai-link', t('aiNowMore', { count: more }), ctx.openStage));
     const note = el('div', 'anomalous-ai-now-error');
     const decide = button('anomalous-ai-panel-skip', '', () => send({ skip: true }, [...card.querySelectorAll('button, input')]));

@@ -15,7 +15,7 @@ import time
 import urllib.error
 import urllib.request
 
-from . import ai_gates, mcp_fill, model_advice, run_refusal
+from . import ai_bases, ai_gates, mcp_fill, model_advice, run_refusal
 from .lora_info import trains_text_encoder
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import MAX_LIMIT, ToolError, _resolve_model, _schema
@@ -139,10 +139,12 @@ MAX_PROMPTS = 8
 MAX_TRIES = 16  # prompts x batch in one call
 
 
-def _submit(batch):
-    """Queues what the canvas holds `batch` times: (receipt IDs, the page's answer); IDs are None when no valid receipt came."""
+def _submit(batch, base_only=False, hold=None):
+    """Queues what the canvas holds `batch` times (its first pass alone with `base_only`; `hold`: the base the
+    user picked, ai_bases.py): (receipt IDs, the page's answer); IDs are None when no valid receipt came."""
     try:
-        answer = ask_page("run_workflow", {"batch": batch}, required_capability="prompt_ids")
+        answer = ask_page("run_workflow", {"batch": batch, **({"base_only": True} if base_only else {}),
+                                           **({"hold": hold} if hold else {})}, required_capability="prompt_ids")
     except (PageUnavailable, PageRefused) as error:
         raise ToolError(str(error))
     page = answer if isinstance(answer, dict) else {}
@@ -158,7 +160,25 @@ def _refused(page):
             or "No valid submission receipts. Check ComfyUI's queue before retrying; do not repeat automatically.")
 
 
-def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, **slots):
+def _base_words(answer, page, base_only, hold):
+    """What run_workflow says of the base: the bases to pick from coming, or the picked one held (ai_bases.py)."""
+    if base_only and page.get("base"):
+        answer["base_only"] = page["base"]  # the run's step keeps it: its previews become the user's picks
+        answer["note"] += (" Only the first pass runs, as previews: when it ends Anomalous shows the user these bases to "
+                           "pick one; the picked one is kept and its seed held for your next run_workflow.")
+    held = page.get("held") or {}
+    if hold and held.get("kept"):
+        answer["held"] = f"The rest grows from the base the user picked ({hold['kept']}); it is not drawn again."
+    elif hold and held.get("held"):
+        answer["held"] = f"The base the user picked: seed {hold['seed']} on node {hold['node']}, held for every try."
+        if hold.get("show"):
+            answer["base_check"] = {"show": hold["show"], "kept": hold["kept"]}  # compared when the run ends
+    elif hold:
+        answer["held"] = (f"The base the user picked was not held: {held.get('reason') or 'the page did not hold it'}; "
+                          "this run draws its own base.")
+
+
+def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, base_only=False, **slots):
     from .ai_run_tracking import checked_wait
     checked_wait(wait_seconds)  # Reject a wait that is no number before anything can be submitted.
     batch = max(1, min(8, int(batch)))
@@ -168,6 +188,9 @@ def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, **s
         if len(prompts) * batch > MAX_TRIES:
             raise ToolError(f"{len(prompts)} prompts x batch {batch} is over {MAX_TRIES} tries in one call.")
     ids, groups, filled, page, stopped = [], [], None, {}, None
+    hold = None if base_only else ai_bases.hold_of(ctx.get("task"))
+    if base_only:
+        ai_bases.forget(ctx.get("task"))  # new bases: the earlier pick no longer holds
     for index, text in enumerate(prompts or [None]):
         try:
             done = mcp_fill.fill(ctx, workflow, **(slots if text is None else {**slots, "prompt": text}))
@@ -177,7 +200,7 @@ def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, **s
             stopped = f"Prompt {index + 1} was not filled in: {error}"
             break
         filled = filled or done
-        got, page = _submit(batch)
+        got, page = _submit(batch, base_only, hold)
         if got is None:
             if not ids:
                 raise ToolError(_refused(page))
@@ -194,6 +217,7 @@ def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, **s
                        "your turn; run_status then brings its pictures." if ai_gates.run_wait() == "call" else
                        "Follow these runs with run_status (wait_seconds up to 55).")
               + " Do not repeat the batch; accepted prompts are already queued."}
+    _base_words(answer, page, base_only, hold)
     if prompts is not None:
         answer["by_prompt"] = groups  # which receipts are which prompt; the canvas keeps the last prompt
     if filled:
@@ -377,7 +401,8 @@ ACTIONS = dict([
                            "height": {"type": "integer", "minimum": 16, "maximum": 16384},
                            "image": {"type": "string", "description": "subfolder/name.png, output or input folder."},
                            "image_node": {"type": "integer", "description": "Which LoadImage, of several."},
-                           "values": {"type": "object", "description": "Other settings by name, any node's."}}),
+                           "values": {"type": "object", "description": "Other settings by name, any node's."},
+                           "base_only": {"type": "boolean", "description": "First pass only: previews to pick a base from."}}),
     _action("open_in_anomalous", "Show a model",
             "Opens Anomalous Model Browser on this model's page, so the user sees its cover and details.",
             open_in_anomalous, {"model_id": _MODEL}, ["model_id"]),

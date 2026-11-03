@@ -82,7 +82,7 @@ async def api_change(request):
 async def api_answer(request):
     """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text | prompts, negative, pictures | skip: true} -
     the user's answer on a panel; a prompt box's texts are sealed and the AI gets tokens (ai_sealed.py)."""
-    from . import ai_panels, ai_repaint, ai_sealed
+    from . import ai_bases, ai_panels, ai_repaint, ai_sealed
 
     try:
         body = await request.json()
@@ -95,15 +95,19 @@ async def api_answer(request):
         if "prompts" in body and not skip:
             extra = await asyncio.to_thread(ai_sealed.seal_answer, task_id, body["prompts"], body.get("negative"), body.get("pictures"))
         else:
-            # A repaint area picked: its picture is made first (outside the lock), so the AI gets it with the answer.
-            extra = await asyncio.to_thread(ai_repaint.prepare, task_id, step_id, body.get("choice"), body.get("text"), skip)
-    except (ai_repaint.RepaintError, ValueError) as error:
+            # A repaint area picked: its picture is made first (outside the lock), so the AI gets it with the answer;
+            # a base picked: it is kept in the output folder first (ai_bases.py).
+            extra = (await asyncio.to_thread(ai_repaint.prepare, task_id, step_id, body.get("choice"), body.get("text"), skip)
+                     or await asyncio.to_thread(ai_bases.prepare, task_id, step_id, body.get("choice"), skip))
+    except (ai_repaint.RepaintError, ValueError, OSError) as error:
         return web.json_response({"error": str(error)}, status=400)
     try:
         answers = ai_panels.answer(task_id, step_id, str(body.get("block")), body.get("choice"), body.get("text"), skip=skip, extra=extra)
     except ai_panels.PanelError as error:
         ai_repaint.discard(extra)
+        ai_bases.discard(extra)
         return web.json_response({"error": str(error)}, status=400)
+    await asyncio.to_thread(ai_bases.hold, task_id, extra)
     return web.json_response({"answers": answers})
 
 

@@ -10,6 +10,7 @@
 import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { queueTracked } from './mcp_run.js';
+import { baseOnly, onKeptBase } from './base_only.js';
 import { translate as t } from './locales.js';
 import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { postCanvasActivity } from './activity_log.js';
@@ -283,11 +284,31 @@ async function downloadModel(args, getOwner) {
     return { ...await downloadFrom(getOwner(), args), note: 'download_status follows it.' };
 }
 
-async function runWorkflow({ batch }) {
-    currentGraph();
-    const result = await queueTracked(app, api, batch || 1);
+/**
+ * run_workflow: `base_only` queues the first pass alone as previews (base_only.js), checked before anything is
+ * queued; `hold` is the base the user picked (api/ai_bases.py): its seed goes on its sampler, held "fixed"
+ * and kept under every try, unless that sampler is not on this canvas; where the rest takes the base's
+ * picture, it takes the kept picture instead and the base is not drawn again (`held.kept`).
+ */
+async function runWorkflow({ batch, base_only: firstPass, hold }, getOwner) {
+    const g = currentGraph();
+    const held = hold ? await holdBase(g, hold, getOwner) : null;
+    const base = firstPass ? baseOnly((await app.graphToPrompt()).output) : null;
+    if (held?.held && hold.kept_input) held.kept = Boolean(onKeptBase((await app.graphToPrompt()).output, hold.kept_input));
+    const cut = base ? output => baseOnly(output).output : held?.kept ? output => onKeptBase(output, hold.kept_input) || output : null;
+    const result = await queueTracked(app, api, batch || 1, { cut, keep: held?.held ? [String(hold.node)] : [] });
     if (result.queued) showWorkbenchToast(t('mcpDidRun'));
-    return result;
+    return { ...result, ...(base ? { base: { bases: base.bases, shows: base.shows, saved: base.saved, prefix: base.prefix } } : {}), ...(held ? { held } : {}) };
+}
+
+async function holdBase(g, { node: id, type, names, seed }, getOwner) {
+    const node = (g._nodes || []).find(item => String(item.id) === String(id));
+    if (!node || node.type !== type) return { held: false, reason: `the sampler #${id} the bases came from is not on this canvas` };
+    const has = name => (node.widgets || []).some(widget => widget?.name === name);
+    const settings = Object.fromEntries((names || []).filter(has).map(name => [name, seed]));
+    if (has('control_after_generate')) settings.control_after_generate = 'fixed';
+    await ACTIONS.fill_slots({ values: { [String(id)]: settings } }, getOwner);
+    return { held: true };
 }
 
 async function openModel({ type, path_idx: pathIdx, rel }, getOwner) {

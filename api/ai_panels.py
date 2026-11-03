@@ -82,8 +82,8 @@ def clean_block(block, at, taken):
     elif kind == "picks":
         items, ids = [], set()
         raw = _list(block.get("items"), MAX_ITEMS, f"{where}.items")
-        if len(raw) < 2:
-            raise PanelError(f"{where}.items needs 2 to {MAX_ITEMS} pictures")
+        if not raw:  # one is "take this one" (a single base, ai_bases.py)
+            raise PanelError(f"{where}.items needs 1 to {MAX_ITEMS} pictures")
         for i, item in enumerate(raw):
             here = f"{where}.items[{i}]"
             if not isinstance(item, dict):
@@ -97,6 +97,8 @@ def clean_block(block, at, taken):
                           "reason": _text(item.get("reason"), 200, f"{here}.reason"), "recommended": item.get("recommended") is True})
         out.update(question=_text(block.get("question"), 200, f"{where}.question"), items=items,
                    multiple=block.get("multiple") is True)
+        if _page_word(block.get("question_key")):
+            out["question_key"] = block["question_key"]
         if block.get("zoom"):
             out["zoom"] = _zoom(block["zoom"], f"{where}.zoom")
     elif kind == "run_map":  # a run's real shape (ai_run_map.py), drawn by the page from the step; only show_run_map makes it
@@ -151,7 +153,7 @@ def clean_block(block, at, taken):
             ids.add(option_id)
             options.append({"id": option_id, "label": label, "detail": _text(option.get("detail"), 200, f"{where}.options[{i}].detail"),
                             **({"recommended": True} if option.get("recommended") is True else {}),
-                            **({"label_key": option["label_key"]} if re.fullmatch(r"ai[A-Z]\w{1,40}", str(option.get("label_key"))) else {})})
+                            **({"label_key": option["label_key"]} if _page_word(option.get("label_key")) else {})})
         # other: a line for an answer none of the options is
         out.update(question=_text(block.get("question"), 200, f"{where}.question"), options=options,
                    multiple=block.get("multiple") is True, other=block.get("other") is True)
@@ -247,9 +249,15 @@ def _find(panel_id):
     return None, None
 
 
-def show(client, title, blocks, now=None, session="", task_id=None, tool="show_panel", extra=None):
+def _page_word(key):
+    """A word of the page (locales.js) Anomalous's own panels name, shown in the user's language."""
+    return bool(re.fullmatch(r"ai[A-Z]\w{1,40}", str(key)))
+
+
+def show(client, title, blocks, now=None, session="", task_id=None, tool="show_panel", extra=None, title_key=None):
     title = _text(title, 120, "title", True)
-    panel = {"id": uuid.uuid4().hex[:10], "title": title, "blocks": _block_ids(clean_blocks(blocks)), "closed": False}
+    panel = {"id": uuid.uuid4().hex[:10], "title": title, "blocks": _block_ids(clean_blocks(blocks)), "closed": False,
+             **({"title_key": title_key} if _page_word(title_key) else {})}
     now = time.time() if now is None else now
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": tool, "kind": "panel", "ok": True,
             "summary": f"{tool}: {title}", "panel": panel, "answers": {}, "results": [], **(extra or {})}

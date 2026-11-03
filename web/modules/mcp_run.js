@@ -18,11 +18,12 @@ const SEEDS = ['seed', 'noise_seed'];
 /**
  * For a batch of tries: each seed held "fixed" counts up instead while the batch is queued (the
  * native control moves it per prompt), so N tries are N pictures, not one prompt ComfyUI runs
- * once. Returns the undo: each control and seed as they were.
+ * once; nodes in `keep` stay as they are. Returns the undo: each control and seed as they were.
  */
-export function varySeeds(graph) {
+export function varySeeds(graph, keep = []) {
     const held = [];
     for (const node of graph?._nodes || []) {
+        if (keep.includes(String(node.id))) continue; // the base the user picked stays under every try
         for (const widget of node.widgets || []) {
             const control = SEEDS.includes(widget.name) ? widget.linkedWidgets?.find(item => item.name === 'control_after_generate') : null;
             if (control?.value !== 'fixed') continue;
@@ -36,8 +37,11 @@ export function varySeeds(graph) {
     });
 }
 
-/** Capture submission receipts from one native ComfyUI queue request, preserving its seed/widget hooks; a batch varies held seeds (varySeeds). */
-export async function queueTracked(app, api, batch = 1) {
+/**
+ * Capture submission receipts from one native ComfyUI queue request, preserving its seed/widget hooks; a batch varies held seeds
+ * (varySeeds) but those in `keep`; `cut` changes each of our prompts before it goes (base_only.js), the canvas staying as it is.
+ */
+export async function queueTracked(app, api, batch = 1, { cut = null, keep = [] } = {}) {
     if (app.processingQueue) throw new Error('ComfyUI is submitting another batch. Wait for submission to finish, then try again.');
     if (!Number.isSafeInteger(app.nextQueueRequestId) || typeof api.queuePrompt !== 'function') {
         throw new Error('This ComfyUI frontend cannot identify queue requests. Update the frontend before running from AI.');
@@ -55,6 +59,7 @@ export async function queueTracked(app, api, batch = 1) {
         const ours = capturing && attempts < batch;
         if (ours) attempts++;
         try {
+            if (ours && cut) args[1] = { ...args[1], output: cut(args[1].output) };
             const result = await original.apply(this, args);
             if (ours) {
                 if (typeof result?.prompt_id === 'string' && result.prompt_id) ids.push(result.prompt_id);
@@ -69,7 +74,7 @@ export async function queueTracked(app, api, batch = 1) {
     api.addEventListener('promptQueueing', started);
     api.addEventListener('promptQueued', finished);
     api.queuePrompt = wrapped;
-    const unvary = batch > 1 ? varySeeds(app.graph) : null;
+    const unvary = batch > 1 ? varySeeds(app.graph, keep) : null;
     try {
         // Native queuePrompt may also drain later manual requests. Return our receipt as soon as
         // our batch ends, but still handle a later rejection from the native queue promise.

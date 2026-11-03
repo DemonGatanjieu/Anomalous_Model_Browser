@@ -491,9 +491,10 @@ def record(client, tool, arguments, result, started, read_only=False, session=""
 
 # ---------------------------------------------------------------- notes from the AI
 
-def _output_media(path):
-    """An output-folder file the AI names ("subfolder/name.png"), as an image result, or None."""
-    root = os.path.realpath(folder_paths.get_output_directory())
+def _output_media(path, folder="output"):
+    """An output-folder file the AI names ("subfolder/name.png"), as an image result, or None; with
+    `folder` "temp", a run's preview there (gone when ComfyUI restarts)."""
+    root = os.path.realpath(folder_paths.get_temp_directory() if folder == "temp" else folder_paths.get_output_directory())
     full = os.path.realpath(os.path.join(root, str(path).replace("\\", "/").lstrip("/")))
     if os.path.commonpath((root, full)) != root or not os.path.isfile(full):
         return None
@@ -501,7 +502,7 @@ def _output_media(path):
         return None
     rel = os.path.relpath(full, root).replace(os.sep, "/")
     subfolder, _, filename = rel.rpartition("/")
-    return {"type": "image", "filename": filename, "subfolder": subfolder, "folder": "output"}
+    return {"type": "image", "filename": filename, "subfolder": subfolder, "folder": "temp" if folder == "temp" else "output"}
 
 
 def report(client, text, images=None, done=False, now=None, session="", task_id=None, reply_to=None):

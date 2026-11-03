@@ -280,6 +280,14 @@ covered by the `styles.css` manifest.
   `web/modules/mcp_run.js` captures exact prompt IDs from one native queue request,
   preserving native seed/widget callbacks and excluding later manual batches. Busy submissions
   and unsupported host request IDs are refused before queueing; wrappers/listeners are released.
+  `run_workflow(base_only=true)` queues the first pass alone (`web/modules/base_only.js` cuts each
+  queued prompt down to the samplers nothing samples before and what they feed, picture nodes made
+  PreviewImage, a base handed on unfinished finished and decoded; the canvas never changes); when it
+  ends `api/ai_bases.py` puts the previews on a picks panel with their seeds, copies the picked one
+  into the output folder and holds its seed, which the task's next run puts on that sampler "fixed"
+  and keeps under every try. Where the rest takes the base's picture, that run takes the kept picture
+  (LoadImage) and the base is not drawn again (`onKeptBase`); a base handed on as a latent (the mid-way
+  switch) is drawn again from its seed and the base that run saves is compared with the kept picture.
   `api/mcp_prompts.py` serves `prompts/list` / `prompts/get`: ready-made requests (the AI app's
   slash commands) that tell the AI how to do a common job so the user can follow it on the AI
   workbench. `api/mcp_apps.py` serves the MCP Apps extension (`io.modelcontextprotocol/ui`):
