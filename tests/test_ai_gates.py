@@ -114,6 +114,28 @@ class GateTests(unittest.TestCase):
         self.assertEqual((step["state"], step["gate"]["decision"]), ("running", "allow"))
         self.assertEqual(step["gate"]["lines"], [{"label": "batch", "value": "2"}])
 
+    def test_a_new_route_gets_one_reminder_or_waits_for_an_ok(self):
+        tools = ai_gates._tools_path()
+        ai_gates._tools_path = lambda: os.path.join(GATES, "ai_tools.json")
+        self.addCleanup(setattr, ai_gates, "_tools_path", lambda: tools)
+        if os.path.exists(ai_gates._tools_path()):
+            os.remove(ai_gates._tools_path())
+        self.assertEqual(ai_gates.route_rule(), "allow")
+        ref, verdict = self.call("add_node", {"type": "ImageScale"})
+        self.assertIsNone(verdict)
+        self.call("add_node", {"type": "ImageInvert"})
+        self.call("add_nodes", {"use": "upscale"})
+        notes = [step for step in ai_tasks.get_task(ref[0])["steps"] if step["tool"] == "new_route"]
+        self.assertEqual(len(notes), 1, "one reminder a task, for what the AI places itself")
+        self.assertIn("旗舰模型", notes[0]["text"])
+        ai_gates.set_route_rule("ask")
+        self.assertIsNone(self.call("add_nodes", {"use": "upscale"})[1], "a way is no new route")
+        ref = ai_tasks.begin_step("Claude", "add_nodes", {"nodes": {"a": {}}}, time.time(), False)
+        self.answer_soon(ref, "allow")
+        self.assertIsNone(ai_gates.check("add_nodes", {"nodes": {"a": {}}}, ref))
+        self.assertEqual(ai_tasks.get_task(ref[0])["steps"][-1]["gate"]["gate"], "route")
+        self.assertIsNone(self.call("add_node", {"type": "ImageBlur"})[1], "the OK holds for the task")
+
     def test_ask_and_no_with_words(self):
         ai_gates.set_policy("download", "ask")
         ref = ai_tasks.begin_step("Claude", "download_model", {"type": "loras", "url": "u"}, time.time(), False)

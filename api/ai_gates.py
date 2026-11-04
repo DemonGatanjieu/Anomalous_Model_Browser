@@ -14,13 +14,17 @@ workbench gives them a line to paste), or "wait", it waits with run_status; how 
 AI waits for the user's answer to its question (answer_wait, ai_answer_wait.py), and what happens
 when that time runs out (no_answer): "stop", the AI ends its turn and waits for the user, or
 "recommended", a choice the AI marked a recommended option for takes it (never a gate's question);
-and which custom nodes the AI may add itself (node_rule): any, or only those of the ready-made ways.
+which custom nodes the AI may add itself (node_rule): any, or only those of the ready-made ways;
+and a new route (route_rule): an AI placing nodes by itself rather than through a way, card or route
+builds something nobody tried. "allow" goes on with one reminder in the task that a stronger model
+suits that better; "ask" waits for the user's OK, once a task.
 """
 
 import json
 import os
 import threading
 import time
+import uuid
 
 from . import action_catalog, ai_tasks
 from .path_utils import atomic_write_json
@@ -28,6 +32,10 @@ from .path_utils import atomic_write_json
 POLICIES = ("auto", "ask", "never")
 RUN_WAITS = ("call", "wait")
 NODE_RULES = ("any", "ways")
+ROUTE_RULES = ("allow", "ask")
+NEW_ROUTE_NOTE = ("AI 在自己搭一条新路线：现成的卡、做法里没有。新路线建议换旗舰模型来搭，搭好验证过存成卡，以后日常用；也可以让它先用最接近的现成路线。 / "
+                  "The AI is building a new route of its own: no card or way has it. New routes suit a flagship model; "
+                  "once tried, save it as a card for daily use. Or have it use the nearest route there is.")
 ANSWER_WAITS = (60, 180, 600)  # seconds; the first call waits 30-55 s, get_answers the rest
 NO_ANSWERS = ("stop", "recommended")
 DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
@@ -106,6 +114,39 @@ def set_node_rule(mode):
     return _set_tool_setting("nodes", mode)
 
 
+def route_rule():
+    """An AI placing nodes by itself: "allow" (with a reminder) or "ask" (the user's OK, once a task)."""
+    chosen = _tool_settings().get("routes")
+    return chosen if chosen in ROUTE_RULES else "allow"
+
+
+def set_route_rule(mode):
+    if mode not in ROUTE_RULES:
+        raise ValueError("routes is allow or ask")
+    return _set_tool_setting("routes", mode)
+
+
+def _new_route(tool, arguments):
+    """Whether this call places nodes the AI chose itself: not a way, a card or a route."""
+    return tool == "add_node" or (tool in ("add_nodes", "new_workflow") and bool((arguments or {}).get("nodes")))
+
+
+def _route_gate(tool, arguments, step_ref, now):
+    """True when this call must wait for the user's OK on a new route; else the task's one reminder is left there."""
+    if not _new_route(tool, arguments):
+        return False
+    with _decided:
+        task, _step_now = _step(step_ref)
+        steps = (task or {}).get("steps") or []
+        if route_rule() == "ask":
+            return not any((step.get("gate") or {}).get("gate") == "route" and (step.get("gate") or {}).get("decision") == "allow" for step in steps)
+        if task and not any(step.get("tool") == "new_route" for step in steps):
+            ai_tasks._add_step(task, {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "new_route", "kind": "note", "ok": True,
+                                      "state": "done", "summary": "new_route", "text": NEW_ROUTE_NOTE, "results": []})
+            ai_tasks._save(task)
+    return False
+
+
 def answer_wait():
     """How long in all an AI waits for the user's answer, in seconds (one of ANSWER_WAITS)."""
     chosen = _tool_settings().get("answer_wait")
@@ -163,12 +204,14 @@ def check(tool, arguments, step_ref, now=None):
         strict = {"auto": 0, "ask": 1, "never": 2}
         gate = max((gate, "canvas"), key=lambda name: strict.get(policies().get(name, "auto"), 0))
     policy = policies().get(gate, "auto") if gate else "auto"
+    now = time.time() if now is None else now
+    if policy == "auto" and _route_gate(tool, arguments, step_ref, now):
+        policy, gate = "ask", "route"
     if policy == "auto":
         return None
     if policy == "never":
         return _blocked(f"The user does not let AI apps do this ({gate}) through Anomalous; tell them what you "
                         "wanted to do instead, or ask them to change it in the AI workbench (Gates).")
-    now = time.time() if now is None else now
     signature = _signature(tool, arguments)
     with _decided:
         task, step = _step(step_ref)
@@ -231,7 +274,7 @@ def decide(task_id, step_id, decision, text="", remember=False, now=None):
         ai_tasks._save(task)
         _decided.notify_all()
     if remember and decision == "allow":
-        set_policy(asked["gate"], "auto")
+        set_route_rule("allow") if asked["gate"] == "route" else set_policy(asked["gate"], "auto")
     ai_tasks._notify(task_id)
     from . import ai_panels
     ai_panels.wake()

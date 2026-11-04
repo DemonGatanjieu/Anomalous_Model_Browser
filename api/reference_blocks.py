@@ -127,7 +127,18 @@ def set_on(name, on):
 
 
 def _missing_models(block, info):
-    """What models block needs that this ComfyUI lacks: [{"kind": "upscaler"|"detector"|"controlnet", "what": …}]."""
+    """What models block needs that this ComfyUI lacks, none when one of its family variants has all it needs
+    (Anima's Tile LLLite without an SDXL tile ControlNet)."""
+    missing = _lacks(block, info)
+    for variant in (block.get("variants") or {}).values():
+        merged = {**block, **variant}
+        if all(kind in info for kind in merged["packs"]) and not _lacks(merged, info):
+            return []
+    return missing
+
+
+def _lacks(block, info):
+    """[{"kind": "upscaler"|"detector"|"controlnet", "what": …}] this block as it stands needs and this ComfyUI lacks."""
     missing = []
     if block.get("upscaler") and not _choices(info, "UpscaleModelLoader", "model_name"):
         missing.append({"kind": "upscaler"})

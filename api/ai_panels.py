@@ -152,7 +152,10 @@ def clean_block(block, at, taken):
             ids.add(option_id)
             options.append({"id": option_id, "label": label, "detail": _text(option.get("detail"), 200, f"{where}.options[{i}].detail"),
                             **({"recommended": True} if option.get("recommended") is True else {}),
-                            **({"label_key": option["label_key"]} if _page_word(option.get("label_key")) else {})})
+                            **({key: option[key] for key in ("label_key", "detail_key") if _page_word(option.get(key))}),
+                            **({"values": {str(key): _text(value, 120, f"{where}.options[{i}].values") for key, value in option["values"].items()}}
+                               if isinstance(option.get("values"), dict) and _page_word(option.get("label_key")) else {}),
+                            **({"sample": option["sample"]} if re.fullmatch(r"[a-z_]{1,40}", str(option.get("sample"))) else {})})
         # other: a line for an answer none of the options is
         out.update(question=_text(block.get("question"), 200, f"{where}.question"), options=options,
                    multiple=block.get("multiple") is True, other=block.get("other") is True)
@@ -320,6 +323,8 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
             if not picked or (len(picked) > 1 and not block.get("multiple")):
                 raise PanelError("Pick one of the options")
             entry.update(choice=picked, labels=[known[item] for item in picked])
+            if (step.get("routes") or {}).get(picked[0]):  # what to call for a route (mcp_routes.py)
+                entry["note"] = step["routes"][picked[0]]
         else:
             value = _text(text, 2000, "text", True)
             entry["text"] = value

@@ -165,11 +165,12 @@ async def api_gates(request):
     POST {runs: call | wait}
     how the AI waits for a run (ai_gates.run_wait), POST {answer_wait: 60 | 180 | 600} for the user's answer,
     POST {no_answer: stop | recommended} what happens when that time runs out,
-    POST {nodes: any | ways} which custom nodes the AI adds itself (ai_gates.node_rule)."""
+    POST {nodes: any | ways} which custom nodes the AI adds itself (ai_gates.node_rule),
+    POST {routes: allow | ask} an AI placing nodes by itself (ai_gates.route_rule)."""
     def settings():
         return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "privacy": ai_privacy.default_on(),
                 "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait(), "no_answer": ai_gates.no_answer(),
-                "nodes": ai_gates.node_rule()}
+                "nodes": ai_gates.node_rule(), "routes": ai_gates.route_rule()}
 
     if request.method == "GET":
         return web.json_response(settings())
@@ -187,6 +188,8 @@ async def api_gates(request):
             ai_gates.set_no_answer(body["no_answer"])
         elif "nodes" in (body or {}):
             ai_gates.set_node_rule(body["nodes"])
+        elif "routes" in (body or {}):
+            ai_gates.set_route_rule(body["routes"])
         else:
             ai_gates.set_policy((body or {}).get("gate"), (body or {}).get("policy"))
     except ValueError as error:

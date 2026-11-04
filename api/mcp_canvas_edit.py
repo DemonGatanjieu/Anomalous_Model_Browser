@@ -11,7 +11,7 @@ import os
 import threading
 import time
 
-from . import ai_gates, ai_pictures, ai_tasks, ai_toolbox, mcp_fill, model_advice, model_download, reference_blocks
+from . import ai_gates, ai_pictures, ai_tasks, ai_toolbox, mcp_fill, mcp_routes, model_advice, model_download, reference_blocks
 from .mcp_actions import _action, _local, _page
 from .media_routes import picture_size
 from .mcp_tools import ToolError, _resolve_model
@@ -250,8 +250,9 @@ def _picture_model(ctx, model_id, info):
     kind, _index, root, path = _resolve_model(model_id)
     base = model_advice.base_of(path)
     loader = {"checkpoints": ("CheckpointLoaderSimple", "ckpt_name")}.get(kind, ("UNETLoader", "unet_name"))
-    if kind not in model_advice.MAIN_TYPES or (loader[0] == "UNETLoader" and model_advice.family(base) != "anima"):
-        raise ToolError(f"{model_id} is no model use picture draws with: a checkpoint, or an Anima diffusion model "
+    family = model_advice.family(base)
+    if kind not in model_advice.MAIN_TYPES or family not in (("anima",) if loader[0] == "UNETLoader" else ("SDXL", "SD 1.x", "")):
+        raise ToolError(f"{model_id} is no model use picture draws with: an SDXL or SD 1.5 checkpoint, or an Anima diffusion model "
                         "(its text encoder and VAE are known). Open a saved workflow for it instead (list_workflows).")
     wanted = os.path.relpath(path, root).replace("\\", "/")
     value = next((name for name in reference_blocks._choices(info, *loader) if name.replace("\\", "/") == wanted), None)
@@ -270,7 +271,9 @@ def _empty_canvas():
     raise ToolError("The canvas already makes a picture: run it, or new_workflow (blank) first for a separate one.")
 
 
-def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None, use=None, want=None, model=None):
+def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None, use=None, want=None, model=None, route=None):
+    if route is not None:
+        return mcp_routes.build(ctx, str(route), model)
     if not isinstance(replace, bool):
         raise ToolError("replace must be true or false.")
     if [nodes is not None, block is not None, use is not None].count(True) != 1:
@@ -389,7 +392,8 @@ CANVAS_TOOLS = dict([
                         "image": {"type": "string", "description": "A repaint block's inpaint_image; a control block's picture to follow."},
                         "scene": {"type": "string", "description": "The picture place_in_scene puts it into."},
                         "near_node_id": _NODE_ID, "replace": {"type": "boolean"},
-                        "model": {"type": "string", "description": "use=picture: a model_id, else the task's picked one."}}),
+                        "model": {"type": "string", "description": "use=picture: a model_id, else the task's picked one."},
+                        "route": {"type": "string", "description": "The route ask_user(routes=true) got: built whole on a new tab."}}),
     _action("connect_nodes", "Wire two nodes",
             "Wires two nodes: every unique matching type, and same-type sockets of the same name (positive to "
             "positive). Anything ambiguous (a lone CONDITIONING into positive or negative, wildcards) changes "

@@ -1,0 +1,31 @@
+{
+  "tile_second": {
+    "label": "{a} draws the base, {b} redraws it enlarged under Tile",
+    "detail": "The first settles the composition, the second adds detail and texture; a larger picture. Faces, hands and small ornaments get redrawn.",
+    "models": 2,
+    "way": ["upscale", "detail"],
+    "loader": ["own_1", "own"]
+  },
+  "midway_enlarge": {
+    "label": "{a} draws the early steps, {b} finishes, enlarged 1.5x at the switch",
+    "detail": "The second model's look comes through more, on a larger picture; colours and ornaments may change.",
+    "models": 2,
+    "way": ["refine", "midway"],
+    "loader": ["second_model"],
+    "enlarge": true,
+    "only": ["anima"]
+  },
+  "midway": {
+    "label": "{a} draws the early steps, {b} finishes",
+    "detail": "The second model's look comes through more, at the same size.",
+    "models": 2,
+    "way": ["refine", "midway"],
+    "loader": ["second_model"],
+    "not": ["anima"]
+  },
+  "one_pass": {
+    "label": "Only {a}, in one pass",
+    "detail": "The quickest: no second model.",
+    "models": 1
+  }
+}

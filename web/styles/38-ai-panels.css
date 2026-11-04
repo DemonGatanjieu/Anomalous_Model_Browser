@@ -343,6 +343,7 @@
 
 .anomalous-ai-panel-option:active:not(:disabled) { transform: translateY(0) scale(0.99); }
 .anomalous-ai-panel-option-text { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+.anomalous-ai-panel-option-sample { width: 56px; height: 80px; flex: none; object-fit: cover; border-radius: 6px; }
 
 /* The arrow says a press sends; it comes forward on hover, a tick once picked. */
 .anomalous-ai-panel-option-go {

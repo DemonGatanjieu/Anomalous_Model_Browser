@@ -4,7 +4,7 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, reference_blocks
+from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, mcp_routes, reference_blocks
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -40,6 +40,8 @@ def begin_task(ctx, title, new_task=False):
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
+        if _routes(ctx, task["id"]):
+            answer["next"] = mcp_routes.TOOLBOX_NOTE
     goes_on = ai_task_links.carried(task)
     if goes_on:
         answer["continues"] = goes_on  # the task this one goes on from, and what was decided there
@@ -126,14 +128,32 @@ def show_panel(ctx, title, blocks, task=None):
     return answer
 
 
-def ask_user(ctx, question, options=None, multiple=False, other=True, wait_seconds=ai_panels.MAX_WAIT, task=None):
+def _routes(ctx, task):
+    """What the user can do with the two models they picked (mcp_routes.py), or None."""
+    from .mcp_canvas_edit import object_info
+
+    task_id = task or ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")
+    box = ai_toolbox.effective(ai_tasks.get_task(task_id)) if task_id else None
+    return mcp_routes.offer(box, object_info(ctx)) if len(mcp_routes._main(box)) >= 2 else None
+
+
+def ask_user(ctx, question="", options=None, multiple=False, other=True, wait_seconds=ai_panels.MAX_WAIT, task=None, routes=False):
     """A question in the AI workbench, where the user watches the work: options to press (one may be
-    recommended), a line of their own; waits for the answer."""
+    recommended), a line of their own; waits for the answer. `routes`: Anomalous's own question and options."""
+    extra, words = None, {}
+    if routes:
+        offered = _routes(ctx, task)
+        if not offered:
+            raise ToolError("No routes to ask about: they need two main models of one family picked for the task. Go on with what the user asked.")
+        question, options, multiple, other = mcp_routes.QUESTION, offered["options"], False, True
+        extra, words = {"routes": offered["calls"]}, {"title_key": "aiRouteTitle"}
+    if not str(question or "").strip():
+        raise ToolError("question is empty.")
     block = ({"type": "choices", "id": "answer", "options": options, "multiple": bool(multiple), "other": bool(other)}
              if options else {"type": "input", "id": "answer", "question": str(question or "")[:200]})
     try:
         panel = ai_panels.show(ctx.get("client") or "AI", question, [block], session=ctx.get("session") or "",
-                               task_id=task or ctx.get("task"), tool="ask_user")
+                               task_id=task or ctx.get("task"), tool="ask_user", extra=extra, **words)
     except ai_panels.PanelError as error:
         raise ToolError(str(error))
     return _answer_of(ctx, panel["id"], wait_seconds)
@@ -268,6 +288,11 @@ def get_toolbox(ctx, task=None, skill=None):
             answer[kind] = [found for name in box[kind] if (found := ai_message_refs.lookup(kind, name)) is not None]
     if box.get("models"):
         answer["models"] = [ai_message_refs.lookup("models", model_id) or {"model_id": model_id, "missing": True} for model_id in box["models"]]
+        for model in answer["models"]:
+            if not model.get("missing") and model["model_id"].split(":", 1)[0] != "loras":
+                model["in_cards"] = mcp_routes.cards_of(model["model_id"])  # its examples: how the user's own routes use it
+        if _routes(ctx, task_id):
+            answer["routes"] = mcp_routes.TOOLBOX_NOTE
     return answer
 
 
@@ -389,7 +414,8 @@ TASK_TOOLS = dict([
     _task_tool("ask_user", "Ask the user",
                "Asks the user in the AI workbench and waits: a question with 2-8 options ({label, detail, "
                "recommended}; mark your suggestion recommended=true), and a line for their own answer unless "
-               "other=false; no options: a free answer. Use it for every choice that is the user's, not your chat's "
+               "other=false; no options: a free answer. routes=true: Anomalous's own question on the two models picked. "
+               "Use it for every choice that is the user's, not your chat's "
                f"question form. Waits at least {ASK_WAIT_MIN} s, up to wait_seconds; unanswered and keep_waiting: wait on "
                "with get_answers. End every round of work with it.",
                _question_with_images(ask_user), {"question": {"type": "string"},
@@ -397,8 +423,7 @@ TASK_TOOLS = dict([
                               "label": {"type": "string"}, "detail": {"type": "string"}, "recommended": {"type": "boolean"}}}},
                           "multiple": {"type": "boolean", "default": False}, "other": {"type": "boolean", "default": True},
                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": ai_panels.MAX_WAIT},
-                          "task": _TASK_PROP},
-               ["question"]),
+                          "routes": {"type": "boolean"}, "task": _TASK_PROP}),
     _task_tool("propose_repaint_area", "Agree on the area to repaint",
                "Before repainting only the marked areas: the user's marks are rough, so show them the area you would "
                "repaint. marks: the marks' message id. areas: boxes or ellipses {shape, x, y, w, h} as fractions of the "

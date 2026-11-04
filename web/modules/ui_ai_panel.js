@@ -208,7 +208,19 @@ function area(block, ctx) {
 
 /** An option's words: Anomalous's own options name a word of the page (label_key), the AI's are plain labels. */
 export function optionLabel(option) {
-    return option.label_key ? t(option.label_key) : option.label;
+    return option.label_key ? t(option.label_key, option.values) : option.label;
+}
+
+/** The same for an option's detail, and the sample picture Anomalous's own options show (a route's, web/assets/routes). */
+export const optionDetail = option => (option.detail_key ? t(option.detail_key) : option.detail);
+
+function optionSample(option) {
+    const picture = el('img', 'anomalous-ai-panel-option-sample');
+    picture.alt = '';
+    picture.loading = 'lazy';
+    picture.onerror = () => picture.remove();
+    picture.src = new URL(`../assets/routes/${option.sample}.webp`, import.meta.url).href;
+    return picture;
 }
 
 function models(block, ctx) {
@@ -344,7 +356,8 @@ function choices(block, ctx) {
             words.append(el('span', 'anomalous-ai-panel-option-badge', t('aiPanelRecommended')));
         }
         words.append(el('span', 'anomalous-ai-panel-option-label', optionLabel(option)));
-        if (option.detail) words.append(el('span', 'anomalous-ai-panel-option-detail', option.detail));
+        if (option.detail) words.append(el('span', 'anomalous-ai-panel-option-detail', optionDetail(option)));
+        if (option.sample) node.append(optionSample(option));
         node.append(words, icon(block.multiple ? 'check' : 'arrowRight', 15, 'anomalous-ai-panel-option-go'));
         node.disabled = !open;
         options.append(node);

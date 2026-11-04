@@ -215,7 +215,11 @@ covered by the `styles.css` manifest.
   KSampler), one "copy_of" "$sampler.model" is a copy of the canvas's model line, loader and LoRAs (a redraw's own model,
   swapped with set_model), before canvas_wiring splices it in (`tests/canvas_roles.mjs`). A "standalone" block (the
   picture from words) names no role: it is built on the model `add_nodes(model=…)` names or the task's picked one, its
-  family's own files found beside it ("files": Anima's text encoder and VAE), and only on a canvas making no picture. A block's "variants"
+  family's own files found beside it ("files": Anima's text encoder and VAE), and only on a canvas making no picture.
+  `api/mcp_routes.py` (data: `api/routes.json`) turns two picked main models into choices the user makes: `ask_user(routes=true)`
+  shows the routes this ComfyUI can build for them, a saved card using both first, its answer says what to call, and
+  `add_nodes(route=…)` builds one from the ways on a new tab; `get_toolbox` lists each picked model's cards as its examples.
+  An AI placing nodes itself is a new route (`ai_gates.route_rule`): one reminder a task, or the user's OK. A block's "variants"
   rebuild it for the canvas model's family (`reference_blocks.build`: on Anima an LLLite model
   patch instead of a ControlNet), and an "optional" node that only improves it (KJNodes'
   ColorMatch, the SAM3 pass before the hand detector) goes when its pack or its model (a block's

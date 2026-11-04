@@ -9,7 +9,7 @@ and the task's history. Unread messages of the user's come with it as with every
 (ai_panels.attach_pending).
 """
 
-from . import ai_decisions, ai_task_runs, ai_tasks
+from . import ai_decisions, ai_task_runs, ai_tasks, mcp_routes
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import _schema, tool_text
 
@@ -34,7 +34,7 @@ def _canvas():
         return {"unavailable": str(error)}
 
 
-def _next(summary, run, canvas):
+def _next(summary, run, canvas, record=None):
     if summary["asks"]:
         return f"{summary['asks']} question(s) or gate(s) wait for the user: get_answers waits for their answer."
     if run.get("state") in ("queued", "running", "asking", "allowed"):
@@ -48,6 +48,8 @@ def _next(summary, run, canvas):
         return "Wire canvas.unwired with connect_nodes (fits lists outputs that fit each), then run_workflow."
     if run.get("state") == "done" and run.get("pictures"):
         return "Look at the run's pictures (zoom_image) and tell the user with report what came out."
+    if record and mcp_routes.waiting(record):
+        return mcp_routes.TOOLBOX_NOTE
     return "Go on with what the user asked (task.asked); run_workflow runs the canvas, report tells the user."
 
 
@@ -72,7 +74,7 @@ def get_situation(ctx, task=None):
         answer["task_note"] = "No task yet: begin_task names what the user asked for."
     canvas = _canvas()
     answer.update(run=run, canvas=canvas)
-    answer["next"] = _next(summary, run, canvas)
+    answer["next"] = _next(summary, run, canvas, record)
     # Trim detail before chains and decisions; preserve actionable missing inputs and errors.
     while len(tool_text(answer)) > BUDGET and canvas.get("lines"):
         canvas["lines"].pop()

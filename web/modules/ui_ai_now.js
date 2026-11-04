@@ -17,7 +17,7 @@ import { toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
 import { progressWords, stopButton } from './ui_ai_run_live.js';
 import { panelSteps, QUESTIONS } from './ui_ai_side.js';
-import { draftField, hasDraft, optionLabel, ownWords, sendAnswer } from './ui_ai_panel.js';
+import { draftField, hasDraft, optionDetail, optionLabel, ownWords, sendAnswer } from './ui_ai_panel.js';
 import { decideGate } from './ui_ai_gate.js';
 import { callRow } from './ui_ai_call.js';
 
@@ -94,7 +94,7 @@ function statusLine(task, ctx) {
 function askCard(task, { step, block }, more, ctx) {
     const card = el('div', 'anomalous-ai-now-ask');
     const head = el('div', 'anomalous-ai-now-ask-head');
-    head.append(icon('question', 15), el('span', 'anomalous-ai-now-question', (block.question_key && t(block.question_key)) || block.question || step.panel.title || t('aiNowAsk')));
+    head.append(icon('question', 15), el('span', 'anomalous-ai-now-question', (block.question_key && t(block.question_key)) || block.question || (step.panel.title_key && t(step.panel.title_key)) || step.panel.title || t('aiNowAsk')));
     if (more) head.append(button('anomalous-ai-link', t('aiNowMore', { count: more }), ctx.openStage));
     const note = el('div', 'anomalous-ai-now-error');
     const decide = button('anomalous-ai-panel-skip', '', () => send({ skip: true }, [...card.querySelectorAll('button, input')]));
@@ -134,7 +134,7 @@ function askCard(task, { step, block }, more, ctx) {
             const chip = button(`anomalous-ai-now-option${option.recommended ? ' is-recommended' : ''}`, '', () => {
                 chip.classList.add('is-picked'); // which one goes shows at once
                 void send({ choice: [option.id] }, [...card.querySelectorAll('button, input')]);
-            }, option.detail || '');
+            }, optionDetail(option) || '');
             if (option.recommended) chip.append(icon('star', 12));
             chip.append(el('span', '', optionLabel(option)), icon('arrowRight', 13, 'anomalous-ai-now-option-go'));
             answers.append(chip);
