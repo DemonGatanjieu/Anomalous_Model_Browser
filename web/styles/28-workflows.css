@@ -94,6 +94,7 @@
 .anomalous-wf-list.is-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-auto-rows: max-content; /* a card clips its content, so plain rows would shrink to fit instead of scrolling */
     align-content: start;
     gap: 14px;
 }
