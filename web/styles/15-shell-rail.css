@@ -195,6 +195,10 @@
     width: calc(100% - 60px);
 }
 
+#anomalous-container.anomalous-docked.anomalous-has-rail > .anomalous-nb-modal {
+    width: calc(100% - 66px); /* stops at the right edge (00-foundation-models.css) */
+}
+
 /* Header: list button and page title on the left. */
 .anomalous-header-left {
     min-width: 0;

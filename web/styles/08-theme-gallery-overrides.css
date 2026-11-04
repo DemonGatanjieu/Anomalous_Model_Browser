@@ -635,6 +635,7 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     justify-content: center !important;
     gap: 6px !important;
     flex: 1 1 auto !important;
+    min-width: 0;
     margin: 0 auto !important;
 }
 

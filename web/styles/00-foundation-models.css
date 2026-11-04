@@ -523,7 +523,9 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     left: 0 !important;
     top: 0 !important;
     height: 100% !important;
-    width: 660px !important;
+    /* No narrower than every page was checked at; leaves some of the canvas, however small the browser window. */
+    width: min(100%, clamp(480px, var(--amb-dock-width, 660px), 100% - 240px)) !important;
+    padding-right: 6px; /* the edge below, clear of the pages' scrollbars */
     border-radius: 0 !important;
     clip-path: none !important;
     transition: all 0.3s ease;
@@ -578,6 +580,39 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     border-right: 2px solid var(--amb-border-strong);
     border-bottom: 2px solid var(--amb-border-strong);
 }
+
+/* The docked window's right edge (ui_shell_frame.js). */
+.anomalous-dock-edge {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    width: 6px;
+    background: var(--amb-border);
+    cursor: ew-resize;
+    touch-action: none;
+}
+
+.anomalous-dock-edge::after {
+    content: '';
+    position: absolute;
+    top: calc(50% - 16px);
+    left: 2px;
+    width: 2px;
+    height: 32px;
+    border-radius: 1px;
+    background: var(--amb-text-dim);
+}
+
+.anomalous-docked .anomalous-dock-edge { display: block; }
+.anomalous-docked .anomalous-resize-handle { display: none; }
+
+.anomalous-dock-edge:hover,
+.is-dock-resizing .anomalous-dock-edge { background: var(--amb-link); }
+
+#anomalous-container.is-dock-resizing { transition: none; }
 
 .anomalous-header-group {
     display: flex;

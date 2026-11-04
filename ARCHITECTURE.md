@@ -875,7 +875,7 @@ covered by the `styles.css` manifest.
   it is open (remembered per page; closed and overlaying below 760 px), the header's
   page title, and the page reopened next time. `ui_home.js` owns the home page (task
   cards, first steps). `ui_shell_frame.js` owns dragging, resizing and keeping the
-  floating window on screen, and the full-window button (double-click on the header too); `ui_scan_watch.js` polls scan status for the rail's scan
+  floating window on screen, the docked window's width (dragged at its right edge; the limits are in the CSS), and the full-window button (double-click on the header too); `ui_scan_watch.js` polls scan status for the rail's scan
   button, the progress panel and the model reload afterwards.
   The activity log (docs/decisions AD-018): `api/activity_log.py` keeps the entries
   (newest first, bounded, in the ComfyUI user folder), records this plugin's and

@@ -69,7 +69,7 @@
 
 .anomalous-ai.uses-tabs .anomalous-ai-tabs { display: flex; }
 .anomalous-ai-tabs .anomalous-ai-side-btn { flex: 1 1 auto; justify-content: center; padding: 5px 8px; }
-.anomalous-ai-tabs .anomalous-ai-side-btn svg { display: none; }
+.anomalous-ai-tabs .anomalous-ai-side-btn .anomalous-tb-icon { display: none; }
 .anomalous-ai-tabs .anomalous-ai-side-btn-label { display: inline; }
 
 /* The tabs say what is shown and lead away from it. */

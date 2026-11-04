@@ -2,8 +2,11 @@
  * The floating window's frame: dragged by its header, resized from the corner handle,
  * kept on screen, position and size remembered; or the full ComfyUI page (the header's
  * full-window button, or a double-click on the header), remembered too. Docked and full
- * window ignore the position and size (CSS).
+ * window ignore the position and size (CSS); docked has a width of its own, dragged at
+ * its right edge.
  */
+
+import { translate as t } from './locales.js';
 
 const MIN_WIDTH = 600;
 const MIN_HEIGHT = 400;
@@ -89,6 +92,45 @@ export function bindShellResize(container) {
     if (savedW) container.style.width = savedW;
     if (savedH) container.style.height = savedH;
     container.appendChild(handle);
+}
+
+/**
+ * The docked window's right edge, appended to `container`: drag to set the width, double-click
+ * for the usual one. The limits are in the CSS (`.anomalous-docked`); what they allowed is kept.
+ */
+export function bindDockResize(container) {
+    const edge = document.createElement('div');
+    edge.className = 'anomalous-dock-edge';
+    let dragged = false;
+    const setWidth = width => container.style.setProperty('--amb-dock-width', `${width}px`);
+    const saved = localStorage.getItem('anomalous_dock_width');
+    if (saved) setWidth(saved);
+
+    edge.onpointerenter = () => { edge.title = t('dockEdgeTitle'); };
+    edge.onpointerdown = (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        dragged = false;
+        edge.setPointerCapture(e.pointerId);
+        container.classList.add('is-dock-resizing');
+    };
+    edge.onpointermove = (e) => {
+        if (!edge.hasPointerCapture(e.pointerId)) return;
+        dragged = true;
+        setWidth(Math.round(e.clientX - container.getBoundingClientRect().left));
+    };
+    edge.onlostpointercapture = () => {
+        container.classList.remove('is-dock-resizing');
+        const width = container.offsetWidth; // 0 if the window closed in the middle of the drag
+        if (!dragged || !width) return;
+        setWidth(width);
+        localStorage.setItem('anomalous_dock_width', String(width));
+    };
+    edge.ondblclick = () => {
+        container.style.removeProperty('--amb-dock-width');
+        localStorage.removeItem('anomalous_dock_width');
+    };
+    container.appendChild(edge);
 }
 
 const MAXIMIZE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';

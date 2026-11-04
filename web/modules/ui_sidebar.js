@@ -15,7 +15,7 @@ import { createGallerySearchBar } from './ui_gallery.js';
 import { bindBrowserEscape } from './ui_browser_navigation.js';
 import { createShellRail } from './ui_shell_rail.js';
 import { installShellNavigation } from './ui_shell_nav.js';
-import { bindShellDrag, bindShellMaximize, bindShellResize } from './ui_shell_frame.js';
+import { bindDockResize, bindShellDrag, bindShellMaximize, bindShellResize } from './ui_shell_frame.js';
 import { watchScans } from './ui_scan_watch.js';
 import { watchCanvasChanges } from './activity_canvas.js';
 import { watchWorkflowLoads } from './ui_doctor_banner.js';
@@ -259,6 +259,7 @@ export function createDOM() {
         this.renderRailTools();
 
         bindShellResize(container);
+        bindDockResize(container);
         document.body.appendChild(this.modal);
     }
 

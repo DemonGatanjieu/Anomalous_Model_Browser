@@ -848,12 +848,14 @@
 /* A narrow drawer stacks the cards (or the reference) over the prompt boxes. */
 @container anomalous-ps (max-width: 540px) {
     .anomalous-ps-grid,
+    .anomalous-prompt-page .anomalous-ps-grid,
     .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: minmax(120px, 34%) minmax(0, 1fr);
     }
 
     .anomalous-ps-grid.has-ref,
+    .anomalous-prompt-page .anomalous-ps-grid.has-ref,
     .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid.has-ref {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: minmax(120px, 40%) minmax(0, 1fr);
