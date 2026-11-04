@@ -127,7 +127,7 @@ class GateTests(unittest.TestCase):
         self.call("add_nodes", {"use": "upscale"})
         notes = [step for step in ai_tasks.get_task(ref[0])["steps"] if step["tool"] == "new_route"]
         self.assertEqual(len(notes), 1, "one reminder a task, for what the AI places itself")
-        self.assertIn("旗舰模型", notes[0]["text"])
+        self.assertIn("存成卡", notes[0]["text"])
         ai_gates.set_route_rule("ask")
         self.assertIsNone(self.call("add_nodes", {"use": "upscale"})[1], "a way is no new route")
         ref = ai_tasks.begin_step("Claude", "add_nodes", {"nodes": {"a": {}}}, time.time(), False)

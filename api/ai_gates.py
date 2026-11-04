@@ -33,9 +33,9 @@ POLICIES = ("auto", "ask", "never")
 RUN_WAITS = ("call", "wait")
 NODE_RULES = ("any", "ways")
 ROUTE_RULES = ("allow", "ask")
-NEW_ROUTE_NOTE = ("AI 在自己搭一条新路线：现成的卡、做法里没有。新路线建议换旗舰模型来搭，搭好验证过存成卡，以后日常用；也可以让它先用最接近的现成路线。 / "
-                  "The AI is building a new route of its own: no card or way has it. New routes suit a flagship model; "
-                  "once tried, save it as a card for daily use. Or have it use the nearest route there is.")
+NEW_ROUTE_NOTE = ("AI 在自己搭一条新路线：现成的卡、做法里没有，还没验证过。跑完看看效果，好的话存成卡，以后日常用；也可以让它用最接近的现成路线。 / "
+                  "The AI is building a new route of its own: no card or way has it, so it is untried. See how the run turns out; "
+                  "if you like it, save it as a card for daily use. Or have it use the nearest route there is.")
 ANSWER_WAITS = (60, 180, 600)  # seconds; the first call waits 30-55 s, get_answers the rest
 NO_ANSWERS = ("stop", "recommended")
 DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
