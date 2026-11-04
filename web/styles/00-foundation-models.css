@@ -776,6 +776,25 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     pointer-events: none;
 }
 
+/* Inserting LoRAs: the order they were picked in, which is the order they go in. */
+.anomalous-picker-order {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #6ea8ff;
+    color: #0b1220;
+    font-size: 0.8rem;
+    font-weight: 800;
+    pointer-events: none;
+}
+
 #anomalous-container.anomalous-sidebar-closed #anomalous-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px;

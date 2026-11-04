@@ -299,7 +299,9 @@ until they have a complete remapping path. Complete recipes use
 `loadGraphData` intentionally so ComfyUI owns new-workflow canvas creation.
 
 `graph_splice.js` decides where a LoRA loader goes (`planLoraInsertion`) and wires it
-(`spliceLora`), for Current node's insert buttons and the MCP `add_lora` alike. It reads
+(`spliceLora`), for Current node's insert buttons and the MCP `add_lora` alike. The insert
+buttons take several LoRAs at a time (`lora_insert.js`): they go in as a chain or through one
+third-party node, all or none, and stand in one column. It reads
 declared port types, never slot indexes or display names. After a node, every link of its
 MODEL output moves behind the LoRA; before one, only that node's MODEL input. The CLIP
 line goes through only when the LoRA file trains the text encoder (`api/lora_info.py`

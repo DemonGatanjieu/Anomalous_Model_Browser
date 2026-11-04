@@ -103,7 +103,8 @@ function clipBefore(graph, anchor) {
         const source = inputSource(graph, anchor, own);
         return source && { ...source, links: [{ targetNode: anchor, targetSlot: own }] };
     }
-    const prompts = new Set((anchor.inputs || []).map((_input, index) => inputSource(graph, anchor, index)?.node)
+    // Not its MODEL input: a LoRA already before the sampler takes a CLIP too, and it is no prompt.
+    const prompts = new Set((anchor.inputs || []).map((input, index) => normalizeSlotType(input?.type) !== 'MODEL' && inputSource(graph, anchor, index)?.node)
         .filter(node => node && findSlotIndex(node.inputs, 'CLIP') >= 0));
     const links = [];
     const sources = new Map();
@@ -199,38 +200,41 @@ function restoreConnections(originalConnections) {
     }
 }
 
-function placeInsertedNode(graph, anchorNode, insertedNode, direction) {
+const NODE_SPACING = 60; // a title bar and some air between two nodes in a column
+const PLACES_TRIED = [0, ...Array.from({ length: 30 }, (_, step) => [80 * (step + 1), -80 * (step + 1)]).flat()];
+
+/** Stands `nodes` in a column before or after `anchorNode`, as near its height as there is room. */
+export function placeNodes(graph, anchorNode, nodes, direction) {
     const anchorX = Number(anchorNode?.pos?.[0]) || 0;
     const anchorY = Number(anchorNode?.pos?.[1]) || 0;
     const anchorWidth = Number(anchorNode?.size?.[0]) || 220;
-    const insertedWidth = Number(insertedNode?.size?.[0]) || 220;
+    const heightOf = node => Number(node?.size?.[1]) || 120;
+    const width = Math.max(...nodes.map(node => Number(node?.size?.[0]) || 220));
+    const height = nodes.reduce((sum, node) => sum + heightOf(node) + NODE_SPACING, -NODE_SPACING);
     const horizontalGap = 90;
-    let x = direction === 'before'
-        ? anchorX - insertedWidth - horizontalGap
+    const x = direction === 'before'
+        ? anchorX - width - horizontalGap
         : anchorX + anchorWidth + horizontalGap;
-    let y = anchorY;
 
-    const overlaps = (candidateX, candidateY) => (graph?._nodes || []).some(node => {
-        if (!node || node === anchorNode || node === insertedNode) return false;
+    const overlaps = candidateY => (graph?._nodes || []).some(node => {
+        if (!node || node === anchorNode || nodes.includes(node)) return false;
         const nodeX = Number(node.pos?.[0]) || 0;
         const nodeY = Number(node.pos?.[1]) || 0;
         const nodeWidth = Number(node.size?.[0]) || 220;
-        const nodeHeight = Number(node.size?.[1]) || 120;
-        const insertedHeight = Number(insertedNode?.size?.[1]) || 120;
-        return candidateX < nodeX + nodeWidth + 20
-            && candidateX + insertedWidth + 20 > nodeX
-            && candidateY < nodeY + nodeHeight + 20
-            && candidateY + insertedHeight + 20 > nodeY;
+        return x < nodeX + nodeWidth + 20
+            && x + width + 20 > nodeX
+            && candidateY < nodeY + heightOf(node) + 20
+            && candidateY + height + 20 > nodeY;
     });
 
-    for (const offset of [0, 80, -80, 160, -160, 240, -240]) {
-        if (!overlaps(x, anchorY + offset)) {
-            y = anchorY + offset;
-            break;
-        }
+    let y = anchorY + (PLACES_TRIED.find(offset => !overlaps(anchorY + offset)) ?? 0);
+    for (const node of nodes) {
+        node.pos = [x, y];
+        y += heightOf(node) + NODE_SPACING;
     }
-    insertedNode.pos = [x, y];
 }
+
+const originalLinks = plan => plan.outputs.flatMap(output => output.links.map(link => ({ originNode: output.node, originSlot: output.slot, ...link })));
 
 /**
  * Puts `insertedNode` (a LoRA loader of the plan's kind) where `plan` (planLoraInsertion) says,
@@ -239,13 +243,13 @@ function placeInsertedNode(graph, anchorNode, insertedNode, direction) {
  */
 export function spliceLora({ graph, plan, anchorNode, insertedNode }) {
     const slots = assertInsertedNodeSlots(insertedNode, plan.outputs.map(output => output.type));
-    const original = plan.outputs.flatMap(output => output.links.map(link => ({ originNode: output.node, originSlot: output.slot, ...link })));
+    const original = originalLinks(plan);
     let added = false;
     graph.beforeChange?.(anchorNode);
     try {
         graph.add(insertedNode);
         added = true;
-        placeInsertedNode(graph, anchorNode, insertedNode, plan.direction);
+        placeNodes(graph, anchorNode, [insertedNode], plan.direction);
         for (const output of plan.outputs) {
             const { input, output: out } = slots[output.type];
             connectOrThrow(output.node, output.slot, insertedNode, input, output.type);
@@ -261,4 +265,11 @@ export function spliceLora({ graph, plan, anchorNode, insertedNode }) {
         graph.change?.();
         graph.setDirtyCanvas?.(true, true);
     }
+}
+
+/** Takes `insertedNode` out again: what `plan` moved goes back. The last one in comes out first. */
+export function removeSpliced({ graph, plan, insertedNode }) {
+    const original = originalLinks(plan);
+    graph.remove(insertedNode);
+    restoreConnections(original);
 }

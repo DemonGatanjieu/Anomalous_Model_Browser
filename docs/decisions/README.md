@@ -222,3 +222,10 @@ none in: presets and combos joined to saves were tried and took more to keep sen
 gave, so nothing but the canvas makes a save, and a save only becomes a new card. The Saves page
 shows them by canvas and runs one canvas at a time, in the order of the saves; what is clicked
 after goes behind it on ComfyUI's queue, so there is no queue of our own to keep.
+
+## AD-024 — Anomalous has no nodes of its own
+
+Everything Anomalous puts on a canvas is ComfyUI's own or from a node pack the user already has,
+so a workflow made with it opens on a ComfyUI without it. A LoRA stack, asked for by users, is
+therefore a chain of ComfyUI's loaders by default, and rgthree's or Easy-Use's node where that is
+installed; a stack node of ours would be simpler to build, and would tie every workflow to us.

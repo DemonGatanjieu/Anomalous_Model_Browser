@@ -988,8 +988,9 @@ covered by the `styles.css` manifest.
   read-only translation panel beside its prompts. `lora_nodes.js` knows the LoRA nodes a default
   combo puts its LoRAs in (ComfyUI's chain, rgthree's Power Lora Loader, Easy-Use's LoRA stack, the
   third-party ones only when installed) and a Power Lora Loader's rows (for structures, and as
-  drop-down-like boxes for Model Check); `ui_lora_node_choice.js` is the default combo editor's
-  choice among them.
+  drop-down-like boxes for Model Check); `lora_insert.js` puts several LoRAs into a workflow at once
+  as any of them, for the model picker's Insert LoRA; `ui_lora_node_choice.js` is the choice among
+  them, in the default combo editor and the picker.
 - `detached_graph.js` lays a workflow on a graph of its own, off the canvas, under an id of its own: ComfyUI keeps widget
   values by graph id, so a copy under the canvas's id would write its values onto the canvas.
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,

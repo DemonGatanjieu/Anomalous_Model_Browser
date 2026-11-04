@@ -2,6 +2,10 @@
 
 ## v1.63.0 — unreleased
 
+- **插入 LoRA 可以一次选多个**：选择窗口里点卡片加入，再点一下取消，卡片上的数字就是接上去的顺序，线自动连好，Ctrl+Z 一次全部退回。默认用 ComfyUI 自带的节点串成一串；装了 rgthree 或 Easy-Use 时可以改放进一个 Power Lora Loader 或 LoRA 堆叠节点，会记住上次的选择。
+- 在采样器前面插入 LoRA 时，如果前面已经有一个 LoRA，新的 LoRA 也能接上 CLIP 线了。
+- **Insert LoRA takes several at a time**: in the picker, click cards to add them and again to drop one; the number on a card is the order they go in. They are wired for you, and one Ctrl+Z takes them all out. They chain as ComfyUI's own nodes by default; with rgthree or Easy-Use installed they can go in one Power Lora Loader or LoRA stack, and the choice is remembered.
+- A LoRA inserted before a sampler now gets the CLIP line even when another LoRA already stands there.
 - **操作手感更顺了**：打开和关闭窗口、切换页面都有短暂的过渡，左边栏的高亮会滑到新页面，切换侧边停靠和全屏时窗口平滑过去，不再每一帧重排页面。系统开了“减少动态效果”时这些都关掉。
 - **Moving around feels smoother**: the window and its pages come and go with a short transition, the rail's highlight slides to the new page, and going between docked, floating and full window glides there instead of laying the page out on every frame. All of it stays off when the system asks for reduced motion.
 - **侧边停靠的宽度可以拖了**：按住窗口右边缘左右拖，最窄 480，最宽给画布留 240，宽度会记住，双击边缘恢复原来的 660。窗口变小时也会给画布留位置。各页面都按 480 宽走过一遍：模型页的关闭按钮不再被挤出去，工作流的搜索框放不下时换到第二行，图库拖宽后自动加列。

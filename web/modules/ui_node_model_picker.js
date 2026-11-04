@@ -2,13 +2,19 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from "./locales.js";
-import { planLoraInsertion, spliceLora } from "./graph_splice.js";
+import { placeNodes } from "./graph_splice.js";
+import { insertLoras } from "./lora_insert.js";
+import { isInstalled, loraNodeKind } from "./lora_nodes.js";
 import { collectMainModelContextRequests, getBaseModelFamily, inferPickerModelType } from "./model_picker.js";
 import { escapeHtml } from "./safe_dom.js";
 import { recordCanvasStep } from "./canvas_history.js";
 import { modelCardFace } from "./ui_grid.js";
+import { createLoraNodeChoice } from "./ui_lora_node_choice.js";
 
 const t = (key, params) => translate(key, params);
+const LORA_NODE_KEY = 'anomalous_insert_lora_node'; // the LoRA node last chosen here
+// A third-party LoRA node settles just after it appears: Easy-Use hides its spare rows on a timer, rgthree fills in on being drawn.
+const nodesSettled = () => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(done, 100))));
 
 export function getNativeWidgetValues(node, widget) {
     const source = widget?.options?.values;
@@ -24,6 +30,13 @@ export function getNativeWidgetValues(node, widget) {
     return Array.isArray(values)
         ? [...new Set(values.filter(value => typeof value === 'string'))]
         : [];
+}
+
+/** A crowded canvas can leave new nodes out of sight: the view goes to the first. */
+function bringIntoView(node) {
+    const [left, top, width, height] = app.canvas.visible_area;
+    const [x, y] = node.pos;
+    if (x < left || y < top || x > left + width || y > top + height) app.canvas.centerOnNode(node);
 }
 
 /** Whether the LoRA ComfyUI lists as `name` trains the text encoder (api/lora_info.py); yes when unknown. */
@@ -82,7 +95,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
         const contextRequests = pickerType.isLora
             ? collectMainModelContextRequests(app.graph, options.anchorNode || node)
             : [];
-        let selectedPath = currentPath;
+        let chosen = currentPath ? [currentPath] : []; // in the order picked; only inserting takes more than one
         let selectedFolder = '';
         let previews = {};
         let modelInfo = {};
@@ -212,7 +225,11 @@ export function _openGalleryReplacer(node, w, options = {}) {
             ? t('pickerInsertConfirm')
             : t('pickerReplaceConfirm');
         confirmBtn.style.cssText = 'padding:10px 20px;background:#1976d2;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700;';
-        footer.append(selectionText, cancelBtn, confirmBtn);
+        const loraNode = { loraNode: localStorage.getItem(LORA_NODE_KEY) };
+        if (!isInstalled(loraNodeKind(loraNode.loraNode))) loraNode.loraNode = 'core';
+        if (mode === 'insert') footer.append(selectionText, createLoraNodeChoice(loraNode, () => localStorage.setItem(LORA_NODE_KEY, loraNode.loraNode)));
+        else footer.append(selectionText);
+        footer.append(cancelBtn, confirmBtn);
         modal.appendChild(footer);
         // Opened from the canvas's right-click menu the browser is closed, so the floating button would sit on the picker's head.
         document.documentElement.classList.add('anomalous-picker-open');
@@ -238,11 +255,20 @@ export function _openGalleryReplacer(node, w, options = {}) {
         };
         rebuildFolderCounts();
 
+        // Replacing keeps a model only while the filter shows it; what is being gathered to insert stays.
+        const dropFiltered = () => {
+            if (mode === 'replace') chosen = chosen.filter(pathMatchesBaseFilter);
+        };
         const updateSelection = () => {
-            selectionText.textContent = selectedPath
-                ? t('pickerSelected', { path: normalizePath(selectedPath) })
-                : t('pickerChooseModel');
-            confirmBtn.disabled = !selectedPath || applying;
+            const names = chosen.map(getName).join('、');
+            if (mode === 'insert') {
+                selectionText.textContent = chosen.length ? t('pickerChosenLoras', { count: chosen.length, names }) : t('pickerChooseLoras');
+                selectionText.title = names;
+                confirmBtn.textContent = chosen.length > 1 ? t('pickerInsertConfirmMany', { count: chosen.length }) : t('pickerInsertConfirm');
+            } else {
+                selectionText.textContent = chosen.length ? t('pickerSelected', { path: normalizePath(chosen[0]) }) : t('pickerChooseModel');
+            }
+            confirmBtn.disabled = !chosen.length || applying;
             confirmBtn.style.opacity = confirmBtn.disabled ? '0.45' : '1';
             confirmBtn.style.cursor = confirmBtn.disabled ? 'not-allowed' : 'pointer';
         };
@@ -279,7 +305,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             const preferredFamily = getBaseModelFamily(preferredBaseModel);
             selectedBaseFamily = preferredFamily && groups.has(preferredFamily) ? preferredFamily : '';
             baseFilterSelect.value = selectedBaseFamily;
-            if (selectedBaseFamily && selectedPath && !pathMatchesBaseFilter(selectedPath)) selectedPath = null;
+            dropFiltered();
             rebuildFolderCounts();
 
             compatibilityHint.style.display = 'flex';
@@ -319,9 +345,12 @@ export function _openGalleryReplacer(node, w, options = {}) {
         // Marks the chosen card in place: redrawing the grid would empty it and scroll back to the top.
         const paintCard = (card) => {
             const path = card.dataset.path;
-            const isSelected = path === selectedPath;
+            const isSelected = chosen.includes(path);
             card.style.borderColor = isSelected ? '#6ea8ff' : path === currentPath ? '#e9b949' : '';
             card.style.boxShadow = isSelected ? '0 0 0 2px rgba(88,151,255,0.35),0 14px 28px rgba(0,0,0,0.28)' : '';
+            card.setAttribute('aria-pressed', String(isSelected));
+            card.querySelector('.anomalous-picker-order')?.remove();
+            if (mode === 'insert' && isSelected) card.appendChild(Object.assign(document.createElement('span'), { className: 'anomalous-picker-order', textContent: chosen.indexOf(path) + 1 }));
         };
         // The models page's card face; a video cover shows its still and plays while pointed at.
         const cardOwner = { energySaving: true, cardThumbnailMode: this.cardThumbnailMode };
@@ -359,7 +388,8 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     paintCard(card);
                     if (currentPath === path) card.appendChild(Object.assign(document.createElement('span'), { className: 'anomalous-picker-current', textContent: t('pickerCurrent') }));
                     const choose = () => {
-                        selectedPath = path;
+                        if (mode === 'replace') chosen = [path];
+                        else chosen = chosen.includes(path) ? chosen.filter(item => item !== path) : [...chosen, path];
                         updateSelection();
                         grid.querySelectorAll('[data-path]').forEach(paintCard);
                     };
@@ -385,33 +415,48 @@ export function _openGalleryReplacer(node, w, options = {}) {
         };
 
         confirmBtn.onclick = async () => {
-            if (!selectedPath || applying) return;
+            if (!chosen.length || applying) return;
             applying = true;
             updateSelection();
             const oldValue = w.value;
             try {
                 if (mode === 'insert') {
-                    // The CLIP line goes through the LoRA only when the file trains the text encoder.
-                    const textEncoder = await loraTrainsTextEncoder(selectedPath);
-                    const plan = planLoraInsertion(app.graph, options.anchorNode, options.direction, { textEncoder });
-                    if (!plan.supported) throw new Error(plan.code);
-                    const inserted = plan.clip ? node : LiteGraph.createNode('LoraLoaderModelOnly');
-                    const loraWidget = plan.clip ? w : findModelComboWidget(inserted);
-                    setWidgetValue(inserted, loraWidget, selectedPath);
-                    spliceLora({ graph: app.graph, plan, anchorNode: options.anchorNode, insertedNode: inserted });
-                    try {
-                        loraWidget.callback?.(loraWidget.value, app.canvas, inserted, app.canvas?.graph_mouse, null);
-                    } catch (error) {
-                        console.warn('[Anomalous] LoRA widget callback failed:', error);
+                    // The CLIP line goes through the LoRAs only when a file trains the text encoder.
+                    const trained = await Promise.all(chosen.map(loraTrainsTextEncoder));
+                    if (!modal.isConnected) return;
+                    const { anchorNode, direction } = options;
+                    const { graph } = anchorNode;
+                    const kind = loraNodeKind(loraNode.loraNode);
+                    const inserted = insertLoras({
+                        graph,
+                        anchorNode,
+                        direction,
+                        kind,
+                        loras: chosen,
+                        textEncoder: trained.some(Boolean),
+                        setPath: (item, path) => {
+                            const loraWidget = findModelComboWidget(item);
+                            setWidgetValue(item, loraWidget, path);
+                            try {
+                                loraWidget.callback?.(loraWidget.value, app.canvas, item, app.canvas?.graph_mouse, null);
+                            } catch (error) {
+                                console.warn('[Anomalous] LoRA widget callback failed:', error);
+                            }
+                        },
+                    });
+                    if (kind.head) {
+                        await nodesSettled();
+                        placeNodes(graph, anchorNode, inserted, direction);
                     }
                     recordCanvasStep(app);
                     closeModal();
-                    app.canvas?.selectNode?.(inserted);
+                    app.canvas.selectNodes(inserted);
+                    bringIntoView(inserted[0]);
                     return;
                 } else {
                     app.graph?.beforeChange?.(node);
                     try {
-                        setWidgetValue(node, w, selectedPath);
+                        setWidgetValue(node, w, chosen[0]);
                         if (typeof w.callback === 'function') w.callback(w.value, app.canvas, node, app.canvas?.graph_mouse, null);
                         // ComfyUI clears its own missing-model mark through this hook.
                         node.onWidgetChanged?.(w.name, w.value, oldValue, w);
@@ -447,7 +492,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
         baseFilterSelect.onchange = () => {
             selectedBaseFamily = baseFilterSelect.value;
             selectedFolder = '';
-            if (selectedPath && !pathMatchesBaseFilter(selectedPath)) selectedPath = null;
+            dropFiltered();
             rebuildFolderCounts();
             renderFolders();
             updateSelection();

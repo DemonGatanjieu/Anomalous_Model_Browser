@@ -1,8 +1,9 @@
 /**
- * The LoRA nodes a combo (搭配) puts its LoRAs in: ComfyUI's own (one LoRA loader per LoRA, in a
- * chain), rgthree's Power Lora Loader (one node, a row per LoRA) or Easy-Use's LoRA stack (rows
- * of up to ten per stack node, applied to the model by Easy Apply LoraStack). A third-party one
- * is offered only where its node pack is installed. Also the Power Lora Loader's rows, which are
+ * The LoRA nodes a combo (搭配) or Insert LoRA (lora_insert.js) puts its LoRAs in: ComfyUI's own
+ * (one LoRA loader per LoRA, in a chain), rgthree's Power Lora Loader (one node, a row per LoRA) or
+ * Easy-Use's LoRA stack (rows of up to ten per stack node, applied to the model by Easy Apply
+ * LoraStack). `head` is the node the model goes through in a third-party one, which is offered
+ * only where its node pack is installed. Also the Power Lora Loader's rows, which are
  * no drop-downs: read and made again for combos saved from canvas nodes (combo_structure.js), and
  * shown to Model Check as drop-down-like boxes (model_check.js). No imports, so it is tested on its own (LiteGraph is read from globalThis).
  */
@@ -14,8 +15,8 @@ const EASY_ROWS = 10; // an Easy-Use stack node holds this many LoRAs; more go i
 
 export const LORA_NODES = Object.freeze([
     { id: 'core', labelKey: 'comboLoraNodeCore', hintKey: 'comboLoraNodeCoreHint', types: [] },
-    { id: 'rgthree', labelKey: 'comboLoraNodeRgthree', hintKey: 'comboLoraNodeRgthreeHint', types: [POWER_LORA], pack: 'rgthree-comfy' },
-    { id: 'easy', labelKey: 'comboLoraNodeEasy', hintKey: 'comboLoraNodeEasyHint', types: [EASY_STACK, EASY_APPLY], pack: 'ComfyUI-Easy-Use' },
+    { id: 'rgthree', labelKey: 'comboLoraNodeRgthree', hintKey: 'comboLoraNodeRgthreeHint', types: [POWER_LORA], head: POWER_LORA, pack: 'rgthree-comfy' },
+    { id: 'easy', labelKey: 'comboLoraNodeEasy', hintKey: 'comboLoraNodeEasyHint', types: [EASY_STACK, EASY_APPLY], head: EASY_APPLY, pack: 'ComfyUI-Easy-Use' },
 ]);
 
 const registered = () => globalThis.LiteGraph?.registered_node_types || {};
@@ -60,18 +61,23 @@ function fitHeight(node) {
     if (computed && Array.isArray(node.size)) node.size[1] = Math.max(node.size[1], computed[1]);
 }
 
-/** Power Lora Loader: one row per LoRA (on, strength 1), the model and CLIP through it. */
-function powerLora({ add, source, clipSlot, loras, relX }) {
-    const node = add(POWER_LORA, relX, 0);
+/** One row per LoRA (on, strength 1). */
+function fillPowerLora(node, loras) {
     for (const path of loras) node.addNewLoraWidget?.(nativeLora(path));
     fitHeight(node);
+}
+
+/** Power Lora Loader: the model and CLIP through it. */
+function powerLora({ add, source, clipSlot, loras, relX }) {
+    const node = add(POWER_LORA, relX, 0);
+    fillPowerLora(node, loras);
     source.connect(0, node, inputIndex(node, 'model'));
     if (clipSlot !== null) source.connect(clipSlot, node, inputIndex(node, 'clip'));
     return { last: node, clipSlot: clipSlot === null ? null : 1, relX };
 }
 
-/** Easy-Use: stacks of up to ten rows (a later stack feeds the one before), then Apply LoraStack on the model. */
-function easyStack({ add, source, clipSlot, loras, relX, step }) {
+/** Easy-Use stacks of up to ten rows, a later stack feeding the one before; the first feeds Apply LoraStack. */
+function easyStacks({ add, loras, relX }) {
     const chunks = [];
     for (let at = 0; at < loras.length; at += EASY_ROWS) chunks.push(loras.slice(at, at + EASY_ROWS));
     let y = 0;
@@ -86,6 +92,12 @@ function easyStack({ add, source, clipSlot, loras, relX, step }) {
         return stack;
     });
     stacks.slice(1).forEach((stack, index) => stack.connect(0, stacks[index], inputIndex(stacks[index], 'optional_lora_stack')));
+    return stacks;
+}
+
+/** Easy-Use: the stacks, then Apply LoraStack on the model. */
+function easyStack({ add, source, clipSlot, loras, relX, step }) {
+    const stacks = easyStacks({ add, loras, relX });
     const apply = add(EASY_APPLY, relX + step, 0);
     stacks[0].connect(0, apply, inputIndex(apply, 'lora_stack'));
     source.connect(0, apply, inputIndex(apply, 'model'));
@@ -115,6 +127,12 @@ export function chainLoras(kind, { add, source, clipSlot, loras, relX, step, set
         last = node;
     }
     return { last, clipSlot, relX: x };
+}
+
+/** Gives `head`, `kind`'s node already on a canvas, its `loras`; `add(type)` makes what stands beside it. */
+export function fillLoraHead(kind, head, loras, add) {
+    if (kind.id === 'rgthree') fillPowerLora(head, loras);
+    else easyStacks({ add, loras, relX: 0 })[0].connect(0, head, inputIndex(head, 'lora_stack'));
 }
 
 /** A Power Lora Loader's rows in order: [{ on, lora, strength, strengthTwo }] (lora null when none chosen). */
