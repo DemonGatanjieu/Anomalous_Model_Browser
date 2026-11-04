@@ -130,14 +130,16 @@
 .anomalous-saves-top { display: flex; align-items: center; gap: 8px; }
 .anomalous-saves-number { flex: none; min-width: 24px; padding: 1px 6px; color: var(--amb-accent); background: color-mix(in srgb, var(--amb-accent) 16%, transparent); border-radius: 6px; font-weight: 700; text-align: center; }
 .anomalous-saves-when { min-width: 0; color: var(--amb-text-muted); font-size: 12px; }
-.anomalous-saves-words { max-height: 5.6em; overflow: auto; color: var(--amb-text-muted); font-size: 12px; white-space: pre-line; }
+.anomalous-saves-words { display: -webkit-box; overflow: hidden; color: var(--amb-text-muted); font-size: 12px; white-space: pre-line; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
 .anomalous-saves-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: auto; }
 .anomalous-saves-times { color: var(--amb-text-muted); font-size: 12px; }
 
-.anomalous-saves-pictures { display: flex; flex: 1 1 200px; gap: 6px; min-width: 0; overflow-x: auto; scrollbar-width: thin; scrollbar-color: rgba(var(--amb-ink-rgb), 0.18) transparent; }
+/* As many pictures as fit (ui_saves_pictures.js fills the line, and knows the width and the gap). */
+.anomalous-saves-pictures { display: flex; flex: 1 1 200px; align-items: flex-start; gap: 6px; min-width: 0; min-height: 128px; overflow: hidden; }
 .anomalous-saves-pictures .anomalous-wfd-image { flex: none; width: 96px; }
 .anomalous-saves-picture { display: block; width: 100%; height: 100%; padding: 0; background: none; border: 0; }
-.anomalous-saves-more { flex: none; align-self: center; width: 96px; color: var(--amb-text-muted); font-size: 12px; text-align: center; }
+.anomalous-saves-folded { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(0, 0, 0, 0.55); cursor: pointer; font-size: 20px; font-weight: 700; }
+.anomalous-saves-picture:hover .anomalous-saves-folded { background: rgba(0, 0, 0, 0.4); }
 
 .anomalous-saves-none {
     display: flex;
@@ -151,6 +153,12 @@
     border-radius: 6px;
     font-size: 12px;
 }
+
+/* All of a save's pictures, in the list's place. */
+.anomalous-recipe-body.is-saves-gallery > :not(.anomalous-saves-gallery) { display: none; }
+.anomalous-saves-gallery { display: flex; flex: 1; flex-direction: column; min-height: 0; color: var(--amb-text-main); }
+.anomalous-saves-gallery-head { display: flex; align-items: center; gap: 12px; padding: 12px 20px 0; }
+.anomalous-saves-gallery-title { min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 
 .anomalous-snapshot-status { max-width: 70vw; color: var(--amb-text-muted); white-space: pre-line; }
 .anomalous-snapshot-status:not(:empty) { margin-top: 6px; }

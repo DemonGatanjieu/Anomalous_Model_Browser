@@ -6,7 +6,8 @@
  * canvas, ui_param_compare.js), Delete (to the Recycle Bin, after a confirmation) and the
  * right-click menu (gallery_card_menu.js: insert as a Load Image node, parameters). A video's
  * card shows its first frame with a ▶ badge, plays muted in place (previewInPlace) and with
- * sound in the viewer; it has no Parameters, star, ⇄ or menu (those read a picture).
+ * sound in the viewer; it has no Parameters, star, ⇄ or menu (those read a picture). The cards
+ * of other pictures than the gallery page's say so with `pictures` (a save's, ui_saves_pictures.js).
  */
 
 import { translate as t } from './locales.js';
@@ -76,22 +77,34 @@ async function useAsCover(owner, image) {
     }
 }
 
-function openWorkbench(owner, image, url) {
+/** The gallery page's pictures: what its cards step through and drop a deleted one from, and where ⇄'s bar goes. */
+function galleryPagePictures(owner) {
     // The workbench steps through pictures only (it reads their parameters).
-    const pictures = () => (owner.galleryImagesList || []).filter(item => !isGalleryVideo(item));
-    const list = pictures();
+    const items = () => (owner.galleryImagesList || []).filter(item => !isGalleryVideo(item));
+    return {
+        items,
+        loadMore: async () => {
+            if (owner.galleryHasMore && !owner.galleryLoading) await owner.loadGalleryImages(owner.galleryCurrentPage + 1);
+            return items();
+        },
+        remove: (image) => {
+            owner.galleryImagesList = (owner.galleryImagesList || []).filter(item => !sameItem(item, image));
+        },
+        compareHost: owner.galleryPanel,
+    };
+}
+
+function openWorkbench(owner, image, url, pictures) {
+    const list = pictures.items();
     const index = list.findIndex(item => sameItem(item, image));
     void showImageWorkbench(owner, image, url, {
         items: list,
         currentIndex: Math.max(0, index),
-        loadMore: async () => {
-            if (owner.galleryHasMore && !owner.galleryLoading) await owner.loadGalleryImages(owner.galleryCurrentPage + 1);
-            return pictures();
-        },
+        loadMore: pictures.loadMore,
     });
 }
 
-async function deleteImage(owner, image, card) {
+async function deleteImage(owner, image, card, pictures) {
     if (!await anomalousConfirm(t('galleryDeleteConfirmHint'), t('galleryDeleteConfirm'), { okLabel: t('galleryDelete') })) return;
     try {
         const response = await fetch('/anomalous/delete_gallery_image', {
@@ -102,7 +115,7 @@ async function deleteImage(owner, image, card) {
         const data = await response.json();
         if (data.status !== 'success') throw new Error(data.message);
         card.remove();
-        owner.galleryImagesList = (owner.galleryImagesList || []).filter(item => !sameItem(item, image));
+        pictures.remove(image);
     } catch (error) {
         await anomalousAlert(t('galleryDeleteFailed') + (error?.message || ''));
     }
@@ -166,7 +179,7 @@ function keepButton(owner, image) {
 }
 
 /** The card of `imgData` ({ filename, subfolder, media_type, bytes, width, height } from GET /anomalous/gallery_images). */
-export function createGalleryCard(owner, imgData, { showViewer }) {
+export function createGalleryCard(owner, imgData, { showViewer, pictures = galleryPagePictures(owner) }) {
     const image = { type: 'output', filename: imgData.filename, subfolder: imgData.subfolder || '' };
     const query = `filename=${encodeURIComponent(image.filename)}&subfolder=${encodeURIComponent(image.subfolder)}`;
     const url = `/view?${query}&type=output`;
@@ -196,7 +209,7 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
     });
     card.addEventListener('dragend', () => owner.modal?.classList.remove('anomalous-material-dragging'));
     img.onclick = () => (owner.gallerySelectModel ? useAsCover(owner, image) : showViewer(url, isVideo));
-    const remove = button('anomalous-gallery-delete', t('galleryDelete'), () => deleteImage(owner, image, card));
+    const remove = button('anomalous-gallery-delete', t('galleryDelete'), () => deleteImage(owner, image, card, pictures));
     remove.innerHTML = DELETE_ICON; // static markup only
 
     if (isVideo) {
@@ -209,10 +222,10 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
         return card;
     }
     card.addEventListener('contextmenu', (event) => {
-        if (!owner.gallerySelectModel) openGalleryCardMenu(event, image, { owner, openDetails: () => openWorkbench(owner, image, url) });
+        if (!owner.gallerySelectModel) openGalleryCardMenu(event, image, { owner, openDetails: () => openWorkbench(owner, image, url, pictures) });
     });
     const details = button('anomalous-gallery-details', t('materialViewDetails'), () => {
-        if (!owner.gallerySelectModel) openWorkbench(owner, image, url);
+        if (!owner.gallerySelectModel) openWorkbench(owner, image, url, pictures);
     });
     details.innerHTML = DETAILS_ICON; // static markup only
     details.append(Object.assign(document.createElement('span'), { textContent: t('materialViewParameters') }));
@@ -225,7 +238,7 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
     }
     // Only PNG outputs carry the workflow that can be kept or compared.
     if (/\.png$/i.test(image.filename)) {
-        const compare = button('anomalous-gallery-compare', t('compareCardTitle'), () => pressCompare(owner, image, card));
+        const compare = button('anomalous-gallery-compare', t('compareCardTitle'), () => pressCompare(owner, image, card, { host: pictures.compareHost }));
         compare.textContent = '⇄';
         card.append(keepButton(owner, image), compare);
         if (isComparePicked(owner, image)) card.classList.add('is-compare-picked');
