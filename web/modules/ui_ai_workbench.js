@@ -37,8 +37,7 @@ import { nowStrip } from './ui_ai_now.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageBadge, stageNews } from './ui_ai_side.js';
-import { connectHint } from './ui_ai_connect.js';
-import { waitingView } from './ui_ai_ready.js';
+import { waitingView, welcomePage } from './ui_ai_ready.js';
 import { gateCard } from './ui_ai_gate.js';
 import { iconButton } from './ui_ai_icons.js';
 import { listToggle, renderTaskList, stateIcon } from './ui_ai_task_list.js';
@@ -467,6 +466,7 @@ function layout() {
     page.classList.toggle('is-narrow', narrow);
     page.classList.toggle('is-short', page.clientHeight > 0 && page.clientHeight < SHORT_PX);
     page.classList.toggle('shows-task', narrow && state.narrowView === 'task' && Boolean(state.selected));
+    page.classList.toggle('peeks', narrow && state.narrowView !== 'task' && Boolean(state.selected)); // the list over the task
     page.classList.toggle('tasks-collapsed', folded);
     // Three columns when there is room; else the timeline and the stage take turns behind tabs.
     const room = width - (narrow || folded ? 0 : 260);
@@ -479,16 +479,6 @@ function layout() {
     if (changed && state.task) renderTask(); // the title bar's switch and the tabs change places
 }
 
-function emptyPage() {
-    const box = el('div', 'anomalous-ai-welcome');
-    const picture = el('img', 'anomalous-ai-welcome-art');
-    picture.src = new URL('../assets/ai_tasks_empty.webp', import.meta.url).href;
-    picture.alt = '';
-    box.append(picture, el('h2', 'anomalous-ai-welcome-title', t('aiWelcomeTitle')), el('p', 'anomalous-ai-welcome-body', t('aiWelcomeBody')),
-        iconButton('anomalous-ai-new-task', 'plus', t('aiNewTask'), newTask, { title: t('aiNewTaskHint') }), connectHint());
-    return box;
-}
-
 async function refresh() {
     if (!state.page) return;
     const request = ++state.request;
@@ -496,14 +486,16 @@ async function refresh() {
     if (!tasks || !state.page || request !== state.request) return;
     state.tasks = tasks;
     if (!tasks.length) {
-        state.page.replaceChildren(emptyPage(), state.bar);
+        state.page.replaceChildren(welcomePage(newTask), state.bar);
         state.owner?.headerTools?.replaceChildren();
         state.page.classList.add('is-empty');
         return;
     }
     if (state.page.classList.contains('is-empty') || !state.page.querySelector('.anomalous-ai-tasks')) {
         state.page.classList.remove('is-empty');
-        state.page.replaceChildren(el('aside', 'anomalous-ai-tasks'), el('section', 'anomalous-ai-task'), el('section', 'anomalous-ai-stage'), state.bar);
+        const scrim = button('anomalous-ai-scrim', '', () => { state.narrowView = 'task'; layout(); });
+        scrim.title = t('aiBackToTask');
+        state.page.replaceChildren(el('aside', 'anomalous-ai-tasks'), el('section', 'anomalous-ai-task'), el('section', 'anomalous-ai-stage'), scrim, state.bar);
     }
     // The newest task while the AI works on it, unless the user picked another one.
     const follow = !state.pinned && !tasks[0].ended && tasks[0].id !== state.selected

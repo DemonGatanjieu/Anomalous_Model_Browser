@@ -7,13 +7,13 @@
  * up, write about and send there); what is ready so far (the user's own steps, drawn by the
  * workbench) shows when there is some; the card for an AI not connected yet comes last. The AI
  * gets what is ready when it takes the task. Which folds are open is kept per task while the page
- * is open.
+ * is open. With no task at all, the welcome page stands in for it (welcomePage).
  */
 
 import { translate as t } from './locales.js';
 import { art, connectHint, copyLine } from './ui_ai_connect.js';
 import { pictureGrid } from './ui_ai_gallery_pick.js';
-import { icon } from './ui_ai_icons.js';
+import { icon, iconButton } from './ui_ai_icons.js';
 
 const opened = new Map(); // task id -> the names of its open folds
 
@@ -141,4 +141,15 @@ export function waitingView(task, ctx) {
     }
     view.append(hero, say, optional, connectHint(task.title));
     return view;
+}
+
+/** The page with no task yet: what it is for; `onNew` starts one. */
+export function welcomePage(onNew) {
+    const box = el('div', 'anomalous-ai-welcome');
+    const picture = el('img', 'anomalous-ai-welcome-art');
+    picture.src = new URL('../assets/ai_tasks_empty.webp', import.meta.url).href;
+    picture.alt = '';
+    box.append(picture, el('h2', 'anomalous-ai-welcome-title', t('aiWelcomeTitle')), el('p', 'anomalous-ai-welcome-body', t('aiWelcomeBody')),
+        iconButton('anomalous-ai-new-task', 'plus', t('aiNewTask'), onNew, { title: t('aiNewTaskHint') }), connectHint());
+    return box;
 }

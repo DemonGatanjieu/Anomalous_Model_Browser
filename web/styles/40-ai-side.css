@@ -51,7 +51,7 @@
 .anomalous-ai.is-tabbed:not(.shows-stage) .anomalous-ai-stage,
 .anomalous-ai.is-tabbed.shows-stage .anomalous-ai-task,
 .anomalous-ai:not(.has-stage) .anomalous-ai-stage,
-.anomalous-ai.is-narrow:not(.shows-task) .anomalous-ai-stage {
+.anomalous-ai.is-narrow:not(.shows-task, .peeks) .anomalous-ai-stage {
     display: none;
 }
 

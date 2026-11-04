@@ -925,18 +925,46 @@
     grid-template-columns: minmax(0, 1fr);
 }
 
+/* Narrow: the tasks are a drawer over the task shown, which shows beside it: the list reads as the
+   records of conversations, and a click on what shows goes back to it. With no task it fills the page. */
 .anomalous-ai.is-narrow .anomalous-ai-tasks {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 6;
+    width: 100%;
+    background: var(--amb-bg-page);
     border-right: none;
+    transition: transform 0.2s ease, visibility 0.2s;
 }
 
-.anomalous-ai.is-narrow:not(.shows-task) .anomalous-ai-task,
+.anomalous-ai.is-narrow.peeks .anomalous-ai-tasks {
+    width: min(72%, 440px);
+    border-right: 1px solid var(--amb-border);
+    box-shadow: 10px 0 28px rgba(0, 0, 0, 0.4);
+}
+
 .anomalous-ai.is-narrow.shows-task .anomalous-ai-tasks {
-    display: none;
+    visibility: hidden;
+    transform: translateX(-102%);
 }
 
-.anomalous-ai.is-narrow .anomalous-ai-back {
-    display: inline-block;
+.anomalous-ai-scrim { display: none; }
+
+.anomalous-ai.is-narrow.peeks .anomalous-ai-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
 }
+
+.anomalous-ai.is-narrow:not(.shows-task, .peeks) .anomalous-ai-task { display: none; }
+.anomalous-ai.is-narrow .anomalous-ai-back { display: inline-block; }
+.anomalous-ai.is-narrow.peeks .anomalous-ai-back { display: none; } /* so Esc on the list closes the window, as it does with the list alone */
 
 .anomalous-ai.is-narrow .anomalous-ai-task {
     padding: 14px 16px 24px;
