@@ -68,6 +68,12 @@ class OutsideTests(unittest.TestCase):
         self.times["old.png"] = (10, 380)
         self.assertEqual(self.found(400), {("output", "old.png", "rewritten")})  # rewritten again
 
+    def test_a_picture_anomalous_kept_itself_is_no_news(self):
+        self.assertIsNone(ai_outside.check(self.task, now=100))
+        self.picture("output", "base_00001_.png", 150, 150)
+        ai_outside.own("base_00001_.png")
+        self.assertIsNone(ai_outside.check(self.task, now=200))
+
     def test_new_pictures_wait_while_a_prompt_runs(self):
         ai_outside.check(self.task, now=100)
         self.busy = True

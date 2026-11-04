@@ -42,6 +42,8 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(got["options"][0]["values"], {"a": "harem", "b": "realskin"})
         self.assertTrue(got["options"][0]["recommended"])
         self.assertIn('add_nodes(route="tile_second")', got["calls"]["tile_second"])
+        self.assertIn("base_only=true", got["calls"]["tile_second"])
+        self.assertNotIn("base_only=true", got["calls"]["one_pass"], "one pass: nothing to pick a base for")
 
     def test_nothing_to_ask_with_one_model_or_two_families(self):
         self.assertIsNone(mcp_routes.offer({"models": [A, LORA]}, INFO))

@@ -13,7 +13,7 @@ import shutil
 
 from PIL import Image, ImageChops, ImageStat
 
-from . import ai_panels, ai_pictures, ai_tasks
+from . import ai_outside, ai_panels, ai_pictures, ai_tasks
 
 SAME_BELOW = 1.0  # mean difference per channel (0-255); the same seed and settings drew the same picture
 PREFIX = "amb_base/base"  # where a picked base goes when the canvas saves none of its own
@@ -99,6 +99,7 @@ def prepare(task_id, step_id, choice, skip=False):
     folder, name, counter, subfolder, _prefix = folder_paths.get_save_image_path(
         step.get("prefix") or PREFIX, folder_paths.get_output_directory(), width, height)
     target = f"{name}_{counter:05}_.png"
+    ai_outside.own(target)
     shutil.copyfile(source, os.path.join(folder, target))  # its prompt and workflow come with it
     kept = "/".join(part for part in (subfolder, target) if part)
     picked = {**picked, "kept": kept, "kept_input": ai_pictures.to_input(kept)}  # what LoadImage reads in the next run

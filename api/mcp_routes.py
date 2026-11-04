@@ -19,6 +19,7 @@ QUESTION = "How should the two models you picked be used?"
 TOOLBOX_NOTE = ("The user picked two main models: ask_user(routes=true) asks them how to use the two, with options Anomalous "
                 "prepared, and its answer says what to call. Skip it only when the user already said how.")
 NEXT = "run_workflow(prompt=, negative=, base_only=true, batch=3) shows the user bases to pick from; then run_workflow runs the whole route."
+ONE_PASS = "run_workflow(prompt=, negative=) draws it; there is no second pass, so no base to pick."
 
 
 def _main(box):
@@ -88,7 +89,7 @@ def offer(box, info):
         if _can_build(route, base, info):
             options.append({"id": key, "label": route["label"].format(**names)[:80], "label_key": f"aiRoute_{key}", "values": names,
                             "detail": route["detail"], "detail_key": f"aiRouteDetail_{key}", "sample": key})
-            calls[key] = f'add_nodes(route="{key}") builds it. Then {NEXT}'
+            calls[key] = f'add_nodes(route="{key}") builds it. Then {NEXT if route.get("way") else ONE_PASS}'
     if not card and options:
         options[0]["recommended"] = True
     return {"options": options, "calls": calls} if len(options) > 1 else None
@@ -119,7 +120,7 @@ def build(ctx, key, model=None):
     loras = _loras(box)
     for lora in loras:
         mcp_actions.add_lora(ctx, lora, after_node_id=node)
-    answer = {"route": key, "built": first["nodes"], "next": NEXT}
+    answer = {"route": key, "built": first["nodes"], "next": NEXT if route.get("way") else ONE_PASS}
     if route.get("way"):
         use, want = route["way"]
         added = mcp_canvas_edit.add_nodes(ctx, use=use, want=want)

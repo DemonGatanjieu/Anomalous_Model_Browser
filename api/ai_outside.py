@@ -19,7 +19,7 @@ import os
 import threading
 import time
 import uuid
-from collections import OrderedDict
+from collections import OrderedDict, deque
 
 import folder_paths
 
@@ -36,6 +36,12 @@ MAX_TEXT, MAX_FILES, MAX_FILE = 300, 20, 200
 
 _lock = threading.Lock()
 _watched = OrderedDict()  # task id -> {"since": time of the last full check, "told": {(folder, name, changed)}}
+_own = deque(maxlen=200)  # pictures Anomalous itself put at the top of the output folder
+
+
+def own(name):
+    """Picture `name` was put there by Anomalous (a base the user picked, ai_bases.py): no news."""
+    _own.append(name)
 
 
 def _queue():
@@ -120,7 +126,7 @@ def check(task_id, now=None):
             for name, change, when in _changes(folder, root, watch["since"]):
                 if busy and change != "rewritten":
                     continue  # maybe the running prompt's: judged once it ends
-                if change != "rewritten" and name in saved:
+                if change != "rewritten" and (name in saved or name in _own):
                     continue
                 if (folder, name, when) not in watch["told"]:
                     watch["told"].add((folder, name, when))

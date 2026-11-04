@@ -24,12 +24,12 @@ def begin_task(ctx, title, new_task=False):
     answer = {"task": task["id"], "title": task["title"], "note": (
         "Continue this task; do not begin another for its steps. Every AMB call is a step the user sees, opens and "
         "undoes in Anomalous's AI workbench. Ask them with ask_user (they answer there, not in your chat); report "
-        "explains a choice or hands in pictures, done=true at the end. Run with run_workflow; a run queued another "
-        "way needs track_run(prompt_ids) with your own IDs. In the task's own tab, do not switch tabs yourself. "
+        "explains a choice or hands in pictures, done=true at the end. Run with run_workflow. In the task's own tab, "
+        "do not switch tabs yourself. "
         "Everything is in AMB's tools (models, pictures, node types, the canvas, runs and their previews): do not "
         "read ComfyUI's folders or source, run preprocessors or call its routes yourself. Change pictures only by "
         "running workflows, never by editing files with code. If you use another tool anyway, log_outside right "
-        "after. Unsure where things stand: get_situation. The directory below lists the tools by what you want to do.")}
+        "after. The directory below lists the tools by what you want to do.")}
     answer["next"] = ("get_situation shows where things stand; a daily run is one call: run_workflow(workflow: a saved "
                       "one, with the prompt, seed or size to change).")
     answer["blocks"] = _blocks(ctx)
