@@ -157,7 +157,10 @@ function drawPart(owner, part, group) {
     part.line = document.createElement('div');
     part.line.className = 'anomalous-saves-status';
     showLine(part);
-    box.replaceChildren(head, part.line, ...group.saves.map((save, at) => saveRow(owner, item, group, save, at)));
+    const cards = document.createElement('div');
+    cards.className = 'anomalous-saves-cards';
+    cards.append(...group.saves.map((save, at) => saveRow(owner, item, group, save, at)));
+    box.replaceChildren(head, part.line, cards);
     fillLines(box);
 }
 
@@ -167,6 +170,12 @@ async function openPart(owner, part) {
     } catch (error) {
         console.warn('[AMB] Saves:', error);
     }
+}
+
+/** How many there are, beside the way back to the cards. */
+function sayCount(owner) {
+    const parts = [...owner.savesParts.values()];
+    owner.savesTitle.textContent = t('savesListTitle', { canvases: parts.length, saves: parts.reduce((sum, part) => sum + part.item.count, 0) });
 }
 
 function setView(owner, on) {
@@ -206,6 +215,7 @@ export async function refreshSaves(owner) {
         }
         list.replaceChildren(...parts.map(part => part.box));
         if (!groups.length) appendText(list, 'p', t('savesListEmpty'), 'anomalous-recipe-empty');
+        sayCount(owner);
         await Promise.all(parts.filter(part => owner.savesOpen.has(part.item.key)).map(part => openPart(owner, part)));
         owner.savesParts.get(wanted)?.box.scrollIntoView({ block: 'start' });
     } catch (error) {
@@ -221,6 +231,7 @@ function groupChanged(owner, key, group) {
     const part = owner.savesParts.get(key);
     if (!part || !group) return void refreshSaves(owner);
     part.item.count = group.saves.length;
+    sayCount(owner);
     part.item.cover = group.saves.flatMap(save => save.pictures).at(-1) || null;
     if (owner.savesOpen.has(key)) drawPart(owner, part, group);
     else drawPart(owner, part, null);
@@ -245,6 +256,8 @@ export function savesToggle(owner) {
         // Back on the cards: one kept here may be new to them.
         void (owner.savesListOn ? refreshSaves(owner) : owner.refreshRecipes());
     };
+    owner.savesTitle = document.createElement('span');
+    owner.savesTitle.className = 'anomalous-saves-title';
     onSavesChange((key, group) => groupChanged(owner, key, group));
     watchSeedMode(() => {
         for (const part of owner.savesParts.values()) {

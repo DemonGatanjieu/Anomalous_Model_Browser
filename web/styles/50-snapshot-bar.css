@@ -87,10 +87,13 @@
 
 .anomalous-snapshot-run { color: #1a1205; background: var(--amb-accent); font-weight: 600; white-space: nowrap; }
 
-.anomalous-recipe-body.is-saves .anomalous-wf-bar > :not(.anomalous-wf-saves-toggle),
+.anomalous-recipe-body.is-saves .anomalous-wf-bar > :not(.anomalous-wf-saves-toggle, .anomalous-saves-title),
 .anomalous-recipe-body.is-saves .anomalous-recipe-move-strip,
 .anomalous-recipe-body.is-saves .anomalous-wf-list:not(.anomalous-saves-list),
-.anomalous-recipe-body:not(.is-saves) .anomalous-saves-list { display: none; }
+.anomalous-recipe-body:not(.is-saves) .anomalous-saves-list,
+.anomalous-recipe-body:not(.is-saves) .anomalous-saves-title { display: none; }
+
+.anomalous-saves-title { color: var(--amb-text-muted); font-size: 12.5px; }
 
 .anomalous-saves-list { display: flex; flex-direction: column; gap: 10px; }
 .anomalous-saves-part { flex: none; overflow: hidden; color: var(--amb-text-main); background: var(--amb-bg-card); border: 1px solid var(--amb-border); border-radius: 10px; }
@@ -121,12 +124,20 @@
 .anomalous-saves-status { padding: 0 12px 8px; color: #f87171; font-size: 12px; white-space: pre-line; }
 .anomalous-saves-status:empty { display: none; }
 
+/* The saves of a part sit side by side where the window has room, as the workflow cards do. */
+.anomalous-saves-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 620px), 1fr));
+    gap: 10px;
+    padding: 0 10px 10px;
+}
+
 /* A save is a card: its words on the left, its pictures on the right; under them only in a narrow window. */
 .anomalous-saves-save {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin: 0 10px 10px;
+    min-width: 0;
     padding: 10px;
     background: var(--amb-bg-sunken);
     border: 1px solid var(--amb-border);

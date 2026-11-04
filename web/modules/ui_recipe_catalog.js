@@ -115,7 +115,7 @@ function buildWorkflowBar(owner) {
     };
     showViewButton();
 
-    bar.append(savesToggle(owner));
+    bar.append(savesToggle(owner), owner.savesTitle);
 
     // Share and import (ui_share.js): share codes, workflow files, images, backups.
     const share = appendText(bar, 'button', '⇅', 'anomalous-wf-icon-btn');

@@ -416,6 +416,7 @@
 .anomalous-ai-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; }
 .anomalous-ai-summary > :not(:empty) { margin-bottom: 14px; }
 .anomalous-ai-made-holder { margin-left: auto; }
+.anomalous-ai.uses-tabs .anomalous-ai-made-holder { margin-left: 0; }
 
 /* The AI app calls by an older tool list: how to have it fetch the new one. */
 .anomalous-ai-task-stale {
@@ -574,6 +575,9 @@
     line-height: 1.45;
     resize: none;
 }
+
+/* One line however narrow the box: the words that do not fit end in … instead of being cut in half. */
+.anomalous-ai-message-input::placeholder { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .anomalous-ai-message-input:focus {
     border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
@@ -937,6 +941,9 @@
 .anomalous-ai.is-narrow .anomalous-ai-task {
     padding: 14px 16px 24px;
 }
+
+/* The foot of the column follows its padding, or the timeline shows under the message box. */
+.anomalous-ai.is-narrow .anomalous-ai-dock { bottom: -24px; margin-bottom: -24px; padding-bottom: 24px; }
 
 /* ---------- home: what the AI did lately ---------- */
 .anomalous-ai-recent-list {

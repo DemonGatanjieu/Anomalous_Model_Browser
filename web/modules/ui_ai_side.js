@@ -163,20 +163,6 @@ function markInView(page) {
 }
 
 /** The two tabs of a narrow window: the timeline and the side column's view `label` (lit while a question waits or a new panel is unseen). */
-export function tabBar(stage, asks, onPick, label = t('aiStage')) {
-    const bar = el('div', 'anomalous-ai-tabs');
-    for (const id of ['timeline', 'stage']) {
-        const lit = id === 'stage' && (asks || (stage.lit && stage.tab !== 'stage'));
-        const tab = button(`anomalous-ai-tab${stage.tab === id ? ' is-on' : ''}${lit ? ' is-asking' : ''}`, id === 'stage' ? label : t('aiTimeline'), () => {
-            if (id === 'stage') stage.lit = false;
-            onPick(id);
-        });
-        tab.setAttribute('aria-pressed', String(stage.tab === id));
-        bar.append(tab);
-    }
-    return bar;
-}
-
 function scrollToItem(body, item, smooth = true) {
     if (!item) return;
     const top = item.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 8;

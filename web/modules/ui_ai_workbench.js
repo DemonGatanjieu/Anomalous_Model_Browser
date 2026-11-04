@@ -36,7 +36,7 @@ import { atFoot, newestButton } from './ui_ai_newest.js';
 import { nowStrip } from './ui_ai_now.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
-import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageBadge, stageNews, tabBar } from './ui_ai_side.js';
+import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageBadge, stageNews } from './ui_ai_side.js';
 import { connectHint } from './ui_ai_connect.js';
 import { waitingView } from './ui_ai_ready.js';
 import { gateCard } from './ui_ai_gate.js';
@@ -53,7 +53,7 @@ import { toolboxCount } from './ui_ai_toolbox.js';
 import { stepBody } from './ui_ai_step_body.js';
 import { chainRow, looksRow, undoChanges } from './ui_ai_chain.js';
 import { taskLinks } from './ui_ai_task_links.js';
-import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewLabel } from './ui_ai_side_views.js';
+import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewTabs } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
 import { privacyChip } from './ui_ai_privacy.js';
@@ -214,10 +214,9 @@ function renderTask() {
             openMaterials: () => pickView(state.stage, 'toolbox', false, state.task, renderTask, () => void refresh()) }),
             seen: (task.steps || []).length, newest: newestButton(box), now: nowStrip(), dock: el('div', 'anomalous-ai-dock'),
         };
-        view.tabs = el('div', 'anomalous-ai-tabs');
         view.dock.append(view.newest, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
         view.summary.append(view.flow, view.made);
-        box.replaceChildren(view.tabs, view.header, view.summary, view.timeline, view.dock);
+        box.replaceChildren(view.header, view.summary, view.timeline, view.dock);
         // How much of the column the stuck header covers, for what sticks under it (the waiting page's sentence).
         new ResizeObserver(() => {
             box.style.setProperty('--anomalous-ai-head-h', `${view.header.offsetHeight + parseFloat(getComputedStyle(view.header).top || 0)}px`);
@@ -229,9 +228,6 @@ function renderTask() {
     const typing = state.page.contains(document.activeElement) && document.activeElement.matches('textarea, input:not([type]), input[type=text]');
     bringStage(state.stage, news, state.page.classList.contains('is-tabbed') || state.page.classList.contains('is-narrow'), typing);
     const asking = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
-    const tabs = tabBar(state.stage, asking, pickTab, viewLabel(state.stage.view));
-    view.tabs.replaceWith(tabs);
-    view.tabs = tabs;
     const header = view.header;
     const titleLine = el('div', 'anomalous-ai-task-title-line');
     const name = el('div', 'anomalous-ai-task-name');
@@ -261,15 +257,17 @@ function renderTask() {
     const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
     titleLine.append(name, tools);
     const unseen = newOutputs(state.stage, task, shown && state.stage.view === 'outputs');
-    state.owner?.headerTools?.replaceChildren(sideSwitch(state.stage, shown, { stage: stageBadge(task, state.stage, shown && state.stage.view === 'stage'), asking, toolbox: toolboxCount(task), outputs: unseen },
-        view => pickView(state.stage, view, shown, task, renderTask, () => void refresh())));
+    const badges = { stage: stageBadge(task, state.stage, shown && state.stage.view === 'stage'), asking, toolbox: toolboxCount(task), outputs: unseen };
+    state.tabs = () => viewTabs(state.stage, shown, badges, view => pickView(state.stage, view, false, task, renderTask, () => void refresh()), showTimeline);
+    state.owner?.headerTools?.replaceChildren(...(state.page.classList.contains('uses-tabs') ? [] : [sideSwitch(state.stage, shown, badges,
+        view => pickView(state.stage, view, shown, task, renderTask, () => void refresh()))]));
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);
     const said = el('div', 'anomalous-ai-task-meta', meta.join(' · '));
     said.title = said.textContent;
     const sub = el('div', 'anomalous-ai-task-sub');
     sub.append(said, taskLinks(task, { open: (id) => { state.pinned = true; void select(id); }, changed: refresh }));
-    header.replaceChildren(titleLine, sub,
+    header.replaceChildren(state.tabs(), titleLine, sub,
         ...(task.stale_tools ? [el('div', 'anomalous-ai-task-stale', t('aiStaleTools'))] : [])); // mcp_directory.stale
 
     const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
@@ -344,7 +342,8 @@ function drawStage(task, arrived = null) {
             state.stage.tab = 'timeline';
             renderTask();
         },
-    }, pickTab, arrived);
+        tabs: state.tabs,
+    }, arrived);
     layout();
 }
 
@@ -377,9 +376,8 @@ async function newTask() {
     }
 }
 
-function pickTab(id) {
-    if (id === 'stage') state.stage.hidden = false;
-    state.stage.tab = id;
+function showTimeline() {
+    state.stage.tab = 'timeline';
     renderTask();
 }
 
@@ -472,9 +470,13 @@ function layout() {
     page.classList.toggle('tasks-collapsed', folded);
     // Three columns when there is room; else the timeline and the stage take turns behind tabs.
     const room = width - (narrow || folded ? 0 : 260);
-    const tabbed = page.classList.contains('has-stage') && (narrow || room < sideWidth() + TIMELINE_MIN);
+    const noRoom = narrow || room < sideWidth() + TIMELINE_MIN;
+    const tabbed = page.classList.contains('has-stage') && noRoom;
+    const changed = page.classList.contains('uses-tabs') !== noRoom;
+    page.classList.toggle('uses-tabs', noRoom);
     page.classList.toggle('is-tabbed', tabbed);
     page.classList.toggle('shows-stage', tabbed && state.stage.tab === 'stage');
+    if (changed && state.task) renderTask(); // the title bar's switch and the tabs change places
 }
 
 function emptyPage() {

@@ -19,7 +19,7 @@ import { timeLabel } from './activity_log.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { runMapBox } from './ui_ai_run_map.js';
 import { closeToolbox, openToolbox, setToolboxHost, toolboxOpenFor } from './ui_ai_toolbox.js';
-import { openQuestions, panelSteps, renderStage, sideHead, tabBar } from './ui_ai_side.js';
+import { panelSteps, renderStage, sideHead } from './ui_ai_side.js';
 import { renderDecisionsView } from './ui_ai_decisions.js';
 import { renderOutputsView } from './ui_ai_outputs.js';
 import { renderBlocksView } from './ui_ai_blocks.js';
@@ -54,9 +54,6 @@ function el(tag, className, text) {
 /** The runs of `task` whose shape was read, oldest first. */
 export const mappedRuns = task => (task?.steps || []).filter(step => step.map?.boxes?.length);
 
-/** The view's name, for the tab of a narrow window. */
-export const viewLabel = view => t((VIEWS[view] || VIEWS.stage)[1]);
-
 /**
  * The switch: a button per view, lit for the one shown (`shown`: the column is on screen);
  * `badges`: stage {count, unread}, asking question count, toolbox material count, outputs unseen count. `onPick(view)`.
@@ -81,6 +78,25 @@ export function sideSwitch(side, shown, badges, onPick) {
         node.onclick = () => onPick(view);
         bar.append(node);
     }
+    return bar;
+}
+
+/**
+ * With no room for the column beside the timeline: the timeline and every view as tabs, with their
+ * words, in place of the title bar's switch. A panel that came meanwhile lights the stage's tab.
+ */
+export function viewTabs(side, shown, badges, onPick, onTimeline) {
+    const bar = el('div', 'anomalous-ai-tabs');
+    const timeline = el('button', `anomalous-ai-side-btn${shown ? '' : ' is-on'}`);
+    timeline.type = 'button';
+    timeline.setAttribute('aria-pressed', String(!shown));
+    timeline.append(el('span', 'anomalous-ai-side-btn-label', t('aiTimeline')));
+    timeline.onclick = onTimeline;
+    const views = sideSwitch(side, shown, { ...badges, asking: badges.asking || (side.lit && side.tab !== 'stage') }, (view) => {
+        if (view === 'stage') side.lit = false;
+        onPick(view);
+    });
+    bar.append(timeline, ...views.children);
     return bar;
 }
 
@@ -204,17 +220,16 @@ export function renderMapView(pane, task, side, ctx) {
 }
 
 /**
- * The column into `box` for `task`: the view picked, the narrow window's tab (`pickTab`), the
- * stage drawn while there are panels, the run's shape while it is the view. `ctx`: the stage's
- * (ui_ai_side.js renderStage) with `close()`. A picker left from another task is put away.
+ * The column into `box` for `task`: the view picked, the tabs of a window with no room for it
+ * (`ctx.tabs()`), the stage drawn while there are panels, the run's shape while it is the view.
+ * `ctx`: the stage's (ui_ai_side.js renderStage) with `close()`. A picker left from another task is put away.
  */
-export function drawSide(box, task, side, ctx, pickTab, arrived = null) {
+export function drawSide(box, task, side, ctx, arrived = null) {
     const panes = sidePanes(box);
     if (panes.toolbox.dataset.task && panes.toolbox.dataset.task !== task.id) closeToolbox();
     const opened = panes.blocks.hidden && side.view === 'blocks'; // the ways are read again when the view comes up
     for (const [view, pane] of Object.entries(panes)) pane.hidden = view !== side.view;
-    const asks = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
-    box.querySelector(':scope > .anomalous-ai-tabs').replaceWith(tabBar(side, asks, pickTab, viewLabel(side.view)));
+    box.querySelector(':scope > .anomalous-ai-tabs').replaceWith(ctx.tabs());
     if (panelSteps(task).length) renderStage(panes.stage, task, side, ctx, arrived);
     else {
         const body = el('div', 'anomalous-ai-stage-body');

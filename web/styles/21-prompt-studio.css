@@ -17,12 +17,25 @@
 }
 
 .anomalous-prompt-page .anomalous-ps-grid {
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: clamp(240px, 20%, 320px) minmax(0, 1fr);
 }
 
 .anomalous-prompt-page .anomalous-ps-grid.has-ref {
-    grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: clamp(240px, 20%, 320px) minmax(0, 1fr) minmax(0, 1fr);
 }
+
+/* On the page the boxes take the room there is: side by side when it is wide, sharing the height. */
+.anomalous-prompt-page .anomalous-ps-boxes {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    grid-auto-rows: minmax(220px, 1fr);
+    min-height: 0;
+}
+
+.anomalous-prompt-page .anomalous-ps-box { min-height: 0; }
+.anomalous-prompt-page .anomalous-ps-tags { flex: 1; align-content: flex-start; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.anomalous-prompt-page .anomalous-ps-text { flex: 1; resize: none; }
 
 .anomalous-ps {
     container: anomalous-ps / inline-size;
