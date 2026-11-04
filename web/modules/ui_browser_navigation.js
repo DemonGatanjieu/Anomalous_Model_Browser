@@ -60,11 +60,12 @@ export function closeWorkspace() {
 }
 
 // The back buttons of the pages one level down: a model's details, one combo, one recipe.
-const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-wfd-back, .anomalous-sd-tune-back, .anomalous-ai-back';
+const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-wfd-back, .anomalous-sd-tune-back, .anomalous-ai-scrim';
 
 /**
  * Esc on the browser: a page one level down (a model's details, one combo or one recipe) goes
- * back as its own back button does; any other page closes the browser. Not while one of this
+ * back as its own back button does, the AI page's task list over its task goes away; any other
+ * page closes the browser. Not while one of this
  * plugin's dialogs, overlays or menus, or a ComfyUI dialog, sits above it (they close
  * themselves; a card inside the browser that does says so with `data-anomalous-escape`), and
  * not while a text field has the key (Esc there belongs to the field). It

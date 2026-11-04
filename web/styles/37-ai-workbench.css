@@ -964,7 +964,6 @@
 
 .anomalous-ai.is-narrow:not(.shows-task, .peeks) .anomalous-ai-task { display: none; }
 .anomalous-ai.is-narrow .anomalous-ai-back { display: inline-block; }
-.anomalous-ai.is-narrow.peeks .anomalous-ai-back { display: none; } /* so Esc on the list closes the window, as it does with the list alone */
 
 .anomalous-ai.is-narrow .anomalous-ai-task {
     padding: 14px 16px 24px;
