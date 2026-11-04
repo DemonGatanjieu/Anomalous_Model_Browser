@@ -3,7 +3,8 @@
  * kept on screen, position and size remembered; or the full ComfyUI page (the header's
  * full-window button, or a double-click on the header), remembered too. Docked and full
  * window ignore the position and size (CSS); docked has a width of its own, dragged at
- * its right edge.
+ * its right edge. Going between the three, the page is laid out once and only its picture
+ * moves (`morphFrame`).
  */
 
 import { translate as t } from './locales.js';
@@ -133,6 +134,25 @@ export function bindDockResize(container) {
     container.appendChild(edge);
 }
 
+let morphing = null;
+
+/** Runs `change`, which gives `container` another frame, and carries the picture from the old frame to the new. */
+export function morphFrame(container, change) {
+    const from = container.getBoundingClientRect();
+    morphing?.cancel();
+    change();
+    const to = container.getBoundingClientRect();
+    if (!to.width || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    morphing = container.animate([
+        {
+            transformOrigin: '0 0',
+            translate: `${from.left - to.left}px ${from.top - to.top}px`,
+            scale: `${from.width / to.width} ${from.height / to.height}`,
+        },
+        { transformOrigin: '0 0', translate: '0 0', scale: '1 1' },
+    ], { duration: 220, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+}
+
 const MAXIMIZE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
 const RESTORE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>';
 
@@ -148,7 +168,7 @@ export function bindShellMaximize(container, header, button) {
         button.setAttribute('aria-pressed', String(on));
         localStorage.setItem('anomalous_maximized', on ? 'true' : 'false');
     };
-    const toggle = () => set(!container.classList.contains('anomalous-maximized'));
+    const toggle = () => morphFrame(container, () => set(!container.classList.contains('anomalous-maximized')));
     button.onclick = toggle;
     header.addEventListener('dblclick', (e) => {
         if (!e.target.closest('button, input, select, textarea, #anomalous-close')) toggle();

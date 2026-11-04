@@ -44,6 +44,32 @@
     width: 100%;
 }
 
+.anomalous-rail-nav {
+    position: relative;
+}
+
+/* The current page's highlight: one piece that slides between the entries (ui_shell_rail.js). */
+.anomalous-rail-marker {
+    position: absolute;
+    top: 0;
+    left: 4px;
+    width: 52px;
+    border-radius: 9px;
+    background: rgba(var(--amb-ink-rgb), 0.1);
+    box-shadow: inset 2px 0 0 var(--amb-link);
+    opacity: 0;
+    pointer-events: none;
+    transition: translate 0.2s var(--amb-ease-out), height 0.2s var(--amb-ease-out), opacity 0.15s ease;
+}
+
+.anomalous-rail-marker.is-shown {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .anomalous-rail-marker { transition: none; }
+}
+
 .anomalous-rail-sep {
     flex-shrink: 0;
     width: 28px;
@@ -72,6 +98,7 @@
 }
 
 .anomalous-rail-item {
+    position: relative;
     width: 52px;
     gap: 3px;
     padding: 7px 0 5px;
@@ -91,15 +118,14 @@
     color: var(--amb-text-main);
 }
 
-.anomalous-rail-item.active,
+.anomalous-rail-item.active {
+    color: var(--amb-text-main);
+}
+
 .anomalous-rail-tools button.is-active,
 .anomalous-rail-foot button.is-active {
     background: rgba(var(--amb-ink-rgb), 0.1);
     color: var(--amb-text-main);
-}
-
-.anomalous-rail-item.active {
-    box-shadow: inset 2px 0 0 var(--amb-link);
 }
 
 .anomalous-rail-label {

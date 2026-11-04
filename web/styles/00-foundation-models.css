@@ -42,6 +42,9 @@
     --amb-radius-control: 6px;
     --amb-radius-card: 8px;
     --amb-radius-panel: 10px;
+    --amb-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --amb-motion-enter: 0.18s;
+    --amb-motion-exit: 0.12s;
 
     /* Tints over the page: rgba(var(--amb-ink-rgb), a) lightens a dark page and darkens a light one. */
     --amb-ink-rgb: 255, 255, 255;
@@ -528,7 +531,6 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     padding-right: 6px; /* the edge below, clear of the pages' scrollbars */
     border-radius: 0 !important;
     clip-path: none !important;
-    transition: all 0.3s ease;
 }
 
 /* Full window (ui_shell_frame.js): the whole ComfyUI page, neither dragged nor resized. */
@@ -611,8 +613,6 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-dock-edge:hover,
 .is-dock-resizing .anomalous-dock-edge { background: var(--amb-link); }
-
-#anomalous-container.is-dock-resizing { transition: none; }
 
 .anomalous-header-group {
     display: flex;

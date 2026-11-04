@@ -1,0 +1,67 @@
+/* How the window and its pages come and go. Only opacity and position move, so no frame lays the page
+   out again. No script needed: anything going from display: none starts its animation, whichever way it
+   was opened. ui_shell_frame.js moves the window between its modes; ui_shell_rail.js the rail's marker. */
+
+#anomalous-modal {
+    opacity: 0;
+    transition: opacity var(--amb-motion-exit) ease-out, display var(--amb-motion-exit) allow-discrete;
+}
+
+#anomalous-modal.visible {
+    opacity: 1;
+    transition-duration: var(--amb-motion-enter);
+}
+
+@starting-style {
+    #anomalous-modal.visible { opacity: 0; }
+}
+
+#anomalous-container {
+    --amb-window-move: 0 0;
+    --amb-window-scale: 0.985;
+    animation: anomalous-window-in var(--amb-motion-enter) var(--amb-ease-out);
+    transition: scale var(--amb-motion-exit) ease-out, translate var(--amb-motion-exit) ease-out;
+}
+
+#anomalous-container.anomalous-docked {
+    --amb-window-move: -24px 0;
+    --amb-window-scale: 1;
+}
+
+#anomalous-modal:not(.visible) #anomalous-container {
+    scale: var(--amb-window-scale);
+    translate: var(--amb-window-move);
+    pointer-events: none; /* clicks reach the canvas while it fades */
+}
+
+@keyframes anomalous-window-in {
+    from {
+        scale: var(--amb-window-scale);
+        translate: var(--amb-window-move);
+    }
+}
+
+#anomalous-content > :not(#anomalous-header),
+.anomalous-nb-modal {
+    animation: anomalous-page-in var(--amb-motion-enter) var(--amb-ease-out);
+}
+
+@keyframes anomalous-page-in {
+    from {
+        opacity: 0;
+        translate: 0 6px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #anomalous-modal,
+    #anomalous-container {
+        transition: none;
+    }
+
+    #anomalous-container,
+    #anomalous-content > :not(#anomalous-header),
+    .anomalous-nb-modal {
+        animation: none;
+    }
+}

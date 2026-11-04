@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- **操作手感更顺了**：打开和关闭窗口、切换页面都有短暂的过渡，左边栏的高亮会滑到新页面，切换侧边停靠和全屏时窗口平滑过去，不再每一帧重排页面。系统开了“减少动态效果”时这些都关掉。
+- **Moving around feels smoother**: the window and its pages come and go with a short transition, the rail's highlight slides to the new page, and going between docked, floating and full window glides there instead of laying the page out on every frame. All of it stays off when the system asks for reduced motion.
 - **侧边停靠的宽度可以拖了**：按住窗口右边缘左右拖，最窄 480，最宽给画布留 240，宽度会记住，双击边缘恢复原来的 660。窗口变小时也会给画布留位置。各页面都按 480 宽走过一遍：模型页的关闭按钮不再被挤出去，工作流的搜索框放不下时换到第二行，图库拖宽后自动加列。
 - 工作流很多时，卡片不再被压成细条，列表正常滚动。
 - 窗口窄时提示词页不再只占上半截，词卡和提示词框上下排好。

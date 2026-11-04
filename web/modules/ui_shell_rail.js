@@ -58,6 +58,8 @@ export function createShellRail(owner) {
     brand.setAttribute('aria-hidden', 'true');
 
     const nav = div('anomalous-rail-nav');
+    const marker = div('anomalous-rail-marker');
+    nav.appendChild(marker);
     const items = new Map();
     for (const entry of RAIL_PAGES) {
         if (entry.audio && !nav.querySelector('.anomalous-rail-sep')) nav.appendChild(div('anomalous-rail-sep'));
@@ -91,10 +93,19 @@ export function createShellRail(owner) {
         syncCompact();
     };
 
+    const moveMarker = () => {
+        const current = [...items.values()].find(button => button.classList.contains('active'));
+        marker.classList.toggle('is-shown', !!current);
+        if (!current) return;
+        marker.style.translate = `0 ${current.offsetTop}px`;
+        marker.style.height = `${current.offsetHeight}px`;
+    };
+
     // A short window drops the labels under the icons; the tooltips still name the entries.
     const syncCompact = () => {
         root.classList.remove('is-compact');
         root.classList.toggle('is-compact', root.clientHeight > 0 && root.scrollHeight > root.clientHeight + 1);
+        moveMarker();
     };
     if (typeof ResizeObserver === 'function') new ResizeObserver(syncCompact).observe(root);
     refreshLanguage();
@@ -108,6 +119,7 @@ export function createShellRail(owner) {
                 if (key === page) button.setAttribute('aria-current', 'page');
                 else button.removeAttribute('aria-current');
             }
+            moveMarker();
         },
         refreshLanguage,
     };
