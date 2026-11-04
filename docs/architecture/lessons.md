@@ -148,6 +148,16 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 - 底层模块（看图、卡片、纯函数）只从同样底层的模块取工具函数，不从“页面”模块（下载、设置、浏览器主对象）取，哪怕只是一个小函数；需要就挪到没有导入的小文件里（`file_size.js`）。
 - 改了导入关系，在真的 ComfyUI 页面上确认 `window.anomalousBrowserInstance` 存在、控制台没有 `before initialization`，再提交。
 
+## 2026-11-05 · 偶尔打开 ComfyUI，AMB 整个不见了
+
+**现象**：没有悬浮按钮，没有窗口，控制台里是几十条 `Cannot access 'shared' before initialization`；刷新一下又好了。大约十几次加载碰到一次。
+
+**原因**：ComfyUI 把 `web/` 下每个 .js 都当成扩展，同时各自导入一遍，谁先跑完全看网络。AMB 的模块有一个很大的循环导入，`ui_ai_workbench.js` 加载时就要写 `ui_ai_results.js` 里的 `const shared`。从 `main.js` 进来顺序是对的；碰巧先从 `ui_ai_results.js` 或 `ui_ai_step_body.js` 进来，`shared` 还没初始化，这个模块就报错，而且错误会被缓存，整个 AMB 跟着起不来。
+
+**做法**：`shared` 搬进不导入任何东西的 `ui_ai_shared.js`。`tests/module_cycles.mjs` 查“加载时就读同一个循环里的 const”，这种写法以后过不了测试。
+
+**以后**：会在加载时用到的值，放在循环外面的模块里。别只从 `main.js` 想加载顺序。要逐个模块验证，在浏览器里给每个模块开一个 iframe 单独 import。
+
 ## 2026-11-04 · 存档跑出来全是画布上的内容
 
 **现象**：两个存档跑 3 + 1 次，只出了一轮图。四次提交一模一样，第二个存档的改动和新种子都没进去，后三次全走缓存；运行前的检查查的也是画布。

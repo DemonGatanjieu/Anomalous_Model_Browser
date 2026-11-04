@@ -24,7 +24,7 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 
 | 看到的 | 点了以后 | 后端 |
 | --- | --- | --- |
-| 「新任务」 | 写一句要 AI 做什么（可以空着），任务显示“等 AI 接手”；下一个来调用的 AI 直接接手它，不会接在旧任务后面 | `POST /anomalous/ai_tasks` |
+| 「新任务」 | 马上开一个任务，显示“等 AI 接手”，要做什么在那一页写（可以不写）；下一个来调用的 AI 直接接手它，不会接在旧任务后面 | `POST /anomalous/ai_tasks` |
 | 「连接 AI」 | 弹出连接说明：地址、复制给 AI 的那句话、各个软件怎么加（`ui_ai_connect.js`） | 无 |
 | 「关卡」 | AI 做哪些事要先问你（改画布、用显卡、下载……），还有 AI 怎么等你回答、怎么等跑图（`ui_ai_gate.js`） | `/anomalous/ai_gates` |
 | 「全部」「进行中」「等你回答」「出错」 | 只筛这一栏，不改任何东西 | 无 |
@@ -41,12 +41,17 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | 「AI 改副本」 / 「AI 改当前画布」 | 打开二选一：「改副本」（先把当前工作流复制到新标签页，AI 只改副本）或「改当前画布」。点开才换，不会点一下就悄悄切换 | `POST /anomalous/ai_tasks/{task_id}`（canvas） |
 | 「切到副本」 | 切到这个任务的副本标签页，并显示画布（`mcp_task_tab.js`） | 无 |
 | 「撤销画布上的改动」 | 按操作记录把 AI 在画布上的改动一步步撤销（`canvas_undo.js`） | 无 |
-| 「改名」 / 「从列表移除」 | 移除只删这条记录，图、画布、工作流都不动 | `POST /anomalous/ai_tasks/{task_id}` |
-| 「接着哪个任务…」 | 把这个任务接在另一个后面，两边都显示链接（`ui_ai_task_links.js`） | `POST /anomalous/ai_tasks/{task_id}`（from） |
+| ⋯ 里的「改名」 / 「从列表移除」 | 移除只删这条记录，图、画布、工作流都不动 | `POST /anomalous/ai_tasks/{task_id}` |
+| ⋯ 里的「打开隐私模式」 | 这个任务的图不再发给 AI；开着时标题栏多一个「隐私模式」，点它关掉（`ui_ai_privacy.js`） | `POST /anomalous/ai_tasks/{task_id}`（privacy） |
+| ⋯ 里的「接着哪个任务…」 | 把这个任务接在另一个后面，两边都显示链接（`ui_ai_task_links.js`） | `POST /anomalous/ai_tasks/{task_id}`（from） |
 
 AMB 更新以后，AI 软件还拿着旧的工具列表来调用时，标题栏下面出现一行黄字「AI 软件拿的还是旧的工具列表，会多走弯路。请重新连接：Antigravity 重启一下，或在它的 MCP 设置里把 anomalous 关掉再打开；然后开个新对话。」，AI 那边也会收到同样的提醒（`mcp_directory.stale`，按每个 AI 软件上次取的列表比对）。AI 软件重新取工具列表（`tools/list`）后这行自动消失。
 
 标题栏右上角的一排是侧栏的开关：「展台」「节点结构」「决策」「素材」「成果」（`ui_ai_side_views.js`），同一时间只开一个。
+
+标题栏固定两行：名字和工具，下面是任务信息和前后任务的链接。不常用的都收在 ⋯ 里（`ui_ai_task_menu.js`）。侧栏打开、中间变窄时，状态和「切到副本」只留图标，名字放不下就省略，不把工具挤到下一行。
+
+时间线上面一行：这个任务走过的阶段（点了跳到那一步）和这个任务出了什么。
 
 ### 中间：等 AI 接手的任务（`ui_ai_ready.js`）
 

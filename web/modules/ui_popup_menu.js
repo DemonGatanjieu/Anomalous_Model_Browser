@@ -19,7 +19,7 @@ export function closePopupMenu() {
 }
 
 /**
- * Opens `items` under `anchor`: { heading } or { label, run, checked?, danger? }. A row with
+ * Opens `items` under `anchor`: { heading } or { label, run, checked?, danger?, title? }. A row with
  * `checked` (true or false) shows a tick when true. Pressing the anchor again closes it.
  */
 export function openPopupMenu(anchor, items) {
@@ -35,6 +35,7 @@ export function openPopupMenu(anchor, items) {
         }
         const row = el('button', `anomalous-popup-menu-item${item.danger ? ' is-danger' : ''}`);
         row.type = 'button';
+        if (item.title) row.title = item.title;
         row.setAttribute('role', item.checked === undefined ? 'menuitem' : 'menuitemradio');
         if (item.checked !== undefined) {
             row.setAttribute('aria-checked', String(Boolean(item.checked)));

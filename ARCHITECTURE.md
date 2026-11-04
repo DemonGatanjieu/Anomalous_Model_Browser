@@ -104,7 +104,7 @@ covered by the `styles.css` manifest.
   node's STRING inputs by ComfyUI's node list, prompt fields, picture names, any sealed text),
   `expand` on a call's arguments, `seal_answer` for the user's prompt box (a "prompts" panel block,
   `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model;
-  the privacy skill tells the AI how to work). `web/modules/ui_ai_privacy.js` is the header's lock
+  the privacy skill tells the AI how to work). `web/modules/ui_ai_privacy.js` is the header's chip and the switch in its ⋯
   (`tests/test_ai_privacy.py`, `tests/test_ai_sealed.py`).
   `ai_pictures.mark_gone` marks a task's pictures no longer in the output folder (`gone`) on its
   `GET`, which `ui_ai_images.gonePicture` shows instead of a broken picture.
@@ -433,8 +433,8 @@ covered by the `styles.css` manifest.
   starts one while looking at a task; changed or taken off by the user, never a loop); `GET` of a
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
   decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
-  one to link. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
-  step made and where it leads. `ui_ai_outputs.js` is what the whole task made: a line over the
+  one to link; `ui_ai_task_menu.js` is the ⋯ of the task's head. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
+  step made and where it leads, `ui_ai_shared.js` what the page's parts share. `ui_ai_outputs.js` is what the whole task made: a line over the
   timeline counting it, and the side column's Results view (`ai_task_view.taskOutputs`: the
   pictures by the step that brought them, the workflow, the combos, the newest picture's prompts,
   the models used and download requests — `ai_tasks.results_of` names the downloads — and the sounds),

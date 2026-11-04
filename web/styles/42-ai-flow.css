@@ -4,8 +4,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    margin: -4px 0 16px;
+    gap: 2px;
 }
 
 .anomalous-ai-flow-arrow { color: var(--amb-text-dim); }
@@ -14,8 +13,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    border: 1px solid var(--amb-border);
+    padding: 3px 7px;
+    border: 1px solid transparent;
     border-radius: 999px;
     background: transparent;
     color: var(--amb-text-soft);

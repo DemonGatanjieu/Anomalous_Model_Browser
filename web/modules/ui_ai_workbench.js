@@ -44,7 +44,8 @@ import { iconButton } from './ui_ai_icons.js';
 import { listToggle, renderTaskList, stateIcon } from './ui_ai_task_list.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
-import { locateNode, openModel, resultLinks, shared, updateRunProgress } from './ui_ai_results.js';
+import { locateNode, openModel, resultLinks, updateRunProgress } from './ui_ai_results.js';
+import { shared } from './ui_ai_shared.js';
 import { drawOutputsLine, newOutputs } from './ui_ai_outputs.js';
 import { compareBar, setMarker } from './ui_ai_images.js';
 import { openMarker } from './ui_ai_marker.js';
@@ -55,7 +56,8 @@ import { taskLinks } from './ui_ai_task_links.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewLabel } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
-import { privacyToggle } from './ui_ai_privacy.js';
+import { privacyChip } from './ui_ai_privacy.js';
+import { taskMenu } from './ui_ai_task_menu.js';
 import { syncRows } from './sync_rows.js';
 import { forgetTask, keptTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
 import {
@@ -63,7 +65,8 @@ import {
 } from './ai_task_view.js';
 
 const NARROW_PX = 720;
-const SHORT_PX = 880; // a window this low (not maximised) keeps the task's head to one line
+const SHORT_PX = 880; // a window this low (not maximised) keeps less room around the task's head
+const TIGHT_PX = 640; // a task's column this narrow (the side column open) shows its head's chips as icons
 const COLLAPSED_KEY = 'anomalous_ai_tasks_collapsed';
 const RECENT_COUNT = 3;
 
@@ -199,7 +202,7 @@ function renderTask() {
     if (fresh) {
         view = state.view = {
             taskId: task.id, header: el('div', 'anomalous-ai-task-head'), flow: el('div', 'anomalous-ai-flow-holder'),
-            made: el('div', 'anomalous-ai-made-holder'),
+            made: el('div', 'anomalous-ai-made-holder'), summary: el('div', 'anomalous-ai-summary'),
             timeline: el('div', 'anomalous-ai-timeline'),
             message: messageBox(async (text, refs) => {
                 await postTask(task.id, { text, refs }, 'message');
@@ -213,10 +216,13 @@ function renderTask() {
         };
         view.tabs = el('div', 'anomalous-ai-tabs');
         view.dock.append(view.newest, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
-        box.replaceChildren(view.tabs, view.header, view.flow, view.made, view.timeline, view.dock);
+        view.summary.append(view.flow, view.made);
+        box.replaceChildren(view.tabs, view.header, view.summary, view.timeline, view.dock);
         // How much of the column the stuck header covers, for what sticks under it (the waiting page's sentence).
-        new ResizeObserver(() => box.style.setProperty('--anomalous-ai-head-h',
-            `${view.header.offsetHeight + parseFloat(getComputedStyle(view.header).top || 0)}px`)).observe(view.header);
+        new ResizeObserver(() => {
+            box.style.setProperty('--anomalous-ai-head-h', `${view.header.offsetHeight + parseFloat(getComputedStyle(view.header).top || 0)}px`);
+            for (const part of [view.header, view.dock]) part.classList.toggle('is-tight', box.clientWidth < TIGHT_PX);
+        }).observe(view.header);
     }
     // A new panel opens the stage; in a narrow window only one that asks something takes its tab, and not from under the user's typing.
     const news = stageNews(task, state.stage);
@@ -228,19 +234,22 @@ function renderTask() {
     view.tabs = tabs;
     const header = view.header;
     const titleLine = el('div', 'anomalous-ai-task-title-line');
-    titleLine.append(button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => { state.narrowView = 'list'; layout(); }),
-        el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled')), stateChip(status));
+    const name = el('div', 'anomalous-ai-task-name');
+    const title = el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled'));
+    title.title = title.textContent;
+    name.append(button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => { state.narrowView = 'list'; layout(); }), title, stateChip(status));
     const tools = el('div', 'anomalous-ai-task-tools');
-    tools.append(executionStatus(task, refresh), canvasControls(task, () => void refresh(), () => state.owner?.close?.()), privacyToggle(task, () => void refresh()));
+    tools.append(executionStatus(task, refresh), canvasControls(task, () => void refresh(), () => state.owner?.close?.()));
+    if (task.private === true) tools.append(privacyChip(task, () => void refresh()));
     if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
         tools.append(iconButton('anomalous-ai-tool', 'undo', t('aiUndoAll'), () => undoAll(task)));
     }
-    tools.append(iconButton('anomalous-ai-tool is-icon', 'pencil', t('aiRename'), async () => {
-        const title = await anomalousPrompt(t('aiRenamePrompt'), task.title || '', t('aiRename'));
-        if (title === null || title === undefined) return;
-        await postTask(task.id, { title }).catch(error => anomalousAlert(error.message));
+    tools.append(taskMenu(task, { tasks: state.tasks, changed: () => void refresh(), rename: async () => {
+        const named = await anomalousPrompt(t('aiRenamePrompt'), task.title || '', t('aiRename'));
+        if (named === null || named === undefined) return;
+        await postTask(task.id, { title: named }).catch(error => anomalousAlert(error.message));
         await refresh();
-    }, { iconOnly: true }), iconButton('anomalous-ai-tool is-icon is-danger', 'trash', t('aiRemove'), async () => {
+    }, remove: async () => {
         if (!await anomalousConfirm(t('aiRemoveConfirm'), t('aiRemove'))) return;
         await postTask(task.id, { remove: true }).catch(error => anomalousAlert(error.message));
         forgetTask(task.id);
@@ -248,17 +257,20 @@ function renderTask() {
         state.task = null;
         state.narrowView = 'list';
         await refresh();
-    }, { iconOnly: true }));
+    } }));
     const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
-    titleLine.append(tools);
+    titleLine.append(name, tools);
     const unseen = newOutputs(state.stage, task, shown && state.stage.view === 'outputs');
     state.owner?.headerTools?.replaceChildren(sideSwitch(state.stage, shown, { stage: stageBadge(task, state.stage, shown && state.stage.view === 'stage'), asking, toolbox: toolboxCount(task), outputs: unseen },
         view => pickView(state.stage, view, shown, task, renderTask, () => void refresh())));
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(summary).map(say)].filter(Boolean);
-    header.replaceChildren(titleLine, el('div', 'anomalous-ai-task-meta', meta.join(' · ')),
-        ...(task.stale_tools ? [el('div', 'anomalous-ai-task-stale', t('aiStaleTools'))] : []), // mcp_directory.stale
-        taskLinks(task, state.tasks, { open: (id) => { state.pinned = true; void select(id); }, changed: refresh }));
+    const said = el('div', 'anomalous-ai-task-meta', meta.join(' · '));
+    said.title = said.textContent;
+    const sub = el('div', 'anomalous-ai-task-sub');
+    sub.append(said, taskLinks(task, { open: (id) => { state.pinned = true; void select(id); }, changed: refresh }));
+    header.replaceChildren(titleLine, sub,
+        ...(task.stale_tools ? [el('div', 'anomalous-ai-task-stale', t('aiStaleTools'))] : [])); // mcp_directory.stale
 
     const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
     view.flow.replaceChildren(...(flow ? [flow] : []));
@@ -348,13 +360,11 @@ function showOnStage(panelId) {
     renderTask();
 }
 
-/** New task: the user starts one; the next AI app that calls takes it over. */
+/** New task: the user starts one; the next AI app that calls takes it over. What it is for is said on its page. */
 async function newTask() {
-    const title = await anomalousPrompt(t('aiNewTaskPrompt'), '', t('aiNewTask'));
-    if (title === null || title === undefined) return;
     try {
         const response = await fetch('/anomalous/ai_tasks', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, from: state.task?.id }), // goes on from the task shown
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: '', from: state.task?.id }), // goes on from the task shown
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);

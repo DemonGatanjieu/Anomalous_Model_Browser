@@ -78,7 +78,7 @@
     font: inherit;
     font-size: 12px;
 }
-.anomalous-ai-task-link-go, .anomalous-ai-task-link.is-next, .anomalous-ai-task-link.is-add {
+.anomalous-ai-task-link-go, .anomalous-ai-task-link.is-next {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -90,9 +90,7 @@
     font: inherit;
     cursor: pointer;
 }
-.anomalous-ai-task-link.is-next, .anomalous-ai-task-link.is-add { border: 1px solid color-mix(in srgb, var(--amb-link) 40%, transparent); font-size: 12px; } /* they are the chips: not the header's size */
-.anomalous-ai-task-link.is-add { border-style: dashed; background: none; color: var(--amb-text-dim); }
-.anomalous-ai-task-link.is-add:hover { color: var(--amb-link); }
+.anomalous-ai-task-link.is-next { border: 1px solid color-mix(in srgb, var(--amb-link) 40%, transparent); font-size: 12px; } /* they are the chips: not the header's size */
 .anomalous-ai-task-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-task-link-go:hover span, .anomalous-ai-task-link.is-next:hover span { text-decoration: underline; }
 .anomalous-ai-task-link-x { display: inline-flex; margin-right: 4px; padding: 3px; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
@@ -101,7 +99,7 @@
     position: absolute;
     z-index: 8;
     top: calc(100% + 4px);
-    left: 0;
+    right: 0;
     display: flex;
     flex-direction: column;
     width: min(340px, 90vw);

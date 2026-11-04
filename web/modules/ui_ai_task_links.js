@@ -1,7 +1,7 @@
 /**
  * Where a task stands among others (api/ai_task_links.py), under its title in the AI workbench:
  * "goes on from «…»" and "goes on in «…»", each leading to that task; the first has × to take the
- * link off. A task that goes on from none has "Goes on from…" to pick the one it continues (a short
+ * link off. The ⋯ of a task that goes on from none picks the one it continues (pickTaskLink: a short
  * list of the latest tasks; Esc or a click elsewhere closes it).
  */
 
@@ -37,7 +37,7 @@ async function link(taskId, parent) {
 }
 
 /** The list to pick the task `task` goes on from, under `anchor`. */
-function pickMenu(anchor, task, tasks, changed) {
+export function pickTaskLink(anchor, task, tasks, changed) {
     anchor.parentElement.querySelector('.anomalous-ai-task-links-menu')?.remove();
     const menu = el('div', 'anomalous-ai-task-links-menu');
     menu.dataset.anomalousEscape = '1'; // Esc closes this list, not the browser
@@ -70,8 +70,8 @@ function pickMenu(anchor, task, tasks, changed) {
     document.addEventListener('keydown', escape);
 }
 
-/** The links of `task` (its `links` from the server). `tasks`: the list's summaries; `ctx`: {open(id), changed()}. */
-export function taskLinks(task, tasks, ctx) {
+/** The links of `task` (its `links` from the server). `ctx`: {open(id), changed()}. */
+export function taskLinks(task, ctx) {
     const row = el('div', 'anomalous-ai-task-links');
     const from = task.links?.from;
     if (from) {
@@ -86,9 +86,6 @@ export function taskLinks(task, tasks, ctx) {
                 ctx.changed();
             }, t('aiTaskUnlink')));
         row.append(chip);
-    } else {
-        const add = button('anomalous-ai-task-link is-add', [icon('plus', 12), el('span', '', t('aiTaskLink'))], () => pickMenu(add, task, tasks, ctx.changed), t('aiTaskLinkHint'));
-        row.append(add);
     }
     for (const item of task.links?.next || []) {
         row.append(button('anomalous-ai-task-link is-next', [icon('arrowRight', 13), el('span', '', t('aiTaskNext', { title: item.title || t('aiUntitled') }))], () => ctx.open(item.id)));

@@ -289,15 +289,10 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 6px 10px;
-    margin-bottom: 14px;
-    padding: 8px 10px 8px 12px;
-    border: 1px solid color-mix(in srgb, var(--amb-ok) 35%, transparent);
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--amb-ok) 7%, transparent);
     font-size: 12.5px;
 }
 .anomalous-ai-out-line-icon { display: inline-flex; color: var(--amb-ok); }
-.anomalous-ai-out-line-words { flex: 1 1 160px; min-width: 0; color: var(--amb-text-main); }
+.anomalous-ai-out-line-words { min-width: 0; color: var(--amb-text-soft); }
 
 .anomalous-ai-outputs { display: flex; flex-direction: column; gap: 18px; }
 .anomalous-ai-out-part { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
