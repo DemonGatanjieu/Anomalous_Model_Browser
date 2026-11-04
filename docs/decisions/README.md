@@ -216,5 +216,9 @@ the saves in place and only the user removes them, to the Recycle Bin; a group p
 stops taking more and drops nothing. With the canvas open a save goes back in place, as one of
 ComfyUI's undo steps; with the canvas gone it opens on a new tab and the group goes on there.
 Opening a save on a new tab while its canvas is open is a branch: a new canvas with saves of
-its own. Saves are a working history, not finished work: a card, preset or combo made from a
-save is a copy, and the two never affect each other.
+its own. Saves are a working history, not finished work: a workflow card made from a save is a
+copy, and the two never affect each other. That is the only way out of the saves and there is
+none in: presets and combos joined to saves were tried and took more to keep sensible than they
+gave, so nothing but the canvas makes a save, and a save only becomes a new card. The Saves page
+shows them by canvas and runs one canvas at a time, in the order of the saves; what is clicked
+after goes behind it on ComfyUI's queue, so there is no queue of our own to keep.

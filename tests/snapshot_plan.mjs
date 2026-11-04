@@ -1,6 +1,6 @@
 // The saves bar's rules (web/modules/snapshot_plan.js): which widgets are seeds, what each run gets, what is compiled.
 import assert from 'node:assert/strict';
-import { MAX_COUNT, applySeeds, baseSeed, changeKind, compiled, runCount, runTotal, seedWidgets, seedsOf } from '../web/modules/snapshot_plan.js';
+import { jobLine, MAX_COUNT, applySeeds, baseSeed, changeKind, compiled, runCount, runTotal, seedWidgets, seedsOf } from '../web/modules/snapshot_plan.js';
 
 const control = { name: 'control_after_generate', value: 'fixed' };
 const seed = (name, value = 7, options = {}) => ({ name, value, options, linkedWidgets: [control] });
@@ -55,5 +55,21 @@ wrapped.graphToPrompt = async function () { // ComfyUI-Manager's components-mana
 };
 assert.equal((await wrapped.graphToPrompt(copy)).output, 'canvas');
 assert.equal((await compiled(wrapped, copy)).output, 'copy', 'a plugin that leaves the graph out must not send the canvas instead');
+
+// What is clicked goes in in the order of the clicks, one at a time; the same button twice adds nothing.
+{
+    const add = jobLine();
+    const order = [];
+    const job = (name, wait = 0) => async () => {
+        await new Promise(resolve => setTimeout(resolve, wait));
+        order.push(name);
+        return name;
+    };
+    const answers = [add('2', job('second', 20)), add('2', job('again')), add('1', job('first'))];
+    assert.deepEqual(await Promise.all(answers), ['second', 0, 'first']);
+    assert.deepEqual(order, ['second', 'first']);
+    await assert.rejects(add('bad', async () => { throw new Error('refused'); }), /refused/);
+    assert.equal(await add('bad', job('after')), 'after', 'a refused one neither blocks the line nor stays waiting');
+}
 
 console.log('snapshot_plan ok');

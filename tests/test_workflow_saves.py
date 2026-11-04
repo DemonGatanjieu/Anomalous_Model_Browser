@@ -1,6 +1,5 @@
 """Saves of a workflow (api/workflow_saves.py): they last, a group is found by its key or its file, its
 runs' pictures come from ComfyUI's history, and nothing goes except by the user, to the Recycle Bin."""
-import json
 import os
 import sys
 import tempfile
@@ -21,6 +20,10 @@ WORKFLOW = {"nodes": [], "extra": {"anomalous_saves": KEY}}
 class FakeQueue:
     def __init__(self):
         self.history = {}
+        self.pending = []
+
+    def get_current_queue(self):
+        return [], [(number, prompt_id) for number, prompt_id in enumerate(self.pending)]
 
     def get_history(self, prompt_id=None):
         return {prompt_id: self.history[prompt_id]} if prompt_id in self.history else {}
@@ -82,12 +85,15 @@ class SavesTests(unittest.TestCase):
 
     def test_pictures_come_from_the_history_once_a_run_is_done(self):
         save = self.add()["saves"][0]
+        self.queue.pending = ["run1", "run2"]
         workflow_saves.note_runs(KEY, save["id"], ["run1", "run2"])
         self.assertEqual(workflow_saves.read_group(KEY)["saves"][0]["running"], 2)
         (self.output / "a.png").write_bytes(b"x")
+        self.queue.pending = ["run2"]
         self.queue.history["run1"] = {"outputs": {"9": {"images": [picture("a.png"), picture("preview.png", "temp"), picture("clip.mp4")]}}}
         shown = workflow_saves.read_group(KEY)["saves"][0]
         self.assertEqual((shown["running"], shown["pictures"]), (1, [picture("a.png")]), "what it saved, not its previews")
+        self.queue.pending = []
         self.queue.history["run2"] = {"outputs": {"9": {"images": [picture("a.png")]}}}
         shown = workflow_saves.read_group(KEY)["saves"][0]
         self.assertEqual((shown["running"], shown["pictures"]), (0, [picture("a.png")]), "a run from the cache adds no second one")
@@ -99,16 +105,18 @@ class SavesTests(unittest.TestCase):
         self.queue.history["run1"] = {"outputs": {"9": {"images": [picture("preview.png", "temp")]}}}
         self.assertEqual(workflow_saves.read_group(KEY)["saves"][0]["pictures"], [picture("preview.png", "temp")])
 
-    def test_a_picture_gone_is_not_shown_and_a_lost_run_is_forgotten(self):
+    def test_a_picture_gone_is_not_shown_and_a_run_off_the_queue_is_forgotten(self):
         save = self.add()["saves"][0]
+        self.queue.pending = ["run1", "lost"]
         workflow_saves.note_runs(KEY, save["id"], ["run1", "lost"])
+        self.assertEqual(workflow_saves.read_group(KEY)["saves"][0]["running"], 2, "on the queue: still to come")
+        self.queue.pending = []
         (self.output / "a.png").write_bytes(b"x")
         self.queue.history["run1"] = {"outputs": {"9": {"images": [picture("a.png")]}}}
-        self.assertEqual(len(workflow_saves.read_group(KEY)["saves"][0]["pictures"]), 1)
+        shown = workflow_saves.read_group(KEY)["saves"][0]
+        self.assertEqual((shown["running"], len(shown["pictures"])), (0, 1), "taken off the queue, it made nothing")
         (self.output / "a.png").unlink()
         self.assertEqual(workflow_saves.read_group(KEY)["saves"][0]["pictures"], [])
-        with mock.patch.object(workflow_saves.time, "time", return_value=time.time() + workflow_saves.WAIT_SECONDS + 5):
-            self.assertEqual(workflow_saves.read_group(KEY)["saves"][0]["running"], 0)
 
     def test_a_save_goes_to_the_recycle_bin_and_the_last_takes_the_group(self):
         first = self.add()["saves"][0]
@@ -153,25 +161,6 @@ class SavesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             workflow_saves.read_workflow(KEY, "../index")
         self.assertFalse(workflow_saves._there({"type": "output", "subfolder": "..", "filename": "secret.png"}))
-
-    def test_a_preset_goes_to_cards_of_the_same_structure(self):
-        recipes = self.root / "recipes"
-        recipes.mkdir()
-        nodes = [{"id": 1, "type": "KSampler", "widgets_values": [1]}, {"id": 2, "type": "SaveImage"}]
-        linked = {"nodes": nodes, "links": [[1, 1, 0, 2, 0, "IMAGE"]]}
-        other_values = {"nodes": [{"id": 7, "type": "SaveImage"}, {"id": 8, "type": "KSampler", "widgets_values": [2]}], "links": [{"id": 3, "origin_id": 8, "origin_slot": 0, "target_id": 7, "target_slot": 0}]}
-        for name, data in {
-            "same.json": {"name": "Same", "tags": ["a"], "workflow": other_values},
-            "unwired.json": {"name": "Unwired", "workflow": {"nodes": nodes, "links": []}},
-            "more.json": {"name": "More", "workflow": {"nodes": nodes + [{"id": 3, "type": "VAEDecode"}], "links": linked["links"]}},
-            "part.json": {"name": "Part", "workflow_scope": "partial", "workflow": linked},
-        }.items():
-            (recipes / name).write_text(json.dumps(data), encoding="utf-8")
-        (recipes / "broken.json").write_text("{", encoding="utf-8")
-        save = workflow_saves.add_save(KEY, linked, "tab", "", [])["saves"][0]
-        with mock.patch.object(workflow_saves, "get_recipes_dir", return_value=str(recipes)):
-            cards = workflow_saves.cards_like(KEY, save["id"])
-        self.assertEqual(cards, [{"filename": "same.json", "name": "Same", "tags": ["a"], "notes": ""}])
 
     def test_runs_of_a_save_stay_in_range(self):
         save = self.add()["saves"][0]

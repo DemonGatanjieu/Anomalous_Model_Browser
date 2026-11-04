@@ -4,7 +4,8 @@ the workflow carries in its extra: index.json says what its saves are and each s
 its own, so keeping one writes that file and a small index. Saves outlive their canvas: a closed tab or a
 deleted file leaves them here, and only the user removes them, to the Recycle Bin. The page names a save's
 runs (prompt ids); reading the group finds their pictures in ComfyUI's history and keeps the names, so a
-page reloaded during a run loses nothing. Pictures stay where ComfyUI saved them; one gone is not shown."""
+page reloaded during a run loses nothing. Pictures stay where ComfyUI saved them; one gone is not shown.
+A save becomes something else only as a workflow card, made by the page from its workflow (AD-023)."""
 
 import asyncio
 import json
@@ -19,7 +20,6 @@ from aiohttp import web
 
 from .path_utils import atomic_write_json, resolve_within
 from .recipe_constants import MAX_RECIPE_BYTES
-from .recipe_store import _read_recipe, get_recipes_dir
 from .trash import TrashUnavailable, move_to_trash, trash_failure
 
 INDEX = "index.json"
@@ -29,7 +29,6 @@ MAX_PICTURES = 200  # kept of a save, the newest
 MAX_CHANGES = 40
 MAX_RUNS = 16  # of a save at a time; web/modules/snapshot_plan.js MAX_COUNT
 MAX_WAITING = 200
-WAIT_SECONDS = 24 * 3600  # a run not in ComfyUI's history by then is forgotten
 KEY = re.compile(r"^[0-9a-f-]{8,40}$")
 SAVE_ID = re.compile(r"^[0-9a-f]{12}$")
 PICTURES = (".png", ".jpg", ".jpeg", ".webp")
@@ -107,13 +106,19 @@ def _run_pictures(record):
 
 
 def _collect(group):
-    """Moves the pictures of finished runs into their saves; whether anything changed."""
+    """Moves the pictures of finished runs into their saves; whether anything changed. The queue is asked
+    first: a run leaves it straight into the history, so one in neither was taken off the queue or went
+    with a restart, and is forgotten."""
+    if not any(save["waiting"] for save in group["saves"]):
+        return False
+    running, pending = _queue().get_current_queue()
+    queued = {item[1] for item in [*running, *pending]}
     changed = False
     for save in group["saves"]:
         for run in list(save["waiting"]):
-            record = _queue().get_history(prompt_id=run["id"]).get(run["id"])
-            if not record and time.time() - run["at"] < WAIT_SECONDS:
+            if run["id"] in queued:
                 continue
+            record = _queue().get_history(prompt_id=run["id"]).get(run["id"])
             save["pictures"].extend(picture for picture in _run_pictures(record or {}) if picture not in save["pictures"])
             del save["pictures"][:-MAX_PICTURES]
             save["waiting"].remove(run)
@@ -196,7 +201,7 @@ def note_runs(key, save_id, prompt_ids):
     with _lock:
         group = _read(key)
         save = _save_of(group, save_id)
-        save["waiting"].extend({"id": str(prompt_id), "at": time.time()} for prompt_id in prompt_ids)
+        save["waiting"].extend({"id": str(prompt_id)} for prompt_id in prompt_ids)
         del save["waiting"][:-MAX_WAITING]
         _write(group)
         return _view(group)
@@ -223,36 +228,6 @@ def remove_group(key):
         if _read(key) is None:
             raise LookupError("No such group")
         move_to_trash(_folder(key))
-
-
-def _structure(workflow):
-    """What makes two workflows the same but for their values: their nodes and how they are wired."""
-    types = {node.get("id"): str(node.get("type")) for node in workflow.get("nodes") or [] if isinstance(node, dict)}
-    wired = []
-    for link in workflow.get("links") or []:
-        if isinstance(link, dict):
-            link = [None, link.get("origin_id"), link.get("origin_slot"), link.get("target_id"), link.get("target_slot")]
-        if isinstance(link, list) and len(link) >= 5:
-            wired.append(f"{types.get(link[1])}:{link[2]}>{types.get(link[3])}:{link[4]}")
-    return sorted(types.values()), sorted(wired)
-
-
-def cards_like(key, save_id):
-    """The whole-workflow cards a save could be a preset of: those with its structure."""
-    wanted = _structure(read_workflow(key, save_id))
-    cards = []
-    with os.scandir(get_recipes_dir()) as entries:
-        for entry in entries:
-            if not entry.name.endswith(".json") or entry.stat().st_size > MAX_RECIPE_BYTES:
-                continue
-            try:
-                data = _read_recipe(entry.path)
-            except (OSError, ValueError):
-                continue
-            if isinstance(data, dict) and data.get("workflow_scope") != "partial" and isinstance(data.get("workflow"), dict) \
-                    and _structure(data["workflow"]) == wanted:
-                cards.append({"filename": entry.name, "name": data.get("name") or entry.name[:-5], "tags": data.get("tags") or [], "notes": data.get("notes") or ""})
-    return cards
 
 
 def _changes(value):
@@ -297,12 +272,6 @@ async def api_workflow(request):
     """GET /anomalous/saves/workflow?key&id - one save's whole workflow."""
     query = request.query
     return await _answer(lambda: {"workflow": read_workflow(query.get("key"), query.get("id"))})
-
-
-async def api_cards(request):
-    """GET /anomalous/saves/cards?key&id - the cards a save could be a preset of."""
-    query = request.query
-    return await _answer(lambda: {"cards": cards_like(query.get("key"), query.get("id"))})
 
 
 async def api_add(request):

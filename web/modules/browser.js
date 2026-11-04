@@ -13,6 +13,7 @@ import { showNotebooks, openCombo, openComboByFilename, refreshNotebooks, saveCu
 import { renderNotebookEditor } from './ui_notebook_editor.js';
 import { sendNotebookToCanvas } from './notebook_canvas.js';
 import { showRecipes, refreshRecipes } from './ui_recipe_catalog.js';
+import { showSaves } from './ui_saves_list.js';
 import { renderRecipeList, handleSaveRecipe, openRecipeByFilename } from './ui_recipes.js';
 import { leavePromptPage, openPromptStudio } from './ui_prompt_composer.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
@@ -232,6 +233,7 @@ AnomalousBrowser.prototype.renderNotebookEditor = renderNotebookEditor;
 AnomalousBrowser.prototype.sendNotebookToCanvas = sendNotebookToCanvas;
 
 AnomalousBrowser.prototype.showRecipes = showRecipes;
+AnomalousBrowser.prototype.showSaves = showSaves;
 AnomalousBrowser.prototype.openRecipeByFilename = openRecipeByFilename;
 AnomalousBrowser.prototype.refreshRecipes = refreshRecipes;
 AnomalousBrowser.prototype.renderRecipeList = renderRecipeList;

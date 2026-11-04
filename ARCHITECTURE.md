@@ -223,12 +223,13 @@ covered by the `styles.css` manifest.
   An AI placing nodes itself is a new route (`ai_gates.route_rule`): one reminder a task, or the user's OK.
 - Saves of a workflow. `api/workflow_saves.py` keeps them, a group for each canvas, found by the key in the workflow's
   extra or by its file (AD-023), and finds a run's pictures in ComfyUI's history; `web/modules/snapshot_store.js` is the page's
-  side of its routes, `web/modules/snapshot_keep.js` copies a save to a card, a preset or a combo, and
-  `web/modules/ui_saves_list.js` is the Workflows page's view of every group, open or not; a card's preset comes the other way
-  through `ui_recipe_sets.js`. `web/modules/ui_snapshot_bar.js` is the bar under the canvas, following the open tab (a node's and the
+  side of its routes, every change going through it so what shows a group hears of it. `web/modules/ui_snapshot_bar.js` is the bar
+  under the canvas, following the open tab, with what is used while working there (a node's and the
   empty canvas's menu entry in `canvas_menu.js`; going back is one of ComfyUI's undo steps on the same tab, a new tab is
-  `loadGraphData` as ComfyUI opens a file), and runs saves on detached copies (`detached_graph.js`,
-  `api.queuePrompt`), so the canvas never changes; `web/modules/snapshot_plan.js` holds the rules (which widgets are seeds,
+  `loadGraphData` as ComfyUI opens a file). `web/modules/ui_saves_list.js` is the Workflows page's Saves view, a part for each
+  canvas, open or not, with each save's pictures, its runs and the one thing a save becomes, a workflow card.
+  `web/modules/snapshot_run.js` runs saves for both, on detached copies (`detached_graph.js`,
+  `api.queuePrompt`), so no canvas changes and a closed one's saves run too; `web/modules/snapshot_plan.js` holds the rules (which widgets are seeds,
   what each run gets, compiling past a plugin that drops the graph; `tests/snapshot_plan.mjs`); `api/snapshot_routes.py` checks each save with
   ComfyUI's `validate_prompt` before anything is queued. A block's "variants"
   rebuild it for the canvas model's family (`reference_blocks.build`: on Anima an LLLite model

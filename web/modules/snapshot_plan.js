@@ -58,6 +58,22 @@ export const seedsOf = (mark, mode, base) => Array.from({ length: mark.count }, 
 
 export const runTotal = marks => marks.reduce((sum, mark) => sum + mark.count, 0);
 
+/**
+ * A line of jobs: `add(id, job)` runs `job` once those before it are done, in the order they were added,
+ * and gives what it gives. A job still waiting is not added again (a double click): that gives 0.
+ */
+export function jobLine() {
+    const waiting = new Set();
+    let last = Promise.resolve();
+    return (id, job) => {
+        if (waiting.has(id)) return Promise.resolve(0);
+        waiting.add(id);
+        const turn = last.then(job).finally(() => waiting.delete(id));
+        last = turn.catch(() => {});
+        return turn;
+    };
+}
+
 /** What a save changes from the one before: nothing ('same'), only 'values', or the 'nodes' themselves. */
 export function changeKind(changes) {
     if (!changes.length) return 'same';

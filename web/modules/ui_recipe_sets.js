@@ -13,7 +13,6 @@ import { captureRecipeDraft } from './recipe_parser.js';
 import { appendText, button, dateText } from './ui_recipe_detail_dom.js';
 import { cloneJson } from './ui_recipe_parameter_utils.js';
 import { nextSetName, setDifferences } from './ui_param_set_keys.js';
-import { addWorkflowSave } from './ui_snapshot_bar.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 
 const t = (key, params) => translate(key, params);
@@ -58,22 +57,6 @@ export async function saveCanvasAsSet(ctx) {
             ? t('recipeParameterSkeletonMismatch')
             : t('recipeParameterReadCurrentError'));
     }
-}
-
-/** Whether the canvas shows the workflow `source` belongs to. */
-function canvasIsSet(source) {
-    try {
-        const skeleton = assertRecipeSkeleton(source.workflow, app.graph.serialize());
-        return skeleton.sourceCount === skeleton.candidateCount;
-    } catch {
-        return false;
-    }
-}
-
-/** Puts `source`'s values among the saves of the canvas showing this workflow; with none open, the workflow opens on a new tab first. */
-export async function addSetToSaves(ctx, source) {
-    if (!canvasIsSet(source)) await app.loadGraphData(cloneJson(ctx.recipe.workflow));
-    await addWorkflowSave(source.workflow);
 }
 
 /** A new set to edit, from `source`'s values (the workflow's own when none). */

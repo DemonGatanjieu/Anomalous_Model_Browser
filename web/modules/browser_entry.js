@@ -213,7 +213,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
 
     async function setup() {
         removeLegacyTriggerPosition();
-        watchSaves();
+        watchSaves(ensureBrowser);
         // Beside this file, not under a fixed name: the plugin folder may be called anything
         // (a ZIP from GitHub unpacks as Anomalous_Model_Browser-main), and ComfyUI serves it by that name.
         const cssPath = new URL('../styles.css', import.meta.url).pathname;
