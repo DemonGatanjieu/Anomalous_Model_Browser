@@ -1,5 +1,10 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.62.2 (Fix: workflow cards squeezed into strips) — 2026-11-05
+
+- 工作流很多时，卡片不再被压成细条，列表正常滚动。
+- With many workflows, the cards are no longer squeezed into thin strips; the list scrolls.
+
 ## v1.62.1 (Fix: Anomalous sometimes did not start) — 2026-11-05
 
 - 修好一个偶发的启动故障：有时打开 ComfyUI，AMB 整个没加载，悬浮按钮和窗口都没有，刷新一下又好了。
