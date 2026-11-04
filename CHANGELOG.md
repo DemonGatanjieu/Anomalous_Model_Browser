@@ -1,5 +1,10 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.62.1 (Fix: Anomalous sometimes did not start) — 2026-11-05
+
+- 修好一个偶发的启动故障：有时打开 ComfyUI，AMB 整个没加载，悬浮按钮和窗口都没有，刷新一下又好了。
+- Fixed a startup failure that came now and then: ComfyUI opened with no Anomalous at all, no button and no window, until a reload.
+
 ## v1.62.0 (AI Workbench, AI Builds Workflows on the Canvas, Repaint an Area, Materials Side Panel) — 2026-10-29
 
 - 音频库搬进了“角色语音”页：页面顶上的标签现在是 **角色 ｜ 配音 ｜ 音频库**，左边栏少了一项。加了 AI 工作台以后左边栏有 10 项，数字键只有 1–9，音频库就没键可按了；现在 9 打开角色语音，并回到你上次停的那个标签。
