@@ -204,3 +204,17 @@ top of ComfyUI's output and input folders for pictures no run saved and pictures
 rewritten in place since its previous call, shows them in the task and tells the AI.
 It never looks in the background, never blocks or undoes anything, and words it as
 something the user may have done. Anomalous itself never overwrites a file.
+
+## AD-023 — A save belongs to a canvas, and outlives it
+
+A save is a whole workflow, kept as it was, so it needs nothing from the canvas it came from.
+A group of saves goes with one canvas through a key of Anomalous's own in the workflow's
+extra, because ComfyUI's workflow id is shared by copies and all zeros in some files; a file
+that does not carry the key yet is found by its path. Writing the key is not a change, so a
+saved workflow does not start asking to be saved. Closing the tab or deleting the file leaves
+the saves in place and only the user removes them, to the Recycle Bin; a group past its most
+stops taking more and drops nothing. With the canvas open a save goes back in place, as one of
+ComfyUI's undo steps; with the canvas gone it opens on a new tab and the group goes on there.
+Opening a save on a new tab while its canvas is open is a branch: a new canvas with saves of
+its own. Saves are a working history, not finished work: a card, preset or combo made from a
+save is a copy, and the two never affect each other.

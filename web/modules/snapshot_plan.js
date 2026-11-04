@@ -58,5 +58,11 @@ export const seedsOf = (mark, mode, base) => Array.from({ length: mark.count }, 
 
 export const runTotal = marks => marks.reduce((sum, mark) => sum + mark.count, 0);
 
+/** What a save changes from the one before: nothing ('same'), only 'values', or the 'nodes' themselves. */
+export function changeKind(changes) {
+    if (!changes.length) return 'same';
+    return changes.some(change => change.kind !== 'changed') ? 'nodes' : 'values';
+}
+
 /** What the user typed as a mark's runs, within what a mark takes. */
 export const runCount = value => Math.max(1, Math.min(MAX_COUNT, Math.floor(Number(value)) || 1));

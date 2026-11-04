@@ -37,6 +37,7 @@ from .model_constants import CIVITAI_BACKUP_SUFFIXES, MEDIA_EXTENSIONS, PREVIEW_
 from .model_download import settings_path as download_settings_path
 from .notebooks import get_notebooks_dir
 from .parameters import _invalidate_parameter_notebooks_cache, get_parameters_dir
+from .workflow_saves import saves_dir
 from .path_utils import atomic_write_json, require_filename, resolve_within
 from .recipe_store import get_recipes_dir
 from .trash import TrashUnavailable, move_to_trash, trash_failure
@@ -60,7 +61,7 @@ MAX_MEMBERS = 200_000
 KEEP_EXPORTS = 3  # finished exports kept in the temp folder for downloading
 CHUNK = 1024 * 1024
 
-PART_ORDER = ("recipes", "combos", "materials", "parameters", "comfy_workflows")
+PART_ORDER = ("recipes", "combos", "materials", "parameters", "saves", "comfy_workflows")
 
 
 def _comfy_workflows_dir():
@@ -74,6 +75,7 @@ def part_dirs():
         "combos": get_notebooks_dir(),
         "materials": get_materials_dir(),
         "parameters": get_parameters_dir(),
+        "saves": saves_dir(),
         "comfy_workflows": _comfy_workflows_dir(),
     }
 

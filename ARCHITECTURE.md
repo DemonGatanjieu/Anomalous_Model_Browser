@@ -54,6 +54,7 @@ User-owned data
   ComfyUI model folders              models and sidecars
   user/.../anomalous_recipes         workflow recipes and recipe assets
   user/.../anomalous_parameters      immutable parameter snapshots
+  user/.../anomalous_saves           saves of a workflow, a folder for each canvas
   user/.../anomalous_materials       curated image/workflow material bundles
   user/.../anomalous_notebooks       prompt notes, with legacy originals preserved
 ```
@@ -220,11 +221,13 @@ covered by the `styles.css` manifest.
   shows the routes this ComfyUI can build for them, a saved card using both first, its answer says what to call, and
   `add_nodes(route=…)` builds one from the ways on a new tab; `get_toolbox` lists each picked model's cards as its examples.
   An AI placing nodes itself is a new route (`ai_gates.route_rule`): one reminder a task, or the user's OK.
-- Saves (the snapshot queue). `web/modules/ui_snapshot_bar.js` keeps whole-workflow marks (a node's and the empty canvas's
-  menu entry in `canvas_menu.js`, the bar under the canvas; going back is one of ComfyUI's undo steps on the same tab, a
-  new tab is `loadGraphData` as ComfyUI opens a file) and runs them on detached copies (`detached_graph.js`,
+- Saves of a workflow. `api/workflow_saves.py` keeps them, a group for each canvas, found by the key in the workflow's
+  extra or by its file (AD-023), and finds a run's pictures in ComfyUI's history; `web/modules/snapshot_store.js` is the page's
+  side of its routes. `web/modules/ui_snapshot_bar.js` is the bar under the canvas, following the open tab (a node's and the
+  empty canvas's menu entry in `canvas_menu.js`; going back is one of ComfyUI's undo steps on the same tab, a new tab is
+  `loadGraphData` as ComfyUI opens a file), and runs saves on detached copies (`detached_graph.js`,
   `api.queuePrompt`), so the canvas never changes; `web/modules/snapshot_plan.js` holds the rules (which widgets are seeds,
-  what each run gets, compiling past a plugin that drops the graph; `tests/snapshot_plan.mjs`); `api/snapshot_routes.py` checks each mark with
+  what each run gets, compiling past a plugin that drops the graph; `tests/snapshot_plan.mjs`); `api/snapshot_routes.py` checks each save with
   ComfyUI's `validate_prompt` before anything is queued. A block's "variants"
   rebuild it for the canvas model's family (`reference_blocks.build`: on Anima an LLLite model
   patch instead of a ControlNet), and an "optional" node that only improves it (KJNodes'
@@ -526,7 +529,7 @@ covered by the `styles.css` manifest.
   receipts never reconstruct history from the current graph. The workbench retains only
   its selected task's activity entries and ignores superseded refresh/navigation responses.
 - `api/backup.py` is Settings → Backup (`/anomalous/backup/*`): one .zip of the user's stores
-  (recipes, combos, materials, parameters, optionally ComfyUI's saved workflows), the plugin
+  (recipes, combos, materials, parameters, saves, optionally ComfyUI's saved workflows), the plugin
   settings without the Civitai key, and each model's user layer and own cover; putting it
   back adds what is missing, replaces differing files only on request (Recycle Bin first)
   and finds models again by SHA-256, else by folder, path and size. Its model list (every

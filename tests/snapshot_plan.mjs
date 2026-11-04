@@ -1,6 +1,6 @@
 // The saves bar's rules (web/modules/snapshot_plan.js): which widgets are seeds, what each run gets, what is compiled.
 import assert from 'node:assert/strict';
-import { MAX_COUNT, applySeeds, baseSeed, compiled, runCount, runTotal, seedWidgets, seedsOf } from '../web/modules/snapshot_plan.js';
+import { MAX_COUNT, applySeeds, baseSeed, changeKind, compiled, runCount, runTotal, seedWidgets, seedsOf } from '../web/modules/snapshot_plan.js';
 
 const control = { name: 'control_after_generate', value: 'fixed' };
 const seed = (name, value = 7, options = {}) => ({ name, value, options, linkedWidgets: [control] });
@@ -34,6 +34,11 @@ assert.equal(runCount('0'), 1);
 assert.equal(runCount('nope'), 1);
 assert.equal(runCount(999), MAX_COUNT);
 assert.ok(baseSeed(() => 0.999999999) + MAX_COUNT <= 1125899906842624);
+
+assert.equal(changeKind([]), 'same');
+assert.equal(changeKind([{ kind: 'changed' }]), 'values');
+assert.equal(changeKind([{ kind: 'changed' }, { kind: 'added' }]), 'nodes');
+assert.equal(changeKind([{ kind: 'wired' }]), 'nodes', 'a link moved is the structure, not a value');
 
 class App {
     rootGraph = { id: 'canvas' };
