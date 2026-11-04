@@ -207,13 +207,17 @@ def note_runs(key, save_id, prompt_ids):
         return _view(group)
 
 
-def remove_save(key, save_id):
-    """Moves the save to the Recycle Bin; the group as it stands then, None when that was its last."""
+def remove_save(key, save_id, next_changes=None):
+    """Moves the save to the Recycle Bin; the group as it stands then, None when that was its last.
+    `next_changes`: what the save after it changes from the one it now follows."""
     with _lock:
         group = _read(key)
         save = _save_of(group, save_id)
         move_to_trash(_workflow_file(key, save_id))
+        at = group["saves"].index(save)
         group["saves"].remove(save)
+        if next_changes is not None and at < len(group["saves"]):
+            group["saves"][at]["changes"] = next_changes
         if group["saves"]:
             _write(group)
             return _view(group)
@@ -296,9 +300,10 @@ async def api_ran(request):
 
 
 async def api_remove(request):
-    """POST /anomalous/saves/remove {key, id}."""
+    """POST /anomalous/saves/remove {key, id, changes}."""
     body = await _body(request)
-    return await _answer(lambda: {"group": remove_save(body.get("key"), body.get("id"))})
+    changes = None if body.get("changes") is None else _changes(body["changes"])
+    return await _answer(lambda: {"group": remove_save(body.get("key"), body.get("id"), changes)})
 
 
 async def api_remove_group(request):

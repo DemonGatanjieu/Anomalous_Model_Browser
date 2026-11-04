@@ -1,11 +1,13 @@
-/* The saves bar under the canvas (ui_snapshot_bar.js) and the Workflows page's Saves view (ui_saves_list.js). */
+/* The saves bar on the canvas's panel (ui_snapshot_bar.js) and the Workflows page's Saves view (ui_saves_list.js). */
 .anomalous-snapshot-bar {
-    position: fixed;
-    left: 50%;
+    position: absolute;
+    left: 16px;
+    right: 216px; /* clear of ComfyUI's canvas tools in the corner: it wraps before it goes under them */
     bottom: 16px;
     z-index: 1000;
-    max-width: calc(100vw - 32px);
-    transform: translateX(-50%);
+    width: fit-content;
+    margin-inline: auto;
+    pointer-events: auto;
     padding: 8px 10px;
     color: var(--amb-text-main);
     background: var(--amb-bg-panel);
@@ -14,9 +16,13 @@
     font-size: 13px;
 }
 
+/* Folded: a handle on the canvas's bottom edge, out of the way until it is wanted. */
+.anomalous-snapshot-bar.is-folded { bottom: 0; padding: 0; border-bottom: 0; border-radius: 8px 8px 0 0; opacity: 0.65; }
+.anomalous-snapshot-bar.is-folded:hover { opacity: 1; }
+
 .anomalous-snapshot-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .anomalous-snapshot-title { font-weight: 600; white-space: nowrap; }
-.anomalous-snapshot-marks { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; max-width: 46vw; }
+.anomalous-snapshot-marks { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
 .anomalous-snapshot-mark {
     display: inline-flex;
@@ -31,6 +37,7 @@
 .anomalous-snapshot-mark.is-current { border-color: var(--amb-accent); }
 
 .anomalous-snapshot-number,
+.anomalous-snapshot-older,
 .anomalous-snapshot-look,
 .anomalous-snapshot-add,
 .anomalous-snapshot-close,
@@ -48,11 +55,14 @@
 }
 
 .anomalous-snapshot-number,
-.anomalous-snapshot-add,
-.anomalous-snapshot-unfold { font-weight: 600; }
+.anomalous-snapshot-add { font-weight: 600; }
+.anomalous-snapshot-unfold { min-height: 22px; padding: 0 12px; font-size: 12px; white-space: nowrap; }
 .anomalous-snapshot-close { padding: 0 5px; color: var(--amb-text-muted); white-space: nowrap; }
 .anomalous-snapshot-look { white-space: nowrap; }
+.anomalous-snapshot-older { color: var(--amb-text-muted); white-space: nowrap; }
+.anomalous-snapshot-times { color: var(--amb-text-muted); font-size: 11px; }
 .anomalous-snapshot-number:hover,
+.anomalous-snapshot-older:hover,
 .anomalous-snapshot-look:hover,
 .anomalous-snapshot-add:hover,
 .anomalous-snapshot-close:hover,
@@ -60,7 +70,7 @@
 .anomalous-snapshot-mode:hover { background: var(--amb-bg-card-hover); }
 
 .anomalous-snapshot-count {
-    width: 40px;
+    width: 36px;
     min-height: 24px;
     padding: 0 2px;
     color: inherit;
@@ -76,9 +86,7 @@
 .anomalous-snapshot-mode.is-on { color: var(--amb-text-main); background: var(--amb-bg-card-hover); }
 
 .anomalous-snapshot-run { color: #1a1205; background: var(--amb-accent); font-weight: 600; white-space: nowrap; }
-.anomalous-snapshot-run:disabled { opacity: 0.45; cursor: default; }
 
-.anomalous-wf-saves-toggle.is-on { color: var(--amb-text-main); border-color: var(--amb-accent); }
 .anomalous-recipe-body.is-saves .anomalous-wf-bar > :not(.anomalous-wf-saves-toggle),
 .anomalous-recipe-body.is-saves .anomalous-recipe-move-strip,
 .anomalous-recipe-body.is-saves .anomalous-wf-list:not(.anomalous-saves-list),
@@ -110,9 +118,8 @@
 .anomalous-saves-tag { flex: none; padding: 1px 8px; color: var(--amb-text-muted); background: var(--amb-bg-input); border-radius: 6px; font-size: 12px; }
 .anomalous-saves-tag.is-open { color: var(--amb-text-main); }
 .anomalous-saves-meta { flex: none; color: var(--amb-text-muted); font-size: 12px; }
-.anomalous-saves-status { padding: 0 12px 8px; color: var(--amb-text-muted); font-size: 12px; white-space: pre-line; }
+.anomalous-saves-status { padding: 0 12px 8px; color: #f87171; font-size: 12px; white-space: pre-line; }
 .anomalous-saves-status:empty { display: none; }
-.anomalous-saves-status.is-bad { color: #f87171; }
 
 /* A save is a card: its words on the left, its pictures on the right; under them only in a narrow window. */
 .anomalous-saves-save {
@@ -160,6 +167,21 @@
 .anomalous-saves-gallery-head { display: flex; align-items: center; gap: 12px; padding: 12px 20px 0; }
 .anomalous-saves-gallery-title { min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 
-.anomalous-snapshot-status { max-width: 70vw; color: var(--amb-text-muted); white-space: pre-line; }
-.anomalous-snapshot-status:not(:empty) { margin-top: 6px; }
+/* Over the bar, so that its buttons stay where they are under the pointer. */
+.anomalous-snapshot-status {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    width: max-content;
+    max-width: 70vw;
+    padding: 4px 10px;
+    color: var(--amb-text-muted);
+    background: var(--amb-bg-panel);
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 8px;
+    transform: translateX(-50%);
+    white-space: pre-line;
+}
+
+.anomalous-snapshot-status:empty { display: none; }
 .anomalous-snapshot-status.is-bad { color: #f87171; }

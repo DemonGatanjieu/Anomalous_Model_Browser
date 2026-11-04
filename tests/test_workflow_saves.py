@@ -128,6 +128,15 @@ class SavesTests(unittest.TestCase):
         self.assertIsNone(workflow_saves.read_group(KEY))
         self.assertFalse((self.root / "saves" / KEY).exists())
 
+    def test_the_save_after_a_removed_one_says_what_it_changes_now(self):
+        self.add()
+        middle = self.add()["saves"][1]
+        third = self.add()["saves"][2]
+        changes = [{"kind": "changed", "node": "n", "widget": "w", "before": 1, "after": 3}]
+        group = workflow_saves.remove_save(KEY, middle["id"], changes)
+        self.assertEqual(group["saves"][1]["id"], third["id"])
+        self.assertEqual(group["saves"][1]["changes"], changes)
+
     def test_a_save_stays_when_the_recycle_bin_says_no(self):
         save = self.add()["saves"][0]
         with mock.patch.object(workflow_saves, "move_to_trash", side_effect=workflow_saves.TrashUnavailable("no bin")):

@@ -3,9 +3,10 @@
  * api/workflow_saves.py, a group for each canvas: the workflow carries the group's key in its extra, so
  * they follow it through a rename, a reload and a picture dragged back. The right-click entry of a node
  * or the empty canvas, or the bar's +, keeps the canvas as it is now; a bar under the canvas shows the
- * open tab's saves and goes with the tab. It holds what is used while working on the canvas: a save's
- * number goes back to that state and Run runs them (snapshot_run.js). Their pictures and the rest are in
- * the Workflows page's Saves view (ui_saves_list.js), which comes here to change the canvas.
+ * open tab's saves and goes with the tab. It holds what is used while working on the canvas: the newest
+ * saves' numbers go back to those states and Run runs them all (snapshot_run.js); folded it is a handle on
+ * the canvas's bottom edge. Their pictures and the rest are in the Workflows page's Saves view
+ * (ui_saves_list.js), which comes here to change the canvas.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -23,11 +24,13 @@ import { showWorkbenchToast } from './ui_prompt_toast.js';
 const EXTRA_KEY = 'anomalous_saves'; // in a workflow's extra: the group of saves it belongs to
 const FOLDED_KEY = 'anomalous_saves_folded';
 const TOOLTIP_LINES = 8;
+const MARKS_SHOWN = 6; // on the bar, the newest; all of them are on the Saves page
 
 let group = null; // the open tab's saves: {key, title, path, saves: [{id, at, count, changes, pictures, running}]}
 let shownTab = ''; // the tab `group` is for
 let following = Promise.resolve(); // reading the open tab's saves, one tab after another
-let current = null; // the save the canvas was last sent back to
+let current = null; // the save the canvas stands at, while it is unchanged since
+let said = null; // what the bar is saying: {text, bad}
 let branched = false; // the tab was just opened from a save: an empty bar to start its own
 let folded = readFolded();
 let bar = null;
@@ -203,17 +206,24 @@ export async function openSave(item, save) {
     draw();
 }
 
-function status(text = '', bad = false) {
+const runsLeft = saves => saves.reduce((sum, save) => sum + save.running, 0);
+
+/** The line over the bar: what was said, else how many runs are left, else nothing. */
+function showStatus() {
     const line = bar?.querySelector('.anomalous-snapshot-status');
     if (!line) return;
-    line.textContent = text;
-    line.classList.toggle('is-bad', bad);
+    const left = runsLeft(group?.saves || []);
+    line.textContent = said?.text || (left ? t('savesRunsLeft', { count: left }) : '');
+    line.classList.toggle('is-bad', Boolean(said?.bad));
+}
+
+function status(text = '', bad = false) {
+    said = text ? { text, bad } : null;
+    showStatus();
 }
 
 async function run() {
-    if (!group?.saves.length) return;
-    const queued = await runSaves(group, group.saves, seedMode(), status);
-    if (queued) status(t('snapshotQueued', { count: queued }));
+    if (await runSaves(group, group.saves, seedMode(), status)) status();
 }
 
 /** What `save` changes from the one before. */
@@ -251,13 +261,13 @@ export function seedSwitch() {
 
 function chip(save, at) {
     const box = el('span', `anomalous-snapshot-mark${save.id === current ? ' is-current' : ''}`);
-    box.append(button('anomalous-snapshot-number', String(at + 1), () => void goBack(group.key, save), `${t('snapshotBack')}\n${saveWords(save, at)}`), runsBox(group.key, save));
+    box.append(button('anomalous-snapshot-number', String(at + 1), () => void goBack(group.key, save), `${t('snapshotBack')}\n${saveWords(save, at)}`), el('span', 'anomalous-snapshot-times', '×'), runsBox(group.key, save));
     return box;
 }
 
 function lookButton(saves) {
     const pictures = saves.reduce((sum, save) => sum + save.pictures.length, 0);
-    const label = `${t('snapshotLook')} ${pictures || ''}${saves.some(save => save.running) ? '…' : ''}`.trim();
+    const label = `${t('snapshotLook')} ${pictures || ''}${runsLeft(saves) ? '…' : ''}`.trim();
     return button('anomalous-snapshot-look', label, () => browser()?.showSaves(group.key), t('snapshotLookHint'));
 }
 
@@ -274,24 +284,26 @@ function draw(clear = true) {
         bar.id = 'anomalous-snapshot-bar';
         bar.setAttribute('role', 'region');
         bar.setAttribute('aria-label', t('snapshotTitle'));
-        document.body.append(bar);
     }
-    if (folded) return void bar.replaceChildren(button('anomalous-snapshot-unfold', t('snapshotFolded', { count: saves.length }), () => fold(false)));
-    const kept = bar.querySelector('.anomalous-snapshot-status');
-    const line = el('div', 'anomalous-snapshot-status');
-    if (kept && !clear) {
-        line.textContent = kept.textContent;
-        line.className = kept.className;
+    // Inside the canvas's panel: it centers on the canvas and leaves the panel under it, the logs, uncovered.
+    const home = document.querySelector('.graph-canvas-panel') || document.body;
+    if (bar.parentElement !== home) home.append(bar);
+    if (clear) said = null;
+    bar.classList.toggle('is-folded', folded);
+    if (folded) {
+        const label = `${t('snapshotFolded', { count: saves.length })}${runsLeft(saves) ? '…' : ''} ⌃`;
+        return void bar.replaceChildren(button('anomalous-snapshot-unfold', label, () => fold(false), t('snapshotUnfold')));
     }
     const row = el('div', 'anomalous-snapshot-row');
     const list = el('div', 'anomalous-snapshot-marks');
-    list.append(...saves.map(chip), button('anomalous-snapshot-add', '+', () => void addMark(), t('snapshotAdd')));
-    const go = button('anomalous-snapshot-run', t('snapshotRun', { count: runTotal(saves) }), () => void run());
-    go.disabled = !saves.length;
-    row.append(el('span', 'anomalous-snapshot-title', t('snapshotTitle')), list, seedSwitch());
-    if (saves.length) row.append(lookButton(saves));
-    row.append(go, button('anomalous-snapshot-close', '⌄', () => fold(true), t('snapshotFold')));
-    bar.replaceChildren(row, line);
+    const older = Math.max(0, saves.length - MARKS_SHOWN);
+    if (older) list.append(button('anomalous-snapshot-older', t('snapshotOlder', { count: older }), () => browser()?.showSaves(group.key), t('snapshotOlderHint')));
+    list.append(...saves.slice(older).map((save, at) => chip(save, older + at)), button('anomalous-snapshot-add', '+', () => void addMark(), t('snapshotAdd')));
+    row.append(el('span', 'anomalous-snapshot-title', t('snapshotTitle')), list);
+    if (saves.length) row.append(seedSwitch(), lookButton(saves), button('anomalous-snapshot-run', t('snapshotRun', { count: runTotal(saves) }), () => void run(), t('snapshotRunHint')));
+    row.append(button('anomalous-snapshot-close', '⌄', () => fold(true), t('snapshotFold')));
+    bar.replaceChildren(row, el('div', 'anomalous-snapshot-status'));
+    showStatus();
 }
 
 /** Starts following the open tab and this page's runs; `getBrowser` gives AMB's window. */
@@ -302,6 +314,12 @@ export function watchSaves(getBrowser) {
     });
     onSavesChange((key, found) => {
         if (key === group?.key || key === canvasKey()) showGroup(found);
+    });
+    // Any change, an undo too, leaves the save the canvas stood at. goBack and addMark say so after theirs.
+    api.addEventListener('graphChanged', () => {
+        if (!current) return;
+        current = null;
+        draw(false);
     });
     watchSeedMode(() => draw(false));
     watchRuns();

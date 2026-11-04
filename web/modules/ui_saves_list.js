@@ -6,6 +6,8 @@
  * the canvas is done by the bar under it (ui_snapshot_bar.js).
  */
 
+import { diffSnapshots, snapshotGraph } from './activity_diff.js';
+import { readDetached } from './detached_graph.js';
 import { translate as t } from './locales.js';
 import { keepImageAsRecipe } from './recipe_save.js';
 import { changeKind, runTotal } from './snapshot_plan.js';
@@ -13,34 +15,32 @@ import { runSaves, seedMode, watchSeedMode } from './snapshot_run.js';
 import { findGroup, listGroups, onSavesChange, readWorkflow, removeGroup, removeSave } from './snapshot_store.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { openPopupMenu } from './ui_popup_menu.js';
+import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { appendText, button } from './ui_recipe_detail_dom.js';
 import { closeSaveGallery, fillLines, image, openSaveGallery, pictureLine, thumbUrl } from './ui_saves_pictures.js';
 import { backTo, openSave, runsBox, saveWords, seedSwitch, shownKey, tabOfGroup } from './ui_snapshot_bar.js';
 
-const said = new Map(); // a group's key -> what its part last said: {text, bad}
+const refused = new Map(); // a group's key -> why its part's last try did not go
 
-/** What a part's line says: the last word, else how many of its runs are left. */
+/** A part's line, there only while something went wrong: nothing else moves its saves down. */
 function showLine(part) {
-    if (!part.line) return;
-    const word = said.get(part.item.key);
-    part.line.textContent = word?.text || (part.left ? t('savesRunsLeft', { count: part.left }) : '');
-    part.line.classList.toggle('is-bad', Boolean(word?.bad));
+    if (part.line) part.line.textContent = refused.get(part.item.key) || '';
 }
 
-function say(owner, key, text = '', bad = false) {
-    said.set(key, { text, bad });
+function refuse(owner, key, text = '') {
+    refused.set(key, text);
     showLine(owner.savesParts.get(key) || {});
 }
 
 function fail(owner, key, error) {
     console.warn('[AMB] Saves:', error);
-    say(owner, key, t('snapshotRefused', { why: String(error?.message || error).slice(0, 200) }), true);
+    refuse(owner, key, t('snapshotRefused', { why: String(error?.message || error).slice(0, 200) }));
 }
 
+/** How it goes shows on the saves themselves, as their runs are noted. */
 async function run(owner, group, saves, seeds) {
-    say(owner, group.key);
-    const queued = await runSaves(group, saves, seeds, (text, bad) => say(owner, group.key, text, bad));
-    if (queued) say(owner, group.key);
+    refuse(owner, group.key);
+    await runSaves(group, saves, seeds, (text, bad) => { if (bad) refuse(owner, group.key, text); });
 }
 
 /** A new workflow card from `save`, the newest picture it saved as its cover. */
@@ -48,7 +48,7 @@ async function keep(owner, key, save) {
     try {
         const cover = [...save.pictures].reverse().find(picture => picture.type === 'output') || null;
         const kept = await keepImageAsRecipe(cover, { workflow: await readWorkflow(key, save.id) });
-        say(owner, key, t(kept.existed ? 'snapshotKeptBefore' : 'snapshotKeptCard', { name: kept.name }));
+        showWorkbenchToast(t(kept.existed ? 'snapshotKeptBefore' : 'snapshotKeptCard', { name: kept.name }));
     } catch (error) {
         fail(owner, key, error);
     }
@@ -67,15 +67,24 @@ async function toCanvas(owner, key, change) {
 /** What the pictures of the save at `at` are called, where they are shown together. */
 const placeOf = (item, at) => ({ key: item.key, name: item.title || t('recipeUntitled'), number: at + 1 });
 
-function saveMenu(owner, anchor, item, save, at) {
+/** Removes the save at `at`; the one after it then says what it changes from the one before that. */
+async function remove(group, at) {
+    const { key, saves } = group;
+    const [before, after] = [saves[at - 1], saves[at + 1]];
+    const changes = before && after ? diffSnapshots(readDetached(await readWorkflow(key, before.id), snapshotGraph), readDetached(await readWorkflow(key, after.id), snapshotGraph)) : null;
+    await removeSave(key, saves[at].id, changes);
+}
+
+function saveMenu(owner, anchor, item, group, at) {
     const { key } = item;
+    const save = group.saves[at];
     openPopupMenu(anchor, [
         ...(save.pictures.length ? [{ label: t('savesPicturesAll', { count: save.pictures.length }), run: () => openSaveGallery(owner, placeOf(item, at), save) }] : []),
         ...(tabOfGroup(item) ? [{ label: t('snapshotGoBack'), run: () => void toCanvas(owner, key, () => backTo(item, save)) }] : []),
         { label: t('snapshotOpenTab'), run: () => void toCanvas(owner, key, () => openSave(item, save)) },
         { label: t('snapshotRemove'), danger: true, run: async () => {
             if (!await anomalousConfirm(t('snapshotRemoveConfirm', { number: at + 1 }), t('snapshotTitle'))) return;
-            await removeSave(key, save.id).catch(error => fail(owner, key, error));
+            await remove(group, at).catch(error => fail(owner, key, error));
         } },
     ]);
 }
@@ -88,7 +97,8 @@ function saveRow(owner, item, group, save, at) {
     appendText(top, 'span', String(at + 1), 'anomalous-saves-number');
     const when = new Date(save.at * 1000).toLocaleString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     const kind = at === 0 ? '' : ` · ${t(`snapshotKind_${changeKind(save.changes)}`)}`;
-    appendText(top, 'span', `${when}${kind}`, 'anomalous-saves-when');
+    const left = save.running ? ` · ${t('savesRunning', { count: save.running })}` : '';
+    appendText(top, 'span', `${when}${kind}${left}`, 'anomalous-saves-when');
     if (at > 0 && save.changes.length) appendText(info, 'div', saveWords(save, at), 'anomalous-saves-words').title = saveWords(save, at);
     const tools = appendText(info, 'div', '', 'anomalous-saves-tools');
     const go = button(tools, t('savesRunOne'), 'anomalous-wf-filter');
@@ -99,7 +109,7 @@ function saveRow(owner, item, group, save, at) {
     button(tools, t('snapshotKeepCard'), 'anomalous-wf-filter').onclick = () => void keep(owner, group.key, save);
     const more = button(tools, '⋯', 'anomalous-wf-icon-btn');
     more.title = t('notebookMore');
-    more.onclick = () => saveMenu(owner, more, item, save, at);
+    more.onclick = () => saveMenu(owner, more, item, group, at);
     pictureLine(owner, box, save, placeOf(item, at));
     return box;
 }
@@ -134,7 +144,6 @@ function drawPart(owner, part, group) {
     const head = document.createElement('div');
     head.className = 'anomalous-saves-head';
     head.append(foldButton(owner, part, Boolean(group)));
-    part.left = group?.saves.reduce((sum, save) => sum + save.running, 0) || 0;
     part.line = null;
     if (!group) return void box.replaceChildren(head);
     head.append(seedSwitch());
@@ -168,7 +177,7 @@ function setView(owner, on) {
         new ResizeObserver(() => fillLines(owner.savesList)).observe(owner.savesList);
     }
     owner.savesListOn = on;
-    owner.savesToggle.classList.toggle('is-on', on);
+    owner.savesToggle.textContent = t(on ? 'savesListBack' : 'savesListToggle');
     owner.recipeView.classList.toggle('is-saves', on);
     if (on && shownKey()) owner.savesOpen.add(shownKey());
 }
@@ -188,7 +197,7 @@ export async function refreshSaves(owner) {
     try {
         const groups = await listGroups();
         if (reading !== owner.savesReading) return;
-        said.clear();
+        refused.clear();
         owner.savesParts = new Map(groups.map(item => [item.key, { item, box: document.createElement('section') }]));
         const parts = [...owner.savesParts.values()];
         for (const part of parts) {

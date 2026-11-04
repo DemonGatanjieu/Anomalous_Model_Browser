@@ -45,7 +45,7 @@ export const setCount = (key, id, count) => send('update', { key, id, count }).t
 /** Says which runs came from save `id`, so their pictures can be found. */
 export const noteRuns = (key, id, promptIds) => send('ran', { key, id, prompt_ids: promptIds }).then(data => changed(key, data.group));
 
-/** To the Recycle Bin; the group as it stands then, null after its last save. */
-export const removeSave = (key, id) => send('remove', { key, id }).then(data => changed(key, data.group));
+/** To the Recycle Bin; the group as it stands then, null after its last save. `changes`: the next save's, from now on. */
+export const removeSave = (key, id, changes) => send('remove', { key, id, changes }).then(data => changed(key, data.group));
 
 export const removeGroup = key => send('remove_group', { key }).then(() => changed(key, null));
