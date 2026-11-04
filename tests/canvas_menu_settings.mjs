@@ -21,7 +21,7 @@ settings.placement = 'top';
 assert.equal(saveMenuSettings(settings, store), true);
 const back = menuSettings(store);
 assert.equal(back.placement, 'top');
-assert.equal(back.node.at(-2).id, 'saveCombo');
+assert.equal(back.node.at(-3).id, 'saveCombo');
 assert.equal(back.node.find(entry => entry.id === 'open').on, false);
 
 // Moving past an end changes nothing.
@@ -35,10 +35,9 @@ store.setItem('anomalous_canvas_menu', JSON.stringify({ placement: 'odd', node: 
 settings = menuSettings(store);
 assert.equal(settings.placement, 'submenu');
 assert.equal(settings.node.length, NODE_ENTRIES.length);
-assert.equal(settings.node[0].id, 'saveCombo');
-assert.equal(settings.node[1].id, 'open');
-assert.equal(settings.node[1].on, false);
-assert.equal(settings.node[2].id, 'replaceModel'); // right after "open", as by default
+assert.deepEqual(settings.node.slice(0, 4).map(entry => entry.id), ['saveCombo', 'snapshotMark', 'open', 'replaceModel'],
+    'a new entry right after the one it follows by default');
+assert.equal(settings.node[2].on, false);
 
 // Bad JSON, no storage, reset.
 store.setItem('anomalous_canvas_menu', '{');

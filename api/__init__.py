@@ -2,7 +2,7 @@ from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, quick_index, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
     local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, tts_version, backup,
-    network_check, model_heads, model_usage, usage_ledger, sidecar_layout, ai_tasks_routes,
+    network_check, model_heads, model_usage, usage_ledger, sidecar_layout, ai_tasks_routes, snapshot_routes,
 )
 from .scanner import *
 from .config import *
@@ -38,6 +38,7 @@ def setup_routes(app):
     if hasattr(app, 'middlewares') and local_guard.local_only_middleware not in app.middlewares:
         app.middlewares.append(local_guard.local_only_middleware)
     app.router.add_get('/anomalous/access', local_guard.api_access)
+    app.router.add_post('/anomalous/snapshot_check', snapshot_routes.api_snapshot_check)
     try:
         folder_types.upgrade_folder_defaults()
     except Exception as error:

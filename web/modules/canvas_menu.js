@@ -14,6 +14,7 @@ import { loraInsertionCapabilities } from './graph_splice.js';
 import { modelComboWidgets } from './ui_node_model_picker.js';
 import { hasComboNodes, menuNodes, saveSelectionAsCombo } from './ui_combo_structure.js';
 import { saveNodeParameters } from './node_parameter_sets.js';
+import { addMark } from './ui_snapshot_bar.js';
 import { anomalousPrompt } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openSettingsPage } from './ui_settings_page.js';
@@ -74,6 +75,7 @@ const NODE_ITEMS = {
             showWorkbenchToast(t('currentNodeSaveFailed'));
         }
     })] : [],
+    snapshotMark: node => [item(t('canvasMenuEntry_snapshotMark'), () => addMark(node))],
     saveCombo: (node, browser) => {
         const nodes = menuNodes(node);
         if (!hasComboNodes(nodes)) return [];

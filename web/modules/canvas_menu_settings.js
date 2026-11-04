@@ -19,6 +19,7 @@ export const NODE_ENTRIES = Object.freeze([
     { id: 'modelDetails', on: false },
     { id: 'saveParameters', on: false },
     { id: 'saveCombo', on: true },
+    { id: 'snapshotMark', on: true },
 ]);
 export const CANVAS_ENTRIES = Object.freeze([
     { id: 'quickSearch', on: true },
