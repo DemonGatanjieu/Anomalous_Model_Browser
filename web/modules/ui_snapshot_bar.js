@@ -1,26 +1,28 @@
 /**
- * The snapshot queue: save points of a whole workflow, run in order with Anomalous in charge of the
- * seeds (snapshot_plan.js). A node's right-click "Mark this state" keeps the canvas as it is now
- * (app.graph.serialize) and opens a bar under the canvas, where the user goes on changing anything:
- * a mark's number goes back to that state, each has its runs, and Run checks every mark with ComfyUI
- * first, so a broken one stops the queue before it starts. Marks run on a detached copy
- * (detached_graph.js): seeds are written to the copy's widgets and app.graphToPrompt compiles it, so the
- * canvas, its tabs and the seeds on it stay as they are while the user works on. Marks last for this
- * page; a state worth keeping is saved as a workflow card from the canvas.
+ * The saves bar: save points of a whole workflow (marks here, "saves" on screen), run in order with
+ * Anomalous in charge of the seeds (snapshot_plan.js). The right-click entry of a node or the empty
+ * canvas, or the bar's +, keeps the canvas as it is now (app.graph.serialize) and opens a bar under the
+ * canvas, where the user goes on changing anything: a mark's number goes back to that state, its arrow
+ * opens it on a new tab, each has its runs, and Run checks every mark with ComfyUI first, so a broken one
+ * stops the queue before it starts. Marks run on a detached copy (detached_graph.js): seeds are written to
+ * the copy's widgets and it is compiled on its own, so the canvas, its tabs and the seeds on it stay as
+ * they are while the user works on. Marks last for this page; a state worth keeping is saved as a
+ * workflow card from the canvas.
  */
 
 import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { changeLine, postCanvasActivity } from './activity_log.js';
 import { diffSnapshots, snapshotGraph } from './activity_diff.js';
-import { readDetached } from './detached_graph.js';
+import { recordCanvasStep } from './canvas_history.js';
+import { freshId, readDetached } from './detached_graph.js';
 import { translate as t } from './locales.js';
-import { MAX_RUNS, applySeeds, baseSeed, runCount, runTotal, seedWidgets, seedsOf } from './snapshot_plan.js';
+import { MAX_RUNS, applySeeds, baseSeed, compiled, runCount, runTotal, seedWidgets, seedsOf } from './snapshot_plan.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const TOOLTIP_LINES = 8;
-const marks = []; // {graph, snapshot, changes, node, count}
+const marks = []; // {graph, snapshot, changes, count}
 let mode = 'random';
 let current = null; // the mark the canvas was last sent back to
 let bar = null;
@@ -45,28 +47,39 @@ function button(className, label, run, title = '') {
 
 /** What `mark` changes from the one before it, for its tooltip. */
 function markWords(mark, at) {
-    if (at === 0) return t('snapshotFirst', { node: mark.node });
+    if (at === 0) return t('snapshotFirst');
     const lines = mark.changes.slice(0, TOOLTIP_LINES).map(changeLine);
     return lines.length ? lines.join('\n') : t('snapshotSame');
 }
 
-/** Keeps the canvas as it is now; `node` names where the user marked it. */
-export function addMark(node) {
+/** Keeps the canvas as it is now. */
+export function addMark() {
     const graph = canvasGraph();
     const snapshot = snapshotGraph(graph);
     const before = marks[marks.length - 1];
-    marks.push({ graph: JSON.parse(JSON.stringify(graph.serialize())), snapshot, changes: before ? diffSnapshots(before.snapshot, snapshot) : [],
-        node: node?.title || node?.type || '', count: 1 });
+    marks.push({ graph: JSON.parse(JSON.stringify(graph.serialize())), snapshot, changes: before ? diffSnapshots(before.snapshot, snapshot) : [], count: 1 });
     current = marks[marks.length - 1];
     draw();
     showWorkbenchToast(t('snapshotMarked', { number: marks.length }));
 }
 
-/** The canvas back at `mark`, on the same tab: one more change of that workflow, as Ctrl+Z makes. */
+/**
+ * The canvas back at `mark`, on the same tab, by ComfyUI's own undo step: what the canvas was goes on the
+ * undo list, so Ctrl+Z comes back to it, and the tab still compares with its file. loadGraphData alone
+ * would take `mark` for the tab's starting state and keep no step.
+ */
 async function goBack(mark) {
-    const workflow = app.extensionManager?.workflow?.activeWorkflow;
-    await app.loadGraphData(JSON.parse(JSON.stringify(mark.graph)), false, false, workflow, { showMissingNodesDialog: false, showMissingModelsDialog: false });
-    workflow?.changeTracker?.checkState?.();
+    const tracker = app.extensionManager.workflow.activeWorkflow.changeTracker;
+    recordCanvasStep(app);
+    await tracker.updateState([JSON.parse(JSON.stringify(mark.graph))], tracker.undoQueue);
+    tracker.redoQueue.length = 0;
+    current = mark;
+    draw();
+}
+
+/** `mark` on a tab of its own, as ComfyUI opens a workflow; the tab it leaves stays as it is. */
+async function openOnNewTab(mark) {
+    await app.loadGraphData({ ...JSON.parse(JSON.stringify(mark.graph)), id: freshId() });
     current = mark;
     draw();
 }
@@ -84,7 +97,7 @@ async function problems() {
     for (const [at, mark] of marks.entries()) {
         await readDetached(mark.graph, async (graph) => {
             if (mark.count > 1 && !seedWidgets(graph).length) found.push(t('snapshotProblem', { number: at + 1, line: t('snapshotNoSeed') }));
-            const { output } = await app.graphToPrompt(graph);
+            const { output } = await compiled(app, graph);
             const response = await fetch('/anomalous/snapshot_check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: output }) });
             const data = await response.json();
             for (const line of data.problems || []) found.push(t('snapshotProblem', { number: at + 1, line }));
@@ -101,7 +114,7 @@ async function submit() {
         await readDetached(mark.graph, async (graph) => {
             for (const seed of seedsOf(mark, mode, base)) {
                 applySeeds(graph, seed);
-                await api.queuePrompt(0, await app.graphToPrompt(graph));
+                await api.queuePrompt(0, await compiled(app, graph));
                 status(t('snapshotQueueing', { done: ++queued, total: runTotal(marks) }));
             }
         });
@@ -158,7 +171,7 @@ function chip(mark, at) {
         if (current === mark) current = null;
         draw();
     }, t('snapshotRemove'));
-    box.append(number, count, remove);
+    box.append(number, count, button('anomalous-snapshot-tab', '↗', () => void openOnNewTab(mark), t('snapshotNewTab')), remove);
     return box;
 }
 
@@ -179,7 +192,7 @@ function draw(clear = true) {
     }
     const row = el('div', 'anomalous-snapshot-row');
     const list = el('div', 'anomalous-snapshot-marks');
-    list.append(...marks.map(chip));
+    list.append(...marks.map(chip), button('anomalous-snapshot-add', '+', () => addMark(), t('snapshotAdd')));
     const seeds = el('div', 'anomalous-snapshot-modes');
     seeds.setAttribute('role', 'radiogroup');
     seeds.setAttribute('aria-label', t('snapshotSeeds'));

@@ -24,6 +24,7 @@ export const NODE_ENTRIES = Object.freeze([
 export const CANVAS_ENTRIES = Object.freeze([
     { id: 'quickSearch', on: true },
     { id: 'openPage', on: true },
+    { id: 'snapshotMark', on: true },
 ]);
 export const PLACEMENTS = Object.freeze(['submenu', 'top']);
 

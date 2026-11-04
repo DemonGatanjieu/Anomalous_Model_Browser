@@ -1,4 +1,4 @@
-/* The snapshot queue's bar under the canvas (ui_snapshot_bar.js). */
+/* The saves bar under the canvas (ui_snapshot_bar.js). */
 .anomalous-snapshot-bar {
     position: fixed;
     left: 50%;
@@ -31,6 +31,8 @@
 .anomalous-snapshot-mark.is-current { border-color: var(--amb-accent); }
 
 .anomalous-snapshot-number,
+.anomalous-snapshot-tab,
+.anomalous-snapshot-add,
 .anomalous-snapshot-remove,
 .anomalous-snapshot-close,
 .anomalous-snapshot-mode,
@@ -45,10 +47,14 @@
     font: inherit;
 }
 
-.anomalous-snapshot-number { font-weight: 600; }
+.anomalous-snapshot-number,
+.anomalous-snapshot-add { font-weight: 600; }
+.anomalous-snapshot-tab,
 .anomalous-snapshot-remove,
 .anomalous-snapshot-close { padding: 0 5px; color: var(--amb-text-muted); }
 .anomalous-snapshot-number:hover,
+.anomalous-snapshot-tab:hover,
+.anomalous-snapshot-add:hover,
 .anomalous-snapshot-remove:hover,
 .anomalous-snapshot-close:hover,
 .anomalous-snapshot-mode:hover { background: var(--amb-bg-card-hover); }

@@ -220,10 +220,11 @@ covered by the `styles.css` manifest.
   shows the routes this ComfyUI can build for them, a saved card using both first, its answer says what to call, and
   `add_nodes(route=…)` builds one from the ways on a new tab; `get_toolbox` lists each picked model's cards as its examples.
   An AI placing nodes itself is a new route (`ai_gates.route_rule`): one reminder a task, or the user's OK.
-- The snapshot queue. `web/modules/ui_snapshot_bar.js` keeps whole-workflow marks (a node's menu entry in `canvas_menu.js`,
-  the bar under the canvas, going back on the same tab) and runs them on detached copies (`detached_graph.js`,
-  `app.graphToPrompt`, `api.queuePrompt`), so the canvas never changes; `web/modules/snapshot_plan.js` holds the rules
-  (which widgets are seeds, what each run gets; `tests/snapshot_plan.mjs`); `api/snapshot_routes.py` checks each mark with
+- Saves (the snapshot queue). `web/modules/ui_snapshot_bar.js` keeps whole-workflow marks (a node's and the empty canvas's
+  menu entry in `canvas_menu.js`, the bar under the canvas; going back is one of ComfyUI's undo steps on the same tab, a
+  new tab is `loadGraphData` as ComfyUI opens a file) and runs them on detached copies (`detached_graph.js`,
+  `api.queuePrompt`), so the canvas never changes; `web/modules/snapshot_plan.js` holds the rules (which widgets are seeds,
+  what each run gets, compiling past a plugin that drops the graph; `tests/snapshot_plan.mjs`); `api/snapshot_routes.py` checks each mark with
   ComfyUI's `validate_prompt` before anything is queued. A block's "variants"
   rebuild it for the canvas model's family (`reference_blocks.build`: on Anima an LLLite model
   patch instead of a ControlNet), and an "optional" node that only improves it (KJNodes'

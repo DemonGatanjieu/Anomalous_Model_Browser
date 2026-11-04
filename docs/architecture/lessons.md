@@ -147,3 +147,13 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 **以后怎么做**
 - 底层模块（看图、卡片、纯函数）只从同样底层的模块取工具函数，不从“页面”模块（下载、设置、浏览器主对象）取，哪怕只是一个小函数；需要就挪到没有导入的小文件里（`file_size.js`）。
 - 改了导入关系，在真的 ComfyUI 页面上确认 `window.anomalousBrowserInstance` 存在、控制台没有 `before initialization`，再提交。
+
+## 2026-11-04 · 存档跑出来全是画布上的内容
+
+**现象**：两个存档跑 3 + 1 次，只出了一轮图。四次提交一模一样，第二个存档的改动和新种子都没进去，后三次全走缓存；运行前的检查查的也是画布。
+
+**根因**：ComfyUI-Manager 把 `app.graphToPrompt` 包了一层，调用原函数时不带参数，传进去的离屏图被丢掉，ComfyUI 就用默认的画布。测试环境没装 Manager，所以当时没测出来。
+
+**以后怎么做**
+- 往 ComfyUI 的公共方法传参数前，先想到别的插件可能包过它；能从结果核对的就核对（`snapshot_plan.compiled` 看返回的 `workflow.id`）。
+- 依赖 `app`、`api` 上这类方法的功能，验证时要带上 Manager 这样的常见包装；测试环境没有，就在页面上照它的写法包一层。

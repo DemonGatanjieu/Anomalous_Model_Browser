@@ -1,6 +1,6 @@
 /**
- * The snapshot queue's rules (ui_snapshot_bar.js draws it): how many pictures the marks make and which
- * seed each run gets. A seed is any number widget with ComfyUI's control_after_generate beside it, a
+ * The saves bar's rules (ui_snapshot_bar.js draws it): how many runs the marks make, which seed each
+ * run gets and how a mark is compiled. A seed is any number widget with ComfyUI's control_after_generate beside it, a
  * third party's as well, in subgraphs too. "random": every run a new seed in each. "locked": one seed
  * per round, the same in every mark, so marks compare from the same noise; a fixed seed alone would
  * send the same prompt again, and ComfyUI answers that from its cache with no new picture. Pure.
@@ -42,6 +42,16 @@ export function applySeeds(graph, seed = null, random = Math.random) {
 
 /** A seed to start a locked queue from, leaving room for its rounds. */
 export const baseSeed = (random = Math.random) => Math.floor(random() * (SEED_TOP - MAX_COUNT));
+
+/**
+ * What ComfyUI would queue for `graph`, a graph off the canvas. A plugin may put its own
+ * app.graphToPrompt in front of ComfyUI's and leave the graph out (ComfyUI-Manager does), and ComfyUI
+ * then compiles the canvas: a result that is not `graph`'s is made again by ComfyUI's own method, past them.
+ */
+export async function compiled(app, graph) {
+    const made = await app.graphToPrompt(graph);
+    return made.workflow?.id === graph.id ? made : Object.getPrototypeOf(app).graphToPrompt.call(app, graph);
+}
 
 /** The seeds of `mark`'s runs in order: null for a new one each time. */
 export const seedsOf = (mark, mode, base) => Array.from({ length: mark.count }, (_, round) => (mode === 'locked' ? base + round : null));

@@ -1,6 +1,6 @@
-// The snapshot queue's rules (web/modules/snapshot_plan.js): which widgets are seeds, what each run gets.
+// The saves bar's rules (web/modules/snapshot_plan.js): which widgets are seeds, what each run gets, what is compiled.
 import assert from 'node:assert/strict';
-import { MAX_COUNT, applySeeds, baseSeed, runCount, runTotal, seedWidgets, seedsOf } from '../web/modules/snapshot_plan.js';
+import { MAX_COUNT, applySeeds, baseSeed, compiled, runCount, runTotal, seedWidgets, seedsOf } from '../web/modules/snapshot_plan.js';
 
 const control = { name: 'control_after_generate', value: 'fixed' };
 const seed = (name, value = 7, options = {}) => ({ name, value, options, linkedWidgets: [control] });
@@ -34,5 +34,21 @@ assert.equal(runCount('0'), 1);
 assert.equal(runCount('nope'), 1);
 assert.equal(runCount(999), MAX_COUNT);
 assert.ok(baseSeed(() => 0.999999999) + MAX_COUNT <= 1125899906842624);
+
+class App {
+    rootGraph = { id: 'canvas' };
+    async graphToPrompt(graph = this.rootGraph) {
+        return { workflow: { id: graph.id }, output: graph.id };
+    }
+}
+const copy = { id: 'copy' };
+assert.equal((await compiled(new App(), copy)).output, 'copy');
+const wrapped = new App();
+const own = wrapped.graphToPrompt;
+wrapped.graphToPrompt = async function () { // ComfyUI-Manager's components-manager.js
+    return await own.call(wrapped);
+};
+assert.equal((await wrapped.graphToPrompt(copy)).output, 'canvas');
+assert.equal((await compiled(wrapped, copy)).output, 'copy', 'a plugin that leaves the graph out must not send the canvas instead');
 
 console.log('snapshot_plan ok');

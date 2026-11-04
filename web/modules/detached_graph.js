@@ -9,7 +9,7 @@
  */
 
 /** A random version-4 UUID; `crypto.randomUUID` exists only on https or this computer. */
-function freshId() {
+export function freshId() {
     if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
     const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
     bytes[6] = (bytes[6] & 0x0f) | 0x40;

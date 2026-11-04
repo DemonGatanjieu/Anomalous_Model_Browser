@@ -4,7 +4,8 @@
  * (canvas_menu_settings.js). A node's menu offers what Current node does for it — open it in
  * AMB, change its model by picture, insert a LoRA before / after, its saved values, the
  * model's pictures and details, save its values or the picked nodes as a combo — each only
- * where it applies; the empty canvas's menu opens the quick search and AMB's pages. `browser()` gives the browser,
+ * where it applies; the empty canvas's menu opens the quick search and AMB's pages. Both keep a save of the
+ * workflow (ui_snapshot_bar.js). `browser()` gives the browser,
  * made on first use.
  */
 
@@ -22,6 +23,7 @@ import { RAIL_PAGES } from './ui_shell_rail.js';
 import { openQuickSearch } from './ui_quick_search.js';
 
 const item = (content, run) => ({ content, callback: () => void run() });
+const snapshotMark = () => [item(t('canvasMenuEntry_snapshotMark'), addMark)];
 
 /** The widgets naming a model file that is set (not empty, not "None"). */
 const setModels = node => modelComboWidgets(node).filter(widget => typeof widget.value === 'string' && widget.value && widget.value !== 'None');
@@ -75,7 +77,7 @@ const NODE_ITEMS = {
             showWorkbenchToast(t('currentNodeSaveFailed'));
         }
     })] : [],
-    snapshotMark: node => [item(t('canvasMenuEntry_snapshotMark'), () => addMark(node))],
+    snapshotMark,
     saveCombo: (node, browser) => {
         const nodes = menuNodes(node);
         if (!hasComboNodes(nodes)) return [];
@@ -95,6 +97,7 @@ const CANVAS_ITEMS = {
         const pages = RAIL_PAGES.map(({ page, labelKey }) => item(t(labelKey), () => browser()?.show({ page })));
         return placement === 'top' ? [{ content: t('canvasMenuOpenPage'), has_submenu: true, submenu: { options: pages } }] : pages;
     },
+    snapshotMark,
 };
 
 /** The items of `list` that are on and apply, built by `builders`; a broken one is left out. */
