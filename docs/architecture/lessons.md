@@ -123,3 +123,13 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 **以后怎么做**
 - `node tools/check_structure.mjs` 现在会拒绝 `:has()` 里出现 `[style…]`，报出文件和行号。
 - 同一个坑第二次出现，就把它做成检查，不再只补一段经验。
+
+## 2026-11-05 · 偶尔打开 ComfyUI，AMB 整个不见了
+
+**现象**：没有悬浮按钮，没有窗口，控制台里是几十条 `Cannot access 'shared' before initialization`；刷新一下又好了。大约十几次加载碰到一次。
+
+**原因**：ComfyUI 把 `web/` 下每个 .js 都当成扩展，同时各自导入一遍，谁先跑完全看网络。AMB 的模块有一个很大的循环导入，`ui_ai_workbench.js` 加载时就要写 `ui_ai_results.js` 里的 `const shared`。从 `main.js` 进来顺序是对的；碰巧先从 `ui_ai_results.js` 或 `ui_ai_step_body.js` 进来，`shared` 还没初始化，这个模块就报错，而且错误会被缓存，整个 AMB 跟着起不来。
+
+**做法**：`shared` 搬进不导入任何东西的 `ui_ai_shared.js`。`tests/module_cycles.mjs` 查“加载时就读同一个循环里的 const”，这种写法以后过不了测试。
+
+**以后**：会在加载时用到的值，放在循环外面的模块里。别只从 `main.js` 想加载顺序。要逐个模块验证，在浏览器里给每个模块开一个 iframe 单独 import。

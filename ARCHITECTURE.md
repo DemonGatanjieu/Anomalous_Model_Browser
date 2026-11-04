@@ -363,7 +363,7 @@ covered by the `styles.css` manifest.
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
   decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
   one to link. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
-  step made and where it leads. `ui_ai_outputs.js` is what the whole task made: a line over the
+  step made and where it leads, `ui_ai_shared.js` what the page's parts share. `ui_ai_outputs.js` is what the whole task made: a line over the
   timeline counting it, and the side column's Results view (`ai_task_view.taskOutputs`: the
   pictures by the step that brought them, the workflow, the combos, the newest picture's prompts,
   the models used and download requests — `ai_tasks.results_of` names the downloads — and the sounds),

@@ -22,8 +22,7 @@ import { canvasChanges } from './ui_canvas_changes.js';
 import { estimateBox, runProgress } from './ui_ai_run_live.js';
 import { runMapBox } from './ui_ai_run_map.js';
 import { iconButton } from './ui_ai_icons.js';
-
-export const shared = { owner: null, taskId: null, entries: new Map(), player: null, openMap: null }; // openMap: ui_ai_workbench.js
+import { shared } from './ui_ai_shared.js';
 
 /** A run step's progress with its stop button (while the task shown is the run's). */
 const liveRun = progress => runProgress(progress, shared.taskId ? { task: shared.taskId, step: progress.step } : null);
