@@ -24,6 +24,9 @@ export const listGroups = () => read('').then(data => data.groups);
 /** `save` of group `key`'s whole workflow. */
 export const readWorkflow = (key, id) => read('/workflow', { key, id }).then(data => data.workflow);
 
+/** The whole-workflow cards with save `id`'s structure: [{filename, name, tags, notes}]. */
+export const cardsLike = (key, id) => read('/cards', { key, id }).then(data => data.cards);
+
 /** Keeps a save ({key, workflow, title, path, changes}); the group as it stands then. */
 export const addSave = save => send('add', save).then(data => data.group);
 

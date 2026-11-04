@@ -7,6 +7,7 @@ import { openPopupMenu } from './ui_popup_menu.js';
 import { moveWorkflowMaterials, workflowMaterialCount } from './recipe_save.js';
 import { openShareDialog } from './ui_share.js';
 import { fetchParameterSetSignatures, showParameterSetCount } from './ui_param_set_keys.js';
+import { refreshSaves, savesToggle } from './ui_saves_list.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -113,6 +114,8 @@ function buildWorkflowBar(owner) {
         showViewButton();
     };
     showViewButton();
+
+    bar.append(savesToggle(owner));
 
     // Share and import (ui_share.js): share codes, workflow files, images, backups.
     const share = appendText(bar, 'button', '⇅', 'anomalous-wf-icon-btn');
@@ -352,4 +355,5 @@ export async function refreshRecipes() {
     }
     this.renderRecipeList(this.recipeRecords);
     void resolveCatalogRecipeReadiness(this, this.recipeRecords);
+    void refreshSaves(this);
 }

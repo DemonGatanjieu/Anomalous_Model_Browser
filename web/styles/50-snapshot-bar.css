@@ -1,4 +1,4 @@
-/* The saves bar under the canvas (ui_snapshot_bar.js). */
+/* The saves bar under the canvas (ui_snapshot_bar.js) and the Workflows page's Saves view (ui_saves_list.js). */
 .anomalous-snapshot-bar {
     position: fixed;
     left: 50%;
@@ -118,6 +118,17 @@
 
 .anomalous-snapshot-action:hover { background: var(--amb-bg-card-hover); }
 .anomalous-snapshot-action.is-danger { color: #f87171; }
+
+.anomalous-wf-saves-toggle.is-on { color: var(--amb-text-main); border-color: var(--amb-accent); }
+.anomalous-recipe-body.is-saves .anomalous-wf-bar > :not(.anomalous-wf-saves-toggle),
+.anomalous-recipe-body.is-saves .anomalous-recipe-move-strip,
+.anomalous-recipe-body.is-saves .anomalous-wf-list:not(.anomalous-saves-list),
+.anomalous-recipe-body:not(.is-saves) .anomalous-saves-list { display: none; }
+
+.anomalous-saves-card { cursor: pointer; }
+.anomalous-saves-card:active { cursor: pointer; }
+.anomalous-saves-card .anomalous-wf-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.anomalous-saves-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
 .anomalous-snapshot-status { max-width: 70vw; color: var(--amb-text-muted); white-space: pre-line; }
 .anomalous-snapshot-status:not(:empty) { margin-top: 6px; }

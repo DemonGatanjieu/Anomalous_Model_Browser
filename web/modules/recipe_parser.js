@@ -486,8 +486,15 @@ export function extractRecipeMetadata(graph) {
  * Capture the graph once at save time. The serialized workflow is the source
  * of truth; metadata is only a bounded presentation layer.
  */
+/** `workflow` without the key of the saves it belongs to (ui_snapshot_bar.js): a card opened later is a canvas of its own. */
+function withoutSaves(workflow) {
+    if (!workflow?.extra?.anomalous_saves) return workflow;
+    const { anomalous_saves: key, ...extra } = workflow.extra;
+    return { ...workflow, extra };
+}
+
 export function captureRecipeDraft(graph) {
-    const workflow = graph?.serialize?.();
+    const workflow = withoutSaves(graph?.serialize?.());
     const nodes = Array.isArray(workflow?.nodes) ? workflow.nodes : [];
     const links = Array.isArray(workflow?.links)
         ? workflow.links

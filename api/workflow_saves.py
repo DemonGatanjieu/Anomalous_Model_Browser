@@ -19,6 +19,7 @@ from aiohttp import web
 
 from .path_utils import atomic_write_json, resolve_within
 from .recipe_constants import MAX_RECIPE_BYTES
+from .recipe_store import _read_recipe, get_recipes_dir
 from .trash import TrashUnavailable, move_to_trash, trash_failure
 
 INDEX = "index.json"
@@ -224,6 +225,36 @@ def remove_group(key):
         move_to_trash(_folder(key))
 
 
+def _structure(workflow):
+    """What makes two workflows the same but for their values: their nodes and how they are wired."""
+    types = {node.get("id"): str(node.get("type")) for node in workflow.get("nodes") or [] if isinstance(node, dict)}
+    wired = []
+    for link in workflow.get("links") or []:
+        if isinstance(link, dict):
+            link = [None, link.get("origin_id"), link.get("origin_slot"), link.get("target_id"), link.get("target_slot")]
+        if isinstance(link, list) and len(link) >= 5:
+            wired.append(f"{types.get(link[1])}:{link[2]}>{types.get(link[3])}:{link[4]}")
+    return sorted(types.values()), sorted(wired)
+
+
+def cards_like(key, save_id):
+    """The whole-workflow cards a save could be a preset of: those with its structure."""
+    wanted = _structure(read_workflow(key, save_id))
+    cards = []
+    with os.scandir(get_recipes_dir()) as entries:
+        for entry in entries:
+            if not entry.name.endswith(".json") or entry.stat().st_size > MAX_RECIPE_BYTES:
+                continue
+            try:
+                data = _read_recipe(entry.path)
+            except (OSError, ValueError):
+                continue
+            if isinstance(data, dict) and data.get("workflow_scope") != "partial" and isinstance(data.get("workflow"), dict) \
+                    and _structure(data["workflow"]) == wanted:
+                cards.append({"filename": entry.name, "name": data.get("name") or entry.name[:-5], "tags": data.get("tags") or [], "notes": data.get("notes") or ""})
+    return cards
+
+
 def _changes(value):
     """What the page says changed from the save before, short strings only."""
     if not isinstance(value, list):
@@ -266,6 +297,12 @@ async def api_workflow(request):
     """GET /anomalous/saves/workflow?key&id - one save's whole workflow."""
     query = request.query
     return await _answer(lambda: {"workflow": read_workflow(query.get("key"), query.get("id"))})
+
+
+async def api_cards(request):
+    """GET /anomalous/saves/cards?key&id - the cards a save could be a preset of."""
+    query = request.query
+    return await _answer(lambda: {"cards": cards_like(query.get("key"), query.get("id"))})
 
 
 async def api_add(request):

@@ -61,6 +61,12 @@ const graph = {
 };
 
 const draft = captureRecipeDraft(graph);
+
+// A card keeps no tie to the saves of the canvas it came from; the canvas keeps its own.
+const tagged = { serialize: () => ({ nodes: [], links: [], extra: tag }), _nodes: [], _groups: [] };
+const tag = { anomalous_saves: 'key', ds: { scale: 1 } };
+assert.deepEqual(captureRecipeDraft(tagged).workflow.extra, { ds: { scale: 1 } });
+assert.equal(tag.anomalous_saves, 'key');
 assert.equal(graph.serializeCalls, 1, 'recipe capture serializes exactly once');
 assert.deepEqual(draft.workflow, workflow, 'draft keeps the authoritative serialized workflow');
 assert.equal(draft.stats.nodeCount, 3);

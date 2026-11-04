@@ -1,5 +1,6 @@
 """Saves of a workflow (api/workflow_saves.py): they last, a group is found by its key or its file, its
 runs' pictures come from ComfyUI's history, and nothing goes except by the user, to the Recycle Bin."""
+import json
 import os
 import sys
 import tempfile
@@ -152,6 +153,25 @@ class SavesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             workflow_saves.read_workflow(KEY, "../index")
         self.assertFalse(workflow_saves._there({"type": "output", "subfolder": "..", "filename": "secret.png"}))
+
+    def test_a_preset_goes_to_cards_of_the_same_structure(self):
+        recipes = self.root / "recipes"
+        recipes.mkdir()
+        nodes = [{"id": 1, "type": "KSampler", "widgets_values": [1]}, {"id": 2, "type": "SaveImage"}]
+        linked = {"nodes": nodes, "links": [[1, 1, 0, 2, 0, "IMAGE"]]}
+        other_values = {"nodes": [{"id": 7, "type": "SaveImage"}, {"id": 8, "type": "KSampler", "widgets_values": [2]}], "links": [{"id": 3, "origin_id": 8, "origin_slot": 0, "target_id": 7, "target_slot": 0}]}
+        for name, data in {
+            "same.json": {"name": "Same", "tags": ["a"], "workflow": other_values},
+            "unwired.json": {"name": "Unwired", "workflow": {"nodes": nodes, "links": []}},
+            "more.json": {"name": "More", "workflow": {"nodes": nodes + [{"id": 3, "type": "VAEDecode"}], "links": linked["links"]}},
+            "part.json": {"name": "Part", "workflow_scope": "partial", "workflow": linked},
+        }.items():
+            (recipes / name).write_text(json.dumps(data), encoding="utf-8")
+        (recipes / "broken.json").write_text("{", encoding="utf-8")
+        save = workflow_saves.add_save(KEY, linked, "tab", "", [])["saves"][0]
+        with mock.patch.object(workflow_saves, "get_recipes_dir", return_value=str(recipes)):
+            cards = workflow_saves.cards_like(KEY, save["id"])
+        self.assertEqual(cards, [{"filename": "same.json", "name": "Same", "tags": ["a"], "notes": ""}])
 
     def test_runs_of_a_save_stay_in_range(self):
         save = self.add()["saves"][0]

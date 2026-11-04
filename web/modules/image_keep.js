@@ -39,9 +39,9 @@ export async function loadKeptImages(signal) {
 
 const fileStem = name => String(name || '').split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
 
-/** What the image's workflow uses (extractRecipeMetadata) and a name: its prompt's first tags, else the file's. */
-async function readImage(sourceImage) {
-    const info = await jsonResponse(await post('/anomalous/inspect_image_material', { source_image: sourceImage }), 'read image workflow');
+/** What the image's workflow uses (extractRecipeMetadata) and a name: its prompt's first tags, else the file's. `workflow` when the caller has it. */
+async function readImage(sourceImage, workflow = null) {
+    const info = workflow ? { workflow } : await jsonResponse(await post('/anomalous/inspect_image_material', { source_image: sourceImage }), 'read image workflow');
     const metadata = readDetached(info.workflow, extractRecipeMetadata);
     const name = promptTitle(metadata.promptPositive[0]) || fileStem(sourceImage?.filename);
     return { name, metadata, workflow: info.workflow };
@@ -103,11 +103,11 @@ async function saveCombo(data, wanted, combos) {
  * without a sampler to read from gives a combo of its main model, LoRAs and positive prompt.
  * Returns { filename, name, existed, missing }.
  */
-export async function keepImageAsCombo(sourceImage, { name = '' } = {}) {
+export async function keepImageAsCombo(sourceImage, { name = '', workflow = null } = {}) {
     const combos = await listCombos();
     const kept = combos.find(note => sameImage(note.data?.source_image, sourceImage));
     if (kept) return { filename: kept.filename, name: kept.name, existed: true, missing: [] };
-    const image = await readImage(sourceImage);
+    const image = await readImage(sourceImage, workflow);
     const prompt = image.metadata.promptPositive.join('\n');
     // Loaded only here: it reaches the canvas modules (no DOM in this file, and tests import it).
     const { keepGraphNodes } = await import('./image_keep_nodes.js');

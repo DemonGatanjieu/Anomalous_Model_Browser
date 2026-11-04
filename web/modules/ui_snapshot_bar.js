@@ -4,8 +4,8 @@
  * workflow carries the group's key in its extra, so they follow it through a rename, a reload and a
  * picture dragged back. The right-click entry of a node or the empty canvas, or the bar's +, keeps the
  * canvas as it is now; a bar under the canvas shows the open tab's saves and goes with the tab. A save's
- * number goes back to that state, its pictures button opens what it made and what can be done with it,
- * and Run checks every save with ComfyUI first, so a broken one stops the queue before it starts. Saves
+ * number goes back to that state, its pictures button opens what it made and what can be done with it
+ * (snapshot_keep.js makes cards, presets and combos of it), and Run checks every save with ComfyUI first, so a broken one stops the queue before it starts. Saves
  * run on a detached copy (detached_graph.js): seeds are written to the copy's widgets and it is compiled
  * on its own, so the canvas, its tabs and the seeds on it stay as they are while the user works on.
  */
@@ -17,10 +17,12 @@ import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { freshId, readDetached } from './detached_graph.js';
 import { translate as t } from './locales.js';
+import { keepAsCard, keepAsCombo, keepAsPreset } from './snapshot_keep.js';
 import { MAX_RUNS, applySeeds, baseSeed, changeKind, compiled, runCount, runTotal, seedWidgets, seedsOf } from './snapshot_plan.js';
-import { addSave, findGroup, noteRuns, readWorkflow, removeSave, setCount } from './snapshot_store.js';
+import { addSave, cardsLike, findGroup, noteRuns, readWorkflow, removeSave, setCount } from './snapshot_store.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { showGalleryViewer } from './ui_gallery_viewer.js';
+import { openPopupMenu } from './ui_popup_menu.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const EXTRA_KEY = 'anomalous_saves'; // in a workflow's extra: the group of saves it belongs to
@@ -128,26 +130,52 @@ async function workflowOf(key, save) {
     return workflows.get(save.id);
 }
 
-/** Keeps the canvas as it is now. */
-export async function addMark() {
+/** Keeps `workflow` as the next save of the open canvas; the canvas stays as it is. */
+async function keepSave(workflow) {
     try {
         if (!canvasKey()) tagCanvas(freshId());
         const key = canvasKey();
         const tab = activeTab();
-        const graph = canvasGraph();
+        const kept = { ...workflow, extra: { ...workflow.extra, [EXTRA_KEY]: key } };
         const last = group?.key === key ? group.saves[group.saves.length - 1] : null;
-        const changes = last ? diffSnapshots(readDetached(await workflowOf(key, last), snapshotGraph), snapshotGraph(graph)) : [];
-        const kept = await addSave({ key, workflow: copied(graph.serialize()), title: String(tab?.filename || ''), path: tabPath(tab), changes });
+        const changes = last ? diffSnapshots(readDetached(await workflowOf(key, last), snapshotGraph), readDetached(kept, snapshotGraph)) : [];
+        const stands = await addSave({ key, workflow: kept, title: String(tab?.filename || ''), path: tabPath(tab), changes });
         shownTab = `${tab?.path}\n${key}`;
         branched = false;
-        showGroup(kept);
-        current = kept.saves[kept.saves.length - 1].id;
+        showGroup(stands);
+        current = stands.saves[stands.saves.length - 1].id;
         draw();
-        showWorkbenchToast(t('snapshotMarked', { number: kept.saves.length }));
+        showWorkbenchToast(t('snapshotMarked', { number: stands.saves.length }));
     } catch (error) {
         console.warn('[AMB] Saves:', error);
         showWorkbenchToast(t('snapshotSaveFailed', { why: String(error?.message || error).slice(0, 200) }));
     }
+}
+
+/** Keeps the canvas as it is now. */
+export const addMark = () => keepSave(copied(canvasGraph().serialize()));
+
+/** Keeps `workflow` (a preset of a card) among the open canvas's saves. */
+export const addWorkflowSave = workflow => keepSave(copied(workflow));
+
+/** The open tab with `item`'s group of saves on it, or null. */
+export function tabOfGroup(item) {
+    const tabs = app.extensionManager?.workflow?.openWorkflows || [];
+    return tabs.find(tab => tab.activeState?.extra?.[EXTRA_KEY] === item.key || (item.path && tab.path === item.path)) || null;
+}
+
+/** Shows the canvas of `item`'s group: its tab, or with none its newest save on a new tab, where the group goes on. */
+export async function openGroup(item) {
+    const tab = tabOfGroup(item);
+    if (tab) return void document.querySelectorAll('.workflow-tabs > button')[app.extensionManager.workflow.openWorkflows.indexOf(tab)]?.click();
+    const { saves } = await findGroup(item.key, '');
+    await app.loadGraphData({ ...copied(await readWorkflow(item.key, saves[saves.length - 1].id)), id: freshId() });
+    await followTab();
+}
+
+/** Group `key` was removed elsewhere. */
+export function forgetGroup(key) {
+    if (group?.key === key) showGroup(null);
 }
 
 /**
@@ -186,6 +214,28 @@ async function remove(save, at) {
     } catch (error) {
         status(String(error?.message || error).slice(0, 300), true);
     }
+}
+
+/** Makes something else of `save`; `made(workflow)` says on the status line what it became. */
+async function make(save, made) {
+    try {
+        status(await made(copied(await workflowOf(group.key, save))));
+    } catch (error) {
+        console.warn('[AMB] Saves:', error);
+        status(t('snapshotRefused', { why: String(error?.message || error).slice(0, 200) }), true);
+    }
+}
+
+const keptWords = (kept, key) => t(kept.existed ? 'snapshotKeptBefore' : key, { name: kept.name });
+
+/** The cards `save` could be a preset of, to choose from under `anchor`. */
+async function choosePreset(anchor, save) {
+    const cards = await cardsLike(group.key, save.id).catch(() => []);
+    if (!cards.length) return void status(t('snapshotNoSameCard'), true);
+    openPopupMenu(anchor, cards.map(card => ({
+        label: card.name,
+        run: () => void make(save, async workflow => t('snapshotKeptPreset', { card: card.name, name: await keepAsPreset(card, workflow) })),
+    })));
 }
 
 function status(text = '', bad = false) {
@@ -326,6 +376,9 @@ function details(save, at) {
     actions.append(
         button('anomalous-snapshot-action', t('snapshotGoBack'), () => void goBack(save)),
         button('anomalous-snapshot-action', t('snapshotOpenTab'), () => void openOnNewTab(save)),
+        button('anomalous-snapshot-action', t('snapshotKeepCard'), () => void make(save, async workflow => keptWords(await keepAsCard(save, workflow), 'snapshotKeptCard'))),
+        button('anomalous-snapshot-action', t('snapshotKeepPreset'), event => void choosePreset(event.currentTarget, save)),
+        button('anomalous-snapshot-action', t('snapshotKeepCombo'), () => void make(save, async workflow => keptWords(await keepAsCombo(save, workflow), 'snapshotKeptCombo'))),
         button('anomalous-snapshot-action is-danger', t('snapshotRemove'), () => void remove(save, at)),
     );
     box.append(actions);

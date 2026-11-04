@@ -42,6 +42,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/saves', workflow_saves.api_list)
     app.router.add_get('/anomalous/saves/group', workflow_saves.api_group)
     app.router.add_get('/anomalous/saves/workflow', workflow_saves.api_workflow)
+    app.router.add_get('/anomalous/saves/cards', workflow_saves.api_cards)
     app.router.add_post('/anomalous/saves/add', workflow_saves.api_add)
     app.router.add_post('/anomalous/saves/update', workflow_saves.api_update)
     app.router.add_post('/anomalous/saves/ran', workflow_saves.api_ran)

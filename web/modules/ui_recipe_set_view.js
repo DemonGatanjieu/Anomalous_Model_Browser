@@ -18,7 +18,7 @@ import { renderParameterNotebookEditor, renderPromptSection, renderRawNodesLazy 
 import { renderImageGrid } from './ui_recipe_gallery.js';
 import { renderRecipeInfo } from './ui_recipe_info.js';
 import { modelDisplayName, renderRecipeModels } from './ui_recipe_models.js';
-import { deleteSet, differenceNote, editNewSet, listedSets, renameSet, saveCanvasAsSet } from './ui_recipe_sets.js';
+import { deleteSet, differenceNote, editNewSet, listedSets, renameSet, saveCanvasAsSet, addSetToSaves } from './ui_recipe_sets.js';
 import { openParamCompare } from './ui_param_compare.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 import { focusTest } from './recipe_focus.js';
@@ -170,6 +170,7 @@ function setHead(main, ctx, notebook, source) {
     more.title = t('notebookMore');
     more.onclick = () => openPopupMenu(more, [
         { label: t('workflowSetCopy'), run: () => editNewSet(ctx, source) },
+        { label: t('workflowSetToSaves'), run: () => void addSetToSaves(ctx, source) },
         ...(notebook ? [
             { label: t('recipeParameterRename'), run: () => renameSet(ctx, notebook) },
             { label: t('recipeParameterDelete'), danger: true, run: () => deleteSet(ctx, notebook) },
