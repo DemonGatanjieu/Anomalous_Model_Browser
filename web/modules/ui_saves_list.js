@@ -1,9 +1,10 @@
 /**
  * The Workflows page's Saves view: every canvas's saves in a part of its own, open or not, so those of a
- * closed tab or a deleted file are as near as any. A part folds; open, it shows each save with what it
- * changed and the pictures it made, and runs them, the whole group in order or one save alone. A save
- * can become a workflow card, the one thing it becomes (AD-023). What changes the canvas is done by the
- * bar under it (ui_snapshot_bar.js).
+ * closed tab or a deleted file are as near as any. A part folds; open, it shows each save as a card, what
+ * it changed beside the pictures it made, and runs them, the whole group in order or one save alone. A
+ * picture opens large, or with its parameters, stepping through its save's pictures. A save can become
+ * a workflow card, the one thing it becomes (AD-023). What changes the canvas is done by the bar under
+ * it (ui_snapshot_bar.js).
  */
 
 import { translate as t } from './locales.js';
@@ -15,6 +16,7 @@ import { anomalousConfirm } from './ui_dialog.js';
 import { showGalleryViewer } from './ui_gallery_viewer.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 import { appendText, button } from './ui_recipe_detail_dom.js';
+import { openGalleryImageDetail } from './ui_recipe_gallery.js';
 import { backTo, openSave, runsBox, saveWords, seedSwitch, shownKey, tabOfGroup } from './ui_snapshot_bar.js';
 
 const PICTURES_SHOWN = 40; // of a save, the newest
@@ -92,37 +94,48 @@ function saveMenu(owner, anchor, item, save, at) {
     ]);
 }
 
-function pictures(box, save) {
-    const newest = [...save.pictures].reverse().slice(0, PICTURES_SHOWN);
-    if (!newest.length) return;
+/** One of `all`, a save's pictures: opens large, or with its parameters and the arrows through `all`. */
+function pictureTile(owner, list, all, picture) {
+    const url = `/view?${new URLSearchParams({ filename: picture.filename, subfolder: picture.subfolder, type: picture.type })}`;
+    const tile = appendText(list, 'div', '', 'anomalous-wfd-image');
+    const open = button(tile, '', 'anomalous-saves-picture');
+    open.onclick = () => showGalleryViewer(url);
+    open.append(image(thumbUrl(picture), ''));
+    if (picture.type !== 'output') return; // a preview: the parameters are read from saved pictures only
+    button(tile, t('materialViewParameters'), 'anomalous-wfd-image-btn').onclick = () => openGalleryImageDetail(owner, all, picture, url);
+}
+
+/** A save's pictures in a line, newest first, or what is said in their place. */
+function pictures(owner, box, save) {
+    const all = [...save.pictures].reverse();
+    if (!all.length) return void appendText(box, 'div', save.running ? t('savesRunsLeft', { count: save.running }) : t('snapshotNoPictures'), 'anomalous-saves-none');
     const list = appendText(box, 'div', '', 'anomalous-saves-pictures');
-    for (const picture of newest) {
-        const query = new URLSearchParams({ filename: picture.filename, subfolder: picture.subfolder, type: picture.type });
-        const open = button(list, '', 'anomalous-saves-picture');
-        open.onclick = () => showGalleryViewer(`/view?${query}`);
-        open.append(image(thumbUrl(picture), ''));
-    }
-    if (save.pictures.length > newest.length) appendText(box, 'div', t('snapshotMorePictures', { shown: newest.length, total: save.pictures.length }), 'anomalous-saves-words');
+    list.dataset.save = save.id;
+    for (const picture of all.slice(0, PICTURES_SHOWN)) pictureTile(owner, list, all, picture);
+    if (all.length > PICTURES_SHOWN) appendText(list, 'div', t('snapshotMorePictures', { shown: PICTURES_SHOWN, total: all.length }), 'anomalous-saves-more');
 }
 
 function saveRow(owner, item, group, save, at) {
     const box = document.createElement('div');
     box.className = 'anomalous-saves-save';
-    const row = appendText(box, 'div', '', 'anomalous-saves-save-row');
-    appendText(row, 'span', String(at + 1), 'anomalous-saves-number');
-    row.append(runsBox(group.key, save));
+    const info = appendText(box, 'div', '', 'anomalous-saves-info');
+    const top = appendText(info, 'div', '', 'anomalous-saves-top');
+    appendText(top, 'span', String(at + 1), 'anomalous-saves-number');
     const when = new Date(save.at * 1000).toLocaleString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     const kind = at === 0 ? '' : ` · ${t(`snapshotKind_${changeKind(save.changes)}`)}`;
-    const words = appendText(row, 'div', `${when}${kind}${save.pictures.length || save.running ? '' : ` · ${t('snapshotNoPictures')}`}`, 'anomalous-saves-words');
-    if (at > 0 && save.changes.length) words.append('\n', saveWords(save, at));
-    const go = button(row, t('savesRunOne'), 'anomalous-wf-filter');
+    appendText(top, 'span', `${when}${kind}`, 'anomalous-saves-when');
+    if (at > 0 && save.changes.length) appendText(info, 'div', saveWords(save, at), 'anomalous-saves-words');
+    const tools = appendText(info, 'div', '', 'anomalous-saves-tools');
+    const go = button(tools, t('savesRunOne'), 'anomalous-wf-filter');
     go.title = t('savesRunOneHint', { count: save.count });
     go.onclick = () => void run(owner, group, [save], 'random');
-    button(row, t('snapshotKeepCard'), 'anomalous-wf-filter').onclick = () => void keep(owner, group.key, save);
-    const more = button(row, '⋯', 'anomalous-wf-icon-btn');
+    tools.append(runsBox(group.key, save));
+    appendText(tools, 'span', t('savesRunTimes'), 'anomalous-saves-times');
+    button(tools, t('snapshotKeepCard'), 'anomalous-wf-filter').onclick = () => void keep(owner, group.key, save);
+    const more = button(tools, '⋯', 'anomalous-wf-icon-btn');
     more.title = t('notebookMore');
     more.onclick = () => saveMenu(owner, more, item, save, at);
-    pictures(box, save);
+    pictures(owner, box, save);
     return box;
 }
 
@@ -170,7 +183,10 @@ function drawPart(owner, part, group) {
     part.line = document.createElement('div');
     part.line.className = 'anomalous-saves-status';
     showLine(part);
+    // A run ending redraws the part: a line of pictures stays where it was scrolled to.
+    const scrolled = new Map([...box.querySelectorAll('.anomalous-saves-pictures')].map(list => [list.dataset.save, list.scrollLeft]));
     box.replaceChildren(head, part.line, ...group.saves.map((save, at) => saveRow(owner, item, group, save, at)));
+    for (const list of box.querySelectorAll('.anomalous-saves-pictures')) list.scrollLeft = scrolled.get(list.dataset.save) || 0;
 }
 
 async function openPart(owner, part) {

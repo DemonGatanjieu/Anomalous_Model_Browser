@@ -85,7 +85,7 @@
 .anomalous-recipe-body:not(.is-saves) .anomalous-saves-list { display: none; }
 
 .anomalous-saves-list { display: flex; flex-direction: column; gap: 10px; }
-.anomalous-saves-part { flex: none; overflow: hidden; background: var(--amb-bg-card); border: 1px solid var(--amb-border); border-radius: 10px; }
+.anomalous-saves-part { flex: none; overflow: hidden; color: var(--amb-text-main); background: var(--amb-bg-card); border: 1px solid var(--amb-border); border-radius: 10px; }
 .anomalous-saves-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 8px 12px; }
 
 .anomalous-saves-fold {
@@ -113,24 +113,44 @@
 .anomalous-saves-status { padding: 0 12px 8px; color: var(--amb-text-muted); font-size: 12px; white-space: pre-line; }
 .anomalous-saves-status:empty { display: none; }
 .anomalous-saves-status.is-bad { color: #f87171; }
-.anomalous-saves-save { padding: 10px 12px; border-top: 1px solid var(--amb-border); }
-.anomalous-saves-save-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.anomalous-saves-number { min-width: 20px; font-weight: 600; text-align: center; }
-.anomalous-saves-words { flex: 1 1 180px; min-width: 0; max-height: 5.6em; overflow: auto; color: var(--amb-text-muted); font-size: 12px; white-space: pre-line; }
-.anomalous-saves-pictures { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
-.anomalous-saves-picture {
-    width: 96px;
-    height: 96px;
-    padding: 0;
-    overflow: hidden;
-    background: var(--amb-bg-input);
-    border: 0;
-    border-radius: 6px;
-    cursor: zoom-in;
+/* A save is a card: its words on the left, its pictures on the right; under them only in a narrow window. */
+.anomalous-saves-save {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 10px 10px;
+    padding: 10px;
+    background: var(--amb-bg-sunken);
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
 }
 
-.anomalous-saves-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.anomalous-saves-info { display: flex; flex: 0 1 280px; flex-direction: column; gap: 6px; min-width: 0; }
+.anomalous-saves-top { display: flex; align-items: center; gap: 8px; }
+.anomalous-saves-number { flex: none; min-width: 24px; padding: 1px 6px; color: var(--amb-accent); background: color-mix(in srgb, var(--amb-accent) 16%, transparent); border-radius: 6px; font-weight: 700; text-align: center; }
+.anomalous-saves-when { min-width: 0; color: var(--amb-text-muted); font-size: 12px; }
+.anomalous-saves-words { max-height: 5.6em; overflow: auto; color: var(--amb-text-muted); font-size: 12px; white-space: pre-line; }
+.anomalous-saves-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: auto; }
+.anomalous-saves-times { color: var(--amb-text-muted); font-size: 12px; }
+
+.anomalous-saves-pictures { display: flex; flex: 1 1 200px; gap: 6px; min-width: 0; overflow-x: auto; scrollbar-width: thin; scrollbar-color: rgba(var(--amb-ink-rgb), 0.18) transparent; }
+.anomalous-saves-pictures .anomalous-wfd-image { flex: none; width: 96px; }
+.anomalous-saves-picture { display: block; width: 100%; height: 100%; padding: 0; background: none; border: 0; }
+.anomalous-saves-more { flex: none; align-self: center; width: 96px; color: var(--amb-text-muted); font-size: 12px; text-align: center; }
+
+.anomalous-saves-none {
+    display: flex;
+    flex: 1 1 200px;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    padding: 0 10px;
+    color: var(--amb-text-muted);
+    border: 1px dashed var(--amb-border);
+    border-radius: 6px;
+    font-size: 12px;
+}
 
 .anomalous-snapshot-status { max-width: 70vw; color: var(--amb-text-muted); white-space: pre-line; }
 .anomalous-snapshot-status:not(:empty) { margin-top: 6px; }
