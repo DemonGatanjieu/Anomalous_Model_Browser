@@ -24,6 +24,10 @@ import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture, sourceBadge } from './ui_ai_toolbox_icons.js';
 import { deliveryState } from './ui_ai_delivery.js';
 import { closeFacetMenu, toggleFacetMenu } from './ui_ai_facet_menu.js';
+import { baseFamily, countBases } from './model_bases.js';
+import { groupByPage, pageId, versionId } from './model_versions.js';
+import { chosenVersion } from './ui_model_versions.js';
+import { typeLabel } from './ui_model_types.js';
 
 const MODES = ['prefer', 'only'];
 const CHUNK = 60;
@@ -96,7 +100,7 @@ export const pageNodes = () => (nodesKept ||= nodeItems(globalThis.LiteGraph?.re
 function facetOf(item) {
     if (item.kind === 'nodes') return { key: item.source.key, label: item.source.kind === 'pack' ? item.source.label : t(`aiTbSource_${item.source.kind}`), source: item.source };
     if (item.kind === 'prompts') return { key: item.source, label: t(`aiTbPromptFrom_${item.source}`) };
-    if (item.kind === 'models') return { key: item.type, label: item.type };
+    if (item.kind === 'models') return { key: item.type, label: typeLabel({ type: item.type }) };
     return null;
 }
 
@@ -127,6 +131,7 @@ export async function openToolbox(task, changed = () => {}) {
     const fromTask = Boolean(task.toolbox);
     const state = {
         kind: 'nodes', query: '', filter: 'all', facet: null, focus: null, mode: task.toolbox?.mode || 'prefer',
+        base: null, versions: new Map(), // the base model chip on; page id -> the version a card shows
         picks: empty(), favorites: empty(), nodes: pageNodes(), catalog: keptCatalog(), error: '',
     };
     const byKey = new Map();
@@ -154,12 +159,13 @@ export async function openToolbox(task, changed = () => {}) {
     const side = el('aside', 'anomalous-tb-facets');
     const gridWrap = el('div', 'anomalous-tb-grid-wrap');
     const gridHead = el('div', 'anomalous-tb-grid-head');
+    const baseBar = el('div', 'anomalous-model-bases anomalous-tb-bases');
     const scroller = el('div', 'anomalous-tb-scroller');
     const grid = el('div', 'anomalous-tb-grid');
     const sentinel = el('div', 'anomalous-tb-sentinel');
     scroller.append(grid, sentinel);
     const packBar = el('div', 'anomalous-tb-pack');
-    gridWrap.append(gridHead, packBar, scroller);
+    gridWrap.append(gridHead, baseBar, packBar, scroller);
     const pane = el('div', 'anomalous-tb-pane');
     const main = el('div', 'anomalous-tb-main');
     main.append(rail, side, gridWrap, pane);
@@ -204,7 +210,24 @@ export async function openToolbox(task, changed = () => {}) {
         star: item => setFavorite(item),
         promptPicked: id => state.picks.prompts.includes(id),
         pickPrompt: id => setPick('prompts', id, !state.picks.prompts.includes(id)),
+        showVersion,
     };
+
+    /** A model's card shows `version` instead of `item`; the pick, if there was one, goes with it. */
+    function showVersion(item, version) {
+        state.versions.set(pageId(item), versionId(version));
+        version.versions = item.versions;
+        const old = cards.get(keyOf('models', item.id));
+        const drawn = (body.classList.contains('is-side') ? rowCard : card)(version, ctx);
+        old?.replaceWith(drawn);
+        cards.delete(keyOf('models', item.id));
+        cards.set(keyOf('models', version.id), drawn);
+        if (picked(item)) {
+            setPick('models', item.id, false);
+            setPick('models', version.id, true);
+        }
+        if (state.focus === item) ctx.focus(version);
+    }
 
     function setPick(kind, id, on) {
         state.picks[kind] = on ? [...new Set([...state.picks[kind], id])] : state.picks[kind].filter(item => item !== id);
@@ -247,7 +270,28 @@ export async function openToolbox(task, changed = () => {}) {
         if (state.filter === 'liked') items = items.filter(liked);
         const beforeFacet = items;
         if (state.facet) items = items.filter(item => facetOf(item)?.key === state.facet);
-        return { items, beforeFacet };
+        if (state.kind !== 'models') return { items, beforeFacet, beforeBase: [] };
+        const beforeBase = items;
+        if (!countBases(items).some(([family]) => family === state.base)) state.base = null;
+        if (state.base !== null) items = items.filter(item => baseFamily(item) === state.base);
+        // The versions of a model on one card, as the Models page has them: the one picked, else the one last shown here or pinned there.
+        const pickedVersions = new Map(state.picks.models.map(id => byKey.get(keyOf('models', id))).filter(Boolean).map(item => [pageId(item), versionId(item)]));
+        const folded = groupByPage(items, page => pickedVersions.get(page) || state.versions.get(page) || chosenVersion(page));
+        return { items: folded.map(({ model, versions }) => Object.assign(model, { versions })), beforeFacet, beforeBase };
+    }
+
+    /** The base model chips of the models listed, two or more. */
+    function drawBases(models) {
+        const counts = countBases(models);
+        baseBar.hidden = counts.length < 2;
+        baseBar.replaceChildren(...[[null, models.length], ...counts].map(([family, count]) => {
+            const chip = button('anomalous-model-base-chip', [family === null ? t('modelBasesAll') : family || t('modelBasesUnknown'), el('span', 'anomalous-model-type-count', String(count))], () => {
+                state.base = family;
+                drawGrid();
+            });
+            chip.setAttribute('aria-pressed', String(family === state.base));
+            return chip;
+        }));
     }
 
     function drawRail() {
@@ -257,6 +301,7 @@ export async function openToolbox(task, changed = () => {}) {
             const node = button(`anomalous-tb-kind${state.kind === kind ? ' is-on' : ''}`, [icon(kind, 20), t(`aiToolboxKind_${kind}`)], () => {
                 state.kind = kind;
                 state.facet = null;
+                state.base = null;
                 state.focus = null;
                 drawAll();
             });
@@ -334,8 +379,9 @@ export async function openToolbox(task, changed = () => {}) {
         closeFacetMenu();
         observer?.disconnect();
         cards.clear();
-        const { items, beforeFacet } = shown();
+        const { items, beforeFacet, beforeBase } = shown();
         drawFacets(beforeFacet);
+        drawBases(beforeBase);
         const facetLabel = state.facet ? (facets(beforeFacet, state.kind).find(facet => facet.key === state.facet)?.label || state.facet) : '';
         gridHead.replaceChildren(el('span', 'anomalous-tb-grid-title', facetLabel || t(`aiToolboxKind_${state.kind}`)),
             el('span', 'anomalous-tb-grid-count', t('aiTbCount', { count: items.length })));

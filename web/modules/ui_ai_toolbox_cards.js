@@ -6,7 +6,8 @@
  * the star keeps it among the favourites. In the side panel a card is one line instead
  * (rowCard: its badge or a small cover, its name and where it is from), so a short panel still
  * lists many. The detail pane shows the card in focus in full, and for a combo or workflow can
- * pick just the prompt inside it.
+ * pick just the prompt inside it. A model says its version apart from its name; one with several
+ * is one card, whose version opens the list to show another (ctx.showVersion).
  */
 
 import { translate as t } from './locales.js';
@@ -14,6 +15,9 @@ import { outputThumbnail } from './ui_kept_toast.js';
 import { recipeAssetUrl } from './ui_recipe_media.js';
 import { icon } from './ui_ai_icons.js';
 import { socketColor, sourceBadge, standInCover } from './ui_ai_toolbox_icons.js';
+import { versionLabel } from './ui_model_versions.js';
+import { typeLabel } from './ui_model_types.js';
+import { openPopupMenu } from './ui_popup_menu.js';
 
 const SOCKETS_SHOWN = 4;
 const withQuery = (url, query) => `${url}${url.includes('?') ? '&' : '?'}${query}`;
@@ -104,10 +108,26 @@ function tags(item) {
     } else if (item.kind === 'prompts') {
         add(t(`aiTbPromptFrom_${item.source}`), item.source);
     } else if (item.kind === 'models') {
-        add(item.type);
+        add(typeLabel({ type: item.type }));
         if (item.base) add(item.base);
     }
     return row;
+}
+
+/** A model's version: a word, or with several a button listing them; nothing for a model not found on Civitai. */
+function versionMark(item, ctx) {
+    const several = item.versions?.length > 1;
+    if (!several && !item.metadata?.version_name) return null;
+    if (!several) return el('span', 'anomalous-tb-version', item.metadata.version_name);
+    const mark = el('button', 'anomalous-tb-version is-several');
+    mark.type = 'button';
+    mark.title = t('aiTbVersions', { count: item.versions.length });
+    mark.append(el('span', 'anomalous-tb-version-name', versionLabel(item)), el('span', 'anomalous-tb-version-count', String(item.versions.length)), icon('chevronDown', 12));
+    mark.onclick = (event) => {
+        event.stopPropagation();
+        openPopupMenu(mark, item.versions.map(version => ({ label: versionLabel(version), checked: version === item, run: () => ctx.showVersion(item, version) })));
+    };
+    return mark;
 }
 
 /**
@@ -131,7 +151,9 @@ export function card(item, ctx) {
         node.append(picture(item, 'anomalous-tb-cover'));
     }
     const body = el('div', 'anomalous-tb-card-body');
-    if (item.kind !== 'nodes') body.append(el('div', 'anomalous-tb-card-title', item.title));
+    if (item.kind !== 'nodes') body.append(el('div', 'anomalous-tb-card-title', item.short || item.title));
+    const version = item.kind === 'models' ? versionMark(item, ctx) : null;
+    if (version) body.append(version);
     if (item.sub) body.append(el('div', 'anomalous-tb-card-sub', item.sub));
     body.append(tags(item));
     node.append(body);
@@ -150,11 +172,13 @@ export function rowCard(item, ctx) {
     else if (item.kind === 'prompts') lead.append(icon('prompts', 17));
     else lead.append(picture(item, 'anomalous-tb-row-cover'));
     const text = el('div', 'anomalous-tb-row-text');
-    const name = item.title || item.positive || item.id;
+    const name = item.short || item.title || item.positive || item.id;
     const from = item.kind === 'nodes' ? [item.category?.split('/').pop(), item.paid ? t('aiTbPaid') : ''].filter(Boolean).join(' · ')
         : item.kind === 'prompts' && item.title ? item.positive : item.sub;
     text.append(el('div', 'anomalous-tb-row-title', name));
-    if (from) text.append(el('div', 'anomalous-tb-row-sub', from));
+    const version = item.kind === 'models' ? versionMark(item, ctx) : null;
+    if (version) text.append(version);
+    else if (from) text.append(el('div', 'anomalous-tb-row-sub', from));
     text.title = [name, from].filter(Boolean).join('\n');
     node.append(lead, text);
     return controls(node, item, ctx);

@@ -1,6 +1,6 @@
 // node tests/ai_toolbox_data.mjs — the materials picker's data: node types from the page's own definitions, the catalogue, search, keeping.
 import assert from 'node:assert/strict';
-import { catalogItems, keptCatalog, loadCatalog, nodeItems, nodeSources, packLabel, searchItems } from '../web/modules/ai_toolbox_data.js';
+import { catalogItems, keptCatalog, loadCatalog, nameWithoutVersion, nodeItems, nodeSources, packLabel, searchItems } from '../web/modules/ai_toolbox_data.js';
 
 assert.equal(packLabel('comfyui_controlnet_aux'), 'controlnet aux');
 assert.equal(packLabel('ComfyUI-Impact-Pack'), 'Impact Pack');
@@ -46,6 +46,14 @@ assert.deepEqual(searchItems(items, 'neon').map(item => item.kind), ['models', '
 assert.deepEqual(searchItems(items, 'sdxl castle').map(item => item.id), ['SDXL 高清修复']);
 assert.deepEqual(searchItems(nodes, 'impact').map(item => item.id), ['FaceDetailer'], 'a pack name finds its nodes');
 assert.equal(searchItems(items, '').length, items.length);
+
+// A model carries what the Models page groups by: its versions find it by name, its file name is the one groupByPage sorts on.
+const [version] = catalogItems({ models: [{ id: 'loras:0:b.safetensors', name: 'B', file: 'b.safetensors', type: 'loras', base: '', metadata: { model_id: 7, version_id: 9, version_name: 'v2.5' } }] });
+assert.equal(version.filename, 'b.safetensors');
+assert.deepEqual(searchItems([version], 'v2.5').map(item => item.id), ['loras:0:b.safetensors']);
+assert.equal(nameWithoutVersion({ name: 'GhostMix_v2.0-BakedVAE', metadata: { version_name: 'v2.0-BakedVAE' } }), 'GhostMix');
+assert.equal(nameWithoutVersion({ name: 'My v2.0', metadata: { version_name: 'v2.0' } }), 'My v2.0', 'only a name that ends in _version');
+assert.equal(nameWithoutVersion({ name: 'Plain' }), 'Plain');
 
 // Kept a minute; one request however many ask at once; a failure says why and keeps nothing.
 let calls = 0;

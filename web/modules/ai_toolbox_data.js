@@ -102,6 +102,12 @@ export function nodeSources(items) {
     return [...found.values()].sort((a, b) => order(a) - order(b) || lower(a.label || a.key).localeCompare(lower(b.label || b.key)));
 }
 
+/** A model's name without its version, which Civitai names end in ("Model_v2.0"): the card says that apart. */
+export function nameWithoutVersion(model) {
+    const version = model.metadata?.version_name;
+    return version && model.name.endsWith(`_${version}`) ? model.name.slice(0, -version.length - 1) : model.name;
+}
+
 /** The other kinds (GET /anomalous/ai_toolbox?kind=all) as picker items. */
 export function catalogItems(payload) {
     const out = [];
@@ -118,8 +124,8 @@ export function catalogItems(payload) {
             haystack: lower([prompt.name, prompt.positive, prompt.negative, ...(prompt.tags || [])].join(' ')) });
     }
     for (const model of payload?.models || []) {
-        out.push({ kind: 'models', ...model, id: model.id, title: model.name, sub: model.file,
-            haystack: lower([model.name, model.file, model.folder, model.type, model.base, ...(model.words || [])].join(' ')) });
+        out.push({ kind: 'models', ...model, id: model.id, title: model.name, short: nameWithoutVersion(model), sub: model.file, filename: model.file,
+            haystack: lower([model.name, model.file, model.folder, model.type, model.base, model.metadata?.version_name, ...(model.words || [])].join(' ')) });
     }
     return out;
 }
@@ -159,13 +165,13 @@ export function loadCatalog({ fresh = false, fetcher = globalThis.fetch } = {}) 
 /** What is kept now (even when old), or null: a window shows it at once while loadCatalog refreshes. */
 export const keptCatalog = () => kept?.items || null;
 
-/** Reads the catalogue ahead, so the picker opens with it; errors wait for the window to say them. */
 /** What way `name` (a pick from the Ways view) is called in `locale`, once the catalogue was read; else its name. */
 export function wayTitle(name, locale) {
     const title = kept?.ways?.[name];
     return title?.[locale] || title?.en || title?.zh || name;
 }
 
+/** Reads the catalogue ahead, so the picker opens with it; errors wait for the window to say them. */
 export function prefetchToolbox() {
     loadCatalog().catch(() => {});
 }

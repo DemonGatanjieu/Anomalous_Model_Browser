@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- 给 AI 挑模型时和模型页一样好找了：类型用平常的叫法，有基础模型的分类条，版本和名字分开写，同一模型的几个版本合成一张卡，点版本就能换。
+- Picking models for the AI works like the Models page: types by their usual names, base model chips, the version apart from the name, and a model's versions on one card, changed from its version.
 - 工作流页多了“官方示例”：文生图、两段放大、图生图、局部重绘，打开时自动选一个你已有的模型。两段放大有 SDXL / SD 1.5、Anima 和推荐的 Anima · Tile 锁图三个版本，缺节点包或模型的版本会写明缺什么。新装的人和 AI 都有现成路线可用；AI 没有合适的已存工作流时会用它们。
 - The Workflows page has "Official examples": text to picture, two passes, picture to picture and repainting an area, each opening on a model you already have. Two passes comes for SDXL / SD 1.5, for Anima, and as the recommended Anima held by Tile; a version says what pack or model it lacks. New installs and the AI have routes to start from; the AI gets them when no saved workflow fits.
 - 可以自己选做法了：在“做法”里点“这次用它”，只对当前任务生效。AI 会收到，这一类活 AMB 直接按你选的搭，AI 想用别的也不行。

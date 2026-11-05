@@ -111,7 +111,7 @@ AMB 更新以后，AI 软件还拿着旧的工具列表来调用时，标题栏�
 | 「展台」 | AI 画的面板，从上往下排，旧的在上、新的在下；要你回答的在这里回答（`POST /anomalous/ai_tasks/{task_id}/answer`）。来了新面板而你在往上看时，出现「↓ 查看最新」 | `ui_ai_side.js`、`ui_ai_panel.js`、`ui_ai_stage.js` |
 | 「节点结构」 | 这次运行实际用的节点、和上次比改了什么 | `ui_ai_run_map.js` |
 | 「决策」 | 你在面板上的选择、允许和拒绝、AI 记下的关键决定 | `ui_ai_decisions.js` |
-| 「素材」 | 「给 AI 的素材」：挑模型、节点、搭配、工作流、提示词交给 AI；「来源」列表里鼠标所在的行会亮，选中的打勾 | `ui_ai_toolbox.js`、`ui_ai_facet_menu.js` |
+| 「素材」 | 「给 AI 的素材」：挑模型、节点、搭配、工作流、提示词交给 AI；「来源」列表里鼠标所在的行会亮，选中的打勾。模型和模型页一样：按类型分、有基础模型的分类条，同一模型的几个版本是一张卡，版本单独写，点它换版本，已选的跟着换 | `ui_ai_toolbox.js`、`ui_ai_facet_menu.js` |
 | 「成果」 | 这个任务出的图、工作流、搭配、提示词、音频，按步骤排 | `ui_ai_outputs.js` |
 | 「做法」 | AMB 现成的做法和 skill。右边的开关全局关掉一个，AI 就看不到；能用的做法上有「这次用它」，只对这个任务：AI 会收到，这一类活 AMB 直接按它搭，AI 要别的也一样（`POST /anomalous/ai_tasks/{task_id}/way`） | `ui_ai_blocks.js` |
 

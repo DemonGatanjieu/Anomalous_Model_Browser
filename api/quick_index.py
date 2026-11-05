@@ -39,6 +39,10 @@ def compact_models(models):
             "name": str(meta.get("custom_name") or "").strip(),
             "civitai_name": str(meta.get("name") or "").strip(),
             "base": str(meta.get("baseModel") or "").strip(),
+            "base_guess": str(meta.get("base_guess") or "").strip(),
+            "page": meta.get("model_id") or 0,
+            "version": meta.get("version_id") or 0,
+            "version_name": str(meta.get("version_name") or "").strip(),
             "words": _words(meta),
             "preview_url": model.get("preview_url") or "",
         })

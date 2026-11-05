@@ -1,7 +1,8 @@
 """Everything the materials picker (web/modules/ui_ai_toolbox.js) lists besides node types, in
 one answer (GET /anomalous/ai_toolbox?kind=all): combos with their cover and prompt, saved
 workflows with their cover, tags and prompts, prompts (the saved ones, and the ones inside
-combos and workflows, ids "combo:<name>" and "workflow:<name>"), and models with their cover,
+combos and workflows, ids "combo:<name>" and "workflow:<name>"), and models with their cover and
+what the Models page groups them by (`metadata`: its version page, its base model),
 by the names and ids the AI's tools use, and what the ways are called, for a picked way's chip. Read in one
 go and kept a few seconds, so the picker opens at once; node types come from the page's own node definitions. prompt_entries() also
 gives get_toolbox the text of picked prompts."""
@@ -61,7 +62,9 @@ def _models():
         place = f"{model['subfolder']}/{model['filename']}" if model["subfolder"] else model["filename"]
         out.append({"id": f"{model['type']}:{model['path_idx']}:{place}", "name": model["name"] or model["civitai_name"] or model["filename"],
                     "file": model["filename"], "type": model["type"], "base": model["base"], "words": model["words"],
-                    "cover": model["preview_url"], "folder": model["subfolder"]})
+                    "cover": model["preview_url"], "folder": model["subfolder"],
+                    "metadata": {"model_id": model["page"], "version_id": model["version"], "version_name": model["version_name"],
+                                 "baseModel": model["base"], "base_guess": model["base_guess"]}})
     return out
 
 
