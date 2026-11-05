@@ -20,10 +20,12 @@ import { watchSaves } from '../web/modules/ui_snapshot_bar.js';
 const save = id => ({ id, at: 0, count: 1, changes: [], pictures: [], running: 0 });
 const group = { key: 'k', title: '', path: '', saves: [save('a'), save('b')] };
 let slow = 0; // how long a count's answer takes
+let refused = 0; // the count that is not taken
 window.fetch = async (url, options) => {
     if (String(url).includes('/saves/update')) {
         await new Promise(resolve => setTimeout(resolve, slow));
         const { id, count } = JSON.parse(options.body);
+        if (count === refused) return new Response(JSON.stringify({ message: 'disk full' }), { status: 500 });
         group.saves.find(item => item.id === id).count = count;
     }
     return new Response(JSON.stringify({ group, groups: [{ key: 'k', title: 'canvas', path: '', count: group.saves.length, updated: 0, cover: null }], workflow: {} }));
@@ -73,6 +75,26 @@ try {
     check(other.value === '2', 'the other boxes come up to date');
     check(stayed(), 'a run ending keeps every control on the page');
     box.blur();
+
+    refused = 9;
+    await typed(box, '9');
+    check(box.value === '5' && group.saves[0].count === 5, 'a count not taken goes back to the one stored');
+    check(all('.anomalous-mixer-toast').at(-1)?.textContent === t('snapshotCountFailed', { why: 'disk full' }), 'and says so');
+    box.focus();
+    await typed(box, '9');
+    check(document.activeElement === box && box.value === '5', 'in a box that keeps the focus too, after Enter');
+    box.blur();
+    slow = 10;
+    box.value = '6';
+    box.dispatchEvent(new Event('change'));
+    box.value = '9';
+    box.dispatchEvent(new Event('change'));
+    await answered();
+    check(box.value === '6', 'behind a count that was taken, it goes back to that one');
+    slow = 0;
+    refused = 0;
+    await typed(box, '5');
+    check(group.saves[0].count === 5, 'and the box goes on working');
 
     group.saves.push(save('c'));
     await refreshGroup('k');

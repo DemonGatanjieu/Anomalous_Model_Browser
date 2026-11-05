@@ -239,10 +239,17 @@ export function runsBox(key, save) {
     const count = el('input', 'anomalous-snapshot-count');
     count.type = 'number';
     count.min = 1;
-    count.value = save.count;
+    count.defaultValue = save.count; // what is stored: settle brings it up to date on a box being typed in too
     count.title = t('snapshotCount');
     count.setAttribute('aria-label', t('snapshotCount'));
-    count.onchange = event => void setCount(key, save.id, runCount(event.target.value)).catch(error => console.warn('[AMB] Saves:', error));
+    count.onchange = (event) => {
+        const box = event.target;
+        void setCount(key, save.id, runCount(box.value)).catch((error) => {
+            console.warn('[AMB] Saves:', error);
+            box.value = box.defaultValue;
+            showWorkbenchToast(t('snapshotCountFailed', { why: String(error?.message || error).slice(0, 200) }));
+        });
+    };
     return count;
 }
 
