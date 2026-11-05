@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- ComfyUI-Manager 不再把别的插件的节点算到 AMB 头上：AMB 没有节点，是测试文件里的假节点表让它误以为有，于是缺 Power Lora Loader 等节点时会推荐装 AMB。Manager 重新扫描后生效。
+- ComfyUI-Manager no longer takes other packs' nodes for AMB's: AMB has no nodes, but node tables in its test files looked like some, so a missing Power Lora Loader and the like could offer AMB. Takes effect once Manager scans again.
 - AI 工作台的任务列表：一条线上的任务排在一起，后续任务缩进挂在最早的任务下面，一眼看出谁接着谁。每个任务行上多了 ⋯，改名、隐私模式、从列表移除不用先打开任务。移除中间的任务时，线不会断。
 - The AI workbench's task list keeps a line of tasks together: follow-ups hang under the first task, so you see what goes on from what. Each task row has a ⋯ for rename, privacy mode and remove, without opening the task first. Removing a task in the middle does not break the line.
 - 存档条和存档页上的按钮按一下就管用：刚在提示词框里打完字、刚改完次数，或者运行还在跑的时候，第一下不再被吃掉；运行途中正在输入的次数也不会被清掉。改完次数马上点运行，也一定按新的次数跑。次数没存上时会提示，框里退回实际的次数。按住存档页的图时刚好出了新图，这一下也算数，新图等松手再排进来。

@@ -65,18 +65,19 @@ class UsageTests(unittest.TestCase):
             {"type": "loras", "root": 0, "rel": "never.safetensors", "size": 9},
             {"type": "vae", "root": 0, "rel": "hashed.safetensors", "size": 1},
         ]
+        registered = {  # by this name, not as the keyword's value: tests/test_manager_scan.py says why
+            "KSampler": node("nodes", ["MODEL"], ["LATENT"]),
+            "Power Lora Loader (rgthree)": node("custom_nodes.rgthree-comfy", ["MODEL"], ["MODEL"]),
+            "easy loraStack": node("custom_nodes.ComfyUI-Easy-Use"),
+            "easy seed": node("custom_nodes.ComfyUI-Easy-Use.py.nodes"),
+            "Unused Thing": node("custom_nodes.forgotten-pack"),
+            "DetailerForEach": node("custom_nodes.ComfyUI-Impact-Pack", ["IMAGE", "BBOX_DETECTOR"], ["IMAGE"]),
+            "UltralyticsDetectorProvider": node("custom_nodes.comfyui-impact-subpack", [], ["BBOX_DETECTOR"]),
+            "Genie Speak": node("custom_nodes.Genie-TTS", ["STRING"], ["AUDIO"]),
+            "Manager Thing": node("custom_nodes.ComfyUI-Manager"),
+        }
         nodes = types.SimpleNamespace(
-            NODE_CLASS_MAPPINGS={
-                "KSampler": node("nodes", ["MODEL"], ["LATENT"]),
-                "Power Lora Loader (rgthree)": node("custom_nodes.rgthree-comfy", ["MODEL"], ["MODEL"]),
-                "easy loraStack": node("custom_nodes.ComfyUI-Easy-Use"),
-                "easy seed": node("custom_nodes.ComfyUI-Easy-Use.py.nodes"),
-                "Unused Thing": node("custom_nodes.forgotten-pack"),
-                "DetailerForEach": node("custom_nodes.ComfyUI-Impact-Pack", ["IMAGE", "BBOX_DETECTOR"], ["IMAGE"]),
-                "UltralyticsDetectorProvider": node("custom_nodes.comfyui-impact-subpack", [], ["BBOX_DETECTOR"]),
-                "Genie Speak": node("custom_nodes.Genie-TTS", ["STRING"], ["AUDIO"]),
-                "Manager Thing": node("custom_nodes.ComfyUI-Manager"),
-            },
+            NODE_CLASS_MAPPINGS=registered,
             LOADED_MODULE_DIRS={name: str(custom / name) for name in packs},
             EXTENSION_WEB_DIRS={"rgthree-comfy": str(custom / "rgthree-comfy" / "js"), "page-only": str(custom / "page-only" / "web")},
         )
