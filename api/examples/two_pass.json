@@ -5,10 +5,15 @@
   "en": "Two passes"
  },
  "about": {
-  "zh": "先出一张图，放大 1.25 倍再重绘一遍，细节更多。",
-  "en": "A picture, then enlarged 1.25x and redrawn for more detail."
+  "zh": "只用官方节点：先出一张图，放大 1.25 倍再重绘一遍。这是最简单的两段；想用放大模型或 Tile 锁图，用“做法”里的放大。",
+  "en": "ComfyUI's own nodes only: a picture, then enlarged 1.25x and redrawn. The plainest two passes; for an upscale model or a Tile lock, use the upscale ways in Ways."
  },
- "ai": "A pass, then the latent enlarged 1.25x and redrawn at denoise 0.5. open_workflow, set_model on its loader, then run_workflow with the prompt.",
+ "ai": "A pass, then the latent enlarged 1.25x and redrawn at denoise 0.5. open_workflow, set_model on its loader, then run_workflow with the prompt. For an upscale model or a Tile lock, add_nodes(use='upscale') on a one-pass canvas does better.",
+ "version": {
+  "zh": "SDXL / SD 1.5",
+  "en": "SDXL / SD 1.5"
+ },
+ "family": "sd",
  "workflow": {
   "id": "00000000-0000-0000-0000-000000000000",
   "revision": 0,

@@ -2,8 +2,8 @@
 
 ## v1.63.0 — unreleased
 
-- 工作流页多了“官方示例”：文生图、两段放大、图生图、局部重绘，只用 ComfyUI 自带节点，打开时自动选一个你已有的大模型。新装的人和 AI 都有现成路线可用；AI 没有合适的已存工作流时会用它们。
-- The Workflows page has "Official examples": text to picture, two passes, picture to picture and repainting an area, on ComfyUI's own nodes, each opening on a model you already have. New installs and the AI have routes to start from; the AI gets them when no saved workflow fits.
+- 工作流页多了“官方示例”：文生图、两段放大、图生图、局部重绘，打开时自动选一个你已有的模型。两段放大有 SDXL / SD 1.5、Anima 和推荐的 Anima · Tile 锁图三个版本，缺节点包或模型的版本会写明缺什么。新装的人和 AI 都有现成路线可用；AI 没有合适的已存工作流时会用它们。
+- The Workflows page has "Official examples": text to picture, two passes, picture to picture and repainting an area, each opening on a model you already have. Two passes comes for SDXL / SD 1.5, for Anima, and as the recommended Anima held by Tile; a version says what pack or model it lacks. New installs and the AI have routes to start from; the AI gets them when no saved workflow fits.
 - 可以自己选做法了：在“做法”里点“这次用它”，只对当前任务生效。AI 会收到，这一类活 AMB 直接按你选的搭，AI 想用别的也不行。
 - You can pick the way yourself: "Use it this time" in Ways, for the current task only. The AI is told, and Anomalous builds your pick for that kind of job, whichever one the AI asks for.
 - 点“做法”马上出来，不再每次重画：打开 AI 工作台时就提前读好，再点时停在你上次看的位置，展开的详情也还在；开关一个做法也不会跳回顶部。

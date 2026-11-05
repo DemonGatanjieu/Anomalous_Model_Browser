@@ -1114,9 +1114,10 @@ covered by the `styles.css` manifest.
   models, LoRAs, samplers and prompts (linked prompt nodes before embedded loader
   prompts) and keeps the summary in step with widget edits using the same node rules; which
   LoRAs a node loads is `recipe_loras.js`, and reading a node's boxes `recipe_widgets.js`.
-  `api/example_workflows.py` serves the examples Anomalous ships (`api/examples/*.json`, ComfyUI's own nodes,
-  no model or picture named: filled in from what is here); `ui_recipe_examples.js` is their one card and
-  window on the Workflows page, and list_workflows gives them to an AI when no saved workflow fits.
+  `api/example_workflows.py` serves the examples Anomalous ships (`api/examples/*.json`: plans, a version per
+  model family, no model or picture named: filled in from what is here, what is missing said);
+  `ui_recipe_examples.js` is their one card and window on the Workflows page, and list_workflows gives those
+  that can run here to an AI when no saved workflow fits.
   `ui_recipe_catalog.js` is the Workflows page: one bar (search, the filter menu with kind and tag,
   the count, grid or list, share and import, save the canvas), the list, the empty page's three-step
   guide (`renderRecipeEmptyGuide`) and the catalog-wide model readiness check

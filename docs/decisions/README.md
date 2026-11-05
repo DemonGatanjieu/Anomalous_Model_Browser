@@ -229,3 +229,15 @@ Everything Anomalous puts on a canvas is ComfyUI's own or from a node pack the u
 so a workflow made with it opens on a ComfyUI without it. A LoRA stack, asked for by users, is
 therefore a chain of ComfyUI's loaders by default, and rgthree's or Easy-Use's node where that is
 installed; a stack node of ours would be simpler to build, and would tie every workflow to us.
+
+## AD-025 — Cards, examples, ways and skills are layers, not pairs
+
+An AI looks from the top down and stops as soon as it can: the user's cards (whole routes they
+ran), the official examples (whole routes for an install with no cards), the ways (one job each,
+built by Anomalous, where the values live), the skills (how to think about a job, no values). A
+light model should stop at the first two. They are not kept one to one: every way with its own
+example and skill would be a lot to maintain for little. The one rule is that a lower layer says a
+thing once and a higher one points at it instead of copying it; where an example must carry a
+way's values to run alone, a test keeps the two in step. Examples stay few on purpose: a plan
+gets a version per model family only when the loaders differ, and each version is its own
+workflow, so one route per card still holds.

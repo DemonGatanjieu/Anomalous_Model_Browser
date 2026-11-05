@@ -9,6 +9,11 @@
   "en": "Redraws one part of a picture. Pick it in the Load Image node, right-click to open the mask editor and paint the part to change."
  },
  "ai": "Redraws the area masked on the Load Image node. The user paints that mask; to repaint for them yourself, add_nodes(use='repaint') is better.",
+ "version": {
+  "zh": "SDXL / SD 1.5",
+  "en": "SDXL / SD 1.5"
+ },
+ "family": "sd",
  "workflow": {
   "id": "00000000-0000-0000-0000-000000000000",
   "revision": 0,

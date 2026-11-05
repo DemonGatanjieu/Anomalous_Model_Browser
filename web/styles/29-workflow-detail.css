@@ -799,9 +799,12 @@ html.amb-theme-light .anomalous-recipe-detail-view { --wfd-orange: #ea580c; }
 .anomalous-wf-card.is-examples .anomalous-wf-cover { display: flex; align-items: center; justify-content: center; color: var(--amb-link); }
 .anomalous-examples { display: flex; flex-direction: column; gap: 10px; }
 .anomalous-examples-hint { margin: 0; color: var(--amb-text-soft); font-size: 13px; line-height: 1.6; }
+.anomalous-examples-plan { margin-top: 6px; color: var(--amb-text-main); font-size: 14px; font-weight: 700; }
 .anomalous-example { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--amb-border); border-radius: 10px; }
 .anomalous-example-words { flex: 1; min-width: 0; }
-.anomalous-example-title { color: var(--amb-text-main); font-size: 14px; font-weight: 700; }
-.anomalous-example-about { margin-top: 3px; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
+.anomalous-example.is-missing { border-style: dashed; }
+.anomalous-example-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--amb-text-main); font-size: 13px; font-weight: 650; }
+.anomalous-example-badge { padding: 0 6px; border-radius: 6px; background: color-mix(in srgb, var(--amb-link) 18%, transparent); color: var(--amb-link); font-size: 11px; font-weight: 500; }
+.anomalous-example-about { margin: 3px 0 4px; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
 .anomalous-example-open { flex: none; height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--amb-link); color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
 .anomalous-example-open:hover { filter: brightness(1.15); }

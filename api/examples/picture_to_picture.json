@@ -9,6 +9,11 @@
   "en": "Starts from a picture and changes it by the prompt. Pick it in the Load Image node; a higher denoise changes more."
  },
  "ai": "Redraws a picture at denoise 0.6. open_workflow, set_model on its loader, then run_workflow with the prompt and image.",
+ "version": {
+  "zh": "SDXL / SD 1.5",
+  "en": "SDXL / SD 1.5"
+ },
+ "family": "sd",
  "workflow": {
   "id": "00000000-0000-0000-0000-000000000000",
   "revision": 0,

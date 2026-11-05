@@ -1,0 +1,1217 @@
+{
+ "name": "Example: two passes on Anima, held by Tile",
+ "title": {
+  "zh": "两段放大",
+  "en": "Two passes"
+ },
+ "version": {
+  "zh": "Anima · Tile 锁图",
+  "en": "Anima · held by Tile"
+ },
+ "family": "anima",
+ "recommended": true,
+ "packs": {
+  "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
+ },
+ "about": {
+  "zh": "重绘更狠、细节更多，画面也不容易跑：放大 1.22 倍，Tile 0.7 锁住，重绘 0.85。",
+  "en": "A stronger redraw with more detail that keeps the picture: enlarged 1.22x, held by Tile at 0.7, redrawn at 0.85."
+ },
+ "ai": "A pass on Anima, then enlarged 1.22x and redrawn at denoise 0.85, held by Anima's Tile LLLite at 0.7. open_workflow, set_model on its loader, then run_workflow with the prompt.",
+ "workflow": {
+  "id": "00000000-0000-0000-0000-000000000000",
+  "revision": 0,
+  "last_node_id": 15,
+  "last_link_id": 21,
+  "nodes": [
+   {
+    "id": 1,
+    "type": "UNETLoader",
+    "pos": [
+     40,
+     60
+    ],
+    "size": [
+     270,
+     82
+    ],
+    "flags": {},
+    "order": 0,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "UNet名称",
+      "name": "unet_name",
+      "type": "COMBO",
+      "widget": {
+       "name": "unet_name"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "数据类型",
+      "name": "weight_dtype",
+      "type": "COMBO",
+      "widget": {
+       "name": "weight_dtype"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "模型",
+      "name": "MODEL",
+      "type": "MODEL",
+      "links": [
+       3,
+       13
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "UNETLoader"
+    },
+    "widgets_values": [
+     "",
+     "default"
+    ]
+   },
+   {
+    "id": 2,
+    "type": "CLIPLoader",
+    "pos": [
+     40,
+     230
+    ],
+    "size": [
+     270,
+     106
+    ],
+    "flags": {},
+    "order": 1,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "CLIP名称",
+      "name": "clip_name",
+      "type": "COMBO",
+      "widget": {
+       "name": "clip_name"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "类型",
+      "name": "type",
+      "type": "COMBO",
+      "widget": {
+       "name": "type"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "设备",
+      "name": "device",
+      "shape": 7,
+      "type": "COMBO",
+      "widget": {
+       "name": "device"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "CLIP",
+      "name": "CLIP",
+      "type": "CLIP",
+      "links": [
+       1,
+       2
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "CLIPLoader"
+    },
+    "widgets_values": [
+     "",
+     "stable_diffusion",
+     "default"
+    ]
+   },
+   {
+    "id": 3,
+    "type": "VAELoader",
+    "pos": [
+     40,
+     420
+    ],
+    "size": [
+     270,
+     58
+    ],
+    "flags": {},
+    "order": 2,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "vae名称",
+      "name": "vae_name",
+      "type": "COMBO",
+      "widget": {
+       "name": "vae_name"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "VAE",
+      "name": "VAE",
+      "type": "VAE",
+      "links": [
+       8,
+       11,
+       20
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "VAELoader"
+    },
+    "widgets_values": [
+     ""
+    ]
+   },
+   {
+    "id": 4,
+    "type": "CLIPTextEncode",
+    "pos": [
+     420,
+     40
+    ],
+    "size": [
+     400,
+     200
+    ],
+    "flags": {},
+    "order": 5,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "clip",
+      "name": "clip",
+      "type": "CLIP",
+      "link": 1
+     },
+     {
+      "localized_name": "文本",
+      "name": "text",
+      "type": "STRING",
+      "widget": {
+       "name": "text"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "条件",
+      "name": "CONDITIONING",
+      "type": "CONDITIONING",
+      "links": [
+       4,
+       16
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "CLIPTextEncode"
+    },
+    "widgets_values": [
+     "masterpiece, best quality, scenery, a quiet lake at sunrise, mountains in the distance, soft morning light, no humans"
+    ]
+   },
+   {
+    "id": 5,
+    "type": "CLIPTextEncode",
+    "pos": [
+     420,
+     280
+    ],
+    "size": [
+     400,
+     200
+    ],
+    "flags": {},
+    "order": 6,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "clip",
+      "name": "clip",
+      "type": "CLIP",
+      "link": 2
+     },
+     {
+      "localized_name": "文本",
+      "name": "text",
+      "type": "STRING",
+      "widget": {
+       "name": "text"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "条件",
+      "name": "CONDITIONING",
+      "type": "CONDITIONING",
+      "links": [
+       5,
+       17
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "CLIPTextEncode"
+    },
+    "widgets_values": [
+     "worst quality, low quality, blurry, watermark, text"
+    ]
+   },
+   {
+    "id": 6,
+    "type": "EmptyLatentImage",
+    "pos": [
+     420,
+     520
+    ],
+    "size": [
+     270,
+     106
+    ],
+    "flags": {},
+    "order": 3,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "宽度",
+      "name": "width",
+      "type": "INT",
+      "widget": {
+       "name": "width"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "高度",
+      "name": "height",
+      "type": "INT",
+      "widget": {
+       "name": "height"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "批量大小",
+      "name": "batch_size",
+      "type": "INT",
+      "widget": {
+       "name": "batch_size"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "Latent",
+      "name": "LATENT",
+      "type": "LATENT",
+      "links": [
+       6
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "EmptyLatentImage"
+    },
+    "widgets_values": [
+     832,
+     1216,
+     1
+    ]
+   },
+   {
+    "id": 7,
+    "type": "KSampler",
+    "pos": [
+     820,
+     60
+    ],
+    "size": [
+     270,
+     262
+    ],
+    "flags": {},
+    "order": 7,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "模型",
+      "name": "model",
+      "type": "MODEL",
+      "link": 3
+     },
+     {
+      "localized_name": "正面条件",
+      "name": "positive",
+      "type": "CONDITIONING",
+      "link": 4
+     },
+     {
+      "localized_name": "负面条件",
+      "name": "negative",
+      "type": "CONDITIONING",
+      "link": 5
+     },
+     {
+      "localized_name": "Latent图像",
+      "name": "latent_image",
+      "type": "LATENT",
+      "link": 6
+     },
+     {
+      "localized_name": "种子",
+      "name": "seed",
+      "type": "INT",
+      "widget": {
+       "name": "seed"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "步数",
+      "name": "steps",
+      "type": "INT",
+      "widget": {
+       "name": "steps"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "cfg",
+      "name": "cfg",
+      "type": "FLOAT",
+      "widget": {
+       "name": "cfg"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "采样器名称",
+      "name": "sampler_name",
+      "type": "COMBO",
+      "widget": {
+       "name": "sampler_name"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "调度器",
+      "name": "scheduler",
+      "type": "COMBO",
+      "widget": {
+       "name": "scheduler"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "降噪",
+      "name": "denoise",
+      "type": "FLOAT",
+      "widget": {
+       "name": "denoise"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "Latent",
+      "name": "LATENT",
+      "type": "LATENT",
+      "links": [
+       7
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "KSampler"
+    },
+    "widgets_values": [
+     0,
+     "randomize",
+     35,
+     4.4,
+     "dpmpp_2m_sde_gpu",
+     "beta",
+     1
+    ]
+   },
+   {
+    "id": 8,
+    "type": "VAEDecode",
+    "pos": [
+     1180,
+     60
+    ],
+    "size": [
+     140,
+     46
+    ],
+    "flags": {},
+    "order": 8,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "Latent",
+      "name": "samples",
+      "type": "LATENT",
+      "link": 7
+     },
+     {
+      "localized_name": "vae",
+      "name": "vae",
+      "type": "VAE",
+      "link": 8
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "图像",
+      "name": "IMAGE",
+      "type": "IMAGE",
+      "links": [
+       9,
+       10,
+       14
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "VAEDecode"
+    }
+   },
+   {
+    "id": 9,
+    "type": "SaveImage",
+    "pos": [
+     1180,
+     200
+    ],
+    "size": [
+     270,
+     58
+    ],
+    "flags": {},
+    "order": 9,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "图片",
+      "name": "images",
+      "type": "IMAGE",
+      "link": 9
+     },
+     {
+      "localized_name": "文件名前缀",
+      "name": "filename_prefix",
+      "type": "STRING",
+      "widget": {
+       "name": "filename_prefix"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "images",
+      "name": "images",
+      "type": "IMAGE",
+      "links": null
+     }
+    ],
+    "properties": {},
+    "widgets_values": [
+     "example_base"
+    ]
+   },
+   {
+    "id": 10,
+    "type": "VAEEncodeTiled",
+    "pos": [
+     1500,
+     60
+    ],
+    "size": [
+     270,
+     150
+    ],
+    "flags": {},
+    "order": 10,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "像素",
+      "name": "pixels",
+      "type": "IMAGE",
+      "link": 10
+     },
+     {
+      "localized_name": "vae",
+      "name": "vae",
+      "type": "VAE",
+      "link": 11
+     },
+     {
+      "localized_name": "分块尺寸",
+      "name": "tile_size",
+      "type": "INT",
+      "widget": {
+       "name": "tile_size"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "重叠",
+      "name": "overlap",
+      "type": "INT",
+      "widget": {
+       "name": "overlap"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "时间尺寸",
+      "name": "temporal_size",
+      "type": "INT",
+      "widget": {
+       "name": "temporal_size"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "时间重叠",
+      "name": "temporal_overlap",
+      "type": "INT",
+      "widget": {
+       "name": "temporal_overlap"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "Latent",
+      "name": "LATENT",
+      "type": "LATENT",
+      "links": [
+       12
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "VAEEncodeTiled"
+    },
+    "widgets_values": [
+     512,
+     64,
+     64,
+     8
+    ]
+   },
+   {
+    "id": 11,
+    "type": "LatentUpscaleBy",
+    "pos": [
+     1840,
+     60
+    ],
+    "size": [
+     270,
+     82
+    ],
+    "flags": {},
+    "order": 12,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "Latent",
+      "name": "samples",
+      "type": "LATENT",
+      "link": 12
+     },
+     {
+      "localized_name": "缩放算法",
+      "name": "upscale_method",
+      "type": "COMBO",
+      "widget": {
+       "name": "upscale_method"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "缩放比例",
+      "name": "scale_by",
+      "type": "FLOAT",
+      "widget": {
+       "name": "scale_by"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "Latent",
+      "name": "LATENT",
+      "type": "LATENT",
+      "links": [
+       18
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "LatentUpscaleBy"
+    },
+    "widgets_values": [
+     "bislerp",
+     1.22
+    ]
+   },
+   {
+    "id": 12,
+    "type": "AnimaLLLiteApply_sdscripts",
+    "pos": [
+     1500,
+     340
+    ],
+    "size": [
+     385.9908203125,
+     194
+    ],
+    "flags": {},
+    "order": 11,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "model",
+      "name": "model",
+      "type": "MODEL",
+      "link": 13
+     },
+     {
+      "localized_name": "image",
+      "name": "image",
+      "type": "IMAGE",
+      "link": 14
+     },
+     {
+      "localized_name": "mask",
+      "name": "mask",
+      "shape": 7,
+      "type": "MASK",
+      "link": null
+     },
+     {
+      "localized_name": "lllite_name",
+      "name": "lllite_name",
+      "type": "COMBO",
+      "widget": {
+       "name": "lllite_name"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "strength",
+      "name": "strength",
+      "type": "FLOAT",
+      "widget": {
+       "name": "strength"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "start_percent",
+      "name": "start_percent",
+      "type": "FLOAT",
+      "widget": {
+       "name": "start_percent"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "end_percent",
+      "name": "end_percent",
+      "type": "FLOAT",
+      "widget": {
+       "name": "end_percent"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "preserve_wrapper",
+      "name": "preserve_wrapper",
+      "type": "BOOLEAN",
+      "widget": {
+       "name": "preserve_wrapper"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "模型",
+      "name": "MODEL",
+      "type": "MODEL",
+      "links": [
+       15
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "AnimaLLLiteApply_sdscripts"
+    },
+    "widgets_values": [
+     "",
+     0.7,
+     0,
+     0.8,
+     true
+    ]
+   },
+   {
+    "id": 13,
+    "type": "KSampler",
+    "pos": [
+     2180,
+     60
+    ],
+    "size": [
+     270,
+     262
+    ],
+    "flags": {},
+    "order": 13,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "模型",
+      "name": "model",
+      "type": "MODEL",
+      "link": 15
+     },
+     {
+      "localized_name": "正面条件",
+      "name": "positive",
+      "type": "CONDITIONING",
+      "link": 16
+     },
+     {
+      "localized_name": "负面条件",
+      "name": "negative",
+      "type": "CONDITIONING",
+      "link": 17
+     },
+     {
+      "localized_name": "Latent图像",
+      "name": "latent_image",
+      "type": "LATENT",
+      "link": 18
+     },
+     {
+      "localized_name": "种子",
+      "name": "seed",
+      "type": "INT",
+      "widget": {
+       "name": "seed"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "步数",
+      "name": "steps",
+      "type": "INT",
+      "widget": {
+       "name": "steps"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "cfg",
+      "name": "cfg",
+      "type": "FLOAT",
+      "widget": {
+       "name": "cfg"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "采样器名称",
+      "name": "sampler_name",
+      "type": "COMBO",
+      "widget": {
+       "name": "sampler_name"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "调度器",
+      "name": "scheduler",
+      "type": "COMBO",
+      "widget": {
+       "name": "scheduler"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "降噪",
+      "name": "denoise",
+      "type": "FLOAT",
+      "widget": {
+       "name": "denoise"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "Latent",
+      "name": "LATENT",
+      "type": "LATENT",
+      "links": [
+       19
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "KSampler"
+    },
+    "widgets_values": [
+     0,
+     "randomize",
+     30,
+     4.4,
+     "dpmpp_2m_sde_gpu",
+     "sgm_uniform",
+     0.85
+    ]
+   },
+   {
+    "id": 14,
+    "type": "VAEDecodeTiled",
+    "pos": [
+     2540,
+     60
+    ],
+    "size": [
+     270,
+     150
+    ],
+    "flags": {},
+    "order": 14,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "Latent",
+      "name": "samples",
+      "type": "LATENT",
+      "link": 19
+     },
+     {
+      "localized_name": "vae",
+      "name": "vae",
+      "type": "VAE",
+      "link": 20
+     },
+     {
+      "localized_name": "分块尺寸",
+      "name": "tile_size",
+      "type": "INT",
+      "widget": {
+       "name": "tile_size"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "重叠",
+      "name": "overlap",
+      "type": "INT",
+      "widget": {
+       "name": "overlap"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "时间尺寸",
+      "name": "temporal_size",
+      "type": "INT",
+      "widget": {
+       "name": "temporal_size"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "时间重叠",
+      "name": "temporal_overlap",
+      "type": "INT",
+      "widget": {
+       "name": "temporal_overlap"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "图像",
+      "name": "IMAGE",
+      "type": "IMAGE",
+      "links": [
+       21
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "VAEDecodeTiled"
+    },
+    "widgets_values": [
+     512,
+     64,
+     64,
+     8
+    ]
+   },
+   {
+    "id": 15,
+    "type": "SaveImage",
+    "pos": [
+     2860,
+     60
+    ],
+    "size": [
+     270,
+     58
+    ],
+    "flags": {},
+    "order": 4,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "图片",
+      "name": "images",
+      "type": "IMAGE",
+      "link": 21
+     },
+     {
+      "localized_name": "文件名前缀",
+      "name": "filename_prefix",
+      "type": "STRING",
+      "widget": {
+       "name": "filename_prefix"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "images",
+      "name": "images",
+      "type": "IMAGE",
+      "links": null
+     }
+    ],
+    "properties": {},
+    "widgets_values": [
+     "example"
+    ]
+   }
+  ],
+  "links": [
+   [
+    1,
+    2,
+    0,
+    4,
+    0,
+    "CLIP"
+   ],
+   [
+    2,
+    2,
+    0,
+    5,
+    0,
+    "CLIP"
+   ],
+   [
+    3,
+    1,
+    0,
+    7,
+    0,
+    "MODEL"
+   ],
+   [
+    4,
+    4,
+    0,
+    7,
+    1,
+    "CONDITIONING"
+   ],
+   [
+    5,
+    5,
+    0,
+    7,
+    2,
+    "CONDITIONING"
+   ],
+   [
+    6,
+    6,
+    0,
+    7,
+    3,
+    "LATENT"
+   ],
+   [
+    7,
+    7,
+    0,
+    8,
+    0,
+    "LATENT"
+   ],
+   [
+    8,
+    3,
+    0,
+    8,
+    1,
+    "VAE"
+   ],
+   [
+    9,
+    8,
+    0,
+    9,
+    0,
+    "IMAGE"
+   ],
+   [
+    10,
+    8,
+    0,
+    10,
+    0,
+    "IMAGE"
+   ],
+   [
+    11,
+    3,
+    0,
+    10,
+    1,
+    "VAE"
+   ],
+   [
+    12,
+    10,
+    0,
+    11,
+    0,
+    "LATENT"
+   ],
+   [
+    13,
+    1,
+    0,
+    12,
+    0,
+    "MODEL"
+   ],
+   [
+    14,
+    8,
+    0,
+    12,
+    1,
+    "IMAGE"
+   ],
+   [
+    15,
+    12,
+    0,
+    13,
+    0,
+    "MODEL"
+   ],
+   [
+    16,
+    4,
+    0,
+    13,
+    1,
+    "CONDITIONING"
+   ],
+   [
+    17,
+    5,
+    0,
+    13,
+    2,
+    "CONDITIONING"
+   ],
+   [
+    18,
+    11,
+    0,
+    13,
+    3,
+    "LATENT"
+   ],
+   [
+    19,
+    13,
+    0,
+    14,
+    0,
+    "LATENT"
+   ],
+   [
+    20,
+    3,
+    0,
+    14,
+    1,
+    "VAE"
+   ],
+   [
+    21,
+    14,
+    0,
+    15,
+    0,
+    "IMAGE"
+   ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+ }
+}
