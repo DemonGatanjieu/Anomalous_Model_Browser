@@ -181,10 +181,31 @@ function sayCount(owner) {
     owner.savesTitle.textContent = t('savesListTitle', { canvases: parts.length, saves: parts.reduce((sum, part) => sum + part.item.count, 0) });
 }
 
+/**
+ * While the main button is held on a button of the list, nothing in it moves: a new picture would put
+ * another under the pointer and the press would be no click. What comes meanwhile waits in
+ * owner.savesHeld, a group's key to how it stands, and shows after the press.
+ */
+function holdStill(owner, event) {
+    if (event.button !== 0 || owner.savesHeld || !event.target.closest('button')) return;
+    owner.savesHeld = new Map();
+    const ended = new AbortController();
+    const release = () => {
+        ended.abort();
+        setTimeout(() => { // the click comes right after pointerup
+            const held = owner.savesHeld;
+            owner.savesHeld = null;
+            for (const [key, group] of held) groupChanged(owner, key, group);
+        });
+    };
+    for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, release, { capture: true, signal: ended.signal });
+}
+
 function setView(owner, on) {
     if (!owner.savesList) {
         owner.savesList = document.createElement('div');
         owner.savesList.className = 'anomalous-wf-list anomalous-saves-list';
+        owner.savesList.addEventListener('pointerdown', event => holdStill(owner, event));
         owner.recipeView.append(owner.savesList);
         new ResizeObserver(() => fillLines(owner.savesList)).observe(owner.savesList);
     }
@@ -231,6 +252,7 @@ export async function refreshSaves(owner) {
 /** A group changed: its part shows it; a new one or one gone changes the list. */
 function groupChanged(owner, key, group) {
     if (!owner.savesListOn) return;
+    if (owner.savesHeld) return void owner.savesHeld.set(key, group);
     const part = owner.savesParts.get(key);
     if (!part || !group) return void refreshSaves(owner);
     part.item.count = group.saves.length;
@@ -250,6 +272,7 @@ export function showSaves(key) {
 export function savesToggle(owner) {
     owner.savesOpen = new Set();
     owner.savesParts = new Map();
+    owner.savesHeld = null;
     owner.savesToggle = document.createElement('button');
     owner.savesToggle.type = 'button';
     owner.savesToggle.className = 'anomalous-wf-filter anomalous-wf-saves-toggle';

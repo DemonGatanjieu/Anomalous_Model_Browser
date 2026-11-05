@@ -147,6 +147,38 @@ try {
     const thumbs = all('.anomalous-saves-picture img');
     check(thumbs.length === 2 && thumbs[0].src.includes('two.png'), 'a new picture goes first in its line');
 
+    const press = (node, button = 0) => node.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button }));
+    const firstThumb = () => one('.anomalous-saves-picture img').src;
+    const pressed = one('.anomalous-saves-picture');
+    press(pressed.querySelector('img'));
+    group.saves[0].pictures.push(picture('three.png'));
+    await refreshGroup('k');
+    check(pressed.isConnected && firstThumb().includes('two.png'), 'a press on a picture holds its line: a new one would put another under the pointer');
+    group.saves[0].pictures.push(picture('four.png'));
+    await refreshGroup('k');
+    window.dispatchEvent(new PointerEvent('pointerup'));
+    check(pressed.isConnected, 'its click still finds it as the press ends');
+    await answered();
+    check(firstThumb().includes('four.png'), 'what came meanwhile shows after the press, as it stands last');
+
+    press(one('.anomalous-saves-picture'));
+    group.saves[0].pictures.push(picture('five.png'));
+    await refreshGroup('k');
+    window.dispatchEvent(new PointerEvent('pointercancel'));
+    await answered();
+    check(firstThumb().includes('five.png'), 'a press the browser takes over, a drag, ends the hold too');
+
+    press(one('.anomalous-saves-picture'), 2);
+    group.saves[0].pictures.push(picture('six.png'));
+    await refreshGroup('k');
+    check(firstThumb().includes('six.png'), 'a right press holds nothing: no click follows it, its pointerup may never come');
+    press(one('.anomalous-saves-list'));
+    group.saves[0].pictures.push(picture('seven.png'));
+    await refreshGroup('k');
+    check(firstThumb().includes('seven.png'), 'nor does a press beside the buttons, on the scrollbar say');
+    group.saves[0].pictures.length = 2;
+    await refreshGroup('k');
+
     group.saves[0].count = MAX_RUNS + 1;
     await refreshGroup('k');
     one('.anomalous-saves-head .anomalous-snapshot-run').click();
