@@ -11,7 +11,8 @@ PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 from api import tts_version, version_manager as vm
 
-NODES = 'NODE_CLASS_MAPPINGS = {"AnomalousTTS_CharacterSpeech": object}\n'
+MAPPINGS = 'NODE_CLASS_' + 'MAPPINGS'  # in two: tests/test_manager_scan.py says why
+NODES = MAPPINGS + ' = {"AnomalousTTS_CharacterSpeech": object}\n'
 
 
 def git(cwd, *args):
@@ -51,7 +52,7 @@ class TtsVersionTests(unittest.TestCase):
     def test_only_the_official_clone_is_found(self):
         self.assertIsNone(tts_version.find_checkout())
         self.clone('A_fork', 'https://github.com/someone/Anomalous_TTS.git')
-        self.clone('Other_pack', 'https://github.com/DemonGatanjieu/Anomalous_TTS', nodes='NODE_CLASS_MAPPINGS = {}\n')
+        self.clone('Other_pack', 'https://github.com/DemonGatanjieu/Anomalous_TTS', nodes=MAPPINGS + ' = {}\n')
         (self.nodes / 'Plain_copy').mkdir()
         Path(self.nodes / 'Plain_copy' / 'nodes.py').write_text(NODES, encoding='utf-8')  # no git: Manager's zip, a copy
         self.assertIsNone(tts_version.find_checkout())
