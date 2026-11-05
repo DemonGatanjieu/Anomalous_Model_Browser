@@ -41,6 +41,19 @@ globalThis.fetch = async (url) => ({
     assert.deepEqual(await loadSetPictures([entries[0]]), {}); // no recipe set, nothing asked
 }
 
+// A combo's values are kept by box name: they go where the node has those boxes, and one that holds none of them is no entry.
+{
+    const before = globalThis.fetch;
+    globalThis.fetch = async url => ({ ok: true, json: async () => (String(url).includes('/notebooks/') ? { combos: [
+        { name: 'Night', filename: 'n.json', timestamp: 50, image: { filename: 'c.png', subfolder: '' }, nodes: [{ title: 'Second', role: 'negative', values: { cfg: 4, steps: 12 } }] },
+        { name: 'Other', filename: 'o.json', timestamp: 60, nodes: [{ title: '', role: '', values: { strength: 1 } }] },
+    ] } : {}) });
+    const entries = await loadParameterSets('KSampler', { boxes: ['seed', 'steps', 'cfg'] });
+    assert.deepEqual(entries.map(entry => [entry.name, entry.role, entry.values]), [['Night · Second', 'negative', [undefined, 12, 4]]]);
+    assert.deepEqual(entries[0].sources, [{ kind: 'combo', label: 'Night', filename: 'n.json', timestamp: 50, image: { filename: 'c.png', subfolder: '' } }]);
+    globalThis.fetch = before;
+}
+
 // What would change: seeds, model files and missing choices stay.
 const widget = (name, value, values) => ({ name, value, ...(values ? { options: { values } } : {}) });
 function sampler() {

@@ -1,9 +1,10 @@
 /**
  * The saved parameters for a node type, as one list: material blocks
- * (GET /anomalous/materials/by_node_type) and recipes' parameter sets
- * (GET /anomalous/parameters/by_node_type), with the same values saved twice merged into
- * one entry that names both sources, each saying where it came from (a recipe's set with its
- * file and values' signature, a kept picture, or values saved in Current node). For a live
+ * (GET /anomalous/materials/by_node_type), recipes' parameter sets
+ * (GET /anomalous/parameters/by_node_type) and combos (GET /anomalous/notebooks/by_node_type),
+ * with the same values saved twice merged into one entry that names both sources, each saying
+ * where it came from (a recipe's set with its file and values' signature, a combo, a kept
+ * picture, or values saved in Current node). For a live
  * node, what an entry would change: every differing value, except seeds and how they change
  * after a run, model files (the model section changes those) and choices this computer does
  * not have, which stay. And the recent pictures made with each set's values. What was last
@@ -29,14 +30,17 @@ async function fetchJson(url, signal) {
  * [{ name, role, timestamp, values, sources }], newest first. A source is a material
  * { kind: 'material', label, filename, timestamp, origin, image, preview } (origin: how it was
  * saved, 'generated_image' or 'canvas_node'; image: the kept picture { filename, subfolder } or
- * null; preview: its saved preview's URL or '') or a recipe set { kind: 'recipe', label (the
- * recipe), recipeFile, setFile, setName, timestamp, signature }.
+ * null; preview: its saved preview's URL or ''), a recipe set { kind: 'recipe', label (the
+ * recipe), recipeFile, setFile, setName, timestamp, signature } or a combo { kind: 'combo',
+ * label, filename, timestamp, image }. `boxes`: the node's box names in order, which put a combo's
+ * values (kept by name) where the others have theirs; a box it does not hold stays empty.
  */
-export async function loadParameterSets(type, { signal } = {}) {
+export async function loadParameterSets(type, { signal, boxes = [] } = {}) {
     const query = `type=${encodeURIComponent(type)}`;
-    const [materials, recipes] = await Promise.all([
+    const [materials, recipes, combos] = await Promise.all([
         fetchJson(`/anomalous/materials/by_node_type?${query}`, signal),
         fetchJson(`/anomalous/parameters/by_node_type?${query}`, signal),
+        fetchJson(`/anomalous/notebooks/by_node_type?${query}`, signal),
     ]);
     const entries = new Map();
     const add = (values, entry) => {
@@ -81,6 +85,17 @@ export async function loadParameterSets(type, { signal } = {}) {
                     }],
                 });
             }
+        }
+    }
+    for (const combo of combos.combos || []) {
+        for (const node of combo.nodes) {
+            if (!boxes.some(box => box in node.values)) continue;
+            add(boxes.map(box => node.values[box]), {
+                name: node.title ? `${combo.name} · ${node.title}` : combo.name,
+                role: node.role || '',
+                timestamp: combo.timestamp,
+                sources: [{ kind: 'combo', label: combo.name, filename: combo.filename, timestamp: combo.timestamp, image: combo.image?.filename ? combo.image : null }],
+            });
         }
     }
     return [...entries.values()].sort((a, b) => b.timestamp - a.timestamp);

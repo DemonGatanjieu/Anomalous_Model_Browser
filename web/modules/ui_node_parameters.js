@@ -2,7 +2,7 @@
  * The current-node panel's parameters: every saved set of values for the node's type
  * (node_parameter_sets.js: materials and recipes, merged), as cards or side by side. A card
  * shows the picture made with its values (or the one they were kept from) and says where they
- * came from, a chip per channel: a workflow's parameter set, a kept picture, or saved here. A
+ * came from, a chip per channel: a workflow's parameter set, a combo, a kept picture, or saved here. A
  * press goes to the source; a chip of several lists them first. Then the day. Then each value it would change as a picture (numbers as two bars,
  * choices as old → new) and what stays and why (seeds, model files, choices this computer does
  * not have); "Show all" lists the equal values too. ⇄ opens the comparison window on this node
@@ -31,9 +31,10 @@ const VIEW_KEY = 'anomalous_node_params_view'; // 'cards' | 'table', this browse
 const ROLE_KEYS = { positive: 'recipePromptRolePositive', negative: 'recipePromptRoleNegative', both: 'recipePromptRoleBoth' };
 const KEEP_KEYS = { seed: 'currentNodeKeepSeed', model: 'currentNodeKeepModel', missing: 'currentNodeKeepMissing' };
 const SHOWN_SINCE = 3; // changes named in the line on top; the rest are counted
-const CHANNELS = ['workflow', 'picture', 'saved'];
+const CHANNELS = ['workflow', 'combo', 'picture', 'saved'];
 const ICONS = {
     workflow: '<rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="14" width="7" height="6" rx="1.5"/><path d="M6.5 10v4a3 3 0 0 0 3 3H14"/>',
+    combo: '<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>',
     picture: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/>',
     saved: '<path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/>',
     lock: '<rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"/>',
@@ -119,14 +120,14 @@ function openSet(owner, source) {
  */
 function compareWithCanvas(entry, node) {
     const copy = node.serialize();
-    copy.widgets_values = entry.values;
+    copy.widgets_values = entry.values.map((value, index) => value ?? copy.widgets_values?.[index]); // a combo may not hold every box
     copy.inputs = (copy.inputs || []).map(input => ({ ...input, link: null }));
     copy.outputs = (copy.outputs || []).map(output => ({ ...output, links: [] }));
     openParamCompare({ workflow: { nodes: [copy], links: [], groups: [] }, label: entry.name }, { canvas: true }, { nodeId: node.id });
 }
 
 /** The channel a source came by. */
-const channelOf = source => (source.kind === 'recipe' ? 'workflow' : source.image ? 'picture' : 'saved');
+const channelOf = source => (source.kind === 'recipe' ? 'workflow' : source.kind === 'combo' ? 'combo' : source.image ? 'picture' : 'saved');
 
 /** A source for its chip's list ({label, title, run}: the name alone, the channel being known, in full, and where a press goes; no run for values saved here). */
 function sourceAction(source, pictures, owner) {
@@ -136,6 +137,9 @@ function sourceAction(source, pictures, owner) {
     if (source.kind === 'recipe') {
         const name = source.setName && source.setName !== source.label ? `${source.label} / ${source.setName}` : source.label;
         return { label: said(name), title: said(t('currentNodeFromSet', { recipe: name })), run: source.setFile && source.recipeFile ? () => openSet(owner, source) : null };
+    }
+    if (source.kind === 'combo') {
+        return { label: said(source.label), title: said(t('currentNodeFromCombo', { name: source.label })), run: () => owner.openComboByFilename(source.filename) };
     }
     if (source.image) {
         const name = source.image.filename.replace(/\.[^.]+$/, '');
@@ -255,7 +259,7 @@ function entryCard(node, entry, ctx) {
         top.append(thumb);
     } else {
         top.append(el('span', 'anomalous-node-param-thumb is-empty'));
-        top.lastChild.append(icon(entry.sources.some(source => source.kind === 'recipe') ? 'workflow' : 'saved'));
+        top.lastChild.append(icon(CHANNELS.find(channel => entry.sources.some(source => channelOf(source) === channel))));
     }
     const main = el('div', 'anomalous-node-param-main');
     const head = el('div', 'anomalous-node-param-head');
@@ -454,7 +458,7 @@ export function renderNodeParameters(node, container, owner) {
     const load = async () => {
         const run = (section._load = (section._load || 0) + 1);
         try {
-            const loaded = await loadParameterSets(node.type);
+            const loaded = await loadParameterSets(node.type, { boxes: (node.widgets || []).map(widget => widget.name) });
             if (run !== section._load || !section.isConnected) return;
             entries = loaded;
             draw();

@@ -68,19 +68,19 @@ const TOUR_STEPS = Object.freeze([
         position: 'right',
     },
     {
-        id: 'scan',
-        targetSelector: '#anomalous-scan-btn',
-        icon: '🎯',
-        titleKey: 'tourScanTitle',
-        bodyKey: 'tourScanBody',
-        position: 'right',
-    },
-    {
         id: 'doctor',
         targetSelector: '#anomalous-doctor-btn',
         icon: '🩺',
         titleKey: 'tourDoctorTitle',
         bodyKey: 'tourDoctorBody',
+        position: 'right',
+    },
+    {
+        id: 'scan',
+        targetSelector: '#anomalous-scan-btn',
+        icon: '🎯',
+        titleKey: 'tourScanTitle',
+        bodyKey: 'tourScanBody',
         position: 'right',
     },
     {

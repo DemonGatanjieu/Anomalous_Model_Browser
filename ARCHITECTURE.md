@@ -581,7 +581,8 @@ covered by the `styles.css` manifest.
   holds the size and count limits shared by recipes, parameters and materials.
 - `api/recipe_packages.py` owns bounded inspect-stage-commit package handling.
 - `api/parameters.py` owns Parameter Notebook persistence and lookup.
-- `api/notebooks.py` owns combo (搭配, formerly Prompt Note) persistence and recoverable legacy copying.
+- `api/notebooks.py` owns combo (搭配, formerly Prompt Note) persistence and recoverable legacy copying, and
+  gives Current node a combo's nodes of a type, read only.
 - `api/material_schema.py`, `api/material_assets.py`, and `api/material_store.py`
   own curated material shaping, private assets, persistence/cache, search and
   lifecycle; `api/materials.py` owns HTTP mapping and compatibility entry points.

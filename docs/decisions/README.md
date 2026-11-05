@@ -191,7 +191,9 @@ and saving again. A picture kept as a combo therefore keeps the nodes that made 
 sampler's model and prompts as a node structure, values untouched (a workflow without a
 sampler falls back to the older main model, LoRAs and positive prompt). Placing a combo
 only adds a new group; nodes already on the canvas are never changed (their values are
-changed in Current node). This is one of the feature principles in AGENTS.md.
+changed in Current node). Current node lists a combo's values beside the other saved ones: only
+the user's press there puts them in, one node at a time, and the combo stays as it is. This is
+one of the feature principles in AGENTS.md.
 
 ## AD-022 — What an AI does outside Anomalous is seen, not prevented
 

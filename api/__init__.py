@@ -68,6 +68,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/open_model_folder', model_folder.api_open_model_folder)
     app.router.add_get('/anomalous/compatible_models', model_catalog.api_compatible_models)
     app.router.add_get('/anomalous/notebooks', api_get_notebooks)
+    app.router.add_get('/anomalous/notebooks/by_node_type', api_get_notebooks_by_node_type)
     app.router.add_post('/anomalous/save_notebook', api_save_notebook)
     app.router.add_post('/anomalous/delete_notebook', api_delete_notebook)
 

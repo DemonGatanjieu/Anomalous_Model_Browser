@@ -92,6 +92,47 @@ async def api_get_notebooks(request):
         return web.json_response({"status": "error", "message": "Could not load notebooks"}, status=500)
 
 
+def _combo_nodes(data, node_type):
+    """The nodes of type `node_type` in combo `data`: [{title, role, values: {box name: value}}]. A combo with a
+    structure keeps every box by its name and what its slots hold now; a plain one has only its prompt."""
+    if data.get("kind") != "nodes":
+        prompt = str(data.get("promptEn") or "").strip()
+        return [{"title": "", "role": "positive", "values": {"text": prompt}}] if node_type == "CLIPTextEncode" and prompt else []
+    structure = data.get("structure") or {}
+    held = data.get("values") or {}
+    found = []
+    for node in structure.get("nodes") or []:
+        if node.get("type") != node_type:
+            continue
+        values = dict(pair for pair in node.get("widgets") or [] if len(pair) == 2)
+        role = ""
+        for slot in structure.get("slots") or []:
+            if slot.get("node") == node.get("key") and slot.get("widget") in values and slot.get("id") in held:
+                values[slot["widget"]] = held[slot["id"]]
+                role = slot.get("role") or role
+        found.append({"title": node.get("title") or "", "role": role, "values": values})
+    return found
+
+
+def _combos_of_type(node_type):
+    directory = get_notebooks_dir()
+    found = []
+    for note in _list_notebooks():
+        nodes = _combo_nodes(note["data"], node_type)
+        if nodes:
+            found.append({"name": note["name"], "filename": note["filename"], "image": note["data"].get("source_image"), "nodes": nodes,
+                          "timestamp": os.path.getmtime(resolve_within(directory, note["filename"]))})
+    return found
+
+
+async def api_get_notebooks_by_node_type(request):
+    """GET /anomalous/notebooks/by_node_type?type=: the combos holding that node type, for Current node's list."""
+    node_type = request.query.get("type", "")
+    if not node_type.strip() or len(node_type) > 200:
+        return web.json_response({"status": "error", "message": "Invalid node type"}, status=400)
+    return web.json_response({"combos": await asyncio.to_thread(_combos_of_type, node_type)})
+
+
 def _save_notebook(filename, data):
     with _notebooks_lock:
         atomic_write_json(resolve_within(get_notebooks_dir(), filename), data, MAX_NOTEBOOK_BYTES)

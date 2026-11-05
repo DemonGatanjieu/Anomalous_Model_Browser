@@ -256,6 +256,7 @@
 }
 
 .anomalous-node-param-source.is-workflow { --source: var(--amb-link); }
+.anomalous-node-param-source.is-combo { --source: var(--amb-warn); }
 .anomalous-node-param-source.is-picture { --source: var(--amb-ok); }
 .anomalous-node-param-source > .anomalous-node-param-icon { color: var(--source); }
 button.anomalous-node-param-source { cursor: pointer; }
