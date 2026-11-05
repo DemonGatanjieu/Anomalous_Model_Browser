@@ -39,7 +39,7 @@ export function boxDetail(box) {
     const facts = box.facts || {};
     switch (box.role) {
     case 'lora': return [facts.file, Number.isFinite(facts.strength) ? `(${facts.strength})` : ''].filter(Boolean).join(' ');
-    case 'prompt': return `${t(facts.polarity === 'negative' ? 'aiMapNegative' : 'aiMapPositive')}：${facts.text || '—'}`;
+    case 'prompt': return `${t(facts.polarity === 'negative' ? 'aiMapNegative' : 'aiMapPositive')}${t('wordColon')}${facts.text || '—'}`;
     case 'sampler': return [size(facts), facts.steps ? t('aiRunSteps', { steps: facts.steps }) : '', facts.cfg !== undefined ? `CFG ${facts.cfg}` : '',
         facts.sampler_name || '', facts.denoise !== undefined && facts.denoise < 1 ? t('aiMapDenoise', { value: facts.denoise }) : ''].filter(Boolean).join(' · ');
     case 'size': return size(facts);

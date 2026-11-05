@@ -114,7 +114,7 @@ function placeStructure(owner, data, position) {
     } catch (error) {
         if (error.code !== 'missing_nodes') throw error;
         void anomalousAlert(t('comboPlaceMissingNodes', {
-            nodes: error.missing.map(item => (item.pack ? `${item.type}（${item.pack}）` : item.type)).join('、'),
+            nodes: error.missing.map(item => (item.pack ? `${item.type} (${item.pack})` : item.type)).join(t('listSeparator')),
         }));
         return;
     }

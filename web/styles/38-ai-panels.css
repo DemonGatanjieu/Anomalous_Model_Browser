@@ -389,7 +389,7 @@
     padding: 0 7px;
     border-radius: 999px;
     background: var(--amb-link);
-    color: #fff;
+    color: var(--amb-on-link);
     font-size: 10.5px;
     font-weight: 700;
     line-height: 17px;

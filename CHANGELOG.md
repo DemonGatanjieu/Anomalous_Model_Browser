@@ -2,6 +2,10 @@
 
 ## v1.63.0 — unreleased
 
+- 发版前把每个页面按中英文、深浅色和 480 窄宽走了一遍，修了一批小问题。浅色主题下，模型整理页的标题和文件名、任务上“接着做”的标签原来几乎看不见。窄窗口下，任务的“接着哪个任务”标签伸出窗口、× 点不到，设置页的主题按钮把页面撑出横向滚动，模型页的搜索框压住标题，工作流详情的“新预设”被切掉。
+- 英文界面的列表和冒号不再是中文标点，“1 saves”这类单复数对了，左边栏的 AI 工作台写作 “AI”，一条漏翻的提示补上了。深色主题下浅紫色按钮和角标上的字改成深色，看得更清楚。
+- A round through every page in both languages, all themes and at 480 fixed small things. In the light theme, the Tidy page's headings and file names and a task's "goes on in" chip could hardly be read. In a narrow window, a task's "goes on from" chip ran out of the window with its × out of reach, the theme buttons in Settings pushed the page sideways, the Models search sat over the title, and "New preset" was cut off.
+- The English window no longer shows Chinese punctuation in lists and after labels, "1 saves" and the like have the right plural, the rail says "AI" for the AI workbench, and one line that was left in Chinese is translated. In the dark themes, text on pale accent buttons and badges is dark now, so it reads better.
 - 侧栏下面的工具按常用程度排了：当前节点在最上面，然后是模型检查，模型扫描在最下面。
 - The rail's tools go by how often they are used: Current node first, then Model Check, with the scan last.
 - 当前节点的参数卡清爽了：来源不再一条一行，改成按工作流、搭配、图片、这里存的分开的小标签，同一渠道几条合成一个，点标签直接过去，几条的话先列出来。

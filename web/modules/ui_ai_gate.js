@@ -52,7 +52,7 @@ export function gateCard(step, taskId, changed) {
         if (!asked.decision || asked.earlier) return null;
         const words = asked.decision === 'allow'
             ? t(step.state === 'allowed' ? 'aiGateAllowedLater' : 'aiGateAllowed')
-            : t('aiGateDenied') + (asked.text ? `：${asked.text}` : '');
+            : t('aiGateDenied') + (asked.text ? `${t('wordColon')}${asked.text}` : '');
         return el('div', `anomalous-ai-gate-answer is-${asked.decision}`, words);
     }
     const card = el('div', 'anomalous-ai-gate');

@@ -354,7 +354,7 @@ export async function openToolbox(task, changed = () => {}) {
         const current = list.find(facet => facet.key === state.facet);
         const open = button(`anomalous-tb-facet-open${current && state.picks.packs.includes(current.key) ? ' has-pack' : ''}`, [
             current?.source ? sourceBadge(current.source, 20) : icon('list', 15),
-            el('span', 'anomalous-tb-facet-open-label', `${title}：${current?.label || t('aiTbEverything')}`),
+            el('span', 'anomalous-tb-facet-open-label', `${title}${t('wordColon')}${current?.label || t('aiTbEverything')}`),
             el('span', 'anomalous-tb-facet-count', String(current?.count ?? beforeFacet.length)), icon('chevronDown', 14)],
         () => toggleFacetMenu({ host: main, top: side.offsetTop + side.offsetHeight, title, rows: rows(), button: open }), t('aiTbPickSource'));
         open.setAttribute('aria-haspopup', 'listbox');

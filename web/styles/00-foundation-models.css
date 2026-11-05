@@ -33,6 +33,7 @@
     --amb-border-strong: rgba(255, 255, 255, 0.16); /* controls and dividers that must show at rest */
     --amb-border-hover: rgba(255, 255, 255, 0.16);
     --amb-link: #a5b4fc; /* the one accent for links, selection and focus; tints via color-mix */
+    --amb-on-link: #15171c;
     --amb-btn-primary-bg: #e5e7eb;
     --amb-btn-primary-hover: #ffffff;
     --amb-btn-primary-text: #111827;
@@ -87,6 +88,7 @@ html.amb-theme-light {
     --amb-border-strong: rgba(0, 0, 0, 0.16);
     --amb-border-hover: rgba(0, 0, 0, 0.22);
     --amb-link: #4f46e5;
+    --amb-on-link: #ffffff;
     --amb-btn-primary-bg: #1f2937;
     --amb-btn-primary-hover: #111827;
     --amb-btn-primary-text: #ffffff;
@@ -154,6 +156,7 @@ html.amb-theme-light :is(.anomalous-workbench-overlay, .anomalous-gallery-viewer
     --amb-border-strong: rgba(255, 255, 255, 0.16);
     --amb-border-hover: rgba(255, 255, 255, 0.16);
     --amb-link: #a5b4fc;
+    --amb-on-link: #15171c;
     --amb-btn-primary-bg: #e5e7eb;
     --amb-btn-primary-hover: #ffffff;
     --amb-btn-primary-text: #111827;
@@ -239,6 +242,7 @@ html.theme-abyssal-scarlet,
     --amb-border-strong: rgba(255, 235, 240, 0.16);
     --amb-border-hover: rgba(220, 20, 60, 0.35);
     --amb-link: #F28CA0;
+    --amb-on-link: #2a0c14;
     --amb-btn-primary-bg: #87384E;
     --amb-btn-primary-hover: #9c425b;
     --amb-btn-primary-text: #FFF5F7;
@@ -478,6 +482,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-container {
     width: 90%;
     height: 90%;
+    color: var(--amb-text-main);
     background-color: var(--amb-bg-page, var(--amb-bg-page));
     border: 1px solid var(--amb-border);
     border-radius: 8px;

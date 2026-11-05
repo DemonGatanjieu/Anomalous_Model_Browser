@@ -207,11 +207,11 @@ export async function saveSelectionAsCombo(owner, nodes = null) {
         el('p', 'anomalous-structure-note', t('comboFromSelectionKept', { count: structure.nodes.length, nodes: structureSummary(structure) })));
     if (dropped.length) {
         dialog.append(el('p', 'anomalous-structure-note is-muted', t('comboFromSelectionDropped', {
-            count: dropped.length, nodes: dropped.map(node => node.title || node.type).join('、'),
+            count: dropped.length, nodes: dropped.map(node => node.title || node.type).join(t('listSeparator')),
         })));
     }
     const open = openInputs(structure);
-    if (open.length) dialog.append(el('p', 'anomalous-structure-note is-muted', t('comboFromSelectionOpen', { inputs: open.join('、') })));
+    if (open.length) dialog.append(el('p', 'anomalous-structure-note is-muted', t('comboFromSelectionOpen', { inputs: open.join(t('listSeparator')) })));
     const rows = el('div', 'anomalous-structure-slots');
     const choices = structure.slots.map((slot) => {
         const row = el('label', 'anomalous-structure-slot');
@@ -364,7 +364,7 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
     const nodeName = (slot) => {
         const node = nodeOf.get(slot.node);
         if (!node) return null;
-        return { text: `${node.title || node.name || node.type}${node.pack ? `（${node.pack}）` : ''}`,
+        return { text: `${node.title || node.name || node.type}${node.pack ? ` (${node.pack})` : ''}`,
             title: node.pack ? `${node.type} · ${node.pack}` : node.type };
     };
     const labelLine = (slot) => {
@@ -506,15 +506,15 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
 
     const about = el('div', 'anomalous-structure-about');
     const open = openInputs(structure);
-    if (open.length) about.append(el('p', 'anomalous-structure-note', t('comboOpenInputs', { inputs: open.join('、') })));
+    if (open.length) about.append(el('p', 'anomalous-structure-note', t('comboOpenInputs', { inputs: open.join(t('listSeparator')) })));
     about.append(el('p', 'anomalous-structure-note is-muted', t('comboStructureNodes', { nodes: structureSummary(structure) })),
         el('p', 'anomalous-structure-note is-muted', t('comboFixedHint')));
     const packs = [...new Set(structure.nodes.map(item => item.pack).filter(Boolean))];
-    if (packs.length) about.append(el('p', 'anomalous-structure-note is-muted', t('comboStructurePacks', { packs: packs.join('、') })));
+    if (packs.length) about.append(el('p', 'anomalous-structure-note is-muted', t('comboStructurePacks', { packs: packs.join(t('listSeparator')) })));
     const missing = missingTypes(structure);
     if (missing.length) {
         about.append(el('p', 'anomalous-structure-note is-bad', t('comboStructureMissing', {
-            nodes: missing.map(item => (item.pack ? `${item.type}（${item.pack}）` : item.type)).join('、'),
+            nodes: missing.map(item => (item.pack ? `${item.type} (${item.pack})` : item.type)).join(t('listSeparator')),
         })));
     }
     card.append(about);

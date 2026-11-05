@@ -354,7 +354,7 @@ export function renderDraftCard(draft, view, ctx, { solo = false } = {}) {
         .filter(item => !draft.target || needs.includes(item.id));
     if (missing.length) {
         body.append(el('div', 'anomalous-tts-card-note', t('ttsImportPretrainedNote', {
-            files: missing.map(item => item.label).join('、'),
+            files: missing.map(item => item.label).join(t('listSeparator')),
             size: formatSize(missing.reduce((sum, item) => sum + (item.size || 0), 0)),
         })));
     }

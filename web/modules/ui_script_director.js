@@ -482,7 +482,7 @@ function renderPackage() {
     const ok = !pkg.error;
     refs.summary.classList.toggle('is-error', !ok);
     if (ok && pkg.speakers.length > 1) {
-        refs.summary.textContent = t('scriptDirectorPackageSummaryCast', { count: pkg.lineCount, speakers: pkg.speakers.join('、') });
+        refs.summary.textContent = t('scriptDirectorPackageSummaryCast', { count: pkg.lineCount, speakers: pkg.speakers.join(t('listSeparator')) });
     } else if (ok) {
         const used = [...new Set(state.lines.filter(line => line.text.trim()).map(line => emotionLabel(line.emotion)))];
         refs.summary.textContent = t('scriptDirectorPackageSummary', { count: pkg.lineCount, emotions: used.join(' · ') });

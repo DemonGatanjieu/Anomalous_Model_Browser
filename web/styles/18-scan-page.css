@@ -606,8 +606,10 @@ button.anomalous-scan-stat:hover {
 .anomalous-scan-segment {
     display: inline-flex;
     flex-wrap: wrap;
-    flex-shrink: 0;
+    flex-shrink: 1;
     align-self: flex-start;
+    box-sizing: border-box;
+    max-width: 100%;
     gap: 2px;
     padding: 3px;
     border: 1px solid var(--amb-border);

@@ -29,7 +29,7 @@ export function detectPlatform(url) {
     if (!clean) return null;
     const [, name, rgb] = PLATFORMS.find(([pattern]) => pattern.test(clean)) || [null, 'Web Link', ''];
     return rgb
-        ? { name, color: `rgb(${rgb})`, bg: `rgba(${rgb}, 0.15)`, border: `rgba(${rgb}, 0.4)` }
+        ? { name, color: `color-mix(in srgb, rgb(${rgb}) 60%, var(--amb-text-main))`, bg: `rgba(${rgb}, 0.15)`, border: `rgba(${rgb}, 0.4)` }
         : { name, color: 'var(--amb-text-muted)', bg: 'transparent', border: 'var(--amb-border-strong)' };
 }
 

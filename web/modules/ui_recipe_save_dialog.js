@@ -43,7 +43,7 @@ function verificationBox(parent, missing) {
     if (!missing.length) return null;
     const box = appendText(parent, 'div', '', 'anomalous-wfs-verify');
     appendText(box, 'strong', formatRecipeText('recipeVerificationMissing', { count: missing.length }));
-    appendText(box, 'small', missing.map((reference) => reference.saved_value).join('、'), 'anomalous-wfs-hint');
+    appendText(box, 'small', missing.map((reference) => reference.saved_value).join(t('listSeparator')), 'anomalous-wfs-hint');
     const choice = appendText(box, 'label', '', 'anomalous-wfs-check');
     const input = document.createElement('input');
     input.type = 'checkbox';

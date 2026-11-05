@@ -183,7 +183,7 @@ function keyBlock(keys, ticks, starred, focus) {
 function nodeList(title, nodes) {
     const block = el('div', 'anomalous-compare-node is-structure');
     block.append(el('div', 'anomalous-compare-node-title', title));
-    block.append(el('div', 'anomalous-compare-structure-list', nodes.map(node => `${node.title} #${node.id}`).join('、')));
+    block.append(el('div', 'anomalous-compare-structure-list', nodes.map(node => `${node.title} #${node.id}`).join(t('listSeparator'))));
     return block;
 }
 

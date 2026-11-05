@@ -33,7 +33,7 @@ export function looksRow(steps, number) {
     row.append(el('span', 'anomalous-ai-step-dot', number));
     const body = el('div', 'anomalous-ai-step-body');
     const tools = lookTools(steps).map(({ tool, count }) => counted(tool, count));
-    const head = el('button', 'anomalous-ai-looks', `${t('aiLooks', { count: steps.length })}：${tools.join('、')}`);
+    const head = el('button', 'anomalous-ai-looks', `${t('aiLooks', { count: steps.length })}${t('wordColon')}${tools.join(t('listSeparator'))}`);
     head.type = 'button';
     head.onclick = () => {
         details.hidden = !details.hidden;

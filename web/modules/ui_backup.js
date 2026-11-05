@@ -177,7 +177,7 @@ function showChoices(owner, name, summary, { dialog, footer, close }) {
     if (summary.models?.total) {
         const { matched, total, missing } = summary.models;
         const hint = missing.length
-            ? t('backupModelsMissing', { names: missing.slice(0, 5).map(rel => rel.split('/').pop()).join('、'), count: missing.length })
+            ? t('backupModelsMissing', { names: missing.slice(0, 5).map(rel => rel.split('/').pop()).join(t('listSeparator')), count: missing.length })
             : '';
         models = checkbox(t('backupModels', { matched, total }), matched > 0, hint);
         dialog.append(models.line);

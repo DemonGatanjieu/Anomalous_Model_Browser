@@ -127,6 +127,7 @@ html.amb-theme-light .anomalous-recipe-detail-view { --wfd-orange: #ea580c; }
     top: -16px;
     z-index: 2;
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     gap: 10px;
     margin-top: 4px;
@@ -137,7 +138,7 @@ html.amb-theme-light .anomalous-recipe-detail-view { --wfd-orange: #ea580c; }
 
 .anomalous-wfd-tabs {
     display: flex;
-    flex: 1;
+    flex: 1 1 240px;
     align-items: flex-end;
     gap: 2px;
     min-width: 0;
@@ -806,5 +807,5 @@ html.amb-theme-light .anomalous-recipe-detail-view { --wfd-orange: #ea580c; }
 .anomalous-example-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--amb-text-main); font-size: 13px; font-weight: 650; }
 .anomalous-example-badge { padding: 0 6px; border-radius: 6px; background: color-mix(in srgb, var(--amb-link) 18%, transparent); color: var(--amb-link); font-size: 11px; font-weight: 500; }
 .anomalous-example-about { margin: 3px 0 4px; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
-.anomalous-example-open { flex: none; height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--amb-link); color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.anomalous-example-open { flex: none; height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--amb-link); color: var(--amb-on-link); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
 .anomalous-example-open:hover { filter: brightness(1.15); }

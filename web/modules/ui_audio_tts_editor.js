@@ -334,7 +334,7 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
         const uses = usesOf(state.voices, path).map(use => t(`ttsRefsUse_${use.role}`, { name: use.name === MAIN ? t('ttsRefsMainVoice') : use.name }));
         const message = [
             t('ttsRefsRemoveConfirm', { file: baseName(path) }),
-            uses.length ? t('ttsRefsRemoveUses', { uses: uses.join('、') }) : '',
+            uses.length ? t('ttsRefsRemoveUses', { uses: uses.join(t('listSeparator')) }) : '',
         ].filter(Boolean).join('\n');
         if (!await anomalousConfirm(message, t('ttsRefsRemove'))) return;
         if (state.playing?.path === path) stopPlaying();

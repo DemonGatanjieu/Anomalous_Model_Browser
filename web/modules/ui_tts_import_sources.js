@@ -21,7 +21,7 @@ export const UPLOAD_WARN_FILES = 1500;
 /** `a、b、c…`: the first few names of a list, in name order. */
 function few(names) {
     const sorted = [...names].sort((a, b) => a.localeCompare(b));
-    return sorted.slice(0, 3).join('、') + (sorted.length > 3 ? '…' : '');
+    return sorted.slice(0, 3).join(t('listSeparator')) + (sorted.length > 3 ? '…' : '');
 }
 
 /**

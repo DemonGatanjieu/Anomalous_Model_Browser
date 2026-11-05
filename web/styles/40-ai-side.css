@@ -555,7 +555,7 @@
     border: 0;
     border-radius: 9px;
     background: var(--amb-link);
-    color: #fff;
+    color: var(--amb-on-link);
     font: inherit;
     font-size: 12.5px;
     font-weight: 600;

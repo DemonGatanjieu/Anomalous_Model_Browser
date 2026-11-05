@@ -50,7 +50,7 @@ export function decisionCard(record, numberOf = null) {
     if (BY[record.by]) head.append(el('span', `anomalous-ai-decision-by is-${record.by}`, t(BY[record.by])));
     card.append(head, el('div', 'anomalous-ai-decision-text', record.decision || ''));
     if (record.reason) card.append(el('div', 'anomalous-ai-decision-why', t('aiDecisionWhy', { reason: record.reason })));
-    if (record.rejected?.length) card.append(el('div', 'anomalous-ai-decision-not', t('aiDecisionRejected', { options: record.rejected.join('、') })));
+    if (record.rejected?.length) card.append(el('div', 'anomalous-ai-decision-not', t('aiDecisionRejected', { options: record.rejected.join(t('listSeparator')) })));
     if (record.related?.length) {
         const links = el('div', 'anomalous-ai-decision-links');
         links.append(el('span', '', t('aiDecisionAbout')), ...record.related.map(id => stepLink(id, numberOf)));
@@ -64,7 +64,7 @@ function described(item) {
     switch (item.type) {
     case 'logged': return [item.title, item.decision];
     case 'answer': return [item.question || t('aiDecisionAnswer'), item.skipped ? t('aiPanelSkipped') : item.timed_out ? t('aiPanelTookRecommended', { answer: item.answer }) : item.answer];
-    case 'gate': return [t(toolKey(item.tool)), [t(item.allowed ? 'aiDecisionAllowed' : 'aiDecisionRefused'), item.text].filter(Boolean).join('：')];
+    case 'gate': return [t(toolKey(item.tool)), [t(item.allowed ? 'aiDecisionAllowed' : 'aiDecisionRefused'), item.text].filter(Boolean).join(t('wordColon'))];
     case 'toolbox': return [t('aiDecisionToolbox'), item.count ? t('aiDecisionToolboxText', { count: item.count, mode: t(`aiTbMode_${item.mode}`) }) : t('aiToolboxCleared')];
     case 'canvas': return [t('aiDecisionCanvas'), t(item.mode === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')];
     case 'privacy': return [t('aiPrivacy'), t(item.on ? 'aiPrivacyChoseOn' : 'aiPrivacyChoseOff')];
@@ -85,7 +85,7 @@ export function renderDecisionsView(pane, task, ctx) {
     const gap = task.decisions_gap;
     if (gap && items.length) {
         const parts = [gap.runs ? t('aiDecisionGapRuns', { count: gap.runs }) : '', gap.canvas ? t('aiDecisionGapCanvas', { count: gap.canvas }) : ''].filter(Boolean);
-        body.append(el('div', 'anomalous-ai-decisions-gap', t('aiDecisionGap', { what: parts.join('、') })));
+        body.append(el('div', 'anomalous-ai-decisions-gap', t('aiDecisionGap', { what: parts.join(t('listSeparator')) })));
     }
     if (!items.length) body.append(el('div', 'anomalous-ai-stage-empty anomalous-ai-decisions-none', t('aiDecisionsNone')));
     for (const item of items) {
@@ -100,7 +100,7 @@ export function renderDecisionsView(pane, task, ctx) {
         if (BY[by]) top.append(el('span', `anomalous-ai-decision-by is-${by}`, t(BY[by])));
         text.append(top, el('div', 'anomalous-ai-decisions-words', words || ''));
         if (item.type === 'logged' && item.reason) text.append(el('div', 'anomalous-ai-decision-why', t('aiDecisionWhy', { reason: item.reason })));
-        if (item.type === 'logged' && item.rejected?.length) text.append(el('div', 'anomalous-ai-decision-not', t('aiDecisionRejected', { options: item.rejected.join('、') })));
+        if (item.type === 'logged' && item.rejected?.length) text.append(el('div', 'anomalous-ai-decision-not', t('aiDecisionRejected', { options: item.rejected.join(t('listSeparator')) })));
         const foot = el('div', 'anomalous-ai-decision-links');
         foot.append(el('span', '', timeLabel(item.at)), stepLink(item.step, ctx.numberOf));
         text.append(foot);

@@ -134,7 +134,7 @@
     align-items: center;
     gap: 6px;
     width: min(360px, 100%);
-    min-width: 120px;
+    min-width: 0;
     padding: 0 10px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 999px;

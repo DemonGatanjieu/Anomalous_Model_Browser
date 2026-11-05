@@ -70,6 +70,7 @@
 .anomalous-ai-task-link {
     display: inline-flex;
     align-items: center;
+    min-width: 0;
     max-width: 320px;
     border: 1px solid color-mix(in srgb, var(--amb-link) 40%, transparent);
     border-radius: 999px;
@@ -90,10 +91,10 @@
     font: inherit;
     cursor: pointer;
 }
-.anomalous-ai-task-link.is-next { border: 1px solid color-mix(in srgb, var(--amb-link) 40%, transparent); font-size: 12px; } /* they are the chips: not the header's size */
+.anomalous-ai-task-link.is-next { border: 1px solid color-mix(in srgb, var(--amb-link) 40%, transparent); color: var(--amb-link); font-size: 12px; } /* they are the chips: not the header's size */
 .anomalous-ai-task-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-task-link-go:hover span, .anomalous-ai-task-link.is-next:hover span { text-decoration: underline; }
-.anomalous-ai-task-link-x { display: inline-flex; margin-right: 4px; padding: 3px; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
+.anomalous-ai-task-link-x { display: inline-flex; flex: none; margin-right: 4px; padding: 3px; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
 .anomalous-ai-task-link-x:hover { background: color-mix(in srgb, var(--amb-link) 18%, transparent); }
 .anomalous-ai-task-links-menu {
     position: fixed;

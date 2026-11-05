@@ -120,7 +120,7 @@ export function renderTtsPresets(status, groups, local) {
                     : t('ttsPresetsPair', { ref: t(`scriptRunLang_${use.split('>')[0]}`), lang: t(`scriptRunLang_${use.split('>')[1]}`) }))),
             ...uses.characters,
         ];
-        const message = t('ttsPresetDeleteAsk', { name: label(name) }) + (where.length ? `\n${t('ttsPresetDeleteUses', { list: where.join('、') })}` : '');
+        const message = t('ttsPresetDeleteAsk', { name: label(name) }) + (where.length ? `\n${t('ttsPresetDeleteUses', { list: where.join(t('listSeparator')) })}` : '');
         if (!await anomalousConfirm(message, t('ttsPresetsTitle'), { okLabel: t('ttsPresetDelete') })) return;
         change(() => {
             removePreset(state, name);

@@ -260,7 +260,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             if (mode === 'replace') chosen = chosen.filter(pathMatchesBaseFilter);
         };
         const updateSelection = () => {
-            const names = chosen.map(getName).join('、');
+            const names = chosen.map(getName).join(t('listSeparator'));
             if (mode === 'insert') {
                 selectionText.textContent = chosen.length ? t('pickerChosenLoras', { count: chosen.length, names }) : t('pickerChooseLoras');
                 selectionText.title = names;

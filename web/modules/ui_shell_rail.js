@@ -30,7 +30,7 @@ export const PAGE_ICONS = {
 export const RAIL_PAGES = Object.freeze([
     { page: 'home', id: 'anomalous-home-btn', labelKey: 'shellHome' },
     { page: 'activity', id: 'anomalous-activity-btn', labelKey: 'shellActivity' },
-    { page: 'ai', id: 'anomalous-ai-btn', labelKey: 'shellAi' }, // the AI workbench (ui_ai_workbench.js)
+    { page: 'ai', id: 'anomalous-ai-btn', labelKey: 'shellAi', railKey: 'shellAiRail' }, // the AI workbench (ui_ai_workbench.js)
     { page: 'models', id: 'anomalous-models-btn', labelKey: 'models' },
     { page: 'gallery', id: 'anomalous-gallery-btn', labelKey: 'gallery' },
     { page: 'recipes', id: 'anomalous-notebook-btn', labelKey: 'recipeTitle' },
@@ -84,7 +84,7 @@ export function createShellRail(owner) {
         RAIL_PAGES.forEach((entry, index) => {
             const button = items.get(entry.page);
             const text = t(entry.labelKey);
-            button.querySelector('.anomalous-rail-label').textContent = text;
+            button.querySelector('.anomalous-rail-label').textContent = t(entry.railKey || entry.labelKey);
             button.setAttribute('aria-label', text);
             // Only the first nine have a number key.
             button.dataset.tooltip = index < 9 ? t('shellRailKey', { name: text, key: index + 1 }) : text;

@@ -122,7 +122,7 @@
 .anomalous-ai-tick.is-on {
     border-color: var(--amb-link);
     background: var(--amb-link);
-    color: #fff;
+    color: var(--amb-on-link);
     opacity: 1;
 }
 
@@ -182,7 +182,7 @@
     border: 0;
     border-radius: 999px;
     background: var(--amb-link);
-    color: #fff;
+    color: var(--amb-on-link);
     font: inherit;
     cursor: pointer;
 }
