@@ -8,6 +8,7 @@ import { jsonResponse } from './ui_dom.js';
 
 const FAILED = 'The saves did not answer';
 const listeners = new Set();
+let counts = Promise.resolve(); // the counts sent so far, answered or not
 
 const read = (route, query = {}) => fetch(`/anomalous/saves${route}?${new URLSearchParams(query)}`).then(response => jsonResponse(response, FAILED));
 
@@ -40,7 +41,14 @@ export const readWorkflow = (key, id) => read('/workflow', { key, id }).then(dat
 /** Keeps a save ({key, workflow, title, path, changes}); the group as it stands then. */
 export const addSave = save => send('add', save).then(data => changed(save.key, data.group));
 
-export const setCount = (key, id, count) => send('update', { key, id, count }).then(data => changed(key, data.group));
+export function setCount(key, id, count) {
+    const sent = send('update', { key, id, count }).then(data => changed(key, data.group));
+    counts = Promise.allSettled([counts, sent]);
+    return sent;
+}
+
+/** Settles once every count sent so far is answered, taken or not. */
+export const countsAnswered = () => counts;
 
 /** Says which runs came from save `id`, so their pictures can be found. */
 export const noteRuns = (key, id, promptIds) => send('ran', { key, id, prompt_ids: promptIds }).then(data => changed(key, data.group));

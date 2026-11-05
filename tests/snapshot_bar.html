@@ -9,6 +9,7 @@
 <script type="module">
 import { app } from '/scripts/app.js';
 import { api } from '/scripts/api.js';
+import { translate as t } from '../web/modules/locales.js';
 import { MAX_RUNS } from '../web/modules/snapshot_plan.js';
 import { refreshGroup } from '../web/modules/snapshot_store.js';
 import { savesToggle } from '../web/modules/ui_saves_list.js';
@@ -18,8 +19,10 @@ import { watchSaves } from '../web/modules/ui_snapshot_bar.js';
 // so what must hold is that nothing here takes a control off it. Only ComfyUI and the saves routes are fake.
 const save = id => ({ id, at: 0, count: 1, changes: [], pictures: [], running: 0 });
 const group = { key: 'k', title: '', path: '', saves: [save('a'), save('b')] };
+let slow = 0; // how long a count's answer takes
 window.fetch = async (url, options) => {
     if (String(url).includes('/saves/update')) {
+        await new Promise(resolve => setTimeout(resolve, slow));
         const { id, count } = JSON.parse(options.body);
         group.saves.find(item => item.id === id).count = count;
     }
@@ -138,6 +141,16 @@ try {
     group.saves.shift();
     await refreshGroup('k');
     check(all('.anomalous-saves-save').map(card => card.dataset.key).join() === 'c' && one('.anomalous-saves-number').textContent === '1', 'a card left by a removed save does not go on as the next one');
+
+    group.saves.push({ ...save('d'), count: MAX_RUNS - 1 });
+    await refreshGroup('k');
+    slow = 60;
+    const late = one('.anomalous-snapshot-mark .anomalous-snapshot-count');
+    late.value = '2'; // one over, once it counts
+    late.dispatchEvent(new Event('change'));
+    one('#anomalous-snapshot-bar .anomalous-snapshot-run').click();
+    await new Promise(resolve => setTimeout(resolve, 150));
+    check(one('.anomalous-snapshot-status').textContent === t('snapshotTooMany', { most: MAX_RUNS }), 'Run goes by a count whose answer comes after the click');
     results.textContent += failures ? `${failures} FAILED` : 'ALL PASSED';
 } catch (error) { results.textContent += `FAIL ${error.stack}`; }
 </script>

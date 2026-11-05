@@ -12,7 +12,7 @@ import { postCanvasActivity } from './activity_log.js';
 import { readDetached } from './detached_graph.js';
 import { translate as t } from './locales.js';
 import { MAX_RUNS, applySeeds, baseSeed, compiled, jobLine, runTotal, seedWidgets, seedsOf } from './snapshot_plan.js';
-import { noteRuns, readWorkflow, refreshGroup } from './snapshot_store.js';
+import { countsAnswered, findGroup, noteRuns, readWorkflow, refreshGroup } from './snapshot_store.js';
 
 let mode = 'random';
 const inLine = jobLine(); // what was clicked, going in one after another
@@ -65,14 +65,16 @@ async function submit(key, saves, seeds, say) {
     return done;
 }
 
-async function queue(group, saves, seeds, say) {
-    if (runTotal(saves) > MAX_RUNS) {
-        say(t('snapshotTooMany', { most: MAX_RUNS }), true);
-        return 0;
-    }
-    const { key } = group;
+async function queue(key, ids, seeds, say) {
     try {
         say(t('snapshotChecking'));
+        await countsAnswered();
+        const group = await findGroup(key, '');
+        const saves = group.saves.filter(save => ids.includes(save.id));
+        if (runTotal(saves) > MAX_RUNS) {
+            say(t('snapshotTooMany', { most: MAX_RUNS }), true);
+            return 0;
+        }
         const found = await problems(group, saves);
         if (found.length) {
             say(found.slice(0, 4).join('\n'), true);
@@ -91,10 +93,14 @@ async function queue(group, saves, seeds, say) {
 }
 
 /**
- * Queues `saves` of `group` after whatever was clicked before them, `seeds` 'random' or 'locked'.
+ * Queues `saves` of `group` after whatever was clicked before them, `seeds` 'random' or 'locked'. They
+ * go as they stand at their turn: the click can come before the answer to a count typed just before it.
  * `say(text, bad)` tells how it goes. How many runs went in; none when refused, or already waiting.
  */
-export const runSaves = (group, saves, seeds, say) => inLine(saves.map(save => save.id).join(), () => queue(group, saves, seeds, say));
+export function runSaves(group, saves, seeds, say) {
+    const ids = saves.map(save => save.id);
+    return inLine(ids.join(), () => queue(group.key, ids, seeds, say));
+}
 
 /** ComfyUI says its queue changed: a run has left it for the history, where its pictures are. */
 async function queueChanged() {
