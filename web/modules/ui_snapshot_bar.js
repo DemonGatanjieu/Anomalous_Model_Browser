@@ -74,6 +74,29 @@ function button(className, label, run, title = '') {
 }
 
 /**
+ * `parent` comes to show `fresh` on the elements it has. The browser sends no click to an element that left
+ * the page during the press, and ComfyUI's graphChanged, an answer to a count or a run ending can all come
+ * during one; a box being typed in would lose its digits. A save's part is only kept for that save.
+ * Handlers move over to the kept element, so they read `event.target`, not the element made with them.
+ */
+function settle(parent, fresh) {
+    const there = [...parent.children];
+    fresh.forEach((node, at) => {
+        const old = there[at];
+        if (!old) return void parent.append(node);
+        if (old.tagName !== node.tagName || old.dataset.save !== node.dataset.save) return void old.replaceWith(node);
+        for (const { name, value } of node.attributes) old.setAttribute(name, value);
+        old.onclick = node.onclick;
+        old.onchange = node.onchange;
+        if (node.tagName === 'INPUT') {
+            if (old !== document.activeElement) old.value = node.value;
+        } else if (!node.children.length) old.textContent = node.textContent;
+        settle(old, [...node.children]);
+    });
+    for (const extra of there.slice(fresh.length)) extra.remove();
+}
+
+/**
  * Writes `key` on the open workflow without it counting as a change: the tab's undo states take it too,
  * so nothing asks to be saved and Ctrl+Z does not lose it. It reaches the file when the user next saves;
  * ComfyUI's draft of the tab, what a reload brings back, is written on the event sent here.
@@ -241,7 +264,7 @@ export function runsBox(key, save) {
     count.value = save.count;
     count.title = t('snapshotCount');
     count.setAttribute('aria-label', t('snapshotCount'));
-    count.onchange = () => void setCount(key, save.id, runCount(count.value)).catch(error => console.warn('[AMB] Saves:', error));
+    count.onchange = event => void setCount(key, save.id, runCount(event.target.value)).catch(error => console.warn('[AMB] Saves:', error));
     return count;
 }
 
@@ -261,6 +284,7 @@ export function seedSwitch() {
 
 function chip(save, at) {
     const box = el('span', `anomalous-snapshot-mark${save.id === current ? ' is-current' : ''}`);
+    box.dataset.save = save.id;
     box.append(button('anomalous-snapshot-number', String(at + 1), () => void goBack(group.key, save), `${t('snapshotBack')}\n${saveWords(save, at)}`), el('span', 'anomalous-snapshot-times', '×'), runsBox(group.key, save));
     return box;
 }
@@ -292,7 +316,7 @@ function draw(clear = true) {
     bar.classList.toggle('is-folded', folded);
     if (folded) {
         const label = `${t('snapshotFolded', { count: saves.length })}${runsLeft(saves) ? '…' : ''} ⌃`;
-        return void bar.replaceChildren(button('anomalous-snapshot-unfold', label, () => fold(false), t('snapshotUnfold')));
+        return void settle(bar, [button('anomalous-snapshot-unfold', label, () => fold(false), t('snapshotUnfold'))]);
     }
     const row = el('div', 'anomalous-snapshot-row');
     const list = el('div', 'anomalous-snapshot-marks');
@@ -302,7 +326,7 @@ function draw(clear = true) {
     row.append(el('span', 'anomalous-snapshot-title', t('snapshotTitle')), list);
     if (saves.length) row.append(seedSwitch(), lookButton(saves), button('anomalous-snapshot-run', t('snapshotRun', { count: runTotal(saves) }), () => void run(), t('snapshotRunHint')));
     row.append(button('anomalous-snapshot-close', '⌄', () => fold(true), t('snapshotFold')));
-    bar.replaceChildren(row, el('div', 'anomalous-snapshot-status'));
+    settle(bar, [row, el('div', 'anomalous-snapshot-status')]);
     showStatus();
 }
 

@@ -1,0 +1,86 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Saves bar regression</title>
+<script type="importmap">{"imports":{"/scripts/app.js":"data:text/javascript,export const app = {};","/scripts/api.js":"data:text/javascript,export const api = new EventTarget();"}}</script>
+<pre id="results">Running…</pre>
+<div class="graph-canvas-panel"></div>
+<script type="module">
+import { app } from '/scripts/app.js';
+import { api } from '/scripts/api.js';
+import { refreshGroup } from '../web/modules/snapshot_store.js';
+import { watchSaves } from '../web/modules/ui_snapshot_bar.js';
+
+// The real bar on a page. The browser sends no click to an element that left the page during the press,
+// so what must hold is that nothing here takes a control off it. Only ComfyUI and the saves routes are fake.
+const save = id => ({ id, at: 0, count: 1, changes: [], pictures: [], running: 0 });
+const group = { key: 'k', title: '', path: '', saves: [save('a'), save('b')] };
+window.fetch = async (url, options) => {
+    if (String(url).includes('/saves/update')) {
+        const { id, count } = JSON.parse(options.body);
+        group.saves.find(item => item.id === id).count = count;
+    }
+    return new Response(JSON.stringify({ group, workflow: {} }));
+};
+app.rootGraph = { extra: { anomalous_saves: 'k' }, serialize: () => ({}) };
+app.graph = app.rootGraph;
+app.extensionManager = { workflow: { activeWorkflow: { path: 'a.json', changeTracker: { undoQueue: [], redoQueue: [], updateState: async () => {} } } } };
+
+const results = document.querySelector('#results');
+let failures = 0;
+const check = (condition, text) => { results.textContent += `${condition ? 'PASS' : 'FAIL'} ${text}\n`; if (!condition) failures++; };
+const one = selector => document.querySelector(selector);
+const all = selector => [...document.querySelectorAll(selector)];
+const answered = () => new Promise(resolve => setTimeout(resolve, 30));
+const typed = async (box, value) => {
+    box.value = value;
+    box.dispatchEvent(new Event('change'));
+    await answered();
+};
+try {
+    results.textContent = '';
+    watchSaves(() => null);
+    await answered();
+    one('.anomalous-snapshot-number').click();
+    await answered();
+    check(all('.anomalous-snapshot-mark.is-current').length === 1, 'a number lights when the canvas goes back to it');
+
+    const controls = all('#anomalous-snapshot-bar button, #anomalous-snapshot-bar input');
+    const stayed = () => controls.every(node => node.isConnected);
+    api.dispatchEvent(new CustomEvent('graphChanged'));
+    check(!one('.is-current'), 'a change darkens the lit number');
+    check(stayed(), 'a change keeps every control on the page: ComfyUI tells of it between a press and its click');
+
+    const [box, other] = all('.anomalous-snapshot-count');
+    await typed(box, '3');
+    check(group.saves[0].count === 3, 'a count is sent');
+    check(stayed(), 'the answer to a count keeps every control on the page: it comes during the press on the next one');
+    check(one('.anomalous-snapshot-run').textContent.includes('4'), 'Run says the new total');
+    await typed(box, '5');
+    check(group.saves[0].count === 5, 'a box that was redrawn sends what it holds');
+
+    box.focus();
+    box.value = '7';
+    group.saves[1].count = 2;
+    await refreshGroup('k');
+    check(document.activeElement === box && box.value === '7', 'a run ending leaves a box being typed in alone');
+    check(other.value === '2', 'the other boxes come up to date');
+    check(stayed(), 'a run ending keeps every control on the page');
+    box.blur();
+
+    group.saves.push(save('c'));
+    await refreshGroup('k');
+    check(all('.anomalous-snapshot-number').length === 3, 'a new save shows');
+    group.saves.shift();
+    await refreshGroup('k');
+    const left = all('.anomalous-snapshot-mark');
+    check(left.map(chip => chip.dataset.save).join() === 'b,c' && all('.anomalous-snapshot-count')[0].value === '2', 'a part left by a removed save does not go on as the next one');
+
+    one('.anomalous-snapshot-close').click();
+    const handle = one('.anomalous-snapshot-unfold');
+    await refreshGroup('k');
+    check(handle.isConnected, 'the folded handle stays on the page too');
+    handle.click();
+    check(one('.anomalous-snapshot-add') && one('.anomalous-snapshot-status') && !one('.anomalous-snapshot-unfold'), 'unfolding brings the row back');
+    results.textContent += failures ? `${failures} FAILED` : 'ALL PASSED';
+} catch (error) { results.textContent += `FAIL ${error.stack}`; }
+</script>
