@@ -4,6 +4,35 @@
  * and its steps are api/ai_tasks.py's shapes.
  */
 
+/**
+ * The task list by family: a task comes with all that go on from it (`from`, however far), those
+ * one step in under it, by when they started. Families stand by their latest news, as `tasks`
+ * (newest first) has them; a task whose `from` is not in `tasks` starts a family.
+ * Items: { task, child, size (the family's, on its first task), newest (its latest news) }.
+ */
+export function taskFamilies(tasks) {
+    const byId = new Map(tasks.map(task => [task.id, task]));
+    const headOf = (task) => {
+        const seen = new Set();
+        let head = task;
+        while (byId.has(head.from)) {
+            if (seen.has(head.id)) return task; // going round: set_from refuses that, a hand-edited file need not
+            seen.add(head.id);
+            head = byId.get(head.from);
+        }
+        return head;
+    };
+    const families = new Map(); // first task -> the family, newest first; in the order first met
+    for (const task of tasks) {
+        const head = headOf(task);
+        families.set(head, [...(families.get(head) || []), task]);
+    }
+    return [...families].flatMap(([head, members]) => {
+        const rest = members.filter(task => task !== head).sort((a, b) => a.started - b.started);
+        return [head, ...rest].map(task => ({ task, child: task !== head, size: task === head ? members.length : 1, newest: members[0].updated }));
+    });
+}
+
 /** The kinds of step, in the order a task's counts name them. */
 export const KINDS = ['panel', 'user', 'decision', 'canvas', 'run', 'speech', 'download', 'scan', 'show', 'note', 'act', 'outside', 'skill', 'look'];
 

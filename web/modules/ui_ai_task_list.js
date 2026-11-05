@@ -2,7 +2,9 @@
  * The AI workbench's task column (ui_ai_workbench.js draws the rest): its head, "New task" and
  * the ways in (connect an AI, the gates), which AI came last and when, quick filters by where a
  * task stands (working, asking the user, failed) with their counts, and the tasks by day, each
- * with an icon for where it stands. The filter is this column's own; the rest comes in `view`.
+ * with an icon for where it stands and a ⋯ (ui_ai_task_menu.js) that shows on the task the pointer
+ * is on. All tasks show by family, those going on from a task under it (ai_task_view.taskFamilies);
+ * a filter's show alone. The filter is this column's own; the rest comes in `view`.
  * Drawn again (every few seconds while the page shows), only the rows that changed are made anew.
  * The column folds away from a button at the top left of the window (listToggle); folded, it stays
  * laid out out of sight, and the pointer on that button, or moving left onto the page's left edge,
@@ -11,7 +13,7 @@
 
 import { translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
-import { taskCounts, taskState } from './ai_task_view.js';
+import { taskCounts, taskFamilies, taskState } from './ai_task_view.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { openConnectGuide } from './ui_ai_connect.js';
 import { openGates } from './ui_ai_gate.js';
@@ -37,7 +39,8 @@ export function stateIcon(status, size = 13) {
     return mark;
 }
 
-function taskRow(summary, view) {
+/** `place`: where it stands in the list: `size` of its family, `follows` when no family shows that, `day` when not the heading's. */
+function taskRow(summary, view, place) {
     const status = taskState(summary);
     const row = el('button', `anomalous-ai-task-row is-${status}${summary.id === view.selected ? ' is-current' : ''}`);
     row.type = 'button';
@@ -45,13 +48,28 @@ function taskRow(summary, view) {
     row.onpointerenter = () => view.onHover?.(summary);
     row.onpointerleave = () => view.onLeave?.();
     const top = el('div', 'anomalous-ai-task-row-top');
-    top.append(stateIcon(status), el('span', 'anomalous-ai-task-row-title', summary.title || t('aiUntitled')));
+    const name = el('span', 'anomalous-ai-task-row-title', summary.title || t('aiUntitled'));
+    name.title = name.textContent; // a follow-up stands one step in: its name is cut off sooner
+    top.append(stateIcon(status), name);
+    if (place.size > 1) top.append(el('span', 'anomalous-ai-task-family', t('aiTaskFamily', { count: place.size })));
     if (status === 'live') top.append(el('span', 'anomalous-ai-live-dot'));
-    const meta = [summary.from ? t('aiTaskFollows') : '', summary.client, timeLabel(summary.updated), t('aiStepCount', { count: summary.steps })].filter(Boolean);
+    const when = [place.day, timeLabel(summary.updated)].filter(Boolean).join(' ');
+    const meta = [place.follows ? t('aiTaskFollows') : '', summary.client, when, t('aiStepCount', { count: summary.steps })].filter(Boolean);
     row.append(top, el('div', 'anomalous-ai-task-row-meta', meta.join(' · ')));
     const counts = taskCounts(summary);
     if (counts.length) row.append(el('div', 'anomalous-ai-task-row-counts', counts.map(item => t(item.key, item.values)).join(' · ')));
     return row;
+}
+
+/** A task's row with its ⋯ beside it: a button cannot hold a button. */
+function taskItem(summary, view, place) {
+    const item = el('div', `anomalous-ai-task-item${place.child ? ' is-child' : ''}${summary.id === view.selected ? ' is-current' : ''}`);
+    const more = el('button', 'anomalous-ai-task-more', '⋯');
+    more.type = 'button';
+    more.title = t('notebookMore');
+    more.onclick = () => view.onMenu(more, summary);
+    item.append(taskRow(summary, view, place), more);
+    return item;
 }
 
 /** Which AI came last, and when: from the newest task an AI worked on. */
@@ -96,7 +114,7 @@ function filterChips(box, counts) {
 
 /**
  * Draws the column into `box`, making anew only the rows that changed.
- * `view`: { tasks, selected, onPick(summary), onNew(), onHover(summary), onLeave() }.
+ * `view`: { tasks, selected, onPick(summary), onNew(), onHover(summary), onLeave(), onMenu(anchor, summary) }.
  */
 export function renderTaskList(box, view) {
     box.aiView = view; // what the column's buttons act on: the latest
@@ -111,17 +129,20 @@ export function renderTaskList(box, view) {
         { key: 'list', make: () => el('div', 'anomalous-ai-tasks-list') },
     ]);
     // Newest first, under a heading for each day (today, yesterday, a date).
+    const items = filter === 'all' ? taskFamilies(view.tasks)
+        : view.tasks.filter((_, index) => FILTERS[filter](states[index])).map(task => ({ task, newest: task.updated, follows: Boolean(task.from) }));
     const rows = [];
     let day = null;
-    view.tasks.forEach((summary, index) => {
-        if (!FILTERS[filter](states[index])) return;
-        const label = dayLabel(summary.updated);
+    for (const { task, newest, ...place } of items) {
+        const label = dayLabel(newest);
         if (label !== day) {
             day = label;
             rows.push({ key: `day ${label}`, make: () => el('div', 'anomalous-ai-tasks-day', label) });
         }
-        rows.push({ key: JSON.stringify([summary, summary.id === view.selected]), make: () => taskRow(summary, box.aiView) });
-    });
+        const ownDay = dayLabel(task.updated);
+        const at = { ...place, day: ownDay === label ? '' : ownDay }; // a family stands under its latest day: an older task says its own
+        rows.push({ key: JSON.stringify([task, task.id === view.selected, at]), make: () => taskItem(task, box.aiView, at) });
+    }
     syncRows(box.querySelector(':scope > .anomalous-ai-tasks-list'), rows);
 }
 

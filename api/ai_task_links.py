@@ -2,7 +2,8 @@
 AI begins as new while on another (ai_tasks.begin_task), or one the user starts while looking at
 another (ai_tasks.start_task), keeps that one as its "from". The user can link a task to another
 or take the link off (set_from); links() gives a task's own "from" and the tasks that go on from it,
-and an AI beginning a task that goes on from another hears what was decided there."""
+and an AI beginning a task that goes on from another hears what was decided there. A task the user
+removes (remove) leaves no gap: those that went on from it go on from what it went on from."""
 
 from . import ai_decisions, ai_tasks
 
@@ -33,6 +34,21 @@ def set_from(task_id, parent_id):
         ai_tasks._save(task)
     ai_tasks._notify(task_id)
     return parent_id
+
+
+def remove(task_id):
+    """Takes task `task_id` off the list; those that went on from it now go on from what it went on from."""
+    with ai_tasks._lock:
+        tasks = ai_tasks._load()
+        parent = (tasks.get(task_id) or {}).get("from")
+        for task in tasks.values():
+            if task.get("from") == task_id:
+                if parent:
+                    task["from"] = parent
+                else:
+                    task.pop("from")
+                ai_tasks._save(task)
+        return ai_tasks.remove_task(task_id)
 
 
 def links(task_id):

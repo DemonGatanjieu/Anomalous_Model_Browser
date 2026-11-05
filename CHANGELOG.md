@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- AI 工作台的任务列表：一条线上的任务排在一起，后续任务缩进挂在最早的任务下面，一眼看出谁接着谁。每个任务行上多了 ⋯，改名、隐私模式、从列表移除不用先打开任务。移除中间的任务时，线不会断。
+- The AI workbench's task list keeps a line of tasks together: follow-ups hang under the first task, so you see what goes on from what. Each task row has a ⋯ for rename, privacy mode and remove, without opening the task first. Removing a task in the middle does not break the line.
 - 存档条和存档页上的按钮按一下就管用：刚在提示词框里打完字、刚改完次数，或者运行还在跑的时候，第一下不再被吃掉；运行途中正在输入的次数也不会被清掉。改完次数马上点运行，也一定按新的次数跑。
 - The controls of the saves bar and the Saves page answer the first click: right after typing in a prompt box or changing a count, or while runs go, the click is no longer lost, and a count being typed stays. Run right after changing a count goes by the new count.
 - **插入 LoRA 可以一次选多个**：选择窗口里点卡片加入，再点一下取消，卡片上的数字就是接上去的顺序，线自动连好，Ctrl+Z 一次全部退回。默认用 ComfyUI 自带的节点串成一串；装了 rgthree 或 Easy-Use 时可以改放进一个 Power Lora Loader 或 LoRA 堆叠节点，会记住上次的选择。

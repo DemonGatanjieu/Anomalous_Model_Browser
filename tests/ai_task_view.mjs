@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {
     activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, panelGist, lookTools, newestPicture, outputCount, outputUrl, outputPicture, pictureShown,
-    pictureKey, picturePreview, uniquePictures, skillsBefore, stepDetail, taskCounts, taskOutputs, taskResults, taskState, toolKey,
+    pictureKey, picturePreview, uniquePictures, skillsBefore, stepDetail, taskCounts, taskFamilies, taskOutputs, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
 const look = (tool, ok = true, state = 'done') => ({ kind: 'look', tool, ok, state, summary: tool });
@@ -136,3 +136,15 @@ assert.deepEqual(skillsBefore(timeline, timeline[1]).map(step => step.skill), ['
 assert.deepEqual(skillsBefore(timeline, timeline[6]), [], 'only since the run before');
 assert.deepEqual(skillsBefore(undefined, run('x')), []);
 console.log('ai_task_view: skills ok');
+
+// The task list: a line of tasks stands together under its first, by its latest news.
+const task = (id, updated, started, from) => ({ id, updated, started, ...(from ? { from } : {}) });
+const shape = tasks => taskFamilies(tasks).map(item => [item.task.id, item.child, item.size, item.newest]);
+assert.deepEqual(shape([task('c', 90, 30, 'b'), task('x', 80, 40), task('b', 70, 20, 'a'), task('a', 60, 10)]), [
+    ['a', false, 3, 90], ['b', true, 1, 90], ['c', true, 1, 90], ['x', false, 1, 80],
+], 'the first on top, however far down the news is');
+assert.deepEqual(shape([task('new', 9, 9, 'old'), task('other', 8, 8)]), [['new', false, 1, 9], ['other', false, 1, 8]], 'a task whose first is gone starts a family');
+assert.deepEqual(shape([task('early', 9, 1, 'late'), task('late', 8, 5)]).map(row => row[0]), ['late', 'early'], 'linked by hand, the one it goes on from still leads');
+assert.deepEqual(shape([task('p', 9, 1, 'q'), task('q', 8, 2, 'p')]).map(row => row.slice(0, 3)), [['p', false, 1], ['q', false, 1]], 'a loop on disk: each stands alone, once');
+assert.deepEqual(taskFamilies([]), []);
+console.log('ai_task_view: families ok');

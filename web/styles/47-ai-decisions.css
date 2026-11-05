@@ -96,10 +96,8 @@
 .anomalous-ai-task-link-x { display: inline-flex; margin-right: 4px; padding: 3px; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
 .anomalous-ai-task-link-x:hover { background: color-mix(in srgb, var(--amb-link) 18%, transparent); }
 .anomalous-ai-task-links-menu {
-    position: absolute;
-    z-index: 8;
-    top: calc(100% + 4px);
-    right: 0;
+    position: fixed;
+    z-index: 1000003;
     display: flex;
     flex-direction: column;
     width: min(340px, 90vw);
@@ -116,3 +114,19 @@
 .anomalous-ai-task-links-pick:hover { background: color-mix(in srgb, var(--amb-link) 16%, transparent); }
 .anomalous-ai-task-links-pick-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-task-links-pick-when { flex: none; color: var(--amb-text-dim); font-size: 11.5px; }
+
+/* The task list: those going on from a task hang under it, one step in however long the line. */
+.anomalous-ai-task-item { position: relative; display: flex; flex-direction: column; }
+.anomalous-ai-task-item.is-child { margin-left: 18px; }
+.anomalous-ai-task-item.is-child::before { content: ""; position: absolute; top: -3px; bottom: 0; left: -9px; width: 1px; background: var(--amb-border-strong); }
+.anomalous-ai-task-family { flex: none; padding: 0 6px; border-radius: 6px; background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-link); font-size: 11px; line-height: 17px; }
+
+/* Each task's more button: on the task the pointer is on, and always on the one shown. */
+.anomalous-ai-task-more { position: absolute; top: 7px; right: 7px; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--amb-text-soft); font: inherit; font-size: 15px; line-height: 24px; cursor: pointer; opacity: 0; }
+.anomalous-ai-task-more:hover { background: rgba(var(--amb-ink-rgb), 0.1); color: var(--amb-text-main); }
+.anomalous-ai-task-item:is(:hover, :focus-within, .is-current) .anomalous-ai-task-more { opacity: 1; }
+.anomalous-ai-task-item:is(:hover, :focus-within, .is-current) .anomalous-ai-task-row-top { padding-right: 24px; }
+@media (hover: none) {
+    .anomalous-ai-task-more { opacity: 1; }
+    .anomalous-ai-task-row-top { padding-right: 24px; }
+}

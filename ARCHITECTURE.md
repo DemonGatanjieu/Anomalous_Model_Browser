@@ -433,7 +433,8 @@ covered by the `styles.css` manifest.
   starts one while looking at a task; changed or taken off by the user, never a loop); `GET` of a
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
   decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
-  one to link; `ui_ai_task_menu.js` is the ⋯ of the task's head. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
+  one to link; `ui_ai_task_menu.js` is the ⋯ of a task, in its head and on its row, and what it does; removing a task
+  (`ai_task_links.remove`) joins those after it to the one before. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
   step made and where it leads, `ui_ai_shared.js` what the page's parts share. `ui_ai_outputs.js` is what the whole task made: a line over the
   timeline counting it, and the side column's Results view (`ai_task_view.taskOutputs`: the
   pictures by the step that brought them, the workflow, the combos, the newest picture's prompts,
@@ -471,7 +472,7 @@ covered by the `styles.css` manifest.
   the button (or moving left onto the page's left edge) slides it over the page at once.
   `ui_ai_task_list.js` draws it (New task, Connect an AI
   and the gates, which AI came last, quick filters by state, the tasks by day with a state
-  icon each), making anew only the rows that changed (`web/modules/sync_rows.js`, the timeline's
+  icon each, those going on from a task under it by `ai_task_view.taskFamilies`), making anew only the rows that changed (`web/modules/sync_rows.js`, the timeline's
   way too). `web/modules/ai_task_cache.js` keeps the tasks as last read: a task picked shows at
   once from there (read ahead while the pointer rests on its row) and again, what changed, when the
   server answers; the activity entries a task lacks follow. The stage's pictures, like the

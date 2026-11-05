@@ -39,6 +39,17 @@ class LinkTests(unittest.TestCase):
         self.assertIsNone(ai_task_links.links(three)["from"])
         self.assertIsNone(ai_task_links.carried(ai_tasks.get_task(one)))
 
+    def test_removing_a_task_leaves_no_gap_in_the_line(self):
+        one = ai_tasks.begin_task("A", "一")["id"]
+        two = ai_tasks.start_task("二", from_task=one)["id"]
+        ai_tasks.begin_task("B", "二")  # taken by an AI: a new waiting task would replace it
+        three = ai_tasks.start_task("三", from_task=two)["id"]
+        self.assertTrue(ai_task_links.remove(two))
+        self.assertEqual(ai_tasks.get_task(three)["from"], one, "the line goes on past the removed task")
+        self.assertTrue(ai_task_links.remove(one))
+        self.assertNotIn("from", ai_tasks.get_task(three), "the first of a line leaves none to go on from")
+        self.assertFalse(ai_task_links.remove("gone"))
+
 
 if __name__ == "__main__":
     unittest.main()

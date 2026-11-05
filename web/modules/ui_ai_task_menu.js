@@ -1,26 +1,54 @@
 /**
- * The ⋯ in a task's head: what is done to a task now and then (rename it, say what it goes on from, keep
- * its pictures from the AI, remove it), out of the way of the tools used while it runs.
+ * The ⋯ of a task, in its head and on its row in the list: what is done to a task now and then (rename
+ * it, say what it goes on from, keep its pictures from the AI, remove it), out of the way of the tools
+ * used while it runs.
  */
 
 import { translate as t } from './locales.js';
+import { forgetTask } from './ai_task_cache.js';
+import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { setPrivacy } from './ui_ai_privacy.js';
 import { pickTaskLink } from './ui_ai_task_links.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 
-/** The button for `task`. `tasks`: the list's summaries; `rename()`, `remove()`, `changed()` as the head does them. */
-export function taskMenu(task, { tasks, rename, remove, changed }) {
+/**
+ * What the menu of `task` does. `tasks`: the list's summaries; `post(id, body)` writes to the task,
+ * `refresh()` draws the page again, `removed()` lets go of a removed task, before that.
+ */
+export function menuActions(task, { tasks, post, refresh, removed }) {
+    return { tasks, changed: () => void refresh(), rename: async () => {
+        const named = await anomalousPrompt(t('aiRenamePrompt'), task.title || '', t('aiRename'));
+        if (named === null || named === undefined) return;
+        await post(task.id, { title: named }).catch(error => anomalousAlert(error.message));
+        await refresh();
+    }, remove: async () => {
+        if (!await anomalousConfirm(t('aiRemoveConfirm'), t('aiRemove'))) return;
+        await post(task.id, { remove: true }).catch(error => anomalousAlert(error.message));
+        forgetTask(task.id);
+        removed();
+        await refresh();
+    } };
+}
+
+/** The menu of `task` (its full record) under `anchor`; the rest from menuActions. */
+export function openTaskMenu(anchor, task, { tasks, rename, remove, changed }) {
+    const place = anchor.getBoundingClientRect(); // the head is drawn anew every few seconds: the button may be another by the time a row is chosen
+    openPopupMenu(anchor, [
+        { label: t('aiRename'), run: rename },
+        ...(task.links?.from ? [] : [{ label: t('aiTaskLink'), title: t('aiTaskLinkHint'), run: () => pickTaskLink(place, task, tasks, changed) }]),
+        { label: t(task.private ? 'aiPrivacyTurnOff' : 'aiPrivacyTurnOn'), title: t(task.private ? 'aiPrivacyHint_on' : 'aiPrivacyHint_off'),
+            run: () => void setPrivacy(task, !task.private, changed) },
+        { label: t('aiRemove'), danger: true, run: remove },
+    ]);
+}
+
+/** The button in the head of `task`. */
+export function taskMenu(task, actions) {
     const more = document.createElement('button');
     more.type = 'button';
     more.className = 'anomalous-ai-tool is-icon';
     more.textContent = '⋯';
     more.title = t('notebookMore');
-    more.onclick = () => openPopupMenu(more, [
-        { label: t('aiRename'), run: rename },
-        ...(task.links?.from ? [] : [{ label: t('aiTaskLink'), title: t('aiTaskLinkHint'), run: () => pickTaskLink(more, task, tasks, changed) }]),
-        { label: t(task.private ? 'aiPrivacyTurnOff' : 'aiPrivacyTurnOn'), title: t(task.private ? 'aiPrivacyHint_on' : 'aiPrivacyHint_off'),
-            run: () => void setPrivacy(task, !task.private, changed) },
-        { label: t('aiRemove'), danger: true, run: remove },
-    ]);
+    more.onclick = () => openTaskMenu(more, task, actions);
     return more;
 }

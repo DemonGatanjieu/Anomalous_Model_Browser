@@ -57,7 +57,7 @@ async def api_change(request):
     if not isinstance(body, dict):
         return web.json_response({"error": "Expected {title} or {remove: true}"}, status=400)
     if body.get("remove") is True:
-        return web.json_response({"removed": ai_tasks.remove_task(task_id)})
+        return web.json_response({"removed": ai_task_links.remove(task_id)})
     if "canvas" in body:
         try:
             return web.json_response({"canvas": ai_task_canvas.set_mode(task_id, body["canvas"])})

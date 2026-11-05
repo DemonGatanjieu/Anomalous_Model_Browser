@@ -30,7 +30,7 @@ import { api } from '../../../scripts/api.js';
 import { translate as t } from './locales.js';
 import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
 import { canUndo } from './canvas_undo.js';
-import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
+import { anomalousAlert } from './ui_dialog.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
 import { atFoot, newestButton } from './ui_ai_newest.js';
 import { nowStrip } from './ui_ai_now.js';
@@ -56,9 +56,9 @@ import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, s
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
 import { privacyChip } from './ui_ai_privacy.js';
-import { taskMenu } from './ui_ai_task_menu.js';
+import { menuActions, openTaskMenu, taskMenu } from './ui_ai_task_menu.js';
 import { syncRows } from './sync_rows.js';
-import { forgetTask, keptTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
+import { keptTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
 import {
     activityIds, duration, groupSteps, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
@@ -133,8 +133,19 @@ function renderList(box) {
         onPick: (summary) => { state.pinned = summary.id !== state.tasks[0]?.id; void select(summary.id); },
         onHover: (summary) => { if (summary.id !== state.selected) readAhead(summary.id); },
         onLeave: stopReadAhead,
+        onMenu: async (anchor, summary) => {
+            const task = await readTask(summary.id).catch(error => void anomalousAlert(error.message));
+            if (task && anchor.isConnected) openTaskMenu(anchor, task, taskActions(task));
+        },
     });
 }
+
+const taskActions = task => menuActions(task, { tasks: state.tasks, post: postTask, refresh, removed: () => {
+    if (state.selected !== task.id) return;
+    state.selected = null;
+    state.task = null;
+    state.narrowView = 'list';
+} });
 
 // ---------------------------------------------------------------- one task
 
@@ -239,20 +250,7 @@ function renderTask() {
     if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
         tools.append(iconButton('anomalous-ai-tool', 'undo', t('aiUndoAll'), () => undoAll(task)));
     }
-    tools.append(taskMenu(task, { tasks: state.tasks, changed: () => void refresh(), rename: async () => {
-        const named = await anomalousPrompt(t('aiRenamePrompt'), task.title || '', t('aiRename'));
-        if (named === null || named === undefined) return;
-        await postTask(task.id, { title: named }).catch(error => anomalousAlert(error.message));
-        await refresh();
-    }, remove: async () => {
-        if (!await anomalousConfirm(t('aiRemoveConfirm'), t('aiRemove'))) return;
-        await postTask(task.id, { remove: true }).catch(error => anomalousAlert(error.message));
-        forgetTask(task.id);
-        state.selected = null;
-        state.task = null;
-        state.narrowView = 'list';
-        await refresh();
-    } }));
+    tools.append(taskMenu(task, taskActions(task)));
     const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
     titleLine.append(name, tools);
     const unseen = newOutputs(state.stage, task, shown && state.stage.view === 'outputs');
