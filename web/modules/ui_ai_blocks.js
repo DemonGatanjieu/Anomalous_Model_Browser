@@ -6,8 +6,9 @@
  * with, so the AI is not offered it; how it was tried (the card, a run's time) and the models it recommends
  * (api/block_models.json), each here or a button downloading it, link and SHA256 from the list.
  * Under them the skills (api/ai_skills.py): advice the AI fetches for a kind of job, each with its
- * switch too; for a private task only the private task's skill, as that is all its AI gets. GET /anomalous/ai_blocks, POST {name, on} or {skill, on}. Drawn when shown,
- * the list read again each time the view is opened.
+ * switch too; for a private task only the private task's skill, as that is all its AI gets. GET /anomalous/ai_blocks, POST {name, on} or {skill, on}.
+ * Read ahead when the page shows a task, so the view opens with it; read again quietly each time the view
+ * comes up, and drawn anew only when something changed, so it stays as it was left (where it was scrolled to, what was open).
  */
 
 import { resolveLocale, translate as t } from './locales.js';
@@ -18,6 +19,7 @@ import { formatSize } from './file_size.js';
 
 let reading = null; // the list being read
 let shown = null; // { blocks, jobs } last read, or { error }
+let redrawView = null; // draws the view again, once it was shown
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -35,6 +37,28 @@ async function ask(body) {
     const data = await answer.json().catch(() => ({}));
     if (!answer.ok) throw new Error(data.error || answer.statusText);
     return data;
+}
+
+/** Reads the list unless that is under way; the view is drawn anew if it changed. A failed read keeps a list that shows. */
+function read() {
+    if (reading) return;
+    reading = ask().then((data) => {
+        const changed = JSON.stringify(data) !== JSON.stringify(shown);
+        shown = data;
+        return changed;
+    }, (error) => {
+        if (shown?.blocks) return false;
+        shown = { error: error.message };
+        return true;
+    }).then((changed) => {
+        reading = null;
+        if (changed) redrawView?.();
+    });
+}
+
+/** Reads the list before the view is opened, once. */
+export function readBlocksAhead() {
+    if (!shown) read();
 }
 
 /** What the block lacks, a line each: its packs (each a way into the Manager) and its models. */
@@ -174,14 +198,16 @@ function listBox(owner, redraw, isPrivate) {
 }
 
 /**
- * The view into `pane`; `ctx`: {close, owner}; `isPrivate`: the task shown is private (its skills only).
- * `fresh`: the view was just opened, so the list is read again.
+ * The view into `pane`; `ctx`: {close, owner}. `fresh`: the view was just opened, so the list is read
+ * again; `draw`: what is in `pane` is not this view's yet; `isPrivate`: the task shown is private (its skills only).
  */
-export function renderBlocksView(pane, ctx, fresh = false, isPrivate = false) {
-    const redraw = () => pane.replaceChildren(sideHead(t('aiSideBlocks'), ctx.close), listBox(ctx.owner, redraw, isPrivate));
-    if ((fresh || !shown) && !reading) {
-        reading = ask().then(data => { shown = data; }, error => { shown = { error: error.message }; })
-            .finally(() => { reading = null; redraw(); });
-    }
-    redraw();
+export function renderBlocksView(pane, ctx, { fresh, draw, isPrivate }) {
+    redrawView = () => {
+        const top = pane.querySelector('.anomalous-ai-blocks')?.scrollTop || 0;
+        pane.replaceChildren(sideHead(t('aiSideBlocks'), ctx.close), listBox(ctx.owner, redrawView, isPrivate));
+        const list = pane.querySelector('.anomalous-ai-blocks');
+        if (list) list.scrollTop = top;
+    };
+    if (fresh || !shown) read();
+    if (draw) redrawView();
 }

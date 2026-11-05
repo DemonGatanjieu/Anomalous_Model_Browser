@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- 点“做法”马上出来，不再每次重画：打开 AI 工作台时就提前读好，再点时停在你上次看的位置，展开的详情也还在；开关一个做法也不会跳回顶部。
+- Ways opens at once and no longer draws itself twice: it is read when the AI workbench opens, and comes back where you left it, details still open; turning a way on or off no longer jumps to the top.
 - 新任务的页面清爽了：只留一句发给 AI 的话和一个复制按钮。要先交代的话和图都放下面的留言框，不再有重复的两行。连过 AI 以后也不再看到“第一次用？”；从没连过时，先告诉你怎么连。
 - The new task page is plain now: one sentence for the AI and a Copy button. What to say first and pictures go in the message box below, with no second place for them. Once an AI has connected, "First time?" is gone; until then, how to connect comes first.
 - ComfyUI-Manager 不再把别的插件的节点算到 AMB 头上：AMB 没有节点，是测试文件里的假节点表让它误以为有，于是缺 Power Lora Loader 等节点时会推荐装 AMB。Manager 重新扫描后生效。

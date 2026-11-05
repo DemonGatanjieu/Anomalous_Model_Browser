@@ -22,7 +22,7 @@ import { closeToolbox, openToolbox, setToolboxHost, toolboxOpenFor } from './ui_
 import { panelSteps, renderStage, sideHead } from './ui_ai_side.js';
 import { renderDecisionsView } from './ui_ai_decisions.js';
 import { renderOutputsView } from './ui_ai_outputs.js';
-import { renderBlocksView } from './ui_ai_blocks.js';
+import { readBlocksAhead, renderBlocksView } from './ui_ai_blocks.js';
 
 const WIDTH_KEY = 'anomalous.aiSideWidth';
 const WIDTH = { min: 340, start: 440 };
@@ -239,12 +239,13 @@ export function drawSide(box, task, side, ctx, arrived = null) {
     if (side.view === 'map') renderMapView(panes.map, task, side, ctx);
     if (side.view === 'decisions') renderDecisionsView(panes.decisions, task, ctx);
     if (side.view === 'outputs') renderOutputsView(panes.outputs, task, ctx);
-    // The ways and skills, drawn again when the view comes up or the task's privacy mode changed (its skills differ).
+    // The ways and skills: read again when the view comes up, drawn the first time and when the task's privacy mode changed (its skills differ).
     const privacy = String(task.private === true);
-    if (side.view === 'blocks' && (opened || !panes.blocks.childElementCount || panes.blocks.dataset.private !== privacy)) {
+    const draw = !panes.blocks.childElementCount || panes.blocks.dataset.private !== privacy;
+    if (side.view === 'blocks' && (opened || draw)) {
         panes.blocks.dataset.private = privacy;
-        renderBlocksView(panes.blocks, ctx, opened, task.private === true);
-    }
+        renderBlocksView(panes.blocks, ctx, { fresh: opened, draw, isPrivate: task.private === true });
+    } else readBlocksAhead();
 }
 
 /**
