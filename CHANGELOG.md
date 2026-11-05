@@ -1,5 +1,10 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.62.3 (Fix: ComfyUI-Manager took other packs' nodes for AMB's) — 2026-11-05
+
+- ComfyUI-Manager 不再把别的插件的节点算到 AMB 头上：AMB 没有节点，是测试文件里的假节点表让它误以为有，于是缺 Power Lora Loader 等节点时会推荐装 AMB。Manager 重新扫描后生效。AMB 本身用起来没有变化。
+- ComfyUI-Manager no longer takes other packs' nodes for AMB's: AMB has no nodes, but node tables in its test files looked like some, so a missing Power Lora Loader and the like could offer AMB. Takes effect once Manager scans again. AMB itself works as before.
+
 ## v1.62.2 (Fix: workflow cards squeezed into strips) — 2026-11-05
 
 - 工作流很多时，卡片不再被压成细条，列表正常滚动。
