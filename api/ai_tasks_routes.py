@@ -221,6 +221,19 @@ async def api_marked(request):
     return web.FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
 
 
+async def api_way_pick(request):
+    """POST /anomalous/ai_tasks/{id}/way: {name, on} - a way (做法) the user picks for this task, or takes back."""
+    from . import ai_panels
+
+    body = await _body(request) or {}
+    try:
+        step = ai_toolbox.pick_way(request.match_info["task_id"], str(body.get("name") or ""), bool(body.get("on")))
+    except ai_toolbox.ToolboxError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    ai_panels.wake()
+    return web.json_response({"step": step})
+
+
 async def api_toolbox_pick(request):
     """POST /anomalous/ai_tasks/{id}/toolbox: {mode, nodes, combos, workflows, prompts, models} - what the user hands the AI."""
     from . import ai_panels
@@ -342,6 +355,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}/marks", api_marks)
     app.router.add_get("/anomalous/ai_tasks/{task_id}/marks/{name}", api_marked)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/toolbox", api_toolbox_pick)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/way", api_way_pick)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/runs/{step_id}/stop", api_stop)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/runs/{step_id}/verdict", api_verdict)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/pictures", api_pictures)

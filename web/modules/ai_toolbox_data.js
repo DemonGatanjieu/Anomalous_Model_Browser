@@ -10,7 +10,7 @@
 
 export const KINDS = Object.freeze(['nodes', 'combos', 'workflows', 'prompts', 'models']);
 /** What can be picked: the kinds, and whole custom node packs (picked from the nodes' sources). */
-export const PICK_KINDS = Object.freeze(['nodes', 'packs', 'combos', 'workflows', 'prompts', 'models']);
+export const PICK_KINDS = Object.freeze(['nodes', 'packs', 'combos', 'workflows', 'prompts', 'models', 'ways']);
 const SETTING_TYPES = new Set(['INT', 'FLOAT', 'STRING', 'BOOLEAN', 'COMBO']);
 const KEEP_MS = 60 * 1000;
 const lower = value => String(value ?? '').toLowerCase();
@@ -149,7 +149,7 @@ export function loadCatalog({ fresh = false, fetcher = globalThis.fetch } = {}) 
         .then(async (response) => {
             const data = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
-            kept = { at: Date.now(), items: catalogItems(data) };
+            kept = { at: Date.now(), items: catalogItems(data), ways: data.ways || {} };
             return kept.items;
         })
         .finally(() => { loading = null; });
@@ -160,6 +160,12 @@ export function loadCatalog({ fresh = false, fetcher = globalThis.fetch } = {}) 
 export const keptCatalog = () => kept?.items || null;
 
 /** Reads the catalogue ahead, so the picker opens with it; errors wait for the window to say them. */
+/** What way `name` (a pick from the Ways view) is called in `locale`, once the catalogue was read; else its name. */
+export function wayTitle(name, locale) {
+    const title = kept?.ways?.[name];
+    return title?.[locale] || title?.en || title?.zh || name;
+}
+
 export function prefetchToolbox() {
     loadCatalog().catch(() => {});
 }

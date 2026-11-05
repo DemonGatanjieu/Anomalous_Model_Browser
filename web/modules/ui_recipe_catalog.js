@@ -2,6 +2,7 @@
 
 import { translate } from './locales.js';
 import { appendText } from './ui_recipe_detail_dom.js';
+import { exampleCard } from './ui_recipe_examples.js';
 import { createRecipeCard } from './ui_recipe_cards.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 import { moveWorkflowMaterials, workflowMaterialCount } from './recipe_save.js';
@@ -180,6 +181,7 @@ function renderRecipeEmptyGuide(owner) {
 }
 
 export function renderRecipeList(recipes, services) {
+    const filtering = this.recipeSearchQuery || this.recipeSelectedTags?.size || (this.recipeScopeFilter && this.recipeScopeFilter !== 'all');
     this.recipeListContainer.replaceChildren();
     updateRecipeFilterControls(this);
     const records = Array.isArray(recipes) ? recipes : [];
@@ -202,6 +204,7 @@ export function renderRecipeList(recipes, services) {
             appendText(this.recipeListContainer, 'p', t('recipeNoMatches'), 'anomalous-recipe-empty');
         } else {
             renderRecipeEmptyGuide(this);
+            this.recipeListContainer.append(exampleCard(this));
         }
         return;
     }
@@ -209,6 +212,7 @@ export function renderRecipeList(recipes, services) {
         appendText(this.recipeListContainer, 'p', t('recipeNoMatches'), 'anomalous-recipe-empty');
         return;
     }
+    if (!filtering) this.recipeListContainer.append(exampleCard(this));
     const setSignatures = fetchParameterSetSignatures();
     for (const recipe of filtered) {
         try {

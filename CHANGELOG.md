@@ -2,6 +2,10 @@
 
 ## v1.63.0 — unreleased
 
+- 工作流页多了“官方示例”：文生图、两段放大、图生图、局部重绘，只用 ComfyUI 自带节点，打开时自动选一个你已有的大模型。新装的人和 AI 都有现成路线可用；AI 没有合适的已存工作流时会用它们。
+- The Workflows page has "Official examples": text to picture, two passes, picture to picture and repainting an area, on ComfyUI's own nodes, each opening on a model you already have. New installs and the AI have routes to start from; the AI gets them when no saved workflow fits.
+- 可以自己选做法了：在“做法”里点“这次用它”，只对当前任务生效。AI 会收到，这一类活 AMB 直接按你选的搭，AI 想用别的也不行。
+- You can pick the way yourself: "Use it this time" in Ways, for the current task only. The AI is told, and Anomalous builds your pick for that kind of job, whichever one the AI asks for.
 - 点“做法”马上出来，不再每次重画：打开 AI 工作台时就提前读好，再点时停在你上次看的位置，展开的详情也还在；开关一个做法也不会跳回顶部。
 - Ways opens at once and no longer draws itself twice: it is read when the AI workbench opens, and comes back where you left it, details still open; turning a way on or off no longer jumps to the top.
 - 新任务的页面清爽了：只留一句发给 AI 的话和一个复制按钮。要先交代的话和图都放下面的留言框，不再有重复的两行。连过 AI 以后也不再看到“第一次用？”；从没连过时，先告诉你怎么连。

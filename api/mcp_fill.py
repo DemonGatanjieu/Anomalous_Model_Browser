@@ -52,7 +52,8 @@ def node_values(values):
 
 def saved_workflow(name):
     """(file name, name, plan) of the user's saved workflow called `name`, or of its 方案 "workflow / plan"
-    (plan: the parameter set's file name, else None)."""
+    (plan: the parameter set's file name, else None), or of the example called that."""
+    from . import example_workflows
     from .recipe_store import _list_recipes, get_recipes_dir
 
     name = str(name or "").strip()
@@ -61,6 +62,9 @@ def saved_workflow(name):
         files.setdefault(recipe["data"].get("name") or recipe["filename"], recipe["filename"])
     if name and name in files:
         return files[name], name, None
+    example = example_workflows.file_of(name)
+    if example:
+        return example, name, None
     workflow, _, plan = name.rpartition(" / ")
     found = next((file for file, plan_name in plans().get(files.get(workflow), []) if plan_name == plan), None)
     if not found:

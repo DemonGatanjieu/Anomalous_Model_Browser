@@ -278,9 +278,11 @@ export function canvasEditActions({ recorded, nodeById }) {
         });
     }
 
-    /** One of the user's saved workflows (a recipe), in a new tab named after it; the open one stays. */
+    /** One of the user's saved workflows (a recipe) or an example ("example:<id>"), in a new tab named after it; the open one stays. */
     async function openWorkflow({ filename, name, plan }, getOwner) {
-        const response = await fetch(`/anomalous/recipe_full?filename=${encodeURIComponent(filename || '')}`);
+        const example = String(filename || '').match(/^example:(.+)$/);
+        const response = await fetch(example ? `/anomalous/example_workflows?id=${encodeURIComponent(example[1])}`
+            : `/anomalous/recipe_full?filename=${encodeURIComponent(filename || '')}`);
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload.data?.workflow) throw new Error(`The saved workflow ${name} could not be read.`);
         const tab = tabName(name);

@@ -15,10 +15,10 @@
  * on the right of the screen. toolboxStep() is the timeline row of a pick.
  */
 
-import { translate as t } from './locales.js';
+import { resolveLocale, translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
-import { KINDS, PICK_KINDS, keptCatalog, loadCatalog, nodeItems, nodeSources, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
+import { KINDS, PICK_KINDS, keptCatalog, loadCatalog, nodeItems, nodeSources, prefetchToolbox, searchItems, wayTitle } from './ai_toolbox_data.js';
 import { card, coverUrl, detail, refreshCard, rowCard } from './ui_ai_toolbox_cards.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture, sourceBadge } from './ui_ai_toolbox_icons.js';
@@ -384,7 +384,7 @@ export async function openToolbox(task, changed = () => {}) {
     function chip(kind, id) {
         const item = byKey.get(keyOf(kind, id));
         const inner = kind === 'prompts' && /^(combo|workflow):/.test(id);
-        const label = inner ? t('aiTbPromptOf', { name: id.replace(/^(combo|workflow):/, '') }) : item?.title || String(id).split(/[\\/:]/).pop();
+        const label = kind === 'ways' ? wayTitle(id, resolveLocale()) : inner ? t('aiTbPromptOf', { name: id.replace(/^(combo|workflow):/, '') }) : item?.title || String(id).split(/[\\/:]/).pop();
         const node = el('span', `anomalous-tb-chip is-${kind}`);
         const url = item && ['combos', 'workflows', 'models'].includes(kind) ? coverUrl(item) : '';
         if (url) {
@@ -397,7 +397,7 @@ export async function openToolbox(task, changed = () => {}) {
         } else if ((kind === 'nodes' || kind === 'packs') && item) {
             node.append(sourceBadge(item.source, 16));
         } else {
-            node.append(icon(kind, 14));
+            node.append(icon(kind === 'ways' ? 'blocks' : kind, 14));
         }
         node.append(el('span', 'anomalous-tb-chip-name', label));
         node.title = `${t(`aiToolboxKind_${kind}`)} · ${label}`;
@@ -531,10 +531,10 @@ export function toolboxStep(step) {
                     img.onerror = () => img.replaceWith(icon(kind, 14));
                     node.append(img);
                 } else {
-                    node.append((kind === 'nodes' || kind === 'packs') && item ? sourceBadge(item.source, 16) : icon(kind === 'packs' ? 'nodes' : kind, 14));
+                    node.append((kind === 'nodes' || kind === 'packs') && item ? sourceBadge(item.source, 16) : icon({ packs: 'nodes', ways: 'blocks' }[kind] || kind, 14));
                 }
                 const inner = kind === 'prompts' && /^(combo|workflow):/.test(id);
-                node.append(el('span', 'anomalous-tb-chip-name', inner ? t('aiTbPromptOf', { name: id.replace(/^(combo|workflow):/, '') }) : item?.title || String(id).split(/[\\/:]/).pop()));
+                node.append(el('span', 'anomalous-tb-chip-name', kind === 'ways' ? wayTitle(id, resolveLocale()) : inner ? t('aiTbPromptOf', { name: id.replace(/^(combo|workflow):/, '') }) : item?.title || String(id).split(/[\\/:]/).pop()));
                 chips.append(node);
             }
         }

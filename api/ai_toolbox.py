@@ -2,7 +2,8 @@
 types, whole custom node packs (by folder: every node type in it), combos, workflows, saved
 prompts and models picked for a task, and how strictly: prefer
 (the AI is told to use them first) or only (add_node and new_workflow refuse other node types,
-except ComfyUI's own built-in ones and the helpers that live only in the page). Favourites
+except ComfyUI's own built-in ones and the helpers that live only in the page). Ways too
+(reference_blocks.py, picked in the 做法 view: pick_way): add_nodes builds the picked one for its use. Favourites
 (user/anomalous/ai_toolbox.json) are what a task has until the user picks for it. A pick is a
 "user_toolbox" step the AI receives like a message (kind toolbox, ai_panels.py); begin_task
 names the task's picks and get_toolbox gives them in full. The catalogue the picker shows uses
@@ -18,7 +19,7 @@ import uuid
 from . import ai_tasks
 from .path_utils import atomic_write_json
 
-KINDS = ("nodes", "packs", "combos", "workflows", "prompts", "models")
+KINDS = ("nodes", "packs", "combos", "workflows", "prompts", "models", "ways")
 MODES = ("prefer", "only")
 MAX_ITEMS = 60
 MAX_NAME = 300
@@ -36,7 +37,7 @@ def _path():
 def clean(picks):
     """{kind: [names]} for KINDS: strings only, each kind once per name, at most MAX_ITEMS."""
     if not isinstance(picks, dict):
-        raise ToolboxError("Expected {nodes, packs, combos, workflows, prompts, models}")
+        raise ToolboxError("Expected {nodes, packs, combos, workflows, prompts, models, ways}")
     out = {}
     for kind in KINDS:
         items = picks.get(kind) or []
@@ -82,14 +83,18 @@ def effective(task):
 
 def words(box):
     """The picks in a sentence or two for the AI."""
+    from . import reference_blocks
+
     parts = []
     labels = {"nodes": "node types", "packs": "custom node packs (every node type in these folders; get_toolbox lists them)",
               "combos": "combos (place_combo)", "workflows": "workflows (open_workflow opens one in a new tab)",
               "prompts": "prompts (combo:<name> / workflow:<name> are the prompts inside that combo or workflow)",
-              "models": "models (model_id for set_model / add_lora / get_model)"}
+              "models": "models (model_id for set_model / add_lora / get_model)",
+              "ways": "ways of working (for that use add_nodes builds the one picked)"}
     for kind in KINDS:
         if box.get(kind):
-            parts.append(f"{labels[kind]}: {', '.join(box[kind])}")
+            names = [reference_blocks.call(name) or name for name in box[kind]] if kind == "ways" else box[kind]
+            parts.append(f"{labels[kind]}: {', '.join(names)}")
     how = ("Use ONLY these node types (and those of the picked packs) when you add nodes; ComfyUI's own built-in nodes stay allowed. "
            if box.get("mode") == "only" else "Use these first. ")
     return f"The user picked these for you to work with. {how}{'; '.join(parts)}. get_toolbox gives them in full."
@@ -119,6 +124,17 @@ def pick(task_id, picks, mode="prefer", now=None):
     return step
 
 
+def pick_way(task_id, name, on):
+    """Way `name` onto the picks of task `task_id` (`on`) or off them, the rest as they stand. Returns the step."""
+    from . import reference_blocks
+
+    if name not in reference_blocks.BLOCKS:
+        raise ToolboxError("No such way")
+    box = effective(ai_tasks.get_task(task_id)) or {}
+    ways = [item for item in box.get("ways") or [] if item != name] + ([name] if on else [])
+    return pick(task_id, {**box, "ways": ways}, box.get("mode", "prefer"))
+
+
 def builtin(info):
     """Whether a node type (its /object_info entry) is ComfyUI's own and free: not a custom node, not a paid API node."""
     module = str((info or {}).get("python_module") or "")
@@ -131,11 +147,15 @@ def chosen(box, name, info):
 
 
 def refused(task_id, types, info):
-    """The node types among `types` the task's "only" picks do not allow (page-only helpers, unknown to /object_info, pass)."""
+    """The node types among `types` the task's "only" picks do not allow (page-only helpers, unknown to /object_info, pass;
+    so do those of a way picked)."""
+    from . import reference_blocks
+
     box = effective(ai_tasks.get_task(task_id)) if task_id else None
     if not box or box.get("mode") != "only":
         return []
-    return sorted({name for name in types if name in info and not chosen(box, name, info[name]) and not builtin(info[name])})
+    ways = reference_blocks.node_types(box.get("ways") or [])
+    return sorted({name for name in types if name in info and name not in ways and not chosen(box, name, info[name]) and not builtin(info[name])})
 
 
 def source_of(info):

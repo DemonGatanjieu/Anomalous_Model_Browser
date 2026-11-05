@@ -2,7 +2,7 @@ from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, quick_index, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
     local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, tts_version, backup,
-    network_check, model_heads, model_usage, usage_ledger, sidecar_layout, ai_tasks_routes, snapshot_routes, workflow_saves,
+    network_check, model_heads, model_usage, usage_ledger, sidecar_layout, ai_tasks_routes, snapshot_routes, workflow_saves, example_workflows,
 )
 from .scanner import *
 from .config import *
@@ -83,6 +83,7 @@ def setup_routes(app):
 
     # Recipe Routes
     app.router.add_get('/anomalous/recipes', recipes.api_get_recipes)
+    app.router.add_get('/anomalous/example_workflows', example_workflows.api_examples)
     app.router.add_get('/anomalous/recipe_full', recipes.api_get_recipe_full)
     app.router.add_get('/anomalous/recipe_asset', recipes.api_get_recipe_asset)
     app.router.add_get('/anomalous/recipe_gallery', recipes.api_get_recipe_gallery)

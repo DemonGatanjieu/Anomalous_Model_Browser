@@ -500,7 +500,7 @@ def attach_pending(result, client, task_id=None):
         "kind=marks messages are places the user marked on a picture to change (the marked picture is attached): "
         "say what you see and how you would fix it (show_panel can show the picture with your own marks), "
         "ask_user which fix to do, and log_decision the fix chosen (related: the marks' id); "
-        "kind=toolbox messages are the nodes, combos, workflows, prompts and models the user picked for you to use; "
+        "kind=toolbox messages are the nodes, combos, workflows, prompts, models and ways the user picked for you to use; "
         "kind=stop: the user stopped your run, so do not run it again until they say what to change; "
         "kind=pictures: pictures the user handed you (attached), with made_with read from each picture's own workflow."
     )

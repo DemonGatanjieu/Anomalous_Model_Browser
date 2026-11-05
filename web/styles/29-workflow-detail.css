@@ -793,3 +793,15 @@ html.amb-theme-light .anomalous-recipe-detail-view { --wfd-orange: #ea580c; }
 .anomalous-wfd-flow-value > strong { color: var(--amb-text-main); font-size: 12px; font-weight: 600; word-break: break-all; }
 .anomalous-wfd-flow-value.is-changed { border-color: var(--wfd-orange); background: color-mix(in srgb, var(--wfd-orange) 10%, var(--amb-bg-card)); }
 .anomalous-wfd-flow-was { color: var(--amb-text-dim); font-weight: 400; text-decoration: line-through; }
+
+/* The examples' card and window (ui_recipe_examples.js). */
+.anomalous-wf-card.is-examples { cursor: pointer; }
+.anomalous-wf-card.is-examples .anomalous-wf-cover { display: flex; align-items: center; justify-content: center; color: var(--amb-link); }
+.anomalous-examples { display: flex; flex-direction: column; gap: 10px; }
+.anomalous-examples-hint { margin: 0; color: var(--amb-text-soft); font-size: 13px; line-height: 1.6; }
+.anomalous-example { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--amb-border); border-radius: 10px; }
+.anomalous-example-words { flex: 1; min-width: 0; }
+.anomalous-example-title { color: var(--amb-text-main); font-size: 14px; font-weight: 700; }
+.anomalous-example-about { margin-top: 3px; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
+.anomalous-example-open { flex: none; height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--amb-link); color: #fff; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.anomalous-example-open:hover { filter: brightness(1.15); }

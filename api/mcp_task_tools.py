@@ -286,6 +286,8 @@ def get_toolbox(ctx, task=None, skill=None):
     for kind in ("combos", "workflows", "prompts"):
         if box.get(kind):
             answer[kind] = [found for name in box[kind] if (found := ai_message_refs.lookup(kind, name)) is not None]
+    if box.get("ways"):
+        answer["ways"] = [reference_blocks.call(name) or name for name in box["ways"]]
     if box.get("models"):
         answer["models"] = [ai_message_refs.lookup("models", model_id) or {"model_id": model_id, "missing": True} for model_id in box["models"]]
         for model in answer["models"]:

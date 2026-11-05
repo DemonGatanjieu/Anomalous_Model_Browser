@@ -12,7 +12,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import ai_panels, ai_tasks, ai_toolbox, mcp_canvas_edit, mcp_task_tools  # noqa: E402
+from api import ai_panels, ai_tasks, ai_toolbox, mcp_canvas_edit, mcp_task_tools, reference_blocks  # noqa: E402
 from api.mcp_tools import ToolError  # noqa: E402
 from test_ai_tasks import isolate, ok  # noqa: E402
 
@@ -125,6 +125,36 @@ class ToolboxTests(unittest.TestCase):
         self.assertIn("workflow:<name>", ai_toolbox.words(ai_toolbox.effective(ai_tasks.get_task(self.task))))
         self.assertIs(ai_toolbox.catalog("all"), data, "kept a few seconds")
         catalog._cache.update(at=0.0, data=None)
+
+    def test_a_way_joins_the_picks_as_they_stand_and_wins_its_use(self):
+        ai_toolbox.pick(self.task, {"nodes": ["FaceDetailer"]}, "only")
+        step = ai_toolbox.pick_way(self.task, "upscale_tile", True)
+        box = ai_tasks.get_task(self.task)["toolbox"]
+        self.assertEqual((box["ways"], box["nodes"], box["mode"]), (["upscale_tile"], ["FaceDetailer"], "only"))
+        self.assertIn("add_nodes(use='upscale', want='detail')", step["text"])
+        self.assertEqual(mcp_task_tools.get_toolbox(self.ctx)["ways"], ["add_nodes(use='upscale', want='detail')"])
+        self.assertEqual(reference_blocks.pick("upscale", None, None, False, box["ways"]), "upscale_tile", "the AI asked for none")
+        self.assertEqual(reference_blocks.pick("upscale", "2x", None, False, box["ways"]), "upscale_tile", "the AI asked for another")
+        self.assertEqual(reference_blocks.pick("upscale", "2x", None, False, ["upscale_tile", "upscale_tiled"]), "upscale_tiled")
+        self.assertEqual(reference_blocks.pick("upscale", "2x", None, False, ["control_pose"]), "upscale_tiled", "another use's pick")
+        ai_toolbox.pick_way(self.task, "upscale_tile", False)
+        self.assertEqual(ai_tasks.get_task(self.task)["toolbox"]["ways"], [])
+        with self.assertRaises(ai_toolbox.ToolboxError):
+            ai_toolbox.pick_way(self.task, "no such way", True)
+
+    def test_favourites_go_with_the_first_way_picked(self):
+        ai_toolbox.set_favorites({"nodes": ["FaceDetailer"]})
+        ai_toolbox.pick_way(self.task, "upscale", True)
+        box = ai_tasks.get_task(self.task)["toolbox"]
+        self.assertEqual((box["nodes"], box["ways"]), (["FaceDetailer"], ["upscale"]))
+
+    def test_only_lets_in_what_a_picked_way_builds(self):
+        custom = next(iter(sorted(reference_blocks.node_types(["inpaint_lanpaint"]) - {"SetUnionControlNetType"})))
+        info = {custom: {"python_module": "custom_nodes.some-pack"}}
+        ai_toolbox.pick(self.task, {"nodes": ["FaceDetailer"]}, "only")
+        self.assertEqual(ai_toolbox.refused(self.task, [custom], info), [custom])
+        ai_toolbox.pick_way(self.task, "inpaint_lanpaint", True)
+        self.assertEqual(ai_toolbox.refused(self.task, [custom], info), [])
 
     def test_what_is_refused(self):
         for picks, mode in [(None, "prefer"), ({"nodes": "FaceDetailer"}, "prefer"), ({"nodes": [3]}, "prefer"),

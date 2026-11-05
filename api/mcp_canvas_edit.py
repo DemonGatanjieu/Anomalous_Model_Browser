@@ -279,8 +279,10 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
     if [nodes is not None, block is not None, use is not None].count(True) != 1:
         raise ToolError("Give one of: use (from begin_task's blocks, with want), block (a ready-made one by name) or nodes (a group in API form).")
     if use is not None:
-        try:  # the use's best block this ComfyUI can run
-            block = reference_blocks.pick(str(use), None if want is None else str(want), object_info(ctx), bool(scene))
+        task = ai_tasks.get_task(ctx["task"]) if ctx.get("task") else None
+        try:  # the way the user picked for this use, else the use's best block this ComfyUI can run
+            block = reference_blocks.pick(str(use), None if want is None else str(want), object_info(ctx), bool(scene),
+                                          (ai_toolbox.effective(task) or {}).get("ways") or ())
         except reference_blocks.BlockError as error:
             raise ToolError(str(error))
     if block is not None:

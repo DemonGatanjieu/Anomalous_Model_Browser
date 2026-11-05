@@ -2,14 +2,14 @@
 one answer (GET /anomalous/ai_toolbox?kind=all): combos with their cover and prompt, saved
 workflows with their cover, tags and prompts, prompts (the saved ones, and the ones inside
 combos and workflows, ids "combo:<name>" and "workflow:<name>"), and models with their cover,
-by the names and ids the AI's tools use. Read in one go and kept a few seconds, so the picker
-opens at once; node types come from the page's own node definitions. prompt_entries() also
+by the names and ids the AI's tools use, and what the ways are called, for a picked way's chip. Read in one
+go and kept a few seconds, so the picker opens at once; node types come from the page's own node definitions. prompt_entries() also
 gives get_toolbox the text of picked prompts."""
 
 import threading
 import time
 
-from . import mcp_tools
+from . import mcp_tools, reference_blocks
 from .model_catalog import _collect_all_scan_models
 from .notebooks import _list_notebooks
 from .quick_index import compact_models
@@ -77,10 +77,11 @@ def prompt_entries(combos, workflows):
 
 
 def everything(fresh=False):
-    """{combos, workflows, prompts, models}, read at most every CACHE_SECONDS."""
+    """{combos, workflows, prompts, models, ways}, read at most every CACHE_SECONDS."""
     with _lock:
         if fresh or _cache["data"] is None or time.monotonic() - _cache["at"] > CACHE_SECONDS:
             combos, workflows = _combos(), _workflows()
             _cache.update(at=time.monotonic(), data={"combos": combos, "workflows": workflows,
+                                                     "ways": {name: block["title"] for name, block in reference_blocks.BLOCKS.items()},
                                                      "prompts": prompt_entries(combos, workflows), "models": _models()})
         return _cache["data"]

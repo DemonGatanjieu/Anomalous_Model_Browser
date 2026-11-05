@@ -210,19 +210,33 @@ def directory(info=None):
     return out
 
 
-def node_types():
-    """Every node type a block builds (its variants' too): the custom nodes the user may let in only by the blocks (ai_gates.node_rule)."""
-    groups = [block["nodes"] for block in BLOCKS.values()] + [variant["nodes"] for block in BLOCKS.values()
-                                                             for variant in (block.get("variants") or {}).values() if variant.get("nodes")]
+def call(name):
+    """The add_nodes call that builds block `name`, in the words the AI is told, or None when there is none."""
+    block = BLOCKS.get(name)
+    if not block:
+        return None
+    want = f", want={block['want']!r}" if block.get("want") else ""
+    return f"add_nodes(use={block['job']!r}{want})"
+
+
+def node_types(names=None):
+    """Every node type the blocks `names` (all of them when None) build, their variants' too: the custom nodes the user may let in only by the blocks (ai_gates.node_rule)."""
+    blocks = [BLOCKS[name] for name in (BLOCKS if names is None else names) if name in BLOCKS]
+    groups = [block["nodes"] for block in blocks] + [variant["nodes"] for block in blocks
+                                                     for variant in (block.get("variants") or {}).values() if variant.get("nodes")]
     return {spec["class_type"] for group in groups for spec in group.values()} | {"SetUnionControlNetType"}
 
 
-def pick(use, want=None, info=None, scene=False):
-    """The block for `use` (and `want`): the first by rank this ComfyUI can run, else the first, whose
-    build then says what it needs. Given a second picture (`scene`), the use's block that takes one."""
+def pick(use, want=None, info=None, scene=False, picked=()):
+    """The block for `use` (and `want`): one the user picked for the task (`picked`) whatever the AI wants, else the
+    first by rank this ComfyUI can run, else the first, whose build then says what it needs. Given a second
+    picture (`scene`), the use's block that takes one."""
     names = [name for name, block in BLOCKS.items() if block["job"] == use]
     if not names:
         raise BlockError(f"No use {use!r}; there are: {', '.join(JOBS)}.")
+    own = [name for name in picked if name in names]
+    if own:
+        return next((name for name in own if BLOCKS[name].get("want") == want), own[0])
     if want is None and scene:
         want = next((BLOCKS[name].get("want") for name in names if BLOCKS[name].get("scene")), None)
     chosen = [name for name in names if BLOCKS[name].get("want") == want]

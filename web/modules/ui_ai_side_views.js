@@ -239,12 +239,12 @@ export function drawSide(box, task, side, ctx, arrived = null) {
     if (side.view === 'map') renderMapView(panes.map, task, side, ctx);
     if (side.view === 'decisions') renderDecisionsView(panes.decisions, task, ctx);
     if (side.view === 'outputs') renderOutputsView(panes.outputs, task, ctx);
-    // The ways and skills: read again when the view comes up, drawn the first time and when the task's privacy mode changed (its skills differ).
-    const privacy = String(task.private === true);
-    const draw = !panes.blocks.childElementCount || panes.blocks.dataset.private !== privacy;
+    // The ways and skills: read again when the view comes up, drawn the first time and when what they show of the task changed.
+    const shows = JSON.stringify([task.id, task.private === true, Boolean(task.ended), task.toolbox?.ways || []]);
+    const draw = !panes.blocks.childElementCount || panes.blocks.dataset.shows !== shows;
     if (side.view === 'blocks' && (opened || draw)) {
-        panes.blocks.dataset.private = privacy;
-        renderBlocksView(panes.blocks, ctx, { fresh: opened, draw, isPrivate: task.private === true });
+        panes.blocks.dataset.shows = shows;
+        renderBlocksView(panes.blocks, ctx, { fresh: opened, draw, task });
     } else readBlocksAhead();
 }
 

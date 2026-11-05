@@ -39,7 +39,7 @@ from .path_utils import model_file_within, resolve_folder_subdir, resolve_within
 from .recipe_store import _list_recipes, get_recipes_dir
 from .scan_report import last_scan_path
 from .scan_summary import _summarize
-from . import workflow_route
+from . import example_workflows, workflow_route
 
 MAX_LIMIT = 50
 MAX_SEARCH_PICTURES = 6  # search_images(with_pictures): the first few attached
@@ -459,6 +459,7 @@ def list_workflows(query="", limit=20, *, exact_name=False):
                       "notes": _text(data.get("notes"), 500), "saved": _when((data.get("timestamp") or 0) / 1000),
                       "settings": params if len(params) <= MAX_TEXT else params[:MAX_TEXT] + "…",
                       **({"plans": own} if own else {})})  # run_workflow(workflow=one of them) runs it with that set
+    found = found or [item for item in example_workflows.for_ai() if (item["name"] == query if exact_name else _matches(terms, item["name"], item["notes"]))]
     return {"total_matches": len(found), "workflows": found[:_limit(limit)]}
 
 

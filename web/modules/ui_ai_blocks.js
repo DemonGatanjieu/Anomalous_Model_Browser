@@ -3,7 +3,8 @@
  * the AI (api/reference_blocks.py, a data file a block), by use: what each does, and under Details where it came
  * from, in the user's language; greyed with what it lacks when a node pack or a model is missing
  * (a pack opens ComfyUI-Manager's list searched for it); and a switch the user turns a block off
- * with, so the AI is not offered it; how it was tried (the card, a run's time) and the models it recommends
+ * with, so the AI is not offered it; a button that picks a usable block for this task alone (the AI is told, and
+ * add_nodes builds it for that use); how it was tried (the card, a run's time) and the models it recommends
  * (api/block_models.json), each here or a button downloading it, link and SHA256 from the list.
  * Under them the skills (api/ai_skills.py): advice the AI fetches for a kind of job, each with its
  * switch too; for a private task only the private task's skill, as that is all its AI gets. GET /anomalous/ai_blocks, POST {name, on} or {skill, on}.
@@ -12,6 +13,7 @@
  */
 
 import { resolveLocale, translate as t } from './locales.js';
+import { anomalousAlert } from './ui_dialog.js';
 import { sideHead } from './ui_ai_side.js';
 import { openManager } from './ui_pack_usage.js';
 import { downloadFrom } from './model_download.js';
@@ -136,20 +138,40 @@ function onSwitch(item, key, redraw) {
     return toggle;
 }
 
-function blockRow(block, owner, redraw) {
+/** The button that picks `block` for task `task` or takes it back; `changed()` after (the task is read again, and the view with it). */
+function useButton(block, task, changed) {
+    const using = (task.toolbox?.ways || []).includes(block.name);
+    const node = el('button', `anomalous-ai-block-use${using ? ' is-on' : ''}`, t(using ? 'aiBlocksUsing' : 'aiBlocksUse'));
+    node.type = 'button';
+    node.title = t(using ? 'aiBlocksUsingHint' : 'aiBlocksUseHint');
+    node.setAttribute('aria-pressed', String(using));
+    node.onclick = async () => {
+        node.disabled = true;
+        const answer = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(task.id)}/way`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: block.name, on: !using }),
+        }).catch(error => ({ statusText: error.message }));
+        if (!answer.ok) await anomalousAlert(answer.statusText);
+        node.disabled = false;
+        changed();
+    };
+    return node;
+}
+
+function blockRow(block, ctx, redraw, task) {
     const row = el('div', `anomalous-ai-block${block.usable ? '' : ' is-missing'}${block.on ? '' : ' is-off'}`);
     const body = el('div', 'anomalous-ai-block-body');
     const head = el('div', 'anomalous-ai-block-head');
     head.append(el('span', 'anomalous-ai-block-title', words(block.title)),
         el('span', `anomalous-ai-block-state${block.usable ? ' is-ready' : ''}`, t(block.usable ? 'aiBlocksReady' : 'aiBlocksMissing')));
+    if (block.usable && block.on && !task.ended) head.append(useButton(block, task, ctx.changed));
     body.append(head, el('div', 'anomalous-ai-block-about', words(block.about)));
-    if (!block.usable) body.append(lacks(block, owner));
+    if (!block.usable) body.append(lacks(block, ctx.owner));
     // Where it came from, how it was tried, its models: folded, the row is a line to read.
     const more = el('details', 'anomalous-ai-block-more');
     more.append(el('summary', '', t('aiBlocksDetails')));
     if (block.better_with?.length) more.append(el('div', 'anomalous-ai-block-source', t('aiBlocksBetterWith', { names: block.better_with.join(', ') })));
     if (words(block.source)) more.append(el('div', 'anomalous-ai-block-source', t('aiBlocksSource', { source: words(block.source) })));
-    more.append(...[tested(block), recommended(block, owner)].filter(Boolean));
+    more.append(...[tested(block), recommended(block, ctx.owner)].filter(Boolean));
     if (more.childElementCount > 1) body.append(more);
     row.append(body, onSwitch(block, { name: block.name }, redraw));
     return row;
@@ -172,7 +194,7 @@ function skillsGroup(skills, redraw, isPrivate) {
     return group;
 }
 
-function listBox(owner, redraw, isPrivate) {
+function listBox(ctx, redraw, task) {
     const body = el('div', 'anomalous-ai-stage-body anomalous-ai-blocks');
     if (!shown) {
         body.append(el('div', 'anomalous-ai-stage-empty', t('aiBlocksReading')));
@@ -190,21 +212,21 @@ function listBox(owner, redraw, isPrivate) {
         if (!blocks.length || body.querySelector(`[data-job="${CSS.escape(job)}"]`)) continue;
         const group = el('div', 'anomalous-ai-blocks-group');
         group.dataset.job = job;
-        group.append(el('div', 'anomalous-ai-blocks-job', t(`aiBlocksJob_${job}`)), ...blocks.map(block => blockRow(block, owner, redraw)));
+        group.append(el('div', 'anomalous-ai-blocks-job', t(`aiBlocksJob_${job}`)), ...blocks.map(block => blockRow(block, ctx, redraw, task)));
         body.append(group);
     }
-    if (shown.skills?.length) body.append(skillsGroup(shown.skills, redraw, isPrivate));
+    if (shown.skills?.length) body.append(skillsGroup(shown.skills, redraw, task.private === true));
     return body;
 }
 
 /**
- * The view into `pane`; `ctx`: {close, owner}. `fresh`: the view was just opened, so the list is read
- * again; `draw`: what is in `pane` is not this view's yet; `isPrivate`: the task shown is private (its skills only).
+ * The view into `pane`; `ctx`: {close, owner, changed}. `fresh`: the view was just opened, so the list is read
+ * again; `draw`: what is in `pane` is not this view's yet; `task`: the task shown (a private one has its own skills).
  */
-export function renderBlocksView(pane, ctx, { fresh, draw, isPrivate }) {
+export function renderBlocksView(pane, ctx, { fresh, draw, task }) {
     redrawView = () => {
         const top = pane.querySelector('.anomalous-ai-blocks')?.scrollTop || 0;
-        pane.replaceChildren(sideHead(t('aiSideBlocks'), ctx.close), listBox(ctx.owner, redrawView, isPrivate));
+        pane.replaceChildren(sideHead(t('aiSideBlocks'), ctx.close), listBox(ctx, redrawView, task));
         const list = pane.querySelector('.anomalous-ai-blocks');
         if (list) list.scrollTop = top;
     };

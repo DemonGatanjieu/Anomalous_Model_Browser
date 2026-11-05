@@ -1,0 +1,573 @@
+{
+ "name": "Example: picture to picture",
+ "title": {
+  "zh": "图生图",
+  "en": "Picture to picture"
+ },
+ "about": {
+  "zh": "从一张图出发，按提示词改。在 Load Image 节点选图；denoise 越高，改得越多。",
+  "en": "Starts from a picture and changes it by the prompt. Pick it in the Load Image node; a higher denoise changes more."
+ },
+ "ai": "Redraws a picture at denoise 0.6. open_workflow, set_model on its loader, then run_workflow with the prompt and image.",
+ "workflow": {
+  "id": "00000000-0000-0000-0000-000000000000",
+  "revision": 0,
+  "last_node_id": 8,
+  "last_link_id": 11,
+  "nodes": [
+   {
+    "id": 1,
+    "type": "CheckpointLoaderSimple",
+    "pos": [
+     40,
+     120
+    ],
+    "size": [
+     273.4576171875,
+     98
+    ],
+    "flags": {},
+    "order": 0,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "Checkpoint名称",
+      "name": "ckpt_name",
+      "type": "COMBO",
+      "widget": {
+       "name": "ckpt_name"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "模型",
+      "name": "MODEL",
+      "type": "MODEL",
+      "links": [
+       5
+      ]
+     },
+     {
+      "localized_name": "CLIP",
+      "name": "CLIP",
+      "type": "CLIP",
+      "links": [
+       1,
+       2
+      ]
+     },
+     {
+      "localized_name": "VAE",
+      "name": "VAE",
+      "type": "VAE",
+      "links": [
+       4,
+       10
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "CheckpointLoaderSimple"
+    },
+    "widgets_values": [
+     ""
+    ]
+   },
+   {
+    "id": 2,
+    "type": "CLIPTextEncode",
+    "pos": [
+     440,
+     60
+    ],
+    "size": [
+     400,
+     200
+    ],
+    "flags": {},
+    "order": 4,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "clip",
+      "name": "clip",
+      "type": "CLIP",
+      "link": 1
+     },
+     {
+      "localized_name": "文本",
+      "name": "text",
+      "type": "STRING",
+      "widget": {
+       "name": "text"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "条件",
+      "name": "CONDITIONING",
+      "type": "CONDITIONING",
+      "links": [
+       6
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "CLIPTextEncode"
+    },
+    "widgets_values": [
+     "a quiet lake at sunrise, mountains in the distance, soft morning light, detailed"
+    ]
+   },
+   {
+    "id": 3,
+    "type": "CLIPTextEncode",
+    "pos": [
+     440,
+     300
+    ],
+    "size": [
+     400,
+     200
+    ],
+    "flags": {},
+    "order": 5,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "clip",
+      "name": "clip",
+      "type": "CLIP",
+      "link": 2
+     },
+     {
+      "localized_name": "文本",
+      "name": "text",
+      "type": "STRING",
+      "widget": {
+       "name": "text"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "条件",
+      "name": "CONDITIONING",
+      "type": "CONDITIONING",
+      "links": [
+       7
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "CLIPTextEncode"
+    },
+    "widgets_values": [
+     "low quality, blurry, watermark, text"
+    ]
+   },
+   {
+    "id": 4,
+    "type": "LoadImage",
+    "pos": [
+     40,
+     420
+    ],
+    "size": [
+     270,
+     102
+    ],
+    "flags": {},
+    "order": 1,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "图像",
+      "name": "image",
+      "type": "COMBO",
+      "widget": {
+       "name": "image"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "选择文件上传",
+      "name": "upload",
+      "type": "IMAGEUPLOAD",
+      "widget": {
+       "name": "upload"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "图像",
+      "name": "IMAGE",
+      "type": "IMAGE",
+      "links": [
+       3
+      ]
+     },
+     {
+      "localized_name": "遮罩",
+      "name": "MASK",
+      "type": "MASK",
+      "links": null
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "LoadImage"
+    },
+    "widgets_values": [
+     "",
+     "image"
+    ]
+   },
+   {
+    "id": 5,
+    "type": "VAEEncode",
+    "pos": [
+     440,
+     560
+    ],
+    "size": [
+     140,
+     46
+    ],
+    "flags": {},
+    "order": 6,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "像素",
+      "name": "pixels",
+      "type": "IMAGE",
+      "link": 3
+     },
+     {
+      "localized_name": "vae",
+      "name": "vae",
+      "type": "VAE",
+      "link": 4
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "Latent",
+      "name": "LATENT",
+      "type": "LATENT",
+      "links": [
+       8
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "VAEEncode"
+    }
+   },
+   {
+    "id": 6,
+    "type": "KSampler",
+    "pos": [
+     860,
+     120
+    ],
+    "size": [
+     270,
+     262
+    ],
+    "flags": {},
+    "order": 7,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "模型",
+      "name": "model",
+      "type": "MODEL",
+      "link": 5
+     },
+     {
+      "localized_name": "正面条件",
+      "name": "positive",
+      "type": "CONDITIONING",
+      "link": 6
+     },
+     {
+      "localized_name": "负面条件",
+      "name": "negative",
+      "type": "CONDITIONING",
+      "link": 7
+     },
+     {
+      "localized_name": "Latent图像",
+      "name": "latent_image",
+      "type": "LATENT",
+      "link": 8
+     },
+     {
+      "localized_name": "种子",
+      "name": "seed",
+      "type": "INT",
+      "widget": {
+       "name": "seed"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "步数",
+      "name": "steps",
+      "type": "INT",
+      "widget": {
+       "name": "steps"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "cfg",
+      "name": "cfg",
+      "type": "FLOAT",
+      "widget": {
+       "name": "cfg"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "采样器名称",
+      "name": "sampler_name",
+      "type": "COMBO",
+      "widget": {
+       "name": "sampler_name"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "调度器",
+      "name": "scheduler",
+      "type": "COMBO",
+      "widget": {
+       "name": "scheduler"
+      },
+      "link": null
+     },
+     {
+      "localized_name": "降噪",
+      "name": "denoise",
+      "type": "FLOAT",
+      "widget": {
+       "name": "denoise"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "Latent",
+      "name": "LATENT",
+      "type": "LATENT",
+      "links": [
+       9
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "KSampler"
+    },
+    "widgets_values": [
+     0,
+     "randomize",
+     28,
+     5.5,
+     "euler_ancestral",
+     "normal",
+     0.6
+    ]
+   },
+   {
+    "id": 7,
+    "type": "VAEDecode",
+    "pos": [
+     1240,
+     120
+    ],
+    "size": [
+     140,
+     46
+    ],
+    "flags": {},
+    "order": 2,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "Latent",
+      "name": "samples",
+      "type": "LATENT",
+      "link": 9
+     },
+     {
+      "localized_name": "vae",
+      "name": "vae",
+      "type": "VAE",
+      "link": 10
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "图像",
+      "name": "IMAGE",
+      "type": "IMAGE",
+      "links": [
+       11
+      ]
+     }
+    ],
+    "properties": {
+     "Node name for S&R": "VAEDecode"
+    }
+   },
+   {
+    "id": 8,
+    "type": "SaveImage",
+    "pos": [
+     1500,
+     120
+    ],
+    "size": [
+     270,
+     58
+    ],
+    "flags": {},
+    "order": 3,
+    "mode": 0,
+    "inputs": [
+     {
+      "localized_name": "图片",
+      "name": "images",
+      "type": "IMAGE",
+      "link": 11
+     },
+     {
+      "localized_name": "文件名前缀",
+      "name": "filename_prefix",
+      "type": "STRING",
+      "widget": {
+       "name": "filename_prefix"
+      },
+      "link": null
+     }
+    ],
+    "outputs": [
+     {
+      "localized_name": "images",
+      "name": "images",
+      "type": "IMAGE",
+      "links": null
+     }
+    ],
+    "properties": {},
+    "widgets_values": [
+     "example"
+    ]
+   }
+  ],
+  "links": [
+   [
+    1,
+    1,
+    1,
+    2,
+    0,
+    "CLIP"
+   ],
+   [
+    2,
+    1,
+    1,
+    3,
+    0,
+    "CLIP"
+   ],
+   [
+    3,
+    4,
+    0,
+    5,
+    0,
+    "IMAGE"
+   ],
+   [
+    4,
+    1,
+    2,
+    5,
+    1,
+    "VAE"
+   ],
+   [
+    5,
+    1,
+    0,
+    6,
+    0,
+    "MODEL"
+   ],
+   [
+    6,
+    2,
+    0,
+    6,
+    1,
+    "CONDITIONING"
+   ],
+   [
+    7,
+    3,
+    0,
+    6,
+    2,
+    "CONDITIONING"
+   ],
+   [
+    8,
+    5,
+    0,
+    6,
+    3,
+    "LATENT"
+   ],
+   [
+    9,
+    6,
+    0,
+    7,
+    0,
+    "LATENT"
+   ],
+   [
+    10,
+    1,
+    2,
+    7,
+    1,
+    "VAE"
+   ],
+   [
+    11,
+    7,
+    0,
+    8,
+    0,
+    "IMAGE"
+   ]
+  ],
+  "groups": [],
+  "config": {},
+  "version": 0.4,
+  "extra": {}
+ }
+}
