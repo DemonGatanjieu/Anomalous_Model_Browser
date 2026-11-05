@@ -164,7 +164,7 @@ The main surfaces are:
   `node_parameter_sets.js` own the panel's one list of saved values for the node type;
   `ui_apply_receipt.js` is the receipt with Undo after a panel writes to a node.
 
-`ui_dom.js` owns generic `text` and `jsonResponse` helpers.
+`ui_dom.js` owns generic `text`, `jsonResponse` and `settle` helpers.
 `material_inspector.js` holds the image workbench's metadata helpers and
 node-parameter rendering; `png_metadata.js` reads a PNG's workflow in the browser. See `material-library.md` for the material files' API and
 persistence contract.

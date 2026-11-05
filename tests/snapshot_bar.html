@@ -1,16 +1,20 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>Saves bar regression</title>
+<title>Saves bar and page regression</title>
+<link rel="stylesheet" href="../web/styles/28-workflows.css">
 <script type="importmap">{"imports":{"/scripts/app.js":"data:text/javascript,export const app = {};","/scripts/api.js":"data:text/javascript,export const api = new EventTarget();"}}</script>
 <pre id="results">Running…</pre>
 <div class="graph-canvas-panel"></div>
+<div id="page"></div>
 <script type="module">
 import { app } from '/scripts/app.js';
 import { api } from '/scripts/api.js';
+import { MAX_RUNS } from '../web/modules/snapshot_plan.js';
 import { refreshGroup } from '../web/modules/snapshot_store.js';
+import { savesToggle } from '../web/modules/ui_saves_list.js';
 import { watchSaves } from '../web/modules/ui_snapshot_bar.js';
 
-// The real bar on a page. The browser sends no click to an element that left the page during the press,
+// The real bar and Saves page. The browser sends no click to an element that left the page during the press,
 // so what must hold is that nothing here takes a control off it. Only ComfyUI and the saves routes are fake.
 const save = id => ({ id, at: 0, count: 1, changes: [], pictures: [], running: 0 });
 const group = { key: 'k', title: '', path: '', saves: [save('a'), save('b')] };
@@ -19,7 +23,7 @@ window.fetch = async (url, options) => {
         const { id, count } = JSON.parse(options.body);
         group.saves.find(item => item.id === id).count = count;
     }
-    return new Response(JSON.stringify({ group, workflow: {} }));
+    return new Response(JSON.stringify({ group, groups: [{ key: 'k', title: 'canvas', path: '', count: group.saves.length, updated: 0, cover: null }], workflow: {} }));
 };
 app.rootGraph = { extra: { anomalous_saves: 'k' }, serialize: () => ({}) };
 app.graph = app.rootGraph;
@@ -73,7 +77,7 @@ try {
     group.saves.shift();
     await refreshGroup('k');
     const left = all('.anomalous-snapshot-mark');
-    check(left.map(chip => chip.dataset.save).join() === 'b,c' && all('.anomalous-snapshot-count')[0].value === '2', 'a part left by a removed save does not go on as the next one');
+    check(left.map(chip => chip.dataset.key).join() === 'b,c' && all('.anomalous-snapshot-count')[0].value === '2', 'a part left by a removed save does not go on as the next one');
 
     one('.anomalous-snapshot-close').click();
     const handle = one('.anomalous-snapshot-unfold');
@@ -81,6 +85,59 @@ try {
     check(handle.isConnected, 'the folded handle stays on the page too');
     handle.click();
     check(one('.anomalous-snapshot-add') && one('.anomalous-snapshot-status') && !one('.anomalous-snapshot-unfold'), 'unfolding brings the row back');
+
+    const picture = filename => ({ filename, subfolder: '', type: 'output' });
+    group.saves[0].pictures = [picture('one.png')];
+    const owner = { recipeView: one('#page'), close() {}, show() {}, refreshRecipes() {} };
+    savesToggle(owner);
+    owner.savesOpen.add('k');
+    owner.savesToggle.click();
+    await answered();
+    const pageControls = all('.anomalous-saves-part button, .anomalous-saves-part input');
+    const pageStayed = () => pageControls.every(node => node.isConnected);
+    check(all('.anomalous-saves-save').length === 2 && one('.anomalous-saves-picture'), 'the page shows the saves and their pictures');
+
+    const pageBox = one('.anomalous-saves-tools .anomalous-snapshot-count');
+    await typed(pageBox, '4');
+    check(group.saves[0].count === 4 && pageStayed(), 'on the page too, the answer to a count keeps every control there');
+    check(one('.anomalous-saves-head .anomalous-snapshot-run').textContent.includes('5'), 'the part says the new total');
+    pageBox.focus();
+    pageBox.value = '8';
+    await refreshGroup('k');
+    check(document.activeElement === pageBox && pageBox.value === '8' && pageStayed(), 'a run ending leaves the part alone, a box being typed in too');
+    pageBox.blur();
+
+    const more = one('.anomalous-saves-tools .anomalous-wf-icon-btn');
+    more.click();
+    const [button, menu] = [one('.anomalous-saves-tools .anomalous-wf-icon-btn').getBoundingClientRect(), one('.anomalous-popup-menu').getBoundingClientRect()];
+    check(Math.abs(menu.right - button.right) < 2, 'a redrawn card\'s menu opens by its button');
+    more.click();
+    check(!one('.anomalous-popup-menu'), 'a second press closes it');
+
+    const tiles = all('.anomalous-saves-picture');
+    await refreshGroup('k');
+    check(tiles.every(node => node.isConnected), 'pictures that did not change stay on the page');
+    group.saves[0].pictures.push(picture('two.png'));
+    await refreshGroup('k');
+    const thumbs = all('.anomalous-saves-picture img');
+    check(thumbs.length === 2 && thumbs[0].src.includes('two.png'), 'a new picture goes first in its line');
+
+    group.saves[0].count = MAX_RUNS + 1;
+    await refreshGroup('k');
+    one('.anomalous-saves-head .anomalous-snapshot-run').click();
+    await answered();
+    check(one('.anomalous-saves-status').textContent, 'a refused run says so on the part it has after a redraw');
+    group.saves[0].count = 1;
+
+    one('.anomalous-saves-fold').click();
+    check(!one('.anomalous-saves-save'), 'a part folds');
+    one('.anomalous-saves-fold').click();
+    await answered();
+    check(all('.anomalous-saves-save').length === 2 && all('.anomalous-saves-picture').length === 2, 'and opens with its cards and pictures');
+
+    group.saves.shift();
+    await refreshGroup('k');
+    check(all('.anomalous-saves-save').map(card => card.dataset.key).join() === 'c' && one('.anomalous-saves-number').textContent === '1', 'a card left by a removed save does not go on as the next one');
     results.textContent += failures ? `${failures} FAILED` : 'ALL PASSED';
 } catch (error) { results.textContent += `FAIL ${error.stack}`; }
 </script>

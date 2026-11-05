@@ -14,6 +14,7 @@ import { changeKind, runTotal } from './snapshot_plan.js';
 import { runSaves, seedMode, watchSeedMode } from './snapshot_run.js';
 import { findGroup, listGroups, onSavesChange, readWorkflow, removeGroup, removeSave } from './snapshot_store.js';
 import { anomalousConfirm } from './ui_dialog.js';
+import { settle } from './ui_dom.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { appendText, button } from './ui_recipe_detail_dom.js';
@@ -92,6 +93,7 @@ function saveMenu(owner, anchor, item, group, at) {
 function saveRow(owner, item, group, save, at) {
     const box = document.createElement('div');
     box.className = 'anomalous-saves-save';
+    box.dataset.key = save.id;
     const info = appendText(box, 'div', '', 'anomalous-saves-info');
     const top = appendText(info, 'div', '', 'anomalous-saves-top');
     appendText(top, 'span', String(at + 1), 'anomalous-saves-number');
@@ -109,7 +111,7 @@ function saveRow(owner, item, group, save, at) {
     button(tools, t('snapshotKeepCard'), 'anomalous-wf-filter').onclick = () => void keep(owner, group.key, save);
     const more = button(tools, '⋯', 'anomalous-wf-icon-btn');
     more.title = t('notebookMore');
-    more.onclick = () => saveMenu(owner, more, item, group, at);
+    more.onclick = event => saveMenu(owner, event.currentTarget, item, group, at);
     pictureLine(owner, box, save, placeOf(item, at));
     return box;
 }
@@ -145,7 +147,7 @@ function drawPart(owner, part, group) {
     head.className = 'anomalous-saves-head';
     head.append(foldButton(owner, part, Boolean(group)));
     part.line = null;
-    if (!group) return void box.replaceChildren(head);
+    if (!group) return void settle(box, [head]);
     head.append(seedSwitch());
     const go = button(head, t('snapshotRun', { count: runTotal(group.saves) }), 'anomalous-snapshot-run');
     go.onclick = () => void run(owner, group, group.saves, seedMode());
@@ -154,13 +156,14 @@ function drawPart(owner, part, group) {
         if (!await anomalousConfirm(t('savesListRemoveConfirm', { name: item.title || t('recipeUntitled'), count: item.count }))) return;
         await removeGroup(item.key).catch(error => fail(owner, item.key, error));
     };
-    part.line = document.createElement('div');
-    part.line.className = 'anomalous-saves-status';
-    showLine(part);
+    const line = document.createElement('div');
+    line.className = 'anomalous-saves-status';
     const cards = document.createElement('div');
     cards.className = 'anomalous-saves-cards';
     cards.append(...group.saves.map((save, at) => saveRow(owner, item, group, save, at)));
-    box.replaceChildren(head, part.line, cards);
+    settle(box, [head, line, cards]);
+    part.line = box.querySelector('.anomalous-saves-status');
+    showLine(part);
     fillLines(box);
 }
 

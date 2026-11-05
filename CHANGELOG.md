@@ -2,8 +2,8 @@
 
 ## v1.63.0 — unreleased
 
-- 存档条上的按钮按一下就管用：刚在提示词框里打完字、刚改完次数，或者运行还在跑的时候，第一下不再被吃掉；运行途中正在输入的次数也不会被清掉。
-- The saves bar's controls answer the first click: right after typing in a prompt box or changing a count, or while runs go, the click is no longer lost, and a count being typed stays.
+- 存档条和存档页上的按钮按一下就管用：刚在提示词框里打完字、刚改完次数，或者运行还在跑的时候，第一下不再被吃掉；运行途中正在输入的次数也不会被清掉。
+- The controls of the saves bar and the Saves page answer the first click: right after typing in a prompt box or changing a count, or while runs go, the click is no longer lost, and a count being typed stays.
 - **插入 LoRA 可以一次选多个**：选择窗口里点卡片加入，再点一下取消，卡片上的数字就是接上去的顺序，线自动连好，Ctrl+Z 一次全部退回。默认用 ComfyUI 自带的节点串成一串；装了 rgthree 或 Easy-Use 时可以改放进一个 Power Lora Loader 或 LoRA 堆叠节点，会记住上次的选择。
 - 在采样器前面插入 LoRA 时，如果前面已经有一个 LoRA，新的 LoRA 也能接上 CLIP 线了。
 - **Insert LoRA takes several at a time**: in the picker, click cards to add them and again to drop one; the number on a card is the order they go in. They are wired for you, and one Ctrl+Z takes them all out. They chain as ComfyUI's own nodes by default; with rgthree or Easy-Use installed they can go in one Power Lora Loader or LoRA stack, and the choice is remembered.

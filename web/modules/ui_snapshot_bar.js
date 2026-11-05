@@ -19,6 +19,7 @@ import { translate as t } from './locales.js';
 import { runCount, runTotal } from './snapshot_plan.js';
 import { runSaves, seedMode, setSeedMode, watchRuns, watchSeedMode } from './snapshot_run.js';
 import { addSave, findGroup, onSavesChange, readWorkflow, setCount } from './snapshot_store.js';
+import { settle } from './ui_dom.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const EXTRA_KEY = 'anomalous_saves'; // in a workflow's extra: the group of saves it belongs to
@@ -71,29 +72,6 @@ function button(className, label, run, title = '') {
     node.title = title;
     node.onclick = run;
     return node;
-}
-
-/**
- * `parent` comes to show `fresh` on the elements it has. The browser sends no click to an element that left
- * the page during the press, and ComfyUI's graphChanged, an answer to a count or a run ending can all come
- * during one; a box being typed in would lose its digits. A save's part is only kept for that save.
- * Handlers move over to the kept element, so they read `event.target`, not the element made with them.
- */
-function settle(parent, fresh) {
-    const there = [...parent.children];
-    fresh.forEach((node, at) => {
-        const old = there[at];
-        if (!old) return void parent.append(node);
-        if (old.tagName !== node.tagName || old.dataset.save !== node.dataset.save) return void old.replaceWith(node);
-        for (const { name, value } of node.attributes) old.setAttribute(name, value);
-        old.onclick = node.onclick;
-        old.onchange = node.onchange;
-        if (node.tagName === 'INPUT') {
-            if (old !== document.activeElement) old.value = node.value;
-        } else if (!node.children.length) old.textContent = node.textContent;
-        settle(old, [...node.children]);
-    });
-    for (const extra of there.slice(fresh.length)) extra.remove();
 }
 
 /**
@@ -284,7 +262,7 @@ export function seedSwitch() {
 
 function chip(save, at) {
     const box = el('span', `anomalous-snapshot-mark${save.id === current ? ' is-current' : ''}`);
-    box.dataset.save = save.id;
+    box.dataset.key = save.id;
     box.append(button('anomalous-snapshot-number', String(at + 1), () => void goBack(group.key, save), `${t('snapshotBack')}\n${saveWords(save, at)}`), el('span', 'anomalous-snapshot-times', '×'), runsBox(group.key, save));
     return box;
 }

@@ -94,11 +94,13 @@ function foldTile(line, next, count, total, open) {
     appendText(more, 'span', `+${count}`, 'anomalous-saves-folded');
 }
 
-/** `save`'s pictures in `box`, or what is said in their place. A line is filled by fillLines once it has its width. */
+/** `save`'s pictures in `box`, or what is said in their place. A line is filled by fillLines once it has its width, and stands while its key does. */
 export function pictureLine(owner, box, save, where) {
     const all = newestFirst(save);
     if (!all.length) return void appendText(box, 'div', save.running ? t('savesRunsLeft', { count: save.running }) : t('snapshotNoPictures'), 'anomalous-saves-none');
     const line = appendText(box, 'div', '', 'anomalous-saves-pictures');
+    line.dataset.key = JSON.stringify([where.number, all.map(picture => [picture.filename, picture.subfolder, picture.type])]);
+    line.dataset.fills = '';
     let room = 0;
     line.anomalousFill = () => {
         const fits = Math.floor((line.clientWidth + GAP) / TILE);
