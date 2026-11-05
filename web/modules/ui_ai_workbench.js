@@ -227,9 +227,7 @@ function renderTask() {
         view.dock.append(view.newest, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
         view.summary.append(view.flow, view.made);
         box.replaceChildren(view.header, view.summary, view.timeline, view.dock);
-        // How much of the column the stuck header covers, for what sticks under it (the waiting page's sentence).
         new ResizeObserver(() => {
-            box.style.setProperty('--anomalous-ai-head-h', `${view.header.offsetHeight + parseFloat(getComputedStyle(view.header).top || 0)}px`);
             for (const part of [view.header, view.dock]) part.classList.toggle('is-tight', box.clientWidth < TIGHT_PX);
         }).observe(view.header);
     }
@@ -282,17 +280,12 @@ function renderTask() {
             make: () => chainRow(item.steps, at + 1, { entries: state.entries, stepRow, changed: renderTask, live }) };
     });
     state.numbers = new Map(items.flatMap((item, at) => (item.type === 'step' ? [item.step] : item.steps).map(step => [step.id, at + 1])));
-    // A task the user started waits for an AI: how to get one on it, and a page to put things
-    // ready for it meanwhile (their own steps are drawn there; its gallery feeds the message box).
+    // A task the user started waits for an AI: how to get one on it (what they sent meanwhile is drawn there).
     const preparing = Boolean(task.waiting) && items.every(item => item.type === 'step' && item.step.kind === 'user');
     if (preparing) {
-        const materials = toolboxCount(task);
-        rows.splice(0, rows.length, { key: JSON.stringify(['waiting', task.title, task.steps, materials]), make: () => waitingView(task, {
-            rename: async (title) => {
-                await postTask(task.id, { title }).catch(error => anomalousAlert(error.message));
-                await refresh();
-            },
-            message: view.message, materials, ready: items.map((item, at) => stepRow(item.step, at + 1)),
+        const connected = state.tasks.some(item => item.client);
+        rows.splice(0, rows.length, { key: JSON.stringify(['waiting', task.title, task.steps, connected]), make: () => waitingView(task, {
+            connected, ready: items.map((item, at) => stepRow(item.step, at + 1)),
         }) });
     } else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     syncRows(view.timeline, rows);

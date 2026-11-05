@@ -1,6 +1,5 @@
 /**
- * Pictures from the gallery for the AI workbench: pictureGrid, the grid itself (also on a waiting
- * task's "Put ready" page, ui_ai_ready.js), and the message box's panel (ui_ai_message.js) over
+ * Pictures from the gallery for the AI workbench: the message box's panel (ui_ai_message.js) over
  * the box with the newest output pictures (GET /anomalous/gallery_images, as 512 px thumbnails),
  * searched the way the gallery searches (words of the prompt, a model, "seed:123"…), more as it
  * scrolls. Clicking pictures picks them, up to the number the message still takes; "Add" gives
@@ -46,7 +45,7 @@ export async function galleryPictures(page, limit, query = '', signal = undefine
  * scrolls. `picked(id)` says whether one is picked, `pick(item)` picks or drops it (the caller
  * keeps what is picked). Returns {search, grid, mark() (shows what is picked again), stop()}.
  */
-export function pictureGrid({ picked, pick }) {
+function pictureGrid({ picked, pick }) {
     const abort = new AbortController();
     let page = 0;
     let pages = 1;

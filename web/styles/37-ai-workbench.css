@@ -1050,7 +1050,7 @@
 
 /* A short window (ui_ai_workbench.js layout: the page under SHORT_PX, not maximised): less room
    around the task's head, the message box's hint only for a failure (its words are the input's
-   tooltip), a waiting task's picture smaller and its steps closer. */
+   tooltip), a waiting task's picture smaller and nearer the top. */
 .anomalous-ai.is-short .anomalous-ai-task { padding-top: 12px; }
 .anomalous-ai.is-short .anomalous-ai-task-head {
     top: -12px;
@@ -1061,7 +1061,7 @@
 .anomalous-ai.is-short .anomalous-ai-task-meta { font-size: 11.5px; }
 .anomalous-ai.is-short .anomalous-ai-dock { padding-top: 10px; }
 .anomalous-ai.is-short .anomalous-ai-message-hint:not(.is-error) { display: none; }
-.anomalous-ai.is-short .anomalous-ai-waiting { gap: 14px; }
+.anomalous-ai.is-short .anomalous-ai-waiting { margin-top: 8px; }
 .anomalous-ai.is-short .anomalous-ai-waiting-art { width: 72px; height: 72px; }
 
 /* The user's word on a finished run (ui_ai_verdict.js), under its pictures. */

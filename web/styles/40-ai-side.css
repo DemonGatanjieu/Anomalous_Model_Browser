@@ -398,120 +398,41 @@
     color: var(--amb-link);
 }
 
-/* A task waiting for an AI (ui_ai_ready.js): a picture, the sentence for the AI (kept in view at
-   the top while the page scrolls), what may be put ready first as folds, the connect card. */
+/* A task waiting for an AI (ui_ai_ready.js): one thing to do, in the middle of the column. */
 .anomalous-ai-waiting {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    max-width: 760px;
-    margin: 8px auto 0;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    margin: clamp(16px, 9vh, 72px) auto 0;
+    text-align: center;
 }
 
-.anomalous-ai-waiting-hero { display: flex; align-items: center; gap: 20px; }
-.anomalous-ai-waiting-art { flex: none; width: 112px; height: 112px; object-fit: contain; animation: anomalous-ai-waiting-float 4s ease-in-out infinite; }
+.anomalous-ai-waiting-art { flex: none; width: 104px; height: 104px; object-fit: contain; animation: anomalous-ai-waiting-float 4s ease-in-out infinite; }
 @keyframes anomalous-ai-waiting-float { 50% { transform: translateY(-6px); } }
-.anomalous-ai-waiting-words { min-width: 0; }
 
 .anomalous-ai-waiting-title {
+    margin-top: 10px;
     color: var(--amb-text-main);
-    font-size: 21px;
+    font-size: 20px;
     font-weight: 800;
 }
 
 .anomalous-ai-waiting-body {
-    margin: 6px 0 0;
+    margin: 6px 0 18px;
     color: var(--amb-text-soft);
     font-size: 13.5px;
     line-height: 1.7;
 }
 
-.anomalous-ai-waiting-say {
-    position: sticky;
-    top: calc(var(--anomalous-ai-head-h, 48px) + 8px); /* under the task's stuck header (ui_ai_workbench.js measures it) */
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px 16px;
-    border: 1px solid color-mix(in srgb, var(--amb-link) 55%, var(--amb-border));
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--amb-link) 10%, var(--amb-bg-page));
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-}
+.anomalous-ai-waiting > .anomalous-ai-hint { width: 100%; margin-bottom: 22px; }
+.anomalous-ai-waiting > .anomalous-ai-copy { flex-direction: column; gap: 14px; width: 100%; padding: 16px 18px; border-radius: 14px; }
+.anomalous-ai-waiting > .anomalous-ai-copy .anomalous-ai-copy-text { flex: none; width: 100%; color: var(--amb-text-soft); word-break: normal; overflow-wrap: anywhere; }
+.anomalous-ai-waiting > .anomalous-ai-copy .anomalous-ai-copy-button { justify-content: center; min-width: 200px; height: 40px; padding: 0 22px; font-size: 14px; font-weight: 700; }
 
-.anomalous-ai-waiting-say-label { color: var(--amb-text-main); font-size: 14px; font-weight: 700; }
-.anomalous-ai-waiting-say .anomalous-ai-copy { padding: 10px 12px; background: var(--amb-bg-panel); }
-.anomalous-ai-waiting-say .anomalous-ai-copy-text { font-size: 13.5px; word-break: normal; overflow-wrap: anywhere; }
-.anomalous-ai-waiting-say .anomalous-ai-copy-button { height: 36px; padding: 0 16px; font-size: 13.5px; font-weight: 700; }
-
-.anomalous-ai-ready-parts { display: flex; flex-direction: column; gap: 10px; }
 .anomalous-ai-ready-label { color: var(--amb-text-dim); font-size: 12px; font-weight: 650; }
-.anomalous-ai-ready-note { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
-
-/* A fold: a row that reads as something to press (border, hover, chevron), opening its body under it. */
-.anomalous-ai-ready-fold {
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 12px;
-    background: rgba(var(--amb-ink-rgb), 0.03);
-    transition: border-color 0.15s;
-}
-
-.anomalous-ai-ready-fold:hover, .anomalous-ai-ready-fold.is-open { border-color: color-mix(in srgb, var(--amb-link) 55%, var(--amb-border-strong)); }
-
-.anomalous-ai-ready-fold-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    min-height: 46px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: 12px;
-    background: none;
-    color: var(--amb-text-main);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.anomalous-ai-ready-fold-head:hover { background: color-mix(in srgb, var(--amb-link) 8%, transparent); }
-.anomalous-ai-ready-fold-head > .anomalous-tb-icon:first-child { color: var(--amb-link); }
-.anomalous-ai-ready-fold-label { flex: none; font-size: 13.5px; font-weight: 650; }
-.anomalous-ai-ready-fold-status { flex: 1; min-width: 0; overflow: hidden; color: var(--amb-text-dim); font-size: 12.5px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-ready-fold-arrow { flex: none; color: var(--amb-text-soft); transition: transform 0.18s; }
-.anomalous-ai-ready-fold.is-open .anomalous-ai-ready-fold-arrow { transform: rotate(180deg); }
-.anomalous-ai-ready-fold-body { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 14px; }
-.anomalous-ai-ready-fold-body[hidden] { display: none; }
-.anomalous-ai-ready-fold-body .anomalous-ai-pics-grid { flex: none; height: min(380px, 48vh); grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-.anomalous-ai-ready-done { display: flex; flex-direction: column; gap: 8px; min-width: 0; margin-top: 6px; }
-
-.anomalous-ai-waiting-field {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 14px;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 10px;
-    background: var(--amb-bg-panel);
-    color: var(--amb-text-dim);
-    transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.anomalous-ai-waiting-field:focus-within { border-color: var(--amb-link); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb-link) 20%, transparent); }
-
-.anomalous-ai-waiting-wish {
-    flex: 1;
-    min-width: 0;
-    height: 42px;
-    padding: 0;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: var(--amb-text-main);
-    font: inherit;
-    font-size: 14px;
-}
+.anomalous-ai-ready-done { display: flex; flex-direction: column; gap: 8px; width: 100%; min-width: 0; margin-top: 24px; text-align: left; }
 
 /* The card for an AI not connected yet (ui_ai_connect.js connectHint). */
 .anomalous-ai-hint {
@@ -551,7 +472,7 @@
 .anomalous-ai-hint-guide { padding-top: 14px; border-top: 1px solid var(--amb-border); }
 
 @media (max-width: 640px) {
-    .anomalous-ai-waiting-hero, .anomalous-ai-hint-row { flex-direction: column; text-align: center; }
+    .anomalous-ai-hint-row { flex-direction: column; text-align: center; }
     .anomalous-ai-hint-words { align-items: center; }
 }
 

@@ -84,7 +84,7 @@ const kindWords = item => [item.kind === 'pictures' ? t(item.gallery ? 'aiMentio
  * "@" and "/" for `field` in the message box `box`, what they name drawn into `tray`. `source`:
  * {task(), commands(), mark(image, sent)? (marks a picture up for the AI)}. Returns {keydown(event)
  * (true when the list took the key), refs() (what the message carries), add(item) (attaches it),
- * remove(id), has(id), pictures() and count() (how many pictures, and things, it carries),
+ * pictures() and count() (how many pictures, and things, it carries),
  * clear()}. `box` hears "anomalous-refs" whenever that changes.
  */
 export function mentions(field, box, source, tray) {
@@ -251,11 +251,6 @@ export function mentions(field, box, source, tray) {
             refs.push({ kind: item.kind, id: item.id, label: item.title, item, attached: true });
             drawChips();
         },
-        remove(id) {
-            const ref = refs.find(item => item.id === id);
-            if (ref) drop(ref);
-        },
-        has: id => live().some(ref => ref.id === id),
         pictures: () => live().filter(ref => ref.kind === 'pictures').length,
         count: () => live().length,
         clear() {

@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- 新任务的页面清爽了：只留一句发给 AI 的话和一个复制按钮。要先交代的话和图都放下面的留言框，不再有重复的两行。连过 AI 以后也不再看到“第一次用？”；从没连过时，先告诉你怎么连。
+- The new task page is plain now: one sentence for the AI and a Copy button. What to say first and pictures go in the message box below, with no second place for them. Once an AI has connected, "First time?" is gone; until then, how to connect comes first.
 - ComfyUI-Manager 不再把别的插件的节点算到 AMB 头上：AMB 没有节点，是测试文件里的假节点表让它误以为有，于是缺 Power Lora Loader 等节点时会推荐装 AMB。Manager 重新扫描后生效。
 - ComfyUI-Manager no longer takes other packs' nodes for AMB's: AMB has no nodes, but node tables in its test files looked like some, so a missing Power Lora Loader and the like could offer AMB. Takes effect once Manager scans again.
 - AI 工作台的任务列表：一条线上的任务排在一起，后续任务缩进挂在最早的任务下面，一眼看出谁接着谁。每个任务行上多了 ⋯，改名、隐私模式、从列表移除不用先打开任务。移除中间的任务时，线不会断。

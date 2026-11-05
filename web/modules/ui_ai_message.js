@@ -43,8 +43,7 @@ function sideTool(className, name, label, run) {
 
 /**
  * The box; `source`: {task(), commands(), mark(image, sent), openMaterials()} for "@", "/", the
- * tray's ✎ and the materials button. With them, `box.refs` attaches things from outside (the
- * "Put ready" page's gallery) and `box.setMaterials(count)` shows how many materials are picked.
+ * tray's ✎ and the materials button. With them, `box.setMaterials(count)` shows how many materials are picked.
  */
 export function messageBox(onSend, source) {
     const box = el('div', 'anomalous-ai-message');
@@ -110,7 +109,6 @@ export function messageBox(onSend, source) {
             note.textContent = text;
             note.classList.add('is-error');
         } });
-        box.refs = { add: item => at.add(item), remove: id => at.remove(id), has: id => at.has(id), room, pictures: () => at.pictures() }; // for ui_ai_ready.js
         box.setMaterials = count => materials.setCount(count);
     }
     box.note = note;
@@ -120,11 +118,12 @@ export function messageBox(onSend, source) {
 
 /** The hint for where the task stands (the input's tooltip too: a short window shows the hint only
  * for a failure); quieter while the AI is not working on it. While a task waits for an AI
- * (`status` "waiting"), what is sent waits with it. */
+ * (`status` "waiting"), what is sent waits with it, and the input says it can be used for that. */
 export function updateMessageBox(box, ended, status, materials = 0) {
     box.classList.toggle('is-quiet', !['live', 'asks', 'waiting'].includes(status));
     box.note.textContent = t(ended ? 'aiMessageEnded' : status === 'waiting' ? 'aiMessageWaiting' : 'aiMessageHint');
     box.note.classList.remove('is-error');
     box.field.title = box.note.textContent;
+    box.field.placeholder = t(status === 'waiting' ? 'aiMessagePlaceholderWaiting' : 'aiMessagePlaceholder');
     box.setMaterials?.(materials);
 }
