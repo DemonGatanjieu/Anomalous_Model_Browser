@@ -231,6 +231,150 @@
     height: 100%;
 }
 
+/* Where a set came from: a chip per channel, each its own colour. */
+.anomalous-node-param-sources {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.anomalous-node-param-source {
+    --source: var(--amb-text-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid color-mix(in srgb, var(--source) 35%, transparent);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--source) 12%, transparent);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 11.5px;
+}
+
+.anomalous-node-param-source.is-workflow { --source: var(--amb-link); }
+.anomalous-node-param-source.is-picture { --source: var(--amb-ok); }
+.anomalous-node-param-source > .anomalous-node-param-icon { color: var(--source); }
+button.anomalous-node-param-source { cursor: pointer; }
+button.anomalous-node-param-source:hover { background: color-mix(in srgb, var(--source) 24%, transparent); }
+.anomalous-node-param-source-count { font-weight: 700; }
+.anomalous-node-param-source-go { color: var(--amb-text-soft); }
+.anomalous-node-param-day { color: var(--amb-text-dim); font-size: 11px; }
+
+.anomalous-node-param-link { margin-left: auto; }
+
+/* The card (or column) of the set last put in. */
+.anomalous-node-param-last {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-text-main);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.anomalous-node-param-table .anomalous-node-param-last {
+    display: inline-block;
+    margin-top: 3px;
+}
+
+.anomalous-node-param {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.035);
+}
+
+/* The picture made with the values, and where they came from. */
+.anomalous-node-param-top {
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+}
+
+.anomalous-node-param-thumb {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 52px;
+    height: 68px;
+    padding: 0;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    color: var(--amb-text-dim);
+    overflow: hidden;
+    cursor: zoom-in;
+}
+
+.anomalous-node-param-thumb.is-empty { cursor: default; }
+
+.anomalous-node-param-thumb > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-node-param-thumb > .anomalous-node-param-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.anomalous-node-param-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.anomalous-node-param-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.anomalous-node-param-name {
+    overflow: hidden;
+    color: var(--amb-text-main);
+    font-size: 13px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.anomalous-node-param-role {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-link);
+    font-size: 10px;
+}
+
+.anomalous-node-param-role.is-positive { color: var(--amb-ok-text); }
+.anomalous-node-param-role.is-negative { color: var(--amb-danger-text); }
+
+.anomalous-node-param-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 13px;
+    height: 13px;
+}
+
+.anomalous-node-param-icon > svg {
+    width: 100%;
+    height: 100%;
+}
+
 .anomalous-node-param-from {
     display: flex;
     align-items: baseline;

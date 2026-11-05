@@ -2,8 +2,8 @@
  * The current-node panel's parameters: every saved set of values for the node's type
  * (node_parameter_sets.js: materials and recipes, merged), as cards or side by side. A card
  * shows the picture made with its values (or the one they were kept from) and says where they
- * came from: a workflow's parameter set (Open shows it there), a kept picture (open it), or
- * saved here, with the day. Then each value it would change as a picture (numbers as two bars,
+ * came from, a chip per channel: a workflow's parameter set, a kept picture, or saved here. A
+ * press goes to the source; a chip of several lists them first. Then the day. Then each value it would change as a picture (numbers as two bars,
  * choices as old → new) and what stays and why (seeds, model files, choices this computer does
  * not have); "Show all" lists the equal values too. ⇄ opens the comparison window on this node
  * alone, its values beside the set's; one press puts the changes in (the receipt undoes it); saved values (not a
@@ -20,6 +20,7 @@ import { anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { showApplyReceipt } from './ui_apply_receipt.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openParamCompare } from './ui_param_compare.js';
+import { openPopupMenu } from './ui_popup_menu.js';
 import {
     appliedState, applyParameterChanges, closestSet, deleteSavedValues, isAppliedEntry, loadParameterSets, loadSetPictures,
     parameterRows, rememberApplied, restoreApplied, saveNodeParameters,
@@ -30,6 +31,7 @@ const VIEW_KEY = 'anomalous_node_params_view'; // 'cards' | 'table', this browse
 const ROLE_KEYS = { positive: 'recipePromptRolePositive', negative: 'recipePromptRoleNegative', both: 'recipePromptRoleBoth' };
 const KEEP_KEYS = { seed: 'currentNodeKeepSeed', model: 'currentNodeKeepModel', missing: 'currentNodeKeepMissing' };
 const SHOWN_SINCE = 3; // changes named in the line on top; the rest are counted
+const CHANNELS = ['workflow', 'picture', 'saved'];
 const ICONS = {
     workflow: '<rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="14" width="7" height="6" rx="1.5"/><path d="M6.5 10v4a3 3 0 0 0 3 3H14"/>',
     picture: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/>',
@@ -123,29 +125,56 @@ function compareWithCanvas(entry, node) {
     openParamCompare({ workflow: { nodes: [copy], links: [], groups: [] }, label: entry.name }, { canvas: true }, { nodeId: node.id });
 }
 
-/** One line on where the values came from: an icon, what, the day, and a way to open it. */
-function sourceLine(source, pictures, owner) {
-    const line = el('div', 'anomalous-node-param-from');
-    let text;
-    let open = null;
-    if (source.kind === 'recipe') {
-        line.append(icon('workflow'));
-        text = t('currentNodeFromSet', { recipe: source.label });
-        const count = pictures[source.signature]?.count;
-        if (count) text += ` · ${t('currentNodeSetPictures', { count })}`;
-        if (source.setFile && source.recipeFile) open = button('anomalous-node-param-link', t('currentNodeOpenSet'), () => openSet(owner, source));
-    } else if (source.image) {
-        line.append(icon('picture'));
-        text = t('currentNodeFromPicture', { name: source.image.filename.replace(/\.[^.]+$/, '') });
-        open = button('anomalous-node-param-link', t('currentNodeSeePicture'), () => owner.showGalleryViewer?.(`/view?${outputQuery(source.image)}&type=output`));
-    } else {
-        line.append(icon('saved'));
-        text = source.origin === 'canvas_node' ? t('currentNodeFromHere') : source.label;
-    }
+/** The channel a source came by. */
+const channelOf = source => (source.kind === 'recipe' ? 'workflow' : source.image ? 'picture' : 'saved');
+
+/** A source for its chip's list ({label, title, run}: the name alone, the channel being known, in full, and where a press goes; no run for values saved here). */
+function sourceAction(source, pictures, owner) {
     const day = dayOf(source.timestamp);
-    line.append(el('span', 'anomalous-node-param-from-text', day ? `${text} · ${day}` : text));
-    if (open) line.append(open);
-    return line;
+    const count = pictures[source.signature]?.count;
+    const said = text => [text, count ? t('currentNodeSetPictures', { count }) : '', day].filter(Boolean).join(' · ');
+    if (source.kind === 'recipe') {
+        const name = source.setName && source.setName !== source.label ? `${source.label} / ${source.setName}` : source.label;
+        return { label: said(name), title: said(t('currentNodeFromSet', { recipe: name })), run: source.setFile && source.recipeFile ? () => openSet(owner, source) : null };
+    }
+    if (source.image) {
+        const name = source.image.filename.replace(/\.[^.]+$/, '');
+        return { label: said(name), title: said(t('currentNodeFromPicture', { name })), run: () => owner.showGalleryViewer?.(`/view?${outputQuery(source.image)}&type=output`) };
+    }
+    const name = said(source.origin === 'canvas_node' ? t('currentNodeFromHere') : source.label);
+    return { label: name, title: name, run: null };
+}
+
+/** The sources of a channel as one chip: a press goes to the one there is, or lists them. */
+function sourceChip(channel, actions) {
+    const several = actions.length > 1;
+    const goes = actions.some(action => action.run);
+    const chip = el(goes ? 'button' : 'span', `anomalous-node-param-source is-${channel}`);
+    chip.append(icon(channel), el('span', '', t(`currentNodeChannel_${channel}`)));
+    if (several) chip.append(el('span', 'anomalous-node-param-source-count', String(actions.length)));
+    chip.title = actions.map(action => action.title).join('\n');
+    if (!goes) return chip;
+    chip.type = 'button';
+    chip.append(el('span', 'anomalous-node-param-source-go', several ? '▾' : '›'));
+    chip.onclick = () => (several ? openPopupMenu(chip, actions) : actions[0].run());
+    return chip;
+}
+
+/** Where the entry's values came from: a chip per channel, then the day. */
+function sourceChips(entry, ctx) {
+    const row = el('div', 'anomalous-node-param-sources');
+    const seen = new Set();
+    const sources = entry.sources.filter((source) => {
+        const id = `${source.kind}|${source.setFile || source.filename || source.label}`;
+        return !seen.has(id) && seen.add(id);
+    });
+    for (const channel of CHANNELS) {
+        const actions = sources.filter(source => channelOf(source) === channel).map(source => sourceAction(source, ctx.pictures, ctx.owner));
+        if (actions.length) row.append(sourceChip(channel, actions));
+    }
+    const day = dayOf(entry.timestamp);
+    if (day) row.append(el('span', 'anomalous-node-param-day', day));
+    return row;
 }
 
 /** A value the entry would change: numbers as two bars (now, then), other values as old → new. */
@@ -230,17 +259,12 @@ function entryCard(node, entry, ctx) {
     }
     const main = el('div', 'anomalous-node-param-main');
     const head = el('div', 'anomalous-node-param-head');
-    head.append(el('strong', 'anomalous-node-param-name', entry.name));
+    const name = el('strong', 'anomalous-node-param-name', entry.name.endsWith(` · ${node.type}`) ? entry.name.slice(0, -node.type.length - 3) : entry.name);
+    name.title = entry.name;
+    head.append(name);
     if (ROLE_KEYS[entry.role]) head.append(el('span', `anomalous-node-param-role is-${entry.role}`, t(ROLE_KEYS[entry.role])));
     if (isAppliedEntry(entry, ctx.applied?.record)) head.append(el('span', 'anomalous-node-param-last', t('currentNodeLastBadge')));
-    main.append(head);
-    const seen = new Set();
-    for (const source of entry.sources) {
-        const id = `${source.kind}|${source.setFile || source.filename || source.label}`;
-        if (seen.has(id)) continue;
-        seen.add(id);
-        main.append(sourceLine(source, ctx.pictures, ctx.owner));
-    }
+    main.append(head, sourceChips(entry, ctx));
     top.append(main);
     card.append(top);
 
