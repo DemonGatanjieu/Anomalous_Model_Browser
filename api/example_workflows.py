@@ -21,6 +21,8 @@ LOADERS = ("CheckpointLoaderSimple", "UNETLoader", "CLIPLoader", "VAELoader", "A
 FAMILIES = {"sd": ("SDXL", "SD 1.x"), "anima": ("anima",)}  # what the examples' settings suit
 FOR_MODELS = {"sd": "SDXL, SD 1.5", "anima": "Anima"}
 LOOK_AT = 40  # files looked at for a model of a family
+MAX_WITH_SETTINGS = 3  # saved workflows listed in full for an AI: an AI app files a long answer away, unread
+SHORT_NOTES = 120  # characters of a card's notes in a longer list
 PICTURES = (".png", ".jpg", ".jpeg", ".webp")
 
 
@@ -107,8 +109,27 @@ def for_ai():
     """The examples that can run here, as list_workflows gives saved workflows."""
     info = _here()
     fills = _fills(info)
-    return [{"name": item["name"], "example": True, "for_models": FOR_MODELS[item["family"]], "route": workflow_route.line(item["workflow"]), "notes": item["ai"]}
+    return [{"name": item["name"], "title": item["title"]["zh"], "example": True, "for_models": FOR_MODELS[item["family"]],
+             "route": workflow_route.line(item["workflow"]), "notes": item["ai"]}
             for item in EXAMPLES.values() if not _lacks(item, info, fills)]
+
+
+def _short(card):
+    """A saved workflow in a longer list: what tells it apart."""
+    shown = {key: value for key, value in card.items() if value and key not in ("settings", "saved")}
+    return {**shown, "notes": shown["notes"][:SHORT_NOTES]} if "notes" in shown else shown
+
+
+def answer(found, fits, limit):
+    """What list_workflows gives: the saved workflows `found`, cut short when they are many, or else the examples
+    that `fits`. The other examples go by name, so an AI with no card for the job knows of them."""
+    examples = for_ai()
+    fitting = [] if found else [item for item in examples if fits(item)]
+    if len(found) > MAX_WITH_SETTINGS:
+        found = [_short(card) for card in found]
+    listed = found or fitting
+    others = [item["name"] for item in examples if item not in fitting]
+    return {"total_matches": len(listed), "workflows": listed[:limit], **({"examples": others} if others else {})}
 
 
 def file_of(name):

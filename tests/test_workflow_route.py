@@ -1,13 +1,16 @@
 """A saved workflow's route in one line for the AI (api/workflow_route.py), read from the serialized graph
 with stand-in widget names, and its place in list_workflows."""
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import workflow_route  # noqa: E402
+from api import example_workflows, mcp_routes, mcp_tools, workflow_route  # noqa: E402
 
 NAMES = {
     "UNETLoader": ["unet_name", "weight_dtype"],
@@ -67,6 +70,16 @@ class RouteTests(unittest.TestCase):
     def test_no_sampler_no_route_and_unknown_types_stay_unnamed(self):
         self.assertEqual(self.line({"nodes": [node(1, "UNETLoader", values=["a.safetensors"])], "links": []}), "")
         self.assertIn("on MiaoMiao Harem_Anima_1.5", workflow_route.line(two_passes(), lambda kind: []))
+
+    def test_a_card_on_disk_keeps_its_route_where_the_ai_reads_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "recipe_1.json").write_text(json.dumps({"name": "Two", "workflow": two_passes()}), encoding="utf-8")
+            with mock.patch.object(mcp_tools, "get_recipes_dir", return_value=directory), mock.patch.object(mcp_tools, "plans", return_value={}), \
+                    mock.patch.object(mcp_routes, "get_recipes_dir", return_value=directory), mock.patch.object(example_workflows, "for_ai", return_value=[]):
+                listed = mcp_tools.list_workflows()["workflows"][0]["route"]
+                cards = list(mcp_routes._cards())
+        self.assertTrue(listed.startswith("2 passes"), listed)
+        self.assertEqual((cards[0][0], len(cards[0][1]), cards[0][2]), ("Two", 2, listed))
 
 
 if __name__ == "__main__":

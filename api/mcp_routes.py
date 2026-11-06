@@ -53,7 +53,7 @@ def _can_build(route, base, info):
 
 def _cards():
     """(name, stages, line) of each saved workflow."""
-    for recipe in _list_recipes(get_recipes_dir()):
+    for recipe in _list_recipes(get_recipes_dir(), with_workflow=True):
         data = recipe.get("data") or {}
         workflow = data.get("workflow")
         stages = [stage for stage in workflow_route.route(workflow)[0] if stage["state"] == "run"]

@@ -104,7 +104,25 @@ class ExampleTests(unittest.TestCase):
 
     def test_saved_workflows_come_instead_of_them(self):
         recipe = {"filename": "recipe_1.json", "data": {"name": "Mine"}}
-        self.assertEqual([item["name"] for item in self.listed(recipes=[recipe])["workflows"]], ["Mine"])
+        listed = self.listed(recipes=[recipe])
+        self.assertEqual([item["name"] for item in listed["workflows"]], ["Mine"])
+        self.assertEqual(len(listed["examples"]), len(examples.ORDER), "named, so an AI with no card for the job knows of them")
+
+    def test_they_are_found_in_the_words_people_use(self):
+        for query, name in (("图生图", "Example: picture to picture"), ("img2img", "Example: picture to picture"), ("文生图", "Example: text to picture")):
+            with self.subTest(query=query):
+                listed = self.listed(query)
+                self.assertEqual([item["name"] for item in listed["workflows"]], [name])
+                self.assertNotIn(name, listed["examples"], "no need to name it twice")
+
+    def test_a_long_list_is_short_enough_for_an_ai_to_read(self):
+        data = {"params": {"steps": 20, "text": "x" * 900}, "notes": "n" * 300}
+        recipes = [{"filename": f"r{number}.json", "data": {"name": f"Card {number}", **data}} for number in range(examples.MAX_WITH_SETTINGS + 1)]
+        many = self.listed(recipes=recipes)["workflows"]
+        self.assertFalse([item for item in many if "settings" in item])
+        self.assertEqual({len(item["notes"]) for item in many}, {examples.SHORT_NOTES})
+        few = self.listed(recipes=recipes[:examples.MAX_WITH_SETTINGS])["workflows"]
+        self.assertTrue(all("settings" in item for item in few), "a look at a few says all")
 
     def test_they_open_by_name_but_a_saved_one_of_that_name_wins(self):
         name = "Example: two passes"

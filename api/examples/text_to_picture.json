@@ -8,7 +8,7 @@
   "zh": "最基础的一条路：写提示词，出一张图。",
   "en": "The plainest route: write a prompt, get a picture."
  },
- "ai": "One pass from words. open_workflow, set_model on its loader, then run_workflow with the prompt.",
+ "ai": "One pass from words (txt2img). open_workflow, set_model on its loader, then run_workflow with the prompt.",
  "version": {
   "zh": "SDXL / SD 1.5",
   "en": "SDXL / SD 1.5"

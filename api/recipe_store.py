@@ -31,7 +31,7 @@ def _read_recipe(path):
         return json.load(recipe_file)
 
 
-def _list_recipes(recipes_dir):
+def _list_recipes(recipes_dir, with_workflow=False):
     recipes = []
     try:
         with os.scandir(recipes_dir) as entries:
@@ -44,7 +44,7 @@ def _list_recipes(recipes_dir):
                     if not isinstance(data, dict):
                         continue
                     # The graph can be much larger than all card data combined.
-                    summary = {key: value for key, value in data.items() if key != "workflow"}
+                    summary = data if with_workflow else {key: value for key, value in data.items() if key != "workflow"}
                     recipes.append({"filename": filename, "data": summary})
                 except (OSError, ValueError, json.JSONDecodeError):
                     continue

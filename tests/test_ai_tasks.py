@@ -240,6 +240,12 @@ class TaskTests(unittest.TestCase):
         with mock.patch.object(ai_tasks.time, "time", return_value=310.0):
             got = mcp_task_tools.begin_task({"client": "Cursor"}, "整理 LoRA")
         self.assertEqual((got["task"], ai_tasks.get_task(unnamed["id"])["title"]), (unnamed["id"], "整理 LoRA"))
+        # What the user wrote there names it better than an AI that has only just taken it.
+        written = ai_tasks.start_task("", now=400.0)
+        ai_tasks._load()[written["id"]]["steps"].append({"tool": "user_message", "kind": "user", "text": "出一张雪山风景"})
+        with mock.patch.object(ai_tasks.time, "time", return_value=410.0):
+            got = mcp_task_tools.begin_task({"client": "Cursor"}, "接手任务")
+        self.assertEqual((got["task"], got["title"]), (written["id"], "出一张雪山风景"))
 
     def test_a_task_handed_over_from_anomalous_tells_the_ai_what_it_is_about(self):
         about = [{"type": "model", "model_id": "loras:0:a/b.safetensors", "label": "B"}, {"type": "image", "image": "x/1.png"},

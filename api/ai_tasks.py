@@ -332,8 +332,9 @@ def begin_task(client, title, now=None, new_task=False, session="", task_id=None
             if new_task and previous:
                 task["from"] = previous["id"]  # begun from that one (ai_task_links.py)
         elif not task.get("title") or task.get("title_from") == "auto":
-            task["title"] = _short(title, MAX_TITLE)
-            task["title_from"] = "ai"
+            said = next((step["text"] for step in task["steps"] if step.get("tool") == "user_message" and step.get("text")), "")
+            task["title"] = _short(said or title, MAX_TITLE)
+            task["title_from"] = "user" if said else "ai"
         _bind_owner(client, session, task["id"])
         task["updated"] = now
         _save(task)

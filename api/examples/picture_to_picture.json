@@ -8,7 +8,7 @@
   "zh": "从一张图出发，按提示词改。在 Load Image 节点选图；denoise 越高，改得越多。",
   "en": "Starts from a picture and changes it by the prompt. Pick it in the Load Image node; a higher denoise changes more."
  },
- "ai": "Redraws a picture at denoise 0.6. open_workflow, set_model on its loader, then run_workflow with the prompt and image.",
+ "ai": "Redraws a picture (img2img) at denoise 0.6. open_workflow, set_model on its loader, then run_workflow with the prompt and image.",
  "version": {
   "zh": "SDXL / SD 1.5",
   "en": "SDXL / SD 1.5"

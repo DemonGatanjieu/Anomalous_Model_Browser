@@ -2,6 +2,10 @@
 
 ## v1.63.0 — unreleased
 
+- AI 看工作流清楚多了（Gemini 实测发现的）：列表以前一次两万多字，AI 软件直接存成文件不看了，现在卡片多时只给名字、路线和备注。每张卡的路线说明以前一直是空的，现在有了；按模型找卡片也恢复了。官方示例总会列出名字，用中文（图生图、两段放大）也搜得到。
+- AI apps see your workflows better (found in a real Gemini run): the list was over 20,000 characters, which an AI app files away unread, and is now names, routes and notes when there are many. Each card's route line was always empty and now says the route, and finding cards by model works again. Official examples are always named, and found by their Chinese names too.
+- 新任务里先写了留言的话，任务列表就用这句话当标题，不再都叫“接手任务”。
+- A new task you wrote to takes its name from what you wrote, instead of the AI's "take the task".
 - 两个 Anima 两段放大示例写明了：要多张图就多跑几次，别调批次。Anima 的 VAE 会把一批图当成视频帧，第二段只剩一张。
 - The two Anima two-pass examples now say to run several times for several pictures, not to raise the batch: Anima's VAE takes a batch for video frames, and the second pass is left with one.
 - 当前节点的提示词卡片现在都标着“正面提示词”或“负面提示词”：从图片存下来的也按它原来接在采样器哪个口上来认，以前只有工作流来源的才标，图片和工作流同时有时标注还会丢。

@@ -446,7 +446,7 @@ def plans():
 
 def list_workflows(query="", limit=20, *, exact_name=False):
     terms, found, saved_plans = _terms(query), [], plans()
-    for recipe in _list_recipes(get_recipes_dir()):
+    for recipe in _list_recipes(get_recipes_dir(), with_workflow=True):
         data = recipe.get("data") or {}
         name = data.get("name") or recipe["filename"]
         params = json.dumps(data.get("params") or {}, ensure_ascii=False)
@@ -459,8 +459,8 @@ def list_workflows(query="", limit=20, *, exact_name=False):
                       "notes": _text(data.get("notes"), 500), "saved": _when((data.get("timestamp") or 0) / 1000),
                       "settings": params if len(params) <= MAX_TEXT else params[:MAX_TEXT] + "…",
                       **({"plans": own} if own else {})})  # run_workflow(workflow=one of them) runs it with that set
-    found = found or [item for item in example_workflows.for_ai() if (item["name"] == query if exact_name else _matches(terms, item["name"], item["notes"]))]
-    return {"total_matches": len(found), "workflows": found[:_limit(limit)]}
+    fits = (lambda item: item["name"] == query) if exact_name else (lambda item: _matches(terms, item["name"], item["title"], item["notes"]))
+    return example_workflows.answer(found, fits, _limit(limit))
 
 
 def saved_prompts():
@@ -536,7 +536,7 @@ TOOLS = dict([
           "structure\") model nodes and text nodes saved from the canvas with their links, listed by slot.", list_combos,
           {"query": _QUERY, "limit": _LIMIT}),
     _tool("list_workflows", "Workflow recipes",
-          "The user's saved workflow recipes: route, tags, notes, settings, plans.", list_workflows,
+          "The user's saved workflow recipes: route, tags, notes, plans; settings when few match. `examples`: official ones by name, opened and run like saved ones.", list_workflows,
           {"query": _QUERY, "limit": _LIMIT}),
     _tool("list_saved_prompts", "Saved prompts",
           "Prompts the user saved in the Prompt Studio, with positive and negative text.", list_saved_prompts,

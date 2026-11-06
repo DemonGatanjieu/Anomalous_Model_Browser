@@ -1118,7 +1118,8 @@ covered by the `styles.css` manifest.
   `api/example_workflows.py` serves the examples Anomalous ships (`api/examples/*.json`: plans, a version per
   model family, no model or picture named: filled in from what is here, what is missing said);
   `ui_recipe_examples.js` is their one card and window on the Workflows page, and list_workflows gives those
-  that can run here to an AI when no saved workflow fits.
+  that can run here to an AI when no saved workflow fits, and names them when one does. A long list goes without
+  settings: an AI app files an answer over about 4,000 characters away, and it may not read it.
   `ui_recipe_catalog.js` is the Workflows page: one bar (search, the filter menu with kind and tag,
   the count, grid or list, share and import, save the canvas), the list, the empty page's three-step
   guide (`renderRecipeEmptyGuide`) and the catalog-wide model readiness check
