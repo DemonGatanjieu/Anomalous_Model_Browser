@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- 当前节点的提示词卡片现在都标着“正面提示词”或“负面提示词”：从图片存下来的也按它原来接在采样器哪个口上来认，以前只有工作流来源的才标，图片和工作流同时有时标注还会丢。
+- Current node's prompt cards all say positive or negative now: values kept from a picture are told by what they were wired to in that workflow. Before, only a workflow's said so, and the label was lost when a picture held the same text.
 - 回到一个存档时，输出节点上的图也跟着换：画布是哪个存档，节点上就是哪个存档跑出来的图。跑了几次就都排在节点里，和批量出图一样，新的在前，最多 16 张。这个存档没有图时节点空着，不留别的存档的图，免得看错。只对这个版本之后跑的图有效。
 - 回到存档时数字有时不亮、撤销多出一步的问题修好了：画布上有 Preview Image 这类节点时，每隔一次就会这样。
 - Going back to a save brings its pictures back too: the output nodes show what that save made. Several runs sit on the node together as a batch does, the newest first, up to 16. A save with no picture leaves the node empty rather than showing another save's. This works for runs from this version on.

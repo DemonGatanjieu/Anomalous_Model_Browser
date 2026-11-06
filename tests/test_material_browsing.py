@@ -73,6 +73,23 @@ class MaterialsByNodeTypeTests(unittest.IsolatedAsyncioTestCase):
                 response = await materials.api_get_materials_by_node_type(SimpleNamespace(query={'type': 'KSampler'}))
             self.assertEqual([item['name'] for item in json.loads(response.text)['materials']], ['kept'])
 
+    async def test_a_prompt_says_its_role_by_what_it_is_wired_to(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workflow = {
+                'nodes': [
+                    {'id': 1, 'type': 'CLIPTextEncode', 'widgets_values': ['a quiet lake']},
+                    {'id': 2, 'type': 'CLIPTextEncode', 'widgets_values': ['low quality']},
+                    {'id': 3, 'type': 'CLIPTextEncode', 'widgets_values': ['not wired']},
+                    {'id': 4, 'type': 'KSampler', 'inputs': [{'name': 'positive', 'link': 1}, {'name': 'negative', 'link': 2}], 'widgets_values': [1]},
+                ],
+                'links': [[1, 1, 0, 4, 1, 'CONDITIONING'], [2, 2, 0, 4, 2, 'CONDITIONING']],
+            }
+            Path(directory, 'kept.json').write_text(json.dumps({'name': 'kept', 'workflow': workflow, 'kind': 'image_node_selection'}))
+            with mock.patch.object(materials, 'get_materials_dir', lambda: directory):
+                response = await materials.api_get_materials_by_node_type(SimpleNamespace(query={'type': 'CLIPTextEncode'}))
+            blocks = json.loads(response.text)['materials'][0]['blocks']
+            self.assertEqual({block['node_id']: block['role'] for block in blocks}, {1: 'positive', 2: 'negative', 3: 'unknown'})
+
     async def test_each_says_where_its_values_came_from(self):
         with tempfile.TemporaryDirectory() as directory:
             workflow = {'nodes': [{'id': 1, 'type': 'KSampler', 'widgets_values': [123, 'fixed', 20]}]}

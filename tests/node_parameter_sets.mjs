@@ -134,4 +134,16 @@ function sampler() {
     assert.equal(closestSet(node, entries.slice(0, 1)), null); // too far to speak of
 }
 
+{
+    // The same text from a picture and from a workflow: the role of whichever knows it.
+    const text = ['low quality'];
+    globalThis.fetch = async url => ({ ok: true, json: async () => (String(url).includes('/materials/')
+        ? { materials: [{ name: 'Picture', timestamp: 5, blocks: [{ title: 'Prompt', role: 'unknown', widgets_values: text }] }] }
+        : String(url).includes('/parameters/')
+            ? { groups: [{ recipe_filename: 'r.json', recipe_name: 'Portrait', notebooks: [{ name: 'Set', timestamp: 4, nodes: [{ role: 'negative', widgets_values: text }] }] }] }
+            : { combos: [] }) });
+    const [entry] = await loadParameterSets('CLIPTextEncode');
+    assert.deepEqual([entry.role, entry.sources.length], ['negative', 2]);
+}
+
 console.log('node parameter sets: merged sources, kept values, undoable apply, last applied OK');

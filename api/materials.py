@@ -399,6 +399,10 @@ async def api_get_materials_by_node_type(request):
                 continue
             blocks = [block for block in _material_node_blocks(material, include_values=True) if block["type"] == node_type]
             if blocks:
+                # A prompt's role, by what it is wired to in the workflow it came from.
+                roles = _prompt_roles_for_workflow(material["workflow"], material.get("promptRoleOverrides"))
+                for block in blocks:
+                    block["role"] = (roles.get(str(block["node_id"])) or {}).get("role") or ""
                 # Where the values came from, for Current node: a kept picture, or a node saved there.
                 source = material.get("source") if isinstance(material.get("source"), dict) else {}
                 image = source.get("image") if isinstance(source.get("image"), dict) else {}

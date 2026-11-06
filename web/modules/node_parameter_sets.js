@@ -26,6 +26,8 @@ async function fetchJson(url, signal) {
     return response.json();
 }
 
+const KNOWN_ROLES = new Set(['positive', 'negative', 'both']);
+
 /**
  * [{ name, role, timestamp, values, sources }], newest first. A source is a material
  * { kind: 'material', label, filename, timestamp, origin, image, preview } (origin: how it was
@@ -51,6 +53,7 @@ export async function loadParameterSets(type, { signal, boxes = [] } = {}) {
         else {
             known.sources.push(...entry.sources);
             known.timestamp = Math.max(known.timestamp, entry.timestamp);
+            if (!KNOWN_ROLES.has(known.role)) known.role = entry.role; // one source may not know it
         }
     };
     for (const material of materials.materials || []) {
