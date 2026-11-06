@@ -14,7 +14,8 @@ import time
 from . import ai_gates, ai_pictures, ai_tasks, ai_toolbox, mcp_fill, mcp_routes, model_advice, model_download, reference_blocks
 from .mcp_actions import _action, _local, _page
 from .media_routes import picture_size
-from .mcp_tools import ToolError, _resolve_model
+from .mcp_tools import IMAGE_TYPES, ToolError, _resolve_image, _resolve_model
+from .recipe_images import _embedded_workflow_payload
 
 MAX_FOUND = 20
 MAX_SEARCH = 5
@@ -356,8 +357,26 @@ def new_workflow(ctx, name="", nodes=None):
     return _page("new_workflow", {"name": str(name or "")[:60], "nodes": nodes}, timeout=60)
 
 
+def _picture(name):
+    """{subfolder, filename} of gallery picture `name` (in the output folder) when the name is a
+    picture's and it carries a workflow; None when the name is no picture's."""
+    if os.path.splitext(str(name or "").strip())[1].lower() not in IMAGE_TYPES:
+        return None
+    rel, path = _resolve_image(str(name).strip())
+    if not (_embedded_workflow_payload(path) or {}).get("workflow"):
+        raise ToolError(f"{rel} carries no workflow to open: only the pictures ComfyUI saves with one do.")
+    subfolder, _, filename = rel.rpartition("/")
+    return {"subfolder": subfolder, "filename": filename}
+
+
 def open_workflow(ctx, workflow):
-    filename, name, plan = mcp_fill.saved_workflow(workflow)
+    try:
+        filename, name, plan = mcp_fill.saved_workflow(workflow)
+    except ToolError:
+        picture = _picture(workflow)  # not a saved one: a picture's own, to change what made it
+        if not picture:
+            raise
+        return _page("open_workflow", {"picture": picture, "name": os.path.splitext(picture["filename"])[0]}, timeout=60)
     return _page("open_workflow", {"filename": filename, "name": name, "plan": plan}, timeout=60)
 
 
@@ -419,7 +438,8 @@ CANVAS_TOOLS = dict([
             "or [node id, output slot]). Checked before it opens; the answer maps your ids to node ids.",
             new_workflow, {"name": {"type": "string"}, "nodes": {"type": "object"}}),
     _action("open_workflow", "Open a saved workflow",
-            "Opens one of the user's saved workflows (list_workflows names them) in a new tab, leaving the open one "
-            "as it was, to run it or build on it with add_node, connect_nodes and set_values.",
-            open_workflow, {"workflow": {"type": "string", "description": "A workflow name from list_workflows."}}, ["workflow"]),
+            "Opens a saved workflow or a gallery picture's own in a new tab, the open one kept, "
+            "to run it or build on it with add_node, connect_nodes and set_values.",
+            open_workflow, {"workflow": {"type": "string", "description": "A list_workflows name or a search_images picture."}},
+            ["workflow"]),
 ])

@@ -151,6 +151,32 @@ class BuildToolTests(unittest.TestCase):
                 mcp_canvas_edit.open_workflow({}, workflow)
             self.assertEqual(self.page.call_args, mock.call("open_workflow", {"filename": found[0], "name": found[1], "plan": found[2]}, timeout=60))
 
+    def test_a_gallery_pictures_own_workflow_opens(self):
+        import json
+        import tempfile
+        from PIL import Image, PngImagePlugin
+        from api import mcp_tools
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(__import__("shutil").rmtree, root, True)
+        (root / "sub").mkdir()
+        info = PngImagePlugin.PngInfo()
+        info.add_text("workflow", json.dumps({"nodes": [], "links": []}))
+        Image.new("RGB", (8, 8)).save(root / "sub" / "made_00001_.png", pnginfo=info)
+        Image.new("RGB", (8, 8)).save(root / "bare_00001_.png")
+        missing = ToolError("No saved workflow or plan called that; list_workflows names them.")
+        with mock.patch.object(mcp_tools.folder_paths, "get_output_directory", return_value=str(root)), \
+                mock.patch.object(mcp_fill, "saved_workflow", side_effect=missing):
+            mcp_canvas_edit.open_workflow({}, "sub/made_00001_.png")
+            self.assertEqual(self.page.call_args, mock.call(
+                "open_workflow", {"picture": {"subfolder": "sub", "filename": "made_00001_.png"}, "name": "made_00001_"}, timeout=60))
+            self.page.reset_mock()
+            for name, said in (("bare_00001_.png", "carries no workflow"), ("../made_00001_.png", "output"),
+                               ("gone_00001_.png", "No output image"), ("海边", "list_workflows")):
+                with self.subTest(name=name), self.assertRaises(ToolError) as caught:
+                    mcp_canvas_edit.open_workflow({}, name)
+                self.assertIn(said, str(caught.exception))
+            self.page.assert_not_called()
+
     def test_bad_arguments_never_reach_the_page(self):
         bad = [
             lambda: mcp_canvas_edit.add_node({}, ""),

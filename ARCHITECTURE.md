@@ -197,7 +197,9 @@ covered by the `styles.css` manifest.
   checked for shape there and done by `web/modules/mcp_canvas_edit.js` through the bridge's
   `recorded`, after checking types, settings and choices against the nodes themselves;
   `web/modules/canvas_build.js` is its pure part (type fit, value checks, a free spot, the
-  layered layout). `open_workflow` opens one of the user's saved workflows in a new tab.
+  layered layout). `open_workflow` opens one of the user's saved workflows in a new tab, or the
+  workflow a gallery picture carries (the page reads it from the PNG and drops the marks of the tab
+  it ran on: the saved workflow that tab came from and its group of saves).
   `web/modules/canvas_wiring.js` plans unique concrete-type connections, selected-branch insertion,
   splices, the wires of a group added in API form (add_nodes; `canvas_build.placedBlock` lays it
   out as one block), conflict/cycle checks and rollback on application failure (`tests/canvas_wiring.mjs`).

@@ -14,6 +14,7 @@ import { recordCanvasStep } from './canvas_history.js';
 import { apiLinks, freeSpot, layered, placedBlock, typesFit, valuePlan } from './canvas_build.js';
 import { fedBy, linkOf, sockets, unwired } from './mcp_canvas_brief.js';
 import { fillPlan, valuesPlan } from './mcp_fill.js';
+import { parsePngMetadataFromUrl } from './png_metadata.js';
 import { applyRecipeParametersToCanvas } from './recipe_actions.js';
 import { translate as t } from './locales.js';
 import { setWidgetValue } from './ui_node_model_picker.js';
@@ -278,21 +279,40 @@ export function canvasEditActions({ recorded, nodeById }) {
         });
     }
 
-    /** One of the user's saved workflows (a recipe) or an example ("example:<id>"), in a new tab named after it; the open one stays. */
-    async function openWorkflow({ filename, name, plan }, getOwner) {
+    /** Saved workflow `filename` (a recipe) or an example ("example:<id>"). */
+    async function savedWorkflow(filename, name) {
         const example = String(filename || '').match(/^example:(.+)$/);
         const response = await fetch(example ? `/anomalous/example_workflows?id=${encodeURIComponent(example[1])}`
             : `/anomalous/recipe_full?filename=${encodeURIComponent(filename || '')}`);
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload.data?.workflow) throw new Error(`The saved workflow ${name} could not be read.`);
+        return structuredClone(payload.data.workflow);
+    }
+
+    /**
+     * The workflow gallery picture `picture` ({subfolder, filename}, found in the output folder by
+     * api/mcp_canvas_edit.py) carries, without the marks of the tab it ran on: the saved workflow
+     * that tab was opened from (run_workflow would take this tab for it) and its group of saves.
+     */
+    async function pictureWorkflow({ subfolder, filename }, name) {
+        const query = new URLSearchParams({ filename, subfolder: subfolder || '', type: 'output' });
+        const workflow = await parsePngMetadataFromUrl(`/view?${query}`);
+        if (!Array.isArray(workflow?.nodes)) throw new Error(`${name} carries no workflow to open.`);
+        const { anomalous_saved: saved, anomalous_saves: saves, ...extra } = workflow.extra || {};
+        return { ...workflow, extra };
+    }
+
+    /** A saved workflow, an example or the workflow a gallery picture carries (`picture`), in a new tab named after it; the open one stays. */
+    async function openWorkflow({ filename, name, plan, picture }, getOwner) {
+        const workflow = picture ? await pictureWorkflow(picture, name) : await savedWorkflow(filename, name);
         const tab = tabName(name);
         getOwner()?.flushCanvasActivity?.();
-        await app.loadGraphData(structuredClone(payload.data.workflow), true, true, tab);
+        await app.loadGraphData(workflow, true, true, tab);
         if (plan) await applyPlan(filename, plan, name);
         showWorkbenchToast(t('mcpDidOpenWorkflow', { name }));
         const g = app.canvas?.graph || app.graph;
         // run_workflow with this workflow (or this plan of it) reuses the tab
-        if (g) g.extra = { ...(g.extra || {}), anomalous_saved: plan ? `${filename}#${plan}` : filename };
+        if (g && !picture) g.extra = { ...(g.extra || {}), anomalous_saved: plan ? `${filename}#${plan}` : filename };
         return { opened: tab, node_count: (g?._nodes || []).length, note: 'describe_canvas shows its nodes; add_node, connect_nodes and set_values change it.' };
     }
 

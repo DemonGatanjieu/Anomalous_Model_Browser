@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- AI 想改图库里的某一张图时，可以直接打开那张图自带的工作流（`open_workflow` 写图片名），不用再打开原来的工作流卡，把换过的模型、LoRA 和提示词一样一样设回去。打开的是新标签页，你开着的那页不动。Gemini 实测，这类题从 28 次调用降到 21 次。
+- When the AI changes a picture from the gallery, it can open the workflow that picture carries (open_workflow with the picture's name), instead of opening the saved card and putting back the model, LoRA and prompt that had been changed one by one. It opens in a new tab and leaves yours as it was. In a real Gemini run such a task went from 28 calls to 21.
 - 在设置里切换语言后，AI 工作台的任务列表和时间线马上跟着换。以前有一部分要刷新页面才变。
 - Switching the language in Settings now changes the AI workbench's task list and timeline at once. Part of them used to wait for a page reload.
 - 任务上的“出图 N 张”不再把同一张图算两次。以前 AI 汇报时附上刚跑出的那张图，会被多数一次。

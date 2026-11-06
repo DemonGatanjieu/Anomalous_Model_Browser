@@ -101,6 +101,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 |---|---|
 | describe_canvas | 读当前工作流：每个节点的编号、类型、设置，哪个是正向/反向提示词框 |
 | find_nodes | 搜索最多五个节点摘要；需要具体参数和选项时，用 `types=[节点类型]` 读取 |
+| new_workflow / open_workflow | 开一个新标签页，你开着的那页不动：空白的，或按 API 格式搭好的；打开你存的工作流、官方示例，或者图库里一张图自带的工作流（要改上一张图时用，模型、LoRA、提示词都是那张图的） |
 | add_node / connect_nodes | 添加节点并按唯一类型自动连线，或把节点插进已有路径；见下方例子 |
 | add_nodes | 一次加一组节点：按 ComfyUI 的 API 格式写，组里的节点互相连，也能连画布上已有的节点（写 `"#12"`，输出写编号或名字），排成一块放在空位上，整组算一步撤销 |
 | set_prompt | 改写或追加正向/反向提示词。AI 自己写提示词前会先取 skill“写提示词·动作适合模型”（见下面的 skill）；你给的文本照原样写进去。`run_workflow` 的提示词也一样 |
