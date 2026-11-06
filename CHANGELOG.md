@@ -2,6 +2,10 @@
 
 ## v1.63.0 — unreleased
 
+- 在设置里切换语言后，AI 工作台的任务列表和时间线马上跟着换。以前有一部分要刷新页面才变。
+- Switching the language in Settings now changes the AI workbench's task list and timeline at once. Part of them used to wait for a page reload.
+- 任务上的“出图 N 张”不再把同一张图算两次。以前 AI 汇报时附上刚跑出的那张图，会被多数一次。
+- A task's picture count no longer counts one picture twice. When the AI's report showed the picture its run had made, it was counted again.
 - AI 看工作流清楚多了（Gemini 实测发现的）：列表以前一次两万多字，AI 软件直接存成文件不看了，现在卡片多时只给名字、路线和备注。每张卡的路线说明以前一直是空的，现在有了；按模型找卡片也恢复了。官方示例总会列出名字，用中文（图生图、两段放大）也搜得到。
 - AI apps see your workflows better (found in a real Gemini run): the list was over 20,000 characters, which an AI app files away unread, and is now names, routes and notes when there are many. Each card's route line was always empty and now says the route, and finding cards by model works again. Official examples are always named, and found by their Chinese names too.
 - 新任务里先写了留言的话，任务列表就用这句话当标题，不再都叫“接手任务”。

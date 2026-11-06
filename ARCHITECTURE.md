@@ -393,7 +393,7 @@ covered by the `styles.css` manifest.
   results strip and timeline with links (picture viewer, model page, combo, canvas locate and
   undo, scan page, ▶ for audio), updated live; also the home page's "What the AI did lately"
   and the rail's dot (`owner.railNews`). A task's parts stay in the page between redraws: a
-  step is drawn again only when it changed (`syncRows`), so a scrolled diagram or strip and
+  step is drawn again only when it changed or the language did (`syncRows`), so a scrolled diagram or strip and
   half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box, made
   once per task and docked at the foot of its column (in view while the timeline scrolls; a task
   opens at its newest step, and `ui_ai_newest.js` is the button back to it over the box): a growing input, the gallery and materials buttons beside it, and
@@ -472,7 +472,7 @@ covered by the `styles.css` manifest.
   the button (or moving left onto the page's left edge) slides it over the page at once.
   `ui_ai_task_list.js` draws it (New task, Connect an AI
   and the gates, which AI came last, quick filters by state, the tasks by day with a state
-  icon each, those going on from a task under it by `ai_task_view.taskFamilies`), making anew only the rows that changed (`web/modules/sync_rows.js`, the timeline's
+  icon each, those going on from a task under it by `ai_task_view.taskFamilies`), making anew only the rows that changed, all of them after a switch of language (`web/modules/sync_rows.js`, the timeline's
   way too). `web/modules/ai_task_cache.js` keeps the tasks as last read: a task picked shows at
   once from there (read ahead while the pointer rests on its row) and again, what changed, when the
   server answers; the activity entries a task lacks follow. The stage's pictures, like the

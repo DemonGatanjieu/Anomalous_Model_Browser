@@ -71,6 +71,14 @@ class CompletionEdges(unittest.TestCase):
         ]}
         self.assertEqual(ai_tasks.task_summary(task)["errors"], 1)
 
+    def test_a_picture_the_report_shows_again_counts_once(self):
+        picture = {"type": "image", "folder": "output", "subfolder": "", "filename": "exam_00036_.png"}
+        task = {"id": "counted", "steps": [
+            {"tool": "run_workflow", "kind": "run", "ok": True, "state": "done", "results": [picture]},
+            {"tool": "report", "kind": "note", "ok": True, "state": "done", "results": [dict(picture)]},
+        ]}
+        self.assertEqual(ai_tasks.task_summary(task)["images"], 1)
+
     def test_automatic_followup_yields_to_a_waiting_task(self):
         finished = self.done()
         waiting = ai_tasks.start_task("Next", now=111)

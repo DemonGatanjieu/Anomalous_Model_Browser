@@ -543,6 +543,7 @@ def task_summary(task, now=None):
     for step in steps:
         kinds[step["kind"]] = kinds.get(step["kind"], 0) + 1
     images = [item for step in steps for item in step.get("results") or [] if item.get("type") == "image"]
+    pictures = {(item.get("folder"), item.get("subfolder"), item.get("filename")) for item in images}  # a report shows the run's again
     asks = sum(1 for step in steps if step.get("kind") == "panel" and not step["panel"].get("closed")
                for block in step["panel"]["blocks"] if block.get("type") in ("choices", "input", "picks")
                and block.get("id") and block["id"] not in step.get("answers", {}))
@@ -553,7 +554,7 @@ def task_summary(task, now=None):
         "waiting": bool(task.get("waiting")) and not task.get("ended"),
         "live": any(step.get("state") == "running" and now - step.get("at", 0) < RUN_WATCH_SECONDS for step in steps),
         "steps": len(steps), "kinds": kinds, "errors": unresolved(steps),
-        "images": len(images), "cover": images[-1] if images else None, "asks": asks, "from": task.get("from"),
+        "images": len(pictures), "cover": images[-1] if images else None, "asks": asks, "from": task.get("from"),
     }
 
 
