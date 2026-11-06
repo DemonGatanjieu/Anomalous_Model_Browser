@@ -4,7 +4,8 @@ the workflow carries in its extra: index.json says what its saves are and each s
 its own, so keeping one writes that file and a small index. Saves outlive their canvas: a closed tab or a
 deleted file leaves them here, and only the user removes them, to the Recycle Bin. The page names a save's
 runs (prompt ids); reading the group finds their pictures in ComfyUI's history and keeps the names, so a
-page reloaded during a run loses nothing. Pictures stay where ComfyUI saved them; one gone is not shown.
+page reloaded during a run loses nothing. It keeps them by output node too, previews as well: going back to
+a save puts them on those nodes. Pictures stay where ComfyUI saved them; one gone is not shown.
 A save becomes something else only as a workflow card, made by the page from its workflow (AD-023)."""
 
 import asyncio
@@ -26,6 +27,7 @@ INDEX = "index.json"
 MAX_SAVES = 50  # of a group: past that the user removes some, nothing goes by itself
 MAX_GROUPS = 2000  # read for a list
 MAX_PICTURES = 200  # kept of a save, the newest
+MAX_ON_NODE = 16  # of an output node at a save, the newest: a full round of runs
 MAX_CHANGES = 40
 MAX_RUNS = 16  # of a save at a time; web/modules/snapshot_plan.js MAX_COUNT
 MAX_WAITING = 200
@@ -97,11 +99,20 @@ def _queue():
     return PromptServer.instance.prompt_queue
 
 
+def _run_outputs(record):
+    """The pictures of a finished run by the node that shows them: {node: pictures}."""
+    found = {}
+    for node, output in (record.get("outputs") or {}).items():
+        pictures = [{"filename": image["filename"], "subfolder": image.get("subfolder") or "", "type": image.get("type") or "output"}
+                    for image in output.get("images") or [] if str(image.get("filename") or "").lower().endswith(PICTURES)]
+        if pictures:
+            found[str(node)] = pictures
+    return found
+
+
 def _run_pictures(record):
     """What a finished run made: the pictures it saved, or with none saved those it previewed."""
-    found = [{"filename": image["filename"], "subfolder": image.get("subfolder") or "", "type": image.get("type") or "output"}
-             for output in (record.get("outputs") or {}).values() for image in output.get("images") or []
-             if str(image.get("filename") or "").lower().endswith(PICTURES)]
+    found = [picture for pictures in _run_outputs(record).values() for picture in pictures]
     return [picture for picture in found if picture["type"] == "output"] or found
 
 
@@ -121,6 +132,10 @@ def _collect(group):
             record = _queue().get_history(prompt_id=run["id"]).get(run["id"])
             save["pictures"].extend(picture for picture in _run_pictures(record or {}) if picture not in save["pictures"])
             del save["pictures"][:-MAX_PICTURES]
+            for node, pictures in _run_outputs(record or {}).items():
+                on_node = save.setdefault("outputs", {}).setdefault(node, [])
+                on_node.extend(picture for picture in pictures if picture not in on_node)
+                del on_node[:-MAX_ON_NODE]
             save["waiting"].remove(run)
             changed = True
     return changed
@@ -144,6 +159,12 @@ def _view(group):
     return {"key": group["key"], "title": group.get("title") or "", "path": group.get("path") or "", "saves": saves}
 
 
+def _outputs(save):
+    """What a save's output nodes made, the newest first: no picture that is gone, no node left without one."""
+    shown = {node: [picture for picture in reversed(pictures) if _there(picture)] for node, pictures in (save.get("outputs") or {}).items()}
+    return {node: pictures for node, pictures in shown.items() if pictures}
+
+
 def read_group(key, path=""):
     """The group of `key`, or the newest one of the workflow file `path`; None when there is none."""
     with _lock:
@@ -154,7 +175,10 @@ def read_group(key, path=""):
             return None
         if _collect(group):
             _write(group)
-        return _view(group)
+        shown = _view(group)
+        for view, save in zip(shown["saves"], group["saves"]):
+            view["outputs"] = _outputs(save)
+        return shown
 
 
 def list_groups():

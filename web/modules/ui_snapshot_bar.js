@@ -16,7 +16,7 @@ import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { freshId, readDetached } from './detached_graph.js';
 import { translate as t } from './locales.js';
-import { runCount, runTotal } from './snapshot_plan.js';
+import { outputsAt, runCount, runTotal, withoutEmptyValues } from './snapshot_plan.js';
 import { runSaves, seedMode, setSeedMode, watchRuns, watchSeedMode } from './snapshot_run.js';
 import { addSave, findGroup, onSavesChange, readWorkflow, setCount } from './snapshot_store.js';
 import { settle } from './ui_dom.js';
@@ -31,6 +31,7 @@ let group = null; // the open tab's saves: {key, title, path, saves: [{id, at, c
 let shownTab = ''; // the tab `group` is for
 let following = Promise.resolve(); // reading the open tab's saves, one tab after another
 let current = null; // the save the canvas stands at, while it is unchanged since
+let standing = null; // the canvas as it was then
 let said = null; // what the bar is saying: {text, bad}
 let branched = false; // the tab was just opened from a save: an empty bar to start its own
 let folded = readFolded();
@@ -39,6 +40,13 @@ let browser = () => null;
 
 const canvasGraph = () => app.rootGraph || app.graph;
 const activeTab = () => app.extensionManager?.workflow?.activeWorkflow || null;
+const sameCanvas = (a, b) => activeTab().changeTracker.constructor.graphEqual(withoutEmptyValues(a), withoutEmptyValues(b));
+
+/** The canvas stands at the save `id` from now on. */
+function standAt(id) {
+    current = id;
+    standing = copied(canvasGraph().serialize());
+}
 const canvasKey = () => canvasGraph()?.extra?.[EXTRA_KEY] || '';
 const tabPath = tab => (tab?.isPersisted ? tab.path : '');
 const copied = value => JSON.parse(JSON.stringify(value));
@@ -138,7 +146,7 @@ export async function addMark() {
         const stands = await addSave({ key, workflow: kept, title: String(tab?.filename || ''), path: tabPath(tab), changes });
         shownTab = `${tab?.path}\n${key}`;
         branched = false;
-        current = stands.saves[stands.saves.length - 1].id;
+        standAt(stands.saves[stands.saves.length - 1].id);
         draw();
         showWorkbenchToast(t('snapshotMarked', { number: stands.saves.length }));
     } catch (error) {
@@ -173,18 +181,39 @@ async function front(tab) {
 }
 
 /**
+ * A save's pictures on the output nodes, the way ComfyUI brings a tab's back: no event goes out, so no
+ * plugin takes them for a new run. A node left with none drops what it has drawn.
+ */
+function showOutputs(tracker, saved) {
+    tracker.store();
+    const before = tracker.nodeOutputs || {};
+    tracker.nodeOutputs = outputsAt(before, saved);
+    tracker.restore();
+    for (const id of Object.keys(before).filter(key => !(key in tracker.nodeOutputs))) {
+        const node = canvasGraph().getNodeById(id);
+        if (node) Object.assign(node, { imgs: undefined, images: undefined, imageIndex: null });
+    }
+    app.canvas.setDirty(true, true);
+}
+
+/**
  * The canvas back at `save`, on the same tab, by ComfyUI's own undo step: what the canvas was goes on the
  * undo list, so Ctrl+Z comes back to it, and the tab still compares with its file. loadGraphData alone
- * would take the save for the tab's starting state and keep no step.
+ * would take the save for the tab's starting state and keep no step. Its pictures come back on the nodes.
  */
 async function goBack(key, save) {
-    const workflow = copied(await readWorkflow(key, save.id));
+    const [workflow, shown] = await Promise.all([readWorkflow(key, save.id), findGroup(key, '')]);
     const tracker = activeTab().changeTracker;
+    // What a node gained by showing a picture is no step of its own, here or as the save comes in.
+    const now = copied(canvasGraph().serialize());
+    if (sameCanvas(tracker.activeState, now)) tracker.activeState = now;
     recordCanvasStep(app);
-    await tracker.updateState([workflow], tracker.undoQueue);
+    await tracker.updateState([copied(workflow)], tracker.undoQueue);
     tracker.redoQueue.length = 0;
-    current = save.id;
+    tracker.activeState = copied(canvasGraph().serialize());
+    standAt(save.id);
     draw();
+    showOutputs(tracker, shown?.saves.find(item => item.id === save.id)?.outputs);
 }
 
 /** `save` of `item`'s group back on its canvas, that tab to the front first. */
@@ -325,8 +354,8 @@ export function watchSaves(getBrowser) {
         if (key === group?.key || key === canvasKey()) showGroup(found);
     });
     // Any change, an undo too, leaves the save the canvas stood at. goBack and addMark say so after theirs.
-    api.addEventListener('graphChanged', () => {
-        if (!current) return;
+    api.addEventListener('graphChanged', ({ detail }) => {
+        if (!current || sameCanvas(standing, detail)) return;
         current = null;
         draw(false);
     });

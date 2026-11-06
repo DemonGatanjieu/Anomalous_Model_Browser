@@ -225,7 +225,7 @@ covered by the `styles.css` manifest.
   extra or by its file (AD-023), and finds a run's pictures in ComfyUI's history; `web/modules/snapshot_store.js` is the page's
   side of its routes, every change going through it so what shows a group hears of it. `web/modules/ui_snapshot_bar.js` is the bar
   under the canvas, following the open tab, with what is used while working there (a node's and the
-  empty canvas's menu entry in `canvas_menu.js`; going back is one of ComfyUI's undo steps on the same tab, a new tab is
+  empty canvas's menu entry in `canvas_menu.js`; going back is one of ComfyUI's undo steps on the same tab and puts the save's pictures on their output nodes through the tab's `changeTracker`, a new tab is
   `loadGraphData` as ComfyUI opens a file). `web/modules/ui_saves_pictures.js` is a save's pictures there: a line of what fits, the rest folded into gallery cards. `web/modules/ui_saves_list.js` is the Workflows page's Saves view, a part for each
   canvas, open or not, with each save's pictures, its runs and the one thing a save becomes, a workflow card.
   `web/modules/snapshot_run.js` runs saves for both, on detached copies (`detached_graph.js`,

@@ -1,6 +1,6 @@
 // The saves bar's rules (web/modules/snapshot_plan.js): which widgets are seeds, what each run gets, what is compiled.
 import assert from 'node:assert/strict';
-import { jobLine, MAX_COUNT, applySeeds, baseSeed, changeKind, compiled, runCount, runTotal, seedWidgets, seedsOf } from '../web/modules/snapshot_plan.js';
+import { jobLine, MAX_COUNT, applySeeds, baseSeed, changeKind, compiled, outputsAt, runCount, runTotal, seedWidgets, seedsOf, withoutEmptyValues } from '../web/modules/snapshot_plan.js';
 
 const control = { name: 'control_after_generate', value: 'fixed' };
 const seed = (name, value = 7, options = {}) => ({ name, value, options, linkedWidgets: [control] });
@@ -70,6 +70,22 @@ assert.equal((await compiled(wrapped, copy)).output, 'copy', 'a plugin that leav
     assert.deepEqual(order, ['second', 'first']);
     await assert.rejects(add('bad', async () => { throw new Error('refused'); }), /refused/);
     assert.equal(await add('bad', job('after')), 'after', 'a refused one neither blocks the line nor stays waiting');
+}
+
+{
+    const picture = (filename, type = 'output') => ({ filename, subfolder: '', type });
+    const shown = { 2: { images: [picture('old.png')] }, 3: { images: [picture('old2.png', 'temp')] }, 4: { images: [picture('cat.png', 'input')] }, 5: { text: ['words'] } };
+    assert.deepEqual(outputsAt(shown, { 2: [picture('b.png'), picture('a.png')] }),
+        { 2: { images: [picture('b.png'), picture('a.png')] }, 4: shown[4], 5: shown[5] },
+        "all the save's pictures on their node; none left from elsewhere; Load Image's picture and text stay");
+    assert.deepEqual(outputsAt(shown), { 4: shown[4], 5: shown[5] }, 'a save with no pictures leaves the output nodes empty');
+}
+
+{
+    const state = values => ({ links: [], nodes: [{ id: 1, type: 'SaveImage', ...values }] });
+    assert.deepEqual(withoutEmptyValues(state({ widgets_values: [], widgets_values_named: {} })), state({}), 'a node showing a picture changed nothing');
+    assert.deepEqual(withoutEmptyValues(state({ widgets_values: ['a'], widgets_values_named: { x: 'a' } })), state({ widgets_values: ['a'], widgets_values_named: { x: 'a' } }));
+    assert.deepEqual(withoutEmptyValues(state({ widgets_values: { seed: 1 } })), state({ widgets_values: { seed: 1 } }), 'values kept by name stay');
 }
 
 console.log('snapshot_plan ok');

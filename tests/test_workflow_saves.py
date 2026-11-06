@@ -105,6 +105,34 @@ class SavesTests(unittest.TestCase):
         self.queue.history["run1"] = {"outputs": {"9": {"images": [picture("preview.png", "temp")]}}}
         self.assertEqual(workflow_saves.read_group(KEY)["saves"][0]["pictures"], [picture("preview.png", "temp")])
 
+    def test_a_save_keeps_what_each_output_node_made_the_newest_first(self):
+        save = self.add()["saves"][0]
+        for name in ("a.png", "b.png", "mid.png"):
+            (self.output / name).write_bytes(b"x")
+        workflow_saves.note_runs(KEY, save["id"], ["run1", "run2", "run3"])
+        self.queue.history["run1"] = {"outputs": {"9": {"images": [picture("a.png")]}, "4": {"images": [picture("mid.png", "temp")]}, "7": {"text": ["no picture"]}}}
+        self.queue.history["run2"] = {"outputs": {"9": {"images": [picture("b.png")]}}}
+        self.queue.history["run3"] = {"outputs": {"9": {"images": [picture("a.png")]}}}
+        shown = workflow_saves.read_group(KEY)["saves"][0]
+        self.assertEqual(shown["outputs"], {"9": [picture("b.png"), picture("a.png")], "4": [picture("mid.png", "temp")]},
+                         "several runs stay together, previews too, and a run from the cache adds nothing")
+        (self.output / "mid.png").unlink()
+        self.assertEqual(list(workflow_saves.read_group(KEY)["saves"][0]["outputs"]), ["9"], "a node with its pictures gone is left out")
+
+    def test_an_output_node_keeps_the_newest_of_many(self):
+        save = self.add()["saves"][0]
+        names = [f"{number}.png" for number in range(workflow_saves.MAX_ON_NODE + 2)]
+        for name in names:
+            (self.output / name).write_bytes(b"x")
+        workflow_saves.note_runs(KEY, save["id"], ["run1"])
+        self.queue.history["run1"] = {"outputs": {"9": {"images": [picture(name) for name in names]}}}
+        kept = workflow_saves.read_group(KEY)["saves"][0]["outputs"]["9"]
+        self.assertEqual((len(kept), kept[0]), (workflow_saves.MAX_ON_NODE, picture(names[-1])))
+
+    def test_a_save_from_before_outputs_were_kept_has_none(self):
+        self.add()
+        self.assertEqual(workflow_saves.read_group(KEY)["saves"][0]["outputs"], {})
+
     def test_a_picture_gone_is_not_shown_and_a_run_off_the_queue_is_forgotten(self):
         save = self.add()["saves"][0]
         self.queue.pending = ["run1", "lost"]

@@ -81,4 +81,26 @@ export function changeKind(changes) {
 }
 
 /** What the user typed as a mark's runs, within what a mark takes. */
+/**
+ * What the nodes show at a save, from ComfyUI's `nodeOutputs`: the save's pictures on the nodes that made
+ * them, as a batch shows, and no picture from elsewhere on the others. `saved` is the save's `outputs`.
+ * Load Image's own picture and what is no picture stay.
+ */
+export function outputsAt(nodeOutputs, saved = {}) {
+    const stays = ([, output]) => !output?.images?.length || output.images.every(image => image.type === 'input');
+    const shown = Object.fromEntries(Object.entries(nodeOutputs).filter(stays));
+    for (const [node, images] of Object.entries(saved)) shown[node] = { images };
+    return shown;
+}
+
+const blank = value => value == null || (typeof value === 'object' && !Object.keys(value).length);
+
+/** A canvas state without what a node gains by showing a picture, empty lists of values: no change of the canvas. */
+export function withoutEmptyValues(state) {
+    const nodes = (state?.nodes || []).map(({ widgets_values: values, widgets_values_named: named, ...node }) => ({
+        ...node, ...(blank(values) ? {} : { widgets_values: values }), ...(blank(named) ? {} : { widgets_values_named: named }),
+    }));
+    return { ...state, nodes };
+}
+
 export const runCount = value => Math.max(1, Math.min(MAX_COUNT, Math.floor(Number(value)) || 1));
