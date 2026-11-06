@@ -62,7 +62,11 @@
 
 **7. Let an AI app do it while you watch.** Connect an AI app that supports MCP (Antigravity, Claude, Cursor…) and say what you want: it opens your saved workflows or a picture's own, swaps models, adds LoRAs and runs them, and builds what is missing from **Ways** tested here (repaint an area, upscale, change the background…) instead of guessing nodes. The **AI workbench** shows each step as it happens: the pictures, the questions it asks you (answer with a press) and an undo for every canvas change. **Gates** decide what it may do without asking, such as downloading or moving files. Setup in [docs/guides/mcp.md](docs/guides/mcp.md).
 
+<p align="center"><img src="docs/images/en-ai-workbench.webp" width="760" alt="The AI workbench: a task's steps with the settings it changed, a picture it made and the question it asked"></p>
+
 **8. Try a change, keep both, go back.** Right-click the canvas → **Save this state** keeps the whole workflow as a save; change anything and save again. The bar under the canvas runs every save a few times (**Random** or **Locked** seeds, to compare fairly), and **Saves** at the top of the Workflows page shows what each save changed beside its pictures. Click a save's number to go back to it, on the same tab; Ctrl+Z returns. **Keep as a workflow** turns one into a workflow card.
+
+<p align="center"><img src="docs/images/en-saves.webp" width="760" alt="Three saves of one canvas, what each changed and its picture, and the saves bar under the canvas"></p>
 
 **Changed your mind?** Everything the plugin changes is listed in **Activity**, with **Undo** and **Find on canvas**.
 
@@ -176,7 +180,11 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 
 **7. 让 AI 帮你做，你在旁边看着。** 连上支持 MCP 的 AI 软件（Antigravity、Claude、Cursor 等），说一句想做什么：它会打开你存的工作流或某张图自带的工作流，换模型、加 LoRA、跑图；缺什么就用在这里测过的 **做法**（局部重画、放大、换背景……）搭上，不靠瞎猜节点。**AI 工作台** 实时显示它的每一步：出的图、它问你的问题（点一下就是回答），画布上的每处改动都能撤销。**关卡** 决定它哪些事可以不问你直接做，比如下载模型、挪文件。设置方法见 [docs/guides/mcp.md](docs/guides/mcp.md)。
 
+<p align="center"><img src="docs/images/ai-workbench.webp" width="760" alt="AI 工作台：任务的每一步、它改了哪些参数、出的图和它问你的问题"></p>
+
 **8. 想试试别的改法，又不想丢了现在这版。** 右键画布 → **存档当前工作流**，整个工作流就存成一个存档；随便改，改完再存一个。画布下方的存档条能把每个存档各跑几次（种子选 **随机** 或 **锁种**，公平对比），“工作流”页顶上的 **存档** 把每个存档改了什么和它出的图并排列出来。点存档的数字就回到那一步，还在同一个标签页，Ctrl+Z 能回来；觉得好就 **收藏为工作流**。
+
+<p align="center"><img src="docs/images/saves.webp" width="760" alt="同一画布的三个存档：各改了什么、各自出的图，下面是画布上的存档条"></p>
 
 **改错了也不怕。** 插件做的每一处改动都列在“操作记录”里，带 **撤销** 和 **在画布上找到**。
 

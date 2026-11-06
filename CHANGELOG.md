@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- 在设置里切换语言后，AI 工作台右边的展台、留言框和画布下方的存档条也马上换成新的语言。以前它们要刷新页面才变。
+- After switching the language in Settings, the AI workbench's stage and message box and the saves bar under the canvas change at once too. They used to wait for a page reload.
 - 浏览器里同时开着两个 ComfyUI 页面时，AI 干活不再时好时坏：以前两个页面会各抢一半动作，一个页面开了任务的标签页，另一个页面接着去跑却找不到它（"标签页关了"）。现在任务的动作先交给上次干活的那个页面，它关掉了别的页面才接手。
 - With ComfyUI open in two browser tabs the AI no longer fails now and then: the two pages took half the actions each, one opened the task's tab and the other then could not find it ("the tab is closed"). Now the page that did the last action gets the next first, and another takes over only when it is gone.
 - AI 用 `run_workflow` 时可以直接写图库里一张图的名字：一步打开这张图的工作流、改好提示词或种子、跑出来；同一张图再跑就接着用那个标签页。打开图的工作流时换一个新的工作流编号，原来那个标签页还开着也不会串；打开后的标记在加载之前就写进去，不会被 ComfyUI 收尾时冲掉（以前偶尔会说"标签页关了"或"没打开"）。

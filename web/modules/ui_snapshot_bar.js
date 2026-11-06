@@ -360,6 +360,10 @@ export function watchSaves(getBrowser) {
         draw(false);
     });
     watchSeedMode(() => draw(false));
+    window.addEventListener('anomalous-language-change', () => { // the bar is drawn in the language picked
+        bar?.setAttribute('aria-label', t('snapshotTitle'));
+        draw(false);
+    });
     watchRuns();
     void followTab();
 }

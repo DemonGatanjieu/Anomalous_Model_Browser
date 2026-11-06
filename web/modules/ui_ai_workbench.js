@@ -27,7 +27,7 @@
 
 import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
-import { translate as t } from './locales.js';
+import { resolveLocale, translate as t } from './locales.js';
 import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
 import { canUndo } from './canvas_undo.js';
 import { anomalousAlert } from './ui_dialog.js';
@@ -521,6 +521,11 @@ function pollVisible() {
 /** The whole page into `panel`. */
 export function renderAiWorkbench(owner, panel) {
     connectSideOnce();
+    if (state.language !== resolveLocale()) { // shown again in another language: the parts kept between redraws go
+        state.language = resolveLocale();
+        state.view = null;
+        state.page?.querySelectorAll('[data-key], [data-panel-key]').forEach(node => { delete node.dataset.key; delete node.dataset.panelKey; });
+    }
     state.owner = owner;
     shared.owner = owner;
     state.panel = panel;
