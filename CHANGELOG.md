@@ -2,6 +2,8 @@
 
 ## v1.63.0 — unreleased
 
+- 两个 Anima 两段放大示例写明了：要多张图就多跑几次，别调批次。Anima 的 VAE 会把一批图当成视频帧，第二段只剩一张。
+- The two Anima two-pass examples now say to run several times for several pictures, not to raise the batch: Anima's VAE takes a batch for video frames, and the second pass is left with one.
 - 当前节点的提示词卡片现在都标着“正面提示词”或“负面提示词”：从图片存下来的也按它原来接在采样器哪个口上来认，以前只有工作流来源的才标，图片和工作流同时有时标注还会丢。
 - Current node's prompt cards all say positive or negative now: values kept from a picture are told by what they were wired to in that workflow. Before, only a workflow's said so, and the label was lost when a picture held the same text.
 - 回到一个存档时，输出节点上的图也跟着换：画布是哪个存档，节点上就是哪个存档跑出来的图。跑了几次就都排在节点里，和批量出图一样，新的在前，最多 16 张。这个存档没有图时节点空着，不留别的存档的图，免得看错。只对这个版本之后跑的图有效。

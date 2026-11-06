@@ -10,10 +10,10 @@
  },
  "family": "anima",
  "about": {
-  "zh": "只用官方节点，什么都不用装：放大 1.22 倍，轻轻重绘（0.35）。没有 Tile 锁着，重绘再狠画面就跑了。",
-  "en": "ComfyUI's own nodes, nothing to install: enlarged 1.22x and redrawn gently (0.35). Nothing holds the picture, so a stronger redraw moves it."
+  "zh": "只用官方节点，什么都不用装：放大 1.22 倍，轻轻重绘（0.35）。没有 Tile 锁着，重绘再狠画面就跑了。要多张图就多跑几次，别调批次：Anima 的 VAE 会把一批图当成视频帧，第二段只剩一张。",
+  "en": "ComfyUI's own nodes, nothing to install: enlarged 1.22x and redrawn gently (0.35). Nothing holds the picture, so a stronger redraw moves it. For several pictures run it several times, not a bigger batch: Anima's VAE takes a batch for video frames, and the second pass is left with one."
  },
- "ai": "A pass on Anima, then enlarged 1.22x and redrawn at denoise 0.35, nothing holding the picture: at 0.5 the shapes begin to move. open_workflow, set_model on its loader, then run_workflow with the prompt.",
+ "ai": "A pass on Anima, then enlarged 1.22x and redrawn at denoise 0.35, nothing holding the picture: at 0.5 the shapes begin to move. open_workflow, set_model on its loader, then run_workflow with the prompt. For several pictures run it several times: Anima's VAE takes a batch for video frames, so a batch above 1 ends as one picture at the second pass.",
  "workflow": {
   "id": "00000000-0000-0000-0000-000000000000",
   "revision": 0,
