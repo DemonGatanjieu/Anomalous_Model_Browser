@@ -60,6 +60,10 @@
 
 <p align="center"><img src="docs/images/en-voices.webp" width="760" alt="Character voices page"></p>
 
+**7. Let an AI app do it while you watch.** Connect an AI app that supports MCP (Antigravity, Claude, Cursor…) and say what you want: it opens your saved workflows or a picture's own, swaps models, adds LoRAs and runs them, and builds what is missing from **Ways** tested here (repaint an area, upscale, change the background…) instead of guessing nodes. The **AI workbench** shows each step as it happens: the pictures, the questions it asks you (answer with a press) and an undo for every canvas change. **Gates** decide what it may do without asking, such as downloading or moving files. Setup in [docs/guides/mcp.md](docs/guides/mcp.md).
+
+**8. Try a change, keep both, go back.** Right-click the canvas → **Save this state** keeps the whole workflow as a save; change anything and save again. The bar under the canvas runs every save a few times (**Random** or **Locked** seeds, to compare fairly), and **Saves** at the top of the Workflows page shows what each save changed beside its pictures. Click a save's number to go back to it, on the same tab; Ctrl+Z returns. **Keep as a workflow** turns one into a workflow card.
+
 **Changed your mind?** Everything the plugin changes is listed in **Activity**, with **Undo** and **Find on canvas**.
 
 <p align="center"><img src="docs/images/en-activity.webp" width="620" alt="Activity log with an undo button"></p>
@@ -89,7 +93,8 @@ Every page has an icon on the rail at the left of the window.
 | **🕘 Activity** | Everything the plugin changed, by day: on the canvas (which node settings changed from what to what, nodes added or removed, workflows opened) and in files (models, covers, workflows, materials, notes, images, audio). **Find on canvas** jumps to the node; a canvas change can be undone with **Undo** until something changes it again, the rest is recorded only. Your own edits are not listed. |
 | **📦 Models** | Your models with covers, trigger words and base model. Chips at the top switch between types (Checkpoint, LoRA, VAE…) and list a whole type, subfolders included; the folder list narrows it to one folder. **+** adds a loader node to the canvas; edit a model's name, notes and cover, or scan just that model.<br>Versions of one Civitai model share a card: its version label switches between them, and the details list every version on Civitai to download the others. |
 | **🖼️ Gallery** | Your ComfyUI `output` folder. Search by prompt, model, LoRA, seed, file name or model hash; open an image to see the parameters it was made with, or drag it onto the canvas to get its workflow back. **☆** keeps a good one as a whole workflow, a combo (model, LoRAs, prompt) or just its prompts. |
-| **🪡 Workflows** | Saved workflows: save a whole workflow or a part of one together with its models, cover, notes and parameters. Each card shows whether the models are on this computer; drag it onto the canvas to load it. Versions can be compared and restored. A card's export button makes a **recipe package** (.zip) to give to someone; dropped into their ⇅, it becomes a workflow card. |
+| **✨ AI workbench** | What an AI app does through Anomalous, task by task: a timeline of its steps with undo, the pictures it made (mark one up for it, or say **Turned out well** / **Not quite**), its questions, the **Ways** and **Skills** it builds with, and **Gates**. A new task gives you one sentence to send to the AI. |
+| **🪡 Workflows** | **Official examples** to start from (text to picture, two passes, picture to picture, repaint an area, each opening on a model you have) and **Saves** at the top; then saved workflows: save a whole workflow or a part of one together with its models, cover, notes and parameters. Each card shows whether the models are on this computer; drag it onto the canvas to load it. Versions can be compared and restored. A card's export button makes a **recipe package** (.zip) to give to someone; dropped into their ⇅, it becomes a workflow card. |
 | **🧩 Combos** | A main model, a few LoRAs and a prompt you like, kept together. **Put on canvas** (or dragging the card onto the canvas) lays them out as a wired group of nodes; nothing already on the canvas changes. |
 | **✍️ Prompts** | Prompt Studio, a page of the browser; **Beside the canvas** moves it next to the canvas to see both. Select a prompt node and its prompt boxes appear as tags, edited in place: click a tag to make it stronger or weaker, double-click to edit, drag to reorder, type to add (Chinese, Japanese and other languages are translated to English), and show each tag's meaning in Chinese, Japanese, Korean and other languages. Click a card (a few common ones, plus your saved prompts) to add it, or drag it straight onto a prompt box on the canvas (outlined green for positive, red for negative) or onto empty canvas for a new prompt node. With no prompt node selected you write a draft. |
 | **🎙️ Voices / 🎧 Audio** | With [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) installed: import GPT-SoVITS characters, pick a reference clip per emotion, fix pronunciations, write a script under Voice-over on the same page and generate it right there; generated audio is listed in the audio gallery. Without it, the page explains how to install it and nothing else depends on it. |
@@ -169,6 +174,10 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 
 <p align="center"><img src="docs/images/voices.webp" width="760" alt="角色语音页面"></p>
 
+**7. 让 AI 帮你做，你在旁边看着。** 连上支持 MCP 的 AI 软件（Antigravity、Claude、Cursor 等），说一句想做什么：它会打开你存的工作流或某张图自带的工作流，换模型、加 LoRA、跑图；缺什么就用在这里测过的 **做法**（局部重画、放大、换背景……）搭上，不靠瞎猜节点。**AI 工作台** 实时显示它的每一步：出的图、它问你的问题（点一下就是回答），画布上的每处改动都能撤销。**关卡** 决定它哪些事可以不问你直接做，比如下载模型、挪文件。设置方法见 [docs/guides/mcp.md](docs/guides/mcp.md)。
+
+**8. 想试试别的改法，又不想丢了现在这版。** 右键画布 → **存档当前工作流**，整个工作流就存成一个存档；随便改，改完再存一个。画布下方的存档条能把每个存档各跑几次（种子选 **随机** 或 **锁种**，公平对比），“工作流”页顶上的 **存档** 把每个存档改了什么和它出的图并排列出来。点存档的数字就回到那一步，还在同一个标签页，Ctrl+Z 能回来；觉得好就 **收藏为工作流**。
+
 **改错了也不怕。** 插件做的每一处改动都列在“操作记录”里，带 **撤销** 和 **在画布上找到**。
 
 <p align="center"><img src="docs/images/activity.webp" width="560" alt="操作记录和撤销按钮"></p>
@@ -201,7 +210,8 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 | **🕘 记录** | 按天列出插件做过的每一处改动。<br>画布上：哪个节点的设置从什么改成了什么、加了或删了哪些节点、打开了哪个工作流。<br>文件上：模型、封面、工作流、素材、笔记、图片、音频。<br>**在画布上找到** 可以直接跳到那个节点；画布上的改动在没被再改过之前可以点 **撤销**，其余只记录。你自己在画布上的修改不会记进来。 |
 | **📦 模型** | 模型带封面、触发词和底模信息。<br>顶部标签切换类型（Checkpoint、LoRA、VAE…），连同子文件夹一起列出；左侧文件夹列表可以只看某个文件夹。<br>**+** 一键在画布上创建加载节点；也可以改名、写备注、换封面，或只扫描这一个模型。<br>同一个 Civitai 模型的几个版本合成一张卡片，点卡片上的版本名切换；详情里能列出 Civitai 上的全部版本，下载其他版本。 |
 | **🖼️ 图库** | 读取 ComfyUI 的 `output` 文件夹。<br>可以按提示词、模型、LoRA、seed、文件名或模型哈希搜索。<br>点开图片能看到生成参数；拖到画布上可以还原当时的工作流。<br>觉得好就点 **☆**：存成整个工作流、搭配（模型 + LoRA + 提示词），或者只存提示词。 |
-| **🪡 工作流** | 存下的工作流：把完整工作流或其中一段，连同模型、封面、备注和参数一起存下来。<br>卡片会显示这台电脑上模型是否齐全；拖到画布上即可载入。<br>可以比较、恢复历史版本。<br>卡片上的导出按钮能打成**配方包**（压缩包）发给别人，对方拖进 ⇅ 就多一张工作流卡片。 |
+| **✨ AI 工作台** | AI 软件通过 Anomalous 做的事，一个任务一页：每一步的时间线（可撤销）、它出的图（可以标给它看，或点 **效果好** / **不太行**）、它问你的问题、它用来搭节点的 **做法** 和给它的建议 **Skill**，以及 **关卡**。新任务给你一句话，复制给 AI 就开工。 |
+| **🪡 工作流** | 最上面是 **官方示例**（文生图、两段放大、图生图、局部重绘，打开时自动选一个你有的模型）和 **存档**；下面是存下的工作流：把完整工作流或其中一段，连同模型、封面、备注和参数一起存下来。<br>卡片会显示这台电脑上模型是否齐全；拖到画布上即可载入。<br>可以比较、恢复历史版本。<br>卡片上的导出按钮能打成**配方包**（压缩包）发给别人，对方拖进 ⇅ 就多一张工作流卡片。 |
 | **🧩 搭配** | 把常用的主模型、几个 LoRA 和一段提示词存成一个搭配。<br>按 **放到画布**（或把卡片拖到画布上），就放出一组连好线的节点；画布上原有的东西不动。 |
 | **✍️ 提示词** | 提示词工坊，浏览器里的一个页面；点“停到画布旁”可以移到画布旁边，边看画布边改。选中一个提示词节点，它的提示词框就以词块的样子出现在工坊里，直接改：点一下调权重，双击改字，拖动换位置，输入就加（中文、日文等会自动译成英文），还能在每个词下面显示它的中文、日文、韩文等语言的意思。<br>点词卡（几张常用的，加上你存的）加进去，或者直接拖到画布的提示词框里（正面绿框、负面红框），拖到空白处就新建一个提示词节点。没选中提示词节点时写的是草稿。 |
 | **🎙️ 角色语音 / 🎧 音频库** | 装了 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) 后可用：<br>导入 GPT-SoVITS 角色，给每种情绪选参考音频，修正读音；切到“配音”写台词并直接生成。<br>生成的音频都在音频库里。没装时，页面会说明怎么安装，其他功能不受影响。 |
