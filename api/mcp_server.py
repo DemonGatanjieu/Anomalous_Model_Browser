@@ -24,7 +24,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_prompts
+from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_fit, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS, object_info
@@ -219,6 +219,8 @@ async def _call(params, request):
         ai_task_runs.watch(step["id"], result.get("structuredContent") or {})
         await asyncio.to_thread(ai_run_tracking.wait_for_receipt, result, client, session, active_task,
                                 ai_run_tracking.checked_wait(arguments.get("wait_seconds", 55)), step["id"])
+    if name not in mcp_apps.APP_TOOLS:
+        mcp_fit.fit(result, name)  # read in the chat, not filed away unread; the user's news below stays whole
     # The user's news and the run's go to the AI, never to the card's own calls (they do not reach the AI).
     if name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         resolved_task = active_task or await asyncio.to_thread(ai_tasks.active_task_id, client, session=session)

@@ -15,7 +15,7 @@ import { translate as t } from './locales.js';
 import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { postCanvasActivity } from './activity_log.js';
 import { keepUndo, workflowKey } from './canvas_undo.js';
-import { canvasBrief } from './mcp_canvas_brief.js';
+import { canvasBrief, line as briefLine } from './mcp_canvas_brief.js';
 import { canvasEditActions } from './mcp_canvas_edit.js';
 import { findRoles } from './canvas_roles.js';
 import { onTaskTab } from './mcp_task_tab.js';
@@ -30,6 +30,12 @@ import { openListedModel } from './ui_scan_lists.js';
 
 const HIDDEN_PAGE_DELAY_MS = 1500;
 const MAX_NODES = 150;
+// What an AI on an empty canvas needs instead of "add a SaveImage" (api/mcp_situation.py says the same).
+const EMPTY_CANVAS = 'The canvas is empty. run_workflow(workflow=<name>) opens a saved workflow and runs it in one call; '
+    + "open_workflow opens one to change first, or a gallery picture's own by its file name (to change that picture); "
+    + 'list_workflows names them and the examples.';
+// UTF-8 bytes, as api/mcp_fit.py: past about 4,000 an AI app files the answer away and the AI reads nothing.
+const CANVAS_BUDGET = 3800;
 const MAX_VALUE = 400;
 const MAX_LOGGED = 60;
 
@@ -135,12 +141,28 @@ function describeCanvas({ brief } = {}) {
     const g = currentGraph();
     if (brief) return { workflow: workflowName(), ...canvasBrief(g, app.lastNodeErrors, missingMedia()) };
     const nodes = g._nodes || [];
-    return {
+    return fitCanvas(g, {
         workflow: workflowName(),
         node_count: nodes.length,
+        ...(nodes.length ? {} : { note: EMPTY_CANVAS }),
         selected_node_ids: Object.keys(app.canvas?.selected_nodes || {}).map(Number),
         nodes: nodes.slice(0, MAX_NODES).map(node => describeNode(g, node)),
-    };
+    });
+}
+
+/** `answer` within CANVAS_BUDGET: the nodes in full while they fit, from the end the rest a line each (id, type, what feeds it). */
+function fitCanvas(g, answer) {
+    const bytes = value => new TextEncoder().encode(JSON.stringify(value)).length;
+    if (bytes(answer) <= CANVAS_BUDGET) return answer;
+    const full = [...answer.nodes];
+    const fitted = { ...answer, nodes: full, in_brief: [] };
+    while (bytes(fitted) > CANVAS_BUDGET && full.length > 1) {
+        const node = g.getNodeById?.(full.pop().id);
+        if (node) fitted.in_brief.unshift(briefLine(g, node));
+        fitted.note = `Too big to read whole in one answer: ${fitted.in_brief.length} nodes are in in_brief, one line each `
+            + '(id, type, what feeds each input). find_nodes(types=[their type]) lists a type\'s settings; set_values and connect_nodes take their ids.';
+    }
+    return fitted;
 }
 
 function findPromptBox(role, nodeId) {
@@ -292,6 +314,7 @@ async function downloadModel(args, getOwner) {
  */
 async function runWorkflow({ batch, base_only: firstPass, hold }, getOwner) {
     const g = currentGraph();
+    if (!(g._nodes || []).length) throw new Error(`Nothing was run. ${EMPTY_CANVAS}`);
     const held = hold ? await holdBase(g, hold, getOwner) : null;
     const base = firstPass ? baseOnly((await app.graphToPrompt()).output) : null;
     if (held?.held && hold.kept_input) held.kept = Boolean(onKeptBase((await app.graphToPrompt()).output, hold.kept_input));

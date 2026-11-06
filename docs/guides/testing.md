@@ -20,7 +20,7 @@ English summary at the end.
 node tools/run_tests.mjs
 ```
 
-它依次跑结构检查、每个 `tests/*.mjs`、全部 Python 测试，最后写 `All passed.` 或者列出失败的项目。
+它依次跑结构检查、每个 `tests/*.mjs`、全部 Python 测试，最后写 `All passed.` 或者列出失败的项目。其中 `tests/load_order.mjs` 把 `web/` 里的每个文件都当成第一个加载的试一遍（ComfyUI 会同时加载全部 js 文件，谁先跑不一定），用 `tests/load_order/` 里的假页面顶替浏览器和 ComfyUI，有文件碰到“还没准备好的变量”就失败。
 
 Python 用哪个：
 

@@ -20,7 +20,6 @@ import os
 import re
 
 import folder_paths
-from PIL import Image
 
 from .activity_log import list_entries
 from .audio_catalog import _gallery_page as _audio_page
@@ -30,6 +29,7 @@ from .kept_images import _kept_images
 from .material_store import _list_materials, _read_material, get_materials_dir
 from .media_routes import _build_card_thumbnail
 from .metadata import get_metadata
+from .picture_mask import input_facts
 from .mcp_arguments import prepare_arguments, renaming_note
 from .model_catalog import _iter_search_models
 from .model_constants import MEDIA_EXTENSIONS, MODEL_EXTENSIONS, PREVIEW_SUFFIXES
@@ -137,28 +137,6 @@ def _resolve_folder_image(image, folder):
     if os.path.splitext(path)[1].lower() not in IMAGE_TYPES or not os.path.isfile(path):
         raise ToolError(f"No picture at {image} in ComfyUI's {folder} folder.")
     return rel, path
-
-
-def _input_facts(path):
-    """Size of an input or preview picture and, when it has an alpha, the area LoadImage gives as MASK (1 - alpha)."""
-    try:
-        with Image.open(path) as picture:
-            facts = {"width": picture.width, "height": picture.height}
-            if "A" not in picture.getbands():
-                facts["mask"] = "none: no alpha, so LoadImage's MASK is empty"
-                return facts
-            area = picture.getchannel("A").point(lambda value: 255 if value < 128 else 0)
-    except (OSError, ValueError, Image.DecompressionBombError):
-        return {"note": "The picture cannot be read."}
-    box = area.getbbox()
-    if not box:
-        facts["mask"] = "none: fully opaque, so LoadImage's MASK is empty"
-        return facts
-    share = area.histogram()[255] / (facts["width"] * facts["height"])
-    left, top, right, bottom = (round(100 * value / size) for value, size in zip(box, (facts["width"], facts["height"]) * 2))
-    facts["mask"] = {"share": f"{round(100 * share, 1)}%", "area": f"x {left}-{right}%, y {top}-{bottom}% of the picture",
-                     "meaning": "LoadImage gives this area as MASK: what to repaint"}
-    return facts
 
 
 def _image_content(path):
@@ -338,7 +316,7 @@ def search_images(query="", limit=20, page=1, with_pictures=False):
 def get_image_info(image, include_image=False, folder="output"):
     if folder != "output":
         rel, path = _resolve_folder_image(image, folder)
-        info = {"image": rel, "folder": folder, "created": _when(os.path.getmtime(path)), **_input_facts(path)}
+        info = {"image": rel, "folder": folder, "created": _when(os.path.getmtime(path)), **input_facts(path)}
         extra = [item for item in [_image_content(path)] if include_image and item]
         if include_image:
             info["image_attached"] = bool(extra)
@@ -365,6 +343,8 @@ def get_image_info(image, include_image=False, folder="output"):
                     inputs[key] = value
             nodes.append({"id": node_id, "type": node.get("class_type"), "inputs": inputs})
         info.update(models_used=sorted(models), nodes=nodes)
+    if chunks.get("workflow"):
+        info["to_change_it"] = f"open_workflow(workflow='{rel}') opens the workflow that made it, as it was"
     elif chunks.get("parameters"):
         info["parameters"] = _text(chunks["parameters"], 4000)
     else:

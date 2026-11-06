@@ -178,13 +178,20 @@ covered by the `styles.css` manifest.
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
   side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's; the
   outcome carries the log entry's id as `_activity`, for the AI workbench's undo).
+  `api/mcp_fit.py` is the net under every answer: one that is a list and past Antigravity's size
+  for answers it files away unread keeps the items that fit and names the rest (`left_out`,
+  `more_names`); mcp_server.py runs it after the step is recorded (`tests/test_mcp_fit.py`).
+  `api/picture_mask.py` is what LoadImage gets from an input or preview picture (size, MASK area)
+  for get_image_info.
   `api/mcp_look.py` is zoom_image, the AI's closer look: part of a picture in the output, input
   or temp folder shown larger, the same part of a second picture beside it, read only (so an AI
   need not crop or compare pictures with code of its own).
   `api/mcp_model_use.py` offers search_models and get_model (mcp_tools.py finds the files)
   with what loads each model: the node types whose drop-down lists it (from `/object_info`),
   or, for a file whose header says it belongs in another folder (model_placement.py), where,
-  and `move_model` (behind the "files" gate) moves it there as Tidy does.
+  and `move_model` (behind the "files" gate) moves it there as Tidy does. search_models answers
+  small enough to be read: loaded_by once for a type, no fields the model_id says, four trigger
+  words, a LoRA's author weight, as many models as fit.
   `api/model_advice.py` is what Anomalous knows about using a model well: get_model's
   `author_examples` (sampler, steps, CFG, size and a LoRA's weight from the example pictures in
   the Civitai record a scan keeps), and add_lora / set_model's `base_model_note` when a LoRA and
@@ -250,7 +257,8 @@ covered by the `styles.css` manifest.
   `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is
-  get_situation: the task, that brief (describe_canvas with `brief`), the latest run and the
+  get_situation: the task, that brief (describe_canvas with `brief`; describe_canvas in full gives a
+  big canvas's last nodes as brief lines to stay readable, and says what to do on an empty one), the latest run and the
   next step in one answer kept under Antigravity's size for answers it files away, for an AI
   starting a new chat or lost (`tests/test_mcp_situation.py`, `tests/mcp_canvas_brief.mjs`).
   `api/mcp_directory.py` is the directory of the tools by what an AI wants to do (as this file is

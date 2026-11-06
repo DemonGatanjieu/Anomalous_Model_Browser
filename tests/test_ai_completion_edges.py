@@ -78,6 +78,9 @@ class CompletionEdges(unittest.TestCase):
             {"tool": "report", "kind": "note", "ok": True, "state": "done", "results": [dict(picture)]},
         ]}
         self.assertEqual(ai_tasks.task_summary(task)["images"], 1)
+        found = {"id": "found", "steps": [{"tool": "report", "kind": "note", "ok": True, "state": "done", "results": [picture]}]}
+        self.assertEqual(ai_tasks.task_summary(found)["images"], 0, "a picture the AI found and showed was not made")
+        self.assertEqual(ai_tasks.task_summary(found)["cover"], picture, "it still shows on the task's row")
 
     def test_automatic_followup_yields_to_a_waiting_task(self):
         finished = self.done()

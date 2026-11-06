@@ -155,7 +155,7 @@ class ToolTests(unittest.TestCase):
             found = mcp_tools.call_tool(tools, "search_models", {"query": "neon sdxl"}, CTX)["structuredContent"]
             self.assertEqual(found["total_matches"], 1)
             model = found["models"][0]
-            self.assertEqual((model["model_id"], model["source"], model["loaded_by"]), ("loras:0:sub/neon_city.safetensors", "civitai", ["LoraLoader"]))
+            self.assertEqual((model["model_id"], model["source"], found["loaded_by"]), ("loras:0:sub/neon_city.safetensors", "civitai", {"loras": ["LoraLoader"]}))
             self.assertEqual(mcp_tools.call_tool(tools, "search_models", {"source": "not_scanned"}, CTX)["structuredContent"]["total_matches"], 1)
             for kind, count in (("lora", 2), ("LoRAs", 2), ("checkpoints", 0)):
                 self.assertEqual(mcp_tools.call_tool(tools, "search_models", {"type": kind}, CTX)["structuredContent"]["total_matches"], count, kind)
@@ -171,6 +171,7 @@ class ToolTests(unittest.TestCase):
                   "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "sdxl/base.safetensors"}}}
         info = PngImagePlugin.PngInfo()
         info.add_text("prompt", json.dumps(prompt))
+        info.add_text("workflow", json.dumps({"nodes": [], "links": []}))
         Image.new("RGB", (8, 8)).save(self.root / "out.png", pnginfo=info)
         with mock.patch.object(mcp_tools.folder_paths, "get_output_directory", return_value=str(self.root)), \
                 mock.patch.object(mcp_tools, "_kept_images", return_value=[{"subfolder": "", "filename": "out.png",
@@ -180,6 +181,7 @@ class ToolTests(unittest.TestCase):
             sampler = next(node for node in data["nodes"] if node["type"] == "KSampler")
             self.assertEqual(sampler["inputs"], {"seed": 42})  # links are left out
             self.assertEqual(data["kept_as"], {"combo": "C"})
+            self.assertIn("open_workflow(workflow='out.png')", data["to_change_it"], "it says the workflow it carries opens")
             self.assertTrue(mcp_tools.call_tool(mcp_tools.TOOLS, "get_image_info", {"image": "../out.png"})["isError"])
 
     def test_a_picture_in_the_input_folder_and_its_mask(self):

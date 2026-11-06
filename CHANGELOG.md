@@ -2,6 +2,14 @@
 
 ## v1.63.0 — unreleased
 
+- 偶尔打开 ComfyUI 时 AMB 整个没出来（刷新一下又好了）的问题修好了。ComfyUI 会同时加载插件的全部 js 文件，碰巧某个文件先跑时，会用到另一个还没准备好的变量，整个插件就加载失败；重启或更新后第一次打开最容易碰上。新加的测试会把每个文件都当成第一个加载试一遍。
+- AMB is no longer missing now and then when ComfyUI opens (a reload brought it back). ComfyUI loads every js file of the plugin at once, and when one file happened to run first it used a value of another file not made yet, and the whole plugin failed; the first open after a restart or update met it most. A new test runs each file first.
+- AI 看得到工具的回答了：AI 软件收到太长的回答（Antigravity 大约 4,000 字节以上）会存成文件不看，AI 就什么也没拿到，只好缩小范围重查（考试里为挑一个 LoRA 搜了 8 次）。现在搜模型的回答只留有用的（同类模型的加载节点只写一次，触发词列前四个，LoRA 带上作者示例图的权重），读大画布时后面的节点写成一行，其他列表放不下的列出名字，告诉 AI 怎么查剩下的。
+- AI apps get to read the tools' answers: an app files an answer past its size (about 4,000 bytes in Antigravity) away unread, so the AI had nothing and searched again with smaller limits (eight searches for one LoRA in the exam). Model search now keeps what is used (a type's loaders said once, four trigger words, a LoRA's weight from its author's pictures), a big canvas gives its last nodes a line each, and any other list names what did not fit and says how to get it.
+- 画布是空的时候，AI 跑图或读画布会被告知先打开一个工作流（存的、示例，或者图库里某张图自带的），不再让它去"加一个保存节点"。AI 查一张图的参数时，也会知道这张图的工作流能直接打开。
+- On an empty canvas the AI is told to open a workflow first (a saved one, an example, or a gallery picture's own) instead of being told to add a save node. Reading a picture's settings, the AI learns that its workflow can be opened as it was.
+- AI 发来只写着"test"这类试探的问题，不再放到你面前等回答，AI 会收到正确的问法。任务上的"出图 N 张"只数真正跑出来的图，AI 找到给你看的旧图不算。
+- A question that only says "test" or the like no longer waits in front of you: the AI is told how to ask. A task's picture count counts the pictures its runs made, not old ones the AI found to show you.
 - AI 想改图库里的某一张图时，可以直接打开那张图自带的工作流（`open_workflow` 写图片名），不用再打开原来的工作流卡，把换过的模型、LoRA 和提示词一样一样设回去。打开的是新标签页，你开着的那页不动。Gemini 实测，这类题从 28 次调用降到 21 次。
 - When the AI changes a picture from the gallery, it can open the workflow that picture carries (open_workflow with the picture's name), instead of opening the saved card and putting back the model, LoRA and prompt that had been changed one by one. It opens in a new tab and leaves yours as it was. In a real Gemini run such a task went from 28 calls to 21.
 - 在设置里切换语言后，AI 工作台的任务列表和时间线马上跟着换。以前有一部分要刷新页面才变。

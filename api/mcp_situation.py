@@ -14,6 +14,8 @@ from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import _schema, tool_text
 
 BUDGET = 3600  # characters: Antigravity files away an answer past about 4,000 and has the AI open it
+EMPTY_CANVAS = ("The canvas is empty: run_workflow(workflow=<name>) opens a saved workflow and runs it in one call; open_workflow "
+                "opens one to change first, or a gallery picture's own by its file name; list_workflows names them and the examples.")
 MAX_TEXT = 200
 
 
@@ -50,6 +52,8 @@ def _next(summary, run, canvas, record=None):
         return "Look at the run's pictures (zoom_image) and tell the user with report what came out."
     if record and mcp_routes.waiting(record):
         return mcp_routes.TOOLBOX_NOTE
+    if canvas.get("node_count") == 0:
+        return EMPTY_CANVAS
     return "Go on with what the user asked (task.asked); run_workflow runs the canvas, report tells the user."
 
 

@@ -40,7 +40,7 @@ function needed(node, input) {
     return Boolean(required && Object.prototype.hasOwnProperty.call(required, input.name));
 }
 
-function line(g, node) {
+export function line(g, node) {
     const title = node.title && node.title !== node.type ? ` "${String(node.title).slice(0, 30)}"` : '';
     const state = node.mode === 4 ? ' [bypassed]' : node.mode === 2 ? ' [muted]' : '';
     const fed = sockets(node).map((input) => {

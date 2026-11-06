@@ -399,6 +399,13 @@ class AskUserTests(unittest.TestCase):
         self.assertEqual((step["panel"]["title"], block["options"][0].get("recommended"), block["other"]), ("先测哪种双人题材？", True, True))
         self.assertEqual(step["tool"], "ask_user", "the timeline says the AI asked")
 
+    def test_a_trial_question_is_not_put_to_the_user(self):
+        for question in ("test", " Test? ", "测试"):
+            with self.subTest(question=question), self.assertRaises(mcp_task_tools.ToolError) as caught:
+                mcp_task_tools.ask_user(self.ctx, question, wait_seconds=0)
+            self.assertIn("options", str(caught.exception), "it says how to ask")
+        self.assertFalse(ai_tasks.list_tasks(), "nothing waits in the workbench")
+
     def test_a_skipped_question_says_so(self):
         self.answer_later(skip=True)
         got = mcp_task_tools.ask_user(self.ctx, "要不要加光效？", ["要", "不要"], wait_seconds=5)

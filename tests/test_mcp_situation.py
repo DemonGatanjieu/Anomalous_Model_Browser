@@ -52,6 +52,7 @@ class SituationTests(unittest.TestCase):
         self.assertIn("check_workflow_models", mcp_situation._next(nothing, {"state": "error"}, missing))
         self.assertIn("zoom_image", mcp_situation._next(nothing, {"state": "done", "pictures": ["a.png"]}, {"unwired": []}))
         self.assertIn("task.asked", mcp_situation._next(nothing, {"state": "none"}, {"unwired": []}))
+        self.assertIn("open_workflow", mcp_situation._next(nothing, {"state": "none"}, {"node_count": 0, "unwired": []}), "an empty canvas")
         with mock.patch.object(ai_task_runs, "status", return_value={"state": "done", "summary": "finished", "pictures": ["a.png"], "seconds": 3}):
             self.assertEqual(mcp_situation.get_situation(CTX)["run"], {"state": "done", "summary": "finished", "pictures": ["a.png"]})
 

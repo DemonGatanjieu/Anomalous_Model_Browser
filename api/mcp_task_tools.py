@@ -137,6 +137,9 @@ def _routes(ctx, task):
     return mcp_routes.offer(box, object_info(ctx)) if len(mcp_routes._main(box)) >= 2 else None
 
 
+TRIAL_QUESTIONS = {"test", "testing", "test question", "hello", "hi", "ping", "测试", "试试", "试一下"}
+
+
 def ask_user(ctx, question="", options=None, multiple=False, other=True, wait_seconds=ai_panels.MAX_WAIT, task=None, routes=False):
     """A question in the AI workbench, where the user watches the work: options to press (one may be
     recommended), a line of their own; waits for the answer. `routes`: Anomalous's own question and options."""
@@ -149,6 +152,9 @@ def ask_user(ctx, question="", options=None, multiple=False, other=True, wait_se
         extra, words = {"routes": offered["calls"]}, {"title_key": "aiRouteTitle"}
     if not str(question or "").strip():
         raise ToolError("question is empty.")
+    if not options and str(question).strip().strip("?？!！.。 ").lower() in TRIAL_QUESTIONS:
+        raise ToolError("Not shown to the user: a trial question would wait for an answer nobody gives. Ask when you need "
+                        "their answer: question (needed), options (the choices to press), multiple, other, wait_seconds.")
     block = ({"type": "choices", "id": "answer", "options": options, "multiple": bool(multiple), "other": bool(other)}
              if options else {"type": "input", "id": "answer", "question": str(question or "")[:200]})
     try:

@@ -61,6 +61,37 @@ class ModelUseTests(unittest.TestCase):
     def about(self, model_id):
         return mcp_model_use._about(CTX, {"model_id": model_id})
 
+    def test_a_loras_author_weight_comes_with_the_search(self):
+        found = {"total_matches": 2, "models": [{"model_id": "loras:0:a.safetensors", "type": "loras"},
+                                                {"model_id": "checkpoints:0:b.safetensors", "type": "checkpoints"}]}
+        with mock.patch.object(mcp_tools, "search_models", return_value=found), \
+                mock.patch.object(mcp_model_use, "_about", side_effect=lambda ctx, model: model), \
+                mock.patch.object(mcp_tools, "_resolve_model", return_value=("loras", 0, "/m", "/m/a.safetensors")), \
+                mock.patch.object(mcp_tools, "get_metadata", return_value={"hash": "abc"}), \
+                mock.patch.object(mcp_model_use.model_advice, "author_examples", return_value={"lora_weight": "0.7-0.8"}) as examples:
+            got = mcp_model_use.search_models(CTX, "a")
+        self.assertEqual(got["models"][0]["author_weight"], "0.7-0.8")
+        self.assertNotIn("author_weight", got["models"][1], "only a LoRA has one")
+        examples.assert_called_once_with("/m/a.safetensors", "loras", "abc")
+
+    def test_the_search_answer_stays_readable(self):
+        lora = lambda at: {"model_id": f"loras:0:style/l{at}.safetensors", "name": f"Style {at}", "file": f"l{at}.safetensors",  # noqa: E731
+                           "type": "loras", "folder": "style", "base_model": "Illustrious",
+                           "trigger_words": [f"word{n}" for n in range(9)], "loaded_by": ["LoraLoader"]}
+        models = [lora(at) for at in range(40)]
+        models.append({"model_id": "loras:0:wrong.safetensors", "name": "Wrong", "file": "wrong.safetensors", "type": "loras",
+                       "folder": "", "belongs_in": "model_patches", "placement": "moves"})
+        got = mcp_model_use._compact({"total_matches": 41, "models": models})
+        self.assertLessEqual(len(mcp_tools.tool_text(got)), mcp_model_use.SEARCH_BUDGET)
+        self.assertNotIn("loaded_by", got, "a misfiled one shares no loader")
+        self.assertEqual(got["models"][0]["loaded_by"], ["LoraLoader"])
+        self.assertIn("more to keep this answer readable", got["left_out"])
+        self.assertEqual(int(got["left_out"].split()[0]) + len(got["models"]), 41, "what was left out is counted")
+        self.assertEqual((got["models"][0]["trigger_words"], got["models"][0]["more_trigger_words"]), (["word0", "word1", "word2", "word3"], 5))
+        self.assertFalse({"file", "folder", "type"} & set(got["models"][0]), "the model_id says them")
+        shared = mcp_model_use._compact({"total_matches": 2, "models": [lora(0), lora(1)]})
+        self.assertEqual((shared["loaded_by"], "loaded_by" in shared["models"][0]), ({"loras": ["LoraLoader"]}, False), "said once")
+
     def test_a_misfiled_patch_is_said_to_belong_elsewhere_and_moves_there(self):
         self.put("controlnet", "depth.safetensors", CONTROL)
         patch = self.put("controlnet", "anima-lllite-depth.safetensors", LLLITE)

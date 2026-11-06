@@ -440,11 +440,17 @@ async function select(id) {
 /** Pictures on the AI page can be marked for the task shown (ui_ai_marker.js). */
 setMarker(image => state.task && openMarker(image, state.task.id, () => void refresh()));
 
-/** The materials picker docks in the side column while this page is shown; a run's step opens its shape there. */
-shared.openMap = connectSide({
-    side: state.stage, task: () => state.task, redraw: () => renderTask(),
-    box: () => (visible() && state.page?.querySelector('.anomalous-ai-stage')) || null,
-});
+/**
+ * The materials picker docks in the side column while this page is shown; a run's step opens its shape there.
+ * Connected when the page is first drawn, not when this file loads: ui_ai_toolbox.js is in an import cycle with
+ * this file and ComfyUI loads every file of the plugin as an extension, so either may run first.
+ */
+function connectSideOnce() {
+    shared.openMap ||= connectSide({
+        side: state.stage, task: () => state.task, redraw: () => renderTask(),
+        box: () => (visible() && state.page?.querySelector('.anomalous-ai-stage')) || null,
+    });
+}
 
 // ---------------------------------------------------------------- the page
 
@@ -514,6 +520,7 @@ function pollVisible() {
 
 /** The whole page into `panel`. */
 export function renderAiWorkbench(owner, panel) {
+    connectSideOnce();
     state.owner = owner;
     shared.owner = owner;
     state.panel = panel;

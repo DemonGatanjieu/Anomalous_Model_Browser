@@ -18,6 +18,8 @@ from .model_constants import MODEL_EXTENSIONS
 from .model_import import Refused, import_types
 
 MAX_LOADERS = 6
+SEARCH_BUDGET = 3600  # characters as the AI reads them (mcp_tools.tool_text): past about 4,000 Antigravity files the answer away
+SEARCH_WORDS = 4  # trigger words a found model shows; get_model has them all
 
 _lock = threading.Lock()
 _index = {"of": None, "inputs": [], "by_choice": {}}
@@ -96,11 +98,42 @@ def _about(ctx, model):
     return model
 
 
+def _compact(found):
+    """search_models' answer small enough to be read: what a model_id says already (file, folder, type)
+    left out, loaded_by once for a type when its models share it, a few trigger words, and as many
+    models as fit, the rest counted."""
+    models, kinds = found["models"], {}
+    for model in models:
+        kinds.setdefault(model["type"], []).append(model)
+    shared = {kind: group[0]["loaded_by"] for kind, group in kinds.items()
+              if all("loaded_by" in model and model["loaded_by"] == group[0]["loaded_by"] for model in group)}
+    for model in models:
+        for key in ("file", "folder"):
+            model.pop(key, None)
+        if model.pop("type") in shared:
+            model.pop("loaded_by")
+        words = model.get("trigger_words") or []
+        if len(words) > SEARCH_WORDS:
+            model.update(trigger_words=words[:SEARCH_WORDS], more_trigger_words=len(words) - SEARCH_WORDS)
+    answer = {"total_matches": found["total_matches"], **({"loaded_by": shared} if shared else {}), "models": models}
+    listed = len(models)
+    while len(mcp_tools.tool_text(answer)) > SEARCH_BUDGET and len(models) > 1:
+        models.pop()
+    if len(models) < listed:
+        answer["left_out"] = f"{listed - len(models)} more to keep this answer readable: a narrower query or base_model finds them"
+    return answer
+
+
 def search_models(ctx, query="", type="", base_model="", source="", limit=20):
     found = mcp_tools.search_models(query, type, base_model, source, limit)
     for model in found["models"]:
         _about(ctx, model)
-    return found
+        if model["type"] == "loras":  # the weight its author's pictures use: picking one needs no get_model each
+            path = mcp_tools._resolve_model(model["model_id"])[3]
+            weight = model_advice.author_examples(path, "loras", (mcp_tools.get_metadata(path) or {}).get("hash", "")).get("lora_weight")
+            if weight:
+                model["author_weight"] = weight
+    return _compact(found)
 
 
 def get_model(ctx, model_id, include_cover=False):
