@@ -325,7 +325,11 @@ async def api_mcp_bridge(request):
     if not isinstance(body, dict) or not isinstance(body.get("id"), str):
         return web.json_response({"error": "Expected {id, claim} or {id, outcome}"}, status=400)
     if body.get("claim") is True:
-        return web.json_response({"granted": mcp_bridge.claim(body["id"], body.get("capabilities"))})
+        page = body.get("page") if isinstance(body.get("page"), str) and len(body["page"]) <= 64 else None
+        granted = mcp_bridge.claim(body["id"], body.get("capabilities"), page)
+        if granted == "later":  # another page did the last action: ask again when it has had its turn
+            return web.json_response({"granted": False, "retry_ms": int(mcp_bridge.HOLD_SECONDS * 1000) + 300})
+        return web.json_response({"granted": granted})
     return web.json_response({"accepted": mcp_bridge.resolve(body["id"], body.get("outcome"))})
 
 

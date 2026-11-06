@@ -400,9 +400,9 @@ class AskUserTests(unittest.TestCase):
         self.assertEqual(step["tool"], "ask_user", "the timeline says the AI asked")
 
     def test_a_trial_question_is_not_put_to_the_user(self):
-        for question in ("test", " Test? ", "测试"):
+        for question, options in (("test", None), (" Test? ", None), ("测试", None), ("test", ["方案1", "方案2"])):
             with self.subTest(question=question), self.assertRaises(mcp_task_tools.ToolError) as caught:
-                mcp_task_tools.ask_user(self.ctx, question, wait_seconds=0)
+                mcp_task_tools.ask_user(self.ctx, question, options, wait_seconds=0)
             self.assertIn("options", str(caught.exception), "it says how to ask")
         self.assertFalse(ai_tasks.list_tasks(), "nothing waits in the workbench")
 

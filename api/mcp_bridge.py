@@ -3,7 +3,9 @@ canvas lives in the browser).
 
 `ask_page` sends {id, action, args} as the "anomalous.mcp" event over ComfyUI's websocket
 to every open ComfyUI page and waits. One page claims it (the first claim wins, visible
-pages claim first: web/modules/mcp_bridge.js), does the action with Anomalous's own canvas
+pages claim first: web/modules/mcp_bridge.js; while the page that did the last action is open,
+it gets the next too: it holds the task's tabs, and with ComfyUI open in two browser tabs one
+must not open a task's tab and the other then not find it), does the action with Anomalous's own canvas
 code and posts the outcome back; `claim` and `resolve` take those posts
 (routes in mcp_server.py). With no page open, or none answering in time, the tool fails
 with words the AI can pass on. Actions on the canvas carry the task's own tab
@@ -11,13 +13,16 @@ with words the AI can pass on. Actions on the canvas carry the task's own tab
 """
 
 import threading
+import time
 import uuid
 
 TIMEOUT_SECONDS = 30
 MAX_WAITING = 20
+HOLD_SECONDS = 3  # how long the page that did the last action has to claim the next before another page may
 
 _lock = threading.Lock()
 _waiting = {}  # id -> {"event": Event, "claimed": bool, "outcome": dict | None}
+_last = {"page": None}  # the page that did the last action (its own id, web/modules/mcp_bridge.js pageId)
 
 
 class PageUnavailable(Exception):
@@ -44,7 +49,7 @@ def ask_page(action, args=None, timeout=TIMEOUT_SECONDS, required_capability=Non
     if task_canvas:
         args = {**(args or {}), "_task_canvas": task_canvas}
     request_id = uuid.uuid4().hex
-    entry = {"event": threading.Event(), "claimed": False, "outcome": None, "required": required_capability}
+    entry = {"event": threading.Event(), "claimed": False, "outcome": None, "required": required_capability, "sent": time.monotonic()}
     with _lock:
         if len(_waiting) >= MAX_WAITING:
             raise PageUnavailable("Too many canvas actions are waiting; try again in a moment.")
@@ -65,8 +70,10 @@ def ask_page(action, args=None, timeout=TIMEOUT_SECONDS, required_capability=Non
     return outcome.get("value")
 
 
-def claim(request_id, capabilities=None):
-    """True for the first page that asks to do request `request_id`."""
+def claim(request_id, capabilities=None, page=None):
+    """True for the page that may do request `request_id`: the first that asks, but for HOLD_SECONDS
+    only the page that did the last action (`page`, its id), when it is another: "later" tells
+    another page to ask again then (it is the one left when that page was closed)."""
     with _lock:
         entry = _waiting.get(request_id)
         if entry is None or entry["claimed"] or entry["outcome"] is not None:
@@ -75,7 +82,11 @@ def claim(request_id, capabilities=None):
             entry["outcome"] = {"ok": False, "error": "Refresh the ComfyUI browser page before running from AI. Nothing was queued."}
             entry["event"].set()
             return False
+        if page and _last["page"] and page != _last["page"] and time.monotonic() - entry.get("sent", 0) < HOLD_SECONDS:
+            return "later"
         entry["claimed"] = True
+        if page:
+            _last["page"] = page
         return True
 
 

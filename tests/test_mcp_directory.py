@@ -33,6 +33,15 @@ class DirectoryTests(unittest.TestCase):
         self.assertEqual(found["Run a workflow"], "run_workflow (Run the workflow), run_status (How the run is going)")
         self.assertEqual(set(found), {"note", "Run a workflow", "Pictures"})
 
+    def test_names_alone_when_the_answer_would_be_too_long(self):
+        specs = {name: tool["spec"] for name, tool in mcp_server.TOOLS.items() if name not in mcp_apps.APP_TOOLS}
+        result = {"content": [{"type": "text", "text": ""}], "structuredContent": {"task": "t", "asked": "x" * 2500}, "isError": False}
+        found = mcp_directory.attach(result, "begin_task", specs)["structuredContent"]["directory"]
+        self.assertIn("set_model", found["Models"])
+        self.assertNotIn("(Swap a node's model)", str(found), "the titles go first")
+        self.assertLessEqual(mcp_directory.mcp_fit.size(mcp_directory.directory(specs, titles=False)),
+                             mcp_directory.mcp_fit.size(mcp_directory.directory(specs)) * 2 // 3)
+
     def test_begin_task_carries_the_directory(self):
         result = call("begin_task", {"title": "目录", "new_task": True})
         found = result["structuredContent"]["directory"]

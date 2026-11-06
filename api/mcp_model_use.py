@@ -11,14 +11,13 @@ import threading
 
 import folder_paths
 
-from . import mcp_canvas_edit, mcp_tools, model_advice, model_placement
+from . import mcp_canvas_edit, mcp_fit, mcp_tools, model_advice, model_placement
 from .mcp_actions import _action
 from .mcp_tools import _LIMIT, _QUERY, ToolError
 from .model_constants import MODEL_EXTENSIONS
 from .model_import import Refused, import_types
 
 MAX_LOADERS = 6
-SEARCH_BUDGET = 3600  # characters as the AI reads them (mcp_tools.tool_text): past about 4,000 Antigravity files the answer away
 SEARCH_WORDS = 4  # trigger words a found model shows; get_model has them all
 
 _lock = threading.Lock()
@@ -99,9 +98,10 @@ def _about(ctx, model):
 
 
 def _compact(found):
-    """search_models' answer small enough to be read: what a model_id says already (file, folder, type)
-    left out, loaded_by once for a type when its models share it, a few trigger words, and as many
-    models as fit, the rest counted."""
+    """search_models' answer small enough to be read (mcp_fit.BUDGET): what a model_id says already
+    (file, folder, type) left out, loaded_by once for a type when its models share it, a few trigger
+    words, and as many models as fit, the rest by name (more_names), so one answer shows all there is
+    and the AI need not search again to see the rest."""
     models, kinds = found["models"], {}
     for model in models:
         kinds.setdefault(model["type"], []).append(model)
@@ -116,11 +116,12 @@ def _compact(found):
         if len(words) > SEARCH_WORDS:
             model.update(trigger_words=words[:SEARCH_WORDS], more_trigger_words=len(words) - SEARCH_WORDS)
     answer = {"total_matches": found["total_matches"], **({"loaded_by": shared} if shared else {}), "models": models}
-    listed = len(models)
-    while len(mcp_tools.tool_text(answer)) > SEARCH_BUDGET and len(models) > 1:
+    everything = list(models)
+    while mcp_fit.size(answer) > mcp_fit.BUDGET and len(models) > 1:
         models.pop()
-    if len(models) < listed:
-        answer["left_out"] = f"{listed - len(models)} more to keep this answer readable: a narrower query or base_model finds them"
+        answer["more_names"] = [str(model.get("name") or model["model_id"])[:mcp_fit.NAME] for model in everything[len(models):]]
+        answer["left_out"] = (f"{len(answer['more_names'])} more, named in more_names to keep this answer readable: "
+                              "get_model or a query with the name gives one in full")
     return answer
 
 

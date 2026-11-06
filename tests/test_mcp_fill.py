@@ -64,6 +64,18 @@ class FillTests(unittest.TestCase):
         self.assertEqual(self.calls[0], ("open_workflow", {"filename": "海边.json", "name": "海边 / 夕阳", "plan": "params_1.json"}))
         self.assertEqual(self.calls[1], ("fill_slots", {"filename": "海边.json#params_1.json"}), "the plan's tab, not the workflow's own")
 
+    def test_a_gallery_picture_runs_its_own_workflow_in_a_tab_of_its_own(self):
+        picture = {"subfolder": "cmp", "filename": "made_00001_.png"}
+        with mock.patch.object(mcp_fill, "saved_workflow", side_effect=mcp_tools.ToolError("No saved workflow")), \
+                mock.patch.object(mcp_fill, "picture_workflow", return_value=picture):
+            self.answers = [{"opened": "made_00001_"}, {"set": {"prompt": "x"}}]
+            self.assertEqual(mcp_fill.fill(self.ctx, "cmp/made_00001_.png", prompt="x")["workflow"], "made_00001_")
+        self.assertEqual(self.calls[0], ("open_workflow", {"picture": picture, "name": "made_00001_"}))
+        self.assertEqual(self.calls[1][1]["filename"], "picture:cmp/made_00001_.png", "the tab is the picture's, reused next time")
+        with mock.patch.object(mcp_fill, "saved_workflow", side_effect=mcp_tools.ToolError("No saved workflow")), \
+                mock.patch.object(mcp_fill, "picture_workflow", return_value=None), self.assertRaises(mcp_tools.ToolError):
+            mcp_fill.fill(self.ctx, "海边夕阳")
+
     def test_blanks_alone_and_nothing_at_all(self):
         self.assertIsNone(mcp_fill.fill(self.ctx, None, prompt=""))
         self.assertEqual(self.calls, [])

@@ -15,6 +15,7 @@ import { apiLinks, freeSpot, layered, placedBlock, typesFit, valuePlan } from '.
 import { fedBy, linkOf, sockets, unwired } from './mcp_canvas_brief.js';
 import { fillPlan, valuesPlan } from './mcp_fill.js';
 import { parsePngMetadataFromUrl } from './png_metadata.js';
+import { freshId } from './detached_graph.js';
 import { applyRecipeParametersToCanvas } from './recipe_actions.js';
 import { translate as t } from './locales.js';
 import { setWidgetValue } from './ui_node_model_picker.js';
@@ -291,28 +292,36 @@ export function canvasEditActions({ recorded, nodeById }) {
 
     /**
      * The workflow gallery picture `picture` ({subfolder, filename}, found in the output folder by
-     * api/mcp_canvas_edit.py) carries, without the marks of the tab it ran on: the saved workflow
-     * that tab was opened from (run_workflow would take this tab for it) and its group of saves.
+     * api/mcp_fill.py) carries, as a workflow of its own: a new id (the picture keeps the id of the
+     * tab it ran on, which may still be open, and ComfyUI would show that tab instead), and without
+     * that tab's marks: the saved workflow it was opened from (run_workflow would take this tab for
+     * it) and its group of saves.
      */
     async function pictureWorkflow({ subfolder, filename }, name) {
         const query = new URLSearchParams({ filename, subfolder: subfolder || '', type: 'output' });
         const workflow = await parsePngMetadataFromUrl(`/view?${query}`);
         if (!Array.isArray(workflow?.nodes)) throw new Error(`${name} carries no workflow to open.`);
         const { anomalous_saved: saved, anomalous_saves: saves, ...extra } = workflow.extra || {};
-        return { ...workflow, extra };
+        return { ...workflow, id: freshId(), extra };
     }
 
-    /** A saved workflow, an example or the workflow a gallery picture carries (`picture`), in a new tab named after it; the open one stays. */
+    /**
+     * A saved workflow, an example or the workflow a gallery picture carries (`picture`), in a new tab named
+     * after it; the open one stays. The tab is marked with what it opened (api/mcp_fill.py opening), so
+     * run_workflow with the same name reuses it: in the workflow before it loads, as ComfyUI, finishing the
+     * new tab a moment later, may lay that workflow on the canvas again and a mark set afterwards would go.
+     */
     async function openWorkflow({ filename, name, plan, picture }, getOwner) {
         const workflow = picture ? await pictureWorkflow(picture, name) : await savedWorkflow(filename, name);
+        const mark = picture ? `picture:${[picture.subfolder, picture.filename].filter(Boolean).join('/')}` : plan ? `${filename}#${plan}` : filename;
+        workflow.extra = { ...(workflow.extra || {}), anomalous_saved: mark };
         const tab = tabName(name);
         getOwner()?.flushCanvasActivity?.();
         await app.loadGraphData(workflow, true, true, tab);
         if (plan) await applyPlan(filename, plan, name);
         showWorkbenchToast(t('mcpDidOpenWorkflow', { name }));
         const g = app.canvas?.graph || app.graph;
-        // run_workflow with this workflow (or this plan of it) reuses the tab
-        if (g && !picture) g.extra = { ...(g.extra || {}), anomalous_saved: plan ? `${filename}#${plan}` : filename };
+        if (g) g.extra = { ...(g.extra || {}), anomalous_saved: mark };
         return { opened: tab, node_count: (g?._nodes || []).length, note: 'describe_canvas shows its nodes; add_node, connect_nodes and set_values change it.' };
     }
 

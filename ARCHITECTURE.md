@@ -174,7 +174,8 @@ covered by the `styles.css` manifest.
   stores the pages use: models, scans, output images, combos, recipes, saved prompts,
   generated audio, activity log) and `call_tool`; `api/mcp_actions.py` the acting ones:
   canvas actions done by the open page, scans and Anomalous TTS speech through this
-  server's own routes. `api/mcp_bridge.py` hands a canvas action to the page over
+  server's own routes. `api/mcp_bridge.py` (the page that did the last action gets the next first,
+  so a second ComfyUI tab never takes half a task) hands a canvas action to the page over
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
   side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's; the
   outcome carries the log entry's id as `_activity`, for the AI workbench's undo).
@@ -191,7 +192,7 @@ covered by the `styles.css` manifest.
   or, for a file whose header says it belongs in another folder (model_placement.py), where,
   and `move_model` (behind the "files" gate) moves it there as Tidy does. search_models answers
   small enough to be read: loaded_by once for a type, no fields the model_id says, four trigger
-  words, a LoRA's author weight, as many models as fit.
+  words, a LoRA's author weight, as many models as fit and the rest by name.
   `api/model_advice.py` is what Anomalous knows about using a model well: get_model's
   `author_examples` (sampler, steps, CFG, size and a LoRA's weight from the example pictures in
   the Civitai record a scan keeps), and add_lora / set_model's `base_model_note` when a LoRA and
@@ -205,8 +206,10 @@ covered by the `styles.css` manifest.
   `recorded`, after checking types, settings and choices against the nodes themselves;
   `web/modules/canvas_build.js` is its pure part (type fit, value checks, a free spot, the
   layered layout). `open_workflow` opens one of the user's saved workflows in a new tab, or the
-  workflow a gallery picture carries (the page reads it from the PNG and drops the marks of the tab
-  it ran on: the saved workflow that tab came from and its group of saves).
+  workflow a gallery picture carries (the page reads it from the PNG, gives it an id of its own and
+  drops the marks of the tab it ran on: the saved workflow that tab came from and its group of
+  saves); `mcp_fill.opening` says what a name opens, for run_workflow's `workflow` too. The tab's
+  mark goes into the workflow before it loads, so ComfyUI finishing the new tab does not drop it.
   `web/modules/canvas_wiring.js` plans unique concrete-type connections, selected-branch insertion,
   splices, the wires of a group added in API form (add_nodes; `canvas_build.placedBlock` lays it
   out as one block), conflict/cycle checks and rollback on application failure (`tests/canvas_wiring.mjs`).
@@ -258,13 +261,13 @@ covered by the `styles.css` manifest.
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is
   get_situation: the task, that brief (describe_canvas with `brief`; describe_canvas in full gives a
-  big canvas's last nodes as brief lines to stay readable, and says what to do on an empty one), the latest run and the
+  big canvas's nodes as lines with their settings to stay readable, and says what to do on an empty one), the latest run and the
   next step in one answer kept under Antigravity's size for answers it files away, for an AI
   starting a new chat or lost (`tests/test_mcp_situation.py`, `tests/mcp_canvas_brief.mjs`).
   `api/mcp_directory.py` is the directory of the tools by what an AI wants to do (as this file is
   for the code): each tool under its stage (`action_catalog.TOOLS`) with its title, built from the
-  registry, in begin_task's answer and in get_situation's while there is no task
-  (`tests/test_mcp_directory.py`). AI apps are offered every tool (they load what they need
+  registry, in begin_task's answer and in get_situation's while there is no task, the tools by
+  name alone when the titles would make that answer too long to read (`tests/test_mcp_directory.py`). AI apps are offered every tool (they load what they need
   themselves: Antigravity reads a tool's file before its first call); the module also keeps which
   list each app fetched last (`anomalous/ai_tool_lists.json`), so a call from an app still holding
   the list of an older Anomalous is told so and the task header says how to reconnect it.

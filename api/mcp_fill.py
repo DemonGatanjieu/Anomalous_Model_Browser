@@ -1,8 +1,9 @@
 """run_workflow's blanks: a daily run in one call, so a small model need not read and edit the canvas.
 
 With `workflow` (a saved workflow's name, or one of its 方案 as "workflow / plan": a parameter set saved
-under it, applied as its Apply button does) the run opens it in the task's tab the first time and
-reuses that tab after (the page marks a tab open_workflow opened with the workflow's file); what
+under it, applied as its Apply button does, or a gallery picture, whose own workflow is opened: `opening`)
+the run opens it in the task's tab the first time and reuses that tab after (the page marks a tab
+open_workflow opened with the workflow's file, or "picture:" and the picture); what
 the AI fills in goes into it first (web/modules/mcp_canvas_edit.js fill_slots): the positive and
 negative prompt boxes, the seed of every sampler, the empty latent's width and height, the
 picture its LoadImage reads (from the input or the output folder, found here, never copied;
@@ -13,10 +14,13 @@ do; set_values takes the same). No fixed list of blanks grows here. The rest sta
 changes, and it is one Ctrl+Z step logged as the AI's.
 """
 
+import os
+
 from . import ai_task_canvas, ai_tasks
 from .ai_pictures import to_input
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
-from .mcp_tools import ToolError, _resolve_folder_image, plans
+from .mcp_tools import IMAGE_TYPES, ToolError, _resolve_folder_image, _resolve_image, plans
+from .recipe_images import _embedded_workflow_payload
 
 SLOTS = ("prompt", "negative", "seed", "width", "height", "image", "image_node", "values")
 MAX_VALUES = 60
@@ -72,6 +76,32 @@ def saved_workflow(name):
     return files[workflow], name, found
 
 
+def picture_workflow(name):
+    """{subfolder, filename} of gallery picture `name` (in the output folder) when the name is a
+    picture's and it carries a workflow; None when the name is no picture's."""
+    if os.path.splitext(str(name or "").strip())[1].lower() not in IMAGE_TYPES:
+        return None
+    rel, path = _resolve_image(str(name).strip())
+    if not (_embedded_workflow_payload(path) or {}).get("workflow"):
+        raise ToolError(f"{rel} carries no workflow to open: only the pictures ComfyUI saves with one do.")
+    subfolder, _, filename = rel.rpartition("/")
+    return {"subfolder": subfolder, "filename": filename}
+
+
+def opening(name):
+    """(what the page's open_workflow takes, the mark it leaves on the tab) for `name`: a saved workflow,
+    one of its plans or an example (saved_workflow), else a gallery picture's own workflow."""
+    try:
+        filename, shown, plan = saved_workflow(name)
+    except ToolError:
+        picture = picture_workflow(name)  # not a saved one: a picture's own, to change what made it
+        if not picture:
+            raise
+        rel = "/".join(part for part in (picture["subfolder"], picture["filename"]) if part)
+        return {"picture": picture, "name": os.path.splitext(picture["filename"])[0]}, f"picture:{rel}"
+    return {"filename": filename, "name": shown, "plan": plan}, (f"{filename}#{plan}" if plan else filename)
+
+
 def _picture(image):
     """The value a LoadImage takes for picture `image`: in the input folder as it is, from the
     output folder its copy there (ai_pictures.to_input)."""
@@ -100,15 +130,13 @@ def fill(ctx, workflow=None, **slots):
         slots["image"] = _picture(slots["image"])
     if "values" in slots:
         node_values(slots["values"])
-    filename = name = plan = None
-    if workflow:
-        filename, name, plan = saved_workflow(workflow)
-    opened = f"{filename}#{plan}" if plan else filename  # what the page marks the tab with
+    args, opened = opening(workflow) if workflow else ({}, None)  # opened: what the page marks the tab with
+    name = args.get("name")
     task = ai_tasks.get_task(ctx.get("task")) if ctx.get("task") else None
     no_tab_yet = bool(task) and ai_task_canvas.mode_of(task) == "new" and not (task.get("canvas") or {}).get("tab")
     filled = None if workflow and no_tab_yet else _page("fill_slots", {"filename": opened, **slots})
     if workflow and (filled is None or filled.get("needs_open")):
-        _page("open_workflow", {"filename": filename, "name": name, "plan": plan}, timeout=60)
+        _page("open_workflow", args, timeout=60)
         filled = _page("fill_slots", {"filename": opened, **slots})
         if filled.get("needs_open"):
             raise ToolError(f"The saved workflow {name} did not open; nothing was run.")

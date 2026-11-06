@@ -152,7 +152,7 @@ def ask_user(ctx, question="", options=None, multiple=False, other=True, wait_se
         extra, words = {"routes": offered["calls"]}, {"title_key": "aiRouteTitle"}
     if not str(question or "").strip():
         raise ToolError("question is empty.")
-    if not options and str(question).strip().strip("?？!！.。 ").lower() in TRIAL_QUESTIONS:
+    if str(question).strip().strip("?？!！.。 ").lower() in TRIAL_QUESTIONS:  # with made-up options too ("方案1", "方案2")
         raise ToolError("Not shown to the user: a trial question would wait for an answer nobody gives. Ask when you need "
                         "their answer: question (needed), options (the choices to press), multiple, other, wait_seconds.")
     block = ({"type": "choices", "id": "answer", "options": options, "multiple": bool(multiple), "other": bool(other)}

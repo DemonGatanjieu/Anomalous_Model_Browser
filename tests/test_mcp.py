@@ -215,6 +215,27 @@ class BridgeTests(unittest.TestCase):
         server.send_sync.side_effect = lambda event, data: sent.append(data)
         return server, sent
 
+    def test_the_page_that_did_the_last_action_gets_the_next(self):
+        def waiting():
+            request_id = f"r{len(mcp_bridge._waiting)}-{id(object())}"
+            mcp_bridge._waiting[request_id] = {"event": threading.Event(), "claimed": False, "outcome": None, "required": None,
+                                               "sent": time.monotonic()}
+            self.addCleanup(mcp_bridge._waiting.pop, request_id, None)
+            return request_id
+
+        import threading
+        import time
+        with mock.patch.dict(mcp_bridge._last, {"page": None}):
+            self.assertTrue(mcp_bridge.claim(waiting(), page="A"), "the first page that asks")
+            second = waiting()
+            self.assertEqual(mcp_bridge.claim(second, page="B"), "later", "B waits while A may still take it")
+            self.assertTrue(mcp_bridge.claim(second, page="A"))
+            third = waiting()
+            mcp_bridge._waiting[third]["sent"] -= mcp_bridge.HOLD_SECONDS + 1
+            self.assertTrue(mcp_bridge.claim(third, page="B"), "A did not come: closed, so B goes on")
+            self.assertEqual(mcp_bridge._last["page"], "B")
+            self.assertTrue(mcp_bridge.claim(waiting()), "a page without an id: the first claim wins as before")
+
     def test_first_claim_wins_and_its_outcome_is_returned(self):
         server, sent = self.server()
 

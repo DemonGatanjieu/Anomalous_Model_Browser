@@ -27,6 +27,7 @@ import { promptBoxes } from './prompt_boxes.js';
 import { findModelComboWidget, getNativeWidgetValues, setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openListedModel } from './ui_scan_lists.js';
+import { freshId } from './detached_graph.js';
 
 const HIDDEN_PAGE_DELAY_MS = 1500;
 const MAX_NODES = 150;
@@ -150,19 +151,48 @@ function describeCanvas({ brief } = {}) {
     });
 }
 
-/** `answer` within CANVAS_BUDGET: the nodes in full while they fit, from the end the rest a line each (id, type, what feeds it). */
+/**
+ * `answer` within CANVAS_BUDGET, losing as little as it can, a step at a time until it fits: the
+ * titles (mostly the page's own name of each node); then nodes without settings as a line each
+ * (id, type, what feeds each input: nothing lost); then from the end a line each with its settings
+ * after "||"; last, from the end, lines without their settings.
+ */
 function fitCanvas(g, answer) {
     const bytes = value => new TextEncoder().encode(JSON.stringify(value)).length;
     if (bytes(answer) <= CANVAS_BUDGET) return answer;
-    const full = [...answer.nodes];
-    const fitted = { ...answer, nodes: full, in_brief: [] };
-    while (bytes(fitted) > CANVAS_BUDGET && full.length > 1) {
-        const node = g.getNodeById?.(full.pop().id);
-        if (node) fitted.in_brief.unshift(briefLine(g, node));
-        fitted.note = `Too big to read whole in one answer: ${fitted.in_brief.length} nodes are in in_brief, one line each `
-            + '(id, type, what feeds each input). find_nodes(types=[their type]) lists a type\'s settings; set_values and connect_nodes take their ids.';
+    const order = new Map(answer.nodes.map((item, at) => [item.id, at]));
+    const settingsOf = item => Object.entries(item.settings || {})
+        .map(([key, value]) => `${key}=${typeof value === 'string' ? JSON.stringify(value) : value}`).join(' ');
+    const full = answer.nodes.map(({ title, ...item }) => item);
+    const lines = []; // [item, with its settings]
+    let bare = 0;
+    const fitted = () => {
+        if (!lines.length) return { ...answer, nodes: full };
+        const sorted = [...lines].sort((a, b) => order.get(a[0].id) - order.get(b[0].id));
+        const in_brief = sorted.map(([item, keep]) => {
+            const live = g.getNodeById?.(item.id);
+            const head = live ? briefLine(g, live).replace(/^(#\S+ \S+) "[^"]*"/, '$1') : `#${item.id} ${item.type}`; // no title here either
+            const settings = keep ? settingsOf(item) : '';
+            return settings ? `${head} || ${settings}` : head;
+        });
+        const note = `Too big to read whole in one answer: ${lines.length} nodes are in in_brief, a line each (id, type, what feeds `
+            + 'each input, then its settings after "||")'
+            + (bare ? `; ${bare} of them without their settings: find_nodes(types=[their type]) lists a type's settings` : '')
+            + '. set_values and connect_nodes take their ids.';
+        return { ...answer, nodes: full, in_brief, note };
+    };
+    const fits = () => bytes(fitted()) <= CANVAS_BUDGET;
+    for (let at = full.length - 1; at >= 0 && !fits(); at--) {
+        if (!Object.keys(full[at].settings || {}).length) lines.push([full.splice(at, 1)[0], false]);
     }
-    return fitted;
+    while (!fits() && full.length) lines.push([full.pop(), true]);
+    const kept = [...lines].sort((a, b) => order.get(b[0].id) - order.get(a[0].id)).filter(line => line[1]);
+    for (const line of kept) {
+        if (fits()) break;
+        line[1] = false;
+        bare += 1;
+    }
+    return fitted();
 }
 
 function findPromptBox(role, nodeId) {
@@ -364,6 +394,20 @@ const ACTIONS = {
     ...canvasEditActions({ recorded, nodeById }),
 };
 
+/** This page's id in its claims, kept over a reload of the tab: the server gives an action to the page that did the last (api/mcp_bridge.py). */
+function pageId() {
+    try {
+        const kept = sessionStorage.getItem('anomalous.mcpPage');
+        if (kept) return kept;
+        const made = freshId();
+        sessionStorage.setItem('anomalous.mcpPage', made);
+        return made;
+    } catch {
+        return freshId();
+    }
+}
+const PAGE = pageId();
+
 const post = body => fetch('/anomalous/mcp/bridge', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
 }).then(response => response.json());
@@ -373,7 +417,12 @@ async function handle(detail, getOwner) {
     const run = ACTIONS[action];
     if (typeof id !== 'string' || !run) return;
     if (document.visibilityState !== 'visible') await new Promise(resolve => setTimeout(resolve, HIDDEN_PAGE_DELAY_MS));
-    const claim = await post({ id, claim: true, capabilities: ['prompt_ids'] }).catch(() => null);
+    const ask = () => post({ id, claim: true, capabilities: ['prompt_ids'], page: PAGE }).catch(() => null);
+    let claim = await ask();
+    if (claim?.retry_ms) { // another tab did the last action: it goes first, this one only when that tab is gone
+        await new Promise(resolve => setTimeout(resolve, claim.retry_ms));
+        claim = await ask();
+    }
     if (!claim?.granted) return; // another tab took it
     const { _task_canvas: taskCanvas, ...given } = args || {};
     let outcome;

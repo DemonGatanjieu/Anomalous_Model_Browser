@@ -17,7 +17,7 @@ import json
 import os
 import time
 
-from . import action_catalog, ai_tasks
+from . import action_catalog, ai_tasks, mcp_fit
 from .mcp_tools import retext
 from .path_utils import atomic_write_json
 
@@ -33,12 +33,12 @@ STALE_NOTE = ("Your app holds an older list of Anomalous's tools (Anomalous was 
 _lists = None  # app -> fingerprint of the tool list it fetched last
 
 
-def directory(specs):
-    """{heading: "tool (title), ..."} for the tools of `specs` {name: spec}."""
+def directory(specs, titles=True):
+    """{heading: "tool (title), ..."} for the tools of `specs` {name: spec}; the names alone without `titles`."""
     sections = {}
     for name, entry in action_catalog.TOOLS.items():
         if name in specs:
-            sections.setdefault(entry.stage, []).append(f"{name} ({specs[name].get('title') or name})")
+            sections.setdefault(entry.stage, []).append(f"{name} ({specs[name].get('title') or name})" if titles else name)
     return {"note": NOTE, **{heading: ", ".join(sections[stage]) for stage, heading in SECTIONS if stage in sections}}
 
 
@@ -47,7 +47,10 @@ def attach(result, name, specs):
     data = result.get("structuredContent") if isinstance(result, dict) and not result.get("isError") else None
     if not isinstance(data, dict) or not (name == "begin_task" or (name == "get_situation" and not data.get("task"))):
         return result
-    retext(result, {**data, "directory": directory(specs)})
+    answer = {**data, "directory": directory(specs)}
+    if mcp_fit.size(answer) > mcp_fit.BUDGET:  # a long message of the user's with it: the tools by name, to stay readable
+        answer["directory"] = directory(specs, titles=False)
+    retext(result, answer)
     return result
 
 
