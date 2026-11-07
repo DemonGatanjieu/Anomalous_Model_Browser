@@ -30,6 +30,8 @@ AutoDL 控制台里每台实例都有 SSH 登录指令和密码，平台也提�
 2. 打开服务器的终端（AutoDL：JupyterLab → 终端），粘贴，按回车。
 3. 重启 ComfyUI。启动日志里会出现一行提示，标题旁的标签变成黄色的 **远程可修改**。
 
+![从别的设备打开时，标题旁的「仅浏览」和它的说明窗口，复制按钮在命令旁边](../images/remote-view.webp)
+
 想自己动手也可以：
 
 1. 在服务器上打开插件文件夹 `ComfyUI/custom_nodes/Anomalous_Model_Browser`（AutoDL 可以用 JupyterLab 的文件浏览器，或在终端里操作）。
@@ -80,3 +82,5 @@ You are helping someone use Anomalous Model Browser (a ComfyUI plugin) on a rent
 How far it goes: on an **overseas** cloud server (RunPod…) everything works, Civitai included. On a server in **mainland China** (AutoDL…) it works only in part: browsing, offline scans and tidying work, but Civitai is mostly out of reach, so lookups are unreliable and covers rarely download.
 
 When civitai.com cannot be reached (often so from mainland China), the plugin asks Civitai's other address, civitai.red, which gives names and trigger words; the covers may not download. The same goes for ComfyUI on another computer at home or work opened over the LAN or Tailscale; on the computer ComfyUI runs on, its own LAN address counts as this computer (from 1.62.4). On a rented cloud server the page is always opened from another device, so the plugin is **view only** there by default. Either open ComfyUI through an **SSH tunnel** (the browser address starts with `127.0.0.1`; counts as this computer, nothing to change), or create an empty file named `allow_remote_changes` in the plugin folder on the server and restart ComfyUI (press **View only**: its dialog has the line to copy into the server's terminal, with the real path filled in). With that file, anyone who can open the address may scan, move, delete and save, and use your Civitai key, so only do it while the address stays private; delete the file and restart to go back. The page cannot create or remove the file, and the MCP endpoint stays local-only either way.
+
+![From another device: the View only chip beside the title and its dialog, with Copy beside the command](../images/en-remote-view.webp)
