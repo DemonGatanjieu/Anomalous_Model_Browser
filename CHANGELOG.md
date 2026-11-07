@@ -1,11 +1,11 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.62.4 (Fix: opened at the computer's LAN address, changes were refused) — unreleased
+## v1.62.4 (Fix: opened at the computer's LAN address, changes were refused) — 2026-11-08
 
 - ComfyUI 只监听局域网地址（比如 `--listen 192.168.1.5`）时，在运行 ComfyUI 的这台电脑上用这个地址打开，现在也算本机：扫描、改设置、填代理都能用了。以前它被当成别的设备，只能浏览。
-- 设置页的代理和“测试网络”从别的设备打开时会说清原因：只能在运行 ComfyUI 的电脑上改。以前代理总说“格式写错了”，测试说“连不上 Civitai”，其实格式和网络都没问题。被拒绝的提示也会指向窗口顶上的“仅浏览”：点开有从别的设备也能用的办法（服务器上的 `allow_remote_changes` 文件）。
+- 设置页的代理和“测试连接”从别的设备打开时会说清原因：只能在运行 ComfyUI 的电脑上改。以前代理总说“格式写错了”，测试说“连不上 Civitai”，其实格式和网络都没问题。被拒绝的提示也会指向窗口顶上的“仅浏览”：点开有从别的设备也能用的办法（服务器上的 `allow_remote_changes` 文件）。
 - With ComfyUI listening on its LAN address only (say `--listen 192.168.1.5`), opening it at that address on the computer it runs on now counts as this computer: scans, settings and the proxy work. Before, it was taken for another device and could only look.
-- Opened from another device, the settings page's proxy and network test now say why nothing happened: only the computer ComfyUI runs on can do that. Before, the proxy always said the format was wrong and the test said Civitai could not be reached, though neither was the case. Refusals also point to the View only chip at the top of the window, which says how to use the plugin from other devices too (the `allow_remote_changes` file on the server).
+- Opened from another device, the settings page's proxy and Test connection now say why nothing happened: only the computer ComfyUI runs on can do that. Before, the proxy always said the format was wrong and the test said Civitai could not be reached, though neither was the case. Refusals also point to the View only chip at the top of the window, which says how to use the plugin from other devices too (the `allow_remote_changes` file on the server).
 
 ## v1.62.3 (Fix: ComfyUI-Manager took other packs' nodes for AMB's) — 2026-11-05
 
