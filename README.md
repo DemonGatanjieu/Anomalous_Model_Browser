@@ -3,7 +3,7 @@
 # 🚀 Anomalous Model Browser
 
 **A model browser and creative workspace for ComfyUI**  
-*模型库 · 出图图库 · 工作流 · 搭配 · 提示词 · 角色配音 · 模型检查 · 操作记录*
+*模型库 · 出图图库 · 工作流 · 存档 · 搭配 · 提示词 · 角色配音 · 模型检查 · AI 工作台 · 操作记录*
 
 <br/>
 
@@ -28,7 +28,15 @@
 
 <h2 id="english">🇬🇧 English</h2>
 
-> **Anomalous Model Browser** takes care of the chores around ComfyUI in one window: browse your models with their Civitai covers and trigger words, look back through your outputs, keep workflows you have tuned, keep model combos and prompts, repair workflows whose models are missing, and, with the companion node pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS), give your characters a voice. An activity log shows everything the plugin changed.
+> **Anomalous Model Browser** takes care of the chores around ComfyUI in one window: browse your models with their Civitai covers and trigger words, look back through your outputs, keep workflows you have tuned, keep model combos and prompts, repair workflows whose models are missing, keep saves of a workflow to compare and go back to, let an AI app open workflows, swap models and run them while you watch, and, with the companion node pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS), give your characters a voice. An activity log shows everything the plugin changed.
+
+### 🧭 The idea
+
+**Not another WebUI, not a replacement for ComfyUI: just ComfyUI made easier to use.**
+
+- **Fewer needless chores.** Telling your models apart, finding the missing ones, digging out old pictures, wiring the same nodes again and again: the plugin does these.
+- **Still your ComfyUI.** The canvas and the nodes are ComfyUI's own. The plugin adds no nodes at all: what it puts on the canvas are ComfyUI's nodes or those of packs you installed, so your pictures and the workflows you save from the canvas open without it.
+- **The same with AI.** You say what you want and the AI decides; opening workflows, swapping models and wiring nodes is the plugin's work. You see every step it takes, and every change on the canvas can be undone.
 
 ### 🎬 Videos and discussion
 * 📺 **Bilibili** (Chinese): [Video demo](https://www.bilibili.com/video/BV1boHx61Enc/) · [Character voices demo](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
@@ -144,9 +152,19 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 > - 翻看以前的出图；
 > - 保存调好的工作流，存下常用的模型搭配和提示词；
 > - 别人的工作流缺模型时自动找回；
+> - 同一个工作流的几种改法都存档留着，对比着跑，随时回去；
+> - 让 AI 软件帮你开工作流、换模型、跑图，你在旁边看着；
 > - 配合配套节点包 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) 给角色配音。
 >
 > 插件改动过什么，都能在“操作记录”里查到。
+
+### 🧭 理念
+
+**不再造一个 WebUI，也不取代 ComfyUI，只是让 ComfyUI 更好用。**
+
+- **少做没必要的繁琐操作。** 认模型、找回缺的模型、翻旧图、一遍遍重配同一组节点，这些都交给插件。
+- **用的还是你的 ComfyUI。** 画布和节点都是 ComfyUI 自己的。插件本身一个节点都不加，它放到画布上的都是 ComfyUI 和你装的节点包里的节点，所以出的图、从画布另存的工作流，不装插件也照样能打开。
+- **接 AI 也一样。** 你说想要什么，AI 拿主意；开工作流、换模型、连节点这些活由插件来干。你能看到它的每一步，画布上的每处改动都能撤销。
 
 ### 🎬 视频与讨论
 * 📺 **哔哩哔哩 (Bilibili)**：[功能演示](https://www.bilibili.com/video/BV1boHx61Enc/) · [角色配音演示](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
