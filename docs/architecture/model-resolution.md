@@ -3,7 +3,7 @@
 Read this document for Model Check, workflow provenance, missing-model recovery,
 hash caches, Civitai metadata resolution, or model scanning. The rules as a whole, in plain
 words (what counts as the same model, the confidence levels, foundation components, download
-sources), are in `docs/guides/model-check-rules.md`; keep both in step.
+sources), are in `docs/guides/model-check-rules.md` and its English copy `model-check-rules.en.md`; keep all three in step.
 
 ## Identity boundary
 

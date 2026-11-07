@@ -28,7 +28,7 @@
 
 <h2 id="english">🇬🇧 English</h2>
 
-> **Anomalous Model Browser** takes care of the chores around ComfyUI in one window: browse your models by their Civitai covers and trigger words, recover workflows from past outputs, keep tuned workflows with visual presets, snapshot canvas saves to compare fairly and jump back to, reuse model + LoRA combos and tag-based prompts, repair missing models by file hash, let an AI app run and refine workflows on a copy tab while you steer each step, and—with the optional companion pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)—give your characters a voice. Everything the plugin changes is recorded in **Activity** with **Undo**.
+> **Anomalous Model Browser** takes care of the chores around ComfyUI in one window: browse your models by their Civitai covers and trigger words, recover workflows from past outputs, keep tuned workflows with visual presets, snapshot canvas saves to compare fairly and jump back to, reuse model + LoRA combos and tag-based prompts, find missing models again (for sure when the workflow carries this plugin's fingerprints), let an AI app run and refine workflows on a copy tab while you steer each step, and—with the optional companion pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)—give your characters a voice. Everything the plugin changes is recorded in **Activity** with **Undo**.
 
 ### 🧭 The idea
 
@@ -58,7 +58,7 @@ Most "AI + image" tools either hide ComfyUI behind a cloud generator or ask an L
 - **Your open workflow stays safe.** By default (**AI edits a copy**), the first canvas action duplicates your workflow into a dedicated task tab. Your own tab is never touched, and every step on the timeline has **Undo** and **Find on canvas**.
 - **Tested building blocks instead of guesswork.** Rather than inventing fragile graphs, the AI opens **your saved workflows**, **any gallery picture's embedded workflow**, or **Official examples**, and extends them with **Ways** tested here (two-pass Tile upscale, mid-way model switch, crop-and-stitch or LanPaint area repaint, hand repair, background swap, pose/depth control…) plus on-demand **Skills** (such as matching pose complexity to your model's parameter scale, or planning multi-stage passes). You can also click **Use it this time** on any Way to lock the AI to your preferred method.
 - **Steer before committing GPU time.** On multi-pass workflows, the AI can run a few fast first-pass **base previews** first; **Pick a base** opens on the right-hand **Stage**, you click **Take this one**, and the second pass sharpens that exact image without redrawing the base. Finished runs appear with a **before/after comparison slider**, **Turned out well / Not quite** feedback buttons, and a `✎` brush tool to mark regions for local repainting.
-- **Clear boundaries (`Gates`).** You decide what the AI may do freely, ask first, or never do—canvas edits, GPU runs, model downloads, moving misplaced files, untried routes, or third-party nodes (with an optional per-task `🔒` privacy switch when you want prompt text and pictures kept local as `[P1]` / `[img1]` tokens instead of sent to the AI). Works locally with Claude, Cursor, Antigravity, Cherry Studio, VS Code and other MCP-capable apps—copy one sentence from **Connect an AI** to set it up, or see [docs/guides/mcp.md](docs/guides/mcp.md).
+- **Clear boundaries (`Gates`).** You decide what the AI may **Go ahead** with, must **Ask me first** about, or may **Never** do: changing the canvas, using the GPU, downloading models, scanning models online, moving model files. Two more settings cover nodes it places by itself: any custom node pack or only those of the Ways, and whether an untried route of its own waits for your OK (with an optional per-task `🔒` privacy switch when you want prompt text and pictures kept local as `[P1]` / `[img1]` tokens instead of sent to the AI). Works locally with Claude, Cursor, Antigravity, Cherry Studio, VS Code and other MCP-capable apps—copy one sentence from **Connect an AI** to set it up, or see [docs/guides/mcp.md](docs/guides/mcp.md).
 
 <p align="center"><img src="docs/images/en-ai-workbench.webp" width="840" alt="AI Workbench: pick one of three fast first-pass base previews, then inspect the 2nd-pass upscale with a before/after slider and choose the next step"></p>
 
@@ -72,7 +72,12 @@ Press **Scan** once: every model is matched on Civitai by its SHA-256 file hash 
 <p align="center"><img src="docs/images/en-scan.webp" width="560" alt="Scan results matching cryptic local filenames to their real Civitai titles"></p>
 
 **2. Someone else's workflow opens with red missing-model nodes.**  
-**Model Check** spots what is missing as soon as a workflow opens. When the workflow carries model fingerprints (recorded automatically in workflows and PNGs unless turned off), models you already have under another filename or folder go back in with **one press**; truly missing ones can be downloaded from Civitai, Hugging Face or ComfyUI-Manager's list and verified against SHA-256 before replacing (name-only matches are clearly labeled for you to confirm).
+**Model Check** looks as soon as a workflow opens, without changing it. How far it gets depends on what the workflow carries:
+- **With fingerprints** (its author has this plugin too, which records each model's SHA-256 in the workflows and pictures it saves, unless turned off): the same file on your computer under another name or in another folder is found for certain and goes back in with one press of **Put in**; a model you really lack is looked up on Civitai by its fingerprint and checked against it after downloading.
+- **Without fingerprints** (its author does not have this plugin): nothing proves which file it was, so only names are left. A file of the same name in another folder is offered for you to confirm, row by row; VAEs, text encoders and other parts that often share a name are never guessed by name.
+- **Downloads** also use the links a workflow carries (ComfyUI's own templates have them) and ComfyUI-Manager's model list. A file that only has the same name is marked **Download by name** and comes only when you press it.
+
+<p align="center"><a href="docs/guides/model-check-rules.en.md"><img src="https://img.shields.io/badge/📖_How_Model_Check_decides-Full_rules-blueviolet?style=for-the-badge" alt="How Model Check decides: the full rules"></a></p>
 
 <p align="center"><img src="docs/images/en-model-check.webp" width="820" alt="Model Check replacing three renamed/moved missing models in one click"></p>
 
@@ -145,9 +150,9 @@ Every page has an icon on the left rail; when docked beside the canvas, drag the
 Tools at the bottom of the rail (ordered by frequency of use):
 
 * **Current node** (formerly Node Assistant): inspects the selected canvas node's model, swaps models from visual cards, inserts one or **multiple numbered LoRAs** at once (as standard chained nodes or into an rgthree Power Lora Loader / Easy-Use stack), and compares/applies saved values from workflows, combos, gallery pictures or node presets (`⇄ Compare` checks that node alone).
-* **Model Check** (formerly Model Doctor): checks opened workflows read-only; offers a one-click banner when renamed/moved local files match embedded SHA-256 + size fingerprints (**Settings → Record model fingerprints in workflows**, on by default), and lists verified download sources on Civitai, Hugging Face or ComfyUI-Manager.
+* **Model Check** (formerly Model Doctor): checks opened workflows read-only; offers a one-click banner when renamed or moved local files match the workflow's SHA-256 fingerprints (written by this plugin: **Settings → Record model fingerprints in workflows**, on by default); without fingerprints, offers a file of the same name for you to confirm. Downloads come from Civitai by fingerprint, the workflow's own links or ComfyUI-Manager's model list. [The full rules](docs/guides/model-check-rules.en.md).
 * **Scan**: hashes model files locally, reads headers (including offline base-model & architecture detection checked against 300+ model layouts), and fetches Civitai covers, names and trigger words.
-* **Settings**: language (switches live across all panels, Stage and Saves bar), font size, theme, thumbnails, video covers, model download mirrors, backups, and **Report a problem** (pre-filled with version & GPU info).
+* **Settings**: language (switches live across all panels, Stage and Saves bar), interface scale, theme, thumbnails, video covers, model download mirrors, backups, and **Report a problem** (pre-filled with version & GPU info).
 
 **Connecting AI apps (MCP)**: Claude, Cursor, Antigravity, Cherry Studio, VS Code and other MCP clients connect locally via `http://127.0.0.1:8188/anomalous/mcp` (localhost only). Full setup and tool reference in [docs/guides/mcp.md](docs/guides/mcp.md).
 
@@ -165,11 +170,11 @@ Open the browser with **Shift + B** (press again to close), the floating canvas 
 <details>
 <summary><b>🌐 Network and backups</b></summary>
 
-**On a cloud server (AutoDL, RunPod…):** overseas servers work out of the box; mainland China servers have partial Civitai reachability (see `civitai.red` fallback and `hf-mirror.com` below). Opened from another machine, the plugin defaults to read-only for safety; connect via an SSH tunnel so ComfyUI sees `127.0.0.1`, or read [docs/guides/cloud-server.md](docs/guides/cloud-server.md).
+**On a cloud server (AutoDL, RunPod…):** overseas servers work out of the box; servers in mainland China only in part (Civitai is mostly out of reach there; see the `civitai.red` fallback and `hf-mirror.com` below). Tested on one AutoDL server so far. Opened from another machine, the plugin defaults to read-only for safety; connect via an SSH tunnel so ComfyUI sees `127.0.0.1`, or read [docs/guides/cloud-server.md](docs/guides/cloud-server.md).
 
 **Network:** Civitai scanning and Google prompt translation require network access (when `civitai.com` is unreachable, the plugin tries `civitai.red` automatically; **Offline** scan works without internet and reads base models from file headers). For Hugging Face downloads in mainland China, enable **Settings → Model downloads → Hugging Face mirror (`hf-mirror.com`)**. Daily browsing of models, gallery, workflows, saves and combos requires **no network**.
 
-**Backups:** **Settings → Backup → Export** packs your saved workflows, presets, canvas saves, combos, prompts, node values, and custom model names/notes/covers into a single `.zip` for cloud drives or migration across PCs (**Import** restores without overwriting existing files). Data lives under `workflows/anomalous_*` inside your ComfyUI `user` folder.
+**Backups:** **Settings → Backup → Export** packs your saved workflows, presets, canvas saves, combos, prompts, node values, and custom model names/notes/covers into a single `.zip` for cloud drives or a move to another PC. **Import** never deletes anything: a file that differs from the backup's stays unless you choose to take the backup's (yours then goes to the Recycle Bin). A backup also lists your models with their fingerprints, so on a new computer the missing ones can be looked up and downloaded again. Data lives under `workflows/anomalous_*` inside your ComfyUI `user` folder.
 
 </details>
 
@@ -182,7 +187,7 @@ Open the browser with **Shift + B** (press again to close), the floating canvas 
 > - 翻看历史出图，一拖还原当时的完整工作流；
 > - 用结构流程图和预设管理调好的工作流，随时给画布存几个存档锁种对比、一键回退；
 > - 存下常用的模型 + LoRA 搭配，用词块直观编辑长提示词；
-> - 打开别人的工作流缺模型时，按文件指纹一键换上或核对下载；
+> - 打开别人的工作流缺模型时帮你找回或下载（工作流带着本插件记的指纹时最准）；
 > - 在 **AI 工作台** 里动嘴提要求，让 AI 在副本标签页里调用你的工作流和实测“做法”跑图、先挑底图再放大精修；
 > - 配合可选节点包 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) 给角色配音。
 >
@@ -218,7 +223,7 @@ Open the browser with **Shift + B** (press again to close), the floating canvas 
 - **默认只改“副本”，绝不弄乱你开着的画布。** 任务默认开启 **AI 改副本**：AI 第一次动手前，AMB 自动把工作流复制到专属的任务标签页里操作，你原来的标签页一笔不动；时间线上的每一步都能点 **撤销** 或 **在画布上找到**。
 - **不靠瞎猜连线，优先用你的工作流和实测“做法”。** AI 会直接调用**你存好的工作流及预设**、**图库某张图自带的工作流**，或是开箱即用的 **官方示例**；需要加功能时，由 AMB 按你已装的节点包搭上实测过的 **做法**（Tile 锁图二段放大、半途换模型接着画、裁切缝合 / LanPaint 局部重绘、修手先放大再修、换背景、姿势/深度控制……），并配合按需 **Skill**（按主模型参数量给动作建议、分阶段出图思路）。你还能在做法面板点 **这次用它**，直接指定本次任务必须走哪套做法。
 - **先挑快底图，再跑慢精修，展台拉帘对比。** 跑两段放大这类耗时流程时，AI 可以先快速跑几张第一段底图预览（不污染正式输出目录）；右侧**展台**弹出挑选面板，你点 **就选这张**，第二段直接接着这张图做细节重绘，省掉重跑底图的时间。出图后展台提供**前后拉帘对比**、**效果好 / 不太行** 按钮，哪里不满意还能点图片右上角 `✎` 用画笔涂出区域让它只重画那一块。
-- **权限全由“关卡”把关。** 改画布、用显卡跑图、下载模型、挪文件、未验证的新路线、第三方节点，都能在 **关卡** 里设为“直接做 / 先问我 / 不许做”（任务标题栏还带可选的 `🔒` 隐私开关，开启后提示词与图片名会换成 `[P1]`、`[img1]` 代号，不把原图和原文发给 AI）。支持连接 Antigravity、Claude、Cursor、Cherry Studio、VS Code 等支持 MCP 的本机软件——点工作台里的 **连接 AI** 复制一句话发给它就能配好，详见 [docs/guides/mcp.md](docs/guides/mcp.md)。
+- **权限全由“关卡”把关。** 改画布、用显卡出图、下载模型、联网扫描模型、挪动模型文件，都能在 **关卡** 里设为“直接做 / 先问我 / 不许做”；AI 自己往画布上加节点时，能不能用任意第三方节点包、没验证过的新路线要不要先问你，也在这里设（任务标题栏还带可选的 `🔒` 隐私开关，开启后提示词与图片名会换成 `[P1]`、`[img1]` 代号，不把原图和原文发给 AI）。支持连接 Antigravity、Claude、Cursor、Cherry Studio、VS Code 等支持 MCP 的本机软件——点工作台里的 **连接 AI** 复制一句话发给它就能配好，详见 [docs/guides/mcp.md](docs/guides/mcp.md)。
 
 <p align="center"><img src="docs/images/ai-workbench.webp" width="840" alt="AI 工作台：先在右侧展台三选一挑中快速底图，再锁种完成二段精修并用拉帘滑块对比前后细节"></p>
 
@@ -232,7 +237,12 @@ Open the browser with **Shift + B** (press again to close), the floating canvas 
 <p align="center"><img src="docs/images/scan.webp" width="560" alt="扫描明细：把乱七八糟的本地文件名精准匹配回 C 站模型名"></p>
 
 **2. 打开别人分享的工作流，满屏红框缺模型。**  
-**模型检查** 在打开工作流时自动只读体检。只要工作流或图片里带着模型指纹（装了本插件出图、存工作流时默认自动写入），你电脑里其实有、只是改了名或挪了文件夹的同一个文件，横幅上点一下 **换上** 就全部就位；真缺的模型可以从 C 站、Hugging Face（支持国内镜像）或 ComfyUI-Manager 清单下载，下完核对 SHA-256 一致才换上（仅同名无法核对指纹的会明确标出，交给你决定）。
+**模型检查** 在打开工作流时自动只读体检，能做到哪一步，看工作流里带了什么：
+- **带指纹的**（作者也装了本插件，出图、存工作流时默认记下每个模型的 SHA-256）：你电脑里其实有、只是改了名或挪了文件夹的同一个文件，能确定认出来，横幅上点一下 **换上** 就全部就位；真缺的按指纹去 C 站找，下载完核对一致才换上。
+- **没带指纹的**（作者没装本插件）：没法证明是哪一个文件，只能按名字找。别的文件夹里恰好有一个同名文件，会列出来让你逐个确认；VAE、文本编码器这类经常同名的组件不按名字猜。
+- **下载**时还会查工作流自带的下载链接（ComfyUI 官方模板就带着）和 ComfyUI-Manager 的模型清单，Hugging Face 的文件可以走国内镜像。只是名字对上的会标成 **按文件名下载**，你点了才下。
+
+<p align="center"><a href="docs/guides/model-check-rules.md"><img src="https://img.shields.io/badge/📖_模型检查怎么判断-完整规则-blueviolet?style=for-the-badge" alt="模型检查怎么判断：完整规则"></a></p>
 
 <p align="center"><img src="docs/images/model-check.webp" width="820" alt="模型检查：一键把 3 个改名或挪过文件夹的红框缺失节点换回正确模型"></p>
 
@@ -308,9 +318,9 @@ Open the browser with **Shift + B** (press again to close), the floating canvas 
 左侧栏底部的常用工具（按日常使用频率从上到下排列）：
 
 * **当前节点**（原“节点助手”）：跟随画布当前选中的节点，看封面换模型，或点 **插入 LoRA** 一次勾选多个 LoRA 按 `1 · 2 · 3` 顺序自动串接（装了 rgthree / Easy-Use 可选塞入单个堆叠节点）；下方按来源小标签（工作流、搭配、图片、本节点存的）列出同类节点参数，点 `⇄ 对比` 只看当前节点差异并一键套用。
-* **模型检查**（原“模型医生”）：打开工作流自动只读检查；本机改过名或换过目录的同一文件凭 SHA-256 指纹在画布顶部横幅一键换上（**设置 → 在工作流里记下模型指纹**，默认开启），其余缺失模型列出 C 站、Hugging Face 或 Manager 清单来源供核对下载。
+* **模型检查**（原“模型医生”）：打开工作流自动只读检查；本机改过名或换过目录的同一文件凭 SHA-256 指纹在画布顶部横幅一键换上（指纹由本插件写进工作流：**设置 → 在工作流里记下模型指纹**，默认开启）；没有指纹时列出同名文件让你确认。缺的模型从 C 站（按指纹）、工作流自带的链接或 Manager 清单下载。[完整规则](docs/guides/model-check-rules.md)。
 * **模型扫描**：按文件哈希向 C 站匹配模型信息与封面；离线时也已针对 Manager 清单 300+ 真实模型文件头校准过底模与类型识别，不乱下误判结论。
-* **设置**（最下方）：中英文实时切换（工作台展台、留言框与底部存档条立即生效，无需刷新页面）、字号、深浅主题、缩略图与视频封面、Hugging Face 国内镜像、数据备份导出/导入，以及自动附带版本与显卡信息的 **报告问题**。
+* **设置**（最下方）：中英文实时切换（工作台展台、留言框与底部存档条立即生效，无需刷新页面）、界面缩放、深浅主题、缩略图与视频封面、Hugging Face 国内镜像、数据备份导出/导入，以及自动附带版本与显卡信息的 **报告问题**。
 
 **接入 AI 软件（MCP）**：Antigravity、Claude、Cursor、Cherry Studio、VS Code 等支持 MCP 的客户端可通过本机地址 `http://127.0.0.1:8188/anomalous/mcp` 连接（仅接受本机请求）。完整配置与工具清单见 [docs/guides/mcp.md](docs/guides/mcp.md)。
 
@@ -328,11 +338,11 @@ Open the browser with **Shift + B** (press again to close), the floating canvas 
 <details>
 <summary><b>🌐 网络和备份</b></summary>
 
-**云服务器（AutoDL、RunPod 等）：** 海外云服务器完整支持；国内云服务器因网络原因通常只能连上 `civitai.red` 认出模型名与触发词（封面较难下载）。从非本机浏览器直接访问时插件默认只读保护，建议通过 SSH 隧道映射到本地打开，详见 [docs/guides/cloud-server.md](docs/guides/cloud-server.md)（内附可直接丢给 AI 助手照着配的步骤）。
+**云服务器（AutoDL、RunPod 等）：** 海外云服务器完整支持；国内云服务器只能部分支持：多半连不上 Civitai，有的能连上 `civitai.red` 认出模型名与触发词（封面较难下载）。目前只实测过一台 AutoDL 服务器。从非本机浏览器直接访问时插件默认只读保护，建议通过 SSH 隧道映射到本地打开，详见 [docs/guides/cloud-server.md](docs/guides/cloud-server.md)（内附可直接丢给 AI 助手照着配的步骤）。
 
 **关于网络：** 扫描封面与谷歌提示词翻译需要联网（连不上 `civitai.com` 时会自动尝试 `civitai.red`；无代理时选 **离线** 扫描同样能识别底模）。下载 Hugging Face 模型可在 **设置 → 模型下载** 开启 `hf-mirror.com` 国内镜像。日常浏览模型、图库、工作流、存档和搭配**完全不需要联网**。
 
-**备份自己的数据：** **设置 → 备份 → 导出** 会把工作流、预设、画布存档、搭配、提示词库、节点参数以及你自定义的模型名/备注/封面打包成一个 `.zip`，换电脑或重装后点 **导入** 即可恢复（数据保存在 ComfyUI 用户目录下的 `workflows/anomalous_*` 文件夹中，导入永不覆盖同名旧文件）。
+**备份自己的数据：** **设置 → 备份 → 导出** 会把工作流、预设、画布存档、搭配、提示词库、节点参数以及你自定义的模型名/备注/封面打包成一个 `.zip`，换电脑或重装后点 **导入** 即可恢复。导入从不删东西：和备份里不一样的文件默认留着你电脑上的，选了“换成备份里的”才替换，原来的进回收站。备份里还记着你有哪些模型和它们的指纹，换了新电脑，缺的模型可以照着清单查来源补下载。（数据保存在 ComfyUI 用户目录下的 `workflows/anomalous_*` 文件夹中。）
 
 </details>
 
