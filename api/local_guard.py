@@ -6,7 +6,9 @@ version switches, saved settings) answers only requests from the computer ComfyU
 GET is local-only unless it is a read sent as POST (OPEN_POSTS); a GET is open unless it is not
 a plain read (LOCAL_GETS). A request is local when it comes from a loopback address, through no
 proxy, naming a loopback host; checking the Host also keeps out a page that reached this server
-under another name (DNS rebinding).
+under another name (DNS rebinding). A browser on this computer that opens ComfyUI at one of its own
+addresses (ComfyUI listening on its LAN address only) is local too: the request then comes from
+the very address it reached, which no other device can have, and names it.
 
 ComfyUI on a rented cloud server is only ever opened from another device. An empty file named
 `allow_remote_changes` in the plugin's folder, made on that server, lets every device that can
@@ -47,8 +49,9 @@ REMOTE_CHANGES = os.path.isfile(REMOTE_FILE)
 if REMOTE_CHANGES:
     print("[Anomalous Browser] allow_remote_changes 文件存在：任何能打开页面的设备都能扫描、移动、删除模型和改设置。"
           " The allow_remote_changes file is there: every device that can open the page may change things.", flush=True)
-MESSAGE = ("只能在运行 ComfyUI 的电脑上操作，别的设备只能浏览。"
-           " Only the computer ComfyUI runs on can do this; other devices can only look.")
+MESSAGE = ("只能在运行 ComfyUI 的电脑上操作，别的设备只能浏览；窗口顶上的「仅浏览」里有远程也能用的办法。"
+           " Only the computer ComfyUI runs on can do this; other devices can only look."
+           " The View only chip at the top of the window says how to use it remotely too.")
 
 
 def loopback_host(name):
@@ -63,13 +66,32 @@ def loopback_host(name):
         return False
 
 
+def _address(name):
+    """An IP address from a peer, socket or Host name (IPv4 inside IPv6 as IPv4), or None."""
+    try:
+        address = ipaddress.ip_address(str(name or "").strip("[]").split("%")[0])
+    except ValueError:
+        return None
+    return getattr(address, "ipv4_mapped", None) or address
+
+
+def _own_address(request):
+    """This server's end of the request's connection: the address the browser reached."""
+    transport = request.transport
+    sockname = transport.get_extra_info("sockname") if transport else None
+    return _address(sockname[0]) if isinstance(sockname, (tuple, list)) and sockname else None
+
+
 def is_local(request):
-    """The request comes from this computer, directly, and names a loopback host."""
-    if not loopback_host(request.remote or ""):
-        return False
+    """The request comes from this computer, directly, and names a loopback host, or else this
+    computer's own address that it came from and reached."""
     if any(header in request.headers for header in PROXY_HEADERS):
         return False
-    return loopback_host(urllib.parse.urlsplit("//" + request.headers.get("Host", "")).hostname)
+    host = urllib.parse.urlsplit("//" + request.headers.get("Host", "")).hostname
+    if loopback_host(request.remote or ""):
+        return loopback_host(host)
+    own = _own_address(request)
+    return own is not None and _address(request.remote) == own and _address(host) == own
 
 
 def may_change(request):

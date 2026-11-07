@@ -286,7 +286,9 @@ function networkGroup() {
         } catch (_) { /* shown below as not saved */ }
         const saved = data?.status === 'ok';
         input.classList.toggle('is-bad', !saved);
-        proxyHelp.textContent = saved ? t('settingsProxyHelp') : t(data?.code === 'socks' ? 'settingsProxySocks' : 'settingsProxyBad');
+        // Opened from another device, the server refuses the save (local_guard.py): not the address's fault.
+        const why = { socks: 'settingsProxySocks', local_only: 'settingsProxyLocalOnly' }[data?.code] || 'settingsProxyBad';
+        proxyHelp.textContent = saved ? t('settingsProxyHelp') : t(why);
         if (saved) input.value = (await fetch('/anomalous/config').then(res => res.json()).catch(() => ({}))).proxy ?? input.value;
     };
 
@@ -295,7 +297,8 @@ function networkGroup() {
         testHelp.textContent = t('settingsNetworkTesting');
         try {
             const data = await (await fetch('/anomalous/civitai_check')).json();
-            testHelp.textContent = !data.reachable ? t('settingsNetworkFail', { why: failureWords(data.failure) })
+            testHelp.textContent = data.code === 'local_only' ? t('settingsNetworkLocalOnly')
+                : !data.reachable ? t('settingsNetworkFail', { why: failureWords(data.failure) })
                 : data.key === 'refused' ? t('settingsNetworkKeyRefused')
                 : t(data.host === 'civitai.red' ? 'settingsNetworkOkRed' : 'settingsNetworkOk', { ms: data.ms });
         } catch (error) {
