@@ -65,8 +65,12 @@ unless its path is in `LOCAL_GETS` (`backup/file`, `version/releases`, `import/f
 every model file in a few words for the canvas's quick search.
 `/anomalous/mcp` answers other devices itself. Local means: a loopback peer, no proxy headers
 (`Forwarded`, `X-Forwarded-For`, `X-Real-IP`, `X-Forwarded-Host`) and a loopback `Host`, so a
-page that reached the server under another name (DNS rebinding) is refused too. A refusal is
-HTTP 403 with `code: local_only` and a bilingual message. `GET /anomalous/access` tells the page
+page that reached the server under another name (DNS rebinding) is refused too. ComfyUI listening
+on its LAN address only is opened on its own computer at that address: a request whose peer is the
+server's own end of the connection (`sockname`, which no other device can have) and whose `Host`
+is that same IP is local as well. A refusal is HTTP 403 with `code: local_only` and a bilingual
+message that points to the "view only" chip; the settings page's proxy and network test say so
+instead of "wrong format" / "Civitai cannot be reached". `GET /anomalous/access` tells the page
 whether it is local; `remote_view.js` then shows a "view only" chip in the header.
 
 ComfyUI on a rented cloud server is only ever opened from another device. An empty

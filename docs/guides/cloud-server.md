@@ -12,6 +12,8 @@
 
 ComfyUI 装在租来的云服务器上（AutoDL、RunPod 之类），你在自己电脑的浏览器里打开它时，对插件来说页面是从“别的设备”打开的。为了不让别人远程改动你的文件，插件默认只让这种页面浏览：标题旁会显示 **仅浏览**，扫描、下载、移动、删除、保存这类改动会被拒绝。
 
+ComfyUI 在家里或公司的另一台电脑上，用局域网地址或 Tailscale 之类从别的设备打开，也是一样：下面的办法同样适用。在运行 ComfyUI 的那台电脑上打开不受影响，哪怕 ComfyUI 只监听局域网地址、你用这个地址打开（1.62.4 起）。
+
 想在云服务器上照常使用，有两个办法，选一个就行。
 
 ## 办法一：用 SSH 隧道打开（推荐，什么都不用改）
@@ -77,4 +79,4 @@ You are helping someone use Anomalous Model Browser (a ComfyUI plugin) on a rent
 
 How far it goes: on an **overseas** cloud server (RunPod…) everything works, Civitai included. On a server in **mainland China** (AutoDL…) it works only in part: browsing, offline scans and tidying work, but Civitai is mostly out of reach, so lookups are unreliable and covers rarely download.
 
-When civitai.com cannot be reached (often so from mainland China), the plugin asks Civitai's other address, civitai.red, which gives names and trigger words; the covers may not download. On a rented cloud server the page is always opened from another device, so the plugin is **view only** there by default. Either open ComfyUI through an **SSH tunnel** (the browser address starts with `127.0.0.1`; counts as this computer, nothing to change), or create an empty file named `allow_remote_changes` in the plugin folder on the server and restart ComfyUI (press **View only**: its dialog has the line to copy into the server's terminal, with the real path filled in). With that file, anyone who can open the address may scan, move, delete and save, and use your Civitai key, so only do it while the address stays private; delete the file and restart to go back. The page cannot create or remove the file, and the MCP endpoint stays local-only either way.
+When civitai.com cannot be reached (often so from mainland China), the plugin asks Civitai's other address, civitai.red, which gives names and trigger words; the covers may not download. The same goes for ComfyUI on another computer at home or work opened over the LAN or Tailscale; on the computer ComfyUI runs on, its own LAN address counts as this computer (from 1.62.4). On a rented cloud server the page is always opened from another device, so the plugin is **view only** there by default. Either open ComfyUI through an **SSH tunnel** (the browser address starts with `127.0.0.1`; counts as this computer, nothing to change), or create an empty file named `allow_remote_changes` in the plugin folder on the server and restart ComfyUI (press **View only**: its dialog has the line to copy into the server's terminal, with the real path filled in). With that file, anyone who can open the address may scan, move, delete and save, and use your Civitai key, so only do it while the address stays private; delete the file and restart to go back. The page cannot create or remove the file, and the MCP endpoint stays local-only either way.
