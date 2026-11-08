@@ -37,7 +37,7 @@ MAX_COLUMNS = 8
 MAX_WAIT = 55
 TONES = ("normal", "muted", "tip", "warning")
 LAYOUTS = ("row", "grid", "compare")
-INTERACTIVE = ("choices", "input", "picks", "prompts")
+INTERACTIVE = ("choices", "input", "picks", "prompts", "plan")
 MAX_PROMPT_BOXES = 8
 INPAINT_NOTE = (
     "inpaint_image is the picture with the area to repaint as its alpha, already in ComfyUI's input folder: do not "
@@ -175,6 +175,8 @@ def clean_block(block, at, taken):
         out.update(label=_text(block.get("label"), 120, f"{where}.label"), value=max(0, min(value, top)), max=top)
     elif kind == "divider":
         pass
+    elif kind == "plan":  # the steps of an AI's plan, ready-made blocks; only mcp_plans makes it
+        out["steps"] = [_plan_step(step, f"{where}.steps[{at}]") for at, step in enumerate(_list(block.get("steps"), 6, f"{where}.steps"))]
     else:
         raise PanelError(f"{where}.type {kind!r} is not one of heading, text, images, slider, picks, models, diagram, "
                          "table, list, params, choices, input, prompts, progress, divider")
@@ -184,6 +186,19 @@ def clean_block(block, at, taken):
             raise PanelError(f"{where}.id {block_id!r} twice")
         taken.add(block_id)
         out["id"] = block_id
+    return out
+
+
+def _plan_step(step, where):
+    from .reference_blocks import BLOCKS
+
+    if not isinstance(step, dict) or step.get("block") not in BLOCKS:
+        raise PanelError(f"{where}: a plan's step is one of Anomalous's ready-made blocks")
+    out = {"block": step["block"], "title": BLOCKS[step["block"]]["title"], "model": step.get("model") and str(step["model"])[:300]}
+    if step.get("model"):
+        out.update(model_name=_text(step.get("model_name") or step["model"], 200, f"{where}.model_name"),
+                   choices=[{"model_id": str(item["model_id"])[:300], "name": _text(item.get("name") or item["model_id"], 200, f"{where}.choices")}
+                            for item in (step.get("choices") or [])[:12] if isinstance(item, dict) and item.get("model_id")])
     return out
 
 
@@ -315,6 +330,11 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
         elif block["type"] == "prompts":
             if not (extra or {}).get("prompts"):
                 raise PanelError("Prompts are written in Anomalous's prompt box")
+        elif block["type"] == "plan":  # build (ai_plans.prepare made the steps kept) or what to change
+            if (extra or {}).get("plan"):
+                entry.update(choice=["build"], labels=["build"])
+            else:
+                entry["text"] = _text(text, 2000, "text", True)
         elif block["type"] in ("choices", "picks"):
             picked = choice if isinstance(choice, list) else [choice]
             options = block["options"] if block["type"] == "choices" else block["items"]
@@ -435,7 +455,7 @@ def _collect(client, panel_id, task_id=None):
                 given.update(delivered=True, delivered_at=time.time())
                 changed.add(task["id"])
                 item = {"panel": panel["id"], "question": block["id"], "asked": block.get("question", "")}
-                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout", "prompts", "negative", "pictures") if key in given})
+                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout", "prompts", "negative", "pictures", "plan") if key in given})
                 out.append(item)
     for tid in changed:
         ai_tasks._save(tasks[tid])

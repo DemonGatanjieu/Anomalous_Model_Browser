@@ -1,0 +1,75 @@
+/* The plan card (ui_ai_plan.js): an AI's big steps for a picture, each a ready-made way with its model,
+   numbered; a dropped step is struck through; the build button is the panel's own. */
+
+.anomalous-ai-plan-lead { margin: 0 0 10px; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
+
+.anomalous-ai-plan-steps { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+
+.anomalous-ai-plan-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+}
+
+.anomalous-ai-plan-step.is-dropped { opacity: 0.5; }
+.anomalous-ai-plan-step.is-dropped .anomalous-ai-plan-name { text-decoration: line-through; }
+
+.anomalous-ai-plan-number {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    color: var(--amb-link);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.anomalous-ai-plan-words { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.anomalous-ai-plan-name { color: var(--amb-text-main); font-size: 13.5px; }
+.anomalous-ai-plan-model-name { overflow: hidden; color: var(--amb-text-soft); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+
+.anomalous-ai-plan-model {
+    max-width: 100%;
+    padding: 3px 6px;
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+    background: var(--amb-bg-input, transparent);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+}
+
+.anomalous-ai-plan-drop, .anomalous-ai-plan-change, .anomalous-ai-plan-again {
+    padding: 4px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.anomalous-ai-plan-drop:hover, .anomalous-ai-plan-change:hover, .anomalous-ai-plan-again:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+
+.anomalous-ai-plan-more {
+    padding: 8px 10px;
+    border: 1px dashed var(--amb-border);
+    border-radius: 8px;
+    color: var(--amb-text-soft);
+    font-size: 12.5px;
+}
+
+.anomalous-ai-plan-auto { display: flex; align-items: center; gap: 6px; margin-top: 12px; color: var(--amb-text-soft); font-size: 12.5px; cursor: pointer; }
+.anomalous-ai-plan-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.anomalous-ai-plan-where { margin-left: auto; color: var(--amb-text-soft); font-size: 12px; }
+.anomalous-ai-plan-done { margin-top: 10px; color: var(--amb-text-main); font-size: 12.5px; }
+.anomalous-ai-plan-why { margin-top: 8px; }
+.anomalous-ai-plan-again { margin-top: 6px; }

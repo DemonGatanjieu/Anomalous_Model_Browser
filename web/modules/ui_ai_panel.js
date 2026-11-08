@@ -20,6 +20,7 @@ import { decoratePicture, gonePicture, showPicture } from './ui_ai_images.js';
 import { deliveryState } from './ui_ai_delivery.js';
 import { icon } from './ui_ai_icons.js';
 import { promptBox } from './ui_ai_prompt_box.js';
+import { planCard } from './ui_ai_plan.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -434,6 +435,7 @@ const DRAW = {
     diagram,
     run_map: (block, ctx) => runMapBox(ctx.stepOf?.(block.step), ctx, true) || el('p', 'anomalous-ai-panel-text', t('aiMapGone')),
     prompts: (block, ctx) => promptBox(block, ctx, { sendAnswer, askHead, skipButton, answerNote, draftField }),
+    plan: (block, ctx) => planCard(block, ctx, { sendAnswer, answerNote }),
     picks: (block, ctx) => picks(block, {
         ...ctx,
         send: async (ids, note) => {
@@ -464,7 +466,7 @@ export function renderPanel(step, ctx) {
         const draw = DRAW[block?.type];
         if (draw) card.append(draw(block, blockCtx));
     }
-    const asks = list(panel.blocks).some(block => ['choices', 'input', 'picks', 'prompts'].includes(block?.type));
+    const asks = list(panel.blocks).some(block => ['choices', 'input', 'picks', 'prompts'].includes(block?.type)); // a plan card says its own
     if (asks) card.append(el('div', 'anomalous-ai-panel-foot', t(panel.closed ? 'aiPanelClosed' : 'aiPanelHow')));
     return card;
 }

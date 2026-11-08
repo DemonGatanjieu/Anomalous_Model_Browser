@@ -33,6 +33,15 @@ async def api_start(request):
     return web.json_response({"task": ai_tasks.task_summary(ai_tasks.start_task(title, about=body.get("about"), from_task=parent))})
 
 
+async def api_plan_auto(request):
+    """POST /anomalous/ai_plans/auto: {auto} - build the AI's plans without asking, or ask again (ai_plans.py)."""
+    from . import ai_plans
+
+    body = await _body(request)
+    ai_plans.set_auto((body or {}).get("auto") is True)
+    return web.json_response({"auto": ai_plans.auto()})
+
+
 async def api_get(request):
     task = ai_tasks.get_task(request.match_info["task_id"])
     if task:
@@ -82,7 +91,7 @@ async def api_change(request):
 async def api_answer(request):
     """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text | prompts, negative, pictures | skip: true} -
     the user's answer on a panel; a prompt box's texts are sealed and the AI gets tokens (ai_sealed.py)."""
-    from . import ai_bases, ai_panels, ai_repaint, ai_sealed
+    from . import ai_bases, ai_panels, ai_plans, ai_repaint, ai_sealed
 
     try:
         body = await request.json()
@@ -98,7 +107,9 @@ async def api_answer(request):
             # A repaint area picked: its picture is made first (outside the lock), so the AI gets it with the answer;
             # a base picked: it is kept in the output folder first (ai_bases.py).
             extra = (await asyncio.to_thread(ai_repaint.prepare, task_id, step_id, body.get("choice"), body.get("text"), skip)
-                     or await asyncio.to_thread(ai_bases.prepare, task_id, step_id, body.get("choice"), skip))
+                     or await asyncio.to_thread(ai_bases.prepare, task_id, step_id, body.get("choice"), skip)
+                     or (None if skip else await asyncio.to_thread(ai_plans.prepare, task_id, step_id, body.get("choice"),
+                                                                    body.get("plan"), body.get("auto"))))
     except (ai_repaint.RepaintError, ValueError, OSError) as error:
         return web.json_response({"error": str(error)}, status=400)
     try:
@@ -346,6 +357,7 @@ def register_routes(app):
     activity_log.add_listener(ai_task_changes.note_activity)  # the user's changes while an AI works
     app.router.add_get("/anomalous/ai_tasks", api_list)
     app.router.add_post("/anomalous/ai_tasks", api_start)
+    app.router.add_post("/anomalous/ai_plans/auto", api_plan_auto)
     app.router.add_get("/anomalous/ai_tasks/{task_id}", api_get)
     app.router.add_post("/anomalous/ai_tasks/{task_id}", api_change)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)

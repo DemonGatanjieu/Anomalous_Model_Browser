@@ -247,6 +247,13 @@ covered by the `styles.css` manifest.
   loader ("own_model"); `api/block_chain.py` builds a list of steps on a new tab, the picture first, each next
   block anchored to what the step before gave (near_node_id and the page-only save_node_id, so several samplers
   and outputs are no guess), a step's model on the block's own loader with its LoRAs (`tests/test_block_chain.py`).
+  `api/mcp_plans.py` is `add_nodes(plan=…)`: the AI's big steps for a picture resolved to ready-made blocks
+  (use/want as for add_nodes, a model for the first step or a block's own loader), shown as a plan card
+  (蓝图, panel block "plan", which only it makes; `api/ai_plans.py` keeps the card's rules: the user drops
+  steps but the first, swaps a step's model for one of the same family listed with it, says build or what
+  to change, and "build without asking" in ai_plans.json, `POST /anomalous/ai_plans/auto`), built by
+  block_chain.py when they say build; a card answered after the AI stopped waiting is built by
+  `add_nodes(route=<its panel id>)` (`tests/test_mcp_plans.py`). `web/modules/ui_ai_plan.js` draws the card.
   `api/mcp_routes.py` (data: `api/routes.json`) turns two picked main models into choices the user makes: `ask_user(routes=true)`
   shows the routes this ComfyUI can build for them, a saved card using both first, its answer says what to call, and
   `add_nodes(route=…)` builds one from the ways on a new tab (a two-step chain); `get_toolbox` lists each picked model's cards as its examples.

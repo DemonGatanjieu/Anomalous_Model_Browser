@@ -11,7 +11,7 @@ import os
 import threading
 import time
 
-from . import ai_gates, ai_pictures, ai_tasks, ai_toolbox, mcp_fill, mcp_routes, model_advice, model_download, reference_blocks
+from . import ai_gates, ai_pictures, ai_tasks, ai_toolbox, mcp_fill, mcp_plans, mcp_routes, model_advice, model_download, reference_blocks
 from .mcp_actions import _action, _local, _page
 from .media_routes import picture_size
 from .mcp_tools import ToolError, _resolve_model
@@ -272,8 +272,12 @@ def _empty_canvas():
 
 
 def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None, use=None, want=None, model=None, route=None,
-              save_node_id=None):
+              save_node_id=None, plan=None):
+    if plan is not None:
+        return mcp_plans.propose(ctx, plan)
     if route is not None:
+        if mcp_plans.is_card(ctx, route):
+            return mcp_plans.build_answered(ctx, route)
         return mcp_routes.build(ctx, str(route), model)
     if not isinstance(replace, bool):
         raise ToolError("replace must be true or false.")
@@ -390,7 +394,8 @@ CANVAS_TOOLS = dict([
             "{\"samples\": [\"a\", 0]}, \"wire_to\": 15}}. A link names a key of the group or a canvas node \"#id\", and "
             "an output slot or name; wire_to as in add_node. Checked first; one Ctrl+Z step; the answer maps keys "
             "to node ids. Or use (and want): a ready-made block for that use (begin_task lists them), the best this "
-            "ComfyUI can run, spliced into the canvas's sampler by itself; near_node_id picks the sampler when there are several.",
+            "ComfyUI can run, spliced into the canvas's sampler by itself; near_node_id picks the sampler when there are several. "
+            "plan: a whole picture in big steps, built on a new tab once the user agrees on its card.",
             add_nodes, {"nodes": {"type": "object"}, "use": {"type": "string", "enum": list(reference_blocks.JOBS)},
                         "want": {"type": "string", "description": "Kind from begin_task (best, 2x, pose…)."},
                         "block": {"type": "string"},
@@ -398,7 +403,9 @@ CANVAS_TOOLS = dict([
                         "scene": {"type": "string", "description": "The picture place_in_scene puts it into."},
                         "near_node_id": _NODE_ID, "replace": {"type": "boolean"},
                         "model": {"type": "string", "description": "use=picture: a model_id, else the task's picked one."},
-                        "route": {"type": "string", "description": "The route ask_user(routes=true) got: built whole on a new tab."}}),
+                        "route": {"type": "string", "description": "The route ask_user(routes=true) got, or a plan card's id the user said build to: built whole on a new tab."},
+                        "plan": {"type": "array", "maxItems": 6, "items": {"type": "object"},
+                                 "description": "Steps, the picture first: [{use: 'picture', model}, {use: 'refine', model}, {use: 'detail'}, {use: 'upscale'}]; use and want as above."}}),
     _action("connect_nodes", "Wire two nodes",
             "Wires two nodes: every unique matching type, and same-type sockets of the same name (positive to "
             "positive). Anything ambiguous (a lone CONDITIONING into positive or negative, wildcards) changes "
