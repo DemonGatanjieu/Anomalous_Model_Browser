@@ -15,7 +15,8 @@ from .mcp_tools import _schema, tool_text
 
 BUDGET = 3600  # characters: Antigravity files away an answer past about 4,000 and has the AI open it
 EMPTY_CANVAS = ("The canvas is empty: run_workflow(workflow=<name>) opens a saved workflow and runs it in one call; open_workflow "
-                "opens one to change first, or a gallery picture's own by its file name; list_workflows names them and the examples.")
+                "opens one to change first, or a gallery picture's own by its file name; list_workflows names them and the examples. "
+                "A picture in several steps (the picture, a redraw on another model, details, an enlargement): add_nodes(plan=[…]).")
 MAX_TEXT = 200
 
 

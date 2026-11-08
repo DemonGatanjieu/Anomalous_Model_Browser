@@ -33,6 +33,20 @@ def _task_id(ctx):
     return ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")
 
 
+def _model_id(value, at):
+    """`value` as a model_id: one already, else the one main model whose file or name it is."""
+    value = str(value)
+    if value.count(":") >= 2:
+        return value
+    wanted = value.strip().lower()
+    found = [item for item in search_models(value, "", "", "", 50)["models"] if item["model_id"].split(":", 1)[0] in model_advice.MAIN_TYPES
+             and wanted in (item["name"].lower(), item["model_id"].rsplit("/", 1)[-1].rsplit(".", 1)[0].lower())]
+    if len(found) != 1:
+        raise ToolError(f"Step {at + 1}: model is a model_id from search_models" + (
+            f"; {value!r} is the name of {len(found)}: " + ", ".join(item["model_id"] for item in found[:5]) if found else "."))
+    return found[0]["model_id"]
+
+
 def _box(ctx):
     task_id = _task_id(ctx)
     return ai_toolbox.effective(ai_tasks.get_task(task_id) if task_id else None) or {}
@@ -43,8 +57,9 @@ def resolve(ctx, plan):
     way the user picked), title, model and the models to swap in. ToolError for a plan that cannot be built."""
     from .mcp_canvas_edit import object_info
 
-    if not isinstance(plan, list) or not 0 < len(plan) <= MAX_STEPS:
-        raise ToolError(f"plan is 1 to {MAX_STEPS} steps, the picture first: [{{use: 'picture'}}, {{use: 'refine', model: …}}, …].")
+    if not isinstance(plan, list) or not 1 < len(plan) <= MAX_STEPS:
+        raise ToolError(f"plan is 2 to {MAX_STEPS} steps, the picture first: [{{use: 'picture', model: …}}, {{use: 'refine', model: …}}, …]; "
+                        "the picture alone is add_nodes(use='picture', model=…).")
     info, ways, steps = object_info(ctx), _box(ctx).get("ways") or (), []
     for at, step in enumerate(plan):
         step = step if isinstance(step, dict) else {}
@@ -53,10 +68,16 @@ def resolve(ctx, plan):
                 reference_blocks.pick(str(step.get("use")), None if step.get("want") is None else str(step["want"]), info, False, ways)
         except (reference_blocks.BlockError, KeyError) as error:
             raise ToolError(f"Step {at + 1}: {error}")
+        if reference_blocks.BLOCKS[name].get("takes") in ("picture", "reference") and not step.get("image") and step.get("use"):
+            # one for a picture the user hands over (fix_hands): in a plan the step before gives the picture
+            chained = reference_blocks.pick(str(step["use"]), None, info, False, ways)
+            if reference_blocks.BLOCKS[chained].get("takes") in ("picture", "reference"):
+                raise ToolError(f"Step {at + 1}: {name} works on a picture the user hands over, not on the step before's.")
+            name = chained
         block = reference_blocks.BLOCKS[name]
         if (at == 0) != bool(block.get("standalone")):
             raise ToolError("A plan starts with the picture (use='picture') and has it once.")
-        model = step.get("model") or (next((item for item in _box(ctx).get("models") or []
+        model = _model_id(step["model"], at) if step.get("model") else (next((item for item in _box(ctx).get("models") or []
                                             if item.split(":", 1)[0] in model_advice.MAIN_TYPES), None) if at == 0 else None)
         if at == 0 and not model:
             raise ToolError("Step 1: name the picture's model (model_id from search_models), or the user picks one for the task.")
@@ -73,6 +94,7 @@ def resolve(ctx, plan):
 def _built(ctx, plan, name):
     loras = [item for item in _box(ctx).get("models") or [] if item.startswith("loras:")]
     chain = block_chain.build(ctx, [{**step, "loras": loras} for step in plan], name)
+    ai_plans.mark(_task_id(ctx), ai_plans.PREVIEWS, len(chain["steps"]) > 1)
     return {"built": [step["block"] for step in chain["steps"]], "nodes": chain["nodes"],
             "next": NEXT if len(chain["steps"]) > 1 else ONE_PASS}
 

@@ -112,7 +112,9 @@ def build(ctx, key, model=None):
     box = ai_toolbox.effective(ai_tasks.get_task(ctx["task"]) if ctx.get("task") else None)
     picked = ([model] if model else []) + [item for item in _main(box) if item != model]
     if len(picked) < route["models"]:
-        raise ToolError(f"Route {key} draws with {route['models']} main models: the user picks them for the task, or give model.")
+        raise ToolError(f"Route {key} draws with {route['models']} main models the user picks for the task. With models of your "
+                        "own choosing lay it out instead: add_nodes(plan=[{use: 'picture', model: <first>}, {use: 'upscale', "
+                        "want: 'detail', model: <second>}, …]).")
     ai_bases.forget(ctx.get("task"))  # a base picked on another canvas: its sampler is not this route's
     loras = _loras(box)
     steps = [{"use": "picture", "model": picked[0], "loras": loras}]

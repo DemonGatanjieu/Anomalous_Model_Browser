@@ -13,6 +13,7 @@
  * LoRAs as new nodes with their settings, past bypassed nodes and control patches (a Tile on the first
  * pass is not the second's); the block's key is the copy's last node, its loader titled as the node is
  * (a redraw's own model, which the AI swaps for a second one with set_model, the LoRAs kept).
+ * A path ending in a model ("$sampler.model") stops before a control patch on it (a Tile LLLite is its pass's).
  * Several samplers: near_node_id names the one, else nothing changes and they are listed. A chain of
  * blocks (block_chain.py) also names the output node the next block goes on from (save_node_id): its
  * picture is the step before's, where a sampler's own decode would reach an older one.
@@ -23,6 +24,7 @@ import { linkOf } from './mcp_canvas_brief.js';
 const SAMPLER_INPUTS = ['model', 'positive', 'negative', 'latent_image'];
 const OFF = new Set([2, 4]); // muted, bypassed
 const CONTROL = /lllite|controlnet|t2iadapter|ipadapter/i;
+const SIZE_BOUND = /lllite|controlnet|t2iadapter/i; // patches holding a picture of their pass's size (an IP-Adapter's fits any)
 
 const upper = type => String(type ?? '').toUpperCase();
 const inputNamed = (node, name) => (node?.inputs || []).find(item => String(item.name).toLowerCase() === name.toLowerCase());
@@ -74,7 +76,7 @@ export function findRoles(g, nearId = null, saveId = null) {
     if (!sampler) {
         if (samplers.length !== 1) {
             throw new Error(samplers.length
-                ? `Several samplers on the canvas (${samplers.map(label).join(', ')}): near_node_id names the one this block goes with. Nothing added.`
+                ? `Several samplers on the canvas (${samplers.map(label).join(', ')}): near_node_id names the one this block goes with (a step after the others: the last one). Nothing added.`
                 : 'No sampler (KSampler) on the canvas: open a workflow that makes the picture first (open_workflow). Nothing added.');
         }
         [sampler] = samplers;
@@ -94,6 +96,15 @@ function upstream(g, node, path, ref) {
         const id = inputNamed(at, name)?.link;
         const link = id == null ? null : linkOf(g, id);
         if (!link) throw new Error(`${ref}: nothing is wired into ${label(at)}'s ${name}. Nothing added.`);
+        at = g.getNodeById(link.origin_id);
+        slot = link.origin_slot;
+    }
+    // A control patch on a model line (a Tile LLLite) is its own pass's: its picture is that pass's size, and a
+    // block's sampler drawing other sizes (an enlargement, a face's crop) would break on it. Take the model before it.
+    while (path[path.length - 1] === 'model' && SIZE_BOUND.test(at?.type || '')) {
+        const id = inputNamed(at, 'model')?.link;
+        const link = id == null ? null : linkOf(g, id);
+        if (!link) break;
         at = g.getNodeById(link.origin_id);
         slot = link.origin_slot;
     }

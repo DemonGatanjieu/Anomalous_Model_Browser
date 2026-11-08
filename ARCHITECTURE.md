@@ -254,6 +254,11 @@ covered by the `styles.css` manifest.
   to change, and "build without asking" in ai_plans.json, `POST /anomalous/ai_plans/auto`), built by
   block_chain.py when they say build; a card answered after the AI stopped waiting is built by
   `add_nodes(route=<its panel id>)` (`tests/test_mcp_plans.py`). `web/modules/ui_ai_plan.js` draws the card.
+  A plan is two steps or more; a model may be named by its file or name when only one main model has it; a way
+  for a picture the user hands over (fix_hands) gives way to its use's way that goes on from the step before.
+  Once a plan of several steps is built, the user's rule holds in `mcp_actions.run_workflow`: its first run is
+  three bases (task "plan_previews"), and the whole waits for their pick ("plan_pick": refused once without one).
+  canvas_roles.js takes a "…model" path past size-bound patches (LLLite, ControlNet, T2I-Adapter) on that line.
   `api/mcp_routes.py` (data: `api/routes.json`) turns two picked main models into choices the user makes: `ask_user(routes=true)`
   shows the routes this ComfyUI can build for them, a saved card using both first, its answer says what to call, and
   `add_nodes(route=…)` builds one from the ways on a new tab (a two-step chain); `get_toolbox` lists each picked model's cards as its examples.

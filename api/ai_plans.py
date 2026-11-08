@@ -3,7 +3,12 @@ mcp_plans.py), each a ready-made block (reference_blocks.py) with its model, sho
 anything is built. The card is a panel block only Anomalous makes ("plan", id "answer"): the user drops
 steps but the first, swaps a step's model for one of the same family listed with it, and says build, or
 writes what to change. prepare() turns a build into the steps kept, which the AI's call then builds. The
-user's "build without asking" is kept in ai_plans.json beside the tasks."""
+user's "build without asking" is kept in ai_plans.json beside the tasks. A plan of several steps once built,
+its first run shows three bases to pick from (the user's rule, kept on the task as "plan_previews" until a
+first pass alone has run), and the whole waits for the user's pick ("plan_pick": the first run without one is
+refused once, so an AI that hears "go on without" can go on): mcp_actions.run_workflow."""
+
+PREVIEWS, PICK = "plan_previews", "plan_pick"
 
 import json
 import os
@@ -27,6 +32,23 @@ def auto():
 
 def set_auto(on):
     atomic_write_json(_path(), {"auto": bool(on)})
+
+
+def mark(task_id, key, on):
+    """Sets or clears a plan's rule `key` (PREVIEWS, PICK) on task `task_id`."""
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id)
+        if not task or bool(task.get(key)) == bool(on):
+            return
+        if on:
+            task[key] = True
+        else:
+            task.pop(key)
+        ai_tasks._save(task)
+
+
+def due(task_id, key):
+    return bool(task_id and (ai_tasks.get_task(task_id) or {}).get(key))
 
 
 def card_of(step):

@@ -69,6 +69,19 @@ function txt2img() {
     assert.throws(() => findRoles(g, null, 999), /No node #999/);
 }
 
+// A block's model comes from before a control patch on the sampler's model line: the Tile is that pass's.
+{
+    const { g, ckpt, sampler } = txt2img();
+    const tile = g.node('AnimaLLLiteApply_sdscripts', [['model', 'MODEL'], ['image', 'IMAGE']], [['MODEL', 'MODEL']]);
+    const link = sampler.inputs.find(item => item.name === 'model').link;
+    delete g.links[link];
+    ckpt.outputs[0].links = ckpt.outputs[0].links.filter(id => id !== link);
+    sampler.inputs.find(item => item.name === 'model').link = null;
+    g.wire(ckpt, 0, tile, 'model'); g.wire(tile, 0, sampler, 'model');
+    const placed = placeRoles(g, { a: { class_type: 'X', inputs: { model: ['$sampler.model', '*'], clip: ['$sampler.positive.clip', '*'] } } });
+    assert.deepEqual(placed.a.inputs.model, [`#${ckpt.id}`, 0], 'past the LLLite to the plain model');
+}
+
 // The loader is past the LoRAs on the model line.
 {
     const { g, ckpt, sampler } = txt2img();

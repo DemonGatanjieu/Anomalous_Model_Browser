@@ -15,7 +15,7 @@ import time
 import urllib.error
 import urllib.request
 
-from . import ai_bases, ai_gates, mcp_fill, model_advice, run_refusal
+from . import ai_bases, ai_gates, ai_plans, mcp_fill, model_advice, run_refusal
 from .lora_info import trains_text_encoder
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import MAX_LIMIT, ToolError, _resolve_model, _schema
@@ -183,6 +183,15 @@ def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, bas
     from .ai_run_tracking import checked_wait
     checked_wait(wait_seconds)  # Reject a wait that is no number before anything can be submitted.
     batch = max(1, min(8, int(batch)))
+    task = ctx.get("task")
+    first_of_plan = not base_only and prompts is None and ai_plans.due(task, ai_plans.PREVIEWS)
+    if first_of_plan:  # the user's rule: a plan of several steps shows its bases to pick from before it all runs
+        base_only, batch = True, 3
+    elif not base_only and ai_plans.due(task, ai_plans.PICK) and ai_bases.hold_of(task) is None:
+        ai_plans.mark(task, ai_plans.PICK, False)  # said once: "go on without one" is the user's to say
+        raise ToolError("Nothing was run: the user picks one of the plan's bases first (their rule). Anomalous shows them "
+                        "on that run when it ends: wait with get_answers, then run_workflow. If they say to go on without "
+                        "one, call run_workflow again.")
     if prompts is not None:  # several prompts, queued in order as one run, each with the call's other blanks
         if slots.get("prompt") or not isinstance(prompts, list) or not 1 <= len(prompts) <= MAX_PROMPTS                 or any(not isinstance(text, str) or not text.strip() for text in prompts):
             raise ToolError(f"prompts is a list of 1 to {MAX_PROMPTS} prompts, given instead of prompt.")
@@ -219,6 +228,14 @@ def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, bas
                        "Follow these runs with run_status (wait_seconds up to 55).")
               + " Do not repeat the batch; accepted prompts are already queued."}
     _base_words(answer, page, base_only, hold)
+    if base_only and ids:
+        ai_plans.mark(task, ai_plans.PREVIEWS, False)
+        ai_plans.mark(task, ai_plans.PICK, first_of_plan)
+    elif ids:
+        ai_plans.mark(task, ai_plans.PICK, False)
+    if first_of_plan and ids:
+        answer["plan_note"] = ("Ran the first pass alone, three bases: the user picks one before the whole plan runs (their "
+                               "rule for plans). Show them to pick from as said here, then run_workflow again for the rest.")
     if prompts is not None:
         answer["by_prompt"] = groups  # which receipts are which prompt; the canvas keeps the last prompt
     if filled:

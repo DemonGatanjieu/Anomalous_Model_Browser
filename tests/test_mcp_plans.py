@@ -87,15 +87,29 @@ class ProposeTests(unittest.TestCase):
             self.addCleanup(patch.stop)
 
     def test_a_plan_starts_with_its_picture_and_a_model_needs_a_loader(self):
+        with self.assertRaisesRegex(ToolError, "the picture alone is add_nodes"):
+            mcp_plans.resolve(self.ctx, [{"use": "picture", "model": A}])
         with self.assertRaisesRegex(ToolError, "starts with the picture"):
-            mcp_plans.resolve(self.ctx, [{"use": "upscale"}])
+            mcp_plans.resolve(self.ctx, [{"use": "upscale"}, {"use": "upscale"}])
         with self.assertRaisesRegex(ToolError, "name the picture's model"):
-            mcp_plans.resolve(self.ctx, [{"use": "picture"}])
+            mcp_plans.resolve(self.ctx, [{"use": "picture"}, {"use": "upscale"}])
         with self.assertRaisesRegex(ToolError, "no loader of its own"):
             mcp_plans.resolve(self.ctx, [{"use": "picture", "model": A}, {"use": "upscale", "model": B}])
         steps = mcp_plans.resolve(self.ctx, [{"use": "picture", "model": A}, {"use": "refine", "model": B}, {"use": "detail"}])
         self.assertEqual([(step["block"], step.get("model_name")) for step in steps],
                          [("picture", "Harem"), ("refine_other_model", "Kirazuri"), ("detail_face_hands", None)])
+
+    def test_a_models_name_does_and_a_given_picture_way_gives_way_to_one_that_chains(self):
+        found = {"models": [{"model_id": A, "name": "MiaoMiao Harem_Anima_1.5"}, {"model_id": B, "name": "Harem"},
+                            {"model_id": "loras:0:harem.safetensors", "name": "Harem"}]}
+        picks = {("detail", "hands"): "fix_hands", ("detail", None): "detail_face_hands", ("picture", None): "picture"}
+        with mock.patch.object(mcp_plans, "search_models", return_value=found), \
+                mock.patch.object(mcp_plans.reference_blocks, "pick", side_effect=lambda use, want, *rest: picks[(use, want)]):
+            steps = mcp_plans.resolve(self.ctx, [{"use": "picture", "model": "MiaoMiao Harem_Anima_1.5"}, {"use": "detail", "want": "hands"}])
+            self.assertEqual([(step["block"], step.get("model")) for step in steps], [("picture", A), ("detail_face_hands", None)],
+                             "fix_hands works on a picture handed over; in a plan the details of the step before")
+            with self.assertRaisesRegex(ToolError, "is the name of 2"):
+                mcp_plans.resolve(self.ctx, [{"use": "picture", "model": "harem"}, {"use": "detail"}])
 
     def test_built_when_the_user_says_build_or_at_once_when_they_set_it(self):
         built = {"steps": [{"block": "picture", "nodes": {}}, {"block": "refine_other_model", "nodes": {}}], "nodes": {"1.save": "9"}}
@@ -114,6 +128,28 @@ class ProposeTests(unittest.TestCase):
         self.assertIn("without asking", answer["note"])
         step = [item for item in ai_tasks.get_task(self.task)["steps"] if item.get("panel")][-1]
         self.assertTrue(step["answers"]["answer"]["auto"], "the card shows it was built at once")
+
+    def test_after_a_plan_of_several_steps_the_first_run_shows_bases(self):
+        from api import mcp_actions
+
+        built = {"steps": [{"block": "picture", "nodes": {}}, {"block": "upscale", "nodes": {}}], "nodes": {}}
+        with mock.patch.object(mcp_plans.block_chain, "build", return_value=built), \
+                mock.patch.object(mcp_plans.ai_answer_wait, "collect", return_value={"answers": [
+                    {"question": "answer", "choice": ["build"], "plan": [{"block": "picture", "model": A}, {"block": "upscale", "model": None}]}]}):
+            mcp_plans.propose(self.ctx, [{"use": "picture", "model": A}, {"use": "upscale"}])
+        self.assertTrue(ai_plans.due(self.task, ai_plans.PREVIEWS))
+        sent = []
+        with mock.patch.object(mcp_actions.mcp_fill, "fill", return_value={"prompt": "x"}), \
+                mock.patch.object(mcp_actions, "_submit", side_effect=lambda batch, base_only, hold: (sent.append((batch, base_only)), (["p1", "p2", "p3"], {}))[1]), \
+                mock.patch.object(mcp_actions, "_base_words"):
+            answer = mcp_actions.run_workflow(self.ctx, prompt="a girl under cherry blossoms")
+            self.assertEqual(sent, [(3, True)], "the first run is three bases, though the AI asked for the whole")
+            self.assertIn("picks one before the whole plan runs", answer["plan_note"])
+            self.assertFalse(ai_plans.due(self.task, ai_plans.PREVIEWS))
+            with self.assertRaisesRegex(ToolError, "picks one of the plan's bases first"):
+                mcp_actions.run_workflow(self.ctx, prompt="a girl under cherry blossoms")
+            mcp_actions.run_workflow(self.ctx, prompt="a girl under cherry blossoms")
+        self.assertEqual(sent[-1], (1, False), "said once: then the whole runs as asked")
 
     def test_words_build_nothing_and_a_late_build_goes_by_the_cards_id(self):
         plan = [{"use": "picture", "model": A}, {"use": "detail"}]

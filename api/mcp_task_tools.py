@@ -65,7 +65,9 @@ def _blocks(ctx):
         info = object_info(ctx) if ctx.get("base_url") else None
     except ToolError:
         info = None
-    return {"note": "add_nodes(use=…, want=…) builds the best one this ComfyUI can run, wired in; prefer it.",
+    return {"note": "add_nodes(use=…, want=…) builds the best one this ComfyUI can run, wired in; prefer it. A picture in several "
+                    "of these steps (the picture, a redraw on another model, details, an enlargement): add_nodes(plan=[{use: "
+                    "'picture', model}, {use: …}, …]) shows the steps to the user and builds them all on a new tab.",
             **reference_blocks.directory(info)}
 
 
