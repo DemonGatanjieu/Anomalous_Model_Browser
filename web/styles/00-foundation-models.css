@@ -281,7 +281,8 @@ html.theme-abyssal-scarlet,
     border: 1px solid var(--amb-border-strong);
     font-size: var(--anomalous-trigger-font-size);
     cursor: pointer;
-    z-index: 2147483000 !important;
+    /* Over the canvas and its tool layer (999), under ComfyUI's top bar (1001), menus and dialogs. */
+    z-index: 1000;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(var(--amb-ink-rgb), 0.12);
     display: flex !important;
     visibility: visible !important;
