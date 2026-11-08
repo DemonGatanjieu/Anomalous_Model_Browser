@@ -160,11 +160,11 @@ export function canvasEditActions({ recorded, nodeById }) {
     }
 
     /** A group of new nodes in API form, wired among themselves, to the canvas ("#12", or a block's roles: canvas_roles.js) and by wire_to, as one block and one Ctrl+Z step. */
-    function addNodes({ nodes: asked, near_node_id: nearId, replace = false, roles = {} }, getOwner) {
+    function addNodes({ nodes: asked, near_node_id: nearId, save_node_id: saveId = null, replace = false, roles = {} }, getOwner) {
         return recorded(getOwner, 'mcpDidNodes', async (g) => {
-            const nodes = placeRoles(g, asked, nearId);
+            const nodes = placeRoles(g, asked, nearId, saveId);
             // A block's settings on the canvas nodes it goes with (the sampler's denoise), in the same Ctrl+Z step.
-            const found = Object.keys(roles).length ? findRoles(g, nearId) : {};
+            const found = Object.keys(roles).length ? findRoles(g, nearId, saveId) : {};
             const settings = Object.entries(roles).filter(([role]) => found[role]).map(([role, values]) => [found[role], valuePlan(found[role], values)]);
             const key = workflowKey(app), before = JSON.stringify(g.serialize());
             const built = await withFreshChoices(() => prepare(nodes));

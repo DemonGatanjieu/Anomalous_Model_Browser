@@ -164,6 +164,7 @@
     }
   },
   "after": "Write both in the prompt, the character (who, hair, clothes) and the place as it looks, then run_workflow. The size is the character picture's; the place is cropped to it. The pasted picture before the redraw is among the previews. The place changes too much: lower the denoise (0.5); the character still looks pasted on: raise it a little.",
+  "gives": {},
   "notes": "Denoise 0.5 redraws the place lightly around the character, keeping its look; the character itself is not redrawn but for 6 px of its edge.",
   "models": [],
   "tested": {

@@ -84,6 +84,7 @@
     }
   },
   "after": "run_workflow: the picture now keeps that layout (strength 0.7, for the first 70% of the steps; lower either to let the model change more). The prompt still says what is drawn. Its depth map is among the run's previews: if it is empty or wrong (a crowded or very stylised picture), the picture is too hard to read.",
+  "gives": {},
   "variants": {
     "anima": {
       "packs": {

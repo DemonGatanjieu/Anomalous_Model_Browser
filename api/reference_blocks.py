@@ -12,7 +12,10 @@ latent), "$save" (the output node its picture reaches), "$loader" (the sampler's
 ("$sampler.positive.clip") followed upstream. A node "like" a role takes its settings of the same
 name; one that "replaces" a role takes its place, links and settings; one "copy_of" a path
 ("$sampler.model") is a copy of the canvas's model line there, loader and LoRAs (a redraw's own model). A block may have a variant for
-a model family (on an Anima model an LLLite, or the Turbo LoRA for fewer steps). The directory
+a model family (on an Anima model an LLLite, or the Turbo LoRA for fewer steps). Each block says what it
+gives a block after it ("gives": its sampler and its output node, by key; {} for one that changes the step it
+is put on) and names its own model loader when it has one ("own_model"), so blocks chain (block_chain.py); a
+block going on from a step takes that step's picture from "$save.images". The directory
 (directory()) is what the AI is handed when it begins a task: the blocks this ComfyUI can run
 and the user has not turned off (user/anomalous/ai_blocks.json), a few words each, by job.
 """

@@ -243,9 +243,13 @@ covered by the `styles.css` manifest.
   swapped with set_model), before canvas_wiring splices it in (`tests/canvas_roles.mjs`). A "standalone" block (the
   picture from words) names no role: it is built on the model `add_nodes(model=…)` names or the task's picked one, its
   family's own files found beside it ("files": Anima's text encoder and VAE), and only on a canvas making no picture.
+  Blocks chain: each says what it gives the next (its sampler and output node, "gives") and names its own
+  loader ("own_model"); `api/block_chain.py` builds a list of steps on a new tab, the picture first, each next
+  block anchored to what the step before gave (near_node_id and the page-only save_node_id, so several samplers
+  and outputs are no guess), a step's model on the block's own loader with its LoRAs (`tests/test_block_chain.py`).
   `api/mcp_routes.py` (data: `api/routes.json`) turns two picked main models into choices the user makes: `ask_user(routes=true)`
   shows the routes this ComfyUI can build for them, a saved card using both first, its answer says what to call, and
-  `add_nodes(route=…)` builds one from the ways on a new tab; `get_toolbox` lists each picked model's cards as its examples.
+  `add_nodes(route=…)` builds one from the ways on a new tab (a two-step chain); `get_toolbox` lists each picked model's cards as its examples.
   An AI placing nodes itself is a new route (`ai_gates.route_rule`): one reminder a task, or the user's OK.
 - Saves of a workflow. `api/workflow_saves.py` keeps them, a group for each canvas, found by the key in the workflow's
   extra or by its file (AD-023), and finds a run's pictures in ComfyUI's history; `web/modules/snapshot_store.js` is the page's

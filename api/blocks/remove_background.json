@@ -48,6 +48,9 @@
     }
   },
   "after": "run_workflow saves it with the background cut away (transparent PNG, prefix nobg). On a canvas that makes pictures those are made too: to cut this one out alone, add the block on a blank tab (new_workflow).",
+  "gives": {
+    "save": "save"
+  },
   "models": [],
   "tested": {
     "gpu": "RTX 4050 Laptop",

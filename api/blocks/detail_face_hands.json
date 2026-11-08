@@ -39,8 +39,8 @@
       "class_type": "FaceDetailer",
       "inputs": {
         "image": [
-          "$decode",
-          0
+          "$save.images",
+          "*"
         ],
         "model": [
           "$sampler.model",
@@ -117,6 +117,9 @@
     }
   },
   "after": "run_workflow saves the picture as before and the detailed one beside it (prefix detailed).",
+  "gives": {
+    "save": "save"
+  },
   "models": [
     "face_yolov8m",
     "hand_yolov8s"

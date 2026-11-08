@@ -13,7 +13,9 @@
  * LoRAs as new nodes with their settings, past bypassed nodes and control patches (a Tile on the first
  * pass is not the second's); the block's key is the copy's last node, its loader titled as the node is
  * (a redraw's own model, which the AI swaps for a second one with set_model, the LoRAs kept).
- * Several samplers: near_node_id names the one, else nothing changes and they are listed.
+ * Several samplers: near_node_id names the one, else nothing changes and they are listed. A chain of
+ * blocks (block_chain.py) also names the output node the next block goes on from (save_node_id): its
+ * picture is the step before's, where a sampler's own decode would reach an older one.
  */
 
 import { linkOf } from './mcp_canvas_brief.js';
@@ -64,8 +66,9 @@ function loaderOf(g, node) {
     return at === node ? null : at;
 }
 
-/** The roles on graph `g`: {sampler, decode, save, loader}; decode, save and loader may be missing. */
-export function findRoles(g, nearId = null) {
+/** The roles on graph `g`: {sampler, decode, save, loader}; decode, save and loader may be missing. `saveId`
+ * names the output node itself (a chain's step before). */
+export function findRoles(g, nearId = null, saveId = null) {
     const samplers = (g._nodes || []).filter(node => !OFF.has(node.mode) && SAMPLER_INPUTS.every(name => inputNamed(node, name)));
     let sampler = nearId == null ? null : samplers.find(node => String(node.id) === String(nearId));
     if (!sampler) {
@@ -80,7 +83,8 @@ export function findRoles(g, nearId = null) {
     const decode = takers(g, sampler, latent).find(node => inputNamed(node, 'samples')
         && (node.outputs || []).some(item => upper(item.type) === 'IMAGE')) || null;
     const picture = decode ? decode.outputs.findIndex(item => upper(item.type) === 'IMAGE') : -1;
-    const save = decode ? outputOf(g, decode, picture) || takers(g, decode, picture)[0] || null : null;
+    const save = saveId != null ? g.getNodeById(saveId) : decode ? outputOf(g, decode, picture) || takers(g, decode, picture)[0] || null : null;
+    if (saveId != null && !save) throw new Error(`No node #${saveId} on the canvas to go on from. Nothing added.`);
     return { sampler, decode, save, loader: loaderOf(g, sampler) };
 }
 
@@ -97,9 +101,9 @@ function upstream(g, node, path, ref) {
 }
 
 /** Group `nodes` (add_nodes' API form) with its roles resolved on graph `g`; a group naming none comes back as it is. */
-export function placeRoles(g, nodes, nearId = null) {
+export function placeRoles(g, nodes, nearId = null, saveId = null) {
     if (!JSON.stringify(nodes).includes('"$')) return nodes;
-    const roles = findRoles(g, nearId);
+    const roles = findRoles(g, nearId, saveId);
     const role = (name, ref) => {
         const node = roles[name];
         const what = { decode: 'VAE Decode', save: 'Save Image', loader: 'model loader' }[name] || name;

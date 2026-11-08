@@ -89,6 +89,7 @@
     }
   },
   "after": "run_workflow: the picture now takes that pose (strength 0.8, for the first 80% of the steps; lower either for a looser pose). The prompt still says who and what: change it if it fights the pose. Its pose skeleton is among the run's previews: if it is empty or wrong (a crowded or very stylised picture), try control_depth.",
+  "gives": {},
   "variants": {
     "anima": {
       "packs": {

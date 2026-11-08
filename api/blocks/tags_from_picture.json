@@ -43,6 +43,7 @@
     }
   },
   "after": "run_workflow (what the canvas makes is made too): run_status's answer has texts, the picture's tags. Write the prompt from them with set_prompt, keeping the quality words the prompt has, then remove_nodes these two so later runs skip them.",
+  "gives": {},
   "notes": "The source's model and thresholds (wd-eva02-large-tagger-v3, 0.35, 0.85).",
   "models": [],
   "tested": {

@@ -2,13 +2,13 @@
 model does not work out that two picked models mean one for the base and one for the enlargement, so
 Anomalous prepares the choices (routes.json, those this ComfyUI can build for these models, a saved card
 using both first): ask_user(routes=true) shows them, and add_nodes(route=…) builds the one picked on a new
-tab from the ways (reference_blocks.py), its LoRAs on each model, so the AI wires nothing. Each picked
+tab from the ways (reference_blocks.py) as a chain (block_chain.py), its LoRAs on each model, so the AI wires nothing. Each picked
 model's cards are its examples: get_toolbox lists them with their route (workflow_route.py)."""
 
 import json
 import os
 
-from . import ai_bases, ai_tasks, ai_toolbox, model_advice, reference_blocks, workflow_route
+from . import ai_bases, ai_tasks, ai_toolbox, block_chain, model_advice, reference_blocks, workflow_route
 from .mcp_tools import ToolError, _resolve_model
 from .recipe_store import _list_recipes, get_recipes_dir
 
@@ -104,7 +104,7 @@ def waiting(task):
 def build(ctx, key, model=None):
     """Route `key` on a new tab: the picture on the first model, the picked LoRAs on it, the way after it with
     its own loader on the second model and the LoRAs there too. What was built, and what to do now."""
-    from . import mcp_actions, mcp_canvas_edit
+    from . import mcp_canvas_edit
 
     route = ROUTES.get(key)
     if not route:
@@ -114,22 +114,15 @@ def build(ctx, key, model=None):
     if len(picked) < route["models"]:
         raise ToolError(f"Route {key} draws with {route['models']} main models: the user picks them for the task, or give model.")
     ai_bases.forget(ctx.get("task"))  # a base picked on another canvas: its sampler is not this route's
-    mcp_canvas_edit.new_workflow(ctx, key)
-    first = mcp_canvas_edit.add_nodes(ctx, use="picture", model=picked[0])
-    node = int(first["nodes"]["model"])
     loras = _loras(box)
-    for lora in loras:
-        mcp_actions.add_lora(ctx, lora, after_node_id=node)
-    answer = {"route": key, "built": first["nodes"], "next": NEXT if route.get("way") else ONE_PASS}
+    steps = [{"use": "picture", "model": picked[0], "loras": loras}]
     if route.get("way"):
         use, want = route["way"]
-        added = mcp_canvas_edit.add_nodes(ctx, use=use, want=want)
-        answer["built"] = {**first["nodes"], **added["nodes"]}
-        loader = int(next(added["nodes"][name] for name in route["loader"] if name in added["nodes"]))
-        mcp_actions.set_model(ctx, loader, picked[1])
-        if "second_model" in route["loader"]:  # loaded bare; the Tile's own model copied the LoRAs already
-            for lora in loras:
-                mcp_actions.add_lora(ctx, lora, after_node_id=loader)
+        steps.append({"use": use, "want": want, "model": picked[1], "loras": loras})
+    chain = block_chain.build(ctx, steps, key)
+    answer = {"route": key, "built": chain["nodes"], "next": NEXT if route.get("way") else ONE_PASS}
+    if route.get("way"):
+        added = chain["steps"][1]
         if route.get("enlarge"):
             before, after = int(added["nodes"]["first"]), int(added["nodes"]["second"])
             mcp_canvas_edit.add_node(ctx, "LatentUpscaleBy", {"upscale_method": "nearest-exact", "scale_by": 1.5}, insert_after=before)

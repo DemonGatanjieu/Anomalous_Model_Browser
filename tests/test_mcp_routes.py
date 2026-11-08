@@ -79,7 +79,8 @@ class RouteTests(unittest.TestCase):
 
     def test_the_tile_route_is_built_on_a_new_tab_with_the_second_model(self):
         calls = []
-        added = iter([{"nodes": {"model": "1"}}, {"nodes": {"own_1": "9", "own": "10"}}])
+        added = iter([{"block": "picture", "nodes": {"model": "1", "sampler": "5", "save": "7"}},
+                      {"block": "upscale_tile", "nodes": {"own_1": "9", "own": "10", "redraw": "12", "save": "14"}}])
         with mock.patch.object(mcp_canvas_edit, "new_workflow", side_effect=lambda ctx, name: calls.append(("new", name))), \
                 mock.patch.object(mcp_canvas_edit, "add_nodes", side_effect=lambda ctx, **kw: (calls.append(("add", kw)), next(added))[1]), \
                 mock.patch.object(mcp_actions, "add_lora", side_effect=lambda ctx, lora, after_node_id: calls.append(("lora", after_node_id))), \
@@ -88,8 +89,8 @@ class RouteTests(unittest.TestCase):
                 mock.patch.object(mcp_routes.ai_toolbox, "effective", return_value={"models": [A, LORA, B]}):
             got = mcp_routes.build({"task": "t"}, "tile_second")
         self.assertEqual(calls, [("new", "tile_second"), ("add", {"use": "picture", "model": A}), ("lora", 1),
-                                 ("add", {"use": "upscale", "want": "detail"}), ("model", 9, B)],
-                         "the LoRA goes on before the way copies the model line")
+                                 ("add", {"use": "upscale", "want": "detail", "near_node_id": 5, "save_node_id": 7}), ("model", 9, B)],
+                         "the LoRA goes on before the way copies the model line; the way goes on from the picture's sampler and output")
         self.assertIn("base_only=true", got["next"])
 
     def test_a_route_needs_its_models(self):

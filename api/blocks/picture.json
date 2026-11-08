@@ -230,6 +230,10 @@
     }
   },
   "after": "The picture's nodes are on the canvas, on the checkpoint picked (the loader titled Model), with common SDXL settings (28 steps, euler_ancestral, cfg 5.5, 832x1216; get_model's author_examples has what the model's author used). run_workflow with prompt and negative fills them in. A style LoRA the user picked: add_lora. A second pass after it (enlarge, another model): add_nodes with that use.",
+  "gives": {
+    "sampler": "sampler",
+    "save": "save"
+  },
   "notes": "SDXL's values are common ones, not tested per model here; Anima's are the base pass of the user's tested two-pass card.",
   "tested": {
     "gpu": "RTX 4050 Laptop",

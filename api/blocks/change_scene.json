@@ -108,6 +108,7 @@
     }
   },
   "after": "Write the new scene in the prompt and keep the character's own words (who, hair, clothes) so its edge fits, then run_workflow. The picture's size is the drawing's: the empty latent is no longer used. The kept character (cut out) is among the run's previews: if part of it is missing or the old background clings to it, say so; a halo at its edge: raise the GrowMask expand (6) a little.",
+  "gives": {},
   "notes": "Denoise 1.0: the background is drawn anew, not changed. GrowMask lets the background reach 6 px into the character so the seam is redrawn.",
   "models": [],
   "tested": {

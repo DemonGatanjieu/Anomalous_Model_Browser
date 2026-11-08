@@ -311,6 +311,17 @@
     }
   },
   "after": "run_workflow saves the picture as before and the 1.25x one beside it (prefix upscaled): a tile ControlNet holds it (strength 0.6, to 80% of the steps) while it is redrawn at denoise 0.5 with its own copy of the canvas's model and LoRAs (the loader titled Upscale model). For a second model (steadier, another look), set_model that loader to one of the same family (it reuses the first model's prompts); the LoRAs stay. Lower the denoise if it changes too much, raise the strength to hold it closer.",
+  "gives": {
+    "sampler": "redraw",
+    "save": "save"
+  },
+  "own_model": {
+    "nodes": [
+      "own_1",
+      "own"
+    ],
+    "copies_loras": true
+  },
   "notes": "The source's tile values; denoise 0.5 because the tile holds the picture. The redraw's own model line replaced the separate second-model way (2026-11-04): same model by default, one swap for another. On Anima the user's tested route: Harem 1.5 base, Realskin 1.3 for the Tile upscale, its style LoRA on both, 832x1216 to 1016x1480, 116 s for the upscale on 6 GB.",
   "models": [
     "union_promax_sdxl",

@@ -56,6 +56,19 @@ function txt2img() {
     assert.equal(placeRoles(g, plain), plain, 'a group naming no role is passed on as it is');
 }
 
+// A chain's next block goes on from the output node it is given, not the one the sampler's decode reaches.
+{
+    const { g, decode, save } = txt2img();
+    const bigger = g.node('ImageScaleBy', [['image', 'IMAGE']], [['IMAGE', 'IMAGE']]);
+    const later = g.node('SaveImage', [['images', 'IMAGE']], []);
+    g.wire(decode, 0, bigger, 'image'); g.wire(bigger, 0, later, 'images');
+    assert.equal(findRoles(g).save, save, 'unasked: the sampler decode\'s own output');
+    assert.equal(findRoles(g, null, later.id).save, later);
+    const placed = placeRoles(g, { a: { class_type: 'X', inputs: { image: ['$save.images', '*'] } } }, null, later.id);
+    assert.deepEqual(placed.a.inputs.image, [`#${bigger.id}`, 0], "the step before's picture");
+    assert.throws(() => findRoles(g, null, 999), /No node #999/);
+}
+
 // The loader is past the LoRAs on the model line.
 {
     const { g, ckpt, sampler } = txt2img();

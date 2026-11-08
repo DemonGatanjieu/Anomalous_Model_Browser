@@ -101,6 +101,7 @@
     }
   },
   "after": "Write what is in the picture and the new style in the prompt (e.g. watercolor, flat colors, oil painting), or add_lora a style LoRA, then run_workflow. The size is the picture's. Its outlines are among the previews. To keep more of the old colours: lower the denoise to 0.8 (the style then changes less); the layout drifts: raise the ControlNet strength (0.7).",
+  "gives": {},
   "notes": "Canny outlines through the union ControlNet (its canny/lineart mode); Tried: denoise 0.8 kept the old look (only lighter); 1.0 gave the style, the outlines held the layout.",
   "models": [
     "union_promax_sdxl"

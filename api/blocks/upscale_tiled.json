@@ -21,6 +21,9 @@
   "instead": "upscale",
   "upscaler": true,
   "after": "run_workflow saves the picture as before and the 2× one beside it (prefix upscaled); each tile is redrawn with the sampler's steps and cfg at denoise 0.3 (higher adds more detail, and may add seams).",
+  "gives": {
+    "save": "save"
+  },
   "extras": {
     "ColorMatch": "ComfyUI-KJNodes"
   },

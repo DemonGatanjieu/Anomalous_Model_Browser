@@ -80,6 +80,7 @@
     }
   },
   "after": "Set the picture's size to the drawing's shape (get_image_info on it; the empty latent's width and height), write the colours and style in the prompt (what is drawn, hair, clothes, background), then run_workflow. Its lines (white on black) are among the run's previews: if they are black on white, the drawing was light lines on dark: remove_nodes the ImageInvert and wire the picture straight in.",
+  "gives": {},
   "notes": "A drawing is black lines on white; a lineart ControlNet reads white lines on black, hence ImageInvert.",
   "models": [
     "union_promax_sdxl",

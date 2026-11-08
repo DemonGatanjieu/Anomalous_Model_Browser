@@ -17,6 +17,10 @@
   "packs": {},
   "upscaler": true,
   "after": "run_workflow saves the picture as before and the larger one beside it (prefix upscaled). The redraw sampler has the first one's steps and cfg at denoise 0.35: lower keeps more of the picture, higher adds more (and above 0.5 may change it). For 2× or more use upscale_tiled.",
+  "gives": {
+    "sampler": "redraw",
+    "save": "save"
+  },
   "notes": "1.25× and denoise 0.35: the source used 1.25 and 0.32; its author says more than 1.5× goes wrong, and 1.5× of 832×1216 is too much for a 6 GB card. ColorMatch mkl after the redraw is the source's, optional (KJNodes).",
   "upscale_by": 1.25,
   "nodes": {

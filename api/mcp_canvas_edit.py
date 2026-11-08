@@ -271,7 +271,8 @@ def _empty_canvas():
     raise ToolError("The canvas already makes a picture: run it, or new_workflow (blank) first for a separate one.")
 
 
-def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None, use=None, want=None, model=None, route=None):
+def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, image=None, scene=None, use=None, want=None, model=None, route=None,
+              save_node_id=None):
     if route is not None:
         return mcp_routes.build(ctx, str(route), model)
     if not isinstance(replace, bool):
@@ -312,7 +313,10 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
     _allowed(ctx, [spec["class_type"] for spec in nodes.values()])
     answer = _next(_page("add_nodes", {"nodes": nodes, "replace": replace,
                                        "roles": built["roles"] if block is not None else {},
-                                       "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id")}, timeout=60))
+                                       "near_node_id": None if near_node_id is None else _id(near_node_id, "near_node_id"),
+                                       "save_node_id": None if save_node_id is None else _id(save_node_id, "save_node_id")}, timeout=60))
+    if block is not None and isinstance(answer, dict):
+        answer["block"] = str(block)  # which one this ComfyUI ran for the use (block_chain.py reads what it gives)
     if block is not None and isinstance(answer, dict) and not answer.get("unwired") and answer.get("reaches_output") is not False:
         answer["next"] = built["after"]
         if built["tested"]:
