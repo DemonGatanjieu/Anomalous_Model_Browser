@@ -53,8 +53,8 @@ class GuideTests(unittest.TestCase):
         self.assertIn("重置悬浮入口位置", mcp_guide.read_guide("install", "zh")["text"], "the words the Chinese window shows")
         self.assertEqual(mcp_guide.read_guide("saves", "zh-CN")["topic"], "saves")
         self.assertEqual(mcp_guide.read_guide("model_check_rules", part=99)["part"], mcp_guide.read_guide("model_check_rules")["parts"])
-        with self.assertRaisesRegex(ToolError, "read_guide\\(\\) lists them"):
-            mcp_guide.read_guide("nothing")
+        with self.assertRaisesRegex(ToolError, "The topics: idea, .*, panel\\."):  # no second call to find the name
+            mcp_guide.read_guide("answers")
 
     def test_show_panel_names_the_blocks_and_the_guide_gives_their_fields(self):
         tools = {tool["name"]: tool for tool in mcp_server._tool_list(True)["tools"]}

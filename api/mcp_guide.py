@@ -137,7 +137,7 @@ def read_guide(topic="", lang="en", part=1):
                 "note": "read_guide(topic=...) gives one. With lang='zh' the README's parts are in Chinese, with the "
                         "words the Chinese window shows: use them when you guide a user who writes Chinese."}
     if topic not in found:
-        raise ToolError(f"No topic {topic!r}; read_guide() lists them.")
+        raise ToolError(f"No topic {topic!r}. The topics: {', '.join(found)}.")
     parts = _parts(found[topic])
     try:
         part = min(max(int(part), 1), len(parts))
