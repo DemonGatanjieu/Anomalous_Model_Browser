@@ -187,8 +187,12 @@ def _sheet(ctx, sheet, batch, workflow, slots):
                         "run_workflow() shows them; the sheet after.")
     if not isinstance(sheet, dict) or set(sheet) - {"rows", "count", "pause", "same_seeds"}:
         raise ToolError("sheet is {rows: [prompt or {prompt, negative, values, count}], count, pause, same_seeds}.")
+    prompt = slots.pop("prompt", None)  # with a sheet: the prompt of each row that has none
+    given = sheet.get("rows")
+    if prompt and isinstance(given, list):
+        given = [{"prompt": prompt, **row} if isinstance(row, dict) and row.get("prompt") is None else row for row in given]
     try:
-        rows = job_sheets.rows_of(sheet.get("rows"), sheet.get("count", batch))
+        rows = job_sheets.rows_of(given, sheet.get("count", batch))
         pause = job_sheets.pause_of(sheet.get("pause", 0))
     except job_sheets.SheetError as error:
         raise ToolError(str(error))
@@ -210,8 +214,8 @@ def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, bas
     checked_wait(wait_seconds)  # Reject a wait that is no number before anything can be submitted.
     batch = max(1, min(8, int(batch)))
     if sheet is not None:
-        if prompts is not None or base_only or slots.get("prompt"):
-            raise ToolError("A sheet's prompts are its rows: give no prompt, prompts or base_only with it.")
+        if prompts is not None or base_only:
+            raise ToolError("A sheet's prompts are its rows: give no prompts or base_only with it.")
         return _sheet(ctx, sheet, batch, workflow, slots)
     task = ctx.get("task")
     first_of_plan = not base_only and prompts is None and ai_plans.due(task, ai_plans.PREVIEWS)
@@ -430,14 +434,16 @@ ACTIONS = dict([
             "(default: the user's download settings); name the file name (default: the site's). Never replaces a file.",
             download_model, {"type": {"type": "string"}, "url": {"type": "string"}, "hash": {"type": "string"},
                              "folder": {"type": "string"}, "name": {"type": "string"}}, ["type"], open_world=True),
-    _action("run_workflow", "Run the workflow",
+    _action("run_workflow", "Run the workflow, or a job sheet",
             "Queues the workflow (uses the GPU). workflow (a saved one) opens once in the task's "
             "tab; prompt, negative, seed (every sampler), width/height (the start latent), image (its LoadImage) and "
             "values (any setting by name: {\"steps\": 30}; {\"12\": {\"denoise\": 0.5}} for one node) fill it "
-            "in, else the open canvas. Then run_status, never the output folder.",
+            "in, else the open canvas. Then run_status, never the output folder. Many prompts or settings, or a rest "
+            "between pictures: one call with sheet, Anomalous runs it one by one.",
             run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1,
                                      "description": "Tries, each its own seed."},
-                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 55},
+                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 55,
+                                            "description": "This call's wait for the run; a rest between pictures is sheet.pause."},
                            "workflow": {"type": "string", "description": "A name or plan from list_workflows."},
                            "prompt": _PROMPT, "negative": {"type": "string"},
                            "prompts": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_PROMPTS,
@@ -452,7 +458,7 @@ ACTIONS = dict([
                            "sheet": {"type": "object", "description": (
                                "Many runs, run one after another by Anomalous: {rows: [prompt or {prompt, negative, "
                                "values, count}], count: runs of each row (default batch), pause: seconds between "
-                               "pictures, same_seeds}. A row with none runs the canvas as is.")}}),
+                               "pictures, same_seeds}. prompt: a row's when it has none.")}}),
     _action("open_in_anomalous", "Show a model",
             "Opens Anomalous Model Browser on this model's page, so the user sees its cover and details.",
             open_in_anomalous, {"model_id": _MODEL}, ["model_id"]),

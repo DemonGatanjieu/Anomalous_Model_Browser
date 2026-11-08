@@ -132,10 +132,15 @@ class SheetTests(unittest.TestCase):
             self.assertEqual(page.call_args[0][1]["rows"], [{"prompt": "a cat", "count": 2}, {"prompt": "a dog", "count": 2}])
             self.assertEqual(page.call_args[0][1]["pause"], 5.0)
             with self.assertRaisesRegex(ToolError, "prompts are its rows"):
-                mcp_actions.run_workflow(ctx, prompt="x", sheet={"rows": ["a"]})
+                mcp_actions.run_workflow(ctx, prompts=["x"], sheet={"rows": ["a"]})
+            job_sheets.ask(answer["id"], "stop", PAGE)
+            mcp_actions.run_workflow(ctx, prompt="a barn", sheet={"rows": [{"values": {"cfg": 4}}, {"prompt": "a mill", "values": {"cfg": 7}}]})
+            self.assertEqual([row.get("prompt") for row in page.call_args[0][1]["rows"]], ["a barn", "a mill"],
+                             "prompt with a sheet: the prompt of the rows that have none")
             with self.assertRaisesRegex(ToolError, "1 to 200"):
                 mcp_actions.run_workflow(ctx, sheet={"rows": []})
-        sheet = answer["id"]
+        job_sheets.ask(job_sheets.current()["id"], "stop", PAGE)  # the one the check above started goes
+        sheet = job_sheets.start({"rows": ["a cat", "a dog"], "count": 2, "workflow": FLOW, "page": PAGE, "task": task})["id"]
         self.assertIn("end your turn", answer["note"])
         result = {"structuredContent": answer, "content": [{"type": "text", "text": "ok"}]}
         step = ai_tasks.finish_step("AI", "run_workflow", {"sheet": {}}, result, time.time(), task_id=task)

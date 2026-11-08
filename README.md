@@ -99,6 +99,7 @@ Right-click the canvas → **Save this state** snapshots the whole workflow onto
 
 <p align="center"><img src="docs/images/en-saves.webp" width="840" alt="Canvas Saves: side-by-side diffs with locked-seed renders, and switching saves 1, 2, 3 on the bottom bar"></p>
 
+<!-- guide:job_sheet -->
 Many prompts on one canvas instead? Right-click the canvas → **AMB** → **Job sheet (many prompts)**: paste a prompt a line, set **Runs of each** and **Seconds between pictures**, and press **Start**. It runs copies of the canvas as it was at the start, one after another (your canvas stays as it is), with **Pause**, **Go on** and **Stop**; with no prompt it runs the canvas as it is, a rest between pictures. An AI can hand over a sheet too ("these prompts, 4 each"; "cfg 4, 5 and 6, 3 each").
 
 <!-- guide:picture_workflow -->
@@ -287,6 +288,7 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
 
 <p align="center"><img src="docs/images/saves.webp" width="840" alt="画布存档：并排查看三个存档的参数节点改动与锁种出图，并在底部存档条一键切换回退"></p>
 
+<!-- guide:job_sheet -->
 想用同一张画布跑一大串提示词？画布右键 → **AMB** → **任务单（批量换提示词）**：一行贴一条提示词，填 **每条跑几次**、**每张之间歇几秒**，点 **开始**。跑的是开始时那张画布的副本，一张接一张，你的画布不动；随时 **暂停**、**继续**、**停止**。一条也不写，就是照画布原样隔一段时间跑一张。也可以让 AI 排任务单（“这几条各跑 4 张”“cfg 4、5、6 各跑 3 张”）。
 
 <!-- guide:picture_workflow -->

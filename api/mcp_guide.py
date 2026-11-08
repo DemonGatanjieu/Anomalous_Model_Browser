@@ -24,6 +24,7 @@ TITLES = {  # the list's words for each topic; a README mark without one is list
     "idea": "What Anomalous is for", "ai_workbench": "The AI workbench: how it works with you",
     "names": "Scanning: real names, covers and trigger words", "model_check": "Model Check: missing models put back",
     "workflows": "Workflow cards, their stages and presets", "saves": "Canvas saves (存档)",
+    "job_sheet": "Job sheet (任务单): many prompts or settings, a rest between pictures",
     "picture_workflow": "A picture's own workflow, from the gallery", "combos": "Combos: model, LoRAs and prompt together",
     "prompts": "Prompt Studio", "voices": "Character voices (Anomalous_TTS)", "undo": "The activity log and undo",
     "light": "What it takes from the computer", "install": "Installing, and finding it after (the cube button)",
@@ -129,6 +130,11 @@ def topics(lang):
     return found
 
 
+def _is_tool(name):
+    from .mcp_server import TOOLS  # here, not at the top: the server imports this file
+    return name in TOOLS
+
+
 def read_guide(topic="", lang="en", part=1):
     lang = "zh" if str(lang or "").lower().startswith("zh") else "en"
     found = topics(lang)
@@ -137,7 +143,8 @@ def read_guide(topic="", lang="en", part=1):
                 "note": "read_guide(topic=...) gives one. With lang='zh' the README's parts are in Chinese, with the "
                         "words the Chinese window shows: use them when you guide a user who writes Chinese."}
     if topic not in found:
-        raise ToolError(f"No topic {topic!r}. The topics: {', '.join(found)}.")
+        tool = " It is a tool: its description and its parameters' say how." if _is_tool(topic) else ""
+        raise ToolError(f"No topic {topic!r}.{tool} The topics: {', '.join(found)}.")
     parts = _parts(found[topic])
     try:
         part = min(max(int(part), 1), len(parts))

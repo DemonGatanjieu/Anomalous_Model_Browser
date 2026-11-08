@@ -30,7 +30,7 @@ class DirectoryTests(unittest.TestCase):
     def test_only_the_tools_offered_in_the_catalogs_order(self):
         specs = {name: mcp_server.TOOLS[name]["spec"] for name in ("run_status", "run_workflow", "zoom_image")}
         found = mcp_directory.directory(specs)
-        self.assertEqual(found["Run a workflow"], "run_workflow (Run the workflow), run_status (How the run is going)")
+        self.assertEqual(found["Run a workflow"], "run_workflow (Run the workflow, or a job sheet), run_status (How the run is going)")
         self.assertEqual(set(found), {"note", "Run a workflow", "Pictures"})
 
     def test_names_alone_when_the_answer_would_be_too_long(self):

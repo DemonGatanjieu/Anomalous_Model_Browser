@@ -55,6 +55,9 @@ class GuideTests(unittest.TestCase):
         self.assertEqual(mcp_guide.read_guide("model_check_rules", part=99)["part"], mcp_guide.read_guide("model_check_rules")["parts"])
         with self.assertRaisesRegex(ToolError, "The topics: idea, .*, panel\\."):  # no second call to find the name
             mcp_guide.read_guide("answers")
+        with self.assertRaisesRegex(ToolError, "It is a tool: its description"):  # a tool's name asked as a topic
+            mcp_guide.read_guide("run_workflow")
+        self.assertIn("任务单", str(mcp_guide.read_guide("job_sheet", "zh")), "the job sheet is a topic of its own")
 
     def test_show_panel_names_the_blocks_and_the_guide_gives_their_fields(self):
         tools = {tool["name"]: tool for tool in mcp_server._tool_list(True)["tools"]}
