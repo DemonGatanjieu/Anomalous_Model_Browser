@@ -2,6 +2,9 @@
 
 ## v1.63.0 — unreleased
 
+- 画布左上角的立方体入口不再压在 ComfyUI 自己的菜单上面：以前它在最顶层，打开左上角的 C 菜单时会盖住“新建”那一行。现在它在画布上面、顶栏和菜单、对话框下面。README 的安装第 2 步也配上了图，写明装好后入口在哪、看不到时怎么办。
+- The cube entry at the canvas's top left no longer sits over ComfyUI's own menus: it was on the very top layer and covered the "New" row of the C menu. It is now over the canvas and under the top bar, menus and dialogs. Step 2 of the README's install has a picture of where the entry is after installing and what to do when it can't be seen.
+
 - 在设置里切换语言后，AI 工作台右边的展台、留言框和画布下方的存档条也马上换成新的语言。以前它们要刷新页面才变。
 - After switching the language in Settings, the AI workbench's stage and message box and the saves bar under the canvas change at once too. They used to wait for a page reload.
 - 浏览器里同时开着两个 ComfyUI 页面时，AI 干活不再时好时坏：以前两个页面会各抢一半动作，一个页面开了任务的标签页，另一个页面接着去跑却找不到它（"标签页关了"）。现在任务的动作先交给上次干活的那个页面，它关掉了别的页面才接手。

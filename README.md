@@ -18,6 +18,8 @@
 
 [**English**](#english) | [**中文说明**](#中文)
 
+<sub>Installed but can't find it? <a href="#where-en">Here is where it is</a> · 装好了找不到入口？<a href="#where-zh">看这里</a></sub>
+
 <br/>
 
 <img src="docs/images/en-models.webp" width="900" alt="Model library with Civitai covers, base model badges and multi-version cards">
@@ -125,7 +127,11 @@ Every change made by Anomalous or an AI task is logged in **Activity** with befo
    cd custom_nodes
    git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
    ```
-2. Press **Shift + B** to open it. On **Home**, **Scan model folders** fetches covers and trigger words, and **Tour the interface** walks through each area of the window.
+2. <a id="where-en"></a>**Where to find it**: after the restart a small cube button sits at the top left of the canvas (ringed below). Click it, or press **Shift + B**. On **Home**, **Scan model folders** fetches covers and trigger words, and **Tour the interface** walks through each area of the window.
+
+   <p align="center"><img src="docs/images/en-entry.webp" width="640" alt="The cube button at the canvas's top left, and ComfyUI's menu C, Extensions, Anomalous Model Browser, Open"></p>
+
+   Can't see the cube? It may have been dragged away, or another entry chosen: ComfyUI's **C** menu → **Extensions → Anomalous Model Browser** has **Open Anomalous Model Browser** and **Reset floating entry position**. To make it easier to spot, go to **ComfyUI Settings → Anomalous Model Browser → Interface**: **Floating entry style** → **Labeled pill** adds the words "Model Browser", **Floating entry size** → **Large**, or **Browser entry mode** → **Top action bar** puts it beside the Run button.
 3. Optional: for character voices, install [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) (`Anomalous TTS` in ComfyUI Manager). Nothing else depends on it.
 
 Scanning reaches Civitai by file hash (no extra Python dependencies). Without internet access, choose **Offline** scan: base models are read directly from file headers, and a later online scan fills in covers and trigger words (see **Network and backups** below).
@@ -161,7 +167,7 @@ Tools at the bottom of the rail (ordered by frequency of use):
 <details>
 <summary><b>⚙️ Opening, shortcuts and updating</b></summary>
 
-Open the browser with **Shift + B** (press again to close), the floating canvas button, or **Extensions → Anomalous Model Browser** in ComfyUI's menu. Customize the shortcut, language and launcher style under **ComfyUI Settings → Anomalous Model Browser → Interface**.
+Open the browser with **Shift + B** (press again to close), the cube button at the canvas's top left, or **Extensions → Anomalous Model Browser** in ComfyUI's menu. Customize the shortcut, language and launcher style under **ComfyUI Settings → Anomalous Model Browser → Interface**.
 
 **Updating**: click the **!** button at the top right of the browser, then **Check for updates / switch version** to update to the newest release or roll back to an earlier tag, and restart ComfyUI. The plugin never phones home or checks for updates in the background.
 
@@ -293,7 +299,11 @@ Open the browser with **Shift + B** (press again to close), the floating canvas 
    cd custom_nodes
    git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
    ```
-2. 按 **Shift + B** 打开窗口。第一次用可以在 **主页** 点 **扫描模型文件夹** 补齐封面和触发词，点 **界面导览** 跟着认识一圈各个区域。
+2. <a id="where-zh"></a>**装好后去哪找**：重启后，画布左上角会多一个小立方体按钮（下图圈出来的那个），点它或按 **Shift + B** 打开窗口。第一次用可以在 **主页** 点 **扫描模型文件夹** 补齐封面和触发词，点 **界面导览** 跟着认识一圈各个区域。
+
+   <p align="center"><img src="docs/images/entry.webp" width="640" alt="画布左上角的立方体按钮，以及 ComfyUI 菜单 C → Extensions → Anomalous Model Browser → 打开"></p>
+
+   看不到这个立方体？可能被拖走了，或者换成了别的入口：点左上角 ComfyUI 的 **C** 菜单 → **Extensions → Anomalous Model Browser**，里面有 **打开 Anomalous 模型浏览器** 和 **重置悬浮入口位置**。想让它更显眼，去 **ComfyUI 设置 → Anomalous Model Browser → 界面**：**悬浮入口样式** 选 **胶囊文字**（会带上“模型浏览器”几个字），**悬浮入口大小** 选 **大**；或者 **浏览器入口模式** 选 **顶部动作栏**，放到运行按钮旁边。
 3. 需要角色配音的话，再安装 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)（ComfyUI Manager 搜索 `Anomalous TTS`）；不装完全不影响其他功能。
 
 扫描模型默认联网查 C 站（纯内置实现，无需额外装 Python 包）。没开代理或断网时选 **离线扫描** 也能直接从模型文件头识别底模与架构，等以后连上网再扫一次会自动补齐封面和触发词（详见下方“网络和备份”）。
@@ -329,7 +339,7 @@ Open the browser with **Shift + B** (press again to close), the floating canvas 
 <details>
 <summary><b>⚙️ 打开方式、快捷键和更新</b></summary>
 
-打开方式有三种：按 **Shift + B**（再按一次关闭）、点击画布悬浮按钮，或从 ComfyUI 菜单 **扩展 → Anomalous Model Browser** 进入。在 **ComfyUI 设置 → Anomalous Model Browser → 界面** 中可自定义快捷键、语言及入口按钮样式。
+打开方式有三种：按 **Shift + B**（再按一次关闭）、点画布左上角的立方体按钮，或从 ComfyUI 菜单 **Extensions → Anomalous Model Browser** 进入（中文界面下这一项也叫 Extensions）。在 **ComfyUI 设置 → Anomalous Model Browser → 界面** 中可自定义快捷键、语言及入口按钮样式。
 
 **更新与版本切换**：点击窗口右上角的 **!** → **检查更新 / 切换版本**，可一键升级到最新正式版或回退到历史版本，完成后重启 ComfyUI 生效。插件绝不会在后台悄悄联网检查更新。
 
