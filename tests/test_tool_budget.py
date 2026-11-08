@@ -15,8 +15,7 @@ from api import mcp_server  # noqa: E402
 
 MAX_TOOLS = 53
 MAX_CHARS = 44000  # the full list as AI apps get it (about 11k tokens)
-MAX_DESCRIPTION = 700  # a tool's own description
-LONGER = {"show_panel": 2100}  # its blocks have no schema of their own: the description is their format
+MAX_DESCRIPTION = 700  # a tool's own description; details an AI needs only now and then go to read_guide
 MAX_REQUIRED = 2  # what a call needs at least; the rest has a default
 INSTRUCTIONS_CHARS = 3400
 
@@ -35,7 +34,7 @@ class BudgetTests(unittest.TestCase):
     def test_each_tool_is_short_and_needs_little(self):
         for tool in listed():
             with self.subTest(tool=tool["name"]):
-                self.assertLessEqual(len(tool.get("description") or ""), LONGER.get(tool["name"], MAX_DESCRIPTION))
+                self.assertLessEqual(len(tool.get("description") or ""), MAX_DESCRIPTION)
                 self.assertLessEqual(len(tool["inputSchema"].get("required") or []), MAX_REQUIRED)
                 self.assertTrue(tool.get("description"), "every tool says what it is for")
 

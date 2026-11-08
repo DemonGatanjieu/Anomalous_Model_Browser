@@ -5,6 +5,7 @@ reads what the user picked or typed on it, log_outside keeps what the AI did wit
 (ai_outside.py)."""
 
 from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, mcp_routes, reference_blocks
+from .mcp_actions import downloads as model_downloads
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
 PACK_TYPES = 150  # node types listed per picked pack
@@ -115,7 +116,7 @@ def show_panel(ctx, title, blocks, task=None):
             session=ctx.get("session") or "", task_id=task or ctx.get("task"), extra={"prompt_advice": advice} if advice else None,
         )
     except ai_panels.PanelError as error:
-        raise ToolError(str(error))
+        raise ToolError(f"{error} Every block's fields: read_guide(topic='panel').")
     asks = [block["id"] for block in panel["blocks"] if block["type"] in ai_panels.INTERACTIVE]
     answer = {"panel": panel["id"], "shown": True,
               "blocks": [{"id": block["id"], "type": block["type"]} for block in panel["blocks"]]}
@@ -214,12 +215,14 @@ def update_panel(ctx, panel, title=None, blocks=None, closed=None, task=None):
     try:
         updated = ai_panels.update(panel, title, blocks, closed)
     except ai_panels.PanelError as error:
-        raise ToolError(str(error))
+        raise ToolError(f"{error} Every block's fields: read_guide(topic='panel').")
     return {"updated": True, "blocks": [{"id": block.get("id"), "type": block["type"]}
                                         for block in updated["blocks"]]}
 
 
-def run_status(ctx, wait_seconds=0, task=None):
+def run_status(ctx, wait_seconds=0, task=None, downloads=False):
+    if downloads:
+        return model_downloads(ctx)
     try:
         return ai_task_runs.status(ctx.get("client") or "AI", ctx.get("session") or "", task or ctx.get("task"), wait_seconds)
     except ValueError as error:
@@ -329,25 +332,6 @@ def get_answers(ctx, panel=None, wait_seconds=0, task=None):
         raise ToolError(str(error))
 
 
-BLOCKS_HELP = (
-    "blocks, top to bottom, each {type, ...}: heading {text}; text {text, tone: normal|muted|tip|warning}; "
-    "images {items: [{image: 'subfolder/name.png' from search_images, caption, marks: [{x, y, r | w, h, label, "
-    "color: red|green|blue|yellow|purple}]}], layout: row|grid|compare} (marks: circles or boxes with a label, x/y/w/h/r "
-    "as fractions 0-1 of the picture, x/y the centre; a click on the label zooms there); "
-    "slider {before: {image}, after: {image}, before_label, after_label} (one picture over the other, a line to drag); "
-    "picks {id, question, items: [{id, image, label, reason, recommended}] (2-12), multiple} (pictures to choose from; "
-    "the user can also put one's workflow on the canvas); slider and picks: zoom {x, y, w, h} shows only that part, enlarged; "
-    "diagram {nodes: [{id, label, detail, node_id, color}], edges: [{from, to, label}], direction: right|down} (boxes and "
-    "arrows Anomalous lays out; node_id: a canvas node it finds); "
-    "models {items: [{model_id from search_models, note}]} (cards with their covers, a click opens them); "
-    "table {columns: [...], rows: [[...]]}; list {items: [...], ordered}; params {items: [{label, value}]}; "
-    "choices {id, question, options: [{id, label, detail}] (2-8), multiple} (buttons the user presses); "
-    "input {id, question, placeholder} (a line the user types); progress {label, value, max} (your own "
-    "numbers, kept current with update_panel; none for a run: its progress shows already); divider {}. "
-    "Each block may have a stable id; the tool returns block ids in display order. "
-    "Plain text only (no markup, no links); up to 30 blocks, 12 pictures or models a block."
-)
-
 _TASK_PROP = {"type": "string", "description": "begin_task's id (optional)."}
 
 
@@ -370,11 +354,9 @@ def _question_with_images(run):
 
 TASK_TOOLS = dict([
     _task_tool("track_run", "Track an externally submitted run",
-               "Immediately after YOU submit to this ComfyUI server via /prompt or another tool, attach the exact "
-               "prompt_ids returned by your submissions to your task. This does NOT submit or rerun anything. "
-               "The workbench then shows real queue/node progress and results. Never use another user's IDs or "
-               "guess from queue differences. Repeating the same IDs is safe. Waits up to wait_seconds and returns "
-               "state, summary, pictures and errors; if still running, keep waiting with run_status(wait_seconds=55).",
+               "Only right after YOU queued a prompt another way (/prompt, a script): attaches the prompt_ids it "
+               "returned to your task, so the workbench shows its progress and pictures. Runs nothing; only your own "
+               "ids, never guessed; repeating them is safe. Waits up to wait_seconds, then run_status(wait_seconds=55).",
                ai_run_tracking.track_run, {"prompt_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1, "maxItems": 8},
                    "task": _TASK_PROP, "wait_seconds": {"type": "number", "minimum": 0, "maximum": 55, "default": 15}}, ["prompt_ids"]),
     _task_tool("begin_task", "Begin a task",
@@ -414,7 +396,9 @@ TASK_TOOLS = dict([
                "Draws a panel in the AI workbench, in Anomalous's own style, from blocks: to compare pictures side by "
                "side, present models with their covers, lay out settings, a table, and to ask (buttons or a line of "
                "text). Use a new panel for each new phase (plan, workflow, then results), in the order they happen. "
-               "Use it when a choice is the user's, or to show results better than words do. " + BLOCKS_HELP,
+               "Use it when a choice is the user's, or to show results better than words do. Blocks: heading, text, "
+               "images, slider, picks, diagram, models, table, list, params, choices, input, progress, divider; "
+               "read_guide(topic='panel') gives their fields before your first panel.",
                show_panel, {"title": {"type": "string"},
                             "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
                             "task": _TASK_PROP},
@@ -451,12 +435,9 @@ TASK_TOOLS = dict([
                                       "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": ai_panels.MAX_WAIT}},
                ["title", "marks"]),
     _task_tool("update_panel", "Change a panel",
-               "Adds new output at the BOTTOM of an existing panel, preserving earlier content and its order. "
-               "Send only the new blocks; repeated unchanged blocks are kept once. To deliberately correct an "
-               "existing block or update a progress bar/question in place, include its returned block id and "
-               "the same type. Omitted blocks are retained, not deleted. Never reuse an old block id for a new "
-               "result: append it or use show_panel for the next phase. Up to 30 total blocks per panel. "
-               "Can also change title, or set closed=true to stop answers; existing answers stay.",
+               "Adds blocks at the BOTTOM of a panel, keeping what the user saw: send only the new ones. A block "
+               "sent with its returned id and type is corrected in place (a progress bar, a question). title changes "
+               "it; closed=true stops answers. read_guide(topic='panel') has the rest.",
                update_panel, {"panel": {"type": "string"}, "title": {"type": "string"},
                               "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
                               "closed": {"type": "boolean"}, "task": _TASK_PROP}, ["panel"]),
@@ -464,9 +445,9 @@ TASK_TOOLS = dict([
                "Your task's latest run: none, queued (runs ahead), running (node, steps, percent), done (its "
                "pictures; the first answer telling you it ended attaches up to 4) or failed; summary says it in a "
                "sentence. wait_seconds (up to 55) waits for the end. Call it instead of guessing or looking in "
-               "folders.",
+               "folders. downloads=true: how the model downloads are going instead.",
                run_status, {"wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_task_runs.MAX_STATUS_WAIT, "default": 0},
-                            "task": _TASK_PROP}),
+                            "task": _TASK_PROP, "downloads": {"type": "boolean"}}),
     _task_tool("show_run_map", "Show what the run really was",
                "Puts the shape of your task's latest run (or `run`, a run step id) on the user's stage: the nodes it "
                "really ran as boxes (models, LoRAs with weights, prompts, size, sampler settings, saving), linked, "

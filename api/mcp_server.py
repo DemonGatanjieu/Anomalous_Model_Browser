@@ -28,6 +28,7 @@ from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_panels
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS, object_info
+from .mcp_guide import GUIDE_TOOLS
 from .mcp_model_use import MODEL_TOOLS
 from .mcp_look import LOOK_TOOLS
 from .mcp_situation import SITUATION_TOOLS
@@ -35,7 +36,8 @@ from .mcp_task_tools import TASK_TOOLS
 from .mcp_tools import TOOLS as READ_TOOLS, ToolError, call_tool, retext
 from .mcp_arguments import prepare_arguments, renaming_note
 
-TOOLS = {**READ_TOOLS, **MODEL_TOOLS, **LOOK_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **SITUATION_TOOLS, **mcp_apps.APP_TOOLS}
+TOOLS = {**READ_TOOLS, **MODEL_TOOLS, **LOOK_TOOLS, **ACTIONS, **CANVAS_TOOLS, **TASK_TOOLS, **SITUATION_TOOLS, **GUIDE_TOOLS,
+         **mcp_apps.APP_TOOLS}
 CAPABILITIES = {
     "tools": {"listChanged": False}, "prompts": {"listChanged": False}, "resources": {"listChanged": False},
     "extensions": {mcp_apps.EXTENSION: {"mimeTypes": [mcp_apps.MIME]}},  # the card in the conversation (mcp_apps.py)
@@ -56,9 +58,9 @@ INSTRUCTIONS = (
     "the graph. new_workflow opens a tab only when needed. Tools also scan models or have an "
     "Anomalous TTS voice speak. Canvas changes "
     "are single Ctrl+Z steps and are logged as the AI's; nothing deletes files. Ids returned by "
-    "one tool (model_id, image, node ids) are what the others take. For what no tool does, tell "
-    "the user where in Anomalous to do it (the rail on the left: Models, Gallery, Workflows, "
-    "Combos, Prompts, Voices). begin_task's answer carries a directory of the tools by what you want to do: "
+    "one tool (model_id, image, node ids) are what the others take. For what no tool does, or when the "
+    "user asks how something in Anomalous works, read_guide has its manual: tell them the way, with the words "
+    "on screen. begin_task's answer carries a directory of the tools by what you want to do: "
     "look there and go straight to the tool. In a new chat on a task, or when unsure where things stand, call get_situation "
     "first: the task, the canvas in brief (what is still unwired) and the next step in one answer. "
     "The user watches your work in Anomalous's AI workbench: call begin_task "

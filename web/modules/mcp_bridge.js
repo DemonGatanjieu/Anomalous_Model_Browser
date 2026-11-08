@@ -328,12 +328,12 @@ async function fixModels(_args, getOwner) {
 async function downloadMissingModels({ names }, getOwner) {
     currentGraph();
     const result = await downloadMissing(getOwner(), names);
-    return { ...result, note: 'Downloads run one at a time in the background; download_status follows them. Each finished file '
+    return { ...result, note: 'Downloads run one at a time in the background; run_status(downloads=true) follows them. Each finished file '
         + 'is checked against its fingerprint and put into the nodes that use it.' };
 }
 
 async function downloadModel(args, getOwner) {
-    return { ...await downloadFrom(getOwner(), args), note: 'download_status follows it.' };
+    return { ...await downloadFrom(getOwner(), args), note: 'run_status(downloads=true) follows it.' };
 }
 
 /**

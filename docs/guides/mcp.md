@@ -114,7 +114,8 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | scan_models | 扫描新模型、重新查找没匹配上的，或扫描指定的模型（会联网访问 Civitai） |
 | download_missing_models | 下载当前工作流缺的模型：只下能确定来源的（C 站按指纹找到、或工作流带着文件链接），放在设置里“模型下载”说的位置，核对指纹后自动换上 |
 | download_model | 按链接（C 站模型版本、Hugging Face / GitHub 文件）或 C 站指纹下载一个模型到指定类型的文件夹，不覆盖已有文件 |
-| download_status | 看下载进度和结果 |
+| run_status | 看这次运行到哪了；`downloads=true` 看模型下载的进度和结果 |
+| read_guide | AMB 自己的说明书，一次一节：各个页面和功能怎么用（AI 照着用屏幕上的字教你，中文界面就用中文的字）、模型检查的完整规则、展示面板每种块的写法。不带主题时列出目录，长的分几段给。内容就是 README 和规则文档里的那几节，不另写一份 |
 | move_model | 把放错文件夹的模型挪到它该在的文件夹（封面、备注跟着走），和模型页“整理”里的“挪过去”一样；不会盖掉同名文件。默认先问你 |
 | list_voices / speak | 列出 Anomalous TTS 的角色；让某个角色读一段台词并保存（最多等两分钟） |
 | begin_task / report | 在 AI 工作台里起一个任务的标题；给你留言、交上它用别的方式做出来的图、结束任务（见第 5 节） |

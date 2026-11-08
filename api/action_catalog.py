@@ -38,7 +38,6 @@ TOOLS = {
     "describe_canvas": Entry("look", "canvas", None),
     "get_situation": Entry("look", None, None),  # the task, the canvas in brief and the next step (mcp_situation.py)
     "check_workflow_models": Entry("look", "model", None),
-    "download_status": Entry("look", "model", None),
     "list_voices": Entry("look", "voice", None),
     # acting
     "set_prompt": Entry("canvas", "prompt", "canvas"),
@@ -76,6 +75,7 @@ TOOLS = {
     "run_status": Entry("look", "run", None),
     "stop_run": Entry(None, "run", None),  # ends a run step of its own; the step says who stopped it
     "get_toolbox": Entry(None, None, None),
+    "read_guide": Entry("look", None, None),  # Anomalous's own manual (mcp_guide.py)
     # Anomalous's card in the conversation (mcp_apps.py): its own calls, not the AI's steps
     "app_task_view": Entry(None, None, None),
     "app_answer": Entry(None, None, None),

@@ -15,7 +15,7 @@ sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
 from api import (  # noqa: E402
     ai_gates, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_canvas_edit, mcp_model_use, mcp_server,
-    mcp_tools,
+    mcp_task_tools, mcp_tools,
 )
 
 MODERN = "2026-07-28"
@@ -363,7 +363,7 @@ class ServerActionTests(unittest.TestCase):
         for name, tool in mcp_server.TOOLS.items():
             annotations = tool["spec"]["annotations"]
             self.assertNotIn("delete", name)
-            if name in mcp_actions.ACTIONS and name not in ("describe_canvas", "check_workflow_models", "list_voices", "download_status"):
+            if name in mcp_actions.ACTIONS and name not in ("describe_canvas", "check_workflow_models", "list_voices"):
                 self.assertFalse(annotations["readOnlyHint"], name)
 
 
@@ -385,8 +385,8 @@ class DownloadToolTests(unittest.TestCase):
     def test_status_is_summarised(self):
         jobs = {"jobs": [{"rel": "Flux/a.safetensors", "type": "loras", "state": "running", "error": "", "received": 50,
                           "total": 200, "verified": False, "value": "Flux\a.safetensors"}]}
-        with mock.patch.object(mcp_actions, "_local", return_value=(200, jobs)):
-            result = mcp_actions.download_status({"base_url": "http://127.0.0.1:8188"})
+        with mock.patch.object(mcp_actions, "_local", return_value=(200, jobs)):  # run_status(downloads=true) asks it
+            result = mcp_task_tools.run_status({"base_url": "http://127.0.0.1:8188"}, downloads=True)
         self.assertEqual(result["downloads"][0]["percent"], 25)
         self.assertEqual(result["downloads"][0]["file"], "Flux/a.safetensors")
 

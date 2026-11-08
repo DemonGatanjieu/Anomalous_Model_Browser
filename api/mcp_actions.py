@@ -121,7 +121,8 @@ def download_model(ctx, type, url="", hash="", folder=None, name=""):
                                     "folder": None if folder is None else str(folder), "name": str(name or "")}, timeout=90)
 
 
-def download_status(ctx):
+def downloads(ctx):
+    """How the model downloads of this ComfyUI run are going (run_status(downloads=true))."""
     status, data = _local(ctx, "GET", "/anomalous/download/status")
     if status != 200:
         raise ToolError(f"Download status unavailable ({status}).")
@@ -382,8 +383,6 @@ ACTIONS = dict([
             "(default: the user's download settings); name the file name (default: the site's). Never replaces a file.",
             download_model, {"type": {"type": "string"}, "url": {"type": "string"}, "hash": {"type": "string"},
                              "folder": {"type": "string"}, "name": {"type": "string"}}, ["type"], open_world=True),
-    _action("download_status", "Downloads", "How the downloads of this ComfyUI run are going.", download_status,
-            read_only=True),
     _action("run_workflow", "Run the workflow",
             "Queues the workflow (uses the GPU). workflow (a saved one) opens once in the task's "
             "tab; prompt, negative, seed (every sampler), width/height (the start latent), image (its LoadImage) and "

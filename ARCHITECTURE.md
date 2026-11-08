@@ -184,6 +184,12 @@ covered by the `styles.css` manifest.
   `more_names`); mcp_server.py runs it after the step is recorded (`tests/test_mcp_fit.py`).
   `api/picture_mask.py` is what LoadImage gets from an input or preview picture (size, MASK area)
   for get_image_info.
+  `api/mcp_guide.py` is read_guide, Anomalous's manual for the AI a topic at a time, so the tool list
+  keeps names and the details come when needed: the README's parts between `<!-- guide:name -->`
+  marks (both languages carry the same names; keep them when editing the README), Model Check's
+  rules by section, and the fields of show_panel's blocks (show_panel itself only names them).
+  Longer topics come in parts that fit an answer (`tests/test_mcp_guide.py`). run_status with
+  `downloads=true` tells the model downloads (the former download_status).
   `api/mcp_look.py` is zoom_image, the AI's closer look: part of a picture in the output, input
   or temp folder shown larger, the same part of a second picture beside it, read only (so an AI
   need not crop or compare pictures with code of its own).
