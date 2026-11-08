@@ -40,9 +40,10 @@ def stop(step_id, by="user", task_id=None, now=None):
         step = next((item for item in (task or {}).get("steps", []) if item["id"] == step_id), None)
         if not step or step.get("tool") != "run_workflow":
             raise RunControlError("No such run in this task")
-        if step.get("state") != "running" or not step.get("prompt_ids"):
+        sheet = step.get("sheet")  # a job sheet: its own stop takes its runs out (job_sheets.py)
+        if step.get("state") != "running" or not (step.get("prompt_ids") or sheet):
             raise RunControlError("This run is not going any more")
-        prompts = list(step["prompt_ids"])
+        prompts = list(step.get("prompt_ids") or [])
         step["stop"] = by
         if by == "user":
             task["steps"].append({
@@ -53,6 +54,14 @@ def stop(step_id, by="user", task_id=None, now=None):
             del task["steps"][:-ai_tasks.MAX_STEPS]
         task["updated"] = max(task.get("updated", 0), now)
         ai_tasks._save(task)
+    if sheet:
+        from . import job_sheets
+        try:
+            job_sheets.ask(sheet, "stop")
+        except job_sheets.SheetError:
+            pass  # gone or ended already: nothing left to stop
+        ai_tasks._notify(task["id"])
+        return {"task": task["id"], "removed": 0, "interrupted": 0}
     queue = ai_task_runs._queue()
     removed = sum(1 for prompt_id in prompts if queue.delete_queue_item(lambda item, pid=prompt_id: item[1] == pid))
     interrupted = sum(1 for prompt_id in prompts if _interrupt(queue, prompt_id))

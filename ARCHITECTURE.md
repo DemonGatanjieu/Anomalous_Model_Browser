@@ -263,6 +263,16 @@ covered by the `styles.css` manifest.
   shows the routes this ComfyUI can build for them, a saved card using both first, its answer says what to call, and
   `add_nodes(route=…)` builds one from the ways on a new tab (a two-step chain); `get_toolbox` lists each picked model's cards as its examples.
   An AI placing nodes itself is a new route (`ai_gates.route_rule`): one reminder a task, or the user's OK.
+- The job sheet (任务单): many runs of one canvas one after another, each row a prompt, settings by name or the canvas
+  as it is, with its runs, and a rest between pictures if wanted (the viewers' prompt rotation and run interval).
+  `web/modules/ui_job_sheet.js` is its card on the canvas (a node's and the empty canvas's menu entry in `canvas_menu.js`),
+  `web/modules/job_sheet_run.js` runs it on the page as saves run, from detached copies of the workflow kept at the start
+  (the canvas stays as it is), the row filled in by `mcp_fill.js` fillPlan; with a rest the next run goes in once the one
+  before has left ComfyUI's queue, with none one waits behind the one going. `web/modules/job_sheet_plan.js` holds the
+  rules (`tests/job_sheet_plan.mjs`). `api/job_sheets.py` keeps the one sheet and where it stands, hears the page's
+  reports, passes pause / stop / go on to it (from any page, the workbench's stop or the AI's stop_run; with its page
+  gone another page takes it over) and writes a sheet the AI gave with `run_workflow(sheet=…)` on that call's run step,
+  so run_status and the workbench follow it like a run (`tests/test_job_sheets.py`).
 - Saves of a workflow. `api/workflow_saves.py` keeps them, a group for each canvas, found by the key in the workflow's
   extra or by its file (AD-023), and finds a run's pictures in ComfyUI's history; `web/modules/snapshot_store.js` is the page's
   side of its routes, every change going through it so what shows a group hears of it. `web/modules/ui_snapshot_bar.js` is the bar

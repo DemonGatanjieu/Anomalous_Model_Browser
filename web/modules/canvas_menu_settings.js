@@ -20,11 +20,13 @@ export const NODE_ENTRIES = Object.freeze([
     { id: 'saveParameters', on: false },
     { id: 'saveCombo', on: true },
     { id: 'snapshotMark', on: true },
+    { id: 'jobSheet', on: true },
 ]);
 export const CANVAS_ENTRIES = Object.freeze([
     { id: 'quickSearch', on: true },
     { id: 'openPage', on: true },
     { id: 'snapshotMark', on: true },
+    { id: 'jobSheet', on: true },
 ]);
 export const PLACEMENTS = Object.freeze(['submenu', 'top']);
 

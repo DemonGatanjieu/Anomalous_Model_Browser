@@ -24,7 +24,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, mcp_apps, mcp_bridge, mcp_directory, mcp_fit, mcp_prompts
+from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, job_sheets, mcp_apps, mcp_bridge, mcp_directory, mcp_fit, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS, object_info
@@ -217,7 +217,10 @@ async def _call(params, request):
         step_ref=step_ref, session=session, task_id=active_task,
     )
     ai_task_canvas.tell(result, canvas_call)
-    if name == "run_workflow" and step and step.get("state") == "running":
+    sheet = (result.get("structuredContent") or {}).get("sheet") if name == "run_workflow" else None
+    if sheet and step and step.get("state") == "running":  # the page running it says where it stands (job_sheets.py)
+        await asyncio.to_thread(job_sheets.attach, sheet, step["id"])
+    elif name == "run_workflow" and step and step.get("state") == "running":
         ai_task_runs.watch(step["id"], result.get("structuredContent") or {})
         await asyncio.to_thread(ai_run_tracking.wait_for_receipt, result, client, session, active_task,
                                 ai_run_tracking.checked_wait(arguments.get("wait_seconds", 55)), step["id"])

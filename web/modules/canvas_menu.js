@@ -5,7 +5,7 @@
  * AMB, change its model by picture, insert a LoRA before / after, its saved values, the
  * model's pictures and details, save its values or the picked nodes as a combo — each only
  * where it applies; the empty canvas's menu opens the quick search and AMB's pages. Both keep a save of the
- * workflow (ui_snapshot_bar.js). `browser()` gives the browser,
+ * workflow (ui_snapshot_bar.js) and open the job sheet (ui_job_sheet.js). `browser()` gives the browser,
  * made on first use.
  */
 
@@ -16,6 +16,7 @@ import { modelComboWidgets } from './ui_node_model_picker.js';
 import { hasComboNodes, menuNodes, saveSelectionAsCombo } from './ui_combo_structure.js';
 import { saveNodeParameters } from './node_parameter_sets.js';
 import { addMark } from './ui_snapshot_bar.js';
+import { openJobSheet } from './ui_job_sheet.js';
 import { anomalousPrompt } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openSettingsPage } from './ui_settings_page.js';
@@ -24,6 +25,7 @@ import { openQuickSearch } from './ui_quick_search.js';
 
 const item = (content, run) => ({ content, callback: () => void run() });
 const snapshotMark = () => [item(t('canvasMenuEntry_snapshotMark'), addMark)];
+const jobSheet = () => [item(t('canvasMenuEntry_jobSheet'), openJobSheet)];
 
 /** The widgets naming a model file that is set (not empty, not "None"). */
 const setModels = node => modelComboWidgets(node).filter(widget => typeof widget.value === 'string' && widget.value && widget.value !== 'None');
@@ -78,6 +80,7 @@ const NODE_ITEMS = {
         }
     })] : [],
     snapshotMark,
+    jobSheet,
     saveCombo: (node, browser) => {
         const nodes = menuNodes(node);
         if (!hasComboNodes(nodes)) return [];
@@ -98,6 +101,7 @@ const CANVAS_ITEMS = {
         return placement === 'top' ? [{ content: t('canvasMenuOpenPage'), has_submenu: true, submenu: { options: pages } }] : pages;
     },
     snapshotMark,
+    jobSheet,
 };
 
 /** The items of `list` that are on and apply, built by `builders`; a broken one is left out. */

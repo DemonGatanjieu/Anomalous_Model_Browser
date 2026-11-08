@@ -28,6 +28,7 @@ import { findModelComboWidget, getNativeWidgetValues, setWidgetValue } from './u
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { freshId } from './detached_graph.js';
+import { startFromAi } from './job_sheet_run.js';
 
 const HIDDEN_PAGE_DELAY_MS = 1500;
 const MAX_NODES = 150;
@@ -380,6 +381,7 @@ function blockModel({ near_node_id: nearId }) {
 
 const ACTIONS = {
     describe_canvas: describeCanvas,
+    job_sheet: startFromAi,
     block_model: blockModel,
     set_prompt: setPrompt,
     set_model: setModel,
@@ -406,7 +408,7 @@ function pageId() {
         return freshId();
     }
 }
-const PAGE = pageId();
+export const PAGE = pageId();
 
 const post = body => fetch('/anomalous/mcp/bridge', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),

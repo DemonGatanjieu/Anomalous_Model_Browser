@@ -15,7 +15,7 @@ import time
 import urllib.error
 import urllib.request
 
-from . import ai_bases, ai_gates, ai_plans, mcp_fill, model_advice, run_refusal
+from . import ai_bases, ai_gates, ai_plans, job_sheets, mcp_fill, model_advice, run_refusal
 from .lora_info import trains_text_encoder
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import MAX_LIMIT, ToolError, _resolve_model, _schema
@@ -179,10 +179,40 @@ def _base_words(answer, page, base_only, hold):
                           "this run draws its own base.")
 
 
-def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, base_only=False, **slots):
+def _sheet(ctx, sheet, batch, workflow, slots):
+    """run_workflow(sheet=...): the job sheet the user's page runs one run after another (job_sheets.py)."""
+    task = ctx.get("task")
+    if ai_plans.due(task, ai_plans.PREVIEWS) or (ai_plans.due(task, ai_plans.PICK) and ai_bases.hold_of(task) is None):
+        raise ToolError("Nothing was run: the plan's bases come first, for the user to pick one (their rule). "
+                        "run_workflow() shows them; the sheet after.")
+    if not isinstance(sheet, dict) or set(sheet) - {"rows", "count", "pause", "same_seeds"}:
+        raise ToolError("sheet is {rows: [prompt or {prompt, negative, values, count}], count, pause, same_seeds}.")
+    try:
+        rows = job_sheets.rows_of(sheet.get("rows"), sheet.get("count", batch))
+        pause = job_sheets.pause_of(sheet.get("pause", 0))
+    except job_sheets.SheetError as error:
+        raise ToolError(str(error))
+    filled = mcp_fill.fill(ctx, workflow, **slots)
+    try:
+        started = ask_page("job_sheet", {"rows": rows, "pause": pause, "same_seeds": bool(sheet.get("same_seeds")), "task": task})
+    except (PageUnavailable, PageRefused) as error:
+        raise ToolError(str(error))
+    answer = {**(started or {}), "note": "Anomalous runs the sheet on the user's ComfyUI page, one run after another; "
+              "it shows there and as this step. It takes a while: tell the user and end your turn. run_status says "
+              "where it stands, stop_run stops it."}
+    if filled:
+        answer["filled"] = filled
+    return answer
+
+
+def run_workflow(ctx, batch=1, wait_seconds=55, workflow=None, prompts=None, base_only=False, sheet=None, **slots):
     from .ai_run_tracking import checked_wait
     checked_wait(wait_seconds)  # Reject a wait that is no number before anything can be submitted.
     batch = max(1, min(8, int(batch)))
+    if sheet is not None:
+        if prompts is not None or base_only or slots.get("prompt"):
+            raise ToolError("A sheet's prompts are its rows: give no prompt, prompts or base_only with it.")
+        return _sheet(ctx, sheet, batch, workflow, slots)
     task = ctx.get("task")
     first_of_plan = not base_only and prompts is None and ai_plans.due(task, ai_plans.PREVIEWS)
     if first_of_plan:  # the user's rule: a plan of several steps shows its bases to pick from before it all runs
@@ -418,7 +448,11 @@ ACTIONS = dict([
                            "image": {"type": "string", "description": "subfolder/name.png, output or input folder."},
                            "image_node": {"type": "integer", "description": "Which LoadImage, of several."},
                            "values": {"type": "object", "description": "Other settings by name, any node's."},
-                           "base_only": {"type": "boolean", "description": "First pass only: previews to pick a base from."}}),
+                           "base_only": {"type": "boolean", "description": "First pass only: previews to pick a base from."},
+                           "sheet": {"type": "object", "description": (
+                               "Many runs, run one after another by Anomalous: {rows: [prompt or {prompt, negative, "
+                               "values, count}], count: runs of each row (default batch), pause: seconds between "
+                               "pictures, same_seeds}. A row with none runs the canvas as is.")}}),
     _action("open_in_anomalous", "Show a model",
             "Opens Anomalous Model Browser on this model's page, so the user sees its cover and details.",
             open_in_anomalous, {"model_id": _MODEL}, ["model_id"]),
