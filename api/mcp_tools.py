@@ -209,7 +209,7 @@ def search_models(query="", type="", base_model="", source="", limit=20):
         if source and SOURCES.get(meta.get("info_source", ""), "not_scanned") != source:
             continue
         if not _matches(terms, os.path.relpath(file_path, base_dir), meta.get("name"), meta.get("custom_name"),
-                        meta.get("baseModel"), " ".join(meta.get("trainedWords") or [])):
+                        meta.get("baseModel"), " ".join((meta.get("trainedWords") or []) + (meta.get("headerWords") or []))):
             continue
         total += 1
         if len(found) < _limit(limit):

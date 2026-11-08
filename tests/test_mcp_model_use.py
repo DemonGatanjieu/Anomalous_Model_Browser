@@ -13,7 +13,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import mcp_canvas_edit, mcp_model_use, mcp_tools, model_placement  # noqa: E402
+from api import mcp_canvas_edit, mcp_model_use, mcp_tools, model_guide, model_placement  # noqa: E402
 
 CTX = {"base_url": "http://127.0.0.1:1"}
 
@@ -67,12 +67,34 @@ class ModelUseTests(unittest.TestCase):
         with mock.patch.object(mcp_tools, "search_models", return_value=found), \
                 mock.patch.object(mcp_model_use, "_about", side_effect=lambda ctx, model: model), \
                 mock.patch.object(mcp_tools, "_resolve_model", return_value=("loras", 0, "/m", "/m/a.safetensors")), \
-                mock.patch.object(mcp_tools, "get_metadata", return_value={"hash": "abc"}), \
+                mock.patch.object(mcp_tools, "get_metadata", return_value={"hash": "abc", "headerWords": ["glowstyle"]}), \
                 mock.patch.object(mcp_model_use.model_advice, "author_examples", return_value={"lora_weight": "0.7-0.8"}) as examples:
             got = mcp_model_use.search_models(CTX, "a")
         self.assertEqual(got["models"][0]["author_weight"], "0.7-0.8")
+        self.assertEqual(got["models"][0]["header_words"], ["glowstyle"], "no trigger words from Civitai: what its header suggests")
         self.assertNotIn("author_weight", got["models"][1], "only a LoRA has one")
         examples.assert_called_once_with("/m/a.safetensors", "loras", "abc")
+
+    def test_get_model_tells_the_header_words_and_the_familys_usage(self):
+        def details(model_id, kind, base, meta):
+            detail = {"model_id": model_id, "type": kind, "base_model": base, "trigger_words": [], "sha256": ""}
+            with mock.patch.object(mcp_tools, "get_model", return_value=(detail, None)), \
+                    mock.patch.object(mcp_tools, "_resolve_model", return_value=(kind, 0, "/m", "/m/a.safetensors")), \
+                    mock.patch.object(mcp_tools, "get_metadata", return_value=meta), \
+                    mock.patch.object(mcp_model_use, "_about", side_effect=lambda ctx, model: model), \
+                    mock.patch.object(mcp_model_use.model_advice, "author_examples", return_value={}), \
+                    mock.patch.object(model_guide.folder_paths, "get_filename_list",
+                                      side_effect=lambda folder: {"text_encoders": ["Anima/qwen_3_06b_base.safetensors"], "vae": []}[folder]):
+                return mcp_model_use.get_model(CTX, model_id)[0]
+        anima = details("diffusion_models:0:a.safetensors", "diffusion_models", "", {"base_guess": "Anima"})
+        self.assertEqual(anima["usage"]["needs"], ["text_encoders: qwen_3_06b (here: Anima/qwen_3_06b_base.safetensors)",
+                                                   "vae: qwen_image_vae (none here by that name)"])
+        self.assertIn("batch", anima["usage"]["notes"][0])
+        self.assertNotIn("header_words", anima, "words are a LoRA's")
+        lora = details("loras:0:a.safetensors", "loras", "Pony", {"headerWords": ["glowstyle"]})
+        self.assertEqual(lora["header_words"], ["glowstyle"])
+        self.assertEqual(lora["usage"]["family"], "Pony")
+        self.assertNotIn("needs", lora["usage"], "a LoRA needs no text encoder of its own")
 
     def test_the_search_answer_stays_readable(self):
         lora = lambda at: {"model_id": f"loras:0:style/l{at}.safetensors", "name": f"Style {at}", "file": f"l{at}.safetensors",  # noqa: E731

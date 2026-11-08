@@ -1,7 +1,8 @@
 """What Anomalous knows about using a model well, told to the AI so it need not guess:
 
 - the settings its author's example pictures were made with (the Civitai record a scan keeps
-  beside the file: images[].meta), summed up for get_model: how many pictures, the sampler and
+  beside the file: images[].meta), summed up for get_model and the model details
+  (example_settings; author_examples says it in words): how many pictures, the sampler and
   scheduler most used, the range of steps and CFG, the most used size and, for a LoRA, the
   weight it was used at: by its file hash, name or Civitai version, else the LoRA most of the
   pictures name (their names are the author's own files, and often an older version's);
@@ -29,6 +30,7 @@ except ImportError:  # loaded outside the package (tests)
 FAMILIES = (
     ("SDXL", ("sdxl", "pony", "illustrious", "noob")), ("SD 1.x", ("sd 1",)), ("SD 2.x", ("sd 2",)),
     ("SD 3", ("sd 3", "sd3")), ("Flux.1", ("flux.1", "flux 1", "chroma")), ("Flux.2", ("flux.2", "flux 2")),
+    ("Z-Image", ("z-image", "zimage", "z image")),
 )
 # Bases trained far from their family's: a LoRA of one on another of the family loads but may look off.
 OWN_WAYS = ("pony", "illustrious", "noob", "chroma")
@@ -124,13 +126,10 @@ def _span(numbers):
     return say(low) if low == high else f"{say(low)}–{say(high)}"
 
 
-def _common(values, total):
-    """'euler (6 of 10)': the most used value and in how many of the `total` pictures."""
+def _most(values):
+    """[the most used value, how many times], or None when there is none."""
     counted = Counter(value for value in values if value)
-    if not counted:
-        return ""
-    value, times = counted.most_common(1)[0]
-    return str(value) if times == total else f"{value} ({times} of {total})"
+    return list(counted.most_common(1)[0]) if counted else None
 
 
 def _loras(meta):
@@ -177,8 +176,10 @@ def _record(file_path):
     return None
 
 
-def author_examples(file_path, folder_type, sha256=""):
-    """What the author's example pictures were made with, summed up; {} when nothing is kept."""
+def example_settings(file_path, folder_type, sha256=""):
+    """What the author's example pictures were made with: {"pictures": n, "sampler" / "scheduler" /
+    "size": [the most used, in how many], "steps" / "cfg" / "clip_skip" / "lora_weight": "25" or
+    "20–30"}, unknown ones left out; {} when nothing is kept."""
     record = _record(file_path)
     metas = [image.get("meta") for image in (record or {}).get("images") or []
              if isinstance(image, dict) and isinstance(image.get("meta"), dict)][:MAX_EXAMPLES]
@@ -188,14 +189,23 @@ def author_examples(file_path, folder_type, sha256=""):
              for meta in metas]
     found = {
         "pictures": len(metas),
-        "sampler": _common([str(meta.get("sampler") or "") for meta in metas if str(meta.get("sampler")).lower() != "undefined"], len(metas)),
-        "scheduler": _common([str(meta.get("scheduler") or meta.get("Schedule type") or "") for meta in metas], len(metas)),
+        "sampler": _most([str(meta.get("sampler") or "") for meta in metas if str(meta.get("sampler")).lower() != "undefined"]),
+        "scheduler": _most([str(meta.get("scheduler") or meta.get("Schedule type") or "") for meta in metas]),
         "steps": _span([n for n in (_number(meta.get("steps")) for meta in metas) if n is not None]),
         "cfg": _span([n for n in (_number(meta.get("cfgScale")) for meta in metas) if n is not None]),
-        "size": _common([str(size) for size in sizes], len(metas)),
+        "size": _most([str(size) for size in sizes]),
         "clip_skip": _span([n for n in (_number(meta.get("clipSkip") or meta.get("Clip skip")) for meta in metas) if n is not None]),
     }
     if folder_type == "loras":
         own = {(sha256 or "")[:10].lower(), os.path.splitext(os.path.basename(file_path))[0].lower(), f"v{record.get('id')}"} - {""}
         found["lora_weight"] = _span(_lora_weights(metas, own))
     return {key: value for key, value in found.items() if value}
+
+
+def author_examples(file_path, folder_type, sha256=""):
+    """example_settings in words for the AI: "euler (6 of 10)" for a value not all pictures share."""
+    found = example_settings(file_path, folder_type, sha256)
+    for key, value in found.items():
+        if isinstance(value, list):
+            found[key] = str(value[0]) if value[1] == found["pictures"] else f"{value[0]} ({value[1]} of {found['pictures']})"
+    return found

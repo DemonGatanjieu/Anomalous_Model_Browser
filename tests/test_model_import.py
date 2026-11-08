@@ -35,7 +35,7 @@ def safetensors_bytes(header):
     return struct.pack("<Q", len(raw)) + raw + b"\0" * 64
 
 
-def gguf_bytes(arch, names=()):
+def gguf_bytes(arch, names=(), dims=(4, 4)):
     def text(value):
         raw = value.encode("utf-8")
         return struct.pack("<Q", len(raw)) + raw
@@ -43,7 +43,7 @@ def gguf_bytes(arch, names=()):
     data += text("general.architecture") + struct.pack("<I", 8) + text(arch)
     data += text("tokenizer.tokens") + struct.pack("<I", 9) + struct.pack("<I", 8) + struct.pack("<Q", 2) + text("a") + text("b")
     for name in names:
-        data += text(name) + struct.pack("<I", 2) + struct.pack("<QQ", 4, 4) + struct.pack("<I", 1) + struct.pack("<Q", 0)
+        data += text(name) + struct.pack("<I", len(dims)) + struct.pack("<" + "Q" * len(dims), *dims) + struct.pack("<I", 1) + struct.pack("<Q", 0)
     return data
 
 
@@ -61,6 +61,8 @@ class KindTests(unittest.TestCase):
         self.assertEqual((sd15["kind"], sd15["base"]), ("loras", "SD 1.5"))
         flux = kind_of(tensors("lora_unet_double_blocks_0_img_attn_proj.lora_up.weight"))
         self.assertEqual((flux["kind"], flux["base"]), ("loras", "Flux.1 D"))
+        schnell = kind_of(tensors("lora_unet_double_blocks_0_img_attn_proj.lora_up.weight", meta={"modelspec.architecture": "flux-1-schnell/lora"}))
+        self.assertEqual(schnell["base"], "Flux.1 S")
         # Anima (Cosmos-Predict2 with a Qwen3 adapter): Civitai calls it a Checkpoint, it goes in diffusion models.
         anima = kind_of(tensors("net.blocks.0.self_attn.q_proj.weight", "net.blocks.0.cross_attn.k_proj.weight",
                                 "net.x_embedder.proj.1.weight", "net.llm_adapter.blocks.0.mlp.0.weight"))
@@ -84,8 +86,17 @@ class KindTests(unittest.TestCase):
         merged = kind_of(tensors("model.diffusion_model.input_blocks.0.0.weight", "first_stage_model.decoder.up.0.block.0.conv1.weight",
                                  "lora_te_text_model_encoder_layers_0_mlp_fc1.lora_down.weight"))
         self.assertEqual(merged["kind"], "checkpoints")  # a merge that kept a LoRA's keys
-        flux = kind_of(tensors("double_blocks.0.img_attn.qkv.weight", "img_in.weight", "single_blocks.0.linear1.weight"))
+        flux = kind_of(tensors("double_blocks.0.img_attn.qkv.weight", "img_in.weight", "single_blocks.0.linear1.weight", "guidance_in.in_layer.weight"))
         self.assertEqual((flux["kind"], flux["base"]), ("diffusion_models", "Flux.1 D"))
+        # Schnell is Dev without the guidance input, as ComfyUI tells them.
+        schnell = kind_of(tensors("double_blocks.0.img_attn.qkv.weight", "img_in.weight", "single_blocks.0.linear1.weight"))
+        self.assertEqual(schnell["base"], "Flux.1 S")
+        # Lumina 2 and Z-Image share a layout: the caption embedder's width tells them apart.
+        lumina = lambda width: kind_of(tensors("noise_refiner.0.attention.k_norm.weight", "cap_embedder.1.weight", "layers.0.attention.qkv.weight",
+                                               shapes={"cap_embedder.1.weight": [width, 2304]}))
+        self.assertEqual((lumina(3840)["kind"], lumina(3840)["base"], lumina(3840)["sure"]), ("diffusion_models", "Z-Image", True))
+        self.assertEqual(lumina(2304)["base"], "Lumina")
+        self.assertEqual(lumina(1000)["base"], "", "a width not known is no guess")
         # Qwen-Image also has img_in: not taken for Flux.
         qwen = kind_of(tensors("transformer_blocks.0.img_mod.1.weight", "img_in.weight", "txt_norm.weight"))
         self.assertEqual((qwen["kind"], qwen["base"]), ("diffusion_models", "Qwen"))
@@ -170,8 +181,15 @@ class KindTests(unittest.TestCase):
         self.assertEqual(model_kind.classify(None, None), {"kind": "", "base": "", "sure": False})
 
     def test_gguf(self):
-        flux = model_kind.classify("gguf", model_kind.parse_gguf(gguf_bytes("flux", ["double_blocks.0.img_attn.qkv.weight"])))
+        flux = model_kind.classify("gguf", model_kind.parse_gguf(gguf_bytes("flux", ["double_blocks.0.img_attn.qkv.weight", "guidance_in.in_layer.weight"])))
         self.assertEqual((flux["kind"], flux["base"]), ("diffusion_models", "Flux.1 D"))
+        schnell = gguf_bytes("flux", ["double_blocks.0.img_attn.qkv.weight"])
+        self.assertEqual(model_kind.classify("gguf", model_kind.parse_gguf(schnell))["base"], "Flux.1 S")
+        self.assertEqual(model_kind.classify("gguf", model_kind.parse_gguf(schnell[:-10]))["base"], "Flux.1 D", "not all read: no telling")
+        # ComfyUI-GGUF calls both lumina2: Z-Image has about 6 billion parameters, Lumina 2 under 4.
+        zimage = model_kind.parse_gguf(gguf_bytes("lumina2", ["layers.0.attention.qkv.weight"], dims=(80000, 80000)))
+        self.assertEqual(model_kind.classify("gguf", zimage)["base"], "Z-Image")
+        self.assertEqual(model_kind.classify("gguf", model_kind.parse_gguf(gguf_bytes("lumina2", ["a.weight"])))["base"], "Lumina")
         self.assertEqual(model_kind.parse_gguf(gguf_bytes("flux", ["a.weight"]))["keys"], ["a.weight"])
         self.assertEqual(model_kind.classify("gguf", model_kind.parse_gguf(gguf_bytes("t5encoder")))["kind"], "text_encoders")
         # Cut short: what fits is still read.

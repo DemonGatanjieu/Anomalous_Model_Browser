@@ -105,6 +105,7 @@ def _read_metadata(file_path):
         "description": "",
         "notes": "",
         "trainedWords": [],
+        "headerWords": [],  # no trigger words from Civitai: what the LoRA's header suggests (header_words.py), a guess
         "baseModel": "",
         "civitai_url": "",
         "source_url": "",
@@ -169,6 +170,9 @@ def _read_metadata(file_path):
                     if description: metadata["description"] = description
                     if notes: metadata["notes"] = notes
                     if trained_words: metadata["trainedWords"] = trained_words
+                    kept_words = data.get("anomalous_header_words")
+                    if not trained_words and isinstance(kept_words, list):
+                        metadata["headerWords"] = [str(word) for word in kept_words if str(word).strip()]
                     if base_model: metadata["baseModel"] = base_model
                     if civitai_url: metadata["civitai_url"] = civitai_url
                     if model_id is not None: metadata["model_id"] = model_id

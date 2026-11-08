@@ -22,6 +22,7 @@ from recycle_bin import move_to_trash
 from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, safetensors_damage, scan_choice, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
 from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, download_media, fetch_civitai_info, fetch_model_description
 import model_sidecars as sidecars
+import header_words
 
 
 # Fixed tuples avoid rebuilding long extension lists for every scanned model.
@@ -222,6 +223,12 @@ def scan_one(args, state, rename_log, root, filename, previous):
     info_data = civitai_data
     if file_hash:
         info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
+    # A LoRA Civitai gives no trigger words for: what its own header suggests, kept apart.
+    info_data.pop("anomalous_header_words", None)
+    if not any(str(word).strip() for word in info_data.get("trainedWords") or []):
+        words = header_words.of_file(file_path)
+        if words:
+            info_data["anomalous_header_words"] = words
     # What the file alone tells has no standard name: both names are the file's own, so a
     # rename would only repeat it (name_name, then name_name_name_name on the next scan).
     inferred = is_unmatched(civitai_data)

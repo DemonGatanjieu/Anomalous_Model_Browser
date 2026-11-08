@@ -11,7 +11,7 @@ import threading
 
 import folder_paths
 
-from . import mcp_canvas_edit, mcp_fit, mcp_tools, model_advice, model_placement
+from . import mcp_canvas_edit, mcp_fit, mcp_tools, model_advice, model_guide, model_placement
 from .mcp_actions import _action
 from .mcp_tools import _LIMIT, _QUERY, ToolError
 from .model_constants import MODEL_EXTENSIONS
@@ -129,11 +129,14 @@ def search_models(ctx, query="", type="", base_model="", source="", limit=20):
     found = mcp_tools.search_models(query, type, base_model, source, limit)
     for model in found["models"]:
         _about(ctx, model)
-        if model["type"] == "loras":  # the weight its author's pictures use: picking one needs no get_model each
+        if model["type"] == "loras":  # its author's weight and its header's words: picking one needs no get_model each
             path = mcp_tools._resolve_model(model["model_id"])[3]
-            weight = model_advice.author_examples(path, "loras", (mcp_tools.get_metadata(path) or {}).get("hash", "")).get("lora_weight")
+            meta = mcp_tools.get_metadata(path) or {}
+            weight = model_advice.author_examples(path, "loras", meta.get("hash", "")).get("lora_weight")
             if weight:
                 model["author_weight"] = weight
+            if not model.get("trigger_words") and meta.get("headerWords"):
+                model["header_words"] = meta["headerWords"][:SEARCH_WORDS]
     return _compact(found)
 
 
@@ -143,6 +146,13 @@ def get_model(ctx, model_id, include_cover=False):
     examples = model_advice.author_examples(path, folder_type, detail.get("sha256", ""))
     if examples:
         detail["author_examples"] = examples
+    meta = mcp_tools.get_metadata(path) or {}
+    guessed = model_guide.words(path, folder_type, meta)
+    if guessed:
+        detail["header_words"] = guessed
+    use = model_guide.usage(folder_type, detail.get("base_model") or meta.get("base_guess") or "")
+    if use:
+        detail["usage"] = use
     return _about(ctx, detail), extra
 
 
@@ -188,10 +198,10 @@ MODEL_TOOLS = dict([
                            "description": "Where the model's information came from."},
                 "limit": _LIMIT}, read_only=True),
     _action("get_model", "Model details",
-            "Everything known about one model: Civitai name, version and link, trigger words, base model, description, "
-            "the user's own name and notes, author_examples (the sampler, steps, CFG, size and, for a LoRA, the weight "
-            "its author's example pictures used: a good start), and loaded_by (or belongs_in and placement) as in "
-            "search_models. include_cover attaches its cover picture.",
+            "Everything known about one model: Civitai name, version and link, trigger words (or header_words, guessed "
+            "from its training tags), base model, description, the user's notes, author_examples (settings its "
+            "author's pictures used: a good start), usage (files it needs, notes on its family), and loaded_by (or "
+            "belongs_in and placement) as in search_models. include_cover attaches its cover.",
             get_model, {"model_id": {"type": "string", "description": "From search_models."},
                         "include_cover": {"type": "boolean", "default": False}}, ["model_id"], read_only=True),
     _action("move_model", "Move a model to its folder",

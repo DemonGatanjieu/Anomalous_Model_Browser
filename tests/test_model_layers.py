@@ -2,6 +2,7 @@
 import asyncio
 import json
 import os
+import struct
 import sys
 import tempfile
 import unittest
@@ -134,6 +135,21 @@ class LayerTests(unittest.TestCase):
         self.assertIn("filename=m.civitai_bak.png", found["civitai"])
         Path(self.base + ".preview.png").write_bytes(b"civitai image")  # a copy of Civitai's
         self.assertFalse(covers()["custom"])
+
+    def test_a_scan_keeps_what_a_loras_header_suggests_when_civitai_gives_no_words(self):
+        header = {"lora_unet_input_blocks_4_1_proj_in.lora_down.weight": {"dtype": "F16", "shape": [4, 4], "data_offsets": [0, 0]},
+                  "__metadata__": {"ss_tag_frequency": json.dumps({"10_glow": {"glowstyle": 12, "1girl": 12, "hat": 2}})}}
+        raw = json.dumps(header).encode("utf-8")
+        self.model.write_bytes(struct.pack("<Q", len(raw)) + raw)
+        self.scan()
+        self.assertEqual(json.loads(Path(self.base + ".info").read_text(encoding="utf-8"))["anomalous_header_words"], ["glowstyle"])
+        meta = get_metadata(str(self.model))
+        self.assertEqual((meta["trainedWords"], meta["headerWords"]), ([], ["glowstyle"]))
+        with mock.patch.dict(CIVITAI, trainedWords=["glow"]):  # Civitai has words now: the guess goes
+            self.scan("--force-overwrite")
+        meta = get_metadata(str(self.model))
+        self.assertEqual((meta["trainedWords"], meta["headerWords"]), (["glow"], []))
+        self.assertNotIn("anomalous_header_words", json.loads(Path(self.base + ".info").read_text(encoding="utf-8")))
 
     def test_a_scan_does_not_refetch_what_is_on_disk(self):
         write(self.base + ".info", {**CIVITAI, "anomalous_custom_name": "Found_v2"})

@@ -1,0 +1,248 @@
+{
+  "about": "How models of a base model family are used, told to the AI (get_model's usage), and for a drawing model loaded in parts (a diffusion models file) the files it needs beside it, which the model details also show with the one this ComfyUI has by that name (api/model_guide.py). The first family with a mark that starts the model's base model (Civitai's, else what its header tells) is used. Notes say only what was tested here or what ComfyUI's own templates do. A part's names are looked for in its folder's file names, letters and digits only; a name of three letters or fewer must be the whole name.",
+  "families": [
+    {
+      "family": "Anima",
+      "marks": [
+        "anima"
+      ],
+      "parts": [
+        {
+          "folder": "text_encoders",
+          "file": "qwen_3_06b",
+          "names": [
+            "qwen306b"
+          ]
+        },
+        {
+          "folder": "vae",
+          "file": "qwen_image_vae",
+          "names": [
+            "qwenimage"
+          ]
+        }
+      ],
+      "notes": [
+        "For several pictures run several times: Anima's VAE takes a batch above 1 for video frames, and a second pass is left with one picture."
+      ]
+    },
+    {
+      "family": "Flux.1 Schnell",
+      "marks": [
+        "flux.1 s"
+      ],
+      "parts": [
+        {
+          "folder": "text_encoders",
+          "file": "clip_l",
+          "names": [
+            "clipl"
+          ]
+        },
+        {
+          "folder": "text_encoders",
+          "file": "t5xxl",
+          "names": [
+            "t5xxl",
+            "t5v11xxl"
+          ]
+        },
+        {
+          "folder": "vae",
+          "file": "ae (Flux VAE)",
+          "names": [
+            "ae",
+            "fluxvae",
+            "flux1vae",
+            "fluxae"
+          ]
+        }
+      ],
+      "notes": [
+        "Schnell is distilled: about 4 steps at cfg 1, no FluxGuidance; at cfg 1 the negative prompt does nothing."
+      ]
+    },
+    {
+      "family": "Flux.1",
+      "marks": [
+        "flux.1"
+      ],
+      "parts": [
+        {
+          "folder": "text_encoders",
+          "file": "clip_l",
+          "names": [
+            "clipl"
+          ]
+        },
+        {
+          "folder": "text_encoders",
+          "file": "t5xxl",
+          "names": [
+            "t5xxl",
+            "t5v11xxl"
+          ]
+        },
+        {
+          "folder": "vae",
+          "file": "ae (Flux VAE)",
+          "names": [
+            "ae",
+            "fluxvae",
+            "flux1vae",
+            "fluxae"
+          ]
+        }
+      ],
+      "notes": [
+        "Dev and its kin (Krea, Kontext): KSampler cfg 1, the guidance in a FluxGuidance node (3.5 in ComfyUI's templates); at cfg 1 the negative prompt does nothing."
+      ]
+    },
+    {
+      "family": "Chroma",
+      "marks": [
+        "chroma"
+      ],
+      "parts": [
+        {
+          "folder": "text_encoders",
+          "file": "t5xxl",
+          "names": [
+            "t5xxl",
+            "t5v11xxl"
+          ]
+        },
+        {
+          "folder": "vae",
+          "file": "ae (Flux VAE)",
+          "names": [
+            "ae",
+            "fluxvae",
+            "flux1vae",
+            "fluxae"
+          ]
+        }
+      ],
+      "notes": [
+        "Unlike Flux Dev, Chroma uses a real cfg (about 4) and the negative prompt works."
+      ]
+    },
+    {
+      "family": "Qwen-Image",
+      "marks": [
+        "qwen"
+      ],
+      "parts": [
+        {
+          "folder": "text_encoders",
+          "file": "qwen_2.5_vl_7b",
+          "names": [
+            "qwen25vl"
+          ]
+        },
+        {
+          "folder": "vae",
+          "file": "qwen_image_vae",
+          "names": [
+            "qwenimage"
+          ]
+        }
+      ],
+      "notes": [
+        "ComfyUI's template puts ModelSamplingAuraFlow (shift 3.1) after the loader and uses cfg 2.5. It writes Chinese and English text into pictures."
+      ]
+    },
+    {
+      "family": "Z-Image",
+      "marks": [
+        "z-image",
+        "zimage",
+        "z image"
+      ],
+      "parts": [
+        {
+          "folder": "text_encoders",
+          "file": "qwen_3_4b",
+          "names": [
+            "qwen34b"
+          ]
+        },
+        {
+          "folder": "vae",
+          "file": "ae (Flux VAE)",
+          "names": [
+            "ae",
+            "fluxvae",
+            "flux1vae",
+            "fluxae"
+          ]
+        }
+      ],
+      "notes": [
+        "The Turbo version is distilled: about 8 steps at cfg 1."
+      ]
+    },
+    {
+      "family": "Lumina 2",
+      "marks": [
+        "lumina"
+      ],
+      "parts": [
+        {
+          "folder": "text_encoders",
+          "file": "gemma_2_2b",
+          "names": [
+            "gemma22b"
+          ]
+        },
+        {
+          "folder": "vae",
+          "file": "ae (Flux VAE)",
+          "names": [
+            "ae",
+            "fluxvae",
+            "flux1vae",
+            "fluxae"
+          ]
+        }
+      ]
+    },
+    {
+      "family": "Pony",
+      "marks": [
+        "pony"
+      ],
+      "notes": [
+        "Prompts start with score_9, score_8_up, score_7_up; CLIP skip 2 (CLIPSetLastLayer -2) is usual."
+      ]
+    },
+    {
+      "family": "Illustrious / NoobAI",
+      "marks": [
+        "illustrious",
+        "noob"
+      ],
+      "notes": [
+        "Danbooru tags; Pony's score_ tags do nothing here. A v-prediction checkpoint that carries the v_pred key is switched by ComfyUI itself; only one without it needs ModelSamplingDiscrete (v_prediction)."
+      ]
+    },
+    {
+      "family": "SDXL",
+      "marks": [
+        "sdxl"
+      ],
+      "notes": [
+        "Pictures of about one megapixel (832x1216, 1024x1024); much smaller ones come out poor."
+      ]
+    },
+    {
+      "family": "SD 1.5",
+      "marks": [
+        "sd 1"
+      ],
+      "notes": [
+        "Native size about 512x768; a larger first picture repeats heads and limbs: enlarge in a second pass."
+      ]
+    }
+  ]
+}

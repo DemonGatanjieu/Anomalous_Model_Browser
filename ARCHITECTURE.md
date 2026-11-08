@@ -198,6 +198,14 @@ covered by the `styles.css` manifest.
   the Civitai record a scan keeps), and add_lora / set_model's `base_model_note` when a LoRA and
   the main model on its line (`graph_splice.js` loraChain / modelLineStart, reported by the page)
   are for different base models. `tests/test_model_advice.py`.
+  `api/model_guide.py` is what using a model takes besides its file: the model details'
+  `GET /anomalous/model_guide` (type, folder index, subfolder, file name, never a path) and
+  get_model's `header_words` and `usage`. The author's example settings
+  (`model_advice.example_settings`), the words a LoRA's header suggests when Civitai gave none
+  (`header_words.py`), and from `api/model_profiles.json` (data only: per base model family) the
+  text encoder and VAE a diffusion models file needs, with the file of that name this ComfyUI
+  has, and notes for the AI that say only what was tested here or ComfyUI's own templates do.
+  `tests/test_model_guide.py`.
   `api/mcp_canvas_edit.py` holds the tools that build a workflow where the user watches:
   `find_nodes` reads this ComfyUI's node types from its own `/object_info` (kept two
   minutes); `add_node`, `connect_nodes`, `set_values`, `remove_nodes` and `new_workflow` (a
@@ -625,7 +633,13 @@ covered by the `styles.css` manifest.
   node pack may read them there: `form`; an IP-Adapter carrying LoRA layers stays an
   IP-Adapter; a file two loaders read from different folders, such as SUPIR or a whole CLIP,
   is never `sure`); model import and the scanner's offline base model use it. Its rules are
-  checked in `tests/test_model_import.py`, layouts once misread included.
+  checked in `tests/test_model_import.py`, layouts once misread included. Like ComfyUI it tells
+  Flux Schnell from Dev (no guidance input) and Z-Image from Lumina 2 (the caption embedder's
+  width; a GGUF by its parameter count). `header_words.py` reads what a LoRA's header suggests
+  for its prompt when Civitai gives no trigger words: the maker's `modelspec.trigger_phrase`,
+  else the tags most training pictures share (kohya's `ss_tag_frequency`, generic ones left
+  out); the scanner keeps them in the `.info` (`anomalous_header_words`), metadata gives them as
+  `headerWords`, never inside `trainedWords` (`tests/test_header_words.py`).
 - `recycle_bin.py` is the only way the plugin deletes the user's files (models, covers,
   outputs, recipes, materials, notes, audio): to the system Recycle Bin, together, or not
   at all (`TrashUnavailable` on drives without one). `api/trash.py` is the API's import of it

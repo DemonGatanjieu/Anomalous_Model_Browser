@@ -571,6 +571,18 @@ cache. The key includes the model's real path and the physical `size`, `mtime_ns
 and `ctime_ns` signatures of the model and relevant sidecars. Return independent
 copies; never expose cached mutable dictionaries or lists.
 
+A LoRA Civitai gives no trigger words for gets the words its own header suggests
+(`header_words.py`): the scanner keeps them in the `.info` it writes as
+`anomalous_header_words`, and drops them when Civitai's record brings `trainedWords`;
+metadata gives them as `headerWords`, never inside `trainedWords`, and model search (the
+page's and the AI's) finds them. Listing reads no header for them. `GET
+/anomalous/model_guide` (`api/model_guide.py`), asked when the model details open, reads the
+header of a LoRA scanned before the words were kept, and returns the author's example settings
+and, for a diffusion models / unet file of a family in `api/model_profiles.json`, the text
+encoder and VAE it needs with the file of that name found here (by name only, never a claim
+that it is the right file). The model is named by type, folder index, subfolder and file name;
+being a read, other devices may ask too.
+
 Folder listing inventories a directory once with `os.scandir()` and preserves
 preview priority: `.preview.*` before bare same-stem media. Avoid an `exists()`
 sequence for every candidate when the directory inventory already has the

@@ -3,6 +3,7 @@ from . import (
     model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, quick_index, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
     local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, tts_version, backup,
     network_check, model_heads, model_usage, usage_ledger, sidecar_layout, ai_tasks_routes, snapshot_routes, workflow_saves, example_workflows,
+    model_guide,
 )
 from .scanner import *
 from .config import *
@@ -67,6 +68,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/delete_model', model_metadata.api_delete_model)
     app.router.add_post('/anomalous/open_model_folder', model_folder.api_open_model_folder)
     app.router.add_get('/anomalous/compatible_models', model_catalog.api_compatible_models)
+    app.router.add_get('/anomalous/model_guide', model_guide.api_model_guide)
     app.router.add_get('/anomalous/notebooks', api_get_notebooks)
     app.router.add_get('/anomalous/notebooks/by_node_type', api_get_notebooks_by_node_type)
     app.router.add_post('/anomalous/save_notebook', api_save_notebook)

@@ -1,5 +1,14 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.64.0 — unreleased
+
+- 没有 C 站触发词的 LoRA（自己炼的、从别处下的），扫描时会从模型文件里读出训练图片大多都带的标签（作者写了触发词就用作者的），和 C 站的触发词分开存，搜模型时也能用这些词搜到。
+- For a LoRA without trigger words from Civitai (trained yourself, downloaded elsewhere), a scan reads from the file the tags most of its training pictures share (or the trigger phrase its maker wrote) and keeps them apart from Civitai's trigger words; model search finds them too.
+- 从模型文件认底模时分得清 Flux.1 Dev 和 Schnell（Schnell 没有引导输入），也认得出 Z-Image 和 Lumina 2 这两种结构相近的模型：以前 Z-Image 的 GGUF 被当成 Lumina，safetensors 两种都认不出。已经扫过的模型重新扫描后才会更新。
+- When the base model comes from the file itself, Flux.1 Dev and Schnell are told apart (Schnell has no guidance input), and Z-Image and Lumina 2, two models of one layout, are recognised: a Z-Image GGUF was taken for Lumina, and neither was recognised as safetensors. Models scanned before keep their old answer until scanned again.
+- AI 查模型时多知道三件事：没有触发词的 LoRA 从文件里推测的词（标明是推测）；分开加载的模型（Anima、Flux、Chroma、Qwen-Image、Z-Image、Lumina 2）还要哪个文本编码器和 VAE，你这里有没有这个名字的文件；这一类模型要注意什么，只写这里测过的和 ComfyUI 官方模板里的做法，比如 Anima 出多张要跑几次而不是调批量，Flux Dev 的 CFG 保持 1。
+- Looking up a model, the AI learns three more things: for a LoRA without trigger words, the words guessed from its file (said to be a guess); for a model loaded in parts (Anima, Flux, Chroma, Qwen-Image, Z-Image, Lumina 2), the text encoder and VAE it needs and whether you have a file of that name; and what to mind with its kind of model, only what was tested here or ComfyUI's own templates do, such as running Anima several times for several pictures instead of raising the batch, and keeping Flux Dev at cfg 1.
+
 ## v1.63.0 — unreleased
 
 - 在设置里切换语言后，AI 工作台右边的展台、留言框和画布下方的存档条也马上换成新的语言。以前它们要刷新页面才变。

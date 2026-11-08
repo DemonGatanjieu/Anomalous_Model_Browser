@@ -18,10 +18,12 @@ import struct
 MAX_HEADER = 100 * 1024 * 1024
 GGUF_READ = 16 * 1024 * 1024
 # Raised whenever a rule changes: answers kept on disk (api/model_heads.py) are then read again.
-RULES = 2
+RULES = 3
 
 # Cross-attention width (the text encoder's output) -> base model, for the SD family.
 CONTEXT_WIDTH = {768: "SD 1.5", 1024: "SD 2.1", 2048: "SDXL"}
+# Caption embedder width -> base model, for the Lumina 2 layout (ComfyUI tells them apart the same way).
+CAPTION_WIDTH = {2304: "Lumina", 3840: "Z-Image"}
 # ComfyUI-GGUF's architecture names.
 GGUF_DIFFUSION = {
     "flux": "Flux.1 D", "sd1": "SD 1.5", "sdxl": "SDXL", "sd3": "SD3", "aura": "AuraFlow",
@@ -167,6 +169,15 @@ def _context_width(header):
     return 0
 
 
+def _first_dim(header, ending):
+    """The first dimension of the tensor whose name ends with `ending`, else 0."""
+    for key, value in header.items():
+        if key.endswith(ending) and isinstance(value, dict):
+            shape = value.get("shape") or []
+            return shape[0] if shape and isinstance(shape[0], int) else 0
+    return 0
+
+
 def _family(meta):
     """An SDXL file's family from the name of the model it was trained on (kohya's metadata)."""
     trained_on = " ".join(str(meta.get(key, "")) for key in ("ss_sd_model_name", "ss_base_model", "modelspec.title")).lower()
@@ -179,7 +190,7 @@ def _family(meta):
 def _base_from_meta(meta):
     arch = str(meta.get("modelspec.architecture", "")).lower()
     trained = str(meta.get("ss_base_model_version", "")).lower()
-    pairs = (("flux", "Flux.1 D"), ("chroma", "Chroma"), ("stable-diffusion-xl", "SDXL"), ("sdxl", "SDXL"),
+    pairs = (("flux-1-schnell", "Flux.1 S"), ("flux", "Flux.1 D"), ("chroma", "Chroma"), ("stable-diffusion-xl", "SDXL"), ("sdxl", "SDXL"),
              ("stable-diffusion-v1", "SD 1.5"), ("sd_v1", "SD 1.5"), ("stable-diffusion-v2", "SD 2.1"),
              ("sd_v2", "SD 2.1"), ("stable-diffusion-3", "SD3"), ("sd3", "SD3"), ("wan", "Wan Video"),
              ("qwen", "Qwen"), ("hunyuan", "Hunyuan Video"))
@@ -193,6 +204,9 @@ def _base_from_keys(header, text):
     """(base, sure) from tensor names; ("", False) when they do not tell."""
     if "individual_token_refiner" in text:
         return "Hunyuan Video", True
+    if "noise_refiner" in text and "cap_embedder_1" in text:
+        name = CAPTION_WIDTH.get(_first_dim(header, "cap_embedder.1.weight"), "")
+        return name, bool(name)
     # Cosmos-Predict2 (with or without "net."); Anima adds an adapter for its Qwen3 text
     # encoder. Before Wan: their blocks' attention names look alike.
     if "llm_adapter" in text:
@@ -286,6 +300,18 @@ def _kind(keys, raw, text):
     return "", False
 
 
+def _gguf_base(arch, header):
+    """A GGUF drawing model's base model by ComfyUI-GGUF's architecture name; when all its tensors
+    were read, Schnell is told from Dev (no guidance input) and Z-Image from Lumina 2 (about 6
+    billion parameters, Lumina 2 under 4)."""
+    whole = bool(header.get("params"))
+    if arch == "flux" and whole and not any(key.startswith("guidance_in.") for key in header.get("keys") or []):
+        return "Flux.1 S"
+    if arch == "lumina2" and whole:
+        return "Z-Image" if header["params"] > 4 * 10 ** 9 else "Lumina"
+    return GGUF_DIFFUSION[arch]
+
+
 def classify(fmt, header):
     """What a parsed header says: {"kind", "base", "sure"} (see the module text)."""
     if not header:
@@ -294,7 +320,7 @@ def classify(fmt, header):
         meta, keys = header.get("meta") or {}, header.get("keys") or []
         arch = str(meta.get("general.architecture", "")).lower()
         if arch in GGUF_DIFFUSION:
-            return {"kind": "diffusion_models", "base": GGUF_DIFFUSION[arch], "sure": True}
+            return {"kind": "diffusion_models", "base": _gguf_base(arch, header), "sure": True}
         if arch.startswith(GGUF_TEXT):
             return {"kind": "text_encoders", "base": "", "sure": True}
         header = {key: {} for key in keys}
@@ -314,6 +340,9 @@ def classify(fmt, header):
             base, base_sure = _base_from_keys(header, text)
     if base == "SDXL":
         base = _family(meta) or base
+    # Schnell is Dev without the guidance input; a LoRA has no such layer either way.
+    if base == "Flux.1 D" and kind in ("checkpoints", "diffusion_models") and "guidance_in" not in text:
+        base = "Flux.1 S"
     form = "lllite" if kind == "model_patches" and any(key.startswith("lllite_") for key in keys) else ""
     return {"kind": kind, "base": base, "sure": bool(kind) and sure and (base_sure or not base), "form": form}
 
