@@ -100,7 +100,11 @@ The main surfaces are:
 - Sidebar shell: navigation and persistent scan controls; focused child modules
   own the scan page, folder manager, and help dialog.
 - Grid and model detail: model browsing plus coordinated detail display in
-  `ui_detail.js` (its head with the actions in `model_detail_head.js`), metadata editing in
+  `ui_detail.js` (its head with the actions in `model_detail_head.js`; above the description
+  `ui_model_guide.js`: Civitai's trigger words, else the words the LoRA's file suggests, dashed
+  as a guess, its author's example settings and, for a model loaded in parts, the text encoder
+  and VAE it needs with the file of that name found here, from `GET /anomalous/model_guide`
+  once per page, a newer page cancelling it), metadata editing in
   `ui_model_editor.js`; `model_widget_path.js` puts a
   model path into a loader's widget. The scan page's model picker is `ui_scan_picker.js`, its settings card `ui_scan_settings.js`; opened afresh, the page shows the last counts at once (`?quick=1`) with "showing the last counts while they are updated", then the fresh ones; before any, a count slower than 400 ms shows "counting your models" instead of a blank page. "Found on Civitai" opens a list of those models with a box to find one by name (`/anomalous/scan_matched`, read when it opens).
 - Gallery: generated outputs (pictures and videos; All / Pictures / Videos beside the search

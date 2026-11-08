@@ -18,6 +18,7 @@ export function matchesModelQuery(model, query) {
     const text = [
         model?.filename, model?.subfolder, meta.custom_name, meta.name, meta.baseModel, meta.custom_notes,
         ...(Array.isArray(meta.trainedWords) ? meta.trainedWords : []),
+        ...(Array.isArray(meta.headerWords) ? meta.headerWords : []),
     ].filter(Boolean).join('\n').toLowerCase();
     return words.every(word => text.includes(word));
 }

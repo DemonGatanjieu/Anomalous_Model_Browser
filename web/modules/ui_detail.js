@@ -10,6 +10,7 @@ import { renderInferredNote } from './model_source.js';
 import { createModelFileFoot } from './model_location.js';
 import { createDetailHead } from './model_detail_head.js';
 import { civitaiVersionsBox } from './ui_civitai_versions.js';
+import { createModelGuide } from './ui_model_guide.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -245,68 +246,8 @@ export function showDetail(model) {
             rightPanel.appendChild(notesCard);
         }
 
-        // 2. Trained Words Section
-        if (m.trainedWords && m.trainedWords.length > 0) {
-            const twCont = document.createElement('div');
-            twCont.style.flexShrink = '0';
-            twCont.style.marginBottom = '10px';
-
-            const twHeader = document.createElement('div');
-            twHeader.style.display = 'flex';
-            twHeader.style.alignItems = 'center';
-            twHeader.style.marginBottom = '5px';
-
-            const twLabel = document.createElement('strong');
-            twLabel.textContent = t('detailTrainedWords');
-            twHeader.appendChild(twLabel);
-
-            const copyAll = document.createElement('button');
-            copyAll.innerText = t('copyAll');
-            copyAll.style.marginLeft = '10px';
-            copyAll.style.padding = '2px 6px';
-            copyAll.style.background = 'var(--amb-bg-card-hover)';
-            copyAll.style.color = 'var(--amb-text-main)';
-            copyAll.style.border = 'none';
-            copyAll.style.borderRadius = '3px';
-            copyAll.style.cursor = 'pointer';
-            copyAll.style.fontSize = '0.8em';
-            copyAll.onclick = () => {
-                const allWords = m.trainedWords.join(', ');
-                navigator.clipboard.writeText(allWords).then(() => {
-                    const old = copyAll.innerText;
-                    copyAll.innerText = t('copied');
-                    setTimeout(() => { copyAll.innerText = old; }, 1500);
-                });
-            };
-            twHeader.appendChild(copyAll);
-            twCont.appendChild(twHeader);
-
-            const tagsCont = document.createElement('div');
-            tagsCont.style.display = 'flex';
-            tagsCont.style.flexWrap = 'wrap';
-            tagsCont.style.gap = '4px';
-
-            m.trainedWords.forEach(w => {
-                const tag = document.createElement('span');
-                tag.innerText = w;
-                tag.style.background = 'var(--amb-bg-card-hover)';
-                tag.style.padding = '2px 6px';
-                tag.style.borderRadius = '4px';
-                tag.style.fontSize = '0.85em';
-                tag.style.cursor = 'pointer';
-                tag.style.border = '1px solid var(--amb-border-strong)';
-                tag.title = t('clickToCopy') + w;
-                tag.onclick = () => {
-                    navigator.clipboard.writeText(w).then(() => {
-                        tag.style.background = '#28a745';
-                        setTimeout(() => { tag.style.background = 'var(--amb-bg-card-hover)'; }, 500);
-                    });
-                };
-                tagsCont.appendChild(tag);
-            });
-            twCont.appendChild(tagsCont);
-            rightPanel.appendChild(twCont);
-        }
+        // 2. Trigger words, its author's settings, the files it needs (ui_model_guide.js)
+        rightPanel.appendChild(createModelGuide(model));
 
         // 3. Description Section (a model read from its file has the note above instead)
         if (m.description && m.info_source !== 'local') {

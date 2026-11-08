@@ -1,0 +1,94 @@
+/* The model details' words and settings above the description (ui_model_guide.js): trigger words,
+   the words a LoRA's file suggests (a guess: dashed), its author's example settings, and the files
+   a model loaded in parts needs. */
+
+.anomalous-guide {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.anomalous-guide:empty {
+    display: none;
+}
+
+.anomalous-guide-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.anomalous-guide-copy {
+    padding: 2px 6px;
+    border: none;
+    border-radius: 3px;
+    background: var(--amb-bg-card-hover);
+    color: var(--amb-text-main);
+    font-size: 0.8em;
+    cursor: pointer;
+}
+
+.anomalous-guide-hint {
+    margin-bottom: 6px;
+    color: var(--amb-text-muted);
+    font-size: 0.82em;
+    line-height: 1.5;
+}
+
+.anomalous-guide-words,
+.anomalous-guide-settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.anomalous-guide-word,
+.anomalous-guide-setting {
+    padding: 2px 6px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 4px;
+    background: var(--amb-bg-card-hover);
+    font-size: 0.85em;
+}
+
+.anomalous-guide-word {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.anomalous-guide-word.is-guess {
+    border-style: dashed;
+    background: transparent;
+}
+
+.anomalous-guide-word.is-copied {
+    background: #28a745;
+}
+
+.anomalous-guide-setting {
+    border-color: transparent;
+}
+
+.anomalous-guide-part {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 0.88em;
+    line-height: 1.6;
+}
+
+.anomalous-guide-part-role {
+    color: var(--amb-text-muted);
+}
+
+.anomalous-guide-part-state {
+    color: var(--amb-lt-ok, #77e6cf);
+}
+
+.anomalous-guide-part.is-missing .anomalous-guide-part-state {
+    color: var(--amb-lt-warn, #ffc107);
+}

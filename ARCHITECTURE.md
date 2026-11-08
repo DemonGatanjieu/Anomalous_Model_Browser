@@ -1064,7 +1064,8 @@ covered by the `styles.css` manifest.
   card placeholder ergonomics (eliminating misleading unclickable text in favor of pure centered icon and status),
   card action buttons (one-click canvas addition with plus icon, model metadata editor, direct precision scanner without wizard modal popups)
   with absolute positioning cascades immune to tooltip target conflicts, vibrant hover affordance,
-  safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_detail.js`
+  safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_model_guide.js`
+  (the details' trigger words, header words, author settings and needed files); `ui_detail.js`
   coordinates detail display (cover column, then the head from `model_detail_head.js`: back crumb, name, source line,
   Add node / Edit / Folder / Outputs; the foot with the path, Copy and Delete, and Show in folder, in
   `model_location.js`), `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
