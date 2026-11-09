@@ -424,6 +424,11 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
         fills[f"${role}"] = _lora(info, prefix)
     for role, prefix in (block.get("checkpoints") or {}).items():  # only optional nodes take one (SAM3 before the hand detector)
         fills[f"${role}"] = _checkpoint(info, prefix)
+    for role, kind in (block.get("optional_lllite") or {}).items():  # likewise (a Tile holding the lines of a redraw)
+        try:
+            fills[f"${role}"] = _lllite(info, kind)
+        except MissingModel:
+            fills[f"${role}"] = None
     if block.get("enlarge"):
         fills["$enlarge"] = enlargement(block["enlarge"], size_of(fills["$image"]))
     if block.get("upscaler"):

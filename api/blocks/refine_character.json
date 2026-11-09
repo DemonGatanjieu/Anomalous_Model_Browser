@@ -8,8 +8,8 @@
     "en": "Refine only the character"
   },
   "about": {
-    "zh": "自动抠出人物，换另一个模型只重画人物，边缘慢慢减弱，场景原样不动，另存一张。",
-    "en": "Cuts the character out; another model redraws only it, fading out at its edge, the scene left as it was; saved beside it."
+    "zh": "自动抠出人物，换另一个模型只重画人物，边缘慢慢减弱，场景原样不动；Anima 上有 Tile 时照着原图的线条画，可以改得更多。另存一张。",
+    "en": "Cuts the character out; another model redraws only it, fading out at its edge, the scene left as it was; on Anima with the Tile it follows the picture's lines and may change more. Saved beside it."
   },
   "source": {
     "zh": "常见的抠图加渐变遮罩局部重画（ComfyUI 自带的 Differential Diffusion），强度按 2026-11-10 的人物重画对照定",
@@ -17,6 +17,9 @@
   },
   "packs": {
     "InspyrenetRembg": "comfyui-inspyrenet-rembg"
+  },
+  "extras": {
+    "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
   },
   "nodes": {
     "second_model": {
@@ -153,7 +156,7 @@
     "nodes": ["second_model"],
     "copies_loras": false
   },
-  "notes": "The character's mask grows 12 px and is blurred about 15 px, so the redraw fades out at its edge; Differential Diffusion makes the mask's grey a weaker redraw, and the paste-back keeps everything outside it as it was. In the 2026-11-10 comparison (an Anima picture, RealSkin redrawing the character) this way at 0.45 changed the character about 5.5% on average and the scene 0.03%; the coat stayed on the bench. A small character in a wide picture gets few pixels for its face: repaint it (inpaint_crop_stitch) instead. The cut-out takes what stands out in front, often with what the character sits on or holds (a bench, an umbrella, a bag): redrawn with it, so where they touch still fits.",
+  "notes": "The character's mask grows 12 px and is blurred about 15 px, so the redraw fades out at its edge; Differential Diffusion makes the mask's grey a weaker redraw, and the paste-back keeps everything outside it as it was. In the 2026-11-10 comparison (an Anima picture, RealSkin redrawing the character) this way at 0.45 changed the character about 5.5% on average and the scene 0.03%; the coat stayed on the bench. A small character in a wide picture gets few pixels for its face: repaint it (inpaint_crop_stitch) instead. The cut-out takes what stands out in front, often with what the character sits on or holds (a bench, an umbrella, a bag): redrawn with it, so where they touch still fits. On Anima an animaTileRepair LLLite (strength 0.7, the first 80% of the steps, as the Tile upscale) holds the picture's lines: in a test of 2026-11-10 at denoise 0.70 without it the background's windows vanished and the bag was redrawn as another, with it they stayed (lines kept 61% to 85% in the background, 77% to 92% on the character), so it redraws at 0.7; without the Tile file the node goes and 0.45 is the strength. How much 0.7 changes follows the sampler: dpmpp_2m_sde (the Anima picture way's) about 8% on the character in that test, euler on a canvas there about 5%, the lines kept either way.",
   "models": [],
   "tested": {
     "gpu": "RTX 4050 Laptop",
@@ -161,19 +164,35 @@
     "date": "2026-11-10",
     "runs": [
       {
-        "model": "Anima (Harem 2.9B, then RealSkin 1.3 on the character, denoise 0.45)",
+        "model": "Anima (Harem 2.9B, then RealSkin 1.3 on the character, the Tile, denoise 0.7)",
         "size": "1440×1024",
-        "seconds": 242
+        "seconds": 250
       }
     ]
   },
   "variants": {
     "anima": {
+      "optional_lllite": {
+        "tile": "tile"
+      },
       "nodes": {
         "second_model": {
           "class_type": "UNETLoader",
           "like": "$loader",
           "inputs": {}
+        },
+        "tile": {
+          "class_type": "AnimaLLLiteApply_sdscripts",
+          "optional": true,
+          "inputs": {
+            "model": ["second_model", 0],
+            "lllite_name": "$tile",
+            "image": ["$save.images", "*"],
+            "strength": 0.7,
+            "start_percent": 0.0,
+            "end_percent": 0.8,
+            "preserve_wrapper": true
+          }
         },
         "cut": {
           "class_type": "InspyrenetRembg",
@@ -221,7 +240,7 @@
         "soft": {
           "class_type": "DifferentialDiffusion",
           "inputs": {
-            "model": ["second_model", 0]
+            "model": ["tile|second_model", 0]
           }
         },
         "encode": {
@@ -246,7 +265,7 @@
             "positive": ["$sampler.positive", "*"],
             "negative": ["$sampler.negative", "*"],
             "latent_image": ["area", 0],
-            "denoise": 0.45
+            "denoise": 0.7
           }
         },
         "decode": {
@@ -281,7 +300,7 @@
           }
         }
       },
-      "after": "On this Anima model the redraw's loader (second_model) is a UNET loader that starts as the canvas's model; it reuses the canvas's text encoder, VAE and prompts. set_model it to the other Anima model the user wants for the character (ask_user, search_models); a LoRA on the first model is not on it: add_lora it onto second_model when the user wants that look kept. Then run_workflow; the picture is saved beside it (prefix refined_character), the scene the same to the pixel. Denoise 0.45: face, hair and clothes take the second model's look and the pose stays; 0.3 changes little; at 0.6 the face changes more and colours fade. The preview shows what is redrawn (white, fading at the edge): part of the character missing, or the background in it, say so."
+      "after": "On this Anima model the redraw's loader (second_model) is a UNET loader that starts as the canvas's model; it reuses the canvas's text encoder, VAE and prompts. set_model it to the other Anima model the user wants for the character (ask_user, search_models); a LoRA on the first model is not on it: add_lora it onto second_model when the user wants that look kept. Then run_workflow; the picture is saved beside it (prefix refined_character), the scene the same to the pixel. The Tile (node tile) holds the picture's lines, so at denoise 0.7 the character takes the second model's look and nothing in it turns into something else (a bag stays that bag); without the tile node (no animaTileRepair file here) set redraw's denoise to 0.45. At this strength colours may drift (hair, a scarf): say so. The preview shows what is redrawn (white, fading at the edge): part of the character missing, or the background in it, say so."
     }
   }
 }

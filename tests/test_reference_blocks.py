@@ -215,11 +215,19 @@ class BlockTests(unittest.TestCase):
                 self.assertEqual((nodes["area"]["inputs"]["mask"], nodes["paste"]["inputs"]["mask"]), ([kept_by, 0], [kept_by, 0]),
                                  "redrawn where the mask is, and only there pasted onto the picture")
                 self.assertEqual((nodes["paste"]["inputs"]["destination"], nodes["save"]["inputs"]["images"]), (["$save.images", "*"], ["paste", 0]))
-                self.assertEqual(nodes["redraw"]["inputs"]["denoise"], 0.45, "the tested strength")
+                self.assertEqual((nodes["tile"]["inputs"]["lllite_name"], nodes["tile"]["inputs"]["image"], nodes["redraw"]["inputs"]["denoise"]),
+                                 ("animaTileRepair_v20.safetensors", ["$save.images", "*"], 0.7), "the Tile holds the lines: a stronger redraw")
+                no_tile = {**EVERYTHING, "AnimaLLLiteApply_sdscripts": {"input": {"required": {"lllite_name": [["anima-lllite-depth-1.safetensors"]]}}}}
+                without = reference_blocks.build(name, no_tile, main_base=lambda: "Anima")["nodes"]
+                self.assertNotIn("tile", without, "no Tile file: the way runs without it")
+                self.assertIn(["second_model", 0], [without[key]["inputs"]["model"] for key in ("soft", "redraw") if key in without])
                 sdxl = reference_blocks.build(name, EVERYTHING, main_base=lambda: "Illustrious")["nodes"]
-                self.assertEqual((sdxl["second_model"]["class_type"], sdxl["encode"]["inputs"]["vae"]), ("CheckpointLoaderSimple", ["second_model", 2]))
+                self.assertEqual((sdxl["second_model"]["class_type"], sdxl["encode"]["inputs"]["vae"], sdxl["redraw"]["inputs"]["denoise"]),
+                                 ("CheckpointLoaderSimple", ["second_model", 2], 0.45))
+                self.assertNotIn("tile", sdxl)
         character = reference_blocks.build("refine_character", EVERYTHING, main_base=lambda: "Anima")["nodes"]
-        self.assertEqual(character["redraw"]["inputs"]["model"], ["soft", 0], "the mask's grey a weaker redraw: the edge fades")
+        self.assertEqual((character["soft"]["inputs"]["model"], character["redraw"]["inputs"]["model"]), (["tile", 0], ["soft", 0]),
+                         "the mask's grey a weaker redraw: the edge fades")
         with self.assertRaisesRegex(reference_blocks.BlockError, "needs comfyui-inspyrenet-rembg"):
             reference_blocks.build("refine_background", BUILT_IN)
 
