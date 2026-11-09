@@ -271,14 +271,20 @@ export function showDetail(model) {
             translated.className = 'anomalous-detail-translation';
             translated.hidden = true;
             descText.append(original, translated);
+            // Under the text, the plain sign that there is more: "Show all ▾" folded, "Less ▴" open.
+            const more = document.createElement('button');
+            more.type = 'button';
+            more.className = 'anomalous-detail-intro-more';
             const fold = (folded, keep = false) => {
                 descText.classList.toggle('is-folded', folded);
                 descLabel.textContent = `${t('detailIntro')} ${folded ? '▾' : '▴'}`;
                 descLabel.title = t(folded ? 'detailIntroMore' : 'detailIntroLess');
+                more.textContent = `${t(folded ? 'detailIntroAll' : 'detailIntroLess')} ${folded ? '▾' : '▴'}`;
                 if (keep) keepIntroFolded(folded);
             };
             fold(introFolded());
             descLabel.onclick = () => fold(!descText.classList.contains('is-folded'), true);
+            more.onclick = () => fold(!descText.classList.contains('is-folded'), true);
             descText.addEventListener('click', (event) => {
                 if (descText.classList.contains('is-folded') && !event.target.closest('a')) fold(false, true);
             });
@@ -328,7 +334,7 @@ export function showDetail(model) {
                 };
                 descHead.append(swap, said);
             }
-            descCont.append(descHead, descText);
+            descCont.append(descHead, descText, more);
             rightPanel.appendChild(descCont);
         }
 

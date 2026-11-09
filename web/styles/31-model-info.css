@@ -513,9 +513,9 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: var(--amb-text-dim);
+    color: var(--amb-text-main);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
 }
 .anomalous-detail-intro-toggle:hover { color: var(--amb-text-main); }
@@ -537,10 +537,27 @@
 .anomalous-detail-description.is-folded {
     max-height: 5.2em;
     overflow: hidden;
+    margin: 0 -8px;
+    padding: 0 8px;
+    border-radius: 8px;
     cursor: pointer;
+    transition: background-color 0.15s ease;
     -webkit-mask-image: linear-gradient(#000 30%, transparent);
     mask-image: linear-gradient(#000 30%, transparent);
 }
+/* Folded, the whole text answers the pointer: it unfolds on a click. */
+.anomalous-detail-description.is-folded:hover { background: rgba(var(--amb-ink-rgb), 0.05); }
+.anomalous-detail-intro-more {
+    align-self: flex-start;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: var(--amb-link);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.anomalous-detail-intro-more:hover { text-decoration: underline; }
 
 /* A model Civitai does not know: what was read from the file, and a way to add the rest. */
 .anomalous-inferred-note {
