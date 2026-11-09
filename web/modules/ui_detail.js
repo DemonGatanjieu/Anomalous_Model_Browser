@@ -4,7 +4,8 @@
  */
 
 import { app } from "../../../scripts/app.js";
-import { translate } from './locales.js';
+import { resolveLocale, translate } from './locales.js';
+import { introFolded, introLanguage, keepIntroFolded, paragraphsOf } from './detail_intro.js';
 import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
 import { renderInferredNote } from './model_source.js';
 import { createModelFileFoot } from './model_location.js';
@@ -13,6 +14,8 @@ import { civitaiVersionsBox } from './ui_civitai_versions.js';
 import { createModelGuide } from './ui_model_guide.js';
 
 const t = (key, params) => translate(key, params);
+const ENGINES = { deepl: 'DeepL', google: 'Google', mymemory: 'MyMemory' };
+const engineNames = list => String(list).split(/,\s*/).map(name => ENGINES[name] || name).join(', ');
 
 export function showDetail(model) {
         if (this.currentDetailObserver) {
@@ -249,28 +252,83 @@ export function showDetail(model) {
         const stem = model.filename.replace(/\.[^.]+$/, '');
         rightPanel.appendChild(createModelGuide(model, { versions: onCivitai, file: titleOf(model, m)[0] === stem ? '' : model.filename }));
 
-        // 3. Its author's words from Civitai, folded to their start: long, and often English (a model read
-        // from its file has the note above instead). The label or the text unfolds it.
+        // 3. Its author's words from Civitai, folded to their start as the user last left them (detail_intro.js):
+        // long, and often English (a model read from its file has the note above instead). The label or the text
+        // unfolds it; Translate shows it in the window's language (api/description_translation.py), Original back.
         if (m.description && m.info_source !== 'local') {
             const descCont = document.createElement('div');
             descCont.className = 'anomalous-detail-intro';
+            const descHead = document.createElement('div');
+            descHead.className = 'anomalous-detail-intro-head';
             const descLabel = document.createElement('button');
             descLabel.type = 'button';
             descLabel.className = 'anomalous-detail-intro-toggle';
             const descText = document.createElement('div');
-            descText.className = 'anomalous-detail-description is-folded'; // Civitai's headings kept to size
-            setSafeRichHtml(descText, m.description);
-            const fold = (folded) => {
+            descText.className = 'anomalous-detail-description'; // Civitai's headings kept to size
+            const original = document.createElement('div');
+            setSafeRichHtml(original, m.description);
+            const translated = document.createElement('div');
+            translated.className = 'anomalous-detail-translation';
+            translated.hidden = true;
+            descText.append(original, translated);
+            const fold = (folded, keep = false) => {
                 descText.classList.toggle('is-folded', folded);
                 descLabel.textContent = `${t('detailIntro')} ${folded ? '▾' : '▴'}`;
                 descLabel.title = t(folded ? 'detailIntroMore' : 'detailIntroLess');
+                if (keep) keepIntroFolded(folded);
             };
-            fold(true);
-            descLabel.onclick = () => fold(!descText.classList.contains('is-folded'));
+            fold(introFolded());
+            descLabel.onclick = () => fold(!descText.classList.contains('is-folded'), true);
             descText.addEventListener('click', (event) => {
-                if (descText.classList.contains('is-folded') && !event.target.closest('a')) fold(false);
+                if (descText.classList.contains('is-folded') && !event.target.closest('a')) fold(false, true);
             });
-            descCont.append(descLabel, descText);
+            descHead.append(descLabel);
+            const target = introLanguage(original.textContent, resolveLocale());
+            if (target) {
+                const swap = document.createElement('button');
+                swap.type = 'button';
+                swap.className = 'anomalous-detail-intro-translate';
+                swap.textContent = t('detailTranslate');
+                const said = document.createElement('span');
+                said.className = 'anomalous-detail-intro-note';
+                const show = (inTranslation) => {
+                    original.hidden = inTranslation;
+                    translated.hidden = !inTranslation;
+                    swap.textContent = t(inTranslation ? 'detailShowOriginal' : 'detailTranslate');
+                };
+                swap.onclick = async () => {
+                    if (!translated.hidden) return show(false);
+                    if (translated.childElementCount) return show(true);
+                    swap.disabled = true;
+                    swap.textContent = t('detailTranslating');
+                    said.textContent = '';
+                    try {
+                        const sent = paragraphsOf(original);
+                        const response = await fetch('/anomalous/translate_description', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paragraphs: sent, target }) });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok || !Array.isArray(data.paragraphs)) throw new Error(data.error || `HTTP ${response.status}`);
+                        // A line that is the model's own name stays as it is: a translator turns names into words.
+                        const names = new Set([titleOf(model, m)[0], m.name].filter(Boolean).map(name => String(name).toLowerCase()));
+                        translated.replaceChildren(...data.paragraphs.map((line, at) => (names.has(String(sent[at] || '').toLowerCase()) ? sent[at] : line))
+                            .filter(Boolean).map((line) => {
+                                const p = document.createElement('p');
+                                p.textContent = line;
+                                return p;
+                            }));
+                        said.textContent = data.engine ? t('detailTranslatedBy', { engine: engineNames(data.engine) }) : '';
+                        show(true);
+                        fold(false);
+                    } catch (error) {
+                        said.textContent = t('detailTranslateFailed', { why: String(error.message || error).slice(0, 160) });
+                        show(false);
+                    } finally {
+                        swap.disabled = false;
+                    }
+                };
+                descHead.append(swap, said);
+            }
+            descCont.append(descHead, descText);
             rightPanel.appendChild(descCont);
         }
 

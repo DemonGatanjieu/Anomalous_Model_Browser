@@ -1,6 +1,7 @@
 """Prompt translation (POST /anomalous/translate): DeepL when the user saved a key in Settings
--> Translation, else Google's free endpoint, else MyMemory. When DeepL was asked and failed, the
-answer says why (`deepl_error`) while another provider still translates."""
+-> Translation, else Google's free endpoint, else MyMemory (translate_chain, also the model details'
+description_translation.py). When DeepL was asked and failed, the answer says why (`deepl_error`) while
+another provider still translates."""
 
 import asyncio
 import json
@@ -112,6 +113,33 @@ def _translate_with_mymemory(text, tl):
     raise RuntimeError("MyMemory returned no translation")
 
 
+def translate_chain(text, tl):
+    """`text` in language `tl` by the first provider that answers: DeepL with a saved key, Google, MyMemory.
+    (translated, engine, deepl_error); raises the last provider's error when none does. Blocking: call in a thread."""
+    deepl_key = _deepl_key()
+    deepl_error = None
+    if deepl_key:
+        try:
+            translated = _translate_with_deepl(text, tl, deepl_key)
+            if translated:
+                return translated, "deepl", None
+        except Exception as e:  # noqa: BLE001 - the free providers are asked instead, and the user told why
+            deepl_error = _deepl_error(e)
+            print(f"[Anomalous] DeepL translate failed: {deepl_error}")
+    try:
+        translated = _translate_with_google(text, tl)
+        if translated:
+            return translated, "google", deepl_error
+    except Exception as e:  # noqa: BLE001 - MyMemory is tried next
+        print(f"[Anomalous] Google translate failed: {e}")
+    try:
+        translated = _translate_with_mymemory(text, tl)
+    except Exception as e:
+        print(f"[Anomalous] MyMemory translate failed: {e}")
+        raise
+    return translated, "mymemory", deepl_error
+
+
 async def api_translate(request):
     try:
         data = await request.json()
@@ -124,37 +152,9 @@ async def api_translate(request):
         tl = str(data.get("target_lang", "zh-CN")).strip()
         if not text:
             return web.json_response({"translated": "", "status": "success"})
-            
-        # 1. DeepL, when a key is saved
-        deepl_key = _deepl_key()
-        deepl_error = None
-        if deepl_key:
-            try:
-                translated = await asyncio.to_thread(_translate_with_deepl, text, tl, deepl_key)
-                if translated:
-                    return web.json_response({"translated": translated, "status": "success", "engine": "deepl"})
-            except Exception as e:
-                deepl_error = _deepl_error(e)
-                print(f"[Anomalous] DeepL translate failed: {deepl_error}")
+        translated, engine, deepl_error = await asyncio.to_thread(translate_chain, text, tl)
         why = {"deepl_error": deepl_error} if deepl_error else {}
-
-        # 2. Try Google Translate (client=dict-chrome-ex)
-        try:
-            translated = await asyncio.to_thread(_translate_with_google, text, tl)
-            if translated:
-                return web.json_response({"translated": translated, "status": "success", "engine": "google", **why})
-        except Exception as e:
-            print(f"[Anomalous] Google translate failed: {e}")
-
-        # 3. Fallback to MyMemory
-        try:
-            translated = await asyncio.to_thread(_translate_with_mymemory, text, tl)
-            if translated:
-                return web.json_response({"translated": translated, "status": "success", "engine": "mymemory", **why})
-        except Exception as e:
-            print(f"[Anomalous] MyMemory translate failed: {e}")
-            raise e
-
+        return web.json_response({"translated": translated, "status": "success", "engine": engine, **why})
     except Exception as e:
         print(f"[Anomalous] All translation providers failed: {e}")
         return web.json_response({"translated": text, "error": str(e), "status": "error"})

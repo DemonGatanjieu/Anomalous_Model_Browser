@@ -273,6 +273,11 @@ covered by the `styles.css` manifest.
   reports, passes pause / stop / go on to it (from any page, the workbench's stop or the AI's stop_run; with its page
   gone another page takes it over) and writes a sheet the AI gave with `run_workflow(sheet=…)` on that call's run step,
   so run_status and the workbench follow it like a run (`tests/test_job_sheets.py`).
+- A model's author text from Civitai in its details opens folded as the user last left it and can be translated
+  into the window's language: `web/modules/detail_intro.js` (`tests/detail_intro.mjs`) keeps the fold and picks the
+  language, `api/description_translation.py` translates it paragraph by paragraph through
+  `translation_routes.translate_chain` (DeepL with a key, Google, MyMemory; long pieces cut smaller) and keeps the
+  answer in user/anomalous/translations by the text's hash, never beside the models (`tests/test_description_translation.py`).
 - A prompt the canvas's model cannot read. `api/prompt_language.py` says whether the prompts a run sends are mostly
   Chinese, Japanese or Korean while a loader's model is of a family marked "reads": "English" in `api/model_profiles.json`
   (SD 1.5, SDXL, Pony, Illustrious, Flux, Chroma: CLIP and T5 read English only, and the picture would follow nothing).

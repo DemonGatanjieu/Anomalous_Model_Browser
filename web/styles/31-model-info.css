@@ -519,6 +519,20 @@
     cursor: pointer;
 }
 .anomalous-detail-intro-toggle:hover { color: var(--amb-text-main); }
+.anomalous-detail-intro-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.anomalous-detail-intro-translate {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--amb-link);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.anomalous-detail-intro-translate:hover:not(:disabled) { text-decoration: underline; }
+.anomalous-detail-intro-translate:disabled { color: var(--amb-text-dim); cursor: default; }
+.anomalous-detail-intro-note { color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-detail-translation p { margin: 0 0 0.6em; }
 .anomalous-detail-description { color: var(--amb-text-soft); font-size: 0.95em; line-height: 1.75; }
 .anomalous-detail-description.is-folded {
     max-height: 5.2em;

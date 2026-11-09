@@ -3,7 +3,7 @@ from . import (
     model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, quick_index, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
     local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, tts_version, backup,
     network_check, model_heads, model_usage, usage_ledger, sidecar_layout, ai_tasks_routes, snapshot_routes, workflow_saves, example_workflows,
-    model_guide, job_sheets, prompt_language,
+    model_guide, job_sheets, prompt_language, description_translation,
 )
 from .scanner import *
 from .config import *
@@ -55,6 +55,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/job_sheet/ask', job_sheets.api_ask)
     app.router.add_post('/anomalous/job_sheet/clear', job_sheets.api_clear)
     app.router.add_post('/anomalous/prompt_language', prompt_language.api_check)
+    app.router.add_post('/anomalous/translate_description', description_translation.api_translate_description)
     try:
         folder_types.upgrade_folder_defaults()
     except Exception as error:
