@@ -1,11 +1,30 @@
 /* The flow over an AI task (ui_ai_flow.js), the step that waits for the user's OK and the Gates
    window (ui_ai_gate.js), and the window after handing something to an AI (ui_ai_handoff.js). */
-.anomalous-ai-flow {
+.anomalous-ai-flow { display: flex; flex-direction: column; gap: 4px; }
+.anomalous-ai-flow-done,
+.anomalous-ai-flow-plan {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 2px;
 }
+
+/* The blueprint's line: what the AI means to do; steps not done yet are dashed. */
+.anomalous-ai-flow-label {
+    margin-right: 4px;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    color: var(--amb-link);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+.anomalous-ai-flow-stage.is-ahead { border: 1px dashed var(--amb-border-strong); color: var(--amb-text-dim); }
+.anomalous-ai-flow-stage.is-ahead .anomalous-ai-flow-mark { background: transparent; border: 1px solid var(--amb-text-dim); box-sizing: border-box; }
+.anomalous-ai-flow-stage.is-skipped { color: var(--amb-text-dim); }
+.anomalous-ai-flow-stage.is-skipped .anomalous-ai-flow-words { text-decoration: line-through; }
 
 .anomalous-ai-flow-arrow { color: var(--amb-text-dim); }
 

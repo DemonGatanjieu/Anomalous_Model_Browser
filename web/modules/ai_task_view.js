@@ -97,7 +97,8 @@ export function chainTools(steps) {
 /**
  * The stages a task's steps went through, in the order they first came, with the last step's
  * state for each: 'asking' (waits for the user's OK), 'running', 'error' or 'done'. Notes that
- * hand in pictures count as the picture stage. `first`: the stage's first step, `count` its steps.
+ * hand in pictures count as the picture stage. `first`: the stage's first step, `count` its steps;
+ * `sheet` {done, total} when the stage's last step is a job sheet (api/job_sheets.py).
  */
 export function flowStages(task) {
     const stages = new Map();
@@ -106,12 +107,73 @@ export function flowStages(task) {
         if (!stage) continue;
         const item = stages.get(stage) || { stage, first: step.id, count: 0 };
         item.count += 1;
-        item.state = step.state === 'asking' ? 'asking'
-            : step.state === 'running' || step.state === 'allowed' ? 'running'
-                : step.ok === false ? 'error' : 'done';
+        item.state = stepState(step);
+        delete item.sheet;
+        if (step.sheet) {
+            item.sheet = { done: step.progress ? Math.max(0, (step.progress.prompt || 1) - 1) : step.prompts || 0,
+                total: step.sheet_total || step.progress?.prompts || step.prompts || 0 };
+        }
         stages.set(stage, item);
     }
     return [...stages.values()];
+}
+
+const stepState = step => (step.state === 'asking' ? 'asking'
+    : step.state === 'running' || step.state === 'allowed' ? 'running'
+        : step.ok === false ? 'error' : 'done');
+
+const planBlock = step => (step?.panel?.blocks || []).find(block => block?.type === 'plan') || null;
+
+/** The steps of plan card `block` the user kept (answer.plan, in order), each with the model they left on it. */
+function keptSteps(block, answer) {
+    const all = block.steps || [];
+    if (!answer?.plan?.length) return all;
+    let from = 0;
+    return answer.plan.map((item) => {
+        const at = all.findIndex((step, index) => index >= from && step.block === item.block);
+        from = at + 1;
+        const step = all[at] || { block: item.block, title: item.block };
+        const name = !item.model || item.model === step.model ? step.model_name
+            : (step.choices || []).find(choice => choice.model_id === item.model)?.name;
+        return { ...step, model_name: name || step.model_name };
+    });
+}
+
+/**
+ * The task's newest blueprint (a plan card, api/ai_plans.py) as the flow's second line, read from what came after
+ * the card, so the AI does nothing for it: before the user's nod every step is 'ahead'; built, the first pass is the
+ * bases run (a run with `bases`), then picking one (`pick_base`: 'asking' until picked, 'skipped' when the whole ran
+ * without), then the rest, the whole run after that. null with no plan card. {state: 'waiting' (the nod), 'change'
+ * (they asked for changes) or 'built', card: its step, items: [{title, model} or {key}, state, first: the step to go
+ * to]}; an item's state is 'ahead' (not yet), 'running', 'asking', 'skipped', 'error' or 'done'.
+ */
+export function planFlow(task) {
+    const steps = task?.steps || [];
+    let at = -1;
+    steps.forEach((step, index) => { if (planBlock(step)) at = index; });
+    if (at < 0) return null;
+    const card = steps[at];
+    const block = planBlock(card);
+    const answer = card.answers?.[block.id];
+    const built = Boolean(answer?.plan);
+    const kept = keptSteps(block, answer);
+    const later = steps.slice(at + 1);
+    const runs = later.filter(step => step.tool === 'run_workflow' && !step.sheet);
+    const bases = built ? runs.find(step => step.bases) : null;
+    const whole = built ? runs.find(step => !step.bases && (!bases || later.indexOf(step) > later.indexOf(bases))) : null;
+    const pick = bases ? later.find(step => step.tool === 'pick_base' && later.indexOf(step) > later.indexOf(bases)) : null;
+    const picked = pick?.answers?.base && !pick.answers.base.skipped;
+    const first = bases || whole;
+    const items = [{ title: kept[0]?.title, model: kept[0]?.model_name, state: first ? stepState(first) : 'ahead', first: (first || card).id }];
+    if (kept.length > 1) {
+        const pickState = !bases ? (whole ? 'skipped' : 'ahead') : picked ? 'done' : whole ? 'skipped'
+            : stepState(bases) === 'done' ? 'asking' : 'ahead';
+        items.push({ key: 'aiFlowPick', state: pickState, first: (pick || bases || card).id });
+        for (const step of kept.slice(1)) {
+            items.push({ title: step.title, model: step.model_name, state: whole ? stepState(whole) : 'ahead', first: (whole || card).id });
+        }
+    }
+    return { state: built ? 'built' : answer ? 'change' : 'waiting', card: card.id, items };
 }
 
 /**

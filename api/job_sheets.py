@@ -350,6 +350,7 @@ def _sync_step(sheet, pictures=()):
         if not step:
             return
         step["sheet"] = sheet["id"]
+        step["sheet_total"] = sheet["total"]
         if pictures:
             kept = [item for item in step["results"] if item["type"] != "image"]
             shown = [item for item in step["results"] if item["type"] == "image"]

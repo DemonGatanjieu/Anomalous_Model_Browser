@@ -1,7 +1,7 @@
 // The AI workbench's rules (web/modules/ai_task_view.js): folding reads, words, counts, addresses.
 import assert from 'node:assert/strict';
 import {
-    activityIds, audioResult, chainTools, duration, flowStages, foldLooks, groupSteps, isVideo, panelGist, lookTools, newestPicture, outputCount, outputUrl, outputPicture, pictureShown,
+    activityIds, audioResult, chainTools, duration, flowStages, planFlow, foldLooks, groupSteps, isVideo, panelGist, lookTools, newestPicture, outputCount, outputUrl, outputPicture, pictureShown,
     pictureKey, picturePreview, uniquePictures, skillsBefore, stepDetail, taskCounts, taskFamilies, taskOutputs, taskResults, taskState, toolKey,
 } from '../web/modules/ai_task_view.js';
 
@@ -97,6 +97,36 @@ assert.deepEqual(flow.map(item => [item.stage, item.state, item.first, item.coun
     ['model', 'running', 'a', 2], ['prompt', 'done', 'b', 1], ['picture', 'done', 'd', 1], ['run', 'asking', 'f', 1], ['canvas', 'error', 'g', 1],
 ]);
 assert.deepEqual(flowStages(null), []);
+
+// A job sheet's run says how far it is.
+const sheetRun = flowStages({ steps: [staged('s', 'run', { state: 'running', sheet: 'x', sheet_total: 10, progress: { prompt: 7, prompts: 10 } })] });
+assert.deepEqual(sheetRun[0].sheet, { done: 6, total: 10 });
+assert.deepEqual(flowStages({ steps: [staged('s', 'run', { sheet: 'x', sheet_total: 10, prompts: 10 })] })[0].sheet, { done: 10, total: 10 });
+
+// The blueprint's line, from what came after the card.
+const card = (answers = {}) => ({ id: 'card', kind: 'panel', ok: true, answers, panel: { blocks: [{ type: 'plan', id: 'answer', steps: [
+    { block: 'picture', title: 'Picture', model: 'm:a', model_name: 'Harem' },
+    { block: 'refine_other_model', title: 'Redraw', model: 'm:b', model_name: 'Kirazuri', choices: [{ model_id: 'm:c', name: 'Other' }] },
+    { block: 'detail_face_hands', title: 'Face and hands', model: null },
+] }] } });
+const lineOf = plan => plan.items.map(item => `${item.title || item.key}${item.model ? `/${item.model}` : ''}:${item.state}`);
+assert.equal(planFlow({ steps: [staged('a', 'model')] }), null, 'no card, no line');
+const waiting = planFlow({ steps: [card()] });
+assert.equal(waiting.state, 'waiting');
+assert.deepEqual(lineOf(waiting), ['Picture/Harem:ahead', 'aiFlowPick:ahead', 'Redraw/Kirazuri:ahead', 'Face and hands:ahead']);
+const kept = { choice: ['build'], plan: [{ block: 'picture', model: 'm:a' }, { block: 'refine_other_model', model: 'm:c' }] };
+const planRun = (id, extra) => ({ id, tool: 'run_workflow', stage: 'run', ok: true, state: 'done', results: [], ...extra });
+const picking = planFlow({ steps: [card({ answer: kept }), planRun('b', { bases: { bases: [] } })] });
+assert.equal(picking.state, 'built');
+assert.deepEqual(lineOf(picking), ['Picture/Harem:done', 'aiFlowPick:asking', 'Redraw/Other:ahead'],
+    'a dropped step is gone, a swapped model shows; after the bases the pick waits for the user');
+const pickStep = answers => ({ id: 'p', tool: 'pick_base', kind: 'panel', ok: true, answers, panel: { blocks: [{ type: 'picks', id: 'base' }] } });
+const going = planFlow({ steps: [card({ answer: kept }), planRun('b', { bases: { bases: [] } }), pickStep({ base: { choice: ['b2'] } }), planRun('w', { state: 'running' })] });
+assert.deepEqual(lineOf(going), ['Picture/Harem:done', 'aiFlowPick:done', 'Redraw/Other:running']);
+assert.equal(going.items[2].first, 'w', 'a step leads to the run doing it');
+const without = planFlow({ steps: [card({ answer: kept }), planRun('b', { bases: { bases: [] } }), planRun('w', { ok: false, state: 'error' })] });
+assert.deepEqual(lineOf(without), ['Picture/Harem:done', 'aiFlowPick:skipped', 'Redraw/Other:error']);
+assert.equal(planFlow({ steps: [card({ answer: { text: 'fix hands first' } })] }).state, 'change');
 
 // The activity entries a task shows: the AI's canvas changes and the user's own.
 assert.deepEqual(activityIds({ steps: [{ results: [{ type: 'canvas', activity: 'a1' }, { type: 'model' }] }, { tool: 'user_activity', activity: 'u1', results: [] }] }), ['a1', 'u1']);

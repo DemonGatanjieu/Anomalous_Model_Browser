@@ -434,7 +434,9 @@ covered by the `styles.css` manifest.
   Options Anomalous makes name a page word (`label_key`). `tests/test_ai_repaint.py`.
   `web/modules/ui_ai_gate.js` draws the card under a step that asks and the Gates window;
   `ui_ai_flow.js` the flow over a task (its stages in order, each done, running, waiting or
-  failed; a stage leads to its first step). `ui_ai_handoff.js` is "Hand to AI" on a model's
+  failed; a stage leads to its first step; a job sheet's run with how far it is), and under it the blueprint's line
+  (`ai_task_view.js` planFlow: the newest plan card's kept steps, then picking a base, lit as the bases run, the pick
+  and the whole run after the card go; coming steps dashed; read from the steps, nothing asked of the AI). `ui_ai_handoff.js` is "Hand to AI" on a model's
   page, an output image's inspector and a combo card: a task the user starts with `about`
   (the model's `model_id`, the image, the combo's name; checked in `ai_tasks.start_task`),
   which `begin_task` hands to the AI, and the sentence to paste into the AI app. `ui_ai_canvas_hand.js` is "Hand to
