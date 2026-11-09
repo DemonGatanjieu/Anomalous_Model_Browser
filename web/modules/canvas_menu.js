@@ -5,7 +5,8 @@
  * AMB, change its model by picture, insert a LoRA before / after, its saved values, the
  * model's pictures and details, save its values or the picked nodes as a combo — each only
  * where it applies; the empty canvas's menu opens the quick search and AMB's pages. Both keep a save of the
- * workflow (ui_snapshot_bar.js) and open the job sheet (ui_job_sheet.js). `browser()` gives the browser,
+ * workflow (ui_snapshot_bar.js), open the job sheet (ui_job_sheet.js) and hand the canvas or the node to an AI
+ * (ui_ai_canvas_hand.js). `browser()` gives the browser,
  * made on first use.
  */
 
@@ -17,6 +18,7 @@ import { hasComboNodes, menuNodes, saveSelectionAsCombo } from './ui_combo_struc
 import { saveNodeParameters } from './node_parameter_sets.js';
 import { addMark } from './ui_snapshot_bar.js';
 import { openJobSheet } from './ui_job_sheet.js';
+import { handCanvasToAi } from './ui_ai_canvas_hand.js';
 import { anomalousPrompt } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openSettingsPage } from './ui_settings_page.js';
@@ -81,6 +83,7 @@ const NODE_ITEMS = {
     })] : [],
     snapshotMark,
     jobSheet,
+    handToAi: (node, browser) => [item(t('canvasMenuEntry_handToAi'), () => handCanvasToAi(browser, node))],
     saveCombo: (node, browser) => {
         const nodes = menuNodes(node);
         if (!hasComboNodes(nodes)) return [];
@@ -102,6 +105,7 @@ const CANVAS_ITEMS = {
     },
     snapshotMark,
     jobSheet,
+    handToAi: browser => [item(t('canvasMenuEntry_handToAi'), () => handCanvasToAi(browser))],
 };
 
 /** The items of `list` that are on and apply, built by `builders`; a broken one is left out. */

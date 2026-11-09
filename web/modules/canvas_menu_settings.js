@@ -21,12 +21,14 @@ export const NODE_ENTRIES = Object.freeze([
     { id: 'saveCombo', on: true },
     { id: 'snapshotMark', on: true },
     { id: 'jobSheet', on: true },
+    { id: 'handToAi', on: true },
 ]);
 export const CANVAS_ENTRIES = Object.freeze([
     { id: 'quickSearch', on: true },
     { id: 'openPage', on: true },
     { id: 'snapshotMark', on: true },
     { id: 'jobSheet', on: true },
+    { id: 'handToAi', on: true },
 ]);
 export const PLACEMENTS = Object.freeze(['submenu', 'top']);
 

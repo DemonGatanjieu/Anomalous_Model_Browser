@@ -437,7 +437,11 @@ covered by the `styles.css` manifest.
   failed; a stage leads to its first step). `ui_ai_handoff.js` is "Hand to AI" on a model's
   page, an output image's inspector and a combo card: a task the user starts with `about`
   (the model's `model_id`, the image, the combo's name; checked in `ai_tasks.start_task`),
-  which `begin_task` hands to the AI, and the sentence to paste into the AI app. It tells the page through the
+  which `begin_task` hands to the AI, and the sentence to paste into the AI app. `ui_ai_canvas_hand.js` is "Hand to
+  AI…" in a node's and the empty canvas's right-click menu: ready wishes for the canvas or the node, sent to the task
+  an AI is on now as a message or as a new task about the canvas (`about` {type: canvas, tab}: `ai_task_canvas.spec`
+  gives the page that tab as `from`, so the task's reads, runs and copy start from it, `mcp_task_tab.js`); a run that
+  fails on the page offers "Ask the AI" with ComfyUI's words. It tells the page through the
   `anomalous.ai_task` event; `api/ai_tasks_routes.py` serves `/anomalous/ai_tasks` (list, one
   task, start, rename or remove, a panel's answer, a message). The user can start a task first
   (New task): it waits, and the next app that calls takes it over, so its work starts there

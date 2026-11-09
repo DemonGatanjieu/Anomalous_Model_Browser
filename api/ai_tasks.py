@@ -216,7 +216,7 @@ def _take_waiting(client, now, session=""):
     return task
 
 
-ABOUT_TYPES = {"model": "model_id", "image": "image", "combo": "name", "workflow": "name"}  # what a task the user starts can be about
+ABOUT_TYPES = {"model": "model_id", "image": "image", "combo": "name", "workflow": "name", "canvas": "tab"}  # what a user's task is about
 
 
 def _about(items):

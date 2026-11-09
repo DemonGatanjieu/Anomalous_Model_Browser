@@ -5,7 +5,8 @@
  * the AI gets their ids from begin_task) and shows the sentence to paste into the AI app:
  * Anomalous cannot wake an AI by itself. The task waits on the AI workbench until an AI takes it.
  * Pictures (the inspector's ✦, a gallery card's menu) can instead go to the task open now: the AI
- * gets the pictures themselves and what made them (POST /anomalous/ai_tasks/{id}/pictures).
+ * gets the pictures themselves and what made them (POST /anomalous/ai_tasks/{id}/pictures). The canvas
+ * (ui_ai_canvas_hand.js) starts its tasks here too.
  */
 
 import { translate as t } from './locales.js';
@@ -31,6 +32,11 @@ function button(className, label, onClick) {
 async function handToAi(owner, wish, about, leave = null) {
     const title = await anomalousPrompt(t('aiHandPrompt'), wish, t('aiHand'));
     if (title === null || title === undefined || !String(title).trim()) return;
+    return startTask(owner, title, about, leave);
+}
+
+/** Starts a task called `title` about `about` and shows the sentence to paste into the AI app (canvas hand-off too). */
+export async function startTask(owner, title, about, leave = null) {
     try {
         const response = await fetch('/anomalous/ai_tasks', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: String(title).trim(), about }),
@@ -67,7 +73,7 @@ export function handModelToAi(owner, model, where) {
 }
 
 /** The task an AI is on now (the latest one not ended), or null. */
-async function openTask() {
+export async function openTask() {
     try {
         const tasks = (await (await fetch('/anomalous/ai_tasks?limit=20')).json()).tasks || [];
         return tasks.find(task => !task.ended) || null;

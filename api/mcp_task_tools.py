@@ -54,7 +54,8 @@ def begin_task(ctx, title, new_task=False):
         answer["about"] = task["about"]
         answer["about_note"] = ("The user started this task from these in Anomalous; work with them: model_id goes to "
                                 "set_model / add_lora / get_model, image to get_image_info, a combo's name to place_combo, "
-                                "a workflow's name to open_workflow.")
+                                "a workflow's name to open_workflow; a canvas is the user's tab your work starts from "
+                                "(describe_canvas reads it).")
     return answer
 
 

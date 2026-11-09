@@ -82,14 +82,17 @@ def begin_call(task_id):
 
 
 def spec(action):
-    """What the page needs for page action `action` of the call running now: {mode, tab, title}, or None."""
+    """What the page needs for page action `action` of the call running now: {mode, tab, title, from?}, or None.
+    `from`: the tab of a canvas the user handed over (the task's "about"), what the task's work starts from."""
     holder = _call.get()
     if not holder or not holder.get("task") or action not in TAB_ACTIONS:
         return None
     task = ai_tasks.get_task(holder["task"])
     if not task:
         return None
-    return {"mode": mode_of(task), "tab": (task.get("canvas") or {}).get("tab"), "title": (task.get("title") or "")[:60]}
+    handed = next((item["tab"] for item in task.get("about") or [] if item.get("type") == "canvas"), None)
+    return {"mode": mode_of(task), "tab": (task.get("canvas") or {}).get("tab"), "title": (task.get("title") or "")[:60],
+            **({"from": handed} if handed else {})}
 
 
 def remember(tab):

@@ -4,6 +4,7 @@ import { watchMcpActions } from './mcp_bridge.js';
 import { canvasMenuItems, nodeMenuItems } from './canvas_menu.js';
 import { watchSaves } from './ui_snapshot_bar.js';
 import { watchJobSheetCard } from './ui_job_sheet.js';
+import { watchRunErrors } from './ui_ai_canvas_hand.js';
 import { openQuickSearch } from './ui_quick_search.js';
 import {
     clampFloatingTriggerPosition,
@@ -216,6 +217,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         removeLegacyTriggerPosition();
         watchSaves(ensureBrowser);
         watchJobSheetCard(ensureBrowser);
+        watchRunErrors(ensureBrowser);
         // Beside this file, not under a fixed name: the plugin folder may be called anything
         // (a ZIP from GitHub unpacks as Anomalous_Model_Browser-main), and ComfyUI serves it by that name.
         const cssPath = new URL('../styles.css', import.meta.url).pathname;

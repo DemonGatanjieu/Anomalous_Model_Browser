@@ -5,7 +5,9 @@
  * change copies the open workflow into a new tab named after the task and says so in a toast,
  * so the user's own tab is never changed. Reads and runs follow the task's tab when it is open
  * and use the canvas as it is before it has one; new_workflow and open_workflow make the tab
- * they open the task's. An existing task tab that cannot be opened stops the action.
+ * they open the task's. An existing task tab that cannot be opened stops the action. A canvas the user handed to the
+ * task (`spec.from`, ui_ai_canvas_hand.js) comes to the front first while the task has no tab: it is the one read,
+ * run and copied; closed since, the canvas open now is.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -14,7 +16,7 @@ import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { tabName } from './mcp_canvas_edit.js';
 
 const CHANGES = new Set(['set_prompt', 'set_model', 'add_lora', 'place_combo', 'fix_models', 'add_node', 'add_nodes', 'connect_nodes', 'set_values', 'remove_nodes']);
-const FOLLOWS = new Set(['describe_canvas', 'check_models', 'run_workflow', 'download_missing', 'fill_slots']);
+const FOLLOWS = new Set(['describe_canvas', 'check_models', 'run_workflow', 'download_missing', 'fill_slots', 'job_sheet']);
 const OPENS = new Set(['new_workflow', 'open_workflow']);
 const SWITCH_WAIT_MS = 4000;
 
@@ -49,7 +51,7 @@ export async function showTab(path) {
     return shown(path);
 }
 
-/** Runs page action `action` (`run()`) on the task's tab per `spec` ({mode, tab, title}); `opened(tab)`
+/** Runs page action `action` (`run()`) on the task's tab per `spec` ({mode, tab, title, from}); `opened(tab)`
  * hears of a tab made or opened for the task ({path, name, made}). Returns what `run()` does. */
 export async function onTaskTab(action, spec, run, opened) {
     if (spec?.mode !== 'new' || !(CHANGES.has(action) || FOLLOWS.has(action) || OPENS.has(action))) return run();
@@ -64,6 +66,7 @@ export async function onTaskTab(action, spec, run, opened) {
             + 'Reopen that workflow, or explicitly use open_workflow/new_workflow for this task before retrying. Nothing was run or changed.');
         return run();
     }
+    if (spec.from) await showTab(spec.from);
     if (!CHANGES.has(action)) return run();
     const name = tabName(spec.title || t('aiTaskTabDefault'));
     await app.loadGraphData(app.graph.serialize(), true, true, name);

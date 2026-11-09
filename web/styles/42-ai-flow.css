@@ -149,6 +149,35 @@
 .anomalous-ai-handoff-text { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
 .anomalous-ai-handoff-actions { display: flex; flex-wrap: wrap; gap: 14px; }
 
+/* The canvas handed to an AI (ui_ai_canvas_hand.js): ready wishes as chips, the line, where it goes. */
+.anomalous-ai-canvas-hand { display: flex; flex-direction: column; gap: 10px; width: min(520px, 86vw); }
+.anomalous-ai-canvas-wishes { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-ai-canvas-wish {
+    padding: 5px 10px;
+    color: var(--amb-text-main);
+    background: var(--amb-bg-card);
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12.5px;
+    text-align: left;
+}
+.anomalous-ai-canvas-wish:hover { background: var(--amb-bg-card-hover); border-color: var(--amb-accent); }
+.anomalous-ai-canvas-line {
+    box-sizing: border-box;
+    width: 100%;
+    resize: vertical;
+    padding: 8px 10px;
+    color: inherit;
+    background: var(--amb-bg-input);
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    font: inherit;
+    line-height: 1.5;
+}
+.anomalous-ai-canvas-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
 /* A run's progress under its step (ui_ai_results.js runProgress). */
 .anomalous-ai-run-progress { display: flex; flex-direction: column; gap: 5px; max-width: 520px; margin: 6px 0 4px; }
 .anomalous-ai-run-line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
