@@ -1,0 +1,287 @@
+{
+  "job": "refine",
+  "want": "character",
+  "rank": 8,
+  "short": "character only",
+  "title": {
+    "zh": "换模型精修·只改人物",
+    "en": "Refine only the character"
+  },
+  "about": {
+    "zh": "自动抠出人物，换另一个模型只重画人物，边缘慢慢减弱，场景原样不动，另存一张。",
+    "en": "Cuts the character out; another model redraws only it, fading out at its edge, the scene left as it was; saved beside it."
+  },
+  "source": {
+    "zh": "常见的抠图加渐变遮罩局部重画（ComfyUI 自带的 Differential Diffusion），强度按 2026-11-10 的人物重画对照定",
+    "en": "The common cut-out with a graded-mask repaint (ComfyUI's own Differential Diffusion), its strength from a character redraw comparison of 2026-11-10"
+  },
+  "packs": {
+    "InspyrenetRembg": "comfyui-inspyrenet-rembg"
+  },
+  "nodes": {
+    "second_model": {
+      "class_type": "CheckpointLoaderSimple",
+      "like": "$loader",
+      "inputs": {}
+    },
+    "second_positive": {
+      "class_type": "CLIPTextEncode",
+      "like": "$sampler.positive",
+      "inputs": {
+        "clip": ["second_model", 1]
+      }
+    },
+    "second_negative": {
+      "class_type": "CLIPTextEncode",
+      "like": "$sampler.negative",
+      "inputs": {
+        "clip": ["second_model", 1]
+      }
+    },
+    "cut": {
+      "class_type": "InspyrenetRembg",
+      "inputs": {
+        "image": ["$save.images", "*"],
+        "torchscript_jit": "default"
+      }
+    },
+    "solid": {
+      "class_type": "ThresholdMask",
+      "inputs": {
+        "mask": ["cut", 1],
+        "value": 0.5
+      }
+    },
+    "edge": {
+      "class_type": "GrowMask",
+      "inputs": {
+        "mask": ["solid", 0],
+        "expand": 12,
+        "tapered_corners": true
+      }
+    },
+    "as_picture": {
+      "class_type": "MaskToImage",
+      "inputs": {
+        "mask": ["edge", 0]
+      }
+    },
+    "fade": {
+      "class_type": "ImageBlur",
+      "inputs": {
+        "image": ["as_picture", 0],
+        "blur_radius": 31,
+        "sigma": 0.5
+      }
+    },
+    "area_mask": {
+      "class_type": "ImageToMask",
+      "inputs": {
+        "image": ["fade", 0],
+        "channel": "red"
+      }
+    },
+    "soft": {
+      "class_type": "DifferentialDiffusion",
+      "inputs": {
+        "model": ["second_model", 0]
+      }
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": ["$save.images", "*"],
+        "vae": ["second_model", 2]
+      }
+    },
+    "area": {
+      "class_type": "SetLatentNoiseMask",
+      "inputs": {
+        "samples": ["encode", 0],
+        "mask": ["area_mask", 0]
+      }
+    },
+    "redraw": {
+      "class_type": "KSampler",
+      "like": "$sampler",
+      "inputs": {
+        "model": ["soft", 0],
+        "positive": ["second_positive", 0],
+        "negative": ["second_negative", 0],
+        "latent_image": ["area", 0],
+        "denoise": 0.45
+      }
+    },
+    "decode": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": ["redraw", 0],
+        "vae": ["second_model", 2]
+      }
+    },
+    "paste": {
+      "class_type": "ImageCompositeMasked",
+      "inputs": {
+        "destination": ["$save.images", "*"],
+        "source": ["decode", 0],
+        "x": 0,
+        "y": 0,
+        "resize_source": false,
+        "mask": ["area_mask", 0]
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": ["paste", 0],
+        "filename_prefix": "refined_character"
+      }
+    },
+    "look": {
+      "class_type": "PreviewImage",
+      "inputs": {
+        "images": ["fade", 0]
+      }
+    }
+  },
+  "after": "The redraw's loader (second_model) starts as the same checkpoint: set_model it to the model the user wants for the character (ask_user, search_models), add_lora a character or style LoRA onto it if they want one, and write its prompts (second_positive, second_negative, copied from the first) in that model's style. Then run_workflow; the picture is saved beside it (prefix refined_character), the scene the same to the pixel. Denoise 0.45: face, hair and clothes take the second model's look and the pose stays; 0.3 changes little; at 0.6 the face changes more and colours fade. The preview shows what is redrawn (white, fading at the edge): part of the character missing, or the background in it, say so.",
+  "gives": {
+    "sampler": "redraw",
+    "save": "save"
+  },
+  "own_model": {
+    "nodes": ["second_model"],
+    "copies_loras": false
+  },
+  "notes": "The character's mask grows 12 px and is blurred about 15 px, so the redraw fades out at its edge; Differential Diffusion makes the mask's grey a weaker redraw, and the paste-back keeps everything outside it as it was. In the 2026-11-10 comparison (an Anima picture, RealSkin redrawing the character) this way at 0.45 changed the character about 5.5% on average and the scene 0.03%; the coat stayed on the bench. A small character in a wide picture gets few pixels for its face: repaint it (inpaint_crop_stitch) instead. The cut-out takes what stands out in front, often with what the character sits on or holds (a bench, an umbrella, a bag): redrawn with it, so where they touch still fits.",
+  "models": [],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-11-10",
+    "runs": [
+      {
+        "model": "Anima (Harem 2.9B, then RealSkin 1.3 on the character, denoise 0.45)",
+        "size": "1440×1024",
+        "seconds": 242
+      }
+    ]
+  },
+  "variants": {
+    "anima": {
+      "nodes": {
+        "second_model": {
+          "class_type": "UNETLoader",
+          "like": "$loader",
+          "inputs": {}
+        },
+        "cut": {
+          "class_type": "InspyrenetRembg",
+          "inputs": {
+            "image": ["$save.images", "*"],
+            "torchscript_jit": "default"
+          }
+        },
+        "solid": {
+          "class_type": "ThresholdMask",
+          "inputs": {
+            "mask": ["cut", 1],
+            "value": 0.5
+          }
+        },
+        "edge": {
+          "class_type": "GrowMask",
+          "inputs": {
+            "mask": ["solid", 0],
+            "expand": 12,
+            "tapered_corners": true
+          }
+        },
+        "as_picture": {
+          "class_type": "MaskToImage",
+          "inputs": {
+            "mask": ["edge", 0]
+          }
+        },
+        "fade": {
+          "class_type": "ImageBlur",
+          "inputs": {
+            "image": ["as_picture", 0],
+            "blur_radius": 31,
+            "sigma": 0.5
+          }
+        },
+        "area_mask": {
+          "class_type": "ImageToMask",
+          "inputs": {
+            "image": ["fade", 0],
+            "channel": "red"
+          }
+        },
+        "soft": {
+          "class_type": "DifferentialDiffusion",
+          "inputs": {
+            "model": ["second_model", 0]
+          }
+        },
+        "encode": {
+          "class_type": "VAEEncode",
+          "inputs": {
+            "pixels": ["$save.images", "*"],
+            "vae": ["$decode.vae", "*"]
+          }
+        },
+        "area": {
+          "class_type": "SetLatentNoiseMask",
+          "inputs": {
+            "samples": ["encode", 0],
+            "mask": ["area_mask", 0]
+          }
+        },
+        "redraw": {
+          "class_type": "KSampler",
+          "like": "$sampler",
+          "inputs": {
+            "model": ["soft", 0],
+            "positive": ["$sampler.positive", "*"],
+            "negative": ["$sampler.negative", "*"],
+            "latent_image": ["area", 0],
+            "denoise": 0.45
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": ["redraw", 0],
+            "vae": ["$decode.vae", "*"]
+          }
+        },
+        "paste": {
+          "class_type": "ImageCompositeMasked",
+          "inputs": {
+            "destination": ["$save.images", "*"],
+            "source": ["decode", 0],
+            "x": 0,
+            "y": 0,
+            "resize_source": false,
+            "mask": ["area_mask", 0]
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": ["paste", 0],
+            "filename_prefix": "refined_character"
+          }
+        },
+        "look": {
+          "class_type": "PreviewImage",
+          "inputs": {
+            "images": ["fade", 0]
+          }
+        }
+      },
+      "after": "On this Anima model the redraw's loader (second_model) is a UNET loader that starts as the canvas's model; it reuses the canvas's text encoder, VAE and prompts. set_model it to the other Anima model the user wants for the character (ask_user, search_models); a LoRA on the first model is not on it: add_lora it onto second_model when the user wants that look kept. Then run_workflow; the picture is saved beside it (prefix refined_character), the scene the same to the pixel. Denoise 0.45: face, hair and clothes take the second model's look and the pose stays; 0.3 changes little; at 0.6 the face changes more and colours fade. The preview shows what is redrawn (white, fading at the edge): part of the character missing, or the background in it, say so."
+    }
+  }
+}

@@ -1,0 +1,257 @@
+{
+  "job": "refine",
+  "want": "background",
+  "rank": 9,
+  "short": "background only",
+  "title": {
+    "zh": "换模型精修·只改场景",
+    "en": "Refine only the background"
+  },
+  "about": {
+    "zh": "自动抠出人物，换另一个模型只重画背景，人物和它边上一圈原样不动，另存一张。",
+    "en": "Cuts the character out; another model redraws only the background, the character and a band around it left as they were; saved beside it."
+  },
+  "source": {
+    "zh": "常见的“抠图换背景”做法，只是背景不换新、只轻轻重画，强度按 2026-11-10 的场景重画对照定",
+    "en": "The common cut-out-and-replace-the-background way, the background only lightly redrawn, not replaced; its strength from a background redraw comparison of 2026-11-10"
+  },
+  "packs": {
+    "InspyrenetRembg": "comfyui-inspyrenet-rembg"
+  },
+  "nodes": {
+    "second_model": {
+      "class_type": "CheckpointLoaderSimple",
+      "like": "$loader",
+      "inputs": {}
+    },
+    "second_positive": {
+      "class_type": "CLIPTextEncode",
+      "like": "$sampler.positive",
+      "inputs": {
+        "clip": ["second_model", 1]
+      }
+    },
+    "second_negative": {
+      "class_type": "CLIPTextEncode",
+      "like": "$sampler.negative",
+      "inputs": {
+        "clip": ["second_model", 1]
+      }
+    },
+    "cut": {
+      "class_type": "InspyrenetRembg",
+      "inputs": {
+        "image": ["$save.images", "*"],
+        "torchscript_jit": "default"
+      }
+    },
+    "solid": {
+      "class_type": "ThresholdMask",
+      "inputs": {
+        "mask": ["cut", 1],
+        "value": 0.5
+      }
+    },
+    "edge": {
+      "class_type": "GrowMask",
+      "inputs": {
+        "mask": ["solid", 0],
+        "expand": 12,
+        "tapered_corners": true
+      }
+    },
+    "background": {
+      "class_type": "InvertMask",
+      "inputs": {
+        "mask": ["edge", 0]
+      }
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {
+        "pixels": ["$save.images", "*"],
+        "vae": ["second_model", 2]
+      }
+    },
+    "area": {
+      "class_type": "SetLatentNoiseMask",
+      "inputs": {
+        "samples": ["encode", 0],
+        "mask": ["background", 0]
+      }
+    },
+    "redraw": {
+      "class_type": "KSampler",
+      "like": "$sampler",
+      "inputs": {
+        "model": ["second_model", 0],
+        "positive": ["second_positive", 0],
+        "negative": ["second_negative", 0],
+        "latent_image": ["area", 0],
+        "denoise": 0.45
+      }
+    },
+    "decode": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": ["redraw", 0],
+        "vae": ["second_model", 2]
+      }
+    },
+    "paste": {
+      "class_type": "ImageCompositeMasked",
+      "inputs": {
+        "destination": ["$save.images", "*"],
+        "source": ["decode", 0],
+        "x": 0,
+        "y": 0,
+        "resize_source": false,
+        "mask": ["background", 0]
+      }
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "images": ["paste", 0],
+        "filename_prefix": "refined_background"
+      }
+    },
+    "as_picture": {
+      "class_type": "MaskToImage",
+      "inputs": {
+        "mask": ["background", 0]
+      }
+    },
+    "look": {
+      "class_type": "PreviewImage",
+      "inputs": {
+        "images": ["as_picture", 0]
+      }
+    }
+  },
+  "after": "The redraw's loader (second_model) starts as the same checkpoint: set_model it to the model the user wants for the background (ask_user, search_models), add_lora a style LoRA onto it if they want one, and write its prompts (second_positive, second_negative, copied from the first) in that model's style. Then run_workflow; the picture is saved beside it (prefix refined_background), the character the same to the pixel. Denoise 0.45: textures and light take the second model's look and the layout stays; at 0.6 the ground gets heavier and the edge round the character may show (dark chair legs most). The preview shows what is redrawn (white): part of the character in it, say so.",
+  "gives": {
+    "sampler": "redraw",
+    "save": "save"
+  },
+  "own_model": {
+    "nodes": ["second_model"],
+    "copies_loras": false
+  },
+  "notes": "The background is the inverse of the character's mask grown 12 px, so the character and a 12 px band around it, where it meets a bench or the ground, stay as they were; the paste-back keeps them to the pixel. In the 2026-11-10 comparison (an Anima picture, Kirazuri redrawing the background) this way at 0.45 changed the scene about 3.6% on average and the character not at all; the bench still held the character up. The cut-out takes what stands out in front, often with what the character sits on or holds (a bench, an umbrella, a bag): kept with it, so where they touch stays as it was.",
+  "models": [],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-11-10",
+    "runs": [
+      {
+        "model": "Anima (Harem 2.9B, then Kirazuri v4.0 on the background, denoise 0.45)",
+        "size": "1440×1024",
+        "seconds": 240
+      }
+    ]
+  },
+  "variants": {
+    "anima": {
+      "nodes": {
+        "second_model": {
+          "class_type": "UNETLoader",
+          "like": "$loader",
+          "inputs": {}
+        },
+        "cut": {
+          "class_type": "InspyrenetRembg",
+          "inputs": {
+            "image": ["$save.images", "*"],
+            "torchscript_jit": "default"
+          }
+        },
+        "solid": {
+          "class_type": "ThresholdMask",
+          "inputs": {
+            "mask": ["cut", 1],
+            "value": 0.5
+          }
+        },
+        "edge": {
+          "class_type": "GrowMask",
+          "inputs": {
+            "mask": ["solid", 0],
+            "expand": 12,
+            "tapered_corners": true
+          }
+        },
+        "background": {
+          "class_type": "InvertMask",
+          "inputs": {
+            "mask": ["edge", 0]
+          }
+        },
+        "encode": {
+          "class_type": "VAEEncode",
+          "inputs": {
+            "pixels": ["$save.images", "*"],
+            "vae": ["$decode.vae", "*"]
+          }
+        },
+        "area": {
+          "class_type": "SetLatentNoiseMask",
+          "inputs": {
+            "samples": ["encode", 0],
+            "mask": ["background", 0]
+          }
+        },
+        "redraw": {
+          "class_type": "KSampler",
+          "like": "$sampler",
+          "inputs": {
+            "model": ["second_model", 0],
+            "positive": ["$sampler.positive", "*"],
+            "negative": ["$sampler.negative", "*"],
+            "latent_image": ["area", 0],
+            "denoise": 0.45
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": ["redraw", 0],
+            "vae": ["$decode.vae", "*"]
+          }
+        },
+        "paste": {
+          "class_type": "ImageCompositeMasked",
+          "inputs": {
+            "destination": ["$save.images", "*"],
+            "source": ["decode", 0],
+            "x": 0,
+            "y": 0,
+            "resize_source": false,
+            "mask": ["background", 0]
+          }
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": ["paste", 0],
+            "filename_prefix": "refined_background"
+          }
+        },
+        "as_picture": {
+          "class_type": "MaskToImage",
+          "inputs": {
+            "mask": ["background", 0]
+          }
+        },
+        "look": {
+          "class_type": "PreviewImage",
+          "inputs": {
+            "images": ["as_picture", 0]
+          }
+        }
+      },
+      "after": "On this Anima model the redraw's loader (second_model) is a UNET loader that starts as the canvas's model; it reuses the canvas's text encoder, VAE and prompts. set_model it to the other Anima model the user wants for the background (ask_user, search_models); a LoRA on the first model is not on it: add_lora it onto second_model when the user wants that look kept. Then run_workflow; the picture is saved beside it (prefix refined_background), the character the same to the pixel. Denoise 0.45: textures and light take the second model's look and the layout stays; at 0.6 the ground gets heavier and the edge round the character may show (dark chair legs most). The preview shows what is redrawn (white): part of the character in it, say so."
+    }
+  }
+}

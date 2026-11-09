@@ -203,6 +203,26 @@ class BlockTests(unittest.TestCase):
         with self.assertRaises(reference_blocks.MissingModel):
             reference_blocks.build("upscale_tile", missing, main_base=lambda: "Anima")
 
+    def test_refining_only_the_character_or_the_background_pastes_the_rest_back(self):
+        self.assertEqual(reference_blocks.directory(EVERYTHING)["refine"], "Redraw with another model (want: midway, character, background)")
+        self.assertEqual(reference_blocks.pick("refine", None, EVERYTHING), "refine_other_model", "no want: the whole picture")
+        for want, kept_by in (("character", "area_mask"), ("background", "background")):
+            with self.subTest(want=want):
+                name = reference_blocks.pick("refine", want, EVERYTHING)
+                nodes = reference_blocks.build(name, EVERYTHING, main_base=lambda: "Anima")["nodes"]
+                self.assertEqual(nodes["second_model"]["class_type"], "UNETLoader")
+                self.assertEqual(nodes["cut"]["inputs"]["image"], ["$save.images", "*"], "the step's picture is cut out")
+                self.assertEqual((nodes["area"]["inputs"]["mask"], nodes["paste"]["inputs"]["mask"]), ([kept_by, 0], [kept_by, 0]),
+                                 "redrawn where the mask is, and only there pasted onto the picture")
+                self.assertEqual((nodes["paste"]["inputs"]["destination"], nodes["save"]["inputs"]["images"]), (["$save.images", "*"], ["paste", 0]))
+                self.assertEqual(nodes["redraw"]["inputs"]["denoise"], 0.45, "the tested strength")
+                sdxl = reference_blocks.build(name, EVERYTHING, main_base=lambda: "Illustrious")["nodes"]
+                self.assertEqual((sdxl["second_model"]["class_type"], sdxl["encode"]["inputs"]["vae"]), ("CheckpointLoaderSimple", ["second_model", 2]))
+        character = reference_blocks.build("refine_character", EVERYTHING, main_base=lambda: "Anima")["nodes"]
+        self.assertEqual(character["redraw"]["inputs"]["model"], ["soft", 0], "the mask's grey a weaker redraw: the edge fades")
+        with self.assertRaisesRegex(reference_blocks.BlockError, "needs comfyui-inspyrenet-rembg"):
+            reference_blocks.build("refine_background", BUILT_IN)
+
     def test_a_picture_from_words_is_built_by_the_model_family_on_the_model_picked(self):
         anima = {**EVERYTHING, "CLIPLoader": {"input": {"required": {"clip_name": [["clip_l.safetensors", "Anima/qwen_3_06b_base.safetensors"]]}}},
                  "VAELoader": {"input": {"required": {"vae_name": [["sdxl_vae.safetensors", "Anima/qwenImageGGUF_vae.safetensors"]]}}}}
