@@ -29,6 +29,7 @@ import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { freshId } from './detached_graph.js';
 import { startFromAi } from './job_sheet_run.js';
+import { aiWords, canvasPrompts, firstTime, languageProblem } from './prompt_language.js';
 
 const HIDDEN_PAGE_DELAY_MS = 1500;
 const MAX_NODES = 150;
@@ -338,7 +339,8 @@ async function downloadModel(args, getOwner) {
 }
 
 /**
- * run_workflow: `base_only` queues the first pass alone as previews (base_only.js), checked before anything is
+ * run_workflow: refused once when the prompt is in a language the canvas's model cannot read (prompt_language.js).
+ * `base_only` queues the first pass alone as previews (base_only.js), checked before anything is
  * queued; `hold` is the base the user picked (api/ai_bases.py): its seed goes on its sampler, held "fixed"
  * and kept under every try, unless that sampler is not on this canvas; where the rest takes the base's
  * picture, it takes the kept picture instead and the base is not drawn again (`held.kept`).
@@ -346,6 +348,9 @@ async function downloadModel(args, getOwner) {
 async function runWorkflow({ batch, base_only: firstPass, hold }, getOwner) {
     const g = currentGraph();
     if (!(g._nodes || []).length) throw new Error(`Nothing was run. ${EMPTY_CANVAS}`);
+    const texts = canvasPrompts(g);
+    const odd = firstTime(await languageProblem(g, texts), texts, 'ai'); // refused once: called again unchanged, it runs
+    if (odd) throw new Error(aiWords(odd));
     const held = hold ? await holdBase(g, hold, getOwner) : null;
     const base = firstPass ? baseOnly((await app.graphToPrompt()).output) : null;
     if (held?.held && hold.kept_input) held.kept = Boolean(onKeptBase((await app.graphToPrompt()).output, hold.kept_input));

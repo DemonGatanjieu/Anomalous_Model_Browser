@@ -5,14 +5,16 @@
  * the same seeds; no prompt runs the canvas as it is. Start keeps the canvas as it is then and the sheet runs
  * on this page (job_sheet_run.js). While it goes, from here or from the AI (run_workflow(sheet=…)), the card
  * shows where it stands, the newest pictures, pause / go on and stop, folded to a handle if wanted; a sheet
- * whose page is gone can go on from here. Ended, it can be changed and run again. What was typed is kept in
+ * whose page is gone can go on from here. Ended, it can be changed and run again. Prompts in a language the
+ * canvas's model cannot read are said once before it starts (prompt_language.js). What was typed is kept in
  * localStorage for this viewer. The server's words are api/job_sheets.py.
  */
 
 import { api } from '../../../scripts/api.js';
 import { app } from '../../../scripts/app.js';
 import { MAX_COUNT, MAX_PAUSE, MAX_ROWS, MAX_TOTAL, bounded, jobAt, promptsOf, rowsOf, totalOf } from './job_sheet_plan.js';
-import { askSheet, clearSheet, jobSheet, onJobSheet, startSheet, watchJobSheet } from './job_sheet_run.js';
+import { askSheet, clearSheet, jobSheet, onJobSheet, sheetPrompts, startSheet, watchJobSheet } from './job_sheet_run.js';
+import { firstTime, languageProblem } from './prompt_language.js';
 import { translate as t } from './locales.js';
 import { PAGE } from './mcp_bridge.js';
 import { settle } from './ui_dom.js';
@@ -121,6 +123,12 @@ function form() {
         draw();
         try {
             const root = app.rootGraph || app.graph;
+            const texts = sheetPrompts(rows, root);
+            const odd = firstTime(await languageProblem(root, texts), texts, 'user'); // said once: Start again runs it as written
+            if (odd) {
+                problems = [t('jobSheetLanguage', { model: odd.model, family: odd.family })];
+                return;
+            }
             await startSheet({ rows, pause: now.pause, same_seeds: now.same, title: app.extensionManager?.workflow?.activeWorkflow?.filename || '' }, root.serialize());
             editing = false;
             folded = false;

@@ -273,6 +273,11 @@ covered by the `styles.css` manifest.
   reports, passes pause / stop / go on to it (from any page, the workbench's stop or the AI's stop_run; with its page
   gone another page takes it over) and writes a sheet the AI gave with `run_workflow(sheet=…)` on that call's run step,
   so run_status and the workbench follow it like a run (`tests/test_job_sheets.py`).
+- A prompt the canvas's model cannot read. `api/prompt_language.py` says whether the prompts a run sends are mostly
+  Chinese, Japanese or Korean while a loader's model is of a family marked "reads": "English" in `api/model_profiles.json`
+  (SD 1.5, SDXL, Pony, Illustrious, Flux, Chroma: CLIP and T5 read English only, and the picture would follow nothing).
+  `web/modules/prompt_language.js` asks it before the AI's run_workflow and job sheet (refused once: called again
+  unchanged, it runs) and before the job sheet's Start (said once) (`tests/test_prompt_language.py`).
 - Saves of a workflow. `api/workflow_saves.py` keeps them, a group for each canvas, found by the key in the workflow's
   extra or by its file (AD-023), and finds a run's pictures in ComfyUI's history; `web/modules/snapshot_store.js` is the page's
   side of its routes, every change going through it so what shows a group hears of it. `web/modules/ui_snapshot_bar.js` is the bar

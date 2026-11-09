@@ -1,5 +1,5 @@
 {
-  "about": "How models of a base model family are used, told to the AI (get_model's usage), and for a drawing model loaded in parts (a diffusion models file) the files it needs beside it, which the model details also show with the one this ComfyUI has by that name (api/model_guide.py). The first family with a mark that starts the model's base model (Civitai's, else what its header tells) is used. Notes say only what was tested here or what ComfyUI's own templates do. A part's names are looked for in its folder's file names, letters and digits only; a name of three letters or fewer must be the whole name.",
+  "about": "How models of a base model family are used, told to the AI (get_model's usage), and for a drawing model loaded in parts (a diffusion models file) the files it needs beside it, which the model details also show with the one this ComfyUI has by that name (api/model_guide.py). The first family with a mark that starts the model's base model (Civitai's, else what its header tells) is used. Notes say only what was tested here or what ComfyUI's own templates do. A part's names are looked for in its folder's file names, letters and digits only; a name of three letters or fewer must be the whole name. \"reads\": English for a family whose text encoders (CLIP, T5) read English words and tags only: a prompt in Chinese or Japanese is refused once before a run (api/prompt_language.py).",
   "families": [
     {
       "family": "Anima",
@@ -28,6 +28,7 @@
     },
     {
       "family": "Flux.1 Schnell",
+      "reads": "English",
       "marks": [
         "flux.1 s"
       ],
@@ -64,6 +65,7 @@
     },
     {
       "family": "Flux.1",
+      "reads": "English",
       "marks": [
         "flux.1"
       ],
@@ -100,6 +102,7 @@
     },
     {
       "family": "Chroma",
+      "reads": "English",
       "marks": [
         "chroma"
       ],
@@ -209,6 +212,7 @@
     },
     {
       "family": "Pony",
+      "reads": "English",
       "marks": [
         "pony"
       ],
@@ -218,6 +222,7 @@
     },
     {
       "family": "Illustrious / NoobAI",
+      "reads": "English",
       "marks": [
         "illustrious",
         "noob"
@@ -228,6 +233,7 @@
     },
     {
       "family": "SDXL",
+      "reads": "English",
       "marks": [
         "sdxl"
       ],
@@ -237,6 +243,7 @@
     },
     {
       "family": "SD 1.5",
+      "reads": "English",
       "marks": [
         "sd 1"
       ],

@@ -16,6 +16,7 @@ import { api } from '../../../scripts/api.js';
 import { readDetached } from './detached_graph.js';
 import { jobAt, outcomeOf, restLeft, room, seedOf, slotsOf } from './job_sheet_plan.js';
 import { fillPlan } from './mcp_fill.js';
+import { aiWords, canvasPrompts, firstTime, languageProblem } from './prompt_language.js';
 import { applySeeds, compiled, seedWidgets } from './snapshot_plan.js';
 
 const TICK = 1500; // ms between looks at ComfyUI's queue
@@ -98,11 +99,19 @@ export async function startSheet(given, workflow) {
     return made;
 }
 
-/** The AI's sheet (run_workflow(sheet=…), api/mcp_actions.py) on the canvas the run would run. */
+/** The prompts a sheet of `rows` sends: its rows', and the canvas's for a row with none. */
+export const sheetPrompts = (rows, graph) => [...rows.filter(row => row.prompt).map(row => row.prompt),
+    ...(rows.some(row => !row.prompt) ? canvasPrompts(graph) : [])];
+
+/** The AI's sheet (run_workflow(sheet=…), api/mcp_actions.py) on the canvas the run would run; refused once when
+ * its prompts are in a language the canvas's model cannot read (prompt_language.js). */
 export async function startFromAi({ rows, pause, same_seeds: same, task }) {
     const root = app.rootGraph || app.graph;
     if (!(root?._nodes || []).length) throw new Error('Nothing was run: the canvas is empty. Open a workflow first.');
     const title = app.extensionManager?.workflow?.activeWorkflow?.filename || '';
+    const texts = sheetPrompts(rows, root);
+    const odd = firstTime(await languageProblem(root, texts), texts, 'ai');
+    if (odd) throw new Error(aiWords(odd));
     let made;
     try {
         made = await startSheet({ rows, pause, same_seeds: same, title, task }, root.serialize());
