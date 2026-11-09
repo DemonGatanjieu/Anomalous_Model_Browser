@@ -1,7 +1,8 @@
 /**
- * The top of a model's details, beside its cover: back (a crumb, "Models / LoRA", or back to
- * Model Check, the assistant or the model before; Esc presses it), the name, the size / base /
- * source line with the source links, and one row of actions: Add node (the one blue button),
+ * The top of a model's details, beside its cover, laid out like a profile: back (a crumb, "Models / LoRA", or back to
+ * Model Check, the assistant or the model before; Esc presses it), the name big (a Civitai name "Model - v2" split:
+ * the model's name, then its version in small grey), one small accent line (its type, size, base, source and the
+ * source links), and one row of actions: Add node (the one filled button, the rest plain words),
  * Edit, Folder (its tooltip shows the path), Outputs, Change type (ui_model_retype.js: filed under
  * the wrong type, it moves to another) and Hand to AI (ui_ai_handoff.js). The path, Copy and Delete are at the
  * foot of the details (model_location.js). Where the page is too narrow for the cover column,
@@ -53,6 +54,26 @@ function smallCover(owner, model) {
     return cover;
 }
 
+/** The type the models page lists `owner`'s models under ("LoRA", without its count), or its folder type. */
+function typeName(owner) {
+    const group = (owner.foldersData || []).find(item => item.type === owner.currentType && item.path_idx === owner.currentPathIdx);
+    return group ? typeLabel(group).replace(/\s*\(\d+\)$/, '') : owner.currentType || '';
+}
+
+/**
+ * [the name to show big, the version under it]: a name that ends in its Civitai version ("Model - v2", or the scan's
+ * "Model_v2") in two, the model and the version; else the name as it is, the version under it when it is not in it.
+ */
+export function titleOf(model, meta = model.metadata || {}) {
+    const version = String(meta.version_name || '').trim();
+    const name = String(meta.custom_name || meta.name || model.filename.replace(/\.[^.]+$/, '')).trim();
+    if (version && name.length > version.length && name.endsWith(version)) {
+        const head = name.slice(0, -version.length).replace(/[\s_\-–·]+$/, '');
+        if (head) return [head, version];
+    }
+    return [name, version && !name.includes(version) ? version : ''];
+}
+
 /** `onBack()` leads back and `onOpen(model)` shows another version (ui_detail.js owns both). */
 export function createDetailHead(owner, model, onBack, onOpen) {
     const meta = model.metadata || {};
@@ -67,13 +88,18 @@ export function createDetailHead(owner, model, onBack, onOpen) {
     const cover = smallCover(owner, model);
     if (cover) named.append(cover);
     const title = el('div', 'anomalous-detail-title');
-    const name = el('h2', 'anomalous-detail-name', meta.custom_name || meta.name || model.filename);
+    const [big, version] = titleOf(model, meta);
+    const name = el('h2', 'anomalous-detail-name', big);
     name.title = model.filename;
+    title.append(name);
+    if (version) title.append(el('div', 'anomalous-detail-sub', version));
     const facts = el('div', 'anomalous-detail-facts');
     const line = el('span', 'anomalous-detail-source');
     renderSourceLine(line, model, meta);
+    const type = typeName(owner);
+    if (type) line.prepend(el('span', '', type), el('span', 'anomalous-source-sep', ' · '));
     facts.append(line, renderDetailLinks(meta));
-    title.append(name, facts);
+    title.append(facts);
     const versions = detailVersionRow(owner, model, onOpen);
     if (versions) title.append(versions);
     named.append(title);

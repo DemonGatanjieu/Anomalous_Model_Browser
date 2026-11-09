@@ -59,14 +59,21 @@ export function renderSourceBadge(model) {
 }
 
 /** The detail header's line: size, base model, where the information came from, what the user set. */
+/** "3.89 GB", or "151 MB" under a gigabyte. */
+export function sizeWords(megabytes) {
+    const mb = Number(megabytes) || 0;
+    return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${Math.round(mb)} MB`;
+}
+
 export function renderSourceLine(span, model, meta) {
-    const parts = [`<strong>Size:</strong> ${escapeHtml(model.size_mb)} MB`];
-    if (meta.baseModel) parts.push(`<strong>Base:</strong> ${meta.info_source === 'local' ? '≈ ' : ''}${escapeHtml(meta.baseModel)}`);
+    const parts = [escapeHtml(sizeWords(model.size_mb))];
+    if (meta.baseModel) parts.push(`${escapeHtml(t('modelBaseLabel'))} ${meta.info_source === 'local' ? '≈ ' : ''}${escapeHtml(meta.baseModel)}`);
     const skipped = meta.scan_choice === 'skip';
     const source = meta.info_source === 'civitai' ? t('modelSourceCivitai')
         : meta.info_source === 'local' ? t('modelSourceLocal')
             : scannable(model) ? t(skipped ? 'modelSourceSkipped' : 'modelSourceNotScanned') : '';
-    if (source) parts.push(`<strong>${escapeHtml(t('modelSourceLabel'))}:</strong> ${escapeHtml(source)}`);
+    // Civitai's own link beside the line names it already.
+    if (source && !(meta.info_source === 'civitai' && openable(meta.civitai_url))) parts.push(`${escapeHtml(t('modelSourceLabel'))} ${escapeHtml(source)}`);
     if (skipped && meta.info_source) parts.push(escapeHtml(t('modelSourceSkipped')));
     if (meta.info_source === 'local' && meta.unmatched_reason === 'damaged') {
         parts.push(`<span class="anomalous-source-damaged">⚠ ${escapeHtml(t('modelSourceDamaged'))}</span>`);

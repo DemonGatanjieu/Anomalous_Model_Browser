@@ -8,7 +8,7 @@ import { translate } from './locales.js';
 import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
 import { renderInferredNote } from './model_source.js';
 import { createModelFileFoot } from './model_location.js';
-import { createDetailHead } from './model_detail_head.js';
+import { createDetailHead, titleOf } from './model_detail_head.js';
 import { civitaiVersionsBox } from './ui_civitai_versions.js';
 import { createModelGuide } from './ui_model_guide.js';
 
@@ -171,8 +171,7 @@ export function showDetail(model) {
             this.showDetail(other);
         };
         rightPanel.appendChild(createDetailHead(this, model, goBack, openVersion));
-        const onCivitai = civitaiVersionsBox(this, model, openVersion);
-        if (onCivitai) rightPanel.appendChild(onCivitai);
+        const onCivitai = civitaiVersionsBox(this, model, openVersion); // a row of the facts below
         const inferredNote = renderInferredNote(m, () => this.showEditModal(model));
         if (inferredNote) rightPanel.appendChild(inferredNote);
 
@@ -246,35 +245,32 @@ export function showDetail(model) {
             rightPanel.appendChild(notesCard);
         }
 
-        // 2. Trigger words, its author's settings, the files it needs (ui_model_guide.js)
-        rightPanel.appendChild(createModelGuide(model));
+        // 2. Trigger words, its author's settings, the files it needs, its versions, its file (ui_model_guide.js)
+        const stem = model.filename.replace(/\.[^.]+$/, '');
+        rightPanel.appendChild(createModelGuide(model, { versions: onCivitai, file: titleOf(model, m)[0] === stem ? '' : model.filename }));
 
-        // 3. Description Section (a model read from its file has the note above instead)
+        // 3. Its author's words from Civitai, folded to their start: long, and often English (a model read
+        // from its file has the note above instead). The label or the text unfolds it.
         if (m.description && m.info_source !== 'local') {
             const descCont = document.createElement('div');
-            descCont.style.flex = 'none';
-            descCont.style.display = 'flex';
-            descCont.style.flexDirection = 'column';
-            // important for flex scroll
-
-            const descLabel = document.createElement('strong');
-            descLabel.textContent = t('detailDescription');
-            descLabel.style.marginBottom = '5px';
-            descCont.appendChild(descLabel);
-
+            descCont.className = 'anomalous-detail-intro';
+            const descLabel = document.createElement('button');
+            descLabel.type = 'button';
+            descLabel.className = 'anomalous-detail-intro-toggle';
             const descText = document.createElement('div');
-            descText.className = 'anomalous-detail-description'; // Civitai's headings kept to size
-            descText.style.flex = 'none';
-
-            descText.style.background = 'var(--amb-bg-card)';
-            descText.style.padding = '10px';
-            descText.style.borderRadius = '6px';
-            descText.style.border = '1px solid var(--amb-border-strong)';
-            descText.style.fontSize = '0.95em';
-            descText.style.lineHeight = '1.4';
+            descText.className = 'anomalous-detail-description is-folded'; // Civitai's headings kept to size
             setSafeRichHtml(descText, m.description);
-            descCont.appendChild(descText);
-
+            const fold = (folded) => {
+                descText.classList.toggle('is-folded', folded);
+                descLabel.textContent = `${t('detailIntro')} ${folded ? '▾' : '▴'}`;
+                descLabel.title = t(folded ? 'detailIntroMore' : 'detailIntroLess');
+            };
+            fold(true);
+            descLabel.onclick = () => fold(!descText.classList.contains('is-folded'));
+            descText.addEventListener('click', (event) => {
+                if (descText.classList.contains('is-folded') && !event.target.closest('a')) fold(false);
+            });
+            descCont.append(descLabel, descText);
             rightPanel.appendChild(descCont);
         }
 
