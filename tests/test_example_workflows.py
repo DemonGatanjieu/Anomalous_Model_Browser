@@ -14,11 +14,12 @@ sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 from api import example_workflows as examples, mcp_fill, mcp_tools, reference_blocks  # noqa: E402
 
 OWN_NODES = {"CheckpointLoaderSimple", "UNETLoader", "CLIPLoader", "VAELoader", "CLIPTextEncode", "EmptyLatentImage", "KSampler", "VAEDecode",
-             "VAEEncode", "VAEEncodeTiled", "VAEDecodeTiled", "SaveImage", "LoadImage", "LatentUpscaleBy", "SetLatentNoiseMask"}
+             "VAEEncode", "VAEEncodeTiled", "VAEDecodeTiled", "SaveImage", "LoadImage", "LatentUpscaleBy", "SetLatentNoiseMask",
+             "ImageScaleBy", "ThresholdMask", "GrowMask", "MaskToImage", "ImageBlur", "ImageToMask", "DifferentialDiffusion", "PreviewImage"}
 FILES = ("CheckpointLoaderSimple", "UNETLoader", "CLIPLoader", "VAELoader", "AnimaLLLiteApply_sdscripts", "LoadImage")
 EVERYTHING = {"CheckpointLoaderSimple": "xl.safetensors", "UNETLoader": "anima.safetensors", "CLIPLoader": "qwen.safetensors",
               "VAELoader": "vae.safetensors", "AnimaLLLiteApply_sdscripts": "tile.safetensors", "LoadImage": "a.png"}
-ALL_HERE = {kind: {} for kind in examples.LOADERS}
+ALL_HERE = {kind: {} for kind in [*examples.LOADERS, *(kind for item in examples.EXAMPLES.values() for kind in item.get("packs") or {})]}
 
 
 class ExampleTests(unittest.TestCase):
@@ -52,6 +53,21 @@ class ExampleTests(unittest.TestCase):
         self.assertEqual(of("LatentUpscaleBy")[0]["widgets_values"], [way["enlarge"]["inputs"]["upscale_method"], way["enlarge"]["inputs"]["scale_by"]])
         redraw = of("KSampler")[1]["widgets_values"]  # seed, after, steps, cfg, sampler, scheduler, denoise
         self.assertEqual(redraw[2:], [way["redraw"]["inputs"][name] for name in ("steps", "cfg", "sampler_name", "scheduler", "denoise")])
+
+    def test_the_blurred_background_version_is_the_way_on_anima(self):
+        way = reference_blocks.BLOCKS["upscale_character"]["variants"]["anima"]["nodes"]
+        nodes = examples.EXAMPLES["two_pass_anima_character"]["workflow"]["nodes"]
+        of = lambda kind: [node for node in nodes if node["type"] == kind]  # noqa: E731
+        tile = of("AnimaLLLiteApply_sdscripts")[0]["widgets_values"]
+        self.assertEqual(tile[1:], [way["tile"]["inputs"][name] for name in ("strength", "start_percent", "end_percent", "preserve_wrapper")])
+        redraw = of("KSampler")[1]["widgets_values"]
+        self.assertEqual(redraw[2:], [way["redraw"]["inputs"][name] for name in ("steps", "cfg", "sampler_name", "scheduler", "denoise")])
+        self.assertEqual((of("GrowMask")[0]["widgets_values"][0], of("ImageBlur")[0]["widgets_values"], of("ImageScaleBy")[0]["widgets_values"][1]),
+                         (way["edge"]["inputs"]["expand"], [way["fade"]["inputs"]["blur_radius"], way["fade"]["inputs"]["sigma"]], 1.5))
+        crop = of("InpaintCropImproved")[0]["widgets_values"]
+        self.assertEqual((crop[18], crop[19]), (way["crop"]["inputs"]["context_from_mask_extend_factor"], False), "a margin, not resized")
+        no_cut = {kind: value for kind, value in ALL_HERE.items() if kind != "InspyrenetRembg"}
+        self.assertEqual(examples._lacks(examples.EXAMPLES["two_pass_anima_character"], no_cut, EVERYTHING), [{"pack": "comfyui-inspyrenet-rembg"}])
 
     def test_read_fills_in_what_is_here(self):
         with mock.patch.object(examples, "_here", return_value=ALL_HERE), mock.patch.object(examples, "_fills", return_value=EVERYTHING):

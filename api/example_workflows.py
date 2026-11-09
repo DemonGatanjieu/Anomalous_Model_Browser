@@ -16,7 +16,7 @@ from . import workflow_route
 
 FOLDER = os.path.join(os.path.dirname(__file__), "examples")
 PREFIX = "example:"
-ORDER = ("text_to_picture", "two_pass", "two_pass_anima", "two_pass_anima_tile", "picture_to_picture", "repaint")
+ORDER = ("text_to_picture", "two_pass", "two_pass_anima", "two_pass_anima_tile", "two_pass_anima_character", "picture_to_picture", "repaint")
 LOADERS = ("CheckpointLoaderSimple", "UNETLoader", "CLIPLoader", "VAELoader", "AnimaLLLiteApply_sdscripts")
 FAMILIES = {"sd": ("SDXL", "SD 1.x"), "anima": ("anima",)}  # what the examples' settings suit
 FOR_MODELS = {"sd": "SDXL, SD 1.5", "anima": "Anima"}
@@ -38,10 +38,12 @@ EXAMPLES = _load()
 
 
 def _here():
-    """The loaders' drop-downs, in the form reference_blocks reads /object_info; a node type not here is left out."""
+    """The loaders' drop-downs, in the form reference_blocks reads /object_info, and the nodes of the packs the
+    examples need (whether they are here); a node type not here is left out."""
     import nodes
 
-    return {kind: {"input": nodes.NODE_CLASS_MAPPINGS[kind].INPUT_TYPES()} for kind in LOADERS if kind in nodes.NODE_CLASS_MAPPINGS}
+    kinds = set(LOADERS) | {kind for example in EXAMPLES.values() for kind in example.get("packs") or {}}
+    return {kind: {"input": nodes.NODE_CLASS_MAPPINGS[kind].INPUT_TYPES()} for kind in kinds if kind in nodes.NODE_CLASS_MAPPINGS}
 
 
 def _model(info, kind, field, family):

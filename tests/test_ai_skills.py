@@ -62,6 +62,8 @@ class SkillTests(unittest.TestCase):
         self.assertIn("hold the base's seed yourself", advice)
         self.assertIn("base_only=true", advice)
         self.assertIn("the switch may also enlarge the picture", advice)
+        for by_part in ('want="character" or "background"', 'use="upscale", want="character"', "the depth is lost"):
+            self.assertIn(by_part, advice)
         ai_skills.set_on("staged_picture", False)
         self.assertNotIn("staged_picture", ai_skills.directory())
         with self.assertRaises(ai_skills.SkillError):

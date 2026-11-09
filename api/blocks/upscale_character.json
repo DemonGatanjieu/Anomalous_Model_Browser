@@ -1,0 +1,304 @@
+{
+  "job": "upscale",
+  "want": "character",
+  "rank": 5,
+  "short": "blurred background: only the character redrawn",
+  "title": {
+    "zh": "放大·只重画人物",
+    "en": "Upscale, only the character redrawn"
+  },
+  "about": {
+    "zh": "背景本来就虚化的图用：整张用放大模型拉大，背景不再动；自动抠出人物，只裁出那一块重画再缝回去。虚化原样保住，人物变清楚；Anima 上有 Tile 时照着原图的线条画。背景清楚的图请用「Tile 锁图放大」。",
+    "en": "For a picture whose background is blurred on purpose: an upscale model enlarges it all and the background stays as it is; the character is cut out and only its crop is redrawn and stitched back. The blur is kept, the character gets sharper; on Anima with the Tile it follows the picture's lines. A sharp background: Upscale held by Tile."
+  },
+  "source": {
+    "zh": "2026-11-10 的虚化背景放大对照：整张重画把远处的铁轨和树画清楚了，景深没了；整张拉大、只重画人物保住了虚化，只裁人物来重画最快",
+    "en": "A blurred-background upscale comparison of 2026-11-10: a whole redraw drew the far tracks and trees sharp and the depth was lost; enlarging it all and redrawing only the character kept the blur, a crop of the character the fastest"
+  },
+  "packs": {
+    "InspyrenetRembg": "comfyui-inspyrenet-rembg",
+    "InpaintCropImproved": "ComfyUI-Inpaint-CropAndStitch",
+    "InpaintStitchImproved": "ComfyUI-Inpaint-CropAndStitch"
+  },
+  "extras": {
+    "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
+  },
+  "upscaler": true,
+  "upscale_by": 1.5,
+  "nodes": {
+    "own": {
+      "class_type": "CheckpointLoaderSimple",
+      "copy_of": "$sampler.model",
+      "_meta": {"title": "Upscale model"},
+      "inputs": {}
+    },
+    "upscaler": {
+      "class_type": "UpscaleModelLoader",
+      "inputs": {"model_name": "$upscaler"}
+    },
+    "enlarge": {
+      "class_type": "ImageUpscaleWithModel",
+      "inputs": {"upscale_model": ["upscaler", 0], "image": ["$save.images", "*"]}
+    },
+    "fit": {
+      "class_type": "ImageScaleBy",
+      "inputs": {"image": ["enlarge", 0], "upscale_method": "lanczos", "scale_by": "$fit"}
+    },
+    "cut": {
+      "class_type": "InspyrenetRembg",
+      "inputs": {"image": ["fit", 0], "torchscript_jit": "default"}
+    },
+    "solid": {
+      "class_type": "ThresholdMask",
+      "inputs": {"mask": ["cut", 1], "value": 0.5}
+    },
+    "edge": {
+      "class_type": "GrowMask",
+      "inputs": {"mask": ["solid", 0], "expand": 12, "tapered_corners": true}
+    },
+    "as_picture": {
+      "class_type": "MaskToImage",
+      "inputs": {"mask": ["edge", 0]}
+    },
+    "fade": {
+      "class_type": "ImageBlur",
+      "inputs": {"image": ["as_picture", 0], "blur_radius": 31, "sigma": 0.5}
+    },
+    "area_mask": {
+      "class_type": "ImageToMask",
+      "inputs": {"image": ["fade", 0], "channel": "red"}
+    },
+    "crop": {
+      "class_type": "InpaintCropImproved",
+      "inputs": {
+        "image": ["fit", 0],
+        "mask": ["area_mask", 0],
+        "downscale_algorithm": "lanczos",
+        "upscale_algorithm": "lanczos",
+        "preresize": false,
+        "preresize_mode": "ensure minimum resolution",
+        "preresize_min_width": 1024,
+        "preresize_min_height": 1024,
+        "preresize_max_width": 16384,
+        "preresize_max_height": 16384,
+        "mask_fill_holes": false,
+        "mask_expand_pixels": 0,
+        "mask_invert": false,
+        "mask_blend_pixels": 0,
+        "mask_hipass_filter": 0.0,
+        "extend_for_outpainting": false,
+        "extend_up_factor": 1.0,
+        "extend_down_factor": 1.0,
+        "extend_left_factor": 1.0,
+        "extend_right_factor": 1.0,
+        "context_from_mask_extend_factor": 1.2,
+        "output_resize_to_target_size": false,
+        "output_target_width": 1024,
+        "output_target_height": 1024,
+        "output_padding": "32",
+        "device_mode": "cpu (compatible)"
+      }
+    },
+    "soft": {
+      "class_type": "DifferentialDiffusion",
+      "inputs": {"model": ["own", 0]}
+    },
+    "encode": {
+      "class_type": "VAEEncode",
+      "inputs": {"pixels": ["crop", "cropped_image"], "vae": ["$decode.vae", "*"]}
+    },
+    "area": {
+      "class_type": "SetLatentNoiseMask",
+      "inputs": {"samples": ["encode", 0], "mask": ["crop", "cropped_mask"]}
+    },
+    "redraw": {
+      "class_type": "KSampler",
+      "like": "$sampler",
+      "inputs": {
+        "model": ["soft", 0],
+        "positive": ["$sampler.positive", "*"],
+        "negative": ["$sampler.negative", "*"],
+        "latent_image": ["area", 0],
+        "denoise": 0.45
+      }
+    },
+    "decode": {
+      "class_type": "VAEDecode",
+      "inputs": {"samples": ["redraw", 0], "vae": ["$decode.vae", "*"]}
+    },
+    "stitch": {
+      "class_type": "InpaintStitchImproved",
+      "inputs": {"stitcher": ["crop", "stitcher"], "inpainted_image": ["decode", 0]}
+    },
+    "save": {
+      "class_type": "SaveImage",
+      "inputs": {"images": ["stitch", 0], "filename_prefix": "upscaled_character"}
+    },
+    "look": {
+      "class_type": "PreviewImage",
+      "inputs": {"images": ["fade", 0]}
+    }
+  },
+  "after": "run_workflow saves the picture as before and the 1.5x one beside it (prefix upscaled_character): the whole picture enlarged by an upscale model, the background left as it is, only the character (cut out, cropped with a margin) redrawn at denoise 0.45 with its own copy of the canvas's model and LoRAs (the loader titled Upscale model) and stitched back. Only for a background blurred on purpose: on a sharp one the character comes out sharper than the enlarged background; there use want=\"detail\". A second model for the character: set_model that loader to one of the same family. The preview shows what is redrawn (white): part of the character missing, or the background in it, say so.",
+  "gives": {
+    "sampler": "redraw",
+    "save": "save"
+  },
+  "own_model": {
+    "nodes": ["own_1", "own"],
+    "copies_loras": true
+  },
+  "notes": "In the 2026-11-10 comparison (an Anima picture with a blurred background, 1440x1024 to 2160x1536, RealSkin) a whole Tile redraw at 0.85 drew the far tracks and trees sharp, hazed the picture and lost the depth; enlarging it all and redrawing only the character kept the background to the pixel and sharpened the face. The crop (the character's mask, 20% more around it, not resized) took 153 s where redrawing over the whole enlarged picture took 270 s. The mask is the refine_character way's: cut out, made solid, grown 12 px, blurred about 15 px for a fading edge with Differential Diffusion. On Anima an optional animaTileRepair LLLite holds the lines at denoise 0.7; without the Tile file the node goes and 0.45 is the strength.",
+  "models": ["2x_animesharp_v4", "4x_ultrasharp", "anima_tile_repair"],
+  "tested": {
+    "gpu": "RTX 4050 Laptop",
+    "vram_gb": 6,
+    "date": "2026-11-10",
+    "runs": [
+      {
+        "model": "Anima (Harem 1.5, its own copy redrawing the character, the Tile, denoise 0.7, 2x-AnimeSharpV4)",
+        "size": "832×1216 → 1.5×",
+        "seconds": 223
+      }
+    ]
+  },
+  "variants": {
+    "anima": {
+      "optional_lllite": {
+        "tile": "tile"
+      },
+      "nodes": {
+        "own": {
+          "class_type": "UNETLoader",
+          "copy_of": "$sampler.model",
+          "_meta": {"title": "Upscale model"},
+          "inputs": {}
+        },
+        "upscaler": {
+          "class_type": "UpscaleModelLoader",
+          "inputs": {"model_name": "$upscaler"}
+        },
+        "enlarge": {
+          "class_type": "ImageUpscaleWithModel",
+          "inputs": {"upscale_model": ["upscaler", 0], "image": ["$save.images", "*"]}
+        },
+        "fit": {
+          "class_type": "ImageScaleBy",
+          "inputs": {"image": ["enlarge", 0], "upscale_method": "lanczos", "scale_by": "$fit"}
+        },
+        "cut": {
+          "class_type": "InspyrenetRembg",
+          "inputs": {"image": ["fit", 0], "torchscript_jit": "default"}
+        },
+        "solid": {
+          "class_type": "ThresholdMask",
+          "inputs": {"mask": ["cut", 1], "value": 0.5}
+        },
+        "edge": {
+          "class_type": "GrowMask",
+          "inputs": {"mask": ["solid", 0], "expand": 12, "tapered_corners": true}
+        },
+        "as_picture": {
+          "class_type": "MaskToImage",
+          "inputs": {"mask": ["edge", 0]}
+        },
+        "fade": {
+          "class_type": "ImageBlur",
+          "inputs": {"image": ["as_picture", 0], "blur_radius": 31, "sigma": 0.5}
+        },
+        "area_mask": {
+          "class_type": "ImageToMask",
+          "inputs": {"image": ["fade", 0], "channel": "red"}
+        },
+        "crop": {
+          "class_type": "InpaintCropImproved",
+          "inputs": {
+            "image": ["fit", 0],
+            "mask": ["area_mask", 0],
+            "downscale_algorithm": "lanczos",
+            "upscale_algorithm": "lanczos",
+            "preresize": false,
+            "preresize_mode": "ensure minimum resolution",
+            "preresize_min_width": 1024,
+            "preresize_min_height": 1024,
+            "preresize_max_width": 16384,
+            "preresize_max_height": 16384,
+            "mask_fill_holes": false,
+            "mask_expand_pixels": 0,
+            "mask_invert": false,
+            "mask_blend_pixels": 0,
+            "mask_hipass_filter": 0.0,
+            "extend_for_outpainting": false,
+            "extend_up_factor": 1.0,
+            "extend_down_factor": 1.0,
+            "extend_left_factor": 1.0,
+            "extend_right_factor": 1.0,
+            "context_from_mask_extend_factor": 1.2,
+            "output_resize_to_target_size": false,
+            "output_target_width": 1024,
+            "output_target_height": 1024,
+            "output_padding": "32",
+            "device_mode": "cpu (compatible)"
+          }
+        },
+        "tile": {
+          "class_type": "AnimaLLLiteApply_sdscripts",
+          "optional": true,
+          "inputs": {
+            "model": ["own", 0],
+            "lllite_name": "$tile",
+            "image": ["crop", "cropped_image"],
+            "strength": 0.7,
+            "start_percent": 0.0,
+            "end_percent": 0.8,
+            "preserve_wrapper": true
+          }
+        },
+        "soft": {
+          "class_type": "DifferentialDiffusion",
+          "inputs": {"model": ["tile|own", 0]}
+        },
+        "encode": {
+          "class_type": "VAEEncodeTiled",
+          "inputs": {"pixels": ["crop", "cropped_image"], "vae": ["$decode.vae", "*"], "tile_size": 512, "overlap": 64, "temporal_size": 64, "temporal_overlap": 8}
+        },
+        "area": {
+          "class_type": "SetLatentNoiseMask",
+          "inputs": {"samples": ["encode", 0], "mask": ["crop", "cropped_mask"]}
+        },
+        "redraw": {
+          "class_type": "KSampler",
+          "like": "$sampler",
+          "inputs": {
+            "model": ["soft", 0],
+            "positive": ["$sampler.positive", "*"],
+            "negative": ["$sampler.negative", "*"],
+            "latent_image": ["area", 0],
+            "steps": 30,
+            "cfg": 4.4,
+            "sampler_name": "dpmpp_2m_sde_gpu",
+            "scheduler": "sgm_uniform",
+            "denoise": 0.7
+          }
+        },
+        "decode": {
+          "class_type": "VAEDecodeTiled",
+          "inputs": {"samples": ["redraw", 0], "vae": ["$decode.vae", "*"], "tile_size": 512, "overlap": 64, "temporal_size": 64, "temporal_overlap": 8}
+        },
+        "stitch": {
+          "class_type": "InpaintStitchImproved",
+          "inputs": {"stitcher": ["crop", "stitcher"], "inpainted_image": ["decode", 0]}
+        },
+        "save": {
+          "class_type": "SaveImage",
+          "inputs": {"images": ["stitch", 0], "filename_prefix": "upscaled_character"}
+        },
+        "look": {
+          "class_type": "PreviewImage",
+          "inputs": {"images": ["fade", 0]}
+        }
+      },
+      "after": "On this Anima model run_workflow saves the picture as before and the 1.5x one beside it (prefix upscaled_character): the whole picture enlarged by an upscale model, the background left as it is, only the character (cut out, cropped with a margin) redrawn with its own copy of the canvas's model and LoRAs (the loader titled Upscale model) and stitched back. The Tile (node tile) holds the character's lines, so it redraws at denoise 0.7 (30 steps, dpmpp_2m_sde_gpu, the tested route); without the tile node (no animaTileRepair file here) set redraw's denoise to 0.45. Only for a background blurred on purpose: on a sharp one the character comes out sharper than the enlarged background; there use want=\"detail\". A second model for the character: set_model that loader to another Anima model; the LoRAs stay. The preview shows what is redrawn (white): part of the character missing, or the background in it, say so. The Tile LLLite fits the 2B Anima models; on a larger one (such as Harem 2.9B) the run stops with \"depth_embed slices missing\": then remove_nodes the tile node and set redraw's denoise to 0.45, or set_model a 2B Anima model there."
+    }
+  }
+}

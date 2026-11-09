@@ -189,7 +189,7 @@ class BlockTests(unittest.TestCase):
     def test_the_tile_upscale_redraws_on_its_own_copy_of_the_model(self):
         info = {**EVERYTHING, "ColorMatch": {}}
         self.assertEqual(reference_blocks.pick("upscale", "detail", info), "upscale_tile")
-        with self.assertRaisesRegex(reference_blocks.BlockError, "upscale takes want: detail, 2x, or none"):
+        with self.assertRaisesRegex(reference_blocks.BlockError, "upscale takes want: detail, 2x, character, or none"):
             reference_blocks.pick("upscale", "steady", info)
         nodes = reference_blocks.build("upscale_tile", info, main_base=lambda: "Anima")["nodes"]
         self.assertEqual(nodes["own"], {"class_type": "UNETLoader", "copy_of": "$sampler.model", "_meta": {"title": "Upscale model"}, "inputs": {}},
@@ -202,6 +202,24 @@ class BlockTests(unittest.TestCase):
         missing = {**info, "AnimaLLLiteApply_sdscripts": LLLITES | {"input": {"required": {"lllite_name": [["anima-lllite-depth-1.safetensors"]]}}}}
         with self.assertRaises(reference_blocks.MissingModel):
             reference_blocks.build("upscale_tile", missing, main_base=lambda: "Anima")
+
+    def test_a_blurred_background_is_enlarged_and_only_the_character_redrawn(self):
+        self.assertEqual(reference_blocks.pick("upscale", "character", EVERYTHING), "upscale_character")
+        nodes = reference_blocks.build("upscale_character", EVERYTHING, main_base=lambda: "Anima")["nodes"]
+        self.assertEqual((nodes["upscaler"]["inputs"]["model_name"], nodes["fit"]["inputs"]["scale_by"]), ("2x-Lite.pth", 0.75),
+                         "the least enlarging model reaching 1.5x, brought back to it")
+        self.assertEqual((nodes["cut"]["inputs"]["image"], nodes["crop"]["inputs"]["image"], nodes["crop"]["inputs"]["mask"]),
+                         (["fit", 0], ["fit", 0], ["area_mask", 0]), "the enlarged picture is cut out and only the character's crop redrawn")
+        self.assertEqual((nodes["tile"]["inputs"]["image"], nodes["soft"]["inputs"]["model"], nodes["redraw"]["inputs"]["denoise"]),
+                         (["crop", "cropped_image"], ["tile", 0], 0.7))
+        self.assertEqual((nodes["stitch"]["inputs"]["stitcher"], nodes["save"]["inputs"]["images"]), (["crop", "stitcher"], ["stitch", 0]))
+        no_tile = {**EVERYTHING, "AnimaLLLiteApply_sdscripts": {"input": {"required": {"lllite_name": [["anima-lllite-depth-1.safetensors"]]}}}}
+        without = reference_blocks.build("upscale_character", no_tile, main_base=lambda: "Anima")["nodes"]
+        self.assertEqual(("tile" in without, without["soft"]["inputs"]["model"]), (False, ["own", 0]))
+        sdxl = reference_blocks.build("upscale_character", EVERYTHING, main_base=lambda: "Illustrious")["nodes"]
+        self.assertEqual((sdxl["own"]["class_type"], sdxl["redraw"]["inputs"]["denoise"], "tile" in sdxl), ("CheckpointLoaderSimple", 0.45, False))
+        with self.assertRaisesRegex(reference_blocks.BlockError, "needs ComfyUI-Inpaint-CropAndStitch"):
+            reference_blocks.build("upscale_character", {key: value for key, value in EVERYTHING.items() if key != "InpaintCropImproved"})
 
     def test_refining_only_the_character_or_the_background_pastes_the_rest_back(self):
         self.assertEqual(reference_blocks.directory(EVERYTHING)["refine"], "Redraw with another model (want: midway, character, background)")
