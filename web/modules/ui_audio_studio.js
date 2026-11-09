@@ -12,6 +12,7 @@ import { bindTtsFileDrop } from './ui_tts_file_drop.js';
 import { openTtsImport } from './ui_tts_import.js';
 import { stopScriptDirectorPreview } from './ui_script_director.js';
 import { renderVoiceTabs } from './ui_voice_tabs.js';
+import { changeCover, drawAvatar, loadCovers } from './voice_covers.js';
 
 // The node interface that removes a whole character (POST /anomalous_tts/character/remove).
 const REMOVE_CHARACTER_FORMAT = 19;
@@ -20,7 +21,9 @@ const REMOVE_CHARACTER_FORMAT = 19;
  * The Voices page's Characters view: GPT-SoVITS character cards (Anomalous_TTS, detected
  * at runtime), preview playback, tag copying, dropping a character onto a TTS node, the
  * editors, and each card's way to the Voice-over view (ui_script_page.js), where scripts
- * are written and generated.
+ * are written and generated. A card reads like a profile: its cover (voice_covers.js: a click
+ * changes it), the name big with its version under it, one small line of facts, plain buttons,
+ * and its voices as rows parted by thin lines.
  */
 
 const renderTokens = new WeakMap();
@@ -208,46 +211,45 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false, tunin
     const titleGroup = document.createElement('div');
     titleGroup.className = 'anomalous-character-voice-title';
 
-    const avatar = document.createElement('div');
+    // The cover, else the name's first letter; a click changes it (a button: no drag starts there).
+    const avatar = document.createElement('button');
+    avatar.type = 'button';
     avatar.className = 'anomalous-character-voice-avatar';
-    avatar.innerHTML = SVG.MIC;
+    avatar.title = t('voiceCoverChange');
+    avatar.dataset.hint = t('voiceCoverChange'); // shown over it under the pointer: it can be clicked
+    drawAvatar(avatar, group.character);
+    avatar.onclick = (event) => {
+        event.stopPropagation();
+        changeCover(group.character);
+    };
 
     const nameBox = document.createElement('div');
     nameBox.className = 'anomalous-character-voice-names';
 
     const name = document.createElement('span');
     name.className = 'anomalous-character-voice-name';
-    // GPT-SoVITS versions are named "角色/日配"; show the version as a quiet suffix.
+    // GPT-SoVITS versions are named "角色/日配": the name big, the version under it in grey.
     const cut = group.character.lastIndexOf('/');
     name.textContent = cut > 0 ? group.character.slice(0, cut) : group.character;
+    name.title = group.character;
+    nameBox.append(name);
     if (cut > 0) {
         const version = document.createElement('span');
         version.className = 'anomalous-character-voice-folder';
         version.textContent = group.character.slice(cut + 1);
-        name.append(' ', version);
-    }
-    name.title = group.character;
-    if (group.model_version) {
-        const model = document.createElement('span');
-        model.className = 'anomalous-character-voice-model';
-        model.textContent = group.model_version;
-        model.title = t('ttsModelVersion', { version: group.model_version });
-        name.append(model);
+        nameBox.append(version);
     }
 
-    const sub = document.createElement('span');
-    sub.className = 'anomalous-character-voice-hint';
-    sub.textContent = t('audioDragCardHint');
-    sub.title = sub.textContent;
-
-    nameBox.append(name, sub);
-
-    const countBadge = document.createElement('span');
-    countBadge.className = 'anomalous-character-voice-count';
-    countBadge.textContent = t('audioVoiceClipCount', { count: group.total_slices });
+    // One small line of facts: the model version, how many voices, and that the header drags onto a node.
+    const facts = document.createElement('span');
+    facts.className = 'anomalous-character-voice-hint';
+    facts.textContent = [group.model_version, t('audioVoiceClipCount', { count: group.total_slices }), group.has_main ? t('audioDragCardHint') : '']
+        .filter(Boolean).join(' · ');
+    facts.title = group.model_version ? t('ttsModelVersion', { version: group.model_version }) : '';
+    nameBox.append(facts);
 
     // Only a draggable header shows a grip; without a main voice there is nothing to drag.
-    titleGroup.append(...(group.has_main ? [gripIcon()] : []), avatar, nameBox);
+    titleGroup.append(avatar, nameBox, ...(group.has_main ? [gripIcon()] : []));
     const headerRight = document.createElement('div');
     headerRight.className = 'anomalous-character-voice-actions';
     if (!group.raw.error) {
@@ -273,8 +275,8 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false, tunin
         remove.onclick = () => requestRemoveCharacter(group, onChanged);
         headerRight.append(remove);
     }
-    headerRight.append(countBadge);
-    header.append(titleGroup, headerRight);
+    nameBox.append(headerRight); // the buttons under the name, plain words
+    header.append(titleGroup);
     if (group.has_main) {
         header.classList.add('is-draggable');
         header.title = t('audioDragCharacterTitle', { character: group.character });
@@ -489,6 +491,8 @@ export async function renderAudioStudio(container, { filter = null, owner = null
         studioWrapper.lastChild.replaceWith(renderEmptyGuide(canImport ? onImport : null));
         return;
     }
+    await loadCovers();
+    if (renderTokens.get(container) !== token) return;
     const tuning = Number(ttsStatus?.format) >= PRESETS_FORMAT; // generation settings: Anomalous_TTS 1.1.0+
     const removable = canImport && Number(ttsStatus?.format) >= REMOVE_CHARACTER_FORMAT;
     characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner, { onChanged, canImport, tuning, removable })));

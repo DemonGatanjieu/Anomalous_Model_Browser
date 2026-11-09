@@ -43,9 +43,10 @@ export async function galleryPictures(page, limit, query = '', signal = undefine
 /**
  * The gallery as a grid of pictures to pick: a search line and the newest pictures, more as it
  * scrolls. `picked(id)` says whether one is picked, `pick(item)` picks or drops it (the caller
- * keeps what is picked). Returns {search, grid, mark() (shows what is picked again), stop()}.
+ * keeps what is picked). Returns {search, grid, mark() (shows what is picked again), stop()}. Also the
+ * voice characters' cover picker's (voice_covers.js).
  */
-function pictureGrid({ picked, pick }) {
+export function pictureGrid({ picked, pick }) {
     const abort = new AbortController();
     let page = 0;
     let pages = 1;

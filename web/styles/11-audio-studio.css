@@ -223,38 +223,36 @@
     gap: 16px;
 }
 
+/* A character's card reads like a profile (ui_audio_studio.js): its cover, the name big with its version
+   under it, one small line of facts, plain buttons, and its voices as rows parted by thin lines. Flat: no glow. */
 .anomalous-character-voice-card {
-    background: var(--amb-lt-surface, rgba(18, 18, 23, 0.75));
+    background: var(--amb-bg-card);
     border: 1px solid var(--amb-border);
     border-radius: 12px;
-    padding: 16px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+    gap: 14px;
+    transition: border-color 0.2s ease;
 }
 
 .anomalous-character-voice-card:hover {
-    border-color: color-mix(in srgb, var(--amb-link) 25%, transparent);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 15px color-mix(in srgb, var(--amb-link) 8%, transparent);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-voice-slice-row {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    background: rgba(var(--amb-ink-rgb), 0.02);
-    border: 1px solid var(--amb-border);
-    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 9px 4px;
+    border-top: 1px solid var(--amb-border);
+    transition: background-color 0.15s ease;
 }
 
+.anomalous-voice-slice-row:last-child { border-bottom: 1px solid var(--amb-border); }
+
 .anomalous-voice-slice-row:hover {
-    background: rgba(var(--amb-ink-rgb), 0.06);
-    border-color: var(--amb-border-strong);
+    background: rgba(var(--amb-ink-rgb), 0.04);
 }
 
 .anomalous-character-voice-header {
@@ -268,41 +266,68 @@
 .anomalous-character-voice-title {
     display: flex;
     flex: 1 1 160px;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 16px;
     min-width: 0;
 }
 
+/* The cover (voice_covers.js), or the name's first letter; a click changes it. */
 .anomalous-character-voice-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: rgba(var(--amb-ink-rgb), 0.06);
+    width: 76px;
+    height: 76px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
     border: 1px solid var(--amb-border);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--amb-text-muted);
+    color: var(--amb-link);
     flex-shrink: 0;
+    cursor: pointer;
+    transition: border-color 0.15s ease, filter 0.15s ease;
 }
+
+.anomalous-character-voice-avatar:hover { border-color: var(--amb-link); }
+.anomalous-character-voice-avatar { position: relative; }
+.anomalous-character-voice-avatar::after {
+    content: attr(data-hint);
+    position: absolute;
+    inset: auto 0 0;
+    padding: 3px 0;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 11px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.anomalous-character-voice-avatar:hover::after,
+.anomalous-character-voice-avatar:focus-visible::after { opacity: 1; }
+.anomalous-character-voice-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-voice-initial { font-size: 30px; font-weight: 600; line-height: 1; }
 
 .anomalous-character-voice-names {
     display: flex;
+    flex: 1;
     flex-direction: column;
+    gap: 2px;
     min-width: 0;
 }
 
 .anomalous-character-voice-name {
-    font-size: 14px;
+    font-size: 22px;
     font-weight: 600;
+    line-height: 1.2;
     color: var(--amb-text-main);
     overflow-wrap: anywhere;
 }
 
 .anomalous-character-voice-folder {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 400;
-    color: var(--amb-link);
+    color: var(--amb-text-muted);
 }
 
 /* GPT-SoVITS model version (v2, v4, v5dev…) after the name */
@@ -318,11 +343,10 @@
 }
 
 .anomalous-character-voice-hint {
-    overflow: hidden;
-    font-size: 11px;
-    color: var(--amb-text-dim);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--amb-link);
+    line-height: 1.5;
 }
 
 .anomalous-character-voice-count {
@@ -348,7 +372,6 @@
 .anomalous-character-voice-slices {
     display: flex;
     flex-direction: column;
-    gap: 6px;
 }
 
 .anomalous-audio-eq-bars {
@@ -391,17 +414,18 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 2px 8px;
+    padding: 2px 4px;
     border-radius: 4px;
-    border: 1px solid var(--amb-border);
-    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.3));
-    color: var(--amb-text-muted);
-    font-size: 11px;
-    font-family: monospace;
+    border: 0;
+    background: transparent;
+    color: var(--amb-link);
+    font-size: 11.5px;
     cursor: pointer;
     flex-shrink: 0;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease;
 }
+
+.anomalous-voice-copy-btn:hover { text-decoration: underline; }
 
 .anomalous-voice-copy-btn.is-copied {
     color: var(--amb-ok);
@@ -1241,14 +1265,31 @@
 /* ---------- GPT-SoVITS cards ---------- */
 /* Wraps in a narrow card instead of pushing the page sideways. */
 .anomalous-character-voice-actions {
-    display: inline-flex;
+    display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: center;
-    gap: 6px 8px;
+    gap: 2px;
     min-width: 0;
-    margin-left: auto;
+    margin: 8px 0 0 -8px;
 }
+
+/* On a card the tool buttons are plain words: the card is not a toolbar. */
+.anomalous-character-voice-actions .anomalous-audio-tool-btn {
+    border-color: transparent;
+    background: transparent;
+    color: var(--amb-text-soft);
+}
+
+.anomalous-character-voice-actions .anomalous-audio-tool-btn:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-main); }
+
+/* The cover picker (voice_covers.js): the computer or none, then the gallery to pick from. */
+.anomalous-voice-cover-pick { display: flex; flex-direction: column; gap: 10px; width: min(620px, 86vw); }
+.anomalous-voice-cover-lead { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
+.anomalous-voice-cover-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.anomalous-voice-cover-pick .anomalous-ai-pics-grid { max-height: min(420px, 55vh); overflow-y: auto; }
+.anomalous-voice-cover-said { color: var(--amb-text-muted); font-size: 12px; }
+.anomalous-voice-cover-said:empty { display: none; }
 
 .anomalous-audio-tool-btn.is-compact {
     padding: 3px 8px;

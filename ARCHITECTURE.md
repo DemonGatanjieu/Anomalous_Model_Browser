@@ -278,6 +278,11 @@ covered by the `styles.css` manifest.
   language, `api/description_translation.py` translates it paragraph by paragraph through
   `translation_routes.translate_chain` (DeepL with a key, Google, MyMemory; long pieces cut smaller) and keeps the
   answer in user/anomalous/translations by the text's hash, never beside the models (`tests/test_description_translation.py`).
+- Covers of the voice characters: `api/voice_covers.py` keeps one small square PNG per character's name (its
+  versions share it) in user/anomalous/voice_covers, never in Anomalous_TTS's folders, and takes one away to the
+  Recycle Bin; `web/modules/voice_covers.js` draws the cover or the name's first letter in a card's avatar and, on
+  a click, picks a picture from the gallery (`ui_ai_gallery_pick.js` pictureGrid) or the computer and cuts it
+  square, a tall one keeping its top (`tests/test_voice_covers.py`, `tests/voice_covers.mjs`).
 - A prompt the canvas's model cannot read. `api/prompt_language.py` says whether the prompts a run sends are mostly
   Chinese, Japanese or Korean while a loader's model is of a family marked "reads": "English" in `api/model_profiles.json`
   (SD 1.5, SDXL, Pony, Illustrious, Flux, Chroma: CLIP and T5 read English only, and the picture would follow nothing).
@@ -859,7 +864,8 @@ covered by the `styles.css` manifest.
   page `script`) and Audio (shell page `audio-gallery`, `ui_audio_gallery.js`).
   `ui_shell_nav.js` keeps the rail on Voices and reopens the view used last, from the
   rail and from the 9 key; the rail stays within the nine number keys.
-  `ui_audio_studio.js` owns the Characters view: the character cards, preview playback,
+  `ui_audio_studio.js` owns the Characters view: the character cards (laid out like a profile: cover, name big,
+  version under it, one line of facts, plain buttons, voices as thin-line rows), preview playback,
   tag copying, dragging a card header onto a node through the shared `bindMaterialDrag`
   with `targetHint`/`rejectHint` telling the user what releasing does, each card's
   "Voice-over" button (`owner.openScript(group)`), and its Delete character button
