@@ -2,6 +2,7 @@
   "job": "upscale",
   "rank": 1,
   "short": "1.25×",
+  "when": "an upscale model, then a light redraw; nothing holds the picture, so it stays light.",
   "title": {
     "zh": "放大",
     "en": "Upscale"

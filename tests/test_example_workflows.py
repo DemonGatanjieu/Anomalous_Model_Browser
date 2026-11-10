@@ -11,7 +11,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import example_workflows as examples, mcp_fill, mcp_tools, reference_blocks  # noqa: E402
+from api import example_workflows as examples, lllite_fit, mcp_fill, mcp_tools, model_guide, reference_blocks  # noqa: E402
 
 OWN_NODES = {"CheckpointLoaderSimple", "UNETLoader", "CLIPLoader", "VAELoader", "CLIPTextEncode", "EmptyLatentImage", "KSampler", "VAEDecode",
              "VAEEncode", "VAEEncodeTiled", "VAEDecodeTiled", "SaveImage", "LoadImage", "LatentUpscaleBy", "SetLatentNoiseMask",
@@ -68,6 +68,9 @@ class ExampleTests(unittest.TestCase):
         self.assertEqual((crop[18], crop[19]), (way["crop"]["inputs"]["context_from_mask_extend_factor"], False), "a margin, not resized")
         no_cut = {kind: value for kind, value in ALL_HERE.items() if kind != "InspyrenetRembg"}
         self.assertEqual(examples._lacks(examples.EXAMPLES["two_pass_anima_character"], no_cut, EVERYTHING), [{"pack": "comfyui-inspyrenet-rembg"}])
+        no_crop = {kind: value for kind, value in ALL_HERE.items() if not kind.startswith("Inpaint")}
+        self.assertEqual(examples._lacks(examples.EXAMPLES["two_pass_anima_character"], no_crop, EVERYTHING), [{"pack": "ComfyUI-Inpaint-CropAndStitch"}],
+                         "a pack two of its nodes come from is named once")
 
     def test_read_fills_in_what_is_here(self):
         with mock.patch.object(examples, "_here", return_value=ALL_HERE), mock.patch.object(examples, "_fills", return_value=EVERYTHING):
@@ -78,6 +81,33 @@ class ExampleTests(unittest.TestCase):
         self.assertEqual(shipped["widgets_values"][0], "", "the shipped one stays blank")
         with mock.patch.object(examples, "_here", return_value=ALL_HERE), mock.patch.object(examples, "_fills", return_value=EVERYTHING):
             self.assertIsNone(examples.read("nothing"))
+
+    def test_a_version_with_a_tile_opens_on_a_model_the_tile_fits(self):
+        from api import model_advice
+        info = {**ALL_HERE, "UNETLoader": {"input": {"required": {"unet_name": [["anima_big.safetensors", "anima_small.safetensors"]]}}}}
+        fills = {**EVERYTHING, "UNETLoader": "anima_big.safetensors"}
+        loader = lambda data: next(node["widgets_values"][0] for node in data["workflow"]["nodes"] if node["type"] == "UNETLoader")  # noqa: E731
+        with mock.patch.object(examples, "_here", return_value=info), mock.patch.object(examples, "_fills", return_value=fills), \
+                mock.patch.object(model_advice, "_main_base", return_value="Anima"), \
+                mock.patch.object(lllite_fit, "problem", side_effect=lambda model, tile: {"blocks": 40} if "big" in model else None):
+            self.assertEqual(loader(examples.read("two_pass_anima_tile")), "anima_small.safetensors")
+            self.assertEqual(loader(examples.read("two_pass_anima")), "anima_big.safetensors", "no Tile in it: the first of the family")
+        with mock.patch.object(examples, "_here", return_value=info), mock.patch.object(examples, "_fills", return_value=fills), \
+                mock.patch.object(model_advice, "_main_base", return_value="Anima"), mock.patch.object(lllite_fit, "problem", return_value={"blocks": 40}):
+            self.assertEqual(loader(examples.read("two_pass_anima_tile")), "anima_big.safetensors", "none fits: still opened, the run says why")
+        self.assertEqual(fills["UNETLoader"], "anima_big.safetensors", "what was read for all is not changed for one")
+
+    def test_what_holds_for_a_family_is_written_once(self):
+        batch = model_guide.profile("Anima")["notes"][0]
+        self.assertIn("video frames", batch)
+        for key, example in examples.EXAMPLES.items():
+            with self.subTest(example=key):
+                text = json.dumps(example, ensure_ascii=False)
+                for repeated in ("video frames", "视频帧", "depth_embed"):
+                    self.assertNotIn(repeated, text)
+                self.assertEqual(batch in examples._notes(example), example["family"] == "anima", "an AI gets it with each Anima example")
+        with mock.patch.object(examples, "_here", return_value=ALL_HERE), mock.patch.object(examples, "_fills", return_value=EVERYTHING):
+            self.assertEqual({item["family"] for item in examples.listing()}, set(examples.FAMILIES), "the page says a family's note above its versions")
 
     def test_the_picture_taken_is_comfyuis_own_else_the_first(self):
         with tempfile.TemporaryDirectory() as folder:

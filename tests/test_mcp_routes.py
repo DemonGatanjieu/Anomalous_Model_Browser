@@ -89,7 +89,7 @@ class RouteTests(unittest.TestCase):
                 mock.patch.object(mcp_routes.ai_toolbox, "effective", return_value={"models": [A, LORA, B]}):
             got = mcp_routes.build({"task": "t"}, "tile_second")
         self.assertEqual(calls, [("new", "tile_second"), ("add", {"use": "picture", "model": A}), ("lora", 1),
-                                 ("add", {"use": "upscale", "want": "detail", "near_node_id": 5, "save_node_id": 7}), ("model", 9, B)],
+                                 ("add", {"use": "upscale", "want": "tile", "near_node_id": 5, "save_node_id": 7}), ("model", 9, B)],
                          "the LoRA goes on before the way copies the model line; the way goes on from the picture's sampler and output")
         self.assertIn("base_only=true", got["next"])
 

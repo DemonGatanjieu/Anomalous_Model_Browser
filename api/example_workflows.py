@@ -3,7 +3,10 @@ its own: plans (title), each in a version per model family (version) with a note
 ComfyUI's own nodes; a version may need a pack (packs) or a model, and says so. The Workflows page shows
 them as one card (web/modules/ui_recipe_examples.js); list_workflows gives those that can run here to an
 AI when no saved workflow fits, which opens and runs them like saved ones (file name "example:<id>").
-A file names no model and no picture: read() fills in ones that are here. Read only."""
+A file names no model and no picture: read() fills in ones that are here, for a version with a Tile a model
+the Tile fits (lllite_fit.py). What holds for a whole model family (Anima: several pictures are several
+runs) is written once: for an AI in model_profiles.json, added to each of the family's notes; for the
+user under the plan's heading (the page's words for `family`). Read only."""
 
 import asyncio
 import json
@@ -12,7 +15,7 @@ import os
 import folder_paths
 from aiohttp import web
 
-from . import workflow_route
+from . import lllite_fit, model_guide, workflow_route
 
 FOLDER = os.path.join(os.path.dirname(__file__), "examples")
 PREFIX = "example:"
@@ -20,6 +23,7 @@ ORDER = ("text_to_picture", "two_pass", "two_pass_anima", "two_pass_anima_tile",
 LOADERS = ("CheckpointLoaderSimple", "UNETLoader", "CLIPLoader", "VAELoader", "AnimaLLLiteApply_sdscripts")
 FAMILIES = {"sd": ("SDXL", "SD 1.x"), "anima": ("anima",)}  # what the examples' settings suit
 FOR_MODELS = {"sd": "SDXL, SD 1.5", "anima": "Anima"}
+PROFILES = {"anima": "Anima"}  # the model_profiles.json family whose notes hold for every example of a family
 LOOK_AT = 40  # files looked at for a model of a family
 MAX_WITH_SETTINGS = 3  # saved workflows listed in full for an AI: an AI app files a long answer away, unread
 SHORT_NOTES = 120  # characters of a card's notes in a longer list
@@ -46,12 +50,12 @@ def _here():
     return {kind: {"input": nodes.NODE_CLASS_MAPPINGS[kind].INPUT_TYPES()} for kind in kinds if kind in nodes.NODE_CLASS_MAPPINGS}
 
 
-def _model(info, kind, field, family):
-    """The first file loader `kind` offers of `family` (those named for it looked at first), or ""."""
+def _model(info, kind, field, family, fits=lambda name: True):
+    """The first file loader `kind` offers of `family` (those named for it looked at first) that `fits`, or ""."""
     from . import model_advice, reference_blocks
 
     names = sorted(reference_blocks._choices(info, kind, field), key=lambda name: family not in name.lower())
-    return next((name for name in names[:LOOK_AT] if model_advice.family(model_advice._main_base(name)) in FAMILIES[family]), "")
+    return next((name for name in names[:LOOK_AT] if model_advice.family(model_advice._main_base(name)) in FAMILIES[family] and fits(name)), "")
 
 
 def _picture():
@@ -81,7 +85,7 @@ def _fills(info):
 
 def _lacks(example, info, fills):
     """What `example` needs and this ComfyUI lacks: [{pack}] or [{model: the loader's type}]."""
-    packs = [{"pack": pack} for kind, pack in (example.get("packs") or {}).items() if kind not in info]
+    packs = [{"pack": pack} for pack in dict.fromkeys(pack for kind, pack in (example.get("packs") or {}).items() if kind not in info)]
     kinds = {node["type"] for node in example["workflow"]["nodes"]}
     return packs + [{"model": kind} for kind in LOADERS if kind in kinds and kind in info and not fills.get(kind)]
 
@@ -91,7 +95,12 @@ def read(example_id):
     example = EXAMPLES.get(example_id)
     if not example:
         return None
-    fills = _fills(_here())
+    info = _here()
+    fills = dict(_fills(info))
+    tile = fills.get("AnimaLLLiteApply_sdscripts")
+    if tile and any(node["type"] == "AnimaLLLiteApply_sdscripts" for node in example["workflow"]["nodes"]):
+        # a Tile made for the 2B models stops the run on a larger one: open on one it fits, when there is one
+        fills["UNETLoader"] = _model(info, "UNETLoader", "unet_name", "anima", lambda name: not lllite_fit.problem(name, tile)) or fills["UNETLoader"]
     workflow = json.loads(json.dumps(example["workflow"]))
     for node in workflow["nodes"]:
         if node["type"] in fills:
@@ -104,7 +113,13 @@ def listing():
     info = _here()
     fills = _fills(info)
     return [{"id": key, "title": item["title"], "version": item["version"], "about": item["about"], "recommended": bool(item.get("recommended")),
-             "lacks": _lacks(item, info, fills)} for key, item in EXAMPLES.items()]
+             "family": item["family"], "lacks": _lacks(item, info, fills)} for key, item in EXAMPLES.items()]
+
+
+def _notes(item):
+    """An example's note for an AI, with what model_profiles.json says of its family."""
+    family = model_guide.profile(PROFILES.get(item["family"])) or {}
+    return " ".join([item["ai"], *family.get("notes", [])])
 
 
 def for_ai():
@@ -112,7 +127,7 @@ def for_ai():
     info = _here()
     fills = _fills(info)
     return [{"name": item["name"], "title": item["title"]["zh"], "example": True, "for_models": FOR_MODELS[item["family"]],
-             "route": workflow_route.line(item["workflow"]), "notes": item["ai"]}
+             "route": workflow_route.line(item["workflow"]), "notes": _notes(item)}
             for item in EXAMPLES.values() if not _lacks(item, info, fills)]
 
 

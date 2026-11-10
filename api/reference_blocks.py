@@ -213,6 +213,21 @@ def directory(info=None):
     return out
 
 
+def _runs_here(block, info):
+    """Whether this ComfyUI (its node list `info`; None: not known, so yes) has the packs and models `block` needs."""
+    return info is None or (all(kind in info for kind in block["packs"]) and not _missing_models(block, info))
+
+
+def whens(uses, info=None):
+    """For a skill (ai_skills.py): a line for each block of `uses` that is on, can run here and says when it
+    is the one to take ("when"): add_nodes' use and want for it, then when. The ways are told from the
+    blocks' own files, so a skill does not list them in its words and need not change when one is added."""
+    off = turned_off()
+    asked = lambda block: f"use={block['job']!r}" + (f", want={block['want']!r}" if block.get("want") else "")  # noqa: E731
+    return [f"{asked(block)}: {block['when']}" for name, block in BLOCKS.items()
+            if block["job"] in uses and block.get("when") and name not in off and _runs_here(block, info)]
+
+
 def call(name):
     """The add_nodes call that builds block `name`, in the words the AI is told, or None when there is none."""
     block = BLOCKS.get(name)
@@ -247,8 +262,7 @@ def pick(use, want=None, info=None, scene=False, picked=()):
         wants = [BLOCKS[name]["want"] for name in names if BLOCKS[name].get("want")]
         raise BlockError(f"{use} takes want: {', '.join(wants)}" + ("" if len(wants) == len(names) else ", or none") + ".")
     off = turned_off()
-    runs = [name for name in chosen if name not in off and (info is None or (
-        all(kind in info for kind in BLOCKS[name]["packs"]) and not _missing_models(BLOCKS[name], info)))]
+    runs = [name for name in chosen if name not in off and _runs_here(BLOCKS[name], info)]
     return (runs or chosen)[0]
 
 

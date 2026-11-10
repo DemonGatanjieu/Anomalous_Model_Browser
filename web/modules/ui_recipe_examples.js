@@ -2,7 +2,8 @@
  * The example workflows on the Workflows page (api/example_workflows.py): one card that opens a window of
  * them by plan, each version with its note and a button that opens it in a tab of its own, on a model and a
  * picture that are here. A version that lacks a pack or a model says what, a pack with the way into the
- * Manager, and has no button. The card comes first, or it is lost under the user's own, and goes while the list is filtered.
+ * Manager, and has no button. What holds for every version of a model family is said once, above the first of
+ * them in a plan. The card comes first, or it is lost under the user's own, and goes while the list is filtered.
  */
 
 import { app } from "../../../scripts/app.js";
@@ -14,6 +15,7 @@ import { openManager } from './ui_pack_usage.js';
 import { appendText } from './ui_recipe_detail_dom.js';
 
 const words = value => value?.[resolveLocale()] || value?.en || value?.zh || '';
+const FAMILY_NOTES = { anima: 'recipeExampleNote_anima' };
 
 async function openExample(owner, example, closeWindow) {
     const response = await fetch(`/anomalous/example_workflows?id=${encodeURIComponent(example.id)}`);
@@ -77,10 +79,16 @@ async function showExamples(owner) {
     appendText(body, 'p', t('recipeExamplesHint'), 'anomalous-examples-hint');
     let closeWindow = () => {};
     let plan = '';
+    let noted = new Set();
     for (const example of payload.examples || []) {
         if (words(example.title) !== plan) {
             plan = words(example.title);
+            noted = new Set();
             appendText(body, 'div', plan, 'anomalous-examples-plan');
+        }
+        if (FAMILY_NOTES[example.family] && !noted.has(example.family)) {
+            noted.add(example.family);
+            appendText(body, 'div', t(FAMILY_NOTES[example.family]), 'anomalous-examples-note');
         }
         body.append(exampleRow(owner, example, () => closeWindow()));
     }

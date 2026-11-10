@@ -14,10 +14,10 @@
   "AnimaLLLiteApply_sdscripts": "ComfyUI-Anima-LLLite"
  },
  "about": {
-  "zh": "重绘更狠、细节更多，画面也不容易跑：放大 1.22 倍，Tile 0.7 锁住，重绘 0.85。要多张图就多跑几次，别调批次：Anima 的 VAE 会把一批图当成视频帧，第二段只剩一张。Tile 只适配 2B 的 Anima 模型，2.9B 这类更大的会报错（depth_embed slices missing），换一个 2B 的模型就好。",
-  "en": "A stronger redraw with more detail that keeps the picture: enlarged 1.22x, held by Tile at 0.7, redrawn at 0.85. For several pictures run it several times, not a bigger batch: Anima's VAE takes a batch for video frames, and the second pass is left with one. The Tile fits the 2B Anima models only: a larger one (such as 2.9B) stops with \"depth_embed slices missing\"; pick a 2B one."
+  "zh": "重绘更狠、细节更多，画面也不容易跑：放大 1.22 倍，Tile 0.7 锁住，重绘 0.85。Tile 只适配 2B 的 Anima 模型，打开时会替你选一个；换成 2.9B 这类更大的会报错。",
+  "en": "A stronger redraw with more detail that keeps the picture: enlarged 1.22x, held by Tile at 0.7, redrawn at 0.85. The Tile fits the 2B Anima models only; it opens on one of yours, and a larger one (such as 2.9B) stops with an error."
  },
- "ai": "A pass on Anima, then enlarged 1.22x and redrawn at denoise 0.85, held by Anima's Tile LLLite at 0.7. open_workflow, set_model on its loader, then run_workflow with the prompt. For several pictures run it several times: Anima's VAE takes a batch for video frames, so a batch above 1 ends as one picture at the second pass. The Tile fits the 2B Anima models only: a larger one (such as 2.9B) stops with \"depth_embed slices missing\"; pick a 2B one.",
+ "ai": "A pass on Anima, then enlarged 1.22x and redrawn at denoise 0.85, held by Anima's Tile LLLite at 0.7. open_workflow, set_model on its loader, then run_workflow with the prompt. The Tile fits the 2B Anima models only: Anomalous refuses a run where it does not fit and names the loader to change.",
  "workflow": {
   "id": "00000000-0000-0000-0000-000000000000",
   "revision": 0,

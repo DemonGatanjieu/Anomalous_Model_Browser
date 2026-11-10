@@ -59,13 +59,18 @@ def begin_task(ctx, title, new_task=False):
     return answer
 
 
+def _node_list(ctx):
+    """ComfyUI's node list, to say which blocks can run here; None when it cannot be read."""
+    from .mcp_canvas_edit import object_info
+    try:
+        return object_info(ctx) if ctx.get("base_url") else None
+    except ToolError:
+        return None
+
+
 def _blocks(ctx):
     """The ready-made blocks (reference_blocks.py), each a line, for begin_task's answer: what to reach for first."""
-    from .mcp_canvas_edit import object_info  # the node list, to say which blocks need a pack first
-    try:
-        info = object_info(ctx) if ctx.get("base_url") else None
-    except ToolError:
-        info = None
+    info = _node_list(ctx)
     return {"note": "add_nodes(use=…, want=…) builds the best one this ComfyUI can run, wired in; prefer it. A picture in several "
                     "of these steps (the picture, a redraw on another model, details, an enlargement): add_nodes(plan=[{use: "
                     "'picture', model}, {use: …}, …]) shows the steps to the user and builds them all on a new tab.",
@@ -270,7 +275,7 @@ def get_toolbox(ctx, task=None, skill=None):
     if skill:
         private = ai_privacy.applies(task_id)
         try:
-            answer = ai_skills.get(str(skill), _canvas_model() if ai_skills.by_model(str(skill)) else None, private)
+            answer = ai_skills.get(str(skill), _canvas_model() if ai_skills.by_model(str(skill)) else None, private, _node_list(ctx))
         except ai_skills.SkillError as error:
             raise ToolError(str(error))
         ai_skills.note_use(ctx.get("client") or "AI", answer, session=ctx.get("session") or "", task_id=task or ctx.get("task"))

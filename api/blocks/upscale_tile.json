@@ -1,8 +1,9 @@
 {
   "job": "upscale",
-  "want": "detail",
+  "want": "tile",
   "rank": 2,
   "short": "held by Tile, own model",
+  "when": "enlarge with a lock: Tile holds the picture under a strong redraw, for much more detail; its own model copy can be a second model of the same family.",
   "title": {
     "zh": "Tile 锁图放大",
     "en": "Upscale held by Tile"
@@ -307,7 +308,7 @@
           }
         }
       },
-      "after": "On this Anima model the picture is enlarged 1.22x in latent space and redrawn at denoise 0.85, held by Anima's Tile LLLite (0.7, to 80% of the steps), with its own copy of the canvas's model and LoRAs (the loader titled Upscale model). For a second model (steadier, other skin or texture), set_model that loader to another Anima model; the LoRAs stay. Then run_workflow; the larger one is saved beside it (prefix upscaled). Compare face, hands and clothes with the base: Tile guides, it does not guarantee. The Tile LLLite fits the 2B Anima models; on a larger one (such as Harem 2.9B) the run stops with \"depth_embed slices missing\": then set_model the Upscale model loader to a 2B Anima model, or use another upscale way."
+      "after": "On this Anima model the picture is enlarged 1.22x in latent space and redrawn at denoise 0.85, held by Anima's Tile LLLite (0.7, to 80% of the steps), with its own copy of the canvas's model and LoRAs (the loader titled Upscale model). For a second model (steadier, other skin or texture), set_model that loader to another Anima model; the LoRAs stay. Then run_workflow; the larger one is saved beside it (prefix upscaled). Compare face, hands and clothes with the base: Tile guides, it does not guarantee."
     }
   },
   "after": "run_workflow saves the picture as before and the 1.25x one beside it (prefix upscaled): a tile ControlNet holds it (strength 0.6, to 80% of the steps) while it is redrawn at denoise 0.5 with its own copy of the canvas's model and LoRAs (the loader titled Upscale model). For a second model (steadier, another look), set_model that loader to one of the same family (it reuses the first model's prompts); the LoRAs stay. Lower the denoise if it changes too much, raise the strength to hold it closer.",

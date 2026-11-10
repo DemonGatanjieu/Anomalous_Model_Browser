@@ -30,6 +30,7 @@ import { openListedModel } from './ui_scan_lists.js';
 import { freshId } from './detached_graph.js';
 import { startFromAi } from './job_sheet_run.js';
 import { aiWords, canvasPrompts, firstTime, languageProblem } from './prompt_language.js';
+import { llliteProblem, llliteWords, usesLllite } from './lllite_fit.js';
 
 const HIDDEN_PAGE_DELAY_MS = 1500;
 const MAX_NODES = 150;
@@ -339,7 +340,8 @@ async function downloadModel(args, getOwner) {
 }
 
 /**
- * run_workflow: refused once when the prompt is in a language the canvas's model cannot read (prompt_language.js).
+ * run_workflow: refused once when the prompt is in a language the canvas's model cannot read (prompt_language.js),
+ * and whenever an Anima LLLite on the canvas does not fit the model it is put on (lllite_fit.js).
  * `base_only` queues the first pass alone as previews (base_only.js), checked before anything is
  * queued; `hold` is the base the user picked (api/ai_bases.py): its seed goes on its sampler, held "fixed"
  * and kept under every try, unless that sampler is not on this canvas; where the rest takes the base's
@@ -351,6 +353,8 @@ async function runWorkflow({ batch, base_only: firstPass, hold }, getOwner) {
     const texts = canvasPrompts(g);
     const odd = firstTime(await languageProblem(g, texts), texts, 'ai'); // refused once: called again unchanged, it runs
     if (odd) throw new Error(aiWords(odd));
+    const unfit = usesLllite(g) ? await llliteProblem((await app.graphToPrompt()).output) : null;
+    if (unfit) throw new Error(llliteWords(unfit));
     const held = hold ? await holdBase(g, hold, getOwner) : null;
     const base = firstPass ? baseOnly((await app.graphToPrompt()).output) : null;
     if (held?.held && hold.kept_input) held.kept = Boolean(onKeptBase((await app.graphToPrompt()).output, hold.kept_input));

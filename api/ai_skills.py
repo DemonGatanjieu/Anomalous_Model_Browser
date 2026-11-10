@@ -6,6 +6,11 @@ line a point), and what the user's Ways panel shows (title, about, in both langu
 web/modules/ui_ai_blocks.js). Advice that depends on the canvas's main model (by_model) comes
 in the form for its size: "large" from `large_from` parameters, "small" under it, "unknown" when the
 model or its size cannot be told (model_advice.main_params counts them from the file's header).
+A skill about choosing among ready-made blocks names their uses ("ways"): its answer then lists the
+blocks of those uses that can run here, each with when to take it, from the blocks' own files
+(reference_blocks.whens), so the skill's words hold only the judgment and stay as they are when a
+block is added. An answer must fit what an AI app shows in the chat (mcp_fit.BUDGET): a longer one
+is filed away unread.
 begin_task lists the skills on (name and short); get_toolbox(skill=…)
 gives one. The tools' own descriptions only point at a skill, so the list every app holds stays
 small. The user turns a skill off in the panel (user/anomalous/ai_skills.json): the AI is not
@@ -99,9 +104,10 @@ def _model_name(model):
     return os.path.splitext(os.path.basename(str((model or {}).get("name") or "").replace("\\", "/")))[0]
 
 
-def get(name, model=None, private=False):
+def get(name, model=None, private=False, info=None):
     """The advice of skill `name`, for get_toolbox; `model`: the canvas's main model {name, params},
-    for a skill whose advice depends on it; `private`: the task is private (only its skills)."""
+    for a skill whose advice depends on it; `private`: the task is private (only its skills); `info`:
+    ComfyUI's node list, for a skill that lists the ways that can run here (None: all of them)."""
     if name not in SKILLS:
         raise SkillError(f"No skill {name!r}; begin_task lists them: {', '.join(SKILLS)}.")
     if name in turned_off():
@@ -119,6 +125,10 @@ def get(name, model=None, private=False):
         size = f"{model['params'] / 1e9:.1f} billion" if form != "unknown" else ""
         lines[1:1] = [line.format(model=_model_name(model) or "The model", size=size) for line in forms[form]]
         answer["for_model"] = {"form": form, "model": _model_name(model), "billions": round(model["params"] / 1e9, 1) if size else None}
+    if skill.get("ways"):
+        from . import reference_blocks
+
+        answer["ways"] = reference_blocks.whens(skill["ways"], info)
     return answer
 
 

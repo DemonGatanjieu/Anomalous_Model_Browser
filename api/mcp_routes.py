@@ -114,7 +114,7 @@ def build(ctx, key, model=None):
     if len(picked) < route["models"]:
         raise ToolError(f"Route {key} draws with {route['models']} main models the user picks for the task. With models of your "
                         "own choosing lay it out instead: add_nodes(plan=[{use: 'picture', model: <first>}, {use: 'upscale', "
-                        "want: 'detail', model: <second>}, …]).")
+                        "want: 'tile', model: <second>}, …]).")
     ai_bases.forget(ctx.get("task"))  # a base picked on another canvas: its sampler is not this route's
     loras = _loras(box)
     steps = [{"use": "picture", "model": picked[0], "loras": loras}]

@@ -801,6 +801,7 @@ html.amb-theme-light .anomalous-recipe-detail-view { --wfd-orange: #ea580c; }
 .anomalous-examples { display: flex; flex-direction: column; gap: 10px; }
 .anomalous-examples-hint { margin: 0; color: var(--amb-text-soft); font-size: 13px; line-height: 1.6; }
 .anomalous-examples-plan { margin-top: 6px; color: var(--amb-text-main); font-size: 14px; font-weight: 700; }
+.anomalous-examples-note { color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
 .anomalous-example { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--amb-border); border-radius: 10px; }
 .anomalous-example-words { flex: 1; min-width: 0; }
 .anomalous-example.is-missing { border-style: dashed; }

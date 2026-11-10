@@ -3,6 +3,7 @@
   "want": "2x",
   "rank": 4,
   "short": "2×, in tiles",
+  "when": "2x redrawn tile by tile, for sizes that do not fit memory in one piece.",
   "title": {
     "zh": "分块放大",
     "en": "Tiled upscale"

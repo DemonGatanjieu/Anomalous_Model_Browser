@@ -3,7 +3,7 @@
     "label": "{a} draws the base, {b} redraws it enlarged under Tile",
     "detail": "The first settles the composition, the second adds detail and texture; a larger picture. Faces, hands and small ornaments get redrawn.",
     "models": 2,
-    "way": ["upscale", "detail"]
+    "way": ["upscale", "tile"]
   },
   "midway_enlarge": {
     "label": "{a} draws the early steps, {b} finishes, enlarged 1.5x at the switch",

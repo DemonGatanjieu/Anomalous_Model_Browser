@@ -3,6 +3,7 @@
   "want": "character",
   "rank": 5,
   "short": "blurred background: only the character redrawn",
+  "when": "a background blurred on purpose: all enlarged, only the character redrawn (a whole redraw draws the blur sharp); a sharp background: want='tile'.",
   "title": {
     "zh": "放大·只重画人物",
     "en": "Upscale, only the character redrawn"
@@ -139,7 +140,7 @@
       "inputs": {"images": ["fade", 0]}
     }
   },
-  "after": "run_workflow saves the picture as before and the 1.5x one beside it (prefix upscaled_character): the whole picture enlarged by an upscale model, the background left as it is, only the character (cut out, cropped with a margin) redrawn at denoise 0.45 with its own copy of the canvas's model and LoRAs (the loader titled Upscale model) and stitched back. Only for a background blurred on purpose: on a sharp one the character comes out sharper than the enlarged background; there use want=\"detail\". A second model for the character: set_model that loader to one of the same family. The preview shows what is redrawn (white): part of the character missing, or the background in it, say so.",
+  "after": "run_workflow saves the picture as before and the 1.5x one beside it (prefix upscaled_character): the whole picture enlarged by an upscale model, the background left as it is, only the character (cut out, cropped with a margin) redrawn at denoise 0.45 with its own copy of the canvas's model and LoRAs (the loader titled Upscale model) and stitched back. Only for a background blurred on purpose: on a sharp one the character comes out sharper than the enlarged background; there use want=\"tile\". A second model for the character: set_model that loader to one of the same family. The preview shows what is redrawn (white): part of the character missing, or the background in it, say so.",
   "gives": {
     "sampler": "redraw",
     "save": "save"
@@ -298,7 +299,7 @@
           "inputs": {"images": ["fade", 0]}
         }
       },
-      "after": "On this Anima model run_workflow saves the picture as before and the 1.5x one beside it (prefix upscaled_character): the whole picture enlarged by an upscale model, the background left as it is, only the character (cut out, cropped with a margin) redrawn with its own copy of the canvas's model and LoRAs (the loader titled Upscale model) and stitched back. The Tile (node tile) holds the character's lines, so it redraws at denoise 0.7 (30 steps, dpmpp_2m_sde_gpu, the tested route); without the tile node (no animaTileRepair file here) set redraw's denoise to 0.45. Only for a background blurred on purpose: on a sharp one the character comes out sharper than the enlarged background; there use want=\"detail\". A second model for the character: set_model that loader to another Anima model; the LoRAs stay. The preview shows what is redrawn (white): part of the character missing, or the background in it, say so. The Tile LLLite fits the 2B Anima models; on a larger one (such as Harem 2.9B) the run stops with \"depth_embed slices missing\": then remove_nodes the tile node and set redraw's denoise to 0.45, or set_model a 2B Anima model there."
+      "after": "On this Anima model run_workflow saves the picture as before and the 1.5x one beside it (prefix upscaled_character): the whole picture enlarged by an upscale model, the background left as it is, only the character (cut out, cropped with a margin) redrawn with its own copy of the canvas's model and LoRAs (the loader titled Upscale model) and stitched back. The Tile (node tile) holds the character's lines, so it redraws at denoise 0.7 (30 steps, dpmpp_2m_sde_gpu, the tested route); without the tile node (no animaTileRepair file here) set redraw's denoise to 0.45. Only for a background blurred on purpose: on a sharp one the character comes out sharper than the enlarged background; there use want=\"tile\". A second model for the character: set_model that loader to another Anima model; the LoRAs stay. The preview shows what is redrawn (white): part of the character missing, or the background in it, say so."
     }
   }
 }

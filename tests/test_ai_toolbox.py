@@ -131,8 +131,8 @@ class ToolboxTests(unittest.TestCase):
         step = ai_toolbox.pick_way(self.task, "upscale_tile", True)
         box = ai_tasks.get_task(self.task)["toolbox"]
         self.assertEqual((box["ways"], box["nodes"], box["mode"]), (["upscale_tile"], ["FaceDetailer"], "only"))
-        self.assertIn("add_nodes(use='upscale', want='detail')", step["text"])
-        self.assertEqual(mcp_task_tools.get_toolbox(self.ctx)["ways"], ["add_nodes(use='upscale', want='detail')"])
+        self.assertIn("add_nodes(use='upscale', want='tile')", step["text"])
+        self.assertEqual(mcp_task_tools.get_toolbox(self.ctx)["ways"], ["add_nodes(use='upscale', want='tile')"])
         self.assertEqual(reference_blocks.pick("upscale", None, None, False, box["ways"]), "upscale_tile", "the AI asked for none")
         self.assertEqual(reference_blocks.pick("upscale", "2x", None, False, box["ways"]), "upscale_tile", "the AI asked for another")
         self.assertEqual(reference_blocks.pick("upscale", "2x", None, False, ["upscale_tile", "upscale_tiled"]), "upscale_tiled")

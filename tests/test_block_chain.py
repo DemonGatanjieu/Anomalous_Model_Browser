@@ -73,7 +73,7 @@ class ChainTests(unittest.TestCase):
 
     def test_a_copied_model_line_keeps_its_loras(self):
         calls, _built = self.run_chain(
-            [{"use": "picture", "model": A}, {"use": "upscale", "want": "detail", "model": B, "loras": [LORA]}],
+            [{"use": "picture", "model": A}, {"use": "upscale", "want": "tile", "model": B, "loras": [LORA]}],
             [{"block": "picture", "nodes": {"model": "1", "sampler": "5", "save": "7"}},
              {"block": "upscale_tile", "nodes": {"own_1": "9", "own": "10", "redraw": "12", "save": "14"}}])
         self.assertEqual(calls[-1], ("model", 9, B))

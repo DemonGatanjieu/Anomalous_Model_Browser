@@ -12,7 +12,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import ai_skills, ai_tasks, mcp_actions, mcp_task_tools  # noqa: E402
+from api import ai_skills, ai_tasks, mcp_actions, mcp_fit, mcp_task_tools, reference_blocks  # noqa: E402
 from api.mcp_tools import ToolError  # noqa: E402
 from test_ai_tasks import isolate, ok  # noqa: E402
 
@@ -53,21 +53,42 @@ class SkillTests(unittest.TestCase):
         with mock.patch.object(mcp_task_tools, "_blocks", lambda ctx: {}):
             listed = mcp_task_tools.begin_task(self.ctx, "a picture in two passes")["skills"]
         self.assertIn("staged_picture", listed)
-        advice = " ".join(mcp_task_tools.get_toolbox(self.ctx, skill="staged_picture")["advice"])
-        for way in ('want="midway"', 'want=\"detail\"', 'use="refine"', "its own copy of the model"):
-            self.assertIn(way, advice)
-        self.assertIn("may cross families", advice)
+        answer = mcp_task_tools.get_toolbox(self.ctx, skill="staged_picture")
+        advice, ways = " ".join(answer["advice"]), " ".join(answer["ways"])
+        for way in ("use='refine', want='midway'", "use='upscale', want='tile'", "use='refine':", "its own model copy",
+                    "use='refine', want='character'", "use='refine', want='background'", "use='upscale', want='character'",
+                    "may cross families", "may enlarge at the switch", "draws the blur sharp"):
+            self.assertIn(way, ways)
+        self.assertNotIn("want=", advice, "which ways there are is told from the blocks, not written into the skill")
+        self.assertIn('"ways" lists those this ComfyUI can run now', advice)
         self.assertIn("add_lora it onto the second model", advice)
         self.assertIn("Never add a style, artist or LoRA the user did not pick", advice)
-        self.assertIn("hold the base's seed yourself", advice)
+        self.assertIn("control_after_generate", advice)
         self.assertIn("base_only=true", advice)
-        self.assertIn("the switch may also enlarge the picture", advice)
-        for by_part in ('want="character" or "background"', 'use="upscale", want="character"', "the depth is lost"):
-            self.assertIn(by_part, advice)
+        self.assertIn("does not sit on its bench", advice)
         ai_skills.set_on("staged_picture", False)
         self.assertNotIn("staged_picture", ai_skills.directory())
         with self.assertRaises(ai_skills.SkillError):
             ai_skills.get("staged_picture")
+
+    def test_a_skill_lists_only_the_ways_that_can_run_here(self):
+        every = ai_skills.get("staged_picture")["ways"]
+        self.assertEqual(len(every), len([block for block in reference_blocks.BLOCKS.values() if block["job"] in ("refine", "upscale")]),
+                         "each way of the skill's uses says when it is the one to take")
+        own_nodes = {kind: {} for kind in ("CheckpointLoaderSimple", "KSampler")}  # no pack, no upscale model
+        here = ai_skills.get("staged_picture", info=own_nodes)["ways"]
+        self.assertEqual([line.split(":")[0] for line in here], ["use='refine'", "use='refine', want='midway'"])
+        with mock.patch.object(reference_blocks, "turned_off", return_value={"switch_midway"}):
+            self.assertEqual([line.split(":")[0] for line in ai_skills.get("staged_picture", info=own_nodes)["ways"]], ["use='refine'"])
+        self.assertNotIn("ways", ai_skills.get("prompt_pose"), "a skill that names no uses lists none")
+
+    def test_every_answer_fits_what_an_ai_app_shows_in_the_chat(self):
+        for name, skill in ai_skills.SKILLS.items():
+            forms = ({"name": "a.safetensors", "params": params} for params in (0, 1, 10 ** 11)) if skill.get("by_model") else (None,)
+            for model in forms:
+                with self.subTest(skill=name, model=model):
+                    answer = ai_skills.get(name, model, bool(skill.get("private_only")))  # every way listed: the longest it gets
+                    self.assertLessEqual(mcp_fit.size(answer), mcp_fit.BUDGET)
 
     def test_the_advice_goes_by_the_size_of_the_canvas_model(self):
         def advice(model):

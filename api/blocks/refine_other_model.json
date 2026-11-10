@@ -2,6 +2,7 @@
   "job": "refine",
   "rank": 6,
   "short": "other model",
+  "when": "the picture done, another model lightly redraws all of it; with its own checkpoint it may cross families; several in a row are fine.",
   "title": {
     "zh": "换模型精修",
     "en": "Refine with another model"

@@ -274,7 +274,11 @@ in its result and checks none leaves; `tests/test_ai_sealed.py` does the same wi
 prompts and picture names.
 
 Skills (`api/ai_skills.py`, one data file each in `api/skills/`) are advice an agent fetches
-for a kind of job, beside the blocks that build nodes. begin_task lists the skills on (name and
+for a kind of job, beside the blocks that build nodes. A skill holds judgment only: which blocks
+there are and when each fits comes from the blocks' own files ("when"), listed with the skill's
+answer for the uses it names ("ways") and only those that can run here, so adding a block changes
+no skill; an answer over `mcp_fit.BUDGET` would be filed away unread by an AI app, and a test keeps
+every skill under it. begin_task lists the skills on (name and
 a line), `get_toolbox(skill=…)` returns one, and a skill the user turned off in the Ways panel
 (`user/anomalous/ai_skills.json`) is neither listed nor given. A skill's `by_model` advice comes in the
 form for the canvas's main model (the page's `block_model`): `model_advice.main_params` counts its

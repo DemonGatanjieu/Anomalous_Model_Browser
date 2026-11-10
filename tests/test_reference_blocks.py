@@ -188,8 +188,8 @@ class BlockTests(unittest.TestCase):
 
     def test_the_tile_upscale_redraws_on_its_own_copy_of_the_model(self):
         info = {**EVERYTHING, "ColorMatch": {}}
-        self.assertEqual(reference_blocks.pick("upscale", "detail", info), "upscale_tile")
-        with self.assertRaisesRegex(reference_blocks.BlockError, "upscale takes want: detail, 2x, character, or none"):
+        self.assertEqual(reference_blocks.pick("upscale", "tile", info), "upscale_tile")
+        with self.assertRaisesRegex(reference_blocks.BlockError, "upscale takes want: tile, 2x, character, or none"):
             reference_blocks.pick("upscale", "steady", info)
         nodes = reference_blocks.build("upscale_tile", info, main_base=lambda: "Anima")["nodes"]
         self.assertEqual(nodes["own"], {"class_type": "UNETLoader", "copy_of": "$sampler.model", "_meta": {"title": "Upscale model"}, "inputs": {}},

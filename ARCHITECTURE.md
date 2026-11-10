@@ -288,6 +288,12 @@ covered by the `styles.css` manifest.
   (SD 1.5, SDXL, Pony, Illustrious, Flux, Chroma: CLIP and T5 read English only, and the picture would follow nothing).
   `web/modules/prompt_language.js` asks it before the AI's run_workflow and job sheet (refused once: called again
   unchanged, it runs) and before the job sheet's Start (said once) (`tests/test_prompt_language.py`).
+- An Anima LLLite on a model it was not made for. `api/lllite_fit.py` counts, from the two files' headers, the
+  blocks an LLLite has modules for and the blocks of the drawing model it is put on (28 for the 2B Anima models,
+  40 for the 2.9B ones): with more blocks than modules the pack stops the run with "depth_embed slices missing".
+  `web/modules/lllite_fit.js` reads the uses from the prompt a run would send (each LLLite node and the loader at
+  the top of its model line) and asks before the AI's run_workflow, which is refused with the nodes to change; an
+  example with a Tile opens on a model the Tile fits (`tests/test_lllite_fit.py`, `tests/lllite_fit.mjs`).
 - Saves of a workflow. `api/workflow_saves.py` keeps them, a group for each canvas, found by the key in the workflow's
   extra or by its file (AD-023), and finds a run's pictures in ComfyUI's history; `web/modules/snapshot_store.js` is the page's
   side of its routes, every change going through it so what shows a group hears of it. `web/modules/ui_snapshot_bar.js` is the bar
@@ -311,7 +317,10 @@ covered by the `styles.css` manifest.
   begin_task lists the ones on (name and a line), `get_toolbox(skill=…)` gives one, tool
   descriptions only point at them; each one fetched is a "skill" step of the task (`note_use`); advice that depends on the canvas's main model comes in the
   form for its size, its parameters counted from the file's header (`model_kind.diffusion_params`,
-  `model_advice.main_params`) (`tests/test_ai_skills.py`).
+  `model_advice.main_params`). A skill on choosing among blocks names their uses ("ways"): its answer lists
+  the blocks of those uses that can run here, each with when to take it, from the blocks' own "when"
+  (`reference_blocks.whens`), so its words hold only the judgment and no block is written into them;
+  every answer must fit `mcp_fit.BUDGET` (`tests/test_ai_skills.py`).
   `web/modules/mcp_canvas_brief.js` is the canvas in brief for an AI (pure): bounded path chains and node lines,
   the inputs a run needs that nothing feeds yet with the outputs that fit them, ComfyUI's
   errors; every canvas change answers with what is still unwired. `api/mcp_situation.py` is
@@ -516,11 +525,12 @@ covered by the `styles.css` manifest.
   which keeps what made the newest picture as a recipe, a combo or a saved prompt through the
   keep menu's own `keepPictureAs`; its button counts what came since it was last seen
   (`stage.outputsSeen`). `ui_ai_blocks.js` is the side column's Ways view (做法): the ready-made
-  blocks by job (GET /anomalous/ai_blocks, `reference_blocks.status`), each block's words from its
-  data file, greyed with the pack (a way into ComfyUI-Manager) or model it lacks, and a switch that
-  keeps it from the AI (POST, `user/anomalous/ai_blocks.json`); under them the skills
-  (`ai_skills.status`), each with the same switch (`user/anomalous/ai_skills.json`), those of the
-  task's kind only (a private task's, else the others), as the AI gets. For a run the AI did not wait
+  blocks that can run here by job (GET /anomalous/ai_blocks, `reference_blocks.status`), a short row each
+  (a line of its words from its data file, the rest once opened) with a switch that keeps it from the AI
+  (POST, `user/anomalous/ai_blocks.json`); then the skills (`ai_skills.status`), each with the same
+  switch (`user/anomalous/ai_skills.json`), those of the task's kind only (a private task's, else the
+  others), as the AI gets; last, folded, the blocks lacking a pack (a way into ComfyUI-Manager) or a
+  model, each saying what. For a run the AI did not wait
   for (`ai_gates.run_wait` "call") the server marks the ended run `call_ai` until the AI is told,
   and the lines over the message box are about it meanwhile. `ui_ai_side.js` is the
   stage, the column on the right where the AI's panels are shown (the timeline keeps a card per
@@ -1198,7 +1208,9 @@ covered by the `styles.css` manifest.
   prompts) and keeps the summary in step with widget edits using the same node rules; which
   LoRAs a node loads is `recipe_loras.js`, and reading a node's boxes `recipe_widgets.js`.
   `api/example_workflows.py` serves the examples Anomalous ships (`api/examples/*.json`: plans, a version per
-  model family, no model or picture named: filled in from what is here, what is missing said);
+  model family, no model or picture named: filled in from what is here, a version with a Tile on a model the
+  Tile fits, what is missing said; what holds for a whole family is written once, in `model_profiles.json` for
+  an AI and in the page's words for the user);
   `ui_recipe_examples.js` is their one card and window on the Workflows page, and list_workflows gives those
   that can run here to an AI when no saved workflow fits, and names them when one does. A long list goes without
   settings: an AI app files an answer over about 4,000 characters away, and it may not read it.
