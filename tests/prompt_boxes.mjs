@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { partnerBox, planPromptFill, promptBoxes, promptNameRole, typeTakesPrompt, wiredRole } from '../web/modules/prompt_boxes.js';
+import { partnerBox, planPromptFill, promptBoxes, promptMissing, promptNameRole, typeTakesPrompt, wiredRole } from '../web/modules/prompt_boxes.js';
 
 const multiline = ['STRING', { multiline: true }];
 globalThis.LiteGraph = { registered_node_types: {
@@ -95,6 +95,18 @@ const text = value => ({ name: 'text', value });
     assert.deepEqual(planPromptFill(loader, negOnly, posBox).map(e => [e.index, e.value]), [[0, 'blurry']]);
     const loose = add(2, 'CLIPTextEncode', [], [text('')]);
     assert.deepEqual(planPromptFill(loose, both).map(e => e.value), ['a cat']);
+}
+
+// A run that would draw from nothing with nothing asked for: an empty latent, and every positive prompt empty.
+{
+    const drawing = [{ type: 'UNETLoader' }, { type: 'EmptyLatentImage' }, { type: 'KSampler' }];
+    assert.equal(promptMissing(drawing, ['']), true);
+    assert.equal(promptMissing(drawing, ['', '  ']), true);
+    assert.equal(promptMissing([{ type: 'EmptySD3LatentImage' }], ['']), true, 'an empty latent of another family too');
+    assert.equal(promptMissing(drawing, ['', 'a cat']), false, 'one prompt is enough');
+    assert.equal(promptMissing(drawing, []), false, 'no prompt box to fill');
+    assert.equal(promptMissing([{ type: 'LoadImage' }, { type: 'VAEEncode' }, { type: 'KSampler' }], ['']), false,
+        'a redraw of a picture may go without words');
 }
 
 console.log('prompt boxes: definition, wiring roles, partners and filling OK');

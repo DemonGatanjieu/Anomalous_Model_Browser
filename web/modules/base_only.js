@@ -1,7 +1,9 @@
 /**
  * The first pass of a queued prompt, the base, and the rest: a base sampler is one with no sampler
  * before it; the base part is every node no later sampler feeds; its picture nodes are whatever takes
- * `images` there below a base and feeds nothing. Pure: an API prompt comes in, the canvas never changes.
+ * `images` there below a base and feeds nothing: those taking a decoded base as it is, when there are any
+ * (something made from the picture, as the mask a later step previews, is not a base to pick, and
+ * belongs to the rest). Pure: an API prompt comes in, the canvas never changes.
  * - run_workflow(base_only): baseOnly cuts the prompt down to the base part, its picture nodes made
  *   PreviewImage (shown, nothing saved). A base handed on unfinished (the mid-way switch: no picture
  *   of it before the second sampler) is finished and decoded as the canvas's own VAE decode does.
@@ -37,9 +39,10 @@ function split(output) {
     const later = new Set([...samplers].filter(id => !bases.includes(id)));
     const part = new Set(ids.filter(id => !later.has(id) && ![...above(id)].some(item => later.has(item))));
     const taken = new Set(ids.flatMap(id => links(output[id]).map(([, [from]]) => from)));
-    const shows = [...part].filter(id => isLink(output[id].inputs.images) && !taken.has(id)
+    const below = [...part].filter(id => isLink(output[id].inputs.images) && !taken.has(id)
         && bases.some(base => above(id).has(base)));
-    return { ids, above, bases, part, shows };
+    const decoded = below.filter(id => bases.includes(output[output[id].inputs.images[0]]?.inputs?.samples?.[0]));
+    return { ids, above, bases, part, shows: decoded.length ? decoded : below };
 }
 
 /** {output, bases: [{node, type, names}], shows: [node ids], saved: [those the canvas saves], prefix} for API prompt `output`. */

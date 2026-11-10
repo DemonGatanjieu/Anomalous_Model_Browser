@@ -21,6 +21,8 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(answer["related"], [run["id"]], "only this task's steps")
         step = ai_tasks.get_task(self.task)["steps"][-1]
         self.assertEqual((step["kind"], step["decision"]["by"], step["decision"]["rejected"]), ("decision", "together", ["晨光森林"]))
+        sentence = ai_decisions.log("Gemini", "放大用的模型", "换成 2B 的", rejected="保留 2.9B 的模型")
+        self.assertEqual(sentence["decision"]["rejected"], ["保留 2.9B 的模型"], "one option given as a sentence stays one")
         with self.assertRaises(ToolError):
             mcp_task_tools.log_decision(self.ctx, "背景", "")
         with self.assertRaises(ToolError):

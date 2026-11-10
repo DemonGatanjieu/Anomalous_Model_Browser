@@ -290,7 +290,9 @@ covered by the `styles.css` manifest.
   Chinese, Japanese or Korean while a loader's model is of a family marked "reads": "English" in `api/model_profiles.json`
   (SD 1.5, SDXL, Pony, Illustrious, Flux, Chroma: CLIP and T5 read English only, and the picture would follow nothing).
   `web/modules/prompt_language.js` asks it before the AI's run_workflow and job sheet (refused once: called again
-  unchanged, it runs) and before the job sheet's Start (said once) (`tests/test_prompt_language.py`).
+  unchanged, it runs) and before the job sheet's Start (said once) (`tests/test_prompt_language.py`). The AI's
+  run is refused once too when the canvas draws from an empty latent and every positive prompt box is empty
+  (`prompt_boxes.promptMissing`): an AI trying the tool out with no arguments drew pictures of nothing.
 - An Anima LLLite on a model it was not made for. `api/lllite_fit.py` counts, from the two files' headers, the
   blocks an LLLite has modules for and the blocks of the drawing model it is put on (28 for the 2B Anima models,
   40 for the 2.9B ones): with more blocks than modules the pack stops the run with "depth_embed slices missing".
@@ -383,7 +385,8 @@ covered by the `styles.css` manifest.
   and unsupported host request IDs are refused before queueing; wrappers/listeners are released.
   `run_workflow(base_only=true)` queues the first pass alone (`web/modules/base_only.js` cuts each
   queued prompt down to the samplers nothing samples before and what they feed, picture nodes made
-  PreviewImage, a base handed on unfinished finished and decoded; the canvas never changes); when it
+  PreviewImage, a base handed on unfinished finished and decoded; a picture made from the base, as the
+  mask a later step previews, is not one of them; the canvas never changes); when it
   ends `api/ai_bases.py` puts the previews on a picks panel with their seeds, copies the picked one
   into the output folder and holds its seed, which the task's next run puts on that sampler "fixed"
   and keeps under every try. Where the rest takes the base's picture, that run takes the kept picture

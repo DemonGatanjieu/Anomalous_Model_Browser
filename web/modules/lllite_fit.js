@@ -47,5 +47,6 @@ export async function llliteProblem(output) {
 /** What the AI is told: nothing ran, why, and how to go on. */
 export const llliteWords = odd => `Nothing was run: the LLLite ${odd.lllite} on node #${odd.node} is made for Anima models of ${odd.made_for} blocks `
     + `(the 2B ones), and the model it is put on, ${odd.model} (loader #${odd.loader}), has ${odd.blocks}: the run would stop with "depth_embed slices missing". `
-    + `set_model loader #${odd.loader} to an Anima model of ${odd.made_for} blocks (the 2B ones; search_models). Where the LLLite only holds a redraw's lines `
-    + `(a Tile on a refine), you may instead remove_nodes node #${odd.node} and set that redraw's denoise to 0.45. Tell the user which you did.`;
+    + `The way out is to set_model loader #${odd.loader} to an Anima model of ${odd.made_for} blocks (the 2B ones; search_models), or, where the LLLite only `
+    + `holds a redraw's lines (a Tile on a refine), to remove_nodes node #${odd.node} and set that redraw's denoise to 0.45. When the user named this model, `
+    + 'ask_user which they want (name the 2B model you would take) before changing it; when the model was your own pick, change it and say so.';

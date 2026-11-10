@@ -5,9 +5,12 @@
  * run_workflow (mcp_bridge.js) and job sheet (job_sheet_run.js), and the job sheet's Start (ui_job_sheet.js).
  * What was asked about once is let through the next time (`heard`, kept apart for the AI and the user: the AI's
  * refusal is no warning the user saw), so either can insist.
+ * And is there a prompt at all: an AI trying a tool out calls run_workflow with nothing, and on a picture
+ * Anomalous just built, its prompt box still empty, that drew pictures of nothing (the bases of a plan too).
+ * Such a run is refused once as well.
  */
 
-import { promptBoxes } from './prompt_boxes.js';
+import { promptBoxes, promptMissing } from './prompt_boxes.js';
 import { modelComboWidgets } from './ui_node_model_picker.js';
 
 const off = node => node.mode === 2 || node.mode === 4;
@@ -38,6 +41,15 @@ export async function languageProblem(graph, texts = canvasPrompts(graph)) {
         return null; // the check only helps: a run is never stopped by it failing
     }
 }
+
+/** Whether `graph` would draw from an empty latent with every positive prompt box (`texts`) empty, the first time the AI tries it on that canvas. */
+export function noPrompt(graph, texts) {
+    return promptMissing([...nodesOf(graph)].filter(node => !off(node)), texts)
+        && Boolean(firstTime({ model: `no prompt ${graph?.id ?? ''}` }, texts, 'ai'));
+}
+
+export const NO_PROMPT_WORDS = 'Nothing was run: the positive prompt is empty, so the pictures would follow nothing. Give it with the run: '
+    + 'run_workflow(prompt=…, negative=…). If the user wants a run with no prompt, call again unchanged.';
 
 /** The problem the first time `who` ('ai' or 'user') meets it; null when they met it before with the same model and prompts. */
 export function firstTime(problem, texts, who) {

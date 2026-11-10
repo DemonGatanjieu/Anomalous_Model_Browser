@@ -31,9 +31,9 @@ assert.equal(usesLllite({ _nodes: [{ type: 'KSampler' }, { type: 'AnimaLLLiteApp
 assert.equal(usesLllite({ _nodes: [{ type: 'group', subgraph: { _nodes: [{ type: 'AnimaLLLiteApply_sdscripts' }] } }] }), true);
 assert.equal(usesLllite(null), false);
 
-// The AI hears which nodes, the two counts and both ways out.
+// The AI hears which nodes, the two counts, both ways out, and that a model the user named is theirs to change.
 const words = llliteWords({ node: '33', loader: '30', model: 'second.safetensors', lllite: 'animaTileRepair_v20.safetensors', blocks: 40, made_for: 28 });
-for (const part of ['Nothing was run', 'node #33', 'loader #30', 'second.safetensors', '28 blocks', 'has 40', 'set_model', 'remove_nodes', '0.45']) {
+for (const part of ['Nothing was run', 'node #33', 'loader #30', 'second.safetensors', '28 blocks', 'has 40', 'set_model', 'remove_nodes', '0.45', 'ask_user']) {
     assert.ok(words.includes(part), part);
 }
 

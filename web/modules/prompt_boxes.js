@@ -96,6 +96,14 @@ export function promptBoxes(node) {
 }
 
 /** The text of a prompt envelope ({ positive, negative, singleText, primaryRole }) for a box of `role`. */
+/**
+ * Whether a run would draw from nothing with nothing asked for: among `nodes` (those a run takes) one makes
+ * an empty latent, and every positive prompt (`texts`, the boxes' words) is empty.
+ */
+export function promptMissing(nodes, texts) {
+    return texts.length > 0 && !texts.some(text => String(text).trim()) && nodes.some(node => /^Empty.*Latent/i.test(node?.type || ''));
+}
+
 export function textForRole(envelope, role) {
     if (role === 'negative') return envelope.negative || '';
     if (role === 'positive' || role === 'both') return envelope.positive || '';

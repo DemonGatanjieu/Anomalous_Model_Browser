@@ -50,6 +50,12 @@
 - The skill "Drawing a picture in stages" keeps only the judgment (the base shown first for you to pick, when two models must be of one family, whether a style LoRA goes onto the second model) and no longer retells every way in words: which ways there are and when each fits is written in each way's own file, and when the AI fetches the skill Anomalous lists only those installed and switched on here. Adding a way no longer means editing the skill. Its full text had grown just past what an AI app shows in the chat (3,991 bytes against a line of 3,800), beyond which it is filed away unread; it is 3,586 at its longest now, and a test keeps it there.
 - 给 AI 的叫法改了一个词：Tile 锁图放大从 `want="detail"` 改成 `want="tile"`，免得和"修脸和手"那个用途（也叫 detail）混在一起。
 - One word changed for the AI: the Tile upscale is asked for with `want="tile"`, not `want="detail"`, which was also the name of the use that fixes faces and hands.
+- 「挑一张底图」里不会再混进一张黑白遮罩了。用“只重画人物”这类做法时，后面那一步有个“要重画哪块”的遮罩预览，它也被当成了一张底图；挑中它，后面就照着遮罩去放大，成品是废的。现在只把真正的底图拿出来给你挑，遮罩预览留到整条跑的时候才出。
+- "Pick a base" no longer shows a black-and-white mask among the bases. With a way that redraws only the character, the later step's preview of what it will redraw was taken for a base too; picked, the rest enlarged the mask and the picture was ruined. Only the bases themselves are offered now, and the mask preview comes with the whole run.
+- AI 不带任何参数试跑一下时，如果画布是从零开始画、提示词框还空着，先拦一次，告诉它把提示词一起给出来（你就是要空着跑，它再叫一次就照跑）。实测 Gemini Flash 习惯先这样空着试一次，蓝图刚搭好时这一下会白画三张没有内容的小样，还把“先出三张给你挑”用掉了。
+- When an AI tries a run with no arguments and the canvas draws from nothing with its prompt box still empty, the run is refused once and it is told to give the prompt with the run (called again unchanged, it runs). Gemini Flash tries tools this way; on a blueprint just built that drew three bases of nothing and used up the three bases you pick from.
+- Tile 不适配被拦时，如果那个模型是你点名要用的，AI 会被提醒先问你再换，不是自己悄悄换掉。AI 记决策时把“否决了什么”写成一句话，不再被拆成一个个字。
+- When a run is refused because a Tile does not fit and you named that model yourself, the AI is told to ask you before changing it. A decision whose rejected option the AI wrote as one sentence is no longer split into letters.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 

@@ -29,7 +29,7 @@ import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { freshId } from './detached_graph.js';
 import { startFromAi } from './job_sheet_run.js';
-import { aiWords, canvasPrompts, firstTime, languageProblem } from './prompt_language.js';
+import { NO_PROMPT_WORDS, aiWords, canvasPrompts, firstTime, languageProblem, noPrompt } from './prompt_language.js';
 import { llliteProblem, llliteWords, usesLllite } from './lllite_fit.js';
 
 const HIDDEN_PAGE_DELAY_MS = 1500;
@@ -340,7 +340,8 @@ async function downloadModel(args, getOwner) {
 }
 
 /**
- * run_workflow: refused once when the prompt is in a language the canvas's model cannot read (prompt_language.js),
+ * run_workflow: refused once when the prompt is empty on a canvas that draws from nothing, or in a language the
+ * canvas's model cannot read (prompt_language.js),
  * and whenever an Anima LLLite on the canvas does not fit the model it is put on (lllite_fit.js).
  * `base_only` queues the first pass alone as previews (base_only.js), checked before anything is
  * queued; `hold` is the base the user picked (api/ai_bases.py): its seed goes on its sampler, held "fixed"
@@ -351,6 +352,7 @@ async function runWorkflow({ batch, base_only: firstPass, hold }, getOwner) {
     const g = currentGraph();
     if (!(g._nodes || []).length) throw new Error(`Nothing was run. ${EMPTY_CANVAS}`);
     const texts = canvasPrompts(g);
+    if (noPrompt(g, texts)) throw new Error(NO_PROMPT_WORDS);
     const odd = firstTime(await languageProblem(g, texts), texts, 'ai'); // refused once: called again unchanged, it runs
     if (odd) throw new Error(aiWords(odd));
     const unfit = usesLllite(g) ? await llliteProblem((await app.graphToPrompt()).output) : null;

@@ -24,6 +24,8 @@ def log(client, title, decision, reason="", rejected=None, by="user", related=No
         raise ValueError("title (what was decided about) and decision (what was decided) are needed")
     if by not in BY:
         raise ValueError(f"by is one of {', '.join(BY)}")
+    if isinstance(rejected, str):  # one option written as a sentence, not a list: its letters are no options
+        rejected = [rejected]
     rejected = [ai_tasks._short(str(item).strip(), 200) for item in (rejected or []) if str(item).strip()][:MAX_REJECTED]
     now = time.time() if now is None else now
     record = {"title": ai_tasks._short(title, 200), "decision": ai_tasks._short(decision, MAX_TEXT),

@@ -51,6 +51,30 @@ const advanced = (model, latent, start, end, leftover) => ({
     assert.equal(JSON.stringify(output), before, 'the queued prompt is changed in a copy');
 }
 
+// A later step that previews a mask cut from the base (only the character redrawn): the mask is no base to pick.
+{
+    const output = {
+        ...loaders,
+        32: advanced('1', '6', 0, 35, 'disable'),
+        7: { class_type: 'VAEDecode', inputs: { samples: ['32', 0], vae: ['8', 0] } },
+        9: { class_type: 'SaveImage', inputs: { images: ['7', 0], filename_prefix: 'picture' } },
+        40: { class_type: 'InspyrenetRembg', inputs: { image: ['7', 0] } },
+        41: { class_type: 'MaskToImage', inputs: { mask: ['40', 1] } },
+        42: { class_type: 'PreviewImage', inputs: { images: ['41', 0] } },
+        43: { class_type: 'VAEEncode', inputs: { pixels: ['7', 0], vae: ['8', 0] } },
+        44: { class_type: 'SetLatentNoiseMask', inputs: { samples: ['43', 0], mask: ['40', 1] } },
+        45: { class_type: 'KSampler', inputs: { model: ['1', 0], positive: ['2', 0], negative: ['3', 0], latent_image: ['44', 0], seed: 5, denoise: 0.7 } },
+        46: { class_type: 'VAEDecode', inputs: { samples: ['45', 0], vae: ['8', 0] } },
+        47: { class_type: 'SaveImage', inputs: { images: ['46', 0], filename_prefix: 'upscaled_character' } },
+    };
+    const got = baseOnly(output);
+    assert.deepEqual(got.shows, ['9'], 'the base alone, not the mask preview');
+    assert.deepEqual(Object.keys(got.output).sort(), ['1', '2', '3', '32', '5', '6', '7', '8', '9'], 'nothing is cut out for a base to pick');
+    const kept = onKeptBase(output, 'kept.png');
+    assert.deepEqual([kept[40].inputs.image, kept[43].inputs.pixels], [['48', 0], ['48', 0]], 'the rest cuts and redraws the kept picture');
+    assert.ok(kept[42] && kept[47] && !kept[32] && !kept[9], 'the mask preview is the rest\'s, the base is not drawn again');
+}
+
 // The mid-way switch: the first model hands its unfinished latent to the second; the base is finished and decoded to show.
 {
     const output = {
