@@ -2,7 +2,7 @@
  * A panel the AI drew in its task (api/ai_panels.py), drawn here from its blocks: headings,
  * text, pictures (a row, a grid or side by side to compare, with marks), the slider, picks and
  * the diagram (ui_ai_stage.js), the user's models as cards with their covers, tables, lists,
- * settings, a progress bar, and questions: buttons (one pick or several), picks, a line of
+ * settings, and questions: buttons (one pick or several), picks, a line of
  * text and the prompt box of a private task (ui_ai_prompt_box.js), whose answers (or "let the AI decide") go back to the server for the AI to read, each
  * with a pill saying whether the AI has it yet (ui_ai_delivery.js). A question says that one
  * press sends; a line of one's own beside the options stays folded until asked for. Only
@@ -12,7 +12,6 @@
  */
 
 import { translate as t } from './locales.js';
-import { timeLabel } from './activity_log.js';
 import { outputUrl, isVideo } from './ai_task_view.js';
 import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
 import { runMapBox } from './ui_ai_run_map.js';
@@ -272,22 +271,6 @@ function params(block) {
     return box;
 }
 
-/** A bar of the AI's numbers; grey, with when it wrote them, once the task went past them (`ctx.passed`). */
-function progress(block, ctx) {
-    const box = el('div', `anomalous-ai-panel-progress${ctx.passed ? ' is-passed' : ''}`);
-    const top = Number(block.max) > 0 ? Number(block.max) : 100;
-    const value = Math.max(0, Math.min(Number(block.value) || 0, top));
-    const head = el('div', 'anomalous-ai-panel-progress-head');
-    head.append(el('span', '', block.label || ''), el('span', '', `${Math.round((value / top) * 100)}%`));
-    const bar = el('div', 'anomalous-ai-panel-progress-bar');
-    const fill = el('span');
-    fill.style.width = `${(value / top) * 100}%`;
-    bar.append(fill);
-    box.append(head, bar);
-    if (ctx.passed) box.append(el('div', 'anomalous-ai-panel-progress-note', t('aiPanelProgressOld', { time: timeLabel(ctx.passed) })));
-    return box;
-}
-
 /** An answer none of the options is: a line under them. */
 function otherLine(ctx, block, options) {
     const line = el('div', 'anomalous-ai-panel-input is-other');
@@ -429,8 +412,6 @@ const DRAW = {
     params,
     choices,
     input,
-    progress,
-    divider: () => el('hr', 'anomalous-ai-panel-divider'),
     slider,
     diagram,
     run_map: (block, ctx) => runMapBox(ctx.stepOf?.(block.step), ctx, true) || el('p', 'anomalous-ai-panel-text', t('aiMapGone')),
@@ -451,9 +432,8 @@ const DRAW = {
 
 /**
  * The panel of a panel step. `ctx`: `{ taskId, owner, openPicture(url, video), openModel(item),
- * locateNode(id), stepOf(id), changed(), passed, sealed }` (sealed: the task's texts behind its tokens, for the prompt box) (changed: an answer went in, draw the task again;
- * stepOf: the task's step of that id, for a run_map block; passed: when the AI wrote its progress
- * bars if the task went past them since, else 0).
+ * locateNode(id), stepOf(id), changed(), sealed }` (sealed: the task's texts behind its tokens, for the prompt box) (changed: an answer went in, draw the task again;
+ * stepOf: the task's step of that id, for a run_map block). A block of a kind no longer drawn (an old record's) is left out.
  */
 export function renderPanel(step, ctx) {
     const panel = step.panel || {};

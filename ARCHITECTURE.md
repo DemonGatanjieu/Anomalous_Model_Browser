@@ -586,7 +586,7 @@ covered by the `styles.css` manifest.
   this way rather than in its own chat.
   Panels the AI draws (`show_panel`, `update_panel`): `api/ai_panels.py` checks every block
   against a fixed set (heading, text, images from the output folder, models by id with their
-  covers, table, list, params, choices, input, progress, divider; plain strings of bounded
+  covers, table, list, params, choices, input; plain strings of bounded
   length, nothing run or read as markup; the parts of a block: `api/ai_panel_parts.py`, also a
   slider's or picks' `zoom`, the part of every picture shown enlarged) and keeps the panel as a step. `update_panel` preserves
   the order already seen: new blocks append; omitted blocks remain; unchanged resubmitted

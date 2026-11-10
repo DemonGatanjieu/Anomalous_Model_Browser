@@ -46,8 +46,6 @@ class BlockTests(unittest.TestCase):
                 {"type": "params", "items": [{"label": "种子", "value": 42}]},
                 CHOICES,
                 {"type": "input", "question": "还想改什么？"},
-                {"type": "progress", "label": "放大", "value": 150, "max": 100},
-                {"type": "divider", "extra": "ignored"},
             ])
         self.assertEqual(blocks[0]["text"], "两张对比")
         self.assertEqual(blocks[1], {"type": "text", "text": "<b>不是网页</b>", "tone": "normal"}, "text stays text")
@@ -55,8 +53,6 @@ class BlockTests(unittest.TestCase):
         self.assertEqual(blocks[3]["rows"], [["步数", "40"], ["CFG", "7.5"]])
         self.assertEqual(blocks[6]["options"][1], {"id": "b", "label": "右边", "detail": ""})
         self.assertEqual(blocks[7]["id"], "q8", "a question without an id gets one")
-        self.assertEqual(blocks[8]["value"], 100)
-        self.assertEqual(blocks[9], {"type": "divider"})
 
     def test_refused(self):
         bad = [
@@ -69,7 +65,8 @@ class BlockTests(unittest.TestCase):
             [{"type": "choices", "options": [{"id": "x", "label": "1"}, {"id": "x", "label": "2"}]}],
             [CHOICES, CHOICES],
             [{"type": "models", "items": ["loras:0:../../x.safetensors"]}],
-            [{"type": "progress", "value": "half"}],
+            [{"type": "progress", "value": 1, "max": 4}],  # the AI's own progress bar and the divider are no blocks any more
+            [{"type": "divider"}],
             [{"type": "heading", "text": {"a": 1}}],
             [{"type": "text", "text": "x"}] * 31,
         ]
@@ -230,12 +227,12 @@ class AnswerTests(unittest.TestCase):
         self.assertEqual([m["text"] for m in got["messages"]], ["先别跑了"])
 
     def test_update_and_close(self):
-        shown = ai_panels.show("A", "进度", [{"type": "progress", "value": 1, "max": 4}, CHOICES])
-        ai_panels.update(shown["id"], blocks=[{"type": "progress", "value": 3, "max": 4}, CHOICES])
+        shown = ai_panels.show("A", "设置", [{"type": "params", "items": [{"label": "步数", "value": 20}]}, CHOICES])
+        ai_panels.update(shown["id"], blocks=[{"type": "params", "id": shown["blocks"][0]["id"], "items": [{"label": "步数", "value": 30}]}, CHOICES])
         task_id = ai_tasks.list_tasks()[0]["id"]
         step = ai_tasks.get_task(task_id)["steps"][0]
-        self.assertEqual(step["panel"]["blocks"][0]["value"], 3)
-        self.assertGreaterEqual(step["panel"]["changed"], step["at"])  # when its numbers were written
+        self.assertEqual([block["type"] for block in step["panel"]["blocks"]], ["params", "choices"])
+        self.assertEqual(str(step["panel"]["blocks"][0]["items"][0]["value"]), "30")
         ai_panels.update(shown["id"], closed=True)
         with self.assertRaises(ai_panels.PanelError):
             ai_panels.answer(task_id, step["id"], "pick", "a")
@@ -267,16 +264,16 @@ class AnswerTests(unittest.TestCase):
         self.assertEqual(ai_tasks.get_task(task_id)["steps"][0]["panel"]["blocks"], blocks,
                          "chronological order survives reload")
 
-    def test_partial_update_keeps_earlier_content_answers_and_progress_position(self):
-        shown = ai_panels.show("A", "过程", [CHOICES, {"type": "progress", "value": 1, "max": 4}])
+    def test_partial_update_keeps_earlier_content_answers_and_a_corrected_blocks_position(self):
+        shown = ai_panels.show("A", "过程", [CHOICES, {"type": "params", "items": [{"label": "步数", "value": 20}]}])
         task_id = ai_tasks.list_tasks()[0]["id"]
         step = ai_tasks.get_task(task_id)["steps"][0]
         ai_panels.answer(task_id, step["id"], "pick", "a")
-        progress_id = shown["blocks"][1]["id"]
+        params_id = shown["blocks"][1]["id"]
         changed = ai_panels.update(shown["id"], blocks=[{"type": "text", "text": "结果好了"},
-                                  {"type": "progress", "id": progress_id, "value": 4, "max": 4}])
-        self.assertEqual([b["type"] for b in changed["blocks"]], ["choices", "progress", "text"])
-        self.assertEqual(changed["blocks"][1]["value"], 4)
+                                  {"type": "params", "id": params_id, "items": [{"label": "步数", "value": 30}]}])
+        self.assertEqual([b["type"] for b in changed["blocks"]], ["choices", "params", "text"])
+        self.assertEqual(str(changed["blocks"][1]["items"][0]["value"]), "30")
         self.assertEqual(ai_panels.get_answers("A")["answers"][0]["choice"], ["a"])
         self.assertEqual(ai_panels.get_answers("A")["answers"], [])
 
@@ -286,9 +283,9 @@ class AnswerTests(unittest.TestCase):
         before = copy.deepcopy(ai_tasks.get_task(task_id))
         bad = [
             [{"type": "html"}],
-            [{"type": "progress", "id": shown["blocks"][0]["id"], "value": 1}],
+            [{"type": "heading", "id": shown["blocks"][0]["id"], "text": "换了种类"}],
             [{"type": "text", "text": str(i)} for i in range(ai_panels.MAX_BLOCKS)],
-            [{"type": "text", "id": "same", "text": "a"}, {"type": "divider", "id": "same"}],
+            [{"type": "text", "id": "same", "text": "a"}, {"type": "heading", "id": "same", "text": "b"}],
         ]
         for blocks in bad:
             with self.subTest(blocks=blocks), self.assertRaises(ai_panels.PanelError):
@@ -314,15 +311,23 @@ class AnswerTests(unittest.TestCase):
         self.assertEqual(ai_panels.get_answers("A")["answers"][0]["text"], "海边")
 
     def test_legacy_blocks_keep_order_when_updated(self):
-        plan = [{"type": "text", "text": "之前的方案"}, {"type": "progress", "value": 1}]
+        plan = [{"type": "text", "text": "之前的方案"}, {"type": "heading", "text": "设置"}]
         shown = ai_panels.show("A", "旧面板", plan)
         for block in shown["blocks"]:
             block.pop("id")  # old records did not give static blocks handles
-        changed = ai_panels.update(shown["id"], blocks=[{"type": "text", "text": "后来的结果"},
-                                  plan[0], {"type": "progress", "value": 100}])
-        self.assertEqual([b["type"] for b in changed["blocks"]], ["text", "progress", "text"])
-        self.assertEqual(changed["blocks"][1]["value"], 100)
+        changed = ai_panels.update(shown["id"], blocks=[{"type": "text", "text": "后来的结果"}, plan[0], plan[1]])
+        self.assertEqual([b["type"] for b in changed["blocks"]], ["text", "heading", "text"])
+        self.assertEqual(changed["blocks"][2]["text"], "后来的结果", "what was sent again keeps its place, the new one goes below")
         self.assertEqual(len({b["id"] for b in changed["blocks"]}), 3)
+
+    def test_a_panel_kept_with_a_block_no_longer_drawn_can_still_be_added_to(self):
+        shown = ai_panels.show("A", "旧面板", [{"type": "text", "text": "之前"}])
+        with ai_tasks._lock:  # a record of 1.63: the AI's own progress bar
+            task, step = ai_panels._find(shown["id"])
+            step["panel"]["blocks"].append({"type": "progress", "id": "old", "label": "放大", "value": 1, "max": 4})
+            ai_tasks._save(task)
+        changed = ai_panels.update(shown["id"], blocks=[{"type": "text", "text": "后来"}])
+        self.assertEqual([b["type"] for b in changed["blocks"]], ["text", "progress", "text"], "the record is kept as it was")
 
 
     def test_attach_pending_delivers_once_and_skips_errors(self):

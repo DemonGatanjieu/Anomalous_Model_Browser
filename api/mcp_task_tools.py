@@ -405,7 +405,7 @@ TASK_TOOLS = dict([
                "side, present models with their covers, lay out settings, a table, and to ask (buttons or a line of "
                "text). Use a new panel for each new phase (plan, workflow, then results), in the order they happen. "
                "Use it when a choice is the user's, or to show results better than words do. Blocks: heading, text, "
-               "images, slider, picks, diagram, models, table, list, params, choices, input, progress, divider; "
+               "images, slider, picks, diagram, models, table, list, params, choices, input; "
                "read_guide(topic='panel') gives their fields before your first panel.",
                show_panel, {"title": {"type": "string"},
                             "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},
@@ -444,7 +444,7 @@ TASK_TOOLS = dict([
                ["title", "marks"]),
     _task_tool("update_panel", "Change a panel",
                "Adds blocks at the BOTTOM of a panel, keeping what the user saw: send only the new ones. A block "
-               "sent with its returned id and type is corrected in place (a progress bar, a question). title changes "
+               "sent with its returned id and type is corrected in place (a table, a question). title changes "
                "it; closed=true stops answers. read_guide(topic='panel') has the rest.",
                update_panel, {"panel": {"type": "string"}, "title": {"type": "string"},
                               "blocks": {"type": "array", "items": {"type": "object"}, "maxItems": ai_panels.MAX_BLOCKS},

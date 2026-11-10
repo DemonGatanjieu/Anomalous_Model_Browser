@@ -34,7 +34,7 @@ TITLES = {  # the list's words for each topic; a README mark without one is list
 }
 
 PANEL = """show_panel's blocks, top to bottom, each {type, ...}:
-- heading {text}; text {text, tone: normal|muted|tip|warning}; divider {}.
+- heading {text}; text {text, tone: normal|muted|tip|warning}.
 - images {items: [{image: 'subfolder/name.png' from search_images, caption, marks: [{x, y, r | w, h, label, color: red|green|blue|yellow|purple}]}], layout: row|grid|compare}. marks are circles or boxes with a label; x/y/w/h/r are fractions 0-1 of the picture, x/y the centre; a click on the label zooms there.
 - slider {before: {image}, after: {image}, before_label, after_label}: one picture over the other, a line to drag.
 - picks {id, question, items: [{id, image, label, reason, recommended}] (2-12), multiple}: pictures to choose from; the user can also put one's workflow on the canvas.
@@ -44,10 +44,9 @@ PANEL = """show_panel's blocks, top to bottom, each {type, ...}:
 - table {columns: [...], rows: [[...]]}; list {items: [...], ordered}; params {items: [{label, value}]}.
 - choices {id, question, options: [{id, label, detail}] (2-8), multiple}: buttons the user presses.
 - input {id, question, placeholder}: a line the user types.
-- progress {label, value, max}: your own numbers, kept current with update_panel; none for a run, its progress shows already.
 Each block may have a stable id; show_panel returns the block ids in display order. Plain text only (no markup, no links); up to 30 blocks, 12 pictures or models a block.
 
-update_panel adds new output at the bottom of a panel and keeps what the user saw, in its order: send only the new blocks (repeated unchanged blocks are kept once). To correct a block or move a progress bar or question in place, send it with its returned id and the same type; blocks left out stay. Never reuse an old block id for a new result: append it, or show_panel for the next phase. Up to 30 blocks a panel; closed=true stops answers, answers given stay."""
+update_panel adds new output at the bottom of a panel and keeps what the user saw, in its order: send only the new blocks (repeated unchanged blocks are kept once). To correct a block or a question in place, send it with its returned id and the same type; blocks left out stay. Never reuse an old block id for a new result: append it, or show_panel for the next phase. Up to 30 blocks a panel; closed=true stops answers, answers given stay."""
 
 
 def _read(path):

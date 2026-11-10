@@ -7,8 +7,8 @@ at places given as fractions of the picture), slider (two pictures over each oth
 drag between them), picks (pictures with a reason and "take this one"), models (the user's, by
 model_id), diagram (boxes and arrows, laid out by the page; a box can name a canvas node),
 table, list, params, choices (buttons; one or several picks) and input (a line of text),
-prompts (the user's prompt box: texts and reference pictures the AI gets as tokens, ai_sealed.py),
-progress, divider; and area (the user's repaint area beside the AI's, ai_repaint.py). Nothing the AI sends is run or rendered as markup, and no drawing of its own
+prompts (the user's prompt box: texts and reference pictures the AI gets as tokens, ai_sealed.py);
+and area (the user's repaint area beside the AI's, ai_repaint.py). Nothing the AI sends is run or rendered as markup, and no drawing of its own
 (SVG) is taken: every block is checked here to be one of these shapes, with plain strings and
 numbers of bounded size, pictures only from the output folder and models only from the user's
 folders (the parts: ai_panel_parts.py). The page draws them (ui_ai_panel.js).
@@ -168,18 +168,11 @@ def clean_block(block, at, taken):
             raise PanelError(f"{where}.count: 1 to {MAX_PROMPT_BOXES} prompts")
         out.update(question=_text(block.get("question"), 200, f"{where}.question"), count=count,
                    negative=block.get("negative") is True, pictures=block.get("pictures") is True)
-    elif kind == "progress":
-        value, top = block.get("value"), block.get("max", 100)
-        if not all(isinstance(n, (int, float)) and not isinstance(n, bool) for n in (value, top)) or top <= 0:
-            raise PanelError(f"{where}: value and max must be numbers, max above 0")
-        out.update(label=_text(block.get("label"), 120, f"{where}.label"), value=max(0, min(value, top)), max=top)
-    elif kind == "divider":
-        pass
     elif kind == "plan":  # the steps of an AI's plan, ready-made blocks; only mcp_plans makes it
         out["steps"] = [_plan_step(step, f"{where}.steps[{at}]") for at, step in enumerate(_list(block.get("steps"), 6, f"{where}.steps"))]
     else:
         raise PanelError(f"{where}.type {kind!r} is not one of heading, text, images, slider, picks, models, diagram, "
-                         "table, list, params, choices, input, prompts, progress, divider")
+                         "table, list, params, choices, input, prompts")
     if kind in INTERACTIVE or block.get("id") is not None:
         block_id = _text(block.get("id") or f"q{at + 1}", 40, f"{where}.id")
         if block_id in taken:
@@ -240,11 +233,6 @@ def _merge_blocks(existing, incoming):
             # A client may send its entire previous layout again. That cannot reorder it.
             at = next((i for i, old in enumerate(existing) if i not in used
                        and {key: value for key, value in old.items() if key != "id"} == block), None)
-            if at is None and block["type"] == "progress":
-                matches = [i for i, old in enumerate(existing) if old["type"] == "progress"
-                           and old.get("label") == block.get("label")]
-                if len(matches) == 1:
-                    at = matches[0]
         if at is None:
             merged.append(block)
         else:
@@ -297,7 +285,6 @@ def update(panel_id, title=None, blocks=None, closed=None):
             panel["title"] = _text(title, 120, "title", True)
         if blocks is not None:
             panel["blocks"] = _merge_blocks(panel["blocks"], blocks)
-            panel["changed"] = time.time()  # when its numbers were written: the page greys a progress bar the task went past
         if closed is not None:
             panel["closed"] = bool(closed)
         step["panel"] = panel

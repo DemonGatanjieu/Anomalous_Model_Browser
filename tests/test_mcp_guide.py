@@ -14,7 +14,7 @@ from api import ai_panels, mcp_fit, mcp_guide, mcp_server, mcp_task_tools  # noq
 from api.mcp_tools import ToolError  # noqa: E402
 
 BLOCKS = ("heading", "text", "images", "slider", "picks", "diagram", "models", "table", "list", "params", "choices",
-          "input", "progress", "divider")
+          "input")
 
 
 class GuideTests(unittest.TestCase):

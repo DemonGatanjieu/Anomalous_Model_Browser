@@ -56,6 +56,8 @@
 - When an AI tries a run with no arguments and the canvas draws from nothing with its prompt box still empty, the run is refused once and it is told to give the prompt with the run (called again unchanged, it runs). Gemini Flash tries tools this way; on a blueprint just built that drew three bases of nothing and used up the three bases you pick from.
 - Tile 不适配被拦时，如果那个模型是你点名要用的，AI 会被提醒先问你再换，不是自己悄悄换掉。AI 记决策时把“否决了什么”写成一句话，不再被拆成一个个字。
 - When a run is refused because a Tile does not fit and you named that model yourself, the AI is told to ask you before changing it. A decision whose rejected option the AI wrote as one sentence is no longer split into letters.
+- AI 往展台上画面板时少了两种积木：它自己报数的进度条和分隔线。出图、任务单、蓝图的进度现在都由 AMB 自己显示，是真实的数，AI 另报一条反而可能是旧数；分隔线只是装饰。以前的任务里 AI 画过的进度条不再显示，其余内容照旧。模型卡、表格、列表、流程图都留着。
+- Two blocks are gone from the panels an AI draws on the stage: the progress bar with its own numbers, and the divider. A run's, a job sheet's and a blueprint's progress are shown by Anomalous itself, with real numbers, where the AI's own bar could be stale; the divider was decoration. A bar an AI drew in an earlier task is no longer shown; the rest of that panel stays. Model cards, tables, lists and diagrams remain.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 
