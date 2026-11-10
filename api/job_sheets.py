@@ -150,7 +150,8 @@ def workflow():
 def _end_old(sheet):
     """An unfinished sheet a new one replaces: it ends stopped, on its step too."""
     if sheet and sheet["state"] not in ENDED:
-        sheet.update(state="stopped", want=None, note=sheet.get("note") or "replaced")
+        _drop(sheet["pending"])
+        sheet.update(state="stopped", want=None, ended=time.time(), note=sheet.get("note") or "replaced")
         _sync_step(sheet)
 
 
@@ -213,7 +214,7 @@ def _drop(prompt_ids):
 
 def report(body):
     """Word from the page running the sheet: {id, page, at, queued: [[prompt id, run]], finished: [[prompt id,
-    outcome]], state?, note?}; outcome "ok", "error" or "gone" (taken out of the queue). Answers the sheet,
+    outcome]], state?, note?}; outcome "ok", "error", "interrupted" or "gone" (taken out of the queue). Answers the sheet,
     whose `want` says what was asked of the page."""
     pictures, dropped = [], []
     with _lock:
@@ -222,24 +223,28 @@ def report(body):
             raise SheetError("This sheet is gone.")
         if sheet["page"] != body.get("page"):
             raise SheetError("Another page runs this sheet now.")
-        if sheet["state"] in ENDED:
-            return public(sheet)
-        sheet["heard"] = time.time()
+        ended = sheet["state"] in ENDED
         known = {pid for pid, _ in sheet["ids"]}
         for item in body.get("queued") or []:
             if (isinstance(item, list) and len(item) == 2 and isinstance(item[0], str) and 0 < len(item[0]) <= 128
                     and isinstance(item[1], int) and item[0] not in known):
-                sheet["ids"].append(item)
-                sheet["pending"].append(item[0])
+                if not ended:
+                    sheet["ids"].append(item)
+                    sheet["pending"].append(item[0])
                 known.add(item[0])
-                if sheet["want"] == "stop":
+                if sheet["want"] == "stop" or sheet["state"] == "stopped":
                     dropped.append(item[0])  # queued as stop was asked: it goes too
+        if ended:
+            _drop(dropped)  # queuePrompt can return after the page's own Stop has already ended the sheet
+            return public(sheet)
+        sheet["heard"] = time.time()
         for item in body.get("finished") or []:
-            if not (isinstance(item, list) and len(item) == 2 and item[0] in sheet["pending"]):
+            if not (isinstance(item, list) and len(item) == 2 and item[0] in sheet["pending"]
+                    and item[1] in ("ok", "error", "interrupted", "gone")):
                 continue
             sheet["pending"].remove(item[0])
             sheet["done"] += 1
-            if item[1] == "error":
+            if item[1] != "ok":
                 sheet["failed"] += 1
             made = _pictures(item[0]) if item[1] == "ok" else []
             pictures += made
@@ -249,7 +254,7 @@ def report(body):
         at = body.get("at")
         if isinstance(at, int) and 0 <= at <= sheet["total"]:
             sheet["at"] = at
-        state = body.get("state")
+        state = "stopped" if sheet["want"] == "stop" else body.get("state")
         if state in ("running", "paused", "stopped", "done"):
             if state != sheet["state"]:
                 sheet["want"] = None
@@ -330,7 +335,7 @@ def attach(sheet_id, step_id):
             return
         sheet.update(task=task_id, step=step_id)
         atomic_write_json(_path(SHEET), sheet)
-        _sync_step(sheet)
+        _sync_step(sheet, sheet["last"])
 
 
 def _words(sheet):
@@ -354,7 +359,7 @@ def _sync_step(sheet, pictures=()):
         if pictures:
             kept = [item for item in step["results"] if item["type"] != "image"]
             shown = [item for item in step["results"] if item["type"] == "image"]
-            step["results"] = kept + (shown + list(pictures))[-ai_tasks.MAX_RESULTS:]
+            step["results"] = kept + (shown + [item for item in pictures if item not in shown])[-ai_tasks.MAX_RESULTS:]
         if sheet["state"] not in ENDED:
             step["state"] = "running"
             paused = " · 暂停 / paused" if sheet["state"] == "paused" else ""

@@ -272,7 +272,10 @@ covered by the `styles.css` manifest.
   rules (`tests/job_sheet_plan.mjs`). `api/job_sheets.py` keeps the one sheet and where it stands, hears the page's
   reports, passes pause / stop / go on to it (from any page, the workbench's stop or the AI's stop_run; with its page
   gone another page takes it over) and writes a sheet the AI gave with `run_workflow(sheet=…)` on that call's run step,
-  so run_status and the workbench follow it like a run (`tests/test_job_sheets.py`).
+  so run_status and the workbench follow it like a run (`tests/test_job_sheets.py`). Clearing or replacing a stale
+  sheet stops its registered pending runs; a stop wins over a late pause report, and a queued run reported after
+  stopping is cancelled. Attaching the AI step carries over the sheet's recent pictures once. Interrupted and
+  removed runs count as unsuccessful (`tests/test_job_sheet_edges.py`).
 - A model's author text from Civitai in its details opens folded as the user last left it and can be translated
   into the window's language: `web/modules/detail_intro.js` (`tests/detail_intro.mjs`) keeps the fold and picks the
   language, `api/description_translation.py` translates it paragraph by paragraph through

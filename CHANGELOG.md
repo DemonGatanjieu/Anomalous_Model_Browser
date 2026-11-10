@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 任务单停止时，刚提交、迟到回报的运行也会取消，暂停回报不会覆盖停止请求；清除或替换失联任务单会同时停止它已登记的运行。很快完成、早于 AI 步骤绑定的图片会补回工作台，重复绑定不重复添图；中断或被移出队列的运行计入未成功次数。
+- Stopping a job sheet also cancels runs reported just after the stop; a pause report cannot erase a stop request. Clearing or replacing a stale sheet stops its registered runs. Pictures completed before the AI step was attached are carried into the workbench without duplicates on reattachment; interrupted or removed runs count as unsuccessful.
+
 - 没有 C 站触发词的 LoRA（自己炼的、从别处下的），扫描时会从模型文件里读出训练图片大多都带的标签（作者写了触发词就用作者的），和 C 站的触发词分开存，搜模型时也能用这些词搜到。
 - For a LoRA without trigger words from Civitai (trained yourself, downloaded elsewhere), a scan reads from the file the tags most of its training pictures share (or the trigger phrase its maker wrote) and keeps them apart from Civitai's trigger words; model search finds them too.
 - 从模型文件认底模时分得清 Flux.1 Dev 和 Schnell（Schnell 没有引导输入），也认得出 Z-Image 和 Lumina 2 这两种结构相近的模型：以前 Z-Image 的 GGUF 被当成 Lumina，safetensors 两种都认不出。已经扫过的模型重新扫描后才会更新。
