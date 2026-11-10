@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.63.0 — unreleased
+## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 
 - 画布左上角的立方体入口不再压在 ComfyUI 自己的菜单上面：以前它在最顶层，打开左上角的 C 菜单时会盖住“新建”那一行。现在它在画布上面、顶栏和菜单、对话框下面。README 的安装第 2 步也配上了图，写明装好后入口在哪、看不到时怎么办。
 - The cube entry at the canvas's top left no longer sits over ComfyUI's own menus: it was on the very top layer and covered the "New" row of the C menu. It is now over the canvas and under the top bar, menus and dialogs. Step 2 of the README's install has a picture of where the entry is after installing and what to do when it can't be seen.
