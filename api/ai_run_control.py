@@ -12,6 +12,11 @@ from . import ai_task_runs, ai_tasks
 
 
 VERDICTS = ("good", "bad")
+# What is off with a run's pictures, a click each under "not quite right" (ui_ai_verdict.js), in the words the AI gets:
+# the eyes of an AI that is not sent the pictures (ai_privacy.py), and quicker than writing for any.
+ISSUES = {"hands": "the hands are wrong", "face": "the face is off", "body": "the body or the pose is wrong",
+          "composition": "the framing is off", "dark": "too dark", "bright": "too bright", "blurry": "blurry or short of detail",
+          "style": "not the style they want", "subject": "not the subject they asked for", "extra": "something is extra or missing"}
 
 
 class RunControlError(ValueError):
@@ -69,31 +74,40 @@ def stop(step_id, by="user", task_id=None, now=None):
     return {"task": task["id"], "removed": removed, "interrupted": interrupted}
 
 
-def set_verdict(task_id, step_id, verdict):
-    """The user's word on finished run `step_id` of task `task_id`: "good", "bad" or None (taken back);
-    a word given goes to the AI. Returns it."""
+def set_verdict(task_id, step_id, verdict, issues=None):
+    """The user's word on finished run `step_id` of task `task_id`: "good", "bad" or None (taken back), with
+    "bad" what is off (`issues`, keys of ISSUES). A word given goes to the AI; one it has not fetched yet is
+    corrected where it stands, so picking issues one by one says it once. Returns the verdict."""
     if verdict not in (*VERDICTS, None):
         raise RunControlError("verdict is good, bad or null")
+    issues = [name for name in ISSUES if name in issues] if verdict == "bad" and isinstance(issues, list) else []
     with ai_tasks._lock:
         task = ai_tasks._load().get(task_id)
         steps = (task or {}).get("steps", [])
         step = next((item for item in steps if item["id"] == step_id), None)
         if not step or step.get("tool") != "run_workflow" or step.get("state") != "done":
             raise RunControlError("No such finished run")
-        if step.get("verdict") == verdict:
+        if step.get("verdict") == verdict and step.get("issues", []) == issues:
             return verdict
         if verdict:
-            step["verdict"] = verdict
+            step.update(verdict=verdict, issues=issues)
             number = sum(1 for item in steps[:steps.index(step) + 1] if item.get("tool") == "run_workflow")
-            ai_tasks._add_step(task, {"id": uuid.uuid4().hex[:10], "at": time.time(), "ms": 0, "tool": "user_verdict", "kind": "user",
-                                      "ok": True, "state": "done", "summary": "user_verdict", "verdict": verdict, "run": step_id,
-                                      "delivered": False, "results": [], "text": (
-                                          f"The user says run {number} of this task (step {step_id}) turned out well."
-                                          if verdict == "good" else
-                                          f"The user says run {number} of this task (step {step_id}) did not turn out well: "
-                                          "change the way, a setting or the prompt before running again, or ask them what is off.")})
+            text = (f"The user says run {number} of this task (step {step_id}) turned out well." if verdict == "good" else
+                    f"The user says run {number} of this task (step {step_id}) did not turn out well: "
+                    + ("; ".join(ISSUES[name] for name in issues) + ". Change what causes that (the way, a setting, the prompt) "
+                       "before running again." if issues else
+                       "change the way, a setting or the prompt before running again, or ask them what is off."))
+            told = next((item for item in reversed(steps) if item.get("tool") == "user_verdict" and item.get("run") == step_id
+                         and not item.get("delivered")), None)
+            if told:
+                told.update(at=time.time(), verdict=verdict, issues=issues, text=text)
+            else:
+                ai_tasks._add_step(task, {"id": uuid.uuid4().hex[:10], "at": time.time(), "ms": 0, "tool": "user_verdict", "kind": "user",
+                                          "ok": True, "state": "done", "summary": "user_verdict", "verdict": verdict, "issues": issues,
+                                          "run": step_id, "delivered": False, "results": [], "text": text})
         else:
             step.pop("verdict", None)
+            step.pop("issues", None)
         ai_tasks._save(task)
     ai_tasks._notify(task_id)
     return verdict

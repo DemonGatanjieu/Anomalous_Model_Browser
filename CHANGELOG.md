@@ -74,6 +74,8 @@
 - In privacy mode **the names you gave are tokens too**: workflow card names, saved prompt names, their tags, and which card or combo a picture was made with. Such names often say the model or what is drawn. The AI still places a combo and uses a card by its token, and still finds one by a name you say in the chat.
 - 隐私模式新增 **藏**：在提示词框的“画面大意”里，或隐私任务的留言框里，选中几个字点“藏”，这几个字 AI 只拿到代号，其余的它照常看、照常改。不用再为了几个词把整段都藏起来。
 - Privacy mode has **Hide**: in the gist of the prompt box, or in a private task's message box, select a few words and press Hide; the AI gets a token for them and reads and edits the rest. A few words no longer mean hiding the whole text.
+- 跑完的图点了 **不太行**，下面多一排 **哪里不行**：手坏了、脸不对、构图偏了、太暗、太亮、糊、画风不对……点哪个，AI 就知道该改哪个，可以点几个。隐私模式下 AI 看不到图，你点一下就是它的眼睛；普通任务里也省得打字。
+- Under a run you marked **not quite right** there is now **what is off**: hands, face, framing, too dark, too bright, blurry, wrong style and more. A click tells the AI which to fix, and you may pick several. In privacy mode the AI is not sent the pictures, so your click is its eyes; in any task it saves the typing.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 

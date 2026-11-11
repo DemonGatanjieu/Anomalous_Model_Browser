@@ -145,6 +145,13 @@ class StopTests(unittest.TestCase):
         told = [item for item in steps if item["tool"] == "user_verdict"]
         self.assertEqual(steps[0]["verdict"], "bad")
         self.assertTrue(told and not told[0]["delivered"] and "did not turn out well" in told[0]["text"], "the AI is told")
+        ai_run_control.set_verdict(self.task, self.step["id"], "bad", ["dark", "hands", "nope"])
+        steps = ai_tasks.get_task(self.task)["steps"]
+        told = [item for item in steps if item["tool"] == "user_verdict"]
+        self.assertEqual(len(told), 1, "a word the AI has not fetched yet is corrected, not said twice")
+        self.assertIn("the hands are wrong; too dark. Change what causes that", told[0]["text"])
+        self.assertEqual((steps[0]["issues"], told[0]["issues"]), (["hands", "dark"], ["hands", "dark"]), "what is off, in the list's order")
+        told[0]["delivered"] = True
         ai_run_control.set_verdict(self.task, self.step["id"], None)
         self.assertNotIn("verdict", ai_tasks.get_task(self.task)["steps"][0], "taken back")
         with self.assertRaises(ai_run_control.RunControlError):

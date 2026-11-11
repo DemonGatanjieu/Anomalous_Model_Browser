@@ -116,7 +116,8 @@ export function stepBody(step, ctx) {
     case 'user_privacy': return [said(t(step.privacy ? 'aiPrivacyChoseOn' : 'aiPrivacyChoseOff')), deliveryState(step)];
     case 'outside_files': return outsideFiles(step, ctx.owner);
     case 'log_outside': return outsideLog(step);
-    case 'user_verdict': return [said(t(`aiVerdictSaid_${step.verdict}`)), deliveryState(step)];
+    case 'user_verdict': return [said(t(`aiVerdictSaid_${step.verdict}`) + (step.issues?.length
+        ? t('aiIssuesSaid', { issues: step.issues.map(name => t(`aiIssue_${name}`)).join(t('aiIssueJoin')) }) : '')), deliveryState(step)];
     case 'use_skill': return [skillUsed(step)];
     case 'run_workflow': {
         const used = skillsBefore(ctx.steps, step).map(item => words(item.title));

@@ -81,7 +81,8 @@ covered by the `styles.css` manifest.
   a huge decode). `api/ai_run_control.py` stops a run (`stop_run`, the workbench's stop
   button): only its own prompts leave the queue or are interrupted; the step ends `cancelled`
   and a user's stop reaches the AI as a `stop` message. It also keeps the user's word on a
-  finished run (`set_verdict`; the buttons under its pictures are `web/modules/ui_ai_verdict.js`),
+  finished run (`set_verdict`; the buttons under its pictures are `web/modules/ui_ai_verdict.js`, with what
+  is off a click each under "not quite right", `ISSUES`),
   told to the AI as a `user_verdict` step. `tests/test_ai_run_watch.py`.
 - `api/ai_run_map.py` reads a run's shape from the prompt ComfyUI queued (plumbing wired
   through; boxes with a role and facts, links with ComfyUI's types) and what changed since the

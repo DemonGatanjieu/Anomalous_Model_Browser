@@ -345,7 +345,10 @@ The Gates' custom-node rule (`ai_tools.json` `nodes`, `ai_gates.node_rule`): wit
 picks block the user left to the AI (`no_answer` "recommended") takes the item it marked
 recommended, as a choice does (`ai_answer_wait.take_recommended`). The user's word on a finished
 run (`POST /anomalous/ai_tasks/{id}/runs/{step}/verdict`, `ai_run_control.set_verdict`) stays on
-the run's step and reaches the AI as a `user_verdict` step; nothing else keeps it.
+the run's step and reaches the AI as a `user_verdict` step; nothing else keeps it. With "bad" go
+`issues` (keys of `ai_run_control.ISSUES`: hands, face, body, composition, dark, bright, blurry, style,
+subject, extra), said in words in the step's text; while the AI has not fetched the step, a changed
+word corrects it in place.
 
 `ai_answer_wait.collect` is shared by `get_answers` and question tools: after the bounded wait,
 typing/deadline checks, automatic choices and a final nonblocking collection share the task

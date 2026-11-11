@@ -1083,4 +1083,6 @@
 .anomalous-ai-verdict-pick:hover { color: var(--amb-text-main); }
 .anomalous-ai-verdict-pick:disabled { cursor: progress; opacity: 0.7; }
 .anomalous-ai-verdict-pick.is-good.is-chosen { border-color: var(--amb-ok); background: color-mix(in srgb, var(--amb-ok) 16%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-verdict-issues { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.anomalous-ai-verdict-pick.is-issue.is-chosen,
 .anomalous-ai-verdict-pick.is-bad.is-chosen { border-color: var(--amb-warn); background: color-mix(in srgb, var(--amb-warn) 16%, transparent); color: var(--amb-text-main); }

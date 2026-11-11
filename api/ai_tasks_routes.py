@@ -312,12 +312,12 @@ async def api_stop(request):
 
 
 async def api_verdict(request):
-    """POST /anomalous/ai_tasks/{id}/runs/{step}/verdict {verdict: good | bad | null} - the user's word on a run, told to the AI."""
+    """POST /anomalous/ai_tasks/{id}/runs/{step}/verdict {verdict: good | bad | null, issues?: [what is off]} - the user's word on a run, told to the AI."""
     from . import ai_panels
 
     body = await _body(request) or {}
     try:
-        verdict = await asyncio.to_thread(ai_run_control.set_verdict, request.match_info["task_id"], request.match_info["step_id"], body.get("verdict"))
+        verdict = await asyncio.to_thread(ai_run_control.set_verdict, request.match_info["task_id"], request.match_info["step_id"], body.get("verdict"), body.get("issues"))
     except ai_run_control.RunControlError as error:
         return web.json_response({"error": str(error)}, status=400)
     ai_panels.wake()
