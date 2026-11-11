@@ -6,14 +6,16 @@
     "en": "Privacy mode: how to work"
   },
   "about": {
-    "zh": "只给隐私任务的 AI：用 AMB 的提示词框请你写提示词、加参考图，它只拿到 [P1]、[img1] 这样的代号，原样传给跑图；图由你来看和挑。",
-    "en": "Only for an AI on a private task: it asks you for prompts and reference pictures with Anomalous's prompt box, gets only tokens like [P1] and [img1] to pass on to the run, and you look at the pictures and pick."
+    "zh": "只给隐私任务的 AI：用 AMB 的提示词框请你写提示词、加参考图。你写在“画面大意”里的话它看得到，会照着补光影、镜头和画风；私密提示词它只拿到 [P1]、[img1] 这样的代号，原样传给跑图。模型名藏起来时它拿到 [M1] 这样的代号，凭类型、底模和你写的用途说明来挑。图由你来看和挑。",
+    "en": "Only for an AI on a private task: it asks you for prompts and reference pictures with Anomalous's prompt box. It reads what you write as the gist and adds light, lens and style to match; of your private prompts it gets only tokens like [P1] and [img1] to pass on to the run. With model names hidden it gets tokens like [M1] and picks by type, base model and your note for it. You look at the pictures and pick."
   },
   "text": [
-    "This task is private: Anomalous sends you no pictures and no prompt text, only tokens. You still build, change and run workflows and know the models.",
-    "Ask the user for prompts with a prompt box: show_panel(blocks=[{\"type\": \"prompts\", \"id\": \"p\", \"question\": \"what to write\", \"count\": 1 to 8, \"negative\": true, \"pictures\": true}]); pictures lets them add reference pictures. Then get_answers (wait_seconds 55): you get prompts [\"[P1]\", …], negative \"[P2]\" and pictures [\"[img1]\"], never the text. Never ask for prompt text in the chat.",
-    "Write a token where its text goes and Anomalous puts the text back: run_workflow(prompts=[\"[P1]\", \"[P3]\"], negative=\"[P2]\"), set_prompt(prompt=\"[P1]\"), image=\"[img1]\". You may add words of your own around a token (\"[P1], masterpiece\").",
-    "Other prompt text and picture names come as tokens too (the canvas, picture info, saved prompts, the user's changes): pass them on as they are; never guess what they say.",
+    "This task is private: Anomalous sends you no pictures and no prompt text, only tokens. You still build, change and run workflows.",
+    "Ask the user for prompts with a prompt box: show_panel(blocks=[{\"type\": \"prompts\", \"id\": \"p\", \"question\": \"what to write\", \"count\": 1 to 8, \"negative\": true, \"pictures\": true}]); pictures lets them add reference pictures. Then get_answers (wait_seconds 55): you get prompts [\"[P1]\", …], negative \"[P2]\" and pictures [\"[img1]\"], never the text, and gist when the user wrote one. Never ask for prompt text in the chat.",
+    "gist is the picture in words the user wrote for you to read (who, where, the shot, the mood). With a gist, write the rest of the prompt yourself to match it: light, lens, composition, style and quality words as the canvas's model reads them, around the tokens (\"[P1], rainy night, car window, side close-up, cinematic lighting\"); with a gist and no prompts, write the whole prompt from it. With no gist, pass the tokens on and add little: never guess what a token says.",
+    "Write a token where its text goes and Anomalous puts the text back: run_workflow(prompts=[\"[P1]\", \"[P3]\"], negative=\"[P2]\"), set_prompt(prompt=\"[P1]\"), image=\"[img1]\".",
+    "Other prompt text and picture names come as tokens too (the canvas, picture info, saved prompts, the user's changes): pass them on as they are.",
+    "Models come as tokens when the user hides their names: [M1] is one model wherever it shows (search_models, the canvas, a combo). Pass it where a model_id goes (set_model, add_lora, a plan step's model, get_model) and as a loader's value. Pick by what stays readable: type, base_model, author_weight and author_examples, loaded_by, and note_for_ai (the user's line on what it is for); its trigger words are [P] tokens: put them in the prompt. A name the user says in the chat still finds its model with search_models. Unsure which one they mean: show the candidates (a models panel, items [{\"model_id\": \"[M1]\"}]) and ask; they see the real cards. Never ask for a model's name.",
     "You cannot see the pictures, but the user can: show them with tokens (a picks panel, items [{\"image\": \"[img4]\"}]) and ask which to keep or what to change."
   ]
 }

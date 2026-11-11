@@ -168,6 +168,7 @@ def _model_brief(folder_type, path_idx, base_dir, file_path, meta):
     except OSError:
         size_mb = None
     return {
+        **({"note_for_ai": meta["ai_note"]} if meta.get("ai_note") else {}),  # the user's words on what it is for
         "model_id": _model_id(folder_type, path_idx, base_dir, file_path),
         "name": meta.get("custom_name") or meta.get("name") or os.path.basename(file_path),
         "file": os.path.basename(file_path),
@@ -209,7 +210,7 @@ def search_models(query="", type="", base_model="", source="", limit=20):
         if source and SOURCES.get(meta.get("info_source", ""), "not_scanned") != source:
             continue
         if not _matches(terms, os.path.relpath(file_path, base_dir), meta.get("name"), meta.get("custom_name"),
-                        meta.get("baseModel"), " ".join((meta.get("trainedWords") or []) + (meta.get("headerWords") or []))):
+                        meta.get("baseModel"), meta.get("ai_note"), " ".join((meta.get("trainedWords") or []) + (meta.get("headerWords") or []))):
             continue
         total += 1
         if len(found) < _limit(limit):

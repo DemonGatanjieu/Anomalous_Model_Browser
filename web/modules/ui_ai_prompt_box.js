@@ -2,7 +2,9 @@
  * The prompt box (a "prompts" block of the AI's panel, api/ai_panels.py), for a private task: the
  * user writes the prompts here, and a negative one and reference pictures (from the gallery, or
  * dropped in) when the AI asks for them. The texts stay in Anomalous; the AI gets tokens for them
- * (api/ai_sealed.py). Above the fields, what suits the canvas's model (the prompt_pose skill's words,
+ * (api/ai_sealed.py). The first field is the other kind: the gist, the picture in words the AI may
+ * read, so it can write light, lens and style around the tokens; either kind alone can be handed in.
+ * Above the fields, what suits the canvas's model (the prompt_pose skill's words,
  * the step's prompt_advice). Answered, it shows what the user wrote beside the token the AI has.
  * ui_ai_panel.js draws it and hands it its helpers (sending, the question's head, the answer's note).
  */
@@ -53,6 +55,11 @@ function handedIn(answer, sealed) {
             el('span', 'anomalous-ai-prompt-text', sealed?.[token] || ''));
         box.append(row);
     };
+    if (answer.gist) {
+        const row = el('div', 'anomalous-ai-prompt-given-row');
+        row.append(el('span', 'anomalous-ai-prompt-label', t('aiPromptBoxGistGiven')), el('span', 'anomalous-ai-prompt-text', answer.gist));
+        box.append(row);
+    }
     (answer.prompts || []).forEach((token, at) => line(token, t('aiPromptBoxPrompt', { n: at + 1 })));
     if (answer.negative) line(answer.negative, t('aiPromptBoxNegative'));
     if (answer.pictures?.length) {
@@ -103,7 +110,10 @@ export function promptBox(block, ctx, { sendAnswer, askHead, skipButton, answerN
         prompts.at(-1).focus();
     });
     for (let at = 0; at < Math.max(1, Math.min(MAX_PROMPTS, block.count || 1)); at++) addPrompt();
-    box.append(fields, more);
+    const gist = field('gist', t('aiPromptBoxGistPlaceholder'), 2);
+    gist.maxLength = 1000;
+    box.append(el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxGist')), gist,
+        el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxSecret')), fields, more);
     const negative = block.negative ? field('negative', t('aiPromptBoxNegative'), 2) : null;
     if (negative) box.append(negative);
 
@@ -129,13 +139,14 @@ export function promptBox(block, ctx, { sendAnswer, askHead, skipButton, answerN
     }
     const send = button('anomalous-ai-panel-send', t('aiPromptBoxSend'), async () => {
         const texts = prompts.map(area => area.value.trim()).filter(Boolean);
-        if (!texts.length) {
+        const idea = gist.value.trim();
+        if (!texts.length && !idea) {
             note.textContent = t('aiPromptBoxEmpty');
             return;
         }
         send.disabled = true;
         try {
-            await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, prompts: texts, negative: negative?.value.trim() || '', pictures: [...pictures.values()] });
+            await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, prompts: texts, gist: idea, negative: negative?.value.trim() || '', pictures: [...pictures.values()] });
             ctx.changed();
         } catch (error) {
             note.textContent = error.message;

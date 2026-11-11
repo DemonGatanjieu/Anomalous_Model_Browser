@@ -3,8 +3,9 @@ text. The AI still builds and runs workflows and knows the models; it hears how 
 and whether the run went well, and the user looks at them in Anomalous. Prompts and picture names
 reach it as tokens it passes on (ai_sealed.py); the user writes prompts in a prompt box. Each task has its switch (task["privacy"],
 in the task's header); new tasks follow the default the user sets in the Gates window
-(user/anomalous/ai_privacy.json). Turning it on or off is a step the AI is told of, and one of the
-task's decisions (ai_decisions.py).
+(user/anomalous/ai_privacy.json, {default, models}). Turning it on or off is a step the AI is told of, and one of the
+task's decisions (ai_decisions.py). A private task keeps its models' names too, as tokens the AI picks by type,
+base model and the user's note (ai_sealed_models.py), unless the user lets the names through in the Gates window.
 
 All of it happens at one place: mcp_server.py puts the texts back into a call's arguments
 (ai_sealed.expand) and hands every tool result to guard() before it leaves, whatever tool or later
@@ -21,21 +22,39 @@ import uuid
 from . import ai_sealed, ai_tasks
 from .path_utils import atomic_write_json
 
-NOTE = ("Privacy mode: no pictures or prompt text reach you, only tokens like [P1] and [img1] to pass on as they "
-        "are. get_toolbox(skill=\"privacy\") first.")
+NOTE = ("Privacy mode: no pictures or prompt text reach you, only tokens like [P1], [img1] and [M1] (a model) to pass "
+        "on as they are. get_toolbox(skill=\"privacy\") first.")
 
 
 def _path():
     return os.path.join(os.path.dirname(ai_tasks.tasks_dir()), "ai_privacy.json")
 
 
-def default_on():
-    """Whether new tasks are private (the Gates window); off unless the user turned it on."""
+def _kept():
     try:
         with open(_path(), encoding="utf-8") as source:
-            return json.load(source).get("default") is True
-    except (OSError, ValueError, AttributeError):
-        return False
+            data = json.load(source)
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def default_on():
+    """Whether new tasks are private (the Gates window); off unless the user turned it on."""
+    return _kept().get("default") is True
+
+
+def hides_models():
+    """Whether a private task keeps its models' names too (the Gates window); it does unless the user lets them through."""
+    return _kept().get("models") is not False
+
+
+def set_hides_models(on):
+    if not isinstance(on, bool):
+        raise ValueError("privacy_models is true or false")
+    with ai_tasks._lock:
+        atomic_write_json(_path(), {**_kept(), "models": on})
+    return on
 
 
 def set_default(on):
@@ -48,7 +67,7 @@ def set_default(on):
                 if "privacy" not in task:
                     task["privacy"] = True
                     ai_tasks._save(task)
-        atomic_write_json(_path(), {"default": on})
+        atomic_write_json(_path(), {**_kept(), "default": on})
     return on
 
 
@@ -90,7 +109,7 @@ def applies(task_id):
 
 def guard(result, private, task_id=None, info=None, tool=""):
     """`result` as it may leave: a private call's pictures taken out (with a word on why), its prompt
-    text and picture names as tokens (ai_sealed.mask; `info`: ComfyUI's node list)."""
+    text, picture names and (hides_models) models as tokens (ai_sealed.mask; `info`: ComfyUI's node list)."""
     if not private or not isinstance(result, dict):
         return result
     content = [item for item in result.get("content") or [] if not (isinstance(item, dict) and item.get("type") == "image")]
@@ -99,4 +118,4 @@ def guard(result, private, task_id=None, info=None, tool=""):
         result["content"] = content
         if isinstance(result.get("structuredContent"), dict):
             result["structuredContent"] = {**result["structuredContent"], "privacy": NOTE}
-    return ai_sealed.mask(result, task_id, info, tool)
+    return ai_sealed.mask(result, task_id, info, tool, hides_models())

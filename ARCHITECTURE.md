@@ -104,7 +104,14 @@ covered by the `styles.css` manifest.
   node's STRING inputs by ComfyUI's node list, prompt fields, picture names, any sealed text),
   `expand` on a call's arguments, `seal_answer` for the user's prompt box (a "prompts" panel block,
   `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model;
-  the privacy skill tells the AI how to work). `web/modules/ui_ai_privacy.js` is the header's chip and the switch in its ⋯
+  its first field is the gist, the picture in words the AI may read, handed on as written;
+  the privacy skill tells the AI how to work). `api/ai_sealed_models.py` keeps a private task's model names too
+  (the Gates window's "Model names in a private task", on unless turned off): each model of the library is one
+  token ("[M1]", sealed as its model_id) however an answer writes it (model_id, loader name, file name in a text,
+  card name), its own entry loses what tells it apart and keeps type, base model, the author's settings and the
+  user's note for the AI (`ai_note`, set in the model editor, `note_for_ai` in the tools); `expand` writes a
+  model token back as the model_id, as the loader's name among a node's values, as the card's name inside the AI's words.
+  `web/modules/ui_ai_privacy.js` is the header's chip, the switch in its ⋯ and what the model tokens stand for
   (`tests/test_ai_privacy.py`, `tests/test_ai_sealed.py`).
   `ai_pictures.mark_gone` marks a task's pictures no longer in the output folder (`gone`) on its
   `GET`, which `ui_ai_images.gonePicture` shows instead of a broken picture.

@@ -46,6 +46,7 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | 「撤销画布上的改动」 | 按操作记录把 AI 在画布上的改动一步步撤销（`canvas_undo.js`） | 无 |
 | ⋯ 里的「改名」 / 「从列表移除」 | 移除只删这条记录，图、画布、工作流都不动 | `POST /anomalous/ai_tasks/{task_id}` |
 | ⋯ 里的「打开隐私模式」 | 这个任务的图不再发给 AI；开着时标题栏多一个「隐私模式」，点它关掉（`ui_ai_privacy.js`） | `POST /anomalous/ai_tasks/{task_id}`（privacy） |
+| ⋯ 里的「模型代号对照」 | 隐私任务把模型名藏起来后才有：列出 AI 说的 [M1]、[M2] 各是哪个模型（`ui_ai_privacy.js` 的 `modelTokens`） | 无（任务记录里的 `sealed`） |
 | ⋯ 里的「接着哪个任务…」 | 把这个任务接在另一个后面，两边都显示链接（`ui_ai_task_links.js`） | `POST /anomalous/ai_tasks/{task_id}`（from） |
 
 AMB 更新以后，AI 软件还拿着旧的工具列表来调用时，标题栏下面出现一行黄字「AI 软件拿的还是旧的工具列表，会多走弯路。请重新连接：Antigravity 重启一下，或在它的 MCP 设置里把 anomalous 关掉再打开；然后开个新对话。」，AI 那边也会收到同样的提醒（`mcp_directory.stale`，按每个 AI 软件上次取的列表比对）。AI 软件重新取工具列表（`tools/list`）后这行自动消失。

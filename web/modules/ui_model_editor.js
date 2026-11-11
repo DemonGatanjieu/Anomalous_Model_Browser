@@ -227,7 +227,8 @@ export function showEditModal(model) {
 
     const body = el('div', 'anomalous-medit-body');
     const dirty = () => coverChange || nameInput.value.trim() !== (meta.custom_name || '')
-        || notesInput.value.trim() !== (meta.custom_notes || '').trim() || linkInput.value.trim() !== (meta.source_url || '');
+        || notesInput.value.trim() !== (meta.custom_notes || '').trim() || linkInput.value.trim() !== (meta.source_url || '')
+        || aiNoteInput.value.trim() !== (meta.ai_note || '');
     const cover = coverSide(body, model, place, (change) => { coverChange = change; }, () => {
         if (dirty() && !confirm(t('modelEditLeaveForGallery'))) return;
         close();
@@ -281,6 +282,13 @@ export function showEditModal(model) {
     notesInput.placeholder = t('modelEditNotesPlaceholder');
     field(fields, t('modelEditNotes'), notesInput);
 
+    const aiNoteInput = el('input', 'anomalous-medit-input');
+    aiNoteInput.type = 'text';
+    aiNoteInput.maxLength = 300;
+    aiNoteInput.value = meta.ai_note || '';
+    aiNoteInput.placeholder = t('modelEditAiNotePlaceholder');
+    field(fields, t('modelEditAiNote'), aiNoteInput, [el('small', 'anomalous-medit-hint', t('modelEditAiNoteHint'))]);
+
     const foot = el('div', 'anomalous-medit-foot');
     const reset = button('anomalous-medit-reset', t('modelEditReset'), () => resetAll());
     reset.title = t('modelEditResetHint');
@@ -315,6 +323,7 @@ export function showEditModal(model) {
         const request = { ...place, physical_rename: rename.checked };
         if (name !== (meta.custom_name || '') || rename.checked) request.custom_name = name;
         if (notes !== (meta.custom_notes || '').trim()) request.custom_notes = notes;
+        if (aiNoteInput.value.trim() !== (meta.ai_note || '')) request.ai_note = aiNoteInput.value.trim();
         if (link !== (meta.source_url || '')) request.custom_source_url = link;
         if (coverChange?.civitai) request.reset_cover = true;
         setBusy(true);
@@ -336,7 +345,7 @@ export function showEditModal(model) {
         if (busy || !confirm(t('modelEditResetConfirm'))) return;
         setBusy(true);
         try {
-            const data = await postJson('/anomalous/update_metadata', { ...place, custom_name: '', custom_notes: '', reset_cover: true, physical_rename: false });
+            const data = await postJson('/anomalous/update_metadata', { ...place, custom_name: '', custom_notes: '', ai_note: '', reset_cover: true, physical_rename: false });
             close();
             if (data.cover_reset === false) alert(t(data.cover_reset_source === 'preserved_current' ? 'modelEditResetCoverKept' : 'modelEditResetCoverFailed'));
             await refresh(owner, model, place, model.filename);

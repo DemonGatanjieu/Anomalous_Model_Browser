@@ -221,6 +221,8 @@ async def api_update_metadata(request):
             user_data["custom_notes"] = str(custom_notes)
         if custom_source_url is not None:
             user_data["source_url"] = str(custom_source_url).strip()
+        if 'ai_note' in data:
+            user_data["ai_note"] = str(data['ai_note']).strip()[:300]
         
         reset_cover = data.get('reset_cover', False)
         cover_reset = None
@@ -250,7 +252,7 @@ async def api_update_metadata(request):
             elif os.path.exists(new_file_path) and new_file_path != file_path:
                 return web.json_response({"status": "error", "message": "A file with the target physical name already exists."})
             
-        sent = [key for key in ("custom_name", "custom_notes") if key in data]
+        sent = [key for key in ("custom_name", "custom_notes", "ai_note") if key in data]
         sent += ["source_url"] if custom_source_url is not None else []
         fields = [{"field": key, "before": before.get(key) or "", "after": user_data[key]}
                   for key in sent if user_data[key] != (before.get(key) or "")]

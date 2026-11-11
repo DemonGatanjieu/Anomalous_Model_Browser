@@ -14,7 +14,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import ai_decisions, ai_gates, ai_privacy, ai_tasks, mcp_apps, mcp_server, mcp_task_tools  # noqa: E402
+from api import ai_decisions, ai_gates, ai_privacy, ai_sealed_models, ai_tasks, mcp_apps, mcp_server, mcp_task_tools  # noqa: E402
 from test_mcp import rpc  # noqa: E402  (its module keeps tasks and gates in temporary folders)
 
 SETTING = os.path.join(tempfile.mkdtemp(prefix="amb_privacy_"), "ai_privacy.json")
@@ -34,6 +34,7 @@ class PrivacyTests(unittest.TestCase):
         if os.path.exists(SETTING):
             os.remove(SETTING)
         for patcher in (mock.patch.object(ai_privacy, "_path", lambda: SETTING),
+                        mock.patch.object(ai_sealed_models, "_library", return_value=[]),  # no model library here
                         mock.patch.object(mcp_server, "_node_list", return_value={})):  # no ComfyUI here
             patcher.start()
             self.addCleanup(patcher.stop)

@@ -58,6 +58,14 @@
 - When a run is refused because a Tile does not fit and you named that model yourself, the AI is told to ask you before changing it. A decision whose rejected option the AI wrote as one sentence is no longer split into letters.
 - AI 往展台上画面板时少了两种积木：它自己报数的进度条和分隔线。出图、任务单、蓝图的进度现在都由 AMB 自己显示，是真实的数，AI 另报一条反而可能是旧数；分隔线只是装饰。以前的任务里 AI 画过的进度条不再显示，其余内容照旧。模型卡、表格、列表、流程图都留着。
 - Two blocks are gone from the panels an AI draws on the stage: the progress bar with its own numbers, and the divider. A run's, a job sheet's and a blueprint's progress are shown by Anomalous itself, with real numbers, where the AI's own bar could be stale; the divider was decoration. A bar an AI drew in an earlier task is no longer shown; the rest of that panel stays. Model cards, tables, lists and diagrams remain.
+- **隐私模式的提示词框多了一格“画面大意”**。以前整段提示词都变成 [P1]，AI 什么都看不到，没法帮你想光影、镜头和画风。现在最上面这一格是原样给 AI 看的：用不介意让它看到的话说说想要什么，它照着补全，再把你的私密提示词以代号嵌进去。两格可以只填一格。
+- **The prompt box of privacy mode has a new field, the gist.** With the whole prompt a token, the AI could not help with light, lens or style. The first field now goes to the AI as written: say what you want in words you do not mind it reading, and it writes the rest around the tokens of your private prompts. Either field alone can be handed in.
+- **隐私模式把模型名也藏起来了**。模型和 LoRA 的文件名、卡片名、所在文件夹、C 站链接和指纹都不再发给 AI，它拿到的是 [M1] 这样的代号，一个模型不管出现在哪都是同一个；AI 把代号填到要用模型的地方，AMB 换回真模型。它凭类型、底模、作者推荐参数和触发词（代号）来挑。任务标题栏 ⋯ 里的“模型代号对照”能查每个代号是哪个模型。不想藏，在关卡窗口把“隐私任务里的模型名”改成“照常给 AI”。
+- **Privacy mode keeps model names too.** The file names, card names, folders, Civitai links and hashes of models and LoRAs no longer go to the AI; it gets tokens like [M1], one per model wherever it shows, writes the token where the model goes, and Anomalous puts the model back. It picks by type, base model, the author's settings and the trigger words (as tokens). "Model tokens" in the task's ⋯ says which model each is. To send names as before, set "Model names in a private task" to "Sent to the AI" in the Gates window.
+- 模型的编辑窗口多了一栏 **给 AI 的用途说明**：一句不介意让 AI 看到的话，说这个模型是干什么用的（比如“双人互动姿势”）。AI 搜模型时能看到、也能按它搜；隐私模式藏起模型名时，它就靠这句话来分辨。不填就不给。
+- The model editor has a new field, **Note for the AI**: a line you do not mind an AI reading on what the model is for. The AI sees it when it searches models and can search by it; with names hidden in privacy mode, it tells the models apart by it. Left empty, nothing is sent.
+- 隐私模式补了一个漏洞：搭配的名字现在也换成代号。没改过名的搭配，名字是自动拿“模型名 + 提示词开头”拼的，以前会原样给到 AI。AI 用代号照样能把搭配放上画布。
+- A hole in privacy mode is closed: a combo's name is a token now. A combo you never renamed is called by its model's name and the start of its prompt, which went to the AI as written. The AI places a combo by its token as before.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 

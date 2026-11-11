@@ -264,14 +264,23 @@ the run's pictures, the user's messages and the outside check were added: for a 
 (ai_privacy.py) image content items are removed and the answer says why, then `ai_sealed.mask`
 turns prompt text and picture names into tokens (a node's STRING inputs by ComfyUI's node list,
 prompt fields, picture file names, and any text already sealed, also in the text content).
+While `ai_privacy.hides_models()` (user/anomalous/ai_privacy.json `models`, true unless the user set false),
+`ai_sealed_models.hide` runs between the two: every form of a library model (the materials catalog's
+list, read at most every 15 s) becomes that model's "[M#]" token, sealed as its model_id; a
+model's own entry (a dict with `model_id`) drops name, file, folder, links and hash; a model file
+the library does not have is a token of its own. A card name of one plain ASCII word is replaced
+only where a name stands (`NAME_KEYS`), never inside a sentence. `expand` writes a model token as
+the model_id, as the loader's name under a node's values (`WIDGET_KEYS`), and as the card's name
+inside other words.
 A "prompts" panel block is the user's prompt box: answered only through the answer route with
-`seal_answer`, never as plain text (the card in the AI app leaves it out); show_panel stores the
+`seal_answer`, never as plain text (the card in the AI app leaves it out); its `gist` is the one
+field that reaches the AI as written, and may be the whole answer; show_panel stores the
 prompt_pose skill's words for the canvas's model on its step (`prompt_advice`). Privacy is per task (`task["privacy"]`, else the
 Gates default; turning the default off pins the tasks it covered); a call with no task is
 private while the default is on or a private task is unfinished. The card's `app_task_view`
 gives a private task no pictures. `tests/test_ai_privacy.py` calls every tool with a picture
 in its result and checks none leaves; `tests/test_ai_sealed.py` does the same with canary
-prompts and picture names.
+prompts, picture names and model names.
 
 Skills (`api/ai_skills.py`, one data file each in `api/skills/`) are advice an agent fetches
 for a kind of job, beside the blocks that build nodes. A skill holds judgment only: which blocks

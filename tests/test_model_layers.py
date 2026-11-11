@@ -99,10 +99,12 @@ class LayerTests(unittest.TestCase):
         before = Path(self.base + ".civitai.info").read_text(encoding="utf-8")
         with mock.patch.object(model_metadata, "resolve_folder_subdir", return_value=(str(self.dir), str(self.dir))):
             asyncio.run(model_metadata.api_update_metadata(Request({
-                "type": "loras", "filename": "m.safetensors", "custom_name": "Mine", "custom_notes": "note"})))
+                "type": "loras", "filename": "m.safetensors", "custom_name": "Mine", "custom_notes": "note", "ai_note": " two-person poses "})))
         self.assertEqual(Path(self.base + ".civitai.info").read_text(encoding="utf-8"), before)
         user = json.loads(Path(self.base + ".anomalous.json").read_text(encoding="utf-8"))
-        self.assertEqual((user["custom_name"], user["custom_notes"]), ("Mine", "note"))
+        self.assertEqual((user["custom_name"], user["custom_notes"], user["ai_note"]), ("Mine", "note", "two-person poses"))
+        metadata_module.clear_metadata_cache()
+        self.assertEqual(get_metadata(str(self.model))["ai_note"], "two-person poses", "the note for an AI is the user's too")
 
     def edit(self, **fields):
         with mock.patch.object(model_metadata, "resolve_folder_subdir", return_value=(str(self.dir), str(self.dir))):

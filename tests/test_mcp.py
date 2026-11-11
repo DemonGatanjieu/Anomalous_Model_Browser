@@ -141,7 +141,7 @@ class ToolTests(unittest.TestCase):
         (self.root / "plain.ckpt").write_bytes(b"x")
         files = [("loras", 0, str(self.root), str(lora)), ("loras", 0, str(self.root), str(self.root / "plain.ckpt"))]
         metas = {str(lora): {"name": "Neon City", "baseModel": "SDXL 1.0", "trainedWords": ["neon"], "info_source": "civitai",
-                             "description": "<p>Bright <b>lights</b></p>", "custom_notes": "mine"},
+                             "description": "<p>Bright <b>lights</b></p>", "custom_notes": "mine", "ai_note": "streets after dark"},
                  str(self.root / "plain.ckpt"): {"info_source": ""}}
         # ComfyUI's LoRA loader lists the whole loras folder (with its own separators).
         listed = ["plain.ckpt", "sub\\neon_city.safetensors"]
@@ -161,6 +161,10 @@ class ToolTests(unittest.TestCase):
                 self.assertEqual(mcp_tools.call_tool(tools, "search_models", {"type": kind}, CTX)["structuredContent"]["total_matches"], count, kind)
             detail = mcp_tools.call_tool(tools, "get_model", {"model_id": model["model_id"]}, CTX)["structuredContent"]
             self.assertEqual((detail["description"], detail["user_notes"], detail["loaded_by"]), ("Bright lights", "mine", ["LoraLoader"]))
+            noted = mcp_tools.call_tool(tools, "search_models", {"query": "after dark"}, CTX)["structuredContent"]["models"]
+            self.assertEqual([(found["model_id"], found["note_for_ai"]) for found in noted], [(model["model_id"], "streets after dark")],
+                             "the user's note for the AI is found by and given")
+            self.assertNotIn("note_for_ai", mcp_tools.call_tool(tools, "search_models", {"type": "lora", "source": "not_scanned"}, CTX)["structuredContent"]["models"][0])
             for bad in ("loras:0:../../secret.safetensors", "loras:0:sub/missing.safetensors", "nonsense"):
                 result = mcp_tools.call_tool(tools, "get_model", {"model_id": bad}, CTX)
                 self.assertTrue(result["isError"], bad)

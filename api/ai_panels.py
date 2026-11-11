@@ -315,7 +315,7 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
         elif block["type"] == "choices" and block.get("other") and not choice and isinstance(text, str) and text.strip():
             entry.update(choice=["other"], labels=["other"], text=_text(text, 2000, "text", True))
         elif block["type"] == "prompts":
-            if not (extra or {}).get("prompts"):
+            if not ((extra or {}).get("prompts") or (extra or {}).get("gist")):
                 raise PanelError("Prompts are written in Anomalous's prompt box")
         elif block["type"] == "plan":  # build (ai_plans.prepare made the steps kept) or what to change
             if (extra or {}).get("plan"):
@@ -442,7 +442,7 @@ def _collect(client, panel_id, task_id=None):
                 given.update(delivered=True, delivered_at=time.time())
                 changed.add(task["id"])
                 item = {"panel": panel["id"], "question": block["id"], "asked": block.get("question", "")}
-                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout", "prompts", "negative", "pictures", "plan") if key in given})
+                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout", "prompts", "negative", "pictures", "gist", "plan") if key in given})
                 out.append(item)
     for tid in changed:
         ai_tasks._save(tasks[tid])

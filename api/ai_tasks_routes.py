@@ -89,8 +89,8 @@ async def api_change(request):
 
 
 async def api_answer(request):
-    """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text | prompts, negative, pictures | skip: true} -
-    the user's answer on a panel; a prompt box's texts are sealed and the AI gets tokens (ai_sealed.py)."""
+    """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text | prompts, negative, pictures, gist | skip: true} -
+    the user's answer on a panel; a prompt box's texts are sealed and the AI gets tokens, its gist as written (ai_sealed.py)."""
     from . import ai_bases, ai_panels, ai_plans, ai_repaint, ai_sealed
 
     try:
@@ -102,7 +102,7 @@ async def api_answer(request):
     task_id, step_id, skip = request.match_info["task_id"], str(body.get("step")), body.get("skip") is True
     try:
         if "prompts" in body and not skip:
-            extra = await asyncio.to_thread(ai_sealed.seal_answer, task_id, body["prompts"], body.get("negative"), body.get("pictures"))
+            extra = await asyncio.to_thread(ai_sealed.seal_answer, task_id, body["prompts"], body.get("negative"), body.get("pictures"), body.get("gist"))
         else:
             # A repaint area picked: its picture is made first (outside the lock), so the AI gets it with the answer;
             # a base picked: it is kept in the output folder first (ai_bases.py).
@@ -172,7 +172,8 @@ async def api_gate(request):
 async def api_gates(request):
     """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools}; POST {gate, policy} changes one,
     POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py),
-    POST {privacy: bool} whether new tasks are private (ai_privacy.py),
+    POST {privacy: bool} whether new tasks are private, POST {privacy_models: bool} whether a private task
+    keeps its models' names too (ai_privacy.py),
     POST {runs: call | wait}
     how the AI waits for a run (ai_gates.run_wait), POST {answer_wait: 60 | 180 | 600} for the user's answer,
     POST {no_answer: stop | recommended} what happens when that time runs out,
@@ -180,6 +181,7 @@ async def api_gates(request):
     POST {routes: allow | ask} an AI placing nodes by itself (ai_gates.route_rule)."""
     def settings():
         return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "privacy": ai_privacy.default_on(),
+                "privacy_models": ai_privacy.hides_models(),
                 "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait(), "no_answer": ai_gates.no_answer(),
                 "nodes": ai_gates.node_rule(), "routes": ai_gates.route_rule()}
 
@@ -191,6 +193,8 @@ async def api_gates(request):
             ai_task_canvas.set_default(body["canvas_tab"])
         elif "privacy" in (body or {}):
             ai_privacy.set_default(body["privacy"])
+        elif "privacy_models" in (body or {}):
+            ai_privacy.set_hides_models(body["privacy_models"])
         elif "runs" in (body or {}):
             ai_gates.set_run_wait(body["runs"])
         elif "answer_wait" in (body or {}):

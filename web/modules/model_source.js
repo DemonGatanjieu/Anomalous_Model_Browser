@@ -15,7 +15,7 @@ import { isPending, reasonText } from './scan_results.js';
 import { detectPlatform } from './model_source_links.js';
 import { usableSourceUrl } from './model_source_data.js';
 
-const FIELD_KEYS = { custom_name: 'modelSourceFieldName', custom_notes: 'modelSourceFieldNotes', source_url: 'modelSourceFieldLink' };
+const FIELD_KEYS = { custom_name: 'modelSourceFieldName', custom_notes: 'modelSourceFieldNotes', source_url: 'modelSourceFieldLink', ai_note: 'modelSourceFieldAiNote' };
 
 function colourClass(baseModel) {
     const lower = baseModel.toLowerCase();

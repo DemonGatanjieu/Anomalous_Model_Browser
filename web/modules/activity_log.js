@@ -92,7 +92,7 @@ function formatSize(bytes) {
 
 const FIELD_KEYS = {
     custom_name: 'modelSourceFieldName', custom_notes: 'modelSourceFieldNotes',
-    source_url: 'modelSourceFieldLink', filename: 'activityFieldFilename',
+    source_url: 'modelSourceFieldLink', filename: 'activityFieldFilename', ai_note: 'modelSourceFieldAiNote',
 };
 
 /**

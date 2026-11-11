@@ -2,6 +2,7 @@
  * Privacy mode of a task (api/ai_privacy.py): it keeps the task's pictures from the AI. It is turned on
  * from the ⋯ in the task's head (ui_ai_task_menu.js); while on, a chip there says so ("🔒 Private") and
  * turns it off (POST /anomalous/ai_tasks/{id} {privacy}). What the AI saw before stays seen, as the hint says.
+ * While model names are kept too, the AI speaks of "[M1]": modelTokens() says which model each is, for the ⋯.
  */
 
 import { translate as t } from './locales.js';
@@ -27,6 +28,12 @@ export async function setPrivacy(task, on, changed) {
         return;
     }
     changed();
+}
+
+/** The model tokens of `task` and the model each stands for (its `sealed`), a line each; '' when it has none. */
+export function modelTokens(task) {
+    return Object.entries(task.sealed || {}).filter(([token]) => token.startsWith('[M'))
+        .map(([token, text]) => `${token}  ${String(text).replace(/^([\w-]+):\d+:/, '$1 / ')}`).join('\n');
 }
 
 /** What says that `task` is private, and turns it off. */

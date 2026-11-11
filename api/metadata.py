@@ -19,7 +19,7 @@ except ImportError:
 from .model_heads import inspect as inspect_file  # the header, read once per file version
 
 # Fields the model editor sets: <model>.anomalous.json key -> metadata key.
-USER_FIELDS = {"custom_name": "custom_name", "custom_notes": "custom_notes", "source_url": "source_url"}
+USER_FIELDS = {"custom_name": "custom_name", "custom_notes": "custom_notes", "source_url": "source_url", "ai_note": "ai_note"}
 
 def _select_info_file(data, file_path):
     """Select the Civitai file entry that actually describes ``file_path``.
@@ -115,6 +115,7 @@ def _read_metadata(file_path):
         "hash_source": "",
         "custom_name": "",
         "custom_notes": "",
+        "ai_note": "",  # the user's words for an AI on what it is for; a private task hiding model names gives it too
         "version_name": "",  # the Civitai version ("v2.0", "Illustrious"…), told apart on the card
         "base_guess": "",  # no base model known yet (not scanned): what the file's header tells
         # "civitai" (matched), "local" (only what the file tells: no match, or offline) or "" (not scanned)
