@@ -3,6 +3,8 @@
  * from the ⋯ in the task's head (ui_ai_task_menu.js); while on, a chip there says so ("🔒 Private") and
  * turns it off (POST /anomalous/ai_tasks/{id} {privacy}). What the AI saw before stays seen, as the hint says.
  * While model names are kept too, the AI speaks of "[M1]": modelTokens() says which model each is, for the ⋯.
+ * privacyReach() is the line under the head when the task's AI app reads the disk by itself: what privacy
+ * mode cannot keep from it.
  */
 
 import { translate as t } from './locales.js';
@@ -34,6 +36,11 @@ export async function setPrivacy(task, on, changed) {
 export function modelTokens(task) {
     return Object.entries(task.sealed || {}).filter(([token]) => token.startsWith('[M'))
         .map(([token, text]) => `${token}  ${String(text).replace(/^([\w-]+):\d+:/, '$1 / ')}`).join('\n');
+}
+
+/** For a private task whose AI app opens files by itself (`reads_disk`, api/ai_callers.py): the line saying so; else nothing. */
+export function privacyReach(task) {
+    return task.private === true && task.reads_disk ? [el('div', 'anomalous-ai-task-stale', t('aiPrivacyReach', { app: task.client || 'AI' }))] : [];
 }
 
 /** What says that `task` is private, and turns it off. */

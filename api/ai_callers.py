@@ -11,6 +11,18 @@ _CLIENT_NAMES = (
 )
 
 
+# AI apps that read files and run commands by themselves, by a word of what they call themselves.
+_READS_DISK = ("claude code", "claude-code", "cursor", "windsurf", "codex", "gemini", "antigravity", "vs code", "vscode",
+               "cline", "roo", "kilo", "copilot", "trae", "zed", "opencode", "goose", "aider")
+
+
+def reads_disk(client):
+    """Whether AI app `client` (a task's) is known to open files and run commands by itself: privacy mode filters
+    what Anomalous sends it, not what it opens on its own (the output folder, the task records)."""
+    lowered = str(client or "").lower()
+    return any(word in lowered for word in _READS_DISK)
+
+
 def client_of(headers, params):
     """A short name for the AI app making a call: the client info it sends, else its User-Agent."""
     meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else {}

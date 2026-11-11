@@ -14,7 +14,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import ai_panels, ai_privacy, ai_sealed, ai_sealed_models, ai_task_changes, ai_tasks, mcp_apps, mcp_server, mcp_task_tools  # noqa: E402
+from api import ai_callers, ai_panels, ai_privacy, ai_sealed, ai_sealed_models, ai_sent, ai_task_changes, ai_tasks, mcp_apps, mcp_server, mcp_task_tools  # noqa: E402
 from test_mcp import rpc  # noqa: E402  (its module keeps tasks and gates in temporary folders)
 
 SETTING = os.path.join(tempfile.mkdtemp(prefix="amb_sealed_"), "ai_privacy.json")
@@ -177,6 +177,33 @@ class SealedTests(unittest.TestCase):
         self.assertNotIn("canary", json.dumps(result), "its echo goes back as tokens")
         record = ai_tasks.get_task(self.task)
         self.assertNotIn("canarypos", json.dumps([(s.get("summary"), s.get("text")) for s in record["steps"]]), "the record keeps tokens")
+
+    def test_what_a_private_tasks_ai_was_sent_is_kept_for_the_user_to_read(self):
+        def answer(tools, name, arguments, ctx=None):
+            return canary_result(arguments)
+        ai_sealed.seal_answer(self.task, ["canarypos, 1girl"])
+        with mock.patch.object(mcp_server, "call_tool", side_effect=answer), mock.patch.object(mcp_server.ai_gates, "check", return_value=None):
+            rpc("tools/call", {"name": "set_prompt", "arguments": {"task": self.task, "prompt": "[P1], masterpiece"}}, "set_prompt")
+            kept = ai_sent.calls(self.task)
+            self.assertEqual([(call["tool"], call["error"], call["pictures"]) for call in kept], [("set_prompt", False, 0)])
+            self.assertIn("[P1], masterpiece", kept[0]["arguments"], "what the AI wrote, tokens and all")
+            self.assertFalse([word for word in CANARIES + MODEL_CANARIES if word in json.dumps(kept, ensure_ascii=False)], "as it left, not as the tool made it")
+            self.assertIn("[P1]", kept[0]["text"])
+            ai_privacy.set_private(self.task, False)
+            rpc("tools/call", {"name": "describe_canvas", "arguments": {"task": self.task}}, "describe_canvas")
+            self.assertEqual(len(ai_sent.calls(self.task)), 1, "only while the task is private")
+        with mock.patch.object(ai_sent, "MAX_CALLS", 3), mock.patch.object(ai_sent, "SPARE", 2), mock.patch.object(ai_sent, "MAX_TEXT", 10):
+            for at in range(8):
+                ai_sent.keep(self.task, f"tool{at}", {}, {"content": [{"type": "text", "text": "x" * 25}, {"type": "image"}]})
+            newest = ai_sent.calls(self.task)
+            self.assertEqual([call["tool"] for call in newest], ["tool5", "tool6", "tool7"], "the newest are kept")
+            self.assertEqual((newest[0]["text"], newest[0]["pictures"]), ("x" * 10 + "… (+15)", 1))
+        ai_tasks.remove_task(self.task)
+        self.assertEqual(ai_sent.calls(self.task), [], "gone with the task")
+
+    def test_an_app_that_reads_the_disk_is_told_apart(self):
+        self.assertEqual([ai_callers.reads_disk(name) for name in ("Claude Code", "antigravity-client", "Cursor", "Gemini", "Cherry Studio", "Claude", "", None)],
+                         [True, True, True, True, False, False, False, False])
 
     def test_the_gist_reaches_the_ai_as_written_and_may_stand_alone(self):
         shown = rpc("tools/call", {"name": "show_panel", "arguments": {"task": self.task, "title": "Prompts", "blocks": [

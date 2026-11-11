@@ -77,18 +77,19 @@ def _path(task_id):
     return os.path.join(tasks_dir(), f"{task_id}.json")
 
 
-def marks_dir(task_id):
-    """Where the pictures the user marked for a task are kept (ai_marks.py); gone with the task."""
-    return os.path.join(os.path.dirname(tasks_dir()), "ai_marks", re.sub(r"[^\w-]", "", task_id))
+def marks_dir(task_id, kind="ai_marks"):
+    """Where a task's side files are kept, gone with the task: the pictures the user marked (ai_marks.py); `kind` "ai_sent": what its AI was sent (ai_sent.py)."""
+    return os.path.join(os.path.dirname(tasks_dir()), kind, re.sub(r"[^\w-]", "", task_id))
 
 
 def _forget(task_id):
-    """The task's own files: its record and its marked pictures (the plugin's, not the user's pictures)."""
+    """The task's own files: its record, its marked pictures and what its AI was sent (the plugin's, not the user's pictures)."""
     try:
         os.remove(_path(task_id))
     except OSError:
         pass
-    shutil.rmtree(marks_dir(task_id), ignore_errors=True)
+    for kind in ("ai_marks", "ai_sent"):
+        shutil.rmtree(marks_dir(task_id, kind), ignore_errors=True)
 
 
 def _load():

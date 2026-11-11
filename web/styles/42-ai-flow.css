@@ -135,6 +135,20 @@
 .anomalous-ai-gates { display: flex; flex-direction: column; gap: 12px; max-width: 560px; }
 .anomalous-ai-gates-intro,
 .anomalous-ai-gates-note { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
+
+/* What a private task's AI was sent (ui_ai_sent.js): a word to look for, then the calls, each opening to its two texts. */
+.anomalous-ai-sent { display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 0 2px; }
+.anomalous-ai-sent-find { width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--amb-border-strong); border-radius: 7px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 13px; }
+.anomalous-ai-sent-count, .anomalous-ai-sent-none { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; }
+.anomalous-ai-sent-count.is-clear { color: var(--amb-ok); font-weight: 600; }
+.anomalous-ai-sent-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; max-height: 52vh; }
+.anomalous-ai-sent-call { border: 1px solid var(--amb-border); border-radius: 7px; padding: 0 10px; }
+.anomalous-ai-sent-call.is-error { border-color: color-mix(in srgb, var(--amb-warn) 45%, transparent); }
+.anomalous-ai-sent-head { display: flex; align-items: baseline; gap: 10px; padding: 6px 0; cursor: pointer; font-size: 12.5px; color: var(--amb-text-main); }
+.anomalous-ai-sent-time, .anomalous-ai-sent-size { color: var(--amb-text-muted); font-size: 12px; }
+.anomalous-ai-sent-size { margin-left: auto; }
+.anomalous-ai-sent-label { margin-top: 4px; color: var(--amb-text-soft); font-size: 12px; font-weight: 600; }
+.anomalous-ai-sent-text { margin: 4px 0 8px; padding: 8px; max-height: 260px; overflow: auto; border-radius: 6px; background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .anomalous-ai-gates-row {
     display: flex;
     flex-wrap: wrap;

@@ -66,6 +66,10 @@
 - The model editor has a new field, **Note for the AI**: a line you do not mind an AI reading on what the model is for. The AI sees it when it searches models and can search by it; with names hidden in privacy mode, it tells the models apart by it. Left empty, nothing is sent.
 - 隐私模式补了一个漏洞：搭配的名字现在也换成代号。没改过名的搭配，名字是自动拿“模型名 + 提示词开头”拼的，以前会原样给到 AI。AI 用代号照样能把搭配放上画布。
 - A hole in privacy mode is closed: a combo's name is a token now. A combo you never renamed is called by its model's name and the start of its prompt, which went to the AI as written. The AI places a combo by its token as before.
+- **隐私任务能查“发给 AI 了什么”**。任务标题栏 ⋯ 里新增这一项：隐私模式开着时，AI 每一次调用发来的参数和 AMB 回给它的文字都原样记着，可以搜一个词（某个模型名、提示词里的词）看它有没有出去过。只留最近 300 次调用，任务移除时一起删掉。
+- **A private task shows what the AI was sent.** New in the task's ⋯: while privacy mode is on, every call is kept as it went, what the AI wrote and the text Anomalous answered, and you can look for a word (a model name, a word of a prompt) to see whether it ever went out. The newest 300 calls are kept and removed with the task.
+- **说清了隐私模式管不到的地方**：它过滤的是 AMB 发给 AI 的内容。Antigravity、Cursor、Claude Code 这类能自己读硬盘、跑命令的 AI 软件，可以直接打开出图文件夹和 AMB 的任务记录，这个拦不住；用它们开隐私任务时，标题栏下面会有一行提醒，隐私开关的说明里也写明了。只会调用工具的聊天软件不受影响。
+- **Privacy mode now says what it cannot cover**: it filters what Anomalous sends to the AI. An AI app that reads the disk and runs commands by itself (Antigravity, Cursor, Claude Code and the like) can open the output folder and Anomalous's task records, and this cannot stop it; a private task run by such an app says so under its header, and so do the switch's hints. A chat app that only calls tools is not affected.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 

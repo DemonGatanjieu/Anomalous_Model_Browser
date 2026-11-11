@@ -55,7 +55,7 @@ import { taskLinks } from './ui_ai_task_links.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewTabs } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
-import { privacyChip } from './ui_ai_privacy.js';
+import { privacyChip, privacyReach } from './ui_ai_privacy.js';
 import { menuActions, openTaskMenu, taskMenu } from './ui_ai_task_menu.js';
 import { syncRows } from './sync_rows.js';
 import { keptTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
@@ -263,7 +263,7 @@ function renderTask() {
     const sub = el('div', 'anomalous-ai-task-sub');
     sub.append(said, taskLinks(task, { open: (id) => { state.pinned = true; void select(id); }, changed: refresh }));
     header.replaceChildren(state.tabs(), titleLine, sub,
-        ...(task.stale_tools ? [el('div', 'anomalous-ai-task-stale', t('aiStaleTools'))] : [])); // mcp_directory.stale
+        ...(task.stale_tools ? [el('div', 'anomalous-ai-task-stale', t('aiStaleTools'))] : []), ...privacyReach(task)); // mcp_directory.stale
 
     const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
     view.flow.replaceChildren(...(flow ? [flow] : []));

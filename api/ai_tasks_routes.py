@@ -8,7 +8,7 @@ import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
+from . import activity_log, ai_callers, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_sent, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -47,10 +47,18 @@ async def api_get(request):
     if task:
         task["canvas_mode"] = ai_task_canvas.mode_of(task)  # the task's own choice, else the user's default
         task["private"] = ai_privacy.is_private(task)  # the same for privacy mode
+        task["reads_disk"] = ai_callers.reads_disk(task.get("client"))  # an app privacy mode cannot keep from the files
         task["decisions"], task["decisions_gap"] = ai_decisions.decisions(task), ai_decisions.gap(task)
         task["links"] = ai_task_links.links(task["id"])  # the task it goes on from, those going on from it
         ai_pictures.mark_gone(task)  # pictures deleted since: the page says so
     return web.json_response({"task": task}) if task else web.json_response({"error": "not_found"}, status=404)
+
+
+async def api_sent(request):
+    """GET /anomalous/ai_tasks/{id}/sent: {calls: [{at, tool, arguments, text, pictures, error}]}, what the AI of
+    a private task wrote and was answered, as it went (ai_sent.py)."""
+    calls = await asyncio.to_thread(ai_sent.calls, request.match_info["task_id"])
+    return web.json_response({"calls": calls})
 
 
 async def api_change(request):
@@ -364,6 +372,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_plans/auto", api_plan_auto)
     app.router.add_get("/anomalous/ai_tasks/{task_id}", api_get)
     app.router.add_post("/anomalous/ai_tasks/{task_id}", api_change)
+    app.router.add_get("/anomalous/ai_tasks/{task_id}/sent", api_sent)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/message", api_message)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/typing", api_typing)

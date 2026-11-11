@@ -24,7 +24,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, job_sheets, mcp_apps, mcp_bridge, mcp_directory, mcp_fit, mcp_prompts
+from . import ai_callers, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_sent, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, job_sheets, mcp_apps, mcp_bridge, mcp_directory, mcp_fit, mcp_prompts
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS, object_info
@@ -242,7 +242,10 @@ async def _call(params, request):
     if final_task != privacy_task and await asyncio.to_thread(ai_privacy.applies, final_task):
         private, privacy_task = True, final_task
     info = await asyncio.to_thread(_node_list, ctx) if private else None
-    return await asyncio.to_thread(ai_privacy.guard, ai_outside.tell(result, outside), private, privacy_task, info, name)
+    result = await asyncio.to_thread(ai_privacy.guard, ai_outside.tell(result, outside), private, privacy_task, info, name)
+    if private and privacy_task and name not in mcp_apps.APP_TOOLS:  # for the user to read what went out (ai_sent.py)
+        await asyncio.to_thread(ai_sent.keep, privacy_task, name, arguments, result)
+    return result
 
 
 def _node_list(ctx):

@@ -111,7 +111,12 @@ covered by the `styles.css` manifest.
   card name), its own entry loses what tells it apart and keeps type, base model, the author's settings and the
   user's note for the AI (`ai_note`, set in the model editor, `note_for_ai` in the tools); `expand` writes a
   model token back as the model_id, as the loader's name among a node's values, as the card's name inside the AI's words.
-  `web/modules/ui_ai_privacy.js` is the header's chip, the switch in its ⋯ and what the model tokens stand for
+  `web/modules/ui_ai_privacy.js` is the header's chip, the switch in its ⋯ and what the model tokens stand for.
+  `api/ai_sent.py` keeps what a private task's AI wrote and was answered, as it went (a line per call beside the
+  task, the newest 300, gone with it), and `web/modules/ui_ai_sent.js` is the window that lists it and looks for a
+  word in it (the task's ⋯ "What the AI was sent"). Privacy mode covers what Anomalous sends, not what an AI app
+  opens by itself: `ai_callers.reads_disk` knows the apps that read files and run commands, and the head of their
+  private tasks says so (`ui_ai_privacy.privacyReach`)
   (`tests/test_ai_privacy.py`, `tests/test_ai_sealed.py`).
   `ai_pictures.mark_gone` marks a task's pictures no longer in the output folder (`gone`) on its
   `GET`, which `ui_ai_images.gonePicture` shows instead of a broken picture.

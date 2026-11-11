@@ -281,6 +281,14 @@ private while the default is on or a private task is unfinished. The card's `app
 gives a private task no pictures. `tests/test_ai_privacy.py` calls every tool with a picture
 in its result and checks none leaves; `tests/test_ai_sealed.py` does the same with canary
 prompts, picture names and model names.
+What left is kept for the user: after `guard`, a private task's call goes to `ai_sent.keep` with the
+arguments as the AI wrote them (tokens) and the answer's text as it left
+(`user/anomalous/ai_sent/<task>/calls.jsonl`, the newest 300 calls, a text cut at 20,000 characters,
+removed with the task; the card's own calls are not kept, they do not reach the AI).
+`GET /anomalous/ai_tasks/{id}/sent` reads it. The boundary of all this is the MCP channel: an AI
+app that reads the disk can open the output folder and the task records (their `sealed` holds the
+texts) by itself; `ai_callers.reads_disk(client)` names the known ones and `api_get` passes it to the
+page as `reads_disk`.
 
 Skills (`api/ai_skills.py`, one data file each in `api/skills/`) are advice an agent fetches
 for a kind of job, beside the blocks that build nodes. A skill holds judgment only: which blocks
