@@ -105,6 +105,11 @@ export function messageBox(onSend, source) {
         box.addEventListener('anomalous-refs', counted);
         field.addEventListener('input', counted);
         line.prepend(pics, materials);
+        const hide = hideButton(field, (text) => { note.textContent = text; }); // a private task: words the AI gets as a token
+        const shown = () => { hide.hidden = !source.task?.()?.private; };
+        field.addEventListener('focus', shown);
+        shown();
+        line.insertBefore(hide, send);
         takePictures(box, field, { add: item => at.add(item), room, say: (text) => {
             note.textContent = text;
             note.classList.add('is-error');

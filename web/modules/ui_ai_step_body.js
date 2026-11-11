@@ -20,6 +20,7 @@ import { canvasChanges } from './ui_canvas_changes.js';
 import { deliveryState } from './ui_ai_delivery.js';
 import { decisionCard } from './ui_ai_decisions.js';
 import { imageResults } from './ui_ai_images.js';
+import { withHidden } from './ai_hide_mark.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -103,7 +104,7 @@ function userChange(step, entries) {
     return box;
 }
 
-/** The nodes under step `step`'s title. `ctx`: {taskId, owner, entries (activity entries by id), numberOf(stepId)}. */
+/** The nodes under step `step`'s title. `ctx`: {taskId, owner, entries (activity entries by id), numberOf(stepId), sealed (the task's texts behind its tokens)}. */
 export function stepBody(step, ctx) {
     switch (step.tool) {
     case 'user_marks': return [marksStep(step, ctx.taskId, ctx.owner)];
@@ -124,7 +125,7 @@ export function stepBody(step, ctx) {
     }
     default:
         if (step.kind === 'decision') return [decisionCard(step.decision || {}, ctx.numberOf)];
-        if (step.kind === 'user') return [...(step.text ? [said(step.text)] : []), ...namedPictures(step, ctx.owner), deliveryState(step)];
+        if (step.kind === 'user') return [...(step.text ? [said(withHidden(step.text, ctx.sealed))] : []), ...namedPictures(step, ctx.owner), deliveryState(step)];
         return step.text ? [note(step.text)] : [];
     }
 }

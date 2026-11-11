@@ -46,6 +46,7 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | 「撤销画布上的改动」 | 按操作记录把 AI 在画布上的改动一步步撤销（`canvas_undo.js`） | 无 |
 | ⋯ 里的「改名」 / 「从列表移除」 | 移除只删这条记录，图、画布、工作流都不动 | `POST /anomalous/ai_tasks/{task_id}` |
 | ⋯ 里的「打开隐私模式」 | 这个任务的图不再发给 AI；开着时标题栏多一个「隐私模式」，点它关掉（`ui_ai_privacy.js`） | `POST /anomalous/ai_tasks/{task_id}`（privacy） |
+| 提示词框“画面大意”旁和隐私任务留言框里的「藏」 | 先选中几个字再点：这几个字 AI 只拿到代号，其余照常看（`ai_hide_mark.js`） | 随回答或留言一起交出，`ai_sealed.seal_marked` |
 | ⋯ 里的「发给 AI 了什么」 | 隐私任务才有：列出 AI 每次调用发来的参数和 AMB 回给它的文字，能搜一个词看它出没出去过（`ui_ai_sent.js`） | `GET /anomalous/ai_tasks/{task_id}/sent` |
 | 标题栏下的黄色提醒「隐私模式只管 AMB 发给 AI 的内容…」 | 隐私任务的 AI 软件能自己读硬盘时出现（`ui_ai_privacy.js` 的 `privacyReach`） | 任务记录里的 `reads_disk` |
 | ⋯ 里的「模型代号对照」 | 隐私任务把模型名藏起来后才有：列出 AI 说的 [M1]、[M2] 各是哪个模型（`ui_ai_privacy.js` 的 `modelTokens`） | 无（任务记录里的 `sealed`） |

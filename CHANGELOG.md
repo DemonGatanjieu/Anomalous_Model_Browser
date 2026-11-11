@@ -72,6 +72,8 @@
 - **Privacy mode now says what it cannot cover**: it filters what Anomalous sends to the AI. An AI app that reads the disk and runs commands by itself (Antigravity, Cursor, Claude Code and the like) can open the output folder and Anomalous's task records, and this cannot stop it; a private task run by such an app says so under its header, and so do the switch's hints. A chat app that only calls tools is not affected.
 - 隐私模式里，**你起的名字也都是代号了**：工作流卡片名、提示词库的条目名、它们的标签，以及图片信息里“用哪张卡片、哪个搭配做的”。这些名字里常常写着模型名或画的内容。AI 用代号照样能放搭配、用卡片；你在聊天里说出名字，它照样搜得到。
 - In privacy mode **the names you gave are tokens too**: workflow card names, saved prompt names, their tags, and which card or combo a picture was made with. Such names often say the model or what is drawn. The AI still places a combo and uses a card by its token, and still finds one by a name you say in the chat.
+- 隐私模式新增 **藏**：在提示词框的“画面大意”里，或隐私任务的留言框里，选中几个字点“藏”，这几个字 AI 只拿到代号，其余的它照常看、照常改。不用再为了几个词把整段都藏起来。
+- Privacy mode has **Hide**: in the gist of the prompt box, or in a private task's message box, select a few words and press Hide; the AI gets a token for them and reads and edits the rest. A few words no longer mean hiding the whole text.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 

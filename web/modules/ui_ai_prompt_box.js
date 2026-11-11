@@ -3,7 +3,8 @@
  * user writes the prompts here, and a negative one and reference pictures (from the gallery, or
  * dropped in) when the AI asks for them. The texts stay in Anomalous; the AI gets tokens for them
  * (api/ai_sealed.py). The first field is the other kind: the gist, the picture in words the AI may
- * read, so it can write light, lens and style around the tokens; either kind alone can be handed in.
+ * read, so it can write light, lens and style around the tokens; either kind alone can be handed in,
+ * and a few words of the gist can be hidden by themselves (ai_hide_mark.js).
  * Above the fields, what suits the canvas's model (the prompt_pose skill's words,
  * the step's prompt_advice). Answered, it shows what the user wrote beside the token the AI has.
  * ui_ai_panel.js draws it and hands it its helpers (sending, the question's head, the answer's note).
@@ -12,6 +13,7 @@
 import { resolveLocale, translate as t } from './locales.js';
 import { galleryPicker, thumbUrl } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
+import { hideButton, withHidden } from './ai_hide_mark.js';
 
 const MAX_PROMPTS = 8;
 const MAX_PICTURES = 4;
@@ -57,7 +59,7 @@ function handedIn(answer, sealed) {
     };
     if (answer.gist) {
         const row = el('div', 'anomalous-ai-prompt-given-row');
-        row.append(el('span', 'anomalous-ai-prompt-label', t('aiPromptBoxGistGiven')), el('span', 'anomalous-ai-prompt-text', answer.gist));
+        row.append(el('span', 'anomalous-ai-prompt-label', t('aiPromptBoxGistGiven')), el('span', 'anomalous-ai-prompt-text', withHidden(answer.gist, sealed)));
         box.append(row);
     }
     (answer.prompts || []).forEach((token, at) => line(token, t('aiPromptBoxPrompt', { n: at + 1 })));
@@ -112,7 +114,9 @@ export function promptBox(block, ctx, { sendAnswer, askHead, skipButton, answerN
     for (let at = 0; at < Math.max(1, Math.min(MAX_PROMPTS, block.count || 1)); at++) addPrompt();
     const gist = field('gist', t('aiPromptBoxGistPlaceholder'), 2);
     gist.maxLength = 1000;
-    box.append(el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxGist')), gist,
+    const gistHead = el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxGist'));
+    gistHead.append(hideButton(gist, (text) => { note.textContent = text; }));
+    box.append(gistHead, gist,
         el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxSecret')), fields, more);
     const negative = block.negative ? field('negative', t('aiPromptBoxNegative'), 2) : null;
     if (negative) box.append(negative);

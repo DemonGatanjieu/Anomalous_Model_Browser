@@ -14,7 +14,8 @@ when asked to (`models`), picture file names anywhere, and last any sealed text 
 shows up.
 seal_answer() takes the user's prompt box (a "prompts" panel block, ui_ai_prompt_box.js): the
 prompts and reference pictures, sealed, with the tokens the AI gets for them, and the gist: the
-picture in words the user wrote for the AI to read, handed on as written.
+picture in words the user wrote for the AI to read, handed on as written but for the words they
+marked to hide (seal_marked, also for a message they leave): those are tokens inside it.
 """
 
 import json
@@ -38,6 +39,7 @@ MIN_SEALED = 3  # shorter texts are not looked for elsewhere (they would match i
 MAX_PROMPTS = 8
 MAX_PROMPT = 4000
 MAX_GIST = 1000
+MARKED = re.compile("\u27e6([^\u27e6\u27e7]*)\u27e7")  # words the user marked to hide, the page's button (web/modules/ai_hide_mark.js)
 MAX_PICTURES = 4
 _loose = {}  # tokens of calls tied to no task, while this ComfyUI runs
 
@@ -195,6 +197,11 @@ def mask(result, task_id, info, tool="", models=False):
     return result
 
 
+def seal_marked(seals, text):
+    """`text` with the words the user marked as tokens of `seals`; the rest stays for the AI to read."""
+    return MARKED.sub(lambda match: seals.seal(match.group(1).strip()) if match.group(1).strip() else "", text)
+
+
 def seal_answer(task_id, prompts, negative="", pictures=None, gist=""):
     """The user's prompt box: {prompts, negative, pictures} as tokens, the texts and picture names sealed
     in the task, the gist as the user wrote it for the AI (left out when empty), and a line saying them."""
@@ -208,6 +215,7 @@ def seal_answer(task_id, prompts, negative="", pictures=None, gist=""):
         if isinstance(picture, dict) and isinstance(picture.get("filename"), str) and PICTURE.fullmatch(picture["filename"]):
             named.append("/".join(part for part in (str(picture.get("subfolder") or "").strip("/"), picture["filename"]) if part))
     seals = Seals(task_id)
+    gist = seal_marked(seals, gist)
     answer = {"prompts": [seals.seal(item) for item in prompts], "negative": seals.seal(negative) if negative else "",
               "pictures": [seals.seal(item, "img") for item in named]}
     seals.save()

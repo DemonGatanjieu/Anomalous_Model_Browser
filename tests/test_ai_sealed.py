@@ -225,6 +225,11 @@ class SealedTests(unittest.TestCase):
         both = ai_sealed.seal_answer(self.task, ["canarypos, 1girl"], "", None, "a girl by a window")
         self.assertEqual((both["prompts"], both["gist"]), (["[P1]"], "a girl by a window"))
         self.assertNotIn("canarypos", json.dumps(both))
+        marked = ai_sealed.seal_answer(self.task, [], "", None, "a girl in \u27e6canaryecho dress\u27e7 by a window")
+        self.assertRegex(marked["gist"], r"^a girl in \[P\d+\] by a window$", "the words the user marked are a token inside it")
+        self.assertEqual(ai_sealed.expand(self.task, marked["gist"]), "a girl in canaryecho dress by a window")
+        left = ai_panels.leave_message(self.task, "make the \u27e6canaryneg\u27e7 bigger, \u27e6 \u27e7 please")
+        self.assertRegex(left["text"], r"^make the \[P\d+\] bigger,  please$", "and in a message they leave")
 
     def test_the_users_changes_are_told_sealed(self):
         ai_tasks.record("test", "describe_canvas", {}, {"structuredContent": {}, "content": []}, time.time(), True, task_id=self.task)

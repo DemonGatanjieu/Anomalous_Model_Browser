@@ -104,7 +104,9 @@ covered by the `styles.css` manifest.
   node's STRING inputs by ComfyUI's node list, prompt fields, picture names, any sealed text),
   `expand` on a call's arguments, `seal_answer` for the user's prompt box (a "prompts" panel block,
   `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model;
-  its first field is the gist, the picture in words the AI may read, handed on as written;
+  its first field is the gist, the picture in words the AI may read, handed on as written but for the
+  words the user marked to hide, which go as tokens inside it; `web/modules/ai_hide_mark.js` is that
+  mark and its button, also in a private task's message box (`ai_sealed.seal_marked`);
   the privacy skill tells the AI how to work). `api/ai_sealed_models.py` keeps a private task's model names too
   (the Gates window's "Model names in a private task", on unless turned off): each model of the library is one
   token ("[M1]", sealed as its model_id) however an answer writes it (model_id, loader name, file name in a text,
