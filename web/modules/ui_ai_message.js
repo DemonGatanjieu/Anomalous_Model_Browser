@@ -17,6 +17,7 @@ import { galleryPicker } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
 import { iconButton } from './ui_ai_icons.js';
 import { noteTyping } from './ui_ai_panel.js';
+import { hideButton } from './ai_hide_mark.js';
 
 const MAX_REFS = 12; // api/ai_message_refs.py
 const MAX_PICTURES = 8; // a message's pictures, as ai_pictures.py hands them
