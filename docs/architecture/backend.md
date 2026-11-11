@@ -263,7 +263,8 @@ the record keeps the tokens), and every tools/call result passes `ai_privacy.gua
 the run's pictures, the user's messages and the outside check were added: for a private task
 (ai_privacy.py) image content items are removed and the answer says why, then `ai_sealed.mask`
 turns prompt text and picture names into tokens (a node's STRING inputs by ComfyUI's node list,
-prompt fields, picture file names, and any text already sealed, also in the text content).
+prompt fields, the names and tags the user gave their combos, workflow cards and saved prompts
+(`NAMED`), picture file names, and any text already sealed, also in the text content).
 While `ai_privacy.hides_models()` (user/anomalous/ai_privacy.json `models`, true unless the user set false),
 `ai_sealed_models.hide` runs between the two: every form of a library model (the materials catalog's
 list, read at most every 15 s) becomes that model's "[M#]" token, sealed as its model_id; a

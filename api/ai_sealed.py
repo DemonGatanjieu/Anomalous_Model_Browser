@@ -8,9 +8,10 @@ text back before the tool runs, so the canvas and the runs get it while the AI n
 mask() seals what a tool's answer holds, in this order: every text input of a node (ComfyUI's node
 list says which inputs are STRING: prompts, file name prefixes; numbers and choices stay), the
 prompt fields of saved prompts, combos, workflows, models and changes (PROMPT_KEYS, and a few per
-tool), a combo's name (made of its model's name and the start of its prompt unless the user renamed
-it), the models when asked to (`models`), picture file names anywhere, and last any sealed text
-wherever it still shows up.
+tool), what the user named (NAMED: the names and tags of combos, workflow cards and saved prompts;
+a combo's name is its model's name and the start of its prompt unless they renamed it), the models
+when asked to (`models`), picture file names anywhere, and last any sealed text wherever it still
+shows up.
 seal_answer() takes the user's prompt box (a "prompts" panel block, ui_ai_prompt_box.js): the
 prompts and reference pictures, sealed, with the tokens the AI gets for them, and the gist: the
 picture in words the user wrote for the AI to read, handed on as written.
@@ -28,8 +29,11 @@ WORD = re.compile(r"[^\W\d_]")  # a letter of any script
 PICTURE = re.compile(r"[^\s\"'<>|*?,;()\[\]{}]*\.(?:png|jpe?g|webp|gif|bmp|mp4|webm|mov)\b", re.IGNORECASE)
 # Fields whose text is a prompt, or holds one (a workflow's settings, a change's before and after).
 PROMPT_KEYS = {"prompt", "prompts", "positive", "negative", "positive_prompt", "negative_prompt", "notes",
-               "settings", "before", "after", "filename_prefix", "trigger_words", "trainedWords", "header_words"}
-TOOL_KEYS = {"get_model": {"description", "user_notes"}, "list_combos": {"more_names"}}
+               "settings", "before", "after", "filename_prefix", "trigger_words", "trainedWords", "header_words",
+               "tags", "in_cards", "recipe", "combo", "said_as"}  # the last five: names the user gave, where they stand alone
+NAMED = ("combos", "workflows", "prompts")  # lists of what the user named: each one's name and tags are theirs
+TOOL_KEYS = {"get_model": {"description", "user_notes"}, "place_combo": {"name"},
+             **{tool: {"more_names"} for tool in ("list_combos", "list_workflows", "list_saved_prompts")}}
 MIN_SEALED = 3  # shorter texts are not looked for elsewhere (they would match inside other words)
 MAX_PROMPTS = 8
 MAX_PROMPT = 4000
@@ -137,9 +141,9 @@ def _walk(value, seals, info, keys):
                         else _walk(text, seals, info, keys) for name, text in item.items()}
         elif key in keys and (isinstance(item, str) or isinstance(item, list) and all(isinstance(text, str) for text in item)):
             out[key] = seal_text(seals, item)
-        elif key == "combos" and isinstance(item, list):
-            out[key] = [{**combo, "name": seal_text(seals, combo["name"])} if isinstance(combo, dict) and isinstance(combo.get("name"), str)
-                        else combo for combo in _walk(item, seals, info, keys)]
+        elif key in NAMED and isinstance(item, list):
+            out[key] = [{**named, **{part: seal_text(seals, named[part]) for part in ("name", "filename") if part in named}}
+                        if isinstance(named, dict) else named for named in _walk(item, seals, info, keys)]
         else:
             out[key] = _walk(item, seals, info, keys)
     return out

@@ -18,7 +18,7 @@ from api import ai_callers, ai_panels, ai_privacy, ai_sealed, ai_sealed_models, 
 from test_mcp import rpc  # noqa: E402  (its module keeps tasks and gates in temporary folders)
 
 SETTING = os.path.join(tempfile.mkdtemp(prefix="amb_sealed_"), "ai_privacy.json")
-CANARIES = ("canarypos", "canaryneg", "canaryfile", "canarytrigger", "canaryecho", "canarycombo")
+CANARIES = ("canarypos", "canaryneg", "canaryfile", "canarytrigger", "canaryecho", "canarycombo", "canaryflow", "canarytag", "canarysaved")
 MODEL_CANARIES = ("canarylora", "Canarycard", "canaryfolder", "canarysha", "civitai.com", "canarymissing")
 LORA = "loras:0:canaryfolder/canarylora v2.safetensors"
 LIBRARY = [{"id": LORA, "name": "Canarycard Pose", "file": "canarylora v2.safetensors"},
@@ -35,7 +35,10 @@ def canary_result(arguments=None):
                       {"id": 9, "type": "KSampler", "settings": {"sampler_name": "euler", "steps": 20, "control_after_generate": "fixed"}},
                       {"id": 11, "class_type": "SaveImage", "inputs": {"filename_prefix": "canaryfile"}},
                       {"id": 12, "type": "SomePackNode", "settings": {"wildcard": "canarypos again", "model": "flux.safetensors"}}],
-            "prompts": [{"name": "kept", "positive": "canarypos", "negative": "canaryneg"}],
+            "prompts": [{"name": "canarysaved words", "positive": "canarypos", "negative": "canaryneg"}],
+            "workflows": [{"name": "canaryflow card", "tags": ["canarytag"], "route": "2 passes"}],
+            "pictures": [{"made_with": {"recipe": "canaryflow card", "combo": "Some LoRA · canarycombo, 1girl"}}],
+            "models": [{"in_cards": ["canaryflow card"]}],
             "combos": [{"name": "Some LoRA · canarycombo, 1girl", "base_model": "Anima"}, {"name": "2", "base_model": "Anima"}],
             "images": [{"image": "sub/canaryfile_00001_.png"}, {"filename": "canaryfile_00002_.png", "subfolder": ""}],
             "trigger_words": ["canarytrigger"], "echo": json.dumps(arguments or {}), "filled": {"prompt": ["6"]}}
@@ -98,6 +101,9 @@ class SealedTests(unittest.TestCase):
         self.assertRegex(combos[0]["name"], r"^\[P\d+\]$", "a combo's name holds its model and prompt")
         self.assertEqual(ai_sealed.expand(self.task, {"name": combos[0]["name"]}), {"name": "Some LoRA · canarycombo, 1girl"}, "and is placed by its token")
         self.assertEqual(combos[1], {"name": "2", "base_model": "Anima"})
+        flow = result["structuredContent"]["workflows"][0]
+        self.assertRegex(flow["name"], r"^\[P\d+\]$", "a card's name is the user's words")
+        self.assertEqual((flow["route"], result["structuredContent"]["models"][0]["in_cards"]), ("2 passes", [flow["name"]]), "one name, one token")
 
     def test_a_model_is_one_token_however_it_is_written(self):
         result = ai_sealed.mask(model_result(), self.task, INFO, "search_models", True)
