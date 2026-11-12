@@ -9,7 +9,9 @@ download files, and the voice; it keeps the ways and skills (get_toolbox, read_g
 (zoom_image) and stop_run. The instructions an app is given name only listed tools (instructions()):
 a part naming a tool the set leaves out is dropped, and without the workbench the AI is told to ask and
 explain in its own chat. The card's own tools (mcp_apps.APP_TOOLS) come along whenever a listed tool
-shows the card.
+shows the card. Without begin_task, nothing told the AI of the ready-made ways and the skills (a Flash
+exam wired an enlargement node by node): get_situation carries them (chat_start()), every time, since a new
+chat of the same app within 20 minutes goes on in the same task and cannot be told from the old one.
 
 GET /anomalous/ai_tool_sets: {core, mine, needed, tools: [{name, stage, size}], all_size};
 POST {mine: [names]} keeps the user's choice (a write: this computer only, local_guard.py).
@@ -21,7 +23,9 @@ import re
 
 from aiohttp import web
 
-from . import action_catalog, ai_tasks, mcp_apps
+from . import action_catalog, ai_skills, ai_tasks, mcp_apps, reference_blocks
+from .mcp_canvas_edit import object_info
+from .mcp_tools import ToolError, retext
 from .path_utils import atomic_write_json
 
 CORE = (
@@ -35,6 +39,8 @@ CORE = (
 NEEDED = ("begin_task", "report", "ask_user", "get_answers")  # what a task handed over in Anomalous needs
 CHAT_NOTE = ("This connection has no workbench tools: ask the user and explain in your own chat, also where an "
              "answer or a skill says ask_user or report.")
+WAYS_NOTE = ("add_nodes(use=…, want=…) builds the best one this ComfyUI can run, wired in: prefer it to wiring "
+             "nodes yourself. A plan of several steps waits for the user in Anomalous, so here build them one at a time.")
 _mine = None  # the user's choice, read once
 
 
@@ -91,6 +97,24 @@ def instructions(parts, names, tools):
     if not set(NEEDED) <= names:
         text = f"{text} {CHAT_NOTE}"
     return text
+
+
+def chat_start(result, name, names, ctx, private):
+    """In a set without begin_task, get_situation also says what begin_task would: the
+    ready-made ways this ComfyUI can run (a plan of steps is left to Anomalous's own tasks) and the skills
+    (not in a private task, as begin_task)."""
+    data = result.get("structuredContent") if isinstance(result, dict) and not result.get("isError") else None
+    if names is None or "begin_task" in names or name != "get_situation" or not isinstance(data, dict):
+        return result
+    try:
+        info = object_info(ctx)
+    except ToolError:
+        info = None
+    extra = {"blocks": {"note": WAYS_NOTE, **reference_blocks.directory(info)}}
+    if not private and ai_skills.directory():
+        extra["skills"] = ai_skills.directory()
+    retext(result, {**data, **extra})
+    return result
 
 
 def register_routes(app, tools, sizes):

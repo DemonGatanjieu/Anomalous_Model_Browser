@@ -327,6 +327,10 @@ every tool. The set changes tools/list, the instructions (`INSTRUCTION_PARTS` in
 naming a tool outside the set is dropped, and without begin_task, report, ask_user and get_answers the
 AI is told to ask in its own chat), the directory, and the list an app is checked against for being
 stale; tools/call still takes every tool. The card's own tools come along when a listed tool shows it.
+Without begin_task nothing told the AI of the ready-made ways and the skills, so in such a set
+get_situation carries them (`chat_start`: the blocks this ComfyUI can run, one at a time since a plan of
+steps waits for the user in Anomalous; the skills unless the task is private), on every call: a new chat
+of the same app within 20 minutes goes on in the same task.
 
 `track_run(prompt_ids, task, wait_seconds)` attaches existing submissions from this server to
 an open task without running anything. IDs must exist in its queue/history; each is owned by

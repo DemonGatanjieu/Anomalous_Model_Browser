@@ -282,7 +282,7 @@ def add_nodes(ctx, nodes=None, near_node_id=None, replace=False, block=None, ima
     if not isinstance(replace, bool):
         raise ToolError("replace must be true or false.")
     if [nodes is not None, block is not None, use is not None].count(True) != 1:
-        raise ToolError("Give one of: use (from begin_task's blocks, with want), block (a ready-made one by name) or nodes (a group in API form).")
+        raise ToolError("Give one of: use (from the blocks in begin_task's or get_situation's answer, with want), block (a ready-made one by name) or nodes (a group in API form).")
     if use is not None:
         task = ai_tasks.get_task(ctx["task"]) if ctx.get("task") else None
         try:  # the way the user picked for this use, else the use's best block this ComfyUI can run

@@ -247,6 +247,7 @@ async def _call(params, request, names=None):
         ai_task_runs.watch(step["id"], result.get("structuredContent") or {})
         await asyncio.to_thread(ai_run_tracking.wait_for_receipt, result, client, session, active_task,
                                 ai_run_tracking.checked_wait(arguments.get("wait_seconds", 55)), step["id"])
+    await asyncio.to_thread(mcp_tool_sets.chat_start, result, name, names, ctx, private)  # no begin_task: the ways
     if name not in mcp_apps.APP_TOOLS:
         mcp_fit.fit(result, name)  # read in the chat, not filed away unread; the user's news below stays whole
     # The user's news and the run's go to the AI, never to the card's own calls (they do not reach the AI).

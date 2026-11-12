@@ -15,7 +15,7 @@ from aiohttp.test_utils import make_mocked_request
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_tasks, mcp_apps, mcp_server, mcp_tool_sets  # noqa: E402
+from api import ai_tasks, mcp_apps, mcp_server, mcp_situation, mcp_tool_sets  # noqa: E402
 
 _AI_TASKS = tempfile.mkdtemp(prefix="amb_tool_sets_")
 ai_tasks.tasks_dir = lambda: os.path.join(_AI_TASKS, "anomalous", "ai_tasks")
@@ -93,6 +93,17 @@ class ToolSetTests(unittest.TestCase):
     def test_a_tool_left_out_can_still_be_called(self):
         body = {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "begin_task", "arguments": {"title": "set test"}}}
         self.assertNotIn("error", post("/anomalous/mcp?tools=core", body))
+
+    def test_without_begin_task_a_look_at_where_things_stand_names_the_ways_and_skills(self):
+        call = lambda path: post(path, {"jsonrpc": "2.0", "id": 3, "method": "tools/call",  # noqa: E731
+                                        "params": {"name": "get_situation", "arguments": {}, "_meta": {"io.modelcontextprotocol/clientInfo": {"name": path, "version": "1"}}}})
+        with mock.patch.object(mcp_situation, "ask_page", return_value={"nodes": 0}),                 mock.patch.object(mcp_tool_sets, "object_info", side_effect=mcp_tool_sets.ToolError("no server")):
+            first = call("/anomalous/mcp?tools=core")["result"]["structuredContent"]
+            whole = call("/anomalous/mcp")["result"]["structuredContent"]
+        self.assertEqual(first["blocks"]["note"], mcp_tool_sets.WAYS_NOTE)
+        self.assertGreater(len(first["blocks"]), 1)
+        self.assertIn("skills", first)
+        self.assertNotIn("blocks", whole, "begin_task says it there")
 
     def test_every_offered_tool_has_a_label_in_both_languages(self):
         words = (PLUGIN / "web" / "modules" / "locales.js").read_text(encoding="utf-8")
