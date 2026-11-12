@@ -254,3 +254,11 @@ picture reaches the AI app only as a fixed list of checks with a few allowed wor
 words are dropped, because a description is the picture again. A prompt it writes leaves as a
 token, like any prompt. It is an extension: off until the user picks a model, and Anomalous
 installs and downloads nothing for it.
+
+## AD-027 — Users pick from Anomalous's tools; they do not add their own
+
+The tool list sits in the AI's context every round, so a user may offer an AI app fewer tools:
+Anomalous's short set or their own pick, named in the address. A tool is never added by the user:
+it would run someone else's code inside ComfyUI, and privacy mode could not seal what such a tool
+sends. An AI app can connect other MCP servers beside Anomalous for that. A set only shortens the
+list; the full list stays the default, because a task handed over in Anomalous needs the workbench.

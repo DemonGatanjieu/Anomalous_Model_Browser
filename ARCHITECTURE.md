@@ -358,7 +358,10 @@ covered by the `styles.css` manifest.
   for the code): each tool under its stage (`action_catalog.TOOLS`) with its title, built from the
   registry, in begin_task's answer and in get_situation's while there is no task, the tools by
   name alone when the titles would make that answer too long to read (`tests/test_mcp_directory.py`). AI apps are offered every tool (they load what they need
-  themselves: Antigravity reads a tool's file before its first call); the module also keeps which
+  themselves: Antigravity reads a tool's file before its first call) unless the address names a shorter set:
+  `api/mcp_tool_sets.py` serves `?tools=core` (drawing in the AI app's own chat, no workbench) and `?tools=mine`
+  (the user's pick, `anomalous/ai_tool_sets.json`), with the instructions cut to the listed tools; only the list
+  shrinks, tools/call takes every tool (`tests/test_mcp_tool_sets.py`). mcp_directory.py also keeps which
   list each app fetched last (`anomalous/ai_tool_lists.json`), so a call from an app still holding
   the list of an older Anomalous is told so and the task header says how to reconnect it.
   `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow, or
@@ -594,7 +597,9 @@ covered by the `styles.css` manifest.
   `ui_ai_connect.js` says how to connect an AI app (the address, a sentence to send the AI so
   it sets itself up and starts on a waiting task, each common app's way), in a window from the
   list's "Connect an AI", and as a card (`connectHint`) that opens the guide in place on the
-  empty page and over a task waiting for an AI until one has ever come. `ui_ai_ready.js` is that
+  empty page and over a task waiting for an AI until one has ever come; without a waiting task
+  `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the
+  user's checklist by stage) and the address follows. `ui_ai_ready.js` is that
   waiting task's one page: the sentence to send the AI, and what the user sent so far; what to say
   first and pictures go in the message box. The pictures (`web/assets/ai_*.webp`)
   were made with ChatGPT. `ai_task_view.js` holds

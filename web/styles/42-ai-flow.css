@@ -182,6 +182,52 @@
 .anomalous-ai-gates-option:hover:not(.is-on) { background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-text-main); }
 .anomalous-ai-gates-option.is-on { background: color-mix(in srgb, var(--amb-link) 22%, transparent); color: var(--amb-text-main); }
 
+/* Which tools the AI app is offered, in the Connect an AI guide (ui_ai_tool_set.js) */
+.anomalous-ai-toolset { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.anomalous-ai-toolset .anomalous-ai-gates-choice { flex-wrap: wrap; max-width: 100%; }
+.anomalous-ai-toolset-edit {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--amb-link);
+    font: inherit;
+    cursor: pointer;
+}
+.anomalous-ai-toolset-edit:hover { text-decoration: underline; }
+.anomalous-ai-toolset-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+.anomalous-ai-toolset-count { color: var(--amb-text-main); font-size: 12.5px; font-weight: 600; }
+.anomalous-ai-toolset-warn { color: var(--amb-warn-text); font-size: 12px; line-height: 1.5; }
+.anomalous-ai-toolset-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 16px; }
+.anomalous-ai-toolset-group { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.anomalous-ai-toolset-stage { margin-bottom: 2px; color: var(--amb-text-soft); font-size: 12px; font-weight: 600; }
+.anomalous-ai-toolset-tool { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--amb-text-main); cursor: pointer; }
+.anomalous-ai-toolset-tool input { flex: none; margin: 0; }
+.anomalous-ai-toolset-label { flex: none; }
+.anomalous-ai-toolset-name { overflow: hidden; color: var(--amb-text-dim); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-toolset-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-ai-toolset-actions .anomalous-ai-gates-option { border: 1px solid var(--amb-border); border-radius: 8px; }
+.anomalous-ai-toolset-save {
+    padding: 5px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--amb-link);
+    color: var(--amb-on-link);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.anomalous-ai-toolset-save:disabled { opacity: 0.5; cursor: default; }
+
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-flow-stage.is-running .anomalous-ai-flow-mark { animation: none; } }
 
 /* After "Hand to AI". */

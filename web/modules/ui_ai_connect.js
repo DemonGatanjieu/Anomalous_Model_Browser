@@ -4,12 +4,14 @@
  * starts on the task, when one waits), the way for each common app, and rules for the AI app to
  * keep (use Anomalous's tools, never edit pictures with code, say what it did outside). Only this computer can
  * connect; the address is this page's own. Connecting (connectHint) is a card that opens the guide
- * in place, under a task waiting for an AI (ui_ai_ready.js) and on the empty page.
+ * in place, under a task waiting for an AI (ui_ai_ready.js) and on the empty page. Without a waiting
+ * task the guide also picks which tools the app is offered (ui_ai_tool_set.js), and the address follows.
  */
 
 import { translate as t } from './locales.js';
 import { copyText } from './ui_dialog.js';
 import { iconButton } from './ui_ai_icons.js';
+import { toolSetPicker } from './ui_ai_tool_set.js';
 
 const ART = {
     waiting: new URL('../assets/ai_waiting.webp', import.meta.url).href,
@@ -40,7 +42,8 @@ function button(className, label, onClick, title) {
     return node;
 }
 
-export const mcpAddress = () => `${location.origin}/anomalous/mcp`;
+/** The address; `set` 'core' or 'mine' offers a shorter tool list (api/mcp_tool_sets.py). */
+export const mcpAddress = (set = 'all') => `${location.origin}/anomalous/mcp${set === 'all' ? '' : `?tools=${set}`}`;
 
 /** A line to copy: the text and a Copy button that says when it is done. */
 export function copyLine(text, { code = true, label = t('aiCopyAddress') } = {}) {
@@ -60,20 +63,34 @@ export function copyLine(text, { code = true, label = t('aiCopyAddress') } = {})
 }
 
 /** The sentence for the AI: add the server, then (with `title`) start on that task. */
-export function sentenceForAi(title = '') {
-    const add = t('aiConnectSentence', { url: mcpAddress() });
+export function sentenceForAi(title = '', set = 'all') {
+    const add = t('aiConnectSentence', { url: mcpAddress(set) });
     return title ? `${add}${t('aiConnectSentenceTask', { task: title })}` : add;
 }
 
 /** Everything about connecting, as one block. `title`: the task waiting for an AI, if any. */
 export function connectGuide(title = '') {
-    const url = mcpAddress();
     const box = el('div', 'anomalous-ai-connect');
-    box.append(el('div', 'anomalous-ai-connect-step', t('aiConnectStepAddress')), copyLine(url));
-    box.append(el('div', 'anomalous-ai-connect-step', t(title ? 'aiConnectStepSayTask' : 'aiConnectStepSay')),
-        copyLine(sentenceForAi(title), { code: false, label: t('aiConnectCopySentence') }));
+    const linked = el('div', 'anomalous-ai-connect');
     const apps = el('details', 'anomalous-ai-connect-apps');
-    apps.append(el('summary', '', t('aiConnectByApp')));
+    const fill = (set) => {
+        linked.replaceChildren(copyLine(mcpAddress(set)), el('div', 'anomalous-ai-connect-step', t(title ? 'aiConnectStepSayTask' : 'aiConnectStepSay')),
+            copyLine(sentenceForAi(title, set), { code: false, label: t('aiConnectCopySentence') }));
+        appWays(apps, mcpAddress(set));
+    };
+    box.append(el('div', 'anomalous-ai-connect-step', t('aiConnectStepAddress')));
+    if (!title) box.append(toolSetPicker(fill));  // a task waiting in Anomalous needs every tool
+    fill('all');
+    const rules = copyLine(t('aiConnectRules'), { code: false, label: t('aiConnectCopyRules') });
+    rules.classList.add('is-rules');
+    box.append(linked, apps, el('div', 'anomalous-ai-connect-step', t('aiConnectStepRules')), rules,
+        el('div', 'anomalous-ai-connect-note', t('aiConnectLocal')));
+    return box;
+}
+
+/** The way to add `url` in each common app, into the folding `apps`. */
+function appWays(apps, url) {
+    apps.replaceChildren(el('summary', '', t('aiConnectByApp')));
     const ways = [
         ['Claude Code', `claude mcp add --transport http anomalous ${url}`],
         ['Gemini CLI', `gemini mcp add --transport http anomalous ${url}`],
@@ -82,11 +99,6 @@ export function connectGuide(title = '') {
     ];
     for (const [name, text] of ways) apps.append(el('div', 'anomalous-ai-connect-app', name), copyLine(text));
     apps.append(el('div', 'anomalous-ai-connect-app', 'Cherry Studio'), el('div', 'anomalous-ai-connect-note', t('aiConnectCherry', { url })));
-    const rules = copyLine(t('aiConnectRules'), { code: false, label: t('aiConnectCopyRules') });
-    rules.classList.add('is-rules');
-    box.append(apps, el('div', 'anomalous-ai-connect-step', t('aiConnectStepRules')), rules,
-        el('div', 'anomalous-ai-connect-note', t('aiConnectLocal')));
-    return box;
 }
 
 /** The card for an AI not connected yet: connecting is done once; its button opens the guide in place. */

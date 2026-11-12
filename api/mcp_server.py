@@ -19,12 +19,13 @@ outside Anomalous since the AI's previous call shown and told (ai_outside.py). P
 
 import asyncio
 import base64
+import json
 import time
 import urllib.parse
 
 from aiohttp import web
 
-from . import ai_callers, ai_darkroom, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_sent, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, job_sheets, mcp_apps, mcp_bridge, mcp_directory, mcp_fit, mcp_prompts
+from . import ai_callers, ai_darkroom, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_sent, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, job_sheets, mcp_apps, mcp_bridge, mcp_directory, mcp_fit, mcp_prompts, mcp_tool_sets
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS, object_info
@@ -46,42 +47,59 @@ CAPABILITIES = {
 MODERN_VERSIONS = ("2026-07-28",)
 LEGACY_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26")
 SERVER_INFO = {"name": "anomalous-model-browser", "title": "Anomalous Model Browser", "version": "1.0.0"}
-INSTRUCTIONS = (
+# One part per sentence or clause: a set without some tools drops the parts naming them (mcp_tool_sets.py).
+INSTRUCTION_PARTS = (
     "Tools over the user's ComfyUI library as Anomalous Model Browser keeps it: model files with "
     "their Civitai information, output images with their generation settings, combos (a model, "
     "LoRAs and a prompt), workflow recipes, saved prompts, generated audio, the scan status and "
-    "the activity log; and tools that act on the workflow open in ComfyUI (get_situation gives flow chains; "
-    "describe_canvas only for details) or build one where the user watches: find_nodes searches brief types; "
+    "the activity log; ",
+    "and tools that act on the workflow open in ComfyUI (get_situation gives flow chains; "
+    "describe_canvas only for details) or build one where the user watches: ",
+    "find_nodes searches brief types; ",
     "add_node wires in the same call (wire_from/wire_to; wire_to=ID splices it in front of that node, "
-    "insert_after=ID behind it); add_nodes adds a whole group in ComfyUI's API form in one call; "
-    "connect_nodes needs only two IDs unless sockets are ambiguous. Reuse receipts instead of rereading "
-    "the graph. new_workflow opens a tab only when needed. Tools also scan models or have an "
-    "Anomalous TTS voice speak. Canvas changes "
-    "are single Ctrl+Z steps and are logged as the AI's; nothing deletes files. Ids returned by "
-    "one tool (model_id, image, node ids) are what the others take. For what no tool does, or when the "
-    "user asks how something in Anomalous works, read_guide has its manual: tell them the way, with the words "
-    "on screen. begin_task's answer carries a directory of the tools by what you want to do: "
-    "look there and go straight to the tool. In a new chat on a task, or when unsure where things stand, call get_situation "
-    "first: the task, the canvas in brief (what is still unwired) and the next step in one answer. "
+    "insert_after=ID behind it); ",
+    "add_nodes adds a whole group in ComfyUI's API form in one call; ",
+    "connect_nodes needs only two IDs unless sockets are ambiguous. ",
+    "Reuse receipts instead of rereading the graph. ",
+    "new_workflow opens a tab only when needed. ",
+    "Tools also scan models or have an Anomalous TTS voice speak. ",
+    "Canvas changes are single Ctrl+Z steps and are logged as the AI's; nothing deletes files. ",
+    "Ids returned by one tool (model_id, image, node ids) are what the others take. ",
+    "For what no tool does, or when the user asks how something in Anomalous works, read_guide has its manual: "
+    "tell them the way, with the words on screen. ",
+    "begin_task's answer carries a directory of the tools by what you want to do: "
+    "look there and go straight to the tool. ",
+    "In a new chat on a task, or when unsure where things stand, call get_situation "
+    "first: the task, the canvas in brief (what is still unwired) and the next step in one answer. ",
     "The user watches your work in Anomalous's AI workbench: call begin_task "
     "with a short title when you start what they asked for (it continues the waiting or active task; "
     "new_task=true is only for a separate user request), and report to explain a choice, hand in "
-    "pictures made another way, or end the task (done=true). The user can write to you or answer "
+    "pictures made another way, or end the task (done=true). ",
+    "The user can write to you or answer "
     "panel questions there: call get_answers to wait for or read them, and any unread user_messages "
-    "or user_answers attached to a tool result must also be honoured. While you work on an Anomalous task, ask "
+    "or user_answers attached to a tool result must also be honoured. ",
+    "While you work on an Anomalous task, ask "
     "the user every question (a choice, a preference, yes or no) with ask_user, never in your own chat or its "
-    "question form: the user watches and answers in Anomalous. Until they say the task is done, end every round "
+    "question form: the user watches and answers in Anomalous. ",
+    "Until they say the task is done, end every round "
     "with ask_user (what next, or whether to go ahead), not with a note or panel alone; only a run, download or "
-    "scan going on lets you end your turn without asking. Likewise write your explanations and replies "
-    "there with report (reply_to answers their message or marks), not only in your chat. Show plans, workflow explanations "
+    "scan going on lets you end your turn without asking. ",
+    "Likewise write your explanations and replies "
+    "there with report (reply_to answers their message or marks), not only in your chat. ",
+    "Show plans, workflow explanations "
     "and results in chronological order with show_panel; update_panel appends new content below what "
-    "the user already saw. Use run_workflow for execution: it returns real state/results after a bounded wait. "
+    "the user already saw. ",
+    "Use run_workflow for execution: it returns real state/results after a bounded wait. ",
     "If you submit through /prompt or another tool, immediately call track_run with YOUR returned prompt_ids "
-    "and task ID, or the workbench cannot observe it. For running results use run_status(wait_seconds=55); "
-    "do not inspect output directories or resubmit to find out whether it finished. Change pictures only by "
-    "running workflows, never with code of your own; if you do use another tool (a command, a script, files), "
-    "say what you ran with log_outside."
+    "and task ID, or the workbench cannot observe it. ",
+    "For running results use run_status(wait_seconds=55); "
+    "do not inspect output directories or resubmit to find out whether it finished. ",
+    "Change pictures only by "
+    "running workflows, never with code of your own; ",
+    "if you do use another tool (a command, a script, files), "
+    "say what you ran with log_outside.",
 )
+INSTRUCTIONS = "".join(INSTRUCTION_PARTS)
 LIST_TTL_MS = 300000
 # Requests run tools in threads; a few at a time is plenty for one person's AI app.
 _slots = asyncio.Semaphore(4)
@@ -122,34 +140,39 @@ def _result(id_, result, modern):
     return web.json_response({"jsonrpc": "2.0", "id": id_, "result": result})
 
 
-def _tools():
-    """The tool list AI apps are offered, as tools/list gives it."""
-    return [mcp_apps.with_card(tool["spec"]) for tool in TOOLS.values()]
+def _tools(names=None):
+    """The tool list AI apps are offered, as tools/list gives it: every tool, or the set `names` (mcp_tool_sets.py)."""
+    return [mcp_apps.with_card(tool["spec"]) for name, tool in TOOLS.items() if names is None or name in names]
 
 
-def _tool_list(modern):
-    result = {"tools": _tools()}
+def _sizes():
+    """{tool: characters of its spec as listed}, for the Connect an AI window's counts."""
+    return {tool["name"]: len(json.dumps(tool, ensure_ascii=False)) for tool in _tools()}
+
+
+def _tool_list(modern, names=None):
+    result = {"tools": _tools(names)}
     if modern:
         result.update(ttlMs=LIST_TTL_MS, cacheScope="public")
     return result
 
 
-def _initialize(params):
+def _initialize(params, names=None):
     requested = params.get("protocolVersion")
     return {
         "protocolVersion": requested if requested in LEGACY_VERSIONS else LEGACY_VERSIONS[0],
         "capabilities": CAPABILITIES,
         "serverInfo": SERVER_INFO,
-        "instructions": INSTRUCTIONS,
+        "instructions": mcp_tool_sets.instructions(INSTRUCTION_PARTS, names, TOOLS),
     }
 
 
-def _discover():
+def _discover(names=None):
     return {
         "supportedVersions": list(MODERN_VERSIONS + LEGACY_VERSIONS),
         "capabilities": CAPABILITIES,
         "_meta": {"io.modelcontextprotocol/serverInfo": SERVER_INFO},
-        "instructions": INSTRUCTIONS,
+        "instructions": mcp_tool_sets.instructions(INSTRUCTION_PARTS, names, TOOLS),
         "ttlMs": LIST_TTL_MS,
         "cacheScope": "public",
     }
@@ -168,7 +191,7 @@ def _modern_header_problem(request, method, params, version):
     return None
 
 
-async def _call(params, request):
+async def _call(params, request, names=None):
     name = params.get("name")
     raw_arguments = params.get("arguments") or {}
     if not isinstance(name, str) or name not in TOOLS or not isinstance(raw_arguments, dict):
@@ -234,8 +257,9 @@ async def _call(params, request):
         await asyncio.to_thread(ai_task_runs.show_pictures, result, resolved_task)
     if name != "get_answers" and name not in mcp_apps.APP_TOOLS and isinstance(result, dict) and not result.get("isError"):
         await asyncio.to_thread(ai_panels.attach_pending, result, client, task_id=resolved_task or ("" if session else None))
-    mcp_directory.attach(result, name, {key: tool["spec"] for key, tool in TOOLS.items() if key not in mcp_apps.APP_TOOLS})
-    if name not in mcp_apps.APP_TOOLS and mcp_directory.stale(client, _tools()):
+    mcp_directory.attach(result, name, {key: tool["spec"] for key, tool in TOOLS.items()
+                                        if key not in mcp_apps.APP_TOOLS and (names is None or key in names)})
+    if name not in mcp_apps.APP_TOOLS and mcp_directory.stale(client, _tools(names)):
         await asyncio.to_thread(mcp_directory.tell_stale, result, active_task)
     # Last: a private task's pictures and prompts never leave, whatever put them in (ai_privacy.py).
     final_task = active_task or ai_tasks.active_task_id(client, session=session)
@@ -274,9 +298,10 @@ async def api_mcp(request):
         return web.Response(status=202)  # notifications (initialized, cancelled) need no answer
     id_, method = body["id"], body["method"]
     params = body.get("params") if isinstance(body.get("params"), dict) else {}
+    names = mcp_tool_sets.chosen(request.query.get("tools"), TOOLS)  # ?tools=core | mine: a shorter list
 
     if method == "initialize":
-        return _result(id_, _initialize(params), modern=False)
+        return _result(id_, _initialize(params, names), modern=False)
     meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else {}
     version = meta.get("io.modelcontextprotocol/protocolVersion")
     modern = version is not None
@@ -294,11 +319,11 @@ async def api_mcp(request):
                           data={"supported": list(MODERN_VERSIONS + LEGACY_VERSIONS), "requested": header})
 
     if method == "server/discover" and modern:
-        return _result(id_, _discover(), modern)
+        return _result(id_, _discover(names), modern)
     if method == "ping":
         return _result(id_, {}, modern)
     if method == "tools/list":
-        listing = _tool_list(modern)
+        listing = _tool_list(modern, names)
         await asyncio.to_thread(mcp_directory.listed, ai_callers.client_of(request.headers, params), listing["tools"])
         return _result(id_, listing, modern)
     if method == "prompts/list":
@@ -316,7 +341,7 @@ async def api_mcp(request):
             return _error(id_, INVALID_PARAMS, f"Unknown resource: {params.get('uri')}")
         return _result(id_, resource, modern)
     if method == "tools/call":
-        result = await _call(params, request)
+        result = await _call(params, request, names)
         if result is None:
             return _error(id_, INVALID_PARAMS, f"Unknown tool or bad arguments: {params.get('name')}")
         return _result(id_, result, modern)
@@ -346,3 +371,4 @@ async def api_mcp_bridge(request):
 def register_routes(app):
     app.router.add_route("*", "/anomalous/mcp", api_mcp)
     app.router.add_post("/anomalous/mcp/bridge", api_mcp_bridge)
+    mcp_tool_sets.register_routes(app, TOOLS, _sizes)

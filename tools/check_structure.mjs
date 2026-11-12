@@ -72,15 +72,16 @@ if (large.length) {
 }
 // 4. Syntax: every web file must parse as an ES module. `node --check` on a .js file can
 // pass what the browser rejects (a raw line break inside a string did), so compile them
-// the way the browser does, in one child process.
+// the way the browser does, in one child process. Paths go relative to the plugin: absolute ones
+// made the command line longer than Windows takes (32,767 characters) once the files grew past ~260.
 const PARSE = "const vm = require('node:vm'); const fs = require('node:fs');"
     + " for (const f of process.argv.slice(1)) { try { new vm.SourceTextModule(fs.readFileSync(f, 'utf8')); }"
     + " catch (e) { console.log(f + ' | ' + e.message); } }";
 const syntax = execFileSync(process.execPath, ['--experimental-vm-modules', '--no-warnings', '-e', PARSE,
-    ...webFiles.map((file) => path.join(ROOT, file))], { encoding: 'utf8' });
+    ...webFiles], { encoding: 'utf8', cwd: ROOT });
 for (const line of syntax.split(/\r?\n/).filter(Boolean)) {
     const [file, message] = line.split(' | ');
-    failures.push(`${path.relative(ROOT, file).split(path.sep).join('/')}: does not parse (${message})`);
+    failures.push(`${file.split(path.sep).join('/')}: does not parse (${message})`);
 }
 
 // 5. No `:has()` that matches the style attribute. Chrome then treats every inline-style

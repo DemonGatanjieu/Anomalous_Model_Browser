@@ -318,6 +318,16 @@ a skill (the `prompt` of `set_prompt` and `run_workflow` at `prompt_pose`: a pos
 draws well, nonessential hands optionally hidden, the user's own text and poses kept), so the
 tool list stays within its budget; AMB passes prompt text through unchanged.
 
+Tool sets (`api/mcp_tool_sets.py`): an AI app keeps the whole tool list in the AI's context, so the
+address may name a shorter one. `?tools=core` is a fixed set for drawing in the AI app's own chat (no
+workbench, no tools that move, scan or download files, no voice; the ways, skills, zoom_image and
+stop_run stay); `?tools=mine` is the user's pick (`user/anomalous/ai_tool_sets.json` {mine: [names]},
+written by `POST /anomalous/ai_tool_sets`, this computer only). An unknown name or an empty pick offers
+every tool. The set changes tools/list, the instructions (`INSTRUCTION_PARTS` in mcp_server.py: a part
+naming a tool outside the set is dropped, and without begin_task, report, ask_user and get_answers the
+AI is told to ask in its own chat), the directory, and the list an app is checked against for being
+stale; tools/call still takes every tool. The card's own tools come along when a listed tool shows it.
+
 `track_run(prompt_ids, task, wait_seconds)` attaches existing submissions from this server to
 an open task without running anything. IDs must exist in its queue/history; each is owned by
 one recorded run. Retrying an identical batch returns that run, not the task's newest run.
