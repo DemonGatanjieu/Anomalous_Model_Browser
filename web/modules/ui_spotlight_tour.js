@@ -299,7 +299,7 @@ function resolveStepTarget(step) {
     if (typeof document === 'undefined') return null;
     const shown = (el) => { // hidden targets are skipped, and so is one folded to nothing (a tab not shown)
         const box = el?.isConnected && el.getClientRects().length ? el.getBoundingClientRect() : null;
-        return Boolean(box && box.width > 0 && box.height > 0);
+        return Boolean(box && box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden'); // laid out yet hidden: a folded list
     };
     let el = document.querySelector(step.targetSelector);
     if (!shown(el) && step.fallbackSelector) {

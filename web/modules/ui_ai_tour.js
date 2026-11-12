@@ -3,6 +3,8 @@
  * - the workbench's tour (the spotlight tour of ui_spotlight_tour.js with its own steps): a new task,
  *   connecting, the gates, the list, a task's ⋯, the timeline and the message box. It runs by itself the
  *   first time the workbench shows a task, and again from the home page's "How it works" (startAiTour).
+ *   A task list the user folded away slides in for the tour (as the title bar's button peeks it) and
+ *   folds again when the tour ends.
  * - firstHint(): one line under a control that only shows up later (a run's verdict, undo for the AI's
  *   canvas changes, the Hide button of a private task), shown until the user says Got it.
  * What was seen is remembered in this browser only; without storage the notes simply come again.
@@ -44,8 +46,21 @@ function remember(key, id) {
 /** Whether the workbench shows a task at its full size (not mid-animation, not folded into tabs). */
 const settled = page => (page.querySelector('.anomalous-ai-timeline')?.getBoundingClientRect().width || 0) > 200;
 
+const PEEK_MS = 220; // the folded list's slide-in (45-ai-side-views.css) is over by then
+
+/** Starts the tour; resolves whether it started. */
 export function startAiTour() {
-    return startSpotlightTour(null, { steps: AI_TOUR });
+    const page = document.querySelector('.anomalous-ai');
+    const folded = Boolean(page?.classList.contains('tasks-collapsed') && !page.classList.contains('is-narrow'));
+    const unfold = () => { if (folded) page.classList.remove('is-peeking'); };
+    if (folded) page.classList.add('is-peeking');
+    return new Promise((done) => {
+        setTimeout(() => {
+            const started = startSpotlightTour(null, { steps: AI_TOUR, onClose: unfold });
+            if (!started) unfold();
+            done(started);
+        }, folded ? PEEK_MS : 0);
+    });
 }
 
 /** The tour as soon as the workbench shows a task (after going there from the home page); gives up after a few seconds. */
@@ -53,7 +68,7 @@ export function tourWhenShown(tries = 20) {
     const page = document.querySelector('.anomalous-ai');
     if (page && settled(page)) {
         remember(TOUR_KEY, 'workbench');
-        startAiTour();
+        void startAiTour();
     } else if (tries > 0) {
         setTimeout(() => tourWhenShown(tries - 1), 200);
     }
@@ -65,7 +80,7 @@ export function aiTourOnce(page) {
     if (seen(TOUR_KEY).has('workbench') || isSpotlightTourActive() || !page?.isConnected) return;
     setTimeout(() => {
         if (!page.isConnected || isSpotlightTourActive() || !settled(page)) return;
-        if (startAiTour()) remember(TOUR_KEY, 'workbench');
+        void startAiTour().then(started => started && remember(TOUR_KEY, 'workbench'));
     }, 900);
 }
 
