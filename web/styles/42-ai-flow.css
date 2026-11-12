@@ -136,6 +136,13 @@
 .anomalous-ai-gates-intro,
 .anomalous-ai-gates-note { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
 
+/* The darkroom helper in the Gates window (ui_ai_darkroom.js): what is in use, then the buttons or the models to pick from. */
+.anomalous-ai-darkroom { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--amb-border); }
+.anomalous-ai-darkroom-state { color: var(--amb-text-main); font-size: 12.5px; }
+.anomalous-ai-darkroom-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.anomalous-ai-darkroom-pick { min-width: 0; max-width: 100%; padding: 5px 8px; border: 1px solid var(--amb-border-strong); border-radius: 7px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 12.5px; }
+.anomalous-ai-darkroom-vision { display: inline-flex; align-items: center; gap: 5px; color: var(--amb-text-soft); font-size: 12.5px; }
+
 /* What a private task's AI was sent (ui_ai_sent.js): a word to look for, then the calls, each opening to its two texts. */
 .anomalous-ai-sent { display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 0 2px; }
 .anomalous-ai-sent-find { width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--amb-border-strong); border-radius: 7px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 13px; }

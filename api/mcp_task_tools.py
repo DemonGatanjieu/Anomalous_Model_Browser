@@ -4,7 +4,7 @@ show_panel / update_panel draw a panel from Anomalous's blocks (ai_panels.py), g
 reads what the user picked or typed on it, log_outside keeps what the AI did with other tools
 (ai_outside.py)."""
 
-from . import ai_answer_wait, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, mcp_routes, reference_blocks
+from . import ai_answer_wait, ai_darkroom, ai_decisions, ai_marks, ai_message_refs, ai_outside, ai_panels, ai_repaint, ai_run_control, ai_run_tracking, ai_task_links, ai_task_runs, ai_tasks, ai_toolbox, ai_privacy, ai_skills, mcp_routes, reference_blocks
 from .mcp_actions import downloads as model_downloads
 from .mcp_tools import MAX_LIMIT, ToolError, _schema
 
@@ -36,6 +36,8 @@ def begin_task(ctx, title, new_task=False):
     answer["blocks"] = _blocks(ctx)
     if ai_privacy.is_private(ai_tasks.get_task(task["id"])):
         answer["privacy"] = ai_privacy.NOTE  # the user writes the prompts and looks at the pictures: no skill for those
+        if ai_darkroom.note():
+            answer["local_helper"] = ai_darkroom.note()
     elif ai_skills.directory():
         answer["skills"] = ai_skills.directory()
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))

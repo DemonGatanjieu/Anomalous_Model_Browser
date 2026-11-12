@@ -8,7 +8,7 @@ import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_callers, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_sent, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
+from . import activity_log, ai_callers, ai_darkroom, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_sent, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -52,6 +52,24 @@ async def api_get(request):
         task["links"] = ai_task_links.links(task["id"])  # the task it goes on from, those going on from it
         ai_pictures.mark_gone(task)  # pictures deleted since: the page says so
     return web.json_response({"task": task}) if task else web.json_response({"error": "not_found"}, status=404)
+
+
+async def api_darkroom(request):
+    """GET /anomalous/ai_darkroom: {helper: {url, model, vision} | null}, the local model that reads for a private
+    task (ai_darkroom.py); POST {detect: true} -> {found: [{url, models}]} on this computer's usual ports,
+    POST {url, model, vision} keeps one, POST {off: true} drops it."""
+    if request.method == "POST":
+        body = await _body(request) or {}
+        try:
+            if body.get("detect") is True:
+                return web.json_response({"found": await asyncio.to_thread(ai_darkroom.found)})
+            if body.get("off") is True:
+                ai_darkroom.turn_off()
+            else:
+                ai_darkroom.save(body.get("url"), body.get("model"), body.get("vision"))
+        except ValueError as error:
+            return web.json_response({"error": str(error)}, status=400)
+    return web.json_response({"helper": ai_darkroom.settings()})
 
 
 async def api_sent(request):
@@ -390,5 +408,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_toolbox/favorites", api_toolbox)
     app.router.add_get("/anomalous/ai_blocks", api_blocks)
     app.router.add_post("/anomalous/ai_blocks", api_blocks)
+    app.router.add_get("/anomalous/ai_darkroom", api_darkroom)
+    app.router.add_post("/anomalous/ai_darkroom", api_darkroom)
     app.router.add_get("/anomalous/ai_gates", api_gates)
     app.router.add_post("/anomalous/ai_gates", api_gates)

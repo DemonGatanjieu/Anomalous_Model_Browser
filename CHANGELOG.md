@@ -76,6 +76,8 @@
 - Privacy mode has **Hide**: in the gist of the prompt box, or in a private task's message box, select a few words and press Hide; the AI gets a token for them and reads and edits the rest. A few words no longer mean hiding the whole text.
 - 跑完的图点了 **不太行**，下面多一排 **哪里不行**：手坏了、脸不对、构图偏了、太暗、太亮、糊、画风不对……点哪个，AI 就知道该改哪个，可以点几个。隐私模式下 AI 看不到图，你点一下就是它的眼睛；普通任务里也省得打字。
 - Under a run you marked **not quite right** there is now **what is off**: hands, face, framing, too dark, too bright, blurry, wrong style and more. A click tells the AI which to fix, and you may pick several. In privacy mode the AI is not sent the pictures, so your click is its eyes; in any task it saves the typing.
+- 新增拓展功能 **暗房助手**：在你自己电脑上跑的本地模型（Ollama、LM Studio 这类），替隐私任务读云端 AI 看不到的东西。云端 AI 说怎么改，它拿原文去改写提示词，云端 AI 仍然只拿到代号；要看图时图交给它，它只回答固定的六项（清晰度、明暗、手、脸、身体、构图），每项只能是规定的几个词。只连本机地址，内容不出这台电脑。在关卡窗口最下面设置；没装本地模型就当它不存在。
+- New extension, the **darkroom helper**: a model running on your own computer (Ollama, LM Studio and the like) reads for a private task what the cloud AI may not. The cloud AI says what to change and the helper rewrites the prompt from its text, the cloud AI still getting only a token; a picture goes to the helper, which answers a fixed list of six checks (sharpness, exposure, hands, face, body, framing), each with one of a few set words. It connects to this computer only. Set it up at the bottom of the Gates window; without a local model it is simply not there.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 

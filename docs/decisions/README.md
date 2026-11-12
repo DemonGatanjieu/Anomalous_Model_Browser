@@ -243,3 +243,14 @@ thing once and a higher one points at it instead of copying it; where an example
 way's values to run alone, a test keeps the two in step. Examples stay few on purpose: a plan
 gets a version per model family only when the loaders differ, and each version is its own
 workflow, so one route per card still holds.
+
+## AD-026 — What the cloud AI may not read, a model on this computer reads
+
+Privacy mode leaves the AI app blind to prompts and pictures; the user is its eyes, which costs
+them clicks. The darkroom helper gives that reading to a model on the user's own computer, and
+two rules keep it from becoming a way out. It talks to a loopback address only (checked when kept
+and when read, no proxy, no redirect), so nothing it is sent can leave. And what it says about a
+picture reaches the AI app only as a fixed list of checks with a few allowed words each; free
+words are dropped, because a description is the picture again. A prompt it writes leaves as a
+token, like any prompt. It is an extension: off until the user picks a model, and Anomalous
+installs and downloads nothing for it.

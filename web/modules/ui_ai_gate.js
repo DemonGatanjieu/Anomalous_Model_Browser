@@ -12,6 +12,7 @@
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
+import { darkroomPart } from './ui_ai_darkroom.js';
 import { icon } from './ui_ai_icons.js';
 
 export const GATES = ['canvas', 'gpu', 'download', 'network', 'files'];
@@ -153,6 +154,6 @@ export async function openGates() {
         async mode => (await save({ nodes: mode })).nodes),
     choiceRow('route', ['allow', 'ask'], known.routes || 'allow', mode => t(`aiRouteRule_${mode}`),
         async mode => (await save({ routes: mode })).routes),
-    el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
+    darkroomPart(), el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
     aiWindow(t('aiGates'), body);
 }

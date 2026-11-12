@@ -15,7 +15,7 @@ import time
 import urllib.error
 import urllib.request
 
-from . import ai_bases, ai_gates, ai_plans, job_sheets, mcp_fill, model_advice, run_refusal
+from . import ai_bases, ai_darkroom, ai_gates, ai_plans, job_sheets, mcp_fill, model_advice, run_refusal
 from .lora_info import trains_text_encoder
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import MAX_LIMIT, ToolError, _resolve_model, _schema
@@ -60,9 +60,11 @@ def describe_canvas(ctx):
     return _page("describe_canvas")
 
 
-def set_prompt(ctx, prompt, role="positive", node_id=None, mode="replace"):
+def set_prompt(ctx, prompt, role="positive", node_id=None, mode="replace", rewrite=""):
     if role not in ("positive", "negative") or mode not in ("replace", "append"):
         raise ToolError("role is positive or negative; mode is replace or append.")
+    if rewrite:  # the user's local helper writes it, where the AI app may not read the text (ai_darkroom.py)
+        prompt = ai_darkroom.write(str(prompt), str(rewrite))
     return _page("set_prompt", {"text": str(prompt), "role": role, "node_id": node_id, "mode": mode})
 
 
@@ -394,7 +396,8 @@ ACTIONS = dict([
             "Writes text into the workflow's positive or negative prompt box (or the one on node_id). "
             "mode=append adds to what is there. One Ctrl+Z step.",
             set_prompt, {"prompt": _PROMPT, "role": {"type": "string", "enum": ["positive", "negative"], "default": "positive"},
-                         "node_id": _NODE, "mode": {"type": "string", "enum": ["replace", "append"], "default": "replace"}},
+                         "node_id": _NODE, "mode": {"type": "string", "enum": ["replace", "append"], "default": "replace"},
+                         "rewrite": {"type": "string", "description": "How the user's local helper changes prompt first."}},
             ["prompt"], destructive=True),
     _action("set_model", "Swap a node's model",
             "Puts a model into a loader node (checkpoint, LoRA, VAE…) on the canvas, replacing the one it had. "

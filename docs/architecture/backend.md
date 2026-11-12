@@ -282,6 +282,17 @@ private while the default is on or a private task is unfinished. The card's `app
 gives a private task no pictures. `tests/test_ai_privacy.py` calls every tool with a picture
 in its result and checks none leaves; `tests/test_ai_sealed.py` does the same with canary
 prompts, picture names and model names.
+The darkroom helper (`ai_darkroom.py`, an extension, off until the user picks a model in the Gates
+window; `user/anomalous/ai_darkroom.json` {url, model, vision}) is a model on this computer that
+reads what the AI app may not. Its address must be loopback (127.0.0.1, localhost, ::1; checked when
+kept and again when read), requests use no proxy and follow no redirect, a call waits at most 50 s.
+`set_prompt(prompt, rewrite)` sends it the prompt's text (tokens already put back by `expand`) and
+writes its answer to the canvas; the answer leaves as a token like any node text. In a private task
+`zoom_image`'s picture goes to it before `guard` takes the picture out
+(`ai_darkroom.check_picture`, in mcp_server.py), and `local_check` holds only the keys and words of
+`CHECKS`; a helper that fails says so there. begin_task tells a private task's AI what the helper
+does (`local_helper`). `GET/POST /anomalous/ai_darkroom` reads, finds (ports 11434, 1234, 8080),
+keeps and drops it.
 What left is kept for the user: after `guard`, a private task's call goes to `ai_sent.keep` with the
 arguments as the AI wrote them (tokens) and the answer's text as it left
 (`user/anomalous/ai_sent/<task>/calls.jsonl`, the newest 300 calls, a text cut at 20,000 characters,

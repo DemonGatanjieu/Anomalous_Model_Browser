@@ -512,7 +512,7 @@ class ArgumentTests(unittest.TestCase):
         self.assertTrue(result["isError"])
         text = result["content"][0]["text"]
         self.assertIn("Unknown arguments ['colour', 'text']; missing ['prompt']", text)
-        self.assertIn("set_prompt takes: prompt (needed), role, node_id, mode", text, "the AI corrects itself in one go")
+        self.assertIn("set_prompt takes: prompt (needed), role, node_id, mode, rewrite", text, "the AI corrects itself in one go")
 
     def test_the_one_needed_argument_under_another_name_is_taken(self):
         tools = {"open": {"spec": {"inputSchema": {"properties": {"workflow": {"type": "string"}, "seed": {"type": "integer"}},

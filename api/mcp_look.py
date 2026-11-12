@@ -75,7 +75,8 @@ LOOK_TOOLS = dict([
     _tool("zoom_image", "Look closer at a picture",
           "Part of a picture larger, at full detail (a hand, a face, a seam). folder: output, input or temp. "
           "compare_with: a second picture, the same region beside it. Use it instead of cropping with code; "
-          "change pictures only by running a workflow, never by editing their files.",
+          "change pictures only by running a workflow, never by editing their files. A private task: the "
+          "user's local helper's checks instead (local_check).",
           zoom_image, {"image": {"type": "string", "description": "As the other tools name it."},
                        "region": _REGION, "folder": _FOLDER,
                        "compare_with": {"type": "string", "description": "A second picture."},

@@ -115,6 +115,12 @@ covered by the `styles.css` manifest.
   user's note for the AI (`ai_note`, set in the model editor, `note_for_ai` in the tools); `expand` writes a
   model token back as the model_id, as the loader's name among a node's values, as the card's name inside the AI's words.
   `web/modules/ui_ai_privacy.js` is the header's chip, the switch in its ⋯ and what the model tokens stand for.
+  `api/ai_darkroom.py` is the darkroom helper, an extension: a model on this computer (an OpenAI-style server on
+  a loopback address, nothing else taken, no proxy, no redirect) that reads for a private task what the AI app
+  may not: `write` rewrites a sealed prompt the way the AI says (set_prompt's `rewrite`; the result leaves as a
+  token), `check_picture` answers zoom_image with a fixed list of checks, each one of a few allowed words
+  (`CHECKS`), so its word cannot carry what the picture shows. `web/modules/ui_ai_darkroom.js` is its part of the
+  Gates window (find the local servers, pick a model, drop it) (`tests/test_ai_darkroom.py`).
   `api/ai_sent.py` keeps what a private task's AI wrote and was answered, as it went (a line per call beside the
   task, the newest 300, gone with it), and `web/modules/ui_ai_sent.js` is the window that lists it and looks for a
   word in it (the task's ⋯ "What the AI was sent"). Privacy mode covers what Anomalous sends, not what an AI app
