@@ -142,13 +142,16 @@ async function putOnCanvas(item, owner) {
 }
 
 /**
- * Pictures to choose from. `ctx.answers` / `ctx.send(ids)` / `ctx.closed`: as for choices.
+ * Pictures to choose from. `ctx.answers` / `ctx.send(ids)` / `ctx.closed`: as for choices; `ctx.pickedOn`: the step of
+ * the bases panel whose pick may still change, sent as `ctx.send(ids, note, true)`.
  */
 export function picks(block, ctx) {
     const box = el('div', 'anomalous-ai-picks');
     if (block.question) box.append(el('div', 'anomalous-ai-panel-question', block.question_key ? t(block.question_key) : block.question));
     const answer = ctx.answers[block.id];
     const chosen = new Set(answer?.choice || []);
+    // a picked base the task still holds may change for another (api/ai_bases.py change)
+    const again = Boolean(answer) && !ctx.closed && block.id === 'base' && ctx.pickedOn === ctx.stepId;
     const grid = el('div', 'anomalous-ai-picks-grid');
     const note = el('div', 'anomalous-ai-panel-error');
     const confirm = button('anomalous-ai-panel-send', t('aiPanelSend'), () => {
@@ -175,17 +178,18 @@ export function picks(block, ctx) {
         if (item.label) card.append(el('div', 'anomalous-ai-pick-label', item.label));
         if (item.reason) card.append(el('div', 'anomalous-ai-pick-reason', item.reason));
         const actions = el('div', 'anomalous-ai-pick-actions');
-        const take = button('anomalous-ai-pick-take', chosen.has(item.id) ? `✓ ${t('aiPickTaken')}` : t('aiPickTake'), () => {
-            if (!block.multiple) return void ctx.send([item.id], note);
+        const take = button('anomalous-ai-pick-take', chosen.has(item.id) ? `✓ ${t('aiPickTaken')}` : t(again ? 'aiPickInstead' : 'aiPickTake'), () => {
+            if (!block.multiple) return void ctx.send([item.id], note, again);
             card.classList.toggle('is-picked');
             confirm.disabled = !grid.querySelector('.anomalous-ai-pick.is-picked');
         });
-        take.disabled = Boolean(answer) || ctx.closed;
+        take.disabled = ctx.closed || chosen.has(item.id) || (Boolean(answer) && !again);
         actions.append(take, button('anomalous-ai-link', t('aiPickCanvas'), () => putOnCanvas(item, ctx.owner), t('aiPickCanvasHint')));
         card.append(actions);
         grid.append(card);
     }
     box.append(grid);
+    if (again) box.append(el('p', 'anomalous-ai-panel-text is-muted', t('aiPickAgainHint')));
     if (block.multiple && !answer && !ctx.closed) box.append(confirm);
     box.append(note);
     return box;

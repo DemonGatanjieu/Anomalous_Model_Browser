@@ -416,7 +416,8 @@ covered by the `styles.css` manifest.
   mask a later step previews, is not one of them; the canvas never changes); when it
   ends `api/ai_bases.py` puts the previews on a picks panel with their seeds, copies the picked one
   into the output folder and holds its seed, which the task's next run puts on that sampler "fixed"
-  and keeps under every try. Where the rest takes the base's picture, that run takes the kept picture
+  and keeps under every try; until newer bases come or the task moves to another canvas, another
+  preview may be taken instead (answer `change: true`), kept and held the same way, the AI told. Where the rest takes the base's picture, that run takes the kept picture
   (LoadImage) and the base is not drawn again (`onKeptBase`); a base handed on as a latent (the mid-way
   switch) is drawn again from its seed and the base that run saves is compared with the kept picture.
   `api/mcp_prompts.py` serves `prompts/list` / `prompts/get`: ready-made requests (the AI app's

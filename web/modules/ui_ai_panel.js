@@ -419,9 +419,9 @@ const DRAW = {
     plan: (block, ctx) => planCard(block, ctx, { sendAnswer, answerNote }),
     picks: (block, ctx) => picks(block, {
         ...ctx,
-        send: async (ids, note) => {
+        send: async (ids, note, change) => {
             try {
-                await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, choice: ids });
+                await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, choice: ids, ...(change ? { change: true } : {}) });
                 ctx.changed();
             } catch (error) {
                 note.textContent = error.message;
@@ -432,7 +432,8 @@ const DRAW = {
 
 /**
  * The panel of a panel step. `ctx`: `{ taskId, owner, openPicture(url, video), openModel(item),
- * locateNode(id), stepOf(id), changed(), sealed }` (sealed: the task's texts behind its tokens, for the prompt box) (changed: an answer went in, draw the task again;
+ * locateNode(id), stepOf(id), changed(), sealed, pickedOn }` (sealed: the task's texts behind its tokens, for the prompt box;
+ * pickedOn: the step of the bases panel whose pick the task holds, which may still change) (changed: an answer went in, draw the task again;
  * stepOf: the task's step of that id, for a run_map block). A block of a kind no longer drawn (an old record's) is left out.
  */
 export function renderPanel(step, ctx) {

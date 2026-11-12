@@ -90,6 +90,8 @@
 - The AI workbench has a newcomer's tour: the first time it shows a task it walks you through New task, Connect an AI, the gates, the list, a task's ⋯, the timeline and the message box; the home page's How it works (under Let the AI do it) runs it again. What shows up only after the AI has done something (Not quite under a run, the AI's canvas undo, Hide in a private task) gets one line the first time, gone after Got it. A tour skips a control that cannot be seen and lights only the visible part of a tall one.
 - 「关卡」窗口最上面多了「安全级别」：点一下 **谨慎**（每件事都先问、只用现成做法里的节点）、**平衡**（默认：改画布、用显卡和联网直接做，下载和挪文件先问）或 **放手**（下载也不问、蓝图直接搭、没及时回答按推荐走；挪文件仍然先问），一次性设好下面那一串开关，不用一个一个改；单独改过下面某一行会变成自定义。
 - The Gates window has a **Safety level** row at the top: one click sets **Careful** (asks before everything, uses only nodes of the ready-made ways), **Balanced** (the default: canvas, graphics card and going online go ahead; downloads and moving files ask first) or **Hands-off** (downloads without asking, builds blueprints at once, takes its recommendation when you do not answer in time; moving files still asks) across the switches below; changing any row on its own shows Custom instead.
+- 「挑一张底图」选错了可以改：AI 出新底图之前，卡上别的几张都有「改选这张」，点了就换成新的那张（同样存进输出文件夹、锁住它的种子），AI 会收到；以前只能留言告诉 AI，它得停掉已经开跑的放大、把底图重画一遍。
+- Took the wrong base on "Pick a base"? Until the AI draws new bases, the other previews have Take this instead: the new one is kept in the output folder and its seed held the same way, and the AI is told. Before, you could only write to the AI, which had to stop the upscale it had started and draw the base again.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 

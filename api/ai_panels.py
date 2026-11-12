@@ -294,9 +294,10 @@ def update(panel_id, title=None, blocks=None, closed=None):
     return panel
 
 
-def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=False, extra=None):
+def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=False, extra=None, again=False):
     """The user's answer to one block of a panel (from the page), or `skip` it, with `extra` for the AI
-    (ai_repaint.prepare). Returns the step's answers."""
+    (ai_repaint.prepare); `again`: in place of the answer given (another base taken instead, ai_bases.change).
+    Returns the step's answers."""
     with _answered:
         task = ai_tasks._load().get(task_id)
         step = next((item for item in (task or {}).get("steps") or [] if item.get("id") == step_id), None)
@@ -307,7 +308,7 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
         block = next((b for b in step["panel"]["blocks"] if b.get("id") == block_id), None)
         if not block or block["type"] not in INTERACTIVE:
             raise PanelError("No such question")
-        if block_id in step.setdefault("answers", {}):
+        if block_id in step.setdefault("answers", {}) and not again:
             raise PanelError("Already answered")
         entry = {"at": time.time() if now is None else now, "delivered": False, **(extra or {})}
         if skip:

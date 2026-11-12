@@ -226,14 +226,15 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
     head.replaceChildren(...parts);
 
     // The panels, oldest first; only the ones that changed are drawn again.
+    const pickedOn = task.base_hold?.picked_on; // a picked base that may still change (ui_ai_stage.js picks)
     steps.forEach((step, at) => {
-        const key = JSON.stringify([step.panel, step.answers, step.prompt_advice]);
+        const key = JSON.stringify([step.panel, step.answers, step.prompt_advice, pickedOn === step.id]);
         const there = body.children[at];
         if (there?.dataset.panelKey === key) return;
         const item = el('section', 'anomalous-ai-stage-item');
         item.dataset.panelKey = key;
         item.dataset.panelId = step.panel.id;
-        item.append(el('div', 'anomalous-ai-stage-item-step', t('aiStageStep', { number: ctx.numberOf(step.id) })), renderPanel(step, { ...ctx, sealed: task.sealed }));
+        item.append(el('div', 'anomalous-ai-stage-item-step', t('aiStageStep', { number: ctx.numberOf(step.id) })), renderPanel(step, { ...ctx, sealed: task.sealed, pickedOn }));
         if (there) {
             box.inView?.unobserve(there);
             there.replaceWith(item);

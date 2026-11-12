@@ -6,7 +6,9 @@ canvas saves its base, and its seed is held: the task's next run_workflow puts i
 base's picture, it takes the kept picture and the base is not drawn again: drawn again, even from the
 same seed and settings, it came out grainy once on a 6 GB card (2026-11-04). A base handed on as a
 latent (the mid-way switch) is drawn again from its seed; when that run saves its base, the picture is
-compared with the kept one, so the user and the AI know whether the second pass grew from it."""
+compared with the kept one, so the user and the AI know whether the second pass grew from it. Until newer
+bases come or the task moves to another canvas, the user may take another of those previews instead
+(change): it is kept and held the same way, and the AI is told; the earlier copy stays in the output folder."""
 
 import os
 import shutil
@@ -102,7 +104,7 @@ def prepare(task_id, step_id, choice, skip=False):
     ai_outside.own(target)
     shutil.copyfile(source, os.path.join(folder, target))  # its prompt and workflow come with it
     kept = "/".join(part for part in (subfolder, target) if part)
-    picked = {**picked, "kept": kept, "kept_input": ai_pictures.to_input(kept)}  # what LoadImage reads in the next run
+    picked = {**picked, "kept": kept, "kept_input": ai_pictures.to_input(kept), "picked_on": step_id}  # kept_input: what LoadImage reads
     return {"base": picked, "kept": kept, "seed": picked["seed"],
             "note": f"Anomalous keeps this base as {kept} and holds seed {picked['seed']} on node {picked['node']} "
                     "for your next run_workflow: run the whole workflow now; do not change that seed."}
@@ -127,8 +129,33 @@ def hold(task_id, extra):
     with ai_tasks._lock:
         task = ai_tasks._load().get(task_id)
         if task:
-            task["base_hold"] = {key: base[key] for key in ("node", "type", "names", "seed", "kept", "kept_input", "show")}
+            task["base_hold"] = {key: base[key] for key in ("node", "type", "names", "seed", "kept", "kept_input", "show", "picked_on")}
             ai_tasks._save(task)
+
+
+def change(task_id, step_id, choice):
+    """Another base taken instead on bases panel `step_id` while the task still holds that panel's pick: kept
+    and held as the first one was, and the AI told. Returns the step's answers."""
+    task = ai_tasks.get_task(task_id)
+    if ((task or {}).get("base_hold") or {}).get("picked_on") != step_id:
+        raise ValueError("这次挑的底图已经换不了了：之后又出了新底图，或任务换了画布 / "
+                         "This pick can no longer change: newer bases came since, or the task moved to another canvas")
+    answers = dict(_step(task, step_id).get("answers") or {})
+    if answers.get("base", {}).get("choice") == (choice if isinstance(choice, list) else [choice]):
+        return answers  # that one already (a second click)
+    extra = prepare(task_id, step_id, choice)
+    if not extra:
+        raise ValueError("Pick one of the bases")
+    extra["note"] = (f"The user took another base instead: Anomalous now keeps {extra['kept']} and holds seed {extra['seed']} "
+                     f"on node {extra['base']['node']} for your next run_workflow. A run started before this still draws from "
+                     "the earlier base: run the whole workflow again; do not change that seed.")
+    try:
+        answers = ai_panels.answer(task_id, step_id, "base", choice, extra=extra, again=True)
+    except ai_panels.PanelError:
+        discard(extra)
+        raise
+    hold(task_id, extra)
+    return answers
 
 
 def same(first, second):

@@ -116,7 +116,8 @@ async def api_change(request):
 
 async def api_answer(request):
     """POST /anomalous/ai_tasks/{id}/answer: {step, block, choice: [ids] | text | prompts, negative, pictures, gist | skip: true} -
-    the user's answer on a panel; a prompt box's texts are sealed and the AI gets tokens, its gist as written (ai_sealed.py)."""
+    the user's answer on a panel; a prompt box's texts are sealed and the AI gets tokens, its gist as written (ai_sealed.py).
+    {step, block, choice, change: true}: another base taken instead of the one picked (ai_bases.change)."""
     from . import ai_bases, ai_panels, ai_plans, ai_repaint, ai_sealed
 
     try:
@@ -126,6 +127,12 @@ async def api_answer(request):
     if not isinstance(body, dict):
         return web.json_response({"error": "Expected {step, block, choice | text}"}, status=400)
     task_id, step_id, skip = request.match_info["task_id"], str(body.get("step")), body.get("skip") is True
+    if body.get("change") is True:
+        try:
+            answers = await asyncio.to_thread(ai_bases.change, task_id, step_id, body.get("choice"))
+        except (ai_panels.PanelError, ValueError, OSError) as error:
+            return web.json_response({"error": str(error)}, status=400)
+        return web.json_response({"answers": answers})
     try:
         if "prompts" in body and not skip:
             extra = await asyncio.to_thread(ai_sealed.seal_answer, task_id, body["prompts"], body.get("negative"), body.get("pictures"), body.get("gist"))

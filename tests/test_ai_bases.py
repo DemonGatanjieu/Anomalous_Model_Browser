@@ -88,8 +88,39 @@ class BaseTests(unittest.TestCase):
         hold = ai_bases.hold_of(task_id)
         self.assertTrue(hold.pop("kept_input").startswith("anomalous_reference_"), "LoadImage reads its input copy")
         self.assertEqual(hold, {"node": "32", "type": "KSamplerAdvanced", "names": ["noise_seed"],
-                                "seed": 102, "kept": "two_pass/base_00001_.png", "show": "9"})
+                                "seed": 102, "kept": "two_pass/base_00001_.png", "show": "9", "picked_on": step_id})
         self.assertEqual(ai_bases.prepare(task_id, "other", ["b1"]), {}, "other panels bring nothing")
+
+    def test_another_base_may_be_taken_instead_until_new_bases_come(self):
+        task_id, _panel = self.offered()
+        step_id = next(step["id"] for step in ai_tasks.get_task(task_id)["steps"] if step["tool"] == "pick_base")
+        extra = ai_bases.prepare(task_id, step_id, ["b2"])
+        ai_panels.answer(task_id, step_id, "base", ["b2"], extra=extra)
+        ai_bases.hold(task_id, extra)
+        self.assertEqual(ai_panels.get_answers("Claude", task_id=task_id)["answers"][0]["choice"], ["b2"])
+        with self.assertRaisesRegex(ai_panels.PanelError, "Already answered"):
+            ai_panels.answer(task_id, step_id, "base", ["b1"])
+
+        answers = ai_bases.change(task_id, step_id, ["b1"])
+        self.assertEqual((answers["base"]["choice"], answers["base"]["seed"], answers["base"]["delivered"]), (["b1"], 101, False))
+        hold = ai_bases.hold_of(task_id)
+        self.assertEqual((hold["seed"], hold["kept"], hold["picked_on"]), (101, "two_pass/base_00002_.png", step_id))
+        with Image.open(os.path.join(self.output, "two_pass", "base_00002_.png")) as kept:
+            self.assertEqual(kept.getpixel((0, 0)), (255, 0, 0))
+        self.assertTrue(os.path.isfile(os.path.join(self.output, "two_pass", "base_00001_.png")), "the first copy stays")
+        told = ai_panels.get_answers("Claude", task_id=task_id)["answers"]
+        self.assertEqual(told[0]["choice"], ["b1"])
+        self.assertIn("took another base instead", told[0]["note"])
+        self.assertIn("seed 101", told[0]["note"])
+
+        self.assertEqual(ai_bases.change(task_id, step_id, ["b1"])["base"]["choice"], ["b1"])
+        self.assertFalse(os.path.exists(os.path.join(self.output, "two_pass", "base_00003_.png")), "a second click copies nothing")
+        with self.assertRaisesRegex(ValueError, "Pick one"):
+            ai_bases.change(task_id, step_id, ["b9"])
+        ai_bases.forget(task_id)  # newer bases came
+        with self.assertRaisesRegex(ValueError, "newer bases"):
+            ai_bases.change(task_id, step_id, ["b2"])
+        self.assertEqual(ai_tasks.get_task(task_id)["steps"][-1]["answers"]["base"]["choice"], ["b1"])
 
     def test_a_preview_gone_after_a_restart_says_its_seed(self):
         task_id, _panel = self.offered()
@@ -101,7 +132,7 @@ class BaseTests(unittest.TestCase):
     def test_the_next_run_holds_the_pick_and_a_new_base_only_run_drops_it(self):
         task_id, _panel = self.offered()
         hold = {"node": "32", "type": "KSamplerAdvanced", "names": ["noise_seed"], "seed": 102, "kept": "two_pass/base_00001_.png",
-                "kept_input": "anomalous_reference_x.png", "show": "9"}
+                "kept_input": "anomalous_reference_x.png", "show": "9", "picked_on": "s1"}
         ai_bases.hold(task_id, {"base": hold})
         sent = []
 
