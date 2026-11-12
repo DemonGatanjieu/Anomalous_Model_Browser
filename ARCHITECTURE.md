@@ -252,7 +252,8 @@ covered by the `styles.css` manifest.
   thing well (repaints, upscales, ControlNets, face and hand detailing): begin_task hands the
   AI their directory, a line a use (a block's "job"; "want" words ask for its others), `add_nodes(use=…, want=…)` has `pick` choose the best block this ComfyUI can run and builds it (or `block=` by name), its nodes and
   the settings that workflow used, a block whose pack is missing naming the pack and a stand-in;
-  an upscale block takes an upscale model this ComfyUI has, a control block a ControlNet whose
+  an upscale block takes an upscale model this ComfyUI has (and on a card of 8 GB or less decodes with
+  ComfyUI's VAEDecodeTiled, `small_card`: one 2x decode took 20 minutes on 6 GB), a control block a ControlNet whose
   base model fits the canvas's model (the page's `block_model`, `model_advice.py`) and the
   picture to follow, copied into the input folder (`ai_pictures.to_input`); a block marked
   `scene` takes a second picture the same way (`add_nodes(scene=…)`, `$scene`)

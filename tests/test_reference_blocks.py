@@ -186,6 +186,24 @@ class BlockTests(unittest.TestCase):
             reference_blocks.nodes_of("upscale_tiled", {**EVERYTHING, "UpscaleModelLoader": {}})
         self.assertIn("ComfyUI_UltimateSDUpscale: upscale 2x", reference_blocks.directory(BUILT_IN)["Not here yet, needs"])
 
+    def test_an_upscale_decodes_in_tiles_on_a_card_of_8_gb_or_less(self):
+        info = {**EVERYTHING, "VAEDecodeTiled": {}}
+        for total, tiled in ((6141, True), (8188, True), (12282, False), (None, False)):
+            memory = {"total_mb": total, "free_mb": 512} if total else None
+            with mock.patch("api.ai_run_watch.vram", return_value=memory):
+                for name in ("upscale", "upscale_tile", "upscale_character"):
+                    built = reference_blocks.build(name, info, image="a.png", main_base=lambda: "Illustrious", model="checkpoints:0:a.safetensors")["nodes"]
+                    decode = built["decode"]
+                    self.assertEqual(decode["class_type"], "VAEDecodeTiled" if tiled else "VAEDecode", (name, total))
+                    self.assertEqual(decode["inputs"]["samples"], ["redraw", 0], "the same link")
+                    if tiled:
+                        self.assertEqual(decode["inputs"]["tile_size"], 512)
+                picture = reference_blocks.build("picture", info, main_base=lambda: "Illustrious", model="checkpoints:0:a.safetensors")["nodes"]
+                self.assertNotIn("VAEDecodeTiled", {spec["class_type"] for spec in picture.values()}, "only upscales")
+        with mock.patch("api.ai_run_watch.vram", return_value={"total_mb": 6141, "free_mb": 512}):
+            self.assertEqual(reference_blocks.build("upscale", EVERYTHING)["nodes"]["decode"]["class_type"], "VAEDecode",
+                             "a ComfyUI without the node keeps the plain one")
+
     def test_the_tile_upscale_redraws_on_its_own_copy_of_the_model(self):
         info = {**EVERYTHING, "ColorMatch": {}}
         self.assertEqual(reference_blocks.pick("upscale", "tile", info), "upscale_tile")

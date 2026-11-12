@@ -37,6 +37,11 @@ SCENE = "scene: the picture to put it into, given the same ways"
 # The words a ControlNet file's name has for what it follows; a union model follows all of them.
 CONTROLS = {"pose": ("openpose", "pose"), "depth": ("depth",), "tile": ("tile",), "lineart": ("lineart", "mangaline", "manga_line")}
 ANY_CONTROL = ("union", "promax")
+# On a card of 8 GB or less (they report a little under their size), an upscale's decode is tiled: a 2x picture
+# decoded in one piece took 20 minutes on a 6 GB laptop once the desktop held some of its memory. The card's
+# total, not what is free this moment, so it never changes from run to run.
+SMALL_CARD_MB = 10 * 1024
+TILED_DECODE = {"tile_size": 512, "overlap": 64, "temporal_size": 64, "temporal_overlap": 8}
 # What a union ControlNet is told to follow (ComfyUI's SetUnionControlNetType).
 UNION_TYPES = {"pose": "openpose", "depth": "depth", "tile": "tile", "lineart": "canny/lineart/anime_lineart/mlsd"}
 # A ControlNet whose base model is not known yet (not scanned): its folder or name says it, as Anomalous sorts them.
@@ -379,6 +384,19 @@ def _variant(name, block, main_base, info):
     return {**block, **variant}
 
 
+def small_card():
+    """Whether the graphics card has 8 GB or less (no card, or no ComfyUI: no)."""
+    from .ai_run_watch import vram
+
+    memory = vram()
+    return bool(memory) and memory["total_mb"] < SMALL_CARD_MB
+
+
+def _tiled(spec):
+    """A VAEDecode as ComfyUI's VAEDecodeTiled, its links and title kept."""
+    return {**spec, "class_type": "VAEDecodeTiled", "inputs": {**spec["inputs"], **TILED_DECODE}}
+
+
 def nodes_of(name, info, image=None, main_base=lambda: "", base_of=lambda name: ""):
     """Block `name` as add_nodes' group, its values filled in, or BlockError saying why not."""
     return build(name, info, image, main_base, base_of)["nodes"]
@@ -471,4 +489,6 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
     built = {key: {**{field: value for field, value in spec.items() if field != "optional"},
                    "inputs": {input: fills.get(value, value) if isinstance(value, str) else link(value) if isinstance(value, list) else value
                               for input, value in spec["inputs"].items()}} for key, spec in nodes.items()}
+    if BLOCKS[name].get("job") == "upscale" and "VAEDecodeTiled" in info and small_card():
+        built = {key: _tiled(spec) if spec["class_type"] == "VAEDecode" else spec for key, spec in built.items()}
     return {"nodes": built, "roles": block.get("roles") or {}, "after": block["after"], "tested": tested_words(BLOCKS[name])}

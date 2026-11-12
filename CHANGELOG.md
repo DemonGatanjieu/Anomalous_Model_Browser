@@ -82,6 +82,8 @@
 - "Connect an AI" picks **which tools the AI gets**: every tool (the default; tasks handed over in Anomalous need it), **Drawing only** (for when you tell the AI to draw right in your AI app's chat, your ComfyUI still drawing: without Anomalous's panel questions, moving, scanning or downloading models and the voice, so the AI reads about a third less of tool descriptions every round), or **My pick** (tick them by kind, then save). The address below follows, ending in `?tools=core` for example; only the list gets shorter, nothing in Anomalous is taken away; on the short list, the AI's look at where things stand (get_situation) also names Anomalous's ready-made ways and skills, so it does not wire everything node by node. The idea came from issue #27.
 - AI 没起名的任务（多半是你在 AI 软件聊天框里叫它做的），AMB 按它第一个动手的步骤起的名字改成中文显示：以前是「run_workflow」「new_workflow: …」，现在是「运行工作流」「新建了工作流：…」。
 - A task the AI never named (mostly one you asked for in your AI app's chat) shows the name Anomalous took from its first step that did something in the page's words: "Ran the workflow", "Started a workflow: …" instead of "run_workflow", "new_workflow: …".
+- 显卡 8G 及以下时，AMB 的放大重绘做法（轻放大、Tile 锁图放大、只重画人物的放大）最后一步改用 ComfyUI 自带的「VAE 分块解码」。以前在 6G 笔记本上放大两倍，光解码就卡了 20 分钟，桌面和浏览器也跟着卡；分块解码不用装插件，大显存的卡照旧。
+- On a graphics card of 8 GB or less, Anomalous's upscale-and-redraw ways (the light upscale, the Tile upscale, enlarging only the character) decode the last step with ComfyUI's own VAE Decode (Tiled). A 2x upscale on a 6 GB laptop spent 20 minutes decoding alone and froze the desktop; the tiled decode needs no extra pack, and bigger cards stay as they were.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 
