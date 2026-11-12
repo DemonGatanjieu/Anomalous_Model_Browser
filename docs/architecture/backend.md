@@ -368,7 +368,12 @@ The Gates' custom-node rule (`ai_tools.json` `nodes`, `ai_gates.node_rule`): wit
 `mcp_canvas_edit._allowed` refuses a custom node no ready-made way builds
 (`reference_blocks.node_types`) and the task did not pick; ComfyUI's own nodes stay allowed. A
 picks block the user left to the AI (`no_answer` "recommended") takes the item it marked
-recommended, as a choice does (`ai_answer_wait.take_recommended`). The user's word on a finished
+recommended, as a choice does (`ai_answer_wait.take_recommended`). Safety levels
+(`ai_gates.LEVELS`: `careful`, `balanced`, `free`, or `custom` when any of those settings
+differs; `ai_gates.level`, `ai_gates.set_level`) let `GET/POST /anomalous/ai_gates` read `level`
+and apply the five gates together with `node_rule`, `route_rule`, `no_answer` and
+`ai_plans.auto()` in one write, leaving `canvas_tab`, `runs`, `answer_wait` and privacy settings
+unchanged. The user's word on a finished
 run (`POST /anomalous/ai_tasks/{id}/runs/{step}/verdict`, `ai_run_control.set_verdict`) stays on
 the run's step and reaches the AI as a `user_verdict` step; nothing else keeps it. With "bad" go
 `issues` (keys of `ai_run_control.ISSUES`: hands, face, body, composition, dark, bright, blurry, style,

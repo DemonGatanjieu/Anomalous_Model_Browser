@@ -3,8 +3,9 @@
  * (what the AI wants to do; Allow, No, a reason for the AI folded until asked for, and "from now
  * on, go ahead"), what
  * the user answered, and the Gates window where each kind of action is set to go ahead, ask first
- * or never (changing the canvas, using the GPU, downloading, going online, moving model files), whether a new
- * task works in a canvas tab of its own (api/ai_task_canvas.py), how long the AI waits for the
+ * or never (changing the canvas, using the GPU, downloading, going online, moving model files), safety levels
+ * (careful, balanced, free) that set them together with node/route rules, blueprint auto-build and timeout behavior,
+ * whether a new task works in a canvas tab of its own (api/ai_task_canvas.py), how long the AI waits for the
  * user's answer and what happens when nobody answers, and whether the AI waits for a run or the user tells it when the run is done
  * (ui_ai_call.js).
  */
@@ -17,6 +18,8 @@ import { icon } from './ui_ai_icons.js';
 
 export const GATES = ['canvas', 'gpu', 'download', 'network', 'files'];
 const POLICIES = ['auto', 'ask', 'never'];
+const LEVELS = ['careful', 'balanced', 'free'];
+const LEVEL_VALUES = new Set([...LEVELS, 'custom']);
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -98,6 +101,40 @@ export function gateCard(step, taskId, changed) {
     return card;
 }
 
+/** Top row of the Gates window: three safety levels, none lit when `current` is custom. */
+function levelRow(current, apply) {
+    const row = el('div', 'anomalous-ai-gates-row anomalous-ai-gates-level');
+    row.append(el('div', 'anomalous-ai-gates-name', t('aiLevel')));
+    const choice = el('div', 'anomalous-ai-gates-choice');
+    choice.setAttribute('role', 'radiogroup');
+    const note = el('div', 'anomalous-ai-gates-tools');
+    let kept = current;
+    const draw = () => {
+        choice.querySelectorAll('button').forEach((item, at) => {
+            const on = LEVELS[at] === kept;
+            item.classList.toggle('is-on', on);
+            item.setAttribute('aria-checked', String(on));
+        });
+        note.textContent = LEVEL_VALUES.has(kept) ? t(`aiLevelWhy_${kept}`) : '';
+        note.classList.toggle('is-custom', kept === 'custom');
+    };
+    for (const value of LEVELS) {
+        const option = button('anomalous-ai-gates-option', t(`aiLevel_${value}`), () => apply(value));
+        option.setAttribute('role', 'radio');
+        option.dataset.level = value;
+        choice.append(option);
+    }
+    draw();
+    row.append(choice, note);
+    return {
+        row,
+        set(next) {
+            kept = next;
+            draw();
+        },
+    };
+}
+
 /** A row of the Gates window: a setting, its words and its choices; `save(choice)` posts it and gives what is kept. */
 function choiceRow(key, choices, current, labelOf, save) {
     const row = el('div', 'anomalous-ai-gates-row');
@@ -106,7 +143,11 @@ function choiceRow(key, choices, current, labelOf, save) {
     const choice = el('div', 'anomalous-ai-gates-choice');
     choice.setAttribute('role', 'radiogroup');
     let kept = current;
-    const draw = () => choice.querySelectorAll('button').forEach((item, at) => item.classList.toggle('is-on', choices[at] === kept));
+    const draw = () => choice.querySelectorAll('button').forEach((item, at) => {
+        const on = choices[at] === kept;
+        item.classList.toggle('is-on', on);
+        item.setAttribute('aria-checked', String(on));
+    });
     for (const value of choices) {
         const option = button('anomalous-ai-gates-option', labelOf(value), async () => {
             try {
@@ -125,35 +166,72 @@ function choiceRow(key, choices, current, labelOf, save) {
     return row;
 }
 
-/** The Gates window: each kind of action the AI may do (goes ahead, asks or never), where it works, which tools it gets. */
+/** The Gates window: safety levels, each kind of action the AI may do, where it works, which tools it gets. */
 export async function openGates() {
     const body = el('div', 'anomalous-ai-gates');
     body.append(el('p', 'anomalous-ai-gates-intro', t('aiGatesIntro')));
     let known = {};
+    let loaded = false;
     try {
         known = await (await fetch('/anomalous/ai_gates')).json();
+        loaded = true;
     } catch (_) { /* drawn with nothing chosen; a change still saves */ }
-    const save = async change => post('/anomalous/ai_gates', change);
-    for (const gate of GATES) {
-        body.append(choiceRow(gate, POLICIES, known.policies?.[gate], policy => t(`aiPolicy_${policy}`),
-            async policy => (await save({ gate, policy })).policies[gate]));
-    }
-    body.append(choiceRow('canvasTab', ['new', 'current'], known.canvas_tab || 'new', mode => t(`aiCanvasTab_${mode}`),
-        async mode => (await save({ canvas_tab: mode })).canvas_tab),
-    choiceRow('privacy', [false, true], known.privacy === true, on => t(`aiPrivacyDefault_${on}`),
-        async on => (await save({ privacy: on })).privacy),
-    choiceRow('privacyModels', [true, false], known.privacy_models !== false, on => t(`aiPrivacyModels_${on}`),
-        async on => (await save({ privacy_models: on })).privacy_models),
-    choiceRow('answerWait', [60, 180, 600], known.answer_wait || 180, seconds => t(`aiAnswerWait_${seconds}`),
-        async seconds => (await save({ answer_wait: seconds })).answer_wait),
-    choiceRow('noAnswer', ['stop', 'recommended'], known.no_answer || 'stop', mode => t(`aiNoAnswer_${mode}`),
-        async mode => (await save({ no_answer: mode })).no_answer),
-    choiceRow('runs', ['call', 'wait'], known.runs || 'call', mode => t(`aiRunWait_${mode}`),
-        async mode => (await save({ runs: mode })).runs),
-    choiceRow('nodes', ['any', 'ways'], known.nodes || 'any', mode => t(`aiNodeRule_${mode}`),
-        async mode => (await save({ nodes: mode })).nodes),
-    choiceRow('route', ['allow', 'ask'], known.routes || 'allow', mode => t(`aiRouteRule_${mode}`),
-        async mode => (await save({ routes: mode })).routes),
-    darkroomPart(), el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
+    const rows = el('div', 'anomalous-ai-gates-rows');
+    const drawRows = (data) => {
+        let top = null;
+        const save = async (change) => {
+            const next = await post('/anomalous/ai_gates', change);
+            if (!loaded) {
+                loaded = true;
+                drawRows(next);
+            } else {
+                top?.set(next.level);
+            }
+            return next;
+        };
+        const applyLevel = async (value) => {
+            const hadFocus = top.row.contains(document.activeElement);
+            const buttons = [...top.row.querySelectorAll('button')];
+            buttons.forEach((item) => { item.disabled = true; });
+            let next;
+            try {
+                next = await post('/anomalous/ai_gates', { level: value });
+            } catch (error) {
+                buttons.forEach((item) => { item.disabled = false; });
+                await anomalousAlert(error.message);
+                return;
+            }
+            loaded = true;
+            drawRows(next);
+            if (hadFocus) rows.querySelector(`[data-level="${value}"]`)?.focus();
+        };
+        top = levelRow(data.level, applyLevel);
+        const list = [top.row];
+        for (const gate of GATES) {
+            list.push(choiceRow(gate, POLICIES, data.policies?.[gate], policy => t(`aiPolicy_${policy}`),
+                async policy => (await save({ gate, policy })).policies[gate]));
+        }
+        list.push(
+            choiceRow('canvasTab', ['new', 'current'], data.canvas_tab || 'new', mode => t(`aiCanvasTab_${mode}`),
+                async mode => (await save({ canvas_tab: mode })).canvas_tab),
+            choiceRow('privacy', [false, true], data.privacy === true, on => t(`aiPrivacyDefault_${on}`),
+                async on => (await save({ privacy: on })).privacy),
+            choiceRow('privacyModels', [true, false], data.privacy_models !== false, on => t(`aiPrivacyModels_${on}`),
+                async on => (await save({ privacy_models: on })).privacy_models),
+            choiceRow('answerWait', [60, 180, 600], data.answer_wait || 180, seconds => t(`aiAnswerWait_${seconds}`),
+                async seconds => (await save({ answer_wait: seconds })).answer_wait),
+            choiceRow('noAnswer', ['stop', 'recommended'], data.no_answer || 'stop', mode => t(`aiNoAnswer_${mode}`),
+                async mode => (await save({ no_answer: mode })).no_answer),
+            choiceRow('runs', ['call', 'wait'], data.runs || 'call', mode => t(`aiRunWait_${mode}`),
+                async mode => (await save({ runs: mode })).runs),
+            choiceRow('nodes', ['any', 'ways'], data.nodes || 'any', mode => t(`aiNodeRule_${mode}`),
+                async mode => (await save({ nodes: mode })).nodes),
+            choiceRow('route', ['allow', 'ask'], data.routes || 'allow', mode => t(`aiRouteRule_${mode}`),
+                async mode => (await save({ routes: mode })).routes),
+        );
+        rows.replaceChildren(...list);
+    };
+    drawRows(known);
+    body.append(rows, darkroomPart(), el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
     aiWindow(t('aiGates'), body);
 }

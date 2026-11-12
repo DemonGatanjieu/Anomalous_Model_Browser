@@ -196,7 +196,8 @@ async def api_gate(request):
 
 
 async def api_gates(request):
-    """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools}; POST {gate, policy} changes one,
+    """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools, level}; POST {level: careful | balanced | free}
+    applies a safety level, POST {gate, policy} changes one,
     POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py),
     POST {privacy: bool} whether new tasks are private, POST {privacy_models: bool} whether a private task
     keeps its models' names too (ai_privacy.py),
@@ -209,13 +210,15 @@ async def api_gates(request):
         return {"policies": ai_gates.policies(), "canvas_tab": ai_task_canvas.default_mode(), "privacy": ai_privacy.default_on(),
                 "privacy_models": ai_privacy.hides_models(),
                 "runs": ai_gates.run_wait(), "answer_wait": ai_gates.answer_wait(), "no_answer": ai_gates.no_answer(),
-                "nodes": ai_gates.node_rule(), "routes": ai_gates.route_rule()}
+                "nodes": ai_gates.node_rule(), "routes": ai_gates.route_rule(), "level": ai_gates.level()}
 
     if request.method == "GET":
         return web.json_response(settings())
     body = await _body(request)
     try:
-        if "canvas_tab" in (body or {}):
+        if "level" in (body or {}):
+            ai_gates.set_level(body["level"])
+        elif "canvas_tab" in (body or {}):
             ai_task_canvas.set_default(body["canvas_tab"])
         elif "privacy" in (body or {}):
             ai_privacy.set_default(body["privacy"])

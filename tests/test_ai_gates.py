@@ -1,5 +1,7 @@
 """Gates (api/ai_gates.py): what AI apps may do without asking, the step that waits for the
 user's OK, an answer that comes after the AI stopped waiting. Everything in temporary folders."""
+import asyncio
+from contextlib import ExitStack
 import json
 import os
 import sys
@@ -13,7 +15,7 @@ from pathlib import Path
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import ai_gates, ai_panels, ai_tasks, mcp_canvas_edit  # noqa: E402
+from api import ai_gates, ai_panels, ai_plans, ai_privacy, ai_task_canvas, ai_tasks, ai_tasks_routes, mcp_canvas_edit  # noqa: E402
 from api.mcp_tools import ToolError  # noqa: E402
 from test_ai_tasks import isolate, ok  # noqa: E402
 
@@ -235,6 +237,126 @@ class GateTests(unittest.TestCase):
         self.assertEqual(steps[0]["state"], "done")
         with self.assertRaises(ValueError):
             ai_gates.decide(ref[0], ref[1], "allow")
+
+    def _isolated_settings(self):
+        stack = ExitStack()
+        folder = stack.enter_context(tempfile.TemporaryDirectory(prefix="amb_gate_levels_"))
+        for target, filename in (
+            (ai_gates, "ai_gates.json"),
+            (ai_plans, "ai_plans.json"),
+            (ai_task_canvas, "ai_canvas.json"),
+            (ai_privacy, "ai_privacy.json"),
+        ):
+            stack.enter_context(mock.patch.object(target, "_path", lambda name=filename: os.path.join(folder, name)))
+        stack.enter_context(mock.patch.object(ai_gates, "_tools_path", lambda: os.path.join(folder, "ai_tools.json")))
+        return stack
+
+    def test_safety_levels_default_apply_custom_and_validation(self):
+        expected = {
+            "careful": {
+                "policies": {"canvas": "ask", "gpu": "ask", "download": "ask", "network": "ask", "files": "ask"},
+                "nodes": "ways",
+                "routes": "ask",
+                "plan_auto": False,
+                "no_answer": "stop",
+            },
+            "balanced": {
+                "policies": {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"},
+                "nodes": "any",
+                "routes": "allow",
+                "plan_auto": False,
+                "no_answer": "stop",
+            },
+            "free": {
+                "policies": {"canvas": "auto", "gpu": "auto", "download": "auto", "network": "auto", "files": "ask"},
+                "nodes": "any",
+                "routes": "allow",
+                "plan_auto": True,
+                "no_answer": "recommended",
+            },
+        }
+        with self._isolated_settings():
+            self.assertEqual(ai_gates.level(), "balanced")
+            ai_gates.set_run_wait("wait")
+            ai_gates.set_answer_wait(600)
+            ai_task_canvas.set_default("current")
+            ai_privacy.set_default(True)
+            ai_privacy.set_hides_models(False)
+            self.assertEqual(ai_gates.level(), "balanced", "unrelated settings leave the level unchanged")
+
+            for name, spec in expected.items():
+                self.assertEqual(ai_gates.set_level(name), name)
+                self.assertEqual(ai_gates.level(), name)
+                self.assertEqual(ai_gates.policies(), spec["policies"], name)
+                self.assertEqual(ai_gates.node_rule(), spec["nodes"], name)
+                self.assertEqual(ai_gates.route_rule(), spec["routes"], name)
+                self.assertIs(ai_plans.auto(), spec["plan_auto"], name)
+                self.assertEqual(ai_gates.no_answer(), spec["no_answer"], name)
+                self.assertEqual(ai_gates.run_wait(), "wait")
+                self.assertEqual(ai_gates.answer_wait(), 600)
+                self.assertEqual(ai_task_canvas.default_mode(), "current")
+                self.assertIs(ai_privacy.default_on(), True)
+                self.assertIs(ai_privacy.hides_models(), False)
+
+            ai_gates.set_level("balanced")
+            tweaks = (
+                (lambda: ai_gates.set_policy("canvas", "ask"), lambda: ai_gates.set_policy("canvas", "auto")),
+                (lambda: ai_gates.set_policy("download", "auto"), lambda: ai_gates.set_policy("download", "ask")),
+                (lambda: ai_gates.set_node_rule("ways"), lambda: ai_gates.set_node_rule("any")),
+                (lambda: ai_gates.set_route_rule("ask"), lambda: ai_gates.set_route_rule("allow")),
+                (lambda: ai_plans.set_auto(True), lambda: ai_plans.set_auto(False)),
+                (lambda: ai_gates.set_no_answer("recommended"), lambda: ai_gates.set_no_answer("stop")),
+            )
+            for change, restore in tweaks:
+                change()
+                self.assertEqual(ai_gates.level(), "custom")
+                restore()
+                self.assertEqual(ai_gates.level(), "balanced")
+
+            for wrong in ("unknown", "", None, 123, ["careful"]):
+                with self.assertRaises(ValueError):
+                    ai_gates.set_level(wrong)
+            self.assertEqual(ai_gates.level(), "balanced")
+
+    def test_safety_level_route(self):
+        def call(method, body=None):
+            request = mock.Mock()
+            request.method = method
+            request.json = lambda: asyncio.sleep(0, body)
+            response = asyncio.run(ai_tasks_routes.api_gates(request))
+            return response.status, json.loads(response.text)
+
+        with self._isolated_settings():
+            status, initial = call("GET")
+            self.assertEqual(status, 200)
+            self.assertEqual(initial["level"], "balanced")
+
+            status, careful = call("POST", {"level": "careful"})
+            self.assertEqual(status, 200)
+            self.assertEqual(careful["level"], "careful")
+            self.assertEqual(careful["policies"], {"canvas": "ask", "gpu": "ask", "download": "ask", "network": "ask", "files": "ask"})
+            self.assertEqual((careful["nodes"], careful["routes"], careful["no_answer"]), ("ways", "ask", "stop"))
+            self.assertIs(ai_plans.auto(), False)
+
+            status, free = call("POST", {"level": "free"})
+            self.assertEqual(status, 200)
+            self.assertEqual(free["level"], "free")
+            self.assertEqual(free["policies"], {"canvas": "auto", "gpu": "auto", "download": "auto", "network": "auto", "files": "ask"})
+            self.assertEqual((free["nodes"], free["routes"], free["no_answer"]), ("any", "allow", "recommended"))
+            self.assertIs(ai_plans.auto(), True)
+
+            status, custom = call("POST", {"gate": "download", "policy": "ask"})
+            self.assertEqual((status, custom["level"], custom["policies"]["download"]), (200, "custom", "ask"))
+
+            status, balanced = call("POST", {"level": "balanced"})
+            self.assertEqual((status, balanced["level"]), (200, "balanced"))
+            status, still_balanced = call("POST", {"runs": "wait"})
+            self.assertEqual((status, still_balanced["runs"], still_balanced["level"]), (200, "wait", "balanced"))
+
+            status, bad = call("POST", {"level": "nope"})
+            self.assertEqual(status, 400)
+            self.assertIn("error", bad)
+            self.assertEqual(call("GET")[1]["level"], "balanced")
 
 
 if __name__ == "__main__":

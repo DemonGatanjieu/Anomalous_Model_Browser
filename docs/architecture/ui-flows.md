@@ -26,7 +26,7 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | --- | --- | --- |
 | 「新任务」 | 马上开一个任务，显示“等 AI 接手”，要做什么在那一页写（可以不写）；下一个来调用的 AI 直接接手它，不会接在旧任务后面 | `POST /anomalous/ai_tasks` |
 | 「连接 AI」 | 弹出连接说明：地址、复制给 AI 的那句话、各个软件怎么加（`ui_ai_connect.js`）；地址上面选给 AI 哪些工具：全部工具 / 跑图精简 / 我选的，「我选的…」按类别勾选后「保存」，地址跟着加上 `?tools=…`（`ui_ai_tool_set.js`） | `GET/POST /anomalous/ai_tool_sets`（只在保存时写） |
-| 「关卡」 | AI 做哪些事要先问你（改画布、用显卡、下载……），还有 AI 怎么等你回答、怎么等跑图（`ui_ai_gate.js`） | `/anomalous/ai_gates` |
+| 「关卡」 | 顶上一行「安全级别」（「谨慎」「平衡」「放手」，改过下面某一行变成「自定义：你单独改过下面某一行」），一次性设好下面这些开关；再往下是 AI 做哪些事要先问你（改画布、用显卡、下载……），还有 AI 怎么等你回答、怎么等跑图（`ui_ai_gate.js`） | `/anomalous/ai_gates` |
 | 「全部」「进行中」「等你回答」「出错」 | 只筛这一栏，不改任何东西 | 无 |
 | 一个任务 | 中间显示它。看过的、鼠标停过的马上出来，再悄悄补上最新内容（`ai_task_cache.js`） | `GET /anomalous/ai_tasks/{task_id}` |
 | 任务行上的 ⋯ | 鼠标移到任务上才出现，当前任务一直有。菜单和标题栏的 ⋯ 一样（`ui_ai_task_menu.js`），不用先打开这个任务 | `POST /anomalous/ai_tasks/{task_id}` |

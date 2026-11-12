@@ -15,9 +15,10 @@ AI waits for the user's answer to its question (answer_wait, ai_answer_wait.py),
 when that time runs out (no_answer): "stop", the AI ends its turn and waits for the user, or
 "recommended", a choice the AI marked a recommended option for takes it (never a gate's question);
 which custom nodes the AI may add itself (node_rule): any, or only those of the ready-made ways;
-and a new route (route_rule): an AI placing nodes by itself rather than through a way, card or route
+a new route (route_rule): an AI placing nodes by itself rather than through a way, card or route
 builds something nobody tried. "allow" goes on with one reminder in the task that a stronger model
-suits that better; "ask" waits for the user's OK, once a task.
+suits that better; "ask" waits for the user's OK, once a task. Three safety levels (LEVELS:
+"careful", "balanced", "free") set those gates, rules, plan_auto and no_answer together.
 """
 
 import json
@@ -26,7 +27,7 @@ import threading
 import time
 import uuid
 
-from . import action_catalog, ai_tasks
+from . import action_catalog, ai_plans, ai_tasks
 from .path_utils import atomic_write_json
 
 POLICIES = ("auto", "ask", "never")
@@ -39,6 +40,29 @@ NEW_ROUTE_NOTE = ("AI 在自己搭一条新路线：现成的卡、做法里没�
 ANSWER_WAITS = (60, 180, 600)  # seconds; the first call waits 30-55 s, get_answers the rest
 NO_ANSWERS = ("stop", "recommended")
 DEFAULTS = {"canvas": "auto", "gpu": "auto", "download": "ask", "network": "auto", "files": "ask"}
+LEVELS = {
+    "careful": {
+        "policies": {"canvas": "ask", "gpu": "ask", "download": "ask", "network": "ask", "files": "ask"},
+        "nodes": "ways",
+        "routes": "ask",
+        "plan_auto": False,
+        "no_answer": "stop",
+    },
+    "balanced": {
+        "policies": dict(DEFAULTS),
+        "nodes": "any",
+        "routes": "allow",
+        "plan_auto": False,
+        "no_answer": "stop",
+    },
+    "free": {
+        "policies": {"canvas": "auto", "gpu": "auto", "download": "auto", "network": "auto", "files": "ask"},
+        "nodes": "any",
+        "routes": "allow",
+        "plan_auto": True,
+        "no_answer": "recommended",
+    },
+}
 WAIT_SECONDS = 50  # below the minute many AI apps give a tool call
 ALLOWED_SECONDS = 30 * 60  # an Allow the AI did not wait for holds this long for the same call
 MAX_ARGS = 8
@@ -169,6 +193,39 @@ def set_no_answer(mode):
     if mode not in NO_ANSWERS:
         raise ValueError("no_answer is stop or recommended")
     return _set_tool_setting("no_answer", mode)
+
+
+def level():
+    """Which safety level the current settings match (careful / balanced / free), or "custom"."""
+    with _decided:
+        current = {
+            "policies": policies(),
+            "nodes": node_rule(),
+            "routes": route_rule(),
+            "plan_auto": ai_plans.auto(),
+            "no_answer": no_answer(),
+        }
+    for name, spec in LEVELS.items():
+        if current == spec:
+            return name
+    return "custom"
+
+
+def set_level(name):
+    """Apply all settings of safety level `name`, leaving unrelated settings alone."""
+    if not isinstance(name, str) or name not in LEVELS:
+        raise ValueError("level is careful, balanced or free")
+    spec = LEVELS[name]
+    with _decided:
+        atomic_write_json(_path(), dict(spec["policies"]))
+        atomic_write_json(_tools_path(), {
+            **_tool_settings(),
+            "nodes": spec["nodes"],
+            "routes": spec["routes"],
+            "no_answer": spec["no_answer"],
+        })
+        ai_plans.set_auto(spec["plan_auto"])
+    return name
 
 
 def describe(tool, arguments):

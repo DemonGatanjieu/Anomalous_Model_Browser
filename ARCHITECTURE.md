@@ -455,7 +455,9 @@ covered by the `styles.css` manifest.
   `change`); `activity_log.tag` names the task on the entry, and the activity page links to
   it. `api/ai_gates.py` holds the user's gates: each gate is `auto`, `ask` or `never`
   (`anomalous/ai_gates.json`, `/anomalous/ai_gates`); `mcp_server.py` asks it before running a
-  tool. It also keeps (`anomalous/ai_tools.json`) how long in all an AI waits for the user's answer (`answer_wait`: 1, 3 or 10 minutes): `api/ai_answer_wait.py`
+  tool. Its three safety levels (`LEVELS`: `careful`, `balanced`, `free`, or `custom` when a
+  row differs; `level()`, `set_level()`) set the five gates together with `node_rule`,
+  `route_rule`, `no_answer` and `ai_plans.auto()`, leaving unrelated settings alone. It also keeps (`anomalous/ai_tools.json`) how long in all an AI waits for the user's answer (`answer_wait`: 1, 3 or 10 minutes): `api/ai_answer_wait.py`
   tells an AI whose question is still open to wait on with get_answers until then, and while the
   user types (the page posts `POST /anomalous/ai_tasks/{id}/typing`) until a minute after their last
   key; report and show_panel remind it to end each round with ask_user. With `ask` the step waits in state `asking` (what it would do listed) for up to 50 s;
