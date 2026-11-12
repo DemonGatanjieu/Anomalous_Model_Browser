@@ -1,6 +1,7 @@
 /**
  * The home page: what you can do here, one card per task, each opening its page; the
- * first-run setup above them while nothing is scanned (ui_first_run.js); and the first steps
+ * first-run setup above them while nothing is scanned (ui_first_run.js); under them, what to hand the AI
+ * (ui_ai_starters.js); and the first steps
  * (set up, scan, the tour, what's new). Rendered again on each visit, so text follows the
  * language.
  */
@@ -15,6 +16,7 @@ import { renderRecentAiTasks } from './ui_ai_workbench.js';
 import { copyDiagnostics, openRepoPage } from './feedback.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { renderFirstRun, showFirstRun } from './ui_first_run.js';
+import { renderAiStarters } from './ui_ai_starters.js';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`).
 const CARDS = Object.freeze([
@@ -91,6 +93,7 @@ export function renderHome(owner, panel) {
     page.append(grid, start, feedbackBand(owner));
     panel.replaceChildren(page);
     void renderFirstRun(owner, page, grid);
+    renderAiStarters(owner, grid);
     renderRecentActivity(owner, page);
     renderRecentAiTasks(owner, page);
 }

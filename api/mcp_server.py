@@ -25,7 +25,7 @@ import urllib.parse
 
 from aiohttp import web
 
-from . import ai_callers, ai_darkroom, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_sent, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, job_sheets, mcp_apps, mcp_bridge, mcp_directory, mcp_fit, mcp_prompts, mcp_tool_sets
+from . import ai_callers, ai_darkroom, ai_starters, ai_gates, ai_outside, ai_privacy, ai_sealed, ai_sent, ai_panels, ai_run_tracking, ai_task_canvas, ai_task_runs, ai_tasks, job_sheets, mcp_apps, mcp_bridge, mcp_directory, mcp_fit, mcp_prompts, mcp_tool_sets
 from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_canvas_edit import CANVAS_TOOLS, object_info
@@ -373,3 +373,4 @@ def register_routes(app):
     app.router.add_route("*", "/anomalous/mcp", api_mcp)
     app.router.add_post("/anomalous/mcp/bridge", api_mcp_bridge)
     mcp_tool_sets.register_routes(app, TOOLS, _sizes)
+    ai_starters.register_routes(app, _tools)  # the home page's AI cards

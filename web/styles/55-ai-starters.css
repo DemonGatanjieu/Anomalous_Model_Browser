@@ -1,0 +1,81 @@
+/* The home page's "Let the AI do it" and its sheets (ui_ai_starters.js, ui_ai_starter_sheet.js) */
+.anomalous-ai-start {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 28%, var(--amb-border));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--amb-link) 5%, transparent);
+}
+.anomalous-ai-start-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+.anomalous-ai-start-title { display: inline-flex; align-items: center; gap: 8px; color: var(--amb-text-main); font-size: 1em; font-weight: 600; }
+.anomalous-ai-start-app { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; color: var(--amb-text-muted); font-size: 0.8em; }
+.anomalous-ai-start-app.is-known .anomalous-ai-visit-dot { background: var(--amb-ok); opacity: 1; }
+.anomalous-ai-start-warn { flex-basis: 100%; color: var(--amb-warn-text); font-size: 0.8em; line-height: 1.55; }
+.anomalous-ai-start-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.anomalous-ai-start-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-start-card:hover { border-color: color-mix(in srgb, var(--amb-link) 40%, transparent); background: rgba(var(--amb-ink-rgb), 0.07); }
+.anomalous-ai-start-card[data-starter="try"] { border-color: color-mix(in srgb, var(--amb-link) 55%, transparent); }
+.anomalous-ai-start-card-head { display: inline-flex; align-items: center; gap: 7px; color: var(--amb-text-main); }
+.anomalous-ai-start-card-title { font-size: 0.92em; font-weight: 600; }
+.anomalous-ai-start-card-body { color: var(--amb-text-muted); font-size: 0.8em; line-height: 1.55; }
+.anomalous-ai-start-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; padding-top: 2px; }
+.anomalous-ai-start-tag {
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--amb-ok) 16%, transparent);
+    color: var(--amb-ok-text);
+    font-size: 0.72em;
+}
+.anomalous-ai-start-sheet { display: flex; flex-direction: column; gap: 10px; min-width: min(440px, 100%); }
+.anomalous-ai-start-field { display: flex; flex-direction: column; gap: 4px; }
+.anomalous-ai-start-label { color: var(--amb-text-soft); font-size: 12.5px; font-weight: 600; }
+.anomalous-ai-start-input,
+.anomalous-ai-start-select {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+}
+.anomalous-ai-start-pictures .anomalous-ai-pics-grid { max-height: 220px; }
+.anomalous-ai-start-lines { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.04); }
+.anomalous-ai-start-line { color: var(--amb-text-main); font-size: 12.5px; line-height: 1.6; }
+.anomalous-ai-start-line-label { margin-right: 6px; color: var(--amb-text-muted); }
+.anomalous-ai-start-line.is-out { color: var(--amb-warn-text); }
+.anomalous-ai-start-line.is-out .anomalous-ai-start-line-label { color: inherit; }
+.anomalous-ai-start-empty { margin: 0; color: var(--amb-text-soft); font-size: 13px; line-height: 1.6; }
+.anomalous-ai-start-error { min-height: 1em; color: var(--amb-danger-text); font-size: 12px; }
+.anomalous-ai-start-error:empty { display: none; }
+.anomalous-ai-start-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.anomalous-ai-start-go {
+    padding: 6px 18px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--amb-link);
+    color: var(--amb-on-link);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}

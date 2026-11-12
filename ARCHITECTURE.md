@@ -362,7 +362,9 @@ covered by the `styles.css` manifest.
   themselves: Antigravity reads a tool's file before its first call) unless the address names a shorter set:
   `api/mcp_tool_sets.py` serves `?tools=core` (drawing in the AI app's own chat, no workbench) and `?tools=mine`
   (the user's pick, `anomalous/ai_tool_sets.json`), with the instructions cut to the listed tools; only the list
-  shrinks, tools/call takes every tool (`tests/test_mcp_tool_sets.py`). mcp_directory.py also keeps which
+  shrinks, tools/call takes every tool (`tests/test_mcp_tool_sets.py`). `api/ai_starters.py` gives the home page's AI
+  cards what they need (GET /anomalous/ai_starters: saved workflows with their presets, whether downloads ask, the app
+  that came last and which of those lists it holds; `tests/test_ai_starters.py`). mcp_directory.py also keeps which
   list each app fetched last (`anomalous/ai_tool_lists.json`), so a call from an app still holding
   the list of an older Anomalous is told so and the task header says how to reconnect it.
   `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow, or
@@ -600,7 +602,11 @@ covered by the `styles.css` manifest.
   list's "Connect an AI", and as a card (`connectHint`) that opens the guide in place on the
   empty page and over a task waiting for an AI until one has ever come; without a waiting task
   `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the
-  user's checklist by stage) and the address follows. `ui_ai_ready.js` is that
+  user's checklist by stage) and the address follows. `ui_ai_starters.js` is the home page's "Let the AI do it"
+  (the app that came last, a warning when its list is a short one, six starter cards); `ui_ai_starter_sheet.js`
+  holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get), which starts a
+  prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` startTask;
+  a card's tags name only what Anomalous makes sure of. `ui_ai_ready.js` is that
   waiting task's one page: the sentence to send the AI, and what the user sent so far; what to say
   first and pictures go in the message box. The pictures (`web/assets/ai_*.webp`)
   were made with ChatGPT. `ai_task_view.js` holds

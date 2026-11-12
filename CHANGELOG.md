@@ -84,6 +84,8 @@
 - A task the AI never named (mostly one you asked for in your AI app's chat) shows the name Anomalous took from its first step that did something in the page's words: "Ran the workflow", "Started a workflow: …" instead of "run_workflow", "new_workflow: …".
 - 显卡 8G 及以下时，AMB 的放大重绘做法（轻放大、Tile 锁图放大、只重画人物的放大）最后一步改用 ComfyUI 自带的「VAE 分块解码」。以前在 6G 笔记本上放大两倍，光解码就卡了 20 分钟，桌面和浏览器也跟着卡；分块解码不用装插件，大显存的卡照旧。
 - On a graphics card of 8 GB or less, Anomalous's upscale-and-redraw ways (the light upscale, the Tile upscale, enlarging only the character) decode the last step with ComfyUI's own VAE Decode (Tiled). A 2x upscale on a 6 GB laptop spent 20 minutes decoding alone and froze the desktop; the tiled decode needs no extra pack, and bigger cards stay as they were.
+- 主页多了「让 AI 帮你做」：顶上一行写最近连接的 AI 软件（连的是精简工具清单时会提醒它接不了 AMB 里的任务），下面六张卡：先试一次、跑我存的预设、照我说的出图、改一张图、隐私模式出图、看懂我的画布。点开先看说明页：点「开始」会发生什么、什么不会动、AI 拿不到什么、要注意什么；再点「开始」，AMB 把任务建好、开关设好（在新标签页里做，隐私卡直接是隐私任务），给你一句复制给 AI 的话。卡上的小标签只写 AMB 自己能保证的事。
+- The home page has "Let the AI do it": a line on the AI app that came last (with a warning when it holds a short tool list that cannot take a task handed over here), and six cards: Try it once, Run my preset, Draw what I describe, Change a picture, Draw in privacy mode, Explain my canvas. A card opens a sheet first: what happens on Start, what stays as it is, what the AI does not get, what to mind; Start makes the task with its switches set (a new tab; the privacy card makes a private task) and gives the sentence to copy to the AI. A card's tags name only what Anomalous itself makes sure of.
 
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 
