@@ -13,6 +13,7 @@ import { translate as t } from './locales.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { aiWindow, copyLine, openConnectGuide } from './ui_ai_connect.js';
+import { taskTitle } from './ai_task_title.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -96,7 +97,7 @@ async function sendPictures(owner, task, images, leave) {
         await anomalousAlert(error.message);
         return;
     }
-    showWorkbenchToast(t('aiPicturesSent', { count: images.length, task: task.title || t('aiUntitled') }));
+    showWorkbenchToast(t('aiPicturesSent', { count: images.length, task: taskTitle(task) }));
     leave?.();
 }
 
@@ -104,7 +105,7 @@ async function sendPictures(owner, task, images, leave) {
 export async function handPicturesToAi(owner, images, leave = null) {
     const task = await openTask();
     if (task) {
-        const toTask = await anomalousConfirm(t('aiPicturesWhere', { task: task.title || t('aiUntitled'), count: images.length }), t('aiHand'),
+        const toTask = await anomalousConfirm(t('aiPicturesWhere', { task: taskTitle(task), count: images.length }), t('aiHand'),
             { okLabel: t('aiPicturesToTask'), noLabel: t('aiPicturesNewTask'), okClass: 'anomalous-btn-primary' });
         if (toTask === null) return;
         if (toTask) return sendPictures(owner, task, images, leave);

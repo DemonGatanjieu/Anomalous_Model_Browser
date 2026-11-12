@@ -62,6 +62,7 @@ import { keptTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js
 import {
     activityIds, duration, groupSteps, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
+import { taskTitle } from './ai_task_title.js';
 
 const NARROW_PX = 720;
 const SHORT_PX = 880; // a window this low (not maximised) keeps less room around the task's head
@@ -239,7 +240,7 @@ function renderTask() {
     const header = view.header;
     const titleLine = el('div', 'anomalous-ai-task-title-line');
     const name = el('div', 'anomalous-ai-task-name');
-    const title = el('h2', 'anomalous-ai-task-title', task.title || t('aiUntitled'));
+    const title = el('h2', 'anomalous-ai-task-title', taskTitle(task));
     title.title = title.textContent;
     name.append(button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => { state.narrowView = 'list'; layout(); }), title, stateChip(status));
     const tools = el('div', 'anomalous-ai-task-tools');

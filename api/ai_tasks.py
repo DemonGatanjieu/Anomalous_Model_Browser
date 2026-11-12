@@ -551,7 +551,7 @@ def task_summary(task, now=None):
                and block.get("id") and block["id"] not in step.get("answers", {}))
     asks += sum(1 for step in steps if step.get("state") == "asking")
     return {
-        "id": task["id"], "title": task.get("title") or "", "client": task.get("client") or ("" if task.get("waiting") else "AI"),
+        "id": task["id"], "title": task.get("title") or "", "title_from": task.get("title_from") or "", "client": task.get("client") or ("" if task.get("waiting") else "AI"),
         "started": task.get("started"), "updated": task.get("updated"), "ended": task.get("ended"),
         "waiting": bool(task.get("waiting")) and not task.get("ended"),
         "live": any(step.get("state") == "running" and now - step.get("at", 0) < RUN_WATCH_SECONDS for step in steps),

@@ -604,6 +604,8 @@ covered by the `styles.css` manifest.
   first and pictures go in the message box. The pictures (`web/assets/ai_*.webp`)
   were made with ChatGPT. `ai_task_view.js` holds
   its rules without DOM (folding reads and chains of the AI's work, tool words, counts, result addresses);
+  `ai_task_title.js` names a task on every page: its given title, else the one Anomalous took from the AI's
+  first step that did something (`title_from` "auto") in the page's tool words, else Untitled;
   `ui_ai_chain.js` draws the folded rows: reads in a row, and a chain of reads, canvas changes and
   decisions as one row of chips with undo for its canvas changes, opening to its steps.
   `ask_user` (`api/mcp_task_tools.py`) is the AI's question in the workbench: a one-block panel

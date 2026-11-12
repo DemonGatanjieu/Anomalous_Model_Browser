@@ -19,8 +19,8 @@ class LinkTests(unittest.TestCase):
         self.assertEqual(ai_tasks.get_task(second["task"])["from"], first)
         self.assertEqual(second["continues"]["task"], first)
         self.assertIn("构图: 竖图", second["continues"]["decisions"])
-        self.assertEqual(ai_task_links.links(first)["next"], [{"id": second["task"], "title": "换成夜景"}])
-        self.assertEqual(ai_task_links.links(second["task"])["from"], {"id": first, "title": "海边少女"})
+        self.assertEqual(ai_task_links.links(first)["next"], [{"id": second["task"], "title": "换成夜景", "title_from": "ai"}])
+        self.assertEqual(ai_task_links.links(second["task"])["from"], {"id": first, "title": "海边少女", "title_from": "ai"})
         self.assertEqual(ai_tasks.list_tasks()[0]["from"], first)
 
     def test_the_user_starts_links_and_unlinks_but_never_in_a_loop(self):

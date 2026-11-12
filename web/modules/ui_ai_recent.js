@@ -7,6 +7,7 @@
 import { translate as t } from './locales.js';
 import { timeLabel } from './activity_log.js';
 import { picturePreview, taskCounts, taskState } from './ai_task_view.js';
+import { taskTitle } from './ai_task_title.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -40,7 +41,7 @@ export function drawRecentAiTasks(owner, container, { fetchTasks, open }) {
             }
             const text = el('span', 'anomalous-ai-recent-text');
             const counts = taskCounts(summary).map(item => t(item.key, item.values));
-            text.append(el('span', 'anomalous-ai-recent-title', summary.title || t('aiUntitled')),
+            text.append(el('span', 'anomalous-ai-recent-title', taskTitle(summary)),
                 el('span', 'anomalous-ai-recent-meta', [summary.client, timeLabel(summary.updated), ...counts].join(' · ')));
             row.append(text);
             list.append(row);

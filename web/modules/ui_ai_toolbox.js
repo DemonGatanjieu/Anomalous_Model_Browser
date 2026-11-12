@@ -28,6 +28,7 @@ import { baseFamily, countBases } from './model_bases.js';
 import { groupByPage, pageId, versionId } from './model_versions.js';
 import { chosenVersion } from './ui_model_versions.js';
 import { typeLabel } from './ui_model_types.js';
+import { taskTitle } from './ai_task_title.js';
 
 const MODES = ['prefer', 'only'];
 const CHUNK = 60;
@@ -154,7 +155,7 @@ export async function openToolbox(task, changed = () => {}) {
     search.placeholder = t('aiTbSearch');
     searchBox.append(icon('search', 18), search, el('kbd', 'anomalous-tb-kbd', '/'));
     const filters = el('div', 'anomalous-tb-filters');
-    top.append(el('div', 'anomalous-tb-for', t('aiTbFor', { task: task.title || t('aiUntitled') })), searchBox, filters);
+    top.append(el('div', 'anomalous-tb-for', t('aiTbFor', { task: taskTitle(task) })), searchBox, filters);
     const rail = el('nav', 'anomalous-tb-rail');
     const side = el('aside', 'anomalous-tb-facets');
     const gridWrap = el('div', 'anomalous-tb-grid-wrap');

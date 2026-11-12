@@ -9,6 +9,7 @@ import { translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
 import { icon } from './ui_ai_icons.js';
 import { anomalousAlert } from './ui_dialog.js';
+import { taskTitle } from './ai_task_title.js';
 
 const PICKS = 12;
 
@@ -53,7 +54,7 @@ export function pickTaskLink(place, task, tasks, changed) {
     const outside = (event) => { if (!menu.contains(event.target)) close(); };
     const escape = (event) => { if (event.key === 'Escape') setTimeout(close); }; // after the browser's Esc saw the mark
     for (const item of choices) {
-        menu.append(button('anomalous-ai-task-links-pick', [el('span', 'anomalous-ai-task-links-pick-title', item.title || t('aiUntitled')),
+        menu.append(button('anomalous-ai-task-links-pick', [el('span', 'anomalous-ai-task-links-pick-title', taskTitle(item)),
             el('span', 'anomalous-ai-task-links-pick-when', `${dayLabel(item.updated)} ${timeLabel(item.updated)}`)], async () => {
             close();
             try {
@@ -79,7 +80,7 @@ export function taskLinks(task, ctx) {
     const from = task.links?.from;
     if (from) {
         const chip = el('span', 'anomalous-ai-task-link is-from');
-        chip.append(button('anomalous-ai-task-link-go', [icon('undo', 13), el('span', '', t('aiTaskFrom', { title: from.title || t('aiUntitled') }))], () => ctx.open(from.id)),
+        chip.append(button('anomalous-ai-task-link-go', [icon('undo', 13), el('span', '', t('aiTaskFrom', { title: taskTitle(from) }))], () => ctx.open(from.id)),
             button('anomalous-ai-task-link-x', [icon('close', 11)], async () => {
                 try {
                     await link(task.id, null);
@@ -91,7 +92,7 @@ export function taskLinks(task, ctx) {
         row.append(chip);
     }
     for (const item of task.links?.next || []) {
-        row.append(button('anomalous-ai-task-link is-next', [icon('arrowRight', 13), el('span', '', t('aiTaskNext', { title: item.title || t('aiUntitled') }))], () => ctx.open(item.id)));
+        row.append(button('anomalous-ai-task-link is-next', [icon('arrowRight', 13), el('span', '', t('aiTaskNext', { title: taskTitle(item) }))], () => ctx.open(item.id)));
     }
     return row;
 }

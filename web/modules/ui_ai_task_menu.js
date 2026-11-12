@@ -11,6 +11,7 @@ import { modelTokens, setPrivacy } from './ui_ai_privacy.js';
 import { openSent } from './ui_ai_sent.js';
 import { pickTaskLink } from './ui_ai_task_links.js';
 import { openPopupMenu } from './ui_popup_menu.js';
+import { taskTitle } from './ai_task_title.js';
 
 /**
  * What the menu of `task` does. `tasks`: the list's summaries; `post(id, body)` writes to the task,
@@ -18,7 +19,7 @@ import { openPopupMenu } from './ui_popup_menu.js';
  */
 export function menuActions(task, { tasks, post, refresh, removed }) {
     return { tasks, changed: () => void refresh(), rename: async () => {
-        const named = await anomalousPrompt(t('aiRenamePrompt'), task.title || '', t('aiRename'));
+        const named = await anomalousPrompt(t('aiRenamePrompt'), task.title ? taskTitle(task) : '', t('aiRename'));
         if (named === null || named === undefined) return;
         await post(task.id, { title: named }).catch(error => anomalousAlert(error.message));
         await refresh();

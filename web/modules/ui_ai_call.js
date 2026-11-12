@@ -10,6 +10,7 @@ import { translate as t } from './locales.js';
 import { copyText } from './ui_dialog.js';
 import { icon } from './ui_ai_icons.js';
 import { callLines, NEW_CHAT } from './ai_call_lines.js';
+import { taskTitle } from './ai_task_title.js';
 
 const SAID_MS = 4000; // how long "copied" stays in place of the lead
 
@@ -27,7 +28,7 @@ export function callRow() {
     let said = 0;
     row.update = (task) => {
         const offer = callLines(task);
-        const title = task?.title || t('aiUntitled');
+        const title = taskTitle(task);
         const key = offer ? JSON.stringify([offer, title]) : '';
         row.hidden = !offer;
         if (key === row.dataset.key) return;

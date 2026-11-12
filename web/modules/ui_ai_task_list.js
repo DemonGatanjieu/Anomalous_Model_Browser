@@ -18,6 +18,7 @@ import { icon, iconButton } from './ui_ai_icons.js';
 import { openConnectGuide } from './ui_ai_connect.js';
 import { openGates } from './ui_ai_gate.js';
 import { syncRows } from './sync_rows.js';
+import { taskTitle } from './ai_task_title.js';
 
 const STATE_ICONS = { waiting: 'sparkle', idle: 'pulse', live: 'pulse', asks: 'question', error: 'alert', done: 'check' };
 const FILTERS = { all: () => true, live: state => ['live', 'waiting', 'idle'].includes(state), asks: state => state === 'asks', error: state => state === 'error' };
@@ -48,7 +49,7 @@ function taskRow(summary, view, place) {
     row.onpointerenter = () => view.onHover?.(summary);
     row.onpointerleave = () => view.onLeave?.();
     const top = el('div', 'anomalous-ai-task-row-top');
-    const name = el('span', 'anomalous-ai-task-row-title', summary.title || t('aiUntitled'));
+    const name = el('span', 'anomalous-ai-task-row-title', taskTitle(summary));
     name.title = name.textContent; // a follow-up stands one step in: its name is cut off sooner
     top.append(stateIcon(status), name);
     if (place.size > 1) top.append(el('span', 'anomalous-ai-task-family', t('aiTaskFamily', { count: place.size })));

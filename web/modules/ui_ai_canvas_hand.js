@@ -15,6 +15,7 @@ import { aiWindow } from './ui_ai_connect.js';
 import { handPicturesToAi, openTask, startTask } from './ui_ai_handoff.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { taskTitle } from './ai_task_title.js';
 
 const CANVAS_WISHES = ['run', 'fix', 'explain', 'more'];
 const NODE_WISHES = ['explain', 'tune'];
@@ -85,7 +86,7 @@ export async function handCanvasToAi(getBrowser, node = null, given = '') {
     const say = () => String(line.value || '').trim();
     const actions = el('div', 'anomalous-ai-canvas-actions');
     if (task) {
-        actions.append(button('anomalous-btn anomalous-btn-primary', t('aiCanvasToTask', { task: task.title || t('aiUntitled') }), async () => {
+        actions.append(button('anomalous-btn anomalous-btn-primary', t('aiCanvasToTask', { task: taskTitle(task) }), async () => {
             if (!say()) return line.focus();
             try {
                 await message(task, `${say()}${what}`);
@@ -93,7 +94,7 @@ export async function handCanvasToAi(getBrowser, node = null, given = '') {
                 return anomalousAlert(error.message);
             }
             close();
-            showWorkbenchToast(t('aiCanvasSent', { task: task.title || t('aiUntitled') }));
+            showWorkbenchToast(t('aiCanvasSent', { task: taskTitle(task) }));
         }));
     }
     actions.append(button(`anomalous-btn${task ? '' : ' anomalous-btn-primary'}`, task ? t('aiCanvasNewTask') : t('aiHand'), () => {

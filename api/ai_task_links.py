@@ -56,7 +56,7 @@ def links(task_id):
     with ai_tasks._lock:
         tasks = ai_tasks._load()
         task = tasks.get(task_id) or {}
-        brief = lambda item: {"id": item["id"], "title": item.get("title") or ""}  # noqa: E731
+        brief = lambda item: {"id": item["id"], "title": item.get("title") or "", "title_from": item.get("title_from") or ""}  # noqa: E731
         parent = tasks.get(task.get("from"))
         later = sorted((item for item in tasks.values() if item.get("from") == task_id), key=lambda item: item.get("started", 0))
         return {"from": brief(parent) if parent else None, "next": [brief(item) for item in later]}
