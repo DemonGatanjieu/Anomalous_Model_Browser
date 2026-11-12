@@ -8,6 +8,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { firstHint } from './ui_ai_tour.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { icon } from './ui_ai_icons.js';
 
@@ -64,5 +65,7 @@ export function verdictRow(step, taskId) {
         }
         row.append(issues);
     }
+    const hint = !step.verdict && firstHint('verdict', t('aiFirstVerdict'));
+    if (hint) row.append(hint);
     return row;
 }

@@ -297,12 +297,28 @@ export function ensureTourStyles() {
 
 function resolveStepTarget(step) {
     if (typeof document === 'undefined') return null;
-    const shown = el => Boolean(el?.isConnected && el.getClientRects().length); // hidden targets are skipped
+    const shown = (el) => { // hidden targets are skipped, and so is one folded to nothing (a tab not shown)
+        const box = el?.isConnected && el.getClientRects().length ? el.getBoundingClientRect() : null;
+        return Boolean(box && box.width > 0 && box.height > 0);
+    };
     let el = document.querySelector(step.targetSelector);
     if (!shown(el) && step.fallbackSelector) {
         el = document.querySelector(step.fallbackSelector);
     }
     return shown(el) ? el : null;
+}
+
+/** The part of `rect` (target's) that can be seen: a tall target (a timeline) is cut to its scrolling box and the window. */
+function visiblePart(target, rect) {
+    let top = Math.max(rect.top, 0);
+    let bottom = Math.min(rect.bottom, window.innerHeight);
+    for (let node = target.parentElement; node && node !== document.body; node = node.parentElement) {
+        if (!/(auto|scroll)/.test(getComputedStyle(node).overflowY)) continue;
+        const box = node.getBoundingClientRect();
+        [top, bottom] = [Math.max(top, box.top), Math.min(bottom, box.bottom)];
+        break;
+    }
+    return bottom > top ? { left: rect.left, right: rect.right, width: rect.width, top, bottom, height: bottom - top } : rect;
 }
 
 function computeCardPosition(rect, position, cardWidth = 330, cardHeight = 220) {
@@ -399,7 +415,7 @@ export function startSpotlightTour(owner, { steps = TOUR_STEPS, onClose = null }
         // Scroll target into view if out of sight
         target.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
 
-        const rect = target.getBoundingClientRect?.() || { left: 0, top: 0, width: 100, height: 40, right: 100, bottom: 40 };
+        const rect = target.getBoundingClientRect ? visiblePart(target, target.getBoundingClientRect()) : { left: 0, top: 0, width: 100, height: 40, right: 100, bottom: 40 };
         const buffer = 5;
 
         // Position spotlight box smoothly

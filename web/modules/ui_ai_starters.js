@@ -12,6 +12,7 @@ import { openConnectGuide } from './ui_ai_connect.js';
 import { handCanvasToAi } from './ui_ai_canvas_hand.js';
 import { icon } from './ui_ai_icons.js';
 import { STARTERS, cardTags, openStarter } from './ui_ai_starter_sheet.js';
+import { tourWhenShown } from './ui_ai_tour.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -28,11 +29,12 @@ function button(className, label, onClick) {
 }
 
 /** The line about the AI app: who came last, or none yet; a short tool list said apart. */
-function appLine(app) {
+function appLine(owner, app) {
     const line = el('div', `anomalous-ai-start-app${app ? ' is-known' : ''}`);
     line.append(el('span', 'anomalous-ai-visit-dot'),
         el('span', '', app ? t('aiLastVisit', { client: app.client, when: `${dayLabel(app.when)} ${timeLabel(app.when)}` }) : t('aiNoVisit')),
         button('anomalous-home-link', t('aiConnect'), () => openConnectGuide()));
+    if (app) line.append(button('anomalous-home-link', t('aiStartHowItWorks'), () => { owner.goTo('ai'); setTimeout(tourWhenShown, 700); }));
     const lines = [line];
     if (app && (app.tools === 'core' || app.tools === 'mine')) lines.push(el('div', 'anomalous-ai-start-warn', t('aiStartShortList', { client: app.client })));
     return lines;
@@ -61,7 +63,7 @@ export function renderAiStarters(owner, after) {
         const head = el('div', 'anomalous-ai-start-head');
         const title = el('span', 'anomalous-ai-start-title');
         title.append(icon('sparkle', 18), el('span', '', t('aiStartTitle')));
-        head.append(title, ...appLine(data.app));
+        head.append(title, ...appLine(owner, data.app));
         const grid = el('div', 'anomalous-ai-start-cards');
         grid.append(...STARTERS.map(starter => card(owner, starter, data)));
         section.append(head, grid);

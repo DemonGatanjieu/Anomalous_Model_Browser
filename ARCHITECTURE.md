@@ -606,7 +606,11 @@ covered by the `styles.css` manifest.
   (the app that came last, a warning when its list is a short one, six starter cards); `ui_ai_starter_sheet.js`
   holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get), which starts a
   prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` startTask;
-  a card's tags name only what Anomalous makes sure of. `ui_ai_ready.js` is that
+  a card's tags name only what Anomalous makes sure of. `ui_ai_tour.js` holds a newcomer's notes: the workbench's
+  spotlight tour (new task, connecting, gates, the list, a task's ⋯, the timeline, the message box), by itself the
+  first time a task shows and from the home section's "How it works", and `firstHint`, one line with Got it under a
+  control that only shows up later (a run's verdict, the undo of the AI's canvas changes, a private task's Hide).
+  `ui_ai_ready.js` is that
   waiting task's one page: the sentence to send the AI, and what the user sent so far; what to say
   first and pictures go in the message box. The pictures (`web/assets/ai_*.webp`)
   were made with ChatGPT. `ai_task_view.js` holds

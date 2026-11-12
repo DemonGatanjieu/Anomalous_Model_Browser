@@ -51,7 +51,7 @@ export function openTaskMenu(anchor, task, { tasks, rename, remove, changed }) {
 export function taskMenu(task, actions) {
     const more = document.createElement('button');
     more.type = 'button';
-    more.className = 'anomalous-ai-tool is-icon';
+    more.className = 'anomalous-ai-tool is-icon anomalous-ai-task-menu';
     more.textContent = '⋯';
     more.title = t('notebookMore');
     more.onclick = () => openTaskMenu(more, task, actions);

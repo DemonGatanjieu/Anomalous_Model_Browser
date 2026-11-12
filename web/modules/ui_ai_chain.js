@@ -9,6 +9,7 @@
 
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
+import { firstHint } from './ui_ai_tour.js';
 import { timeLabel } from './activity_log.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
 import { anomalousConfirm } from './ui_dialog.js';
@@ -89,10 +90,12 @@ export function chainRow(steps, number, ctx) {
     open.append(el('span', 'anomalous-ai-chain-title', t('aiChain', { count: steps.length })));
     if (ctx.live) open.append(el('span', 'anomalous-ai-chain-last', t('aiChainLast', { what: t(toolKey(steps.at(-1).tool)) })));
     head.append(open);
+    let undoHint = null;
     if (changesOf(steps, ctx.entries).some(entry => canUndo(app, entry))) {
         head.append(iconButton('anomalous-ai-chain-undo', 'undo', t('aiChainUndo'), async () => {
             if (await undoChanges(steps, ctx.entries, t('aiChainUndo'), 'aiChainUndoConfirm')) ctx.changed();
         }));
+        undoHint = firstHint('undo', t('aiFirstUndo'));
     }
     const chips = el('div', 'anomalous-ai-chain-chips');
     for (const { tool, kind, count } of chainTools(steps)) {
@@ -118,7 +121,7 @@ export function chainRow(steps, number, ctx) {
         show(true);
     };
     show(opened.has(key));
-    body.append(head, chips, inside);
+    body.append(head, ...(undoHint ? [undoHint] : []), chips, inside);
     const [first, last] = [timeLabel(steps[0].at), timeLabel(steps.at(-1).at)];
     row.append(body, el('div', 'anomalous-ai-step-when', first === last ? first : `${first}–${last}`));
     return row;

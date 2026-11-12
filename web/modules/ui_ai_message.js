@@ -12,6 +12,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { firstHint } from './ui_ai_tour.js';
 import { mentions } from './ui_ai_mention.js';
 import { galleryPicker } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
@@ -111,6 +112,13 @@ export function messageBox(onSend, source) {
         field.addEventListener('focus', shown);
         shown();
         line.insertBefore(hide, send);
+        const hideHint = firstHint('hide', t('aiFirstHide'));
+        if (hideHint) {
+            box.insertBefore(hideHint, note);
+            const sync = () => { hideHint.hidden = hide.hidden; };
+            field.addEventListener('focus', sync);
+            sync();
+        }
         takePictures(box, field, { add: item => at.add(item), room, say: (text) => {
             note.textContent = text;
             note.classList.add('is-error');

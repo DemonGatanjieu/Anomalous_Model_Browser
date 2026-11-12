@@ -63,6 +63,7 @@ import {
     activityIds, duration, groupSteps, stepDetail, taskCounts, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
 import { taskTitle } from './ai_task_title.js';
+import { aiTourOnce } from './ui_ai_tour.js';
 
 const NARROW_PX = 720;
 const SHORT_PX = 880; // a window this low (not maximised) keeps less room around the task's head
@@ -543,7 +544,7 @@ export function renderAiWorkbench(owner, panel) {
     owner.headerLeadTools?.replaceChildren(listToggle(state.page, toggleTasks));
     owner.railNews?.('ai', false);
     hidePanelToast();
-    void refresh();
+    void refresh().then(() => aiTourOnce(state.page)); // a newcomer's tour, once (ui_ai_tour.js)
     pollVisible();
 }
 

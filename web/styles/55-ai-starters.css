@@ -79,3 +79,28 @@
     font-weight: 600;
     cursor: pointer;
 }
+
+/* A newcomer's line under a control that shows up later (ui_ai_tour.js firstHint) */
+.anomalous-ai-first-hint {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    margin-top: 6px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.anomalous-ai-first-hint[hidden] { display: none; }
+.anomalous-ai-first-hint-done {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--amb-link);
+    font: inherit;
+    cursor: pointer;
+}
+.anomalous-ai-first-hint-done:hover { text-decoration: underline; }
