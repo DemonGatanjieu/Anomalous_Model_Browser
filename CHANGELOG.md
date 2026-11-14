@@ -2,6 +2,11 @@
 
 ## v1.64.0 — unreleased
 
+- 可以打开桌面通知（任务的 ⋯ 里「AI 等你时发桌面通知」，等 AI 接手的页面上也有）：你切去 AI 软件以后，AI 问你问题、要你点头、或者图跑完了而 AI 不知道，电脑上弹一条通知，点它回到 AI 工作台。默认关着，只在你打开的那个浏览器里有效。
+- A desktop notification can be turned on ("Notify me when the AI waits", in a task's ⋯ and on the page of a task waiting for an AI): once you are in the AI app, it shows when the AI asks you something, needs your OK, or a run ended that the AI does not know of; a press brings the AI workbench back. Off by default, and for the browser you turned it on in.
+- 图跑完、AI 没在等的时候，留言框上面可以复制给 AI 的话多了两句：「跑完了，换个构图再来一张」「跑完了，把这张放大」。
+- When a run ends that the AI did not wait for, the lines to copy to the AI have two more: "It's done. One more, framed another way" and "It's done. Make this one larger".
+
 - AI 工作台的任务标题栏多了「叫停并撤销」：AI 做的不对时一下全身而退。正在跑的图停下，AI 用的副本关掉（你自己的工作流它没动过；AI 改的不是副本时，撤销它还能撤销的改动），出好的图都留着。AI 下一次来先收到已叫停的通知，在那之前它改不了画布、跑不了图、下载不了东西；你再留言，任务就接着走。
 - The AI workbench's task head has "Halt and take back": one way out when the AI does the wrong thing. The run going on stops, the AI's copy closes (it never changed your own workflow; where the AI worked on another tab, what of its changes still can be is undone), and the pictures made stay. The AI is told of the halt the next time it comes, and until then it cannot change the canvas, run or download anything; writing to the task goes on with it.
 - 任务信息那一行多了「卡住了？」：写明这个任务现在在等什么、你该做什么，轮到 AI 时给一句可以复制给它的话，还写 AI 软件上次来是多久以前；下面列了三种 AMB 看不到的常见原因和处理办法。

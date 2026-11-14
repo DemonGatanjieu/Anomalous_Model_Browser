@@ -1,12 +1,13 @@
 /**
  * The ⋯ of a task, in its head and on its row in the list: what is done to a task now and then (rename
  * it, say what it goes on from, keep its pictures from the AI, remove it), out of the way of the tools
- * used while it runs.
+ * used while it runs; and, for every task, the desktop notification when the AI waits (ui_ai_notify.js).
  */
 
 import { translate as t } from './locales.js';
 import { forgetTask } from './ai_task_cache.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
+import { notifyState, toggleNotify } from './ui_ai_notify.js';
 import { modelTokens, setPrivacy } from './ui_ai_privacy.js';
 import { openSent } from './ui_ai_sent.js';
 import { pickTaskLink } from './ui_ai_task_links.js';
@@ -43,6 +44,8 @@ export function openTaskMenu(anchor, task, { tasks, rename, remove, changed }) {
         ...(task.private || Object.keys(task.sealed || {}).length ? [{ label: t('aiSent'), title: t('aiSentHint'), run: () => void openSent(task) }] : []),
         ...(modelTokens(task) ? [{ label: t('aiModelTokens'), title: t('aiModelTokensHint'),
             run: () => void anomalousAlert(modelTokens(task), t('aiModelTokens')) }] : []),
+        ...(notifyState() === 'none' ? [] : [{ label: t(notifyState() === 'on' ? 'aiNotifyTurnOff' : 'aiNotifyTurnOn'), title: t('aiNotifyHint'),
+            run: () => void toggleNotify() }]),
         { label: t('aiRemove'), danger: true, run: remove },
     ]);
 }

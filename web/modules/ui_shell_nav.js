@@ -15,6 +15,7 @@ import { getActiveDomain, setActiveDomain } from './ui_domain_switcher.js';
 import { renderHome } from './ui_home.js';
 import { renderActivityPage } from './ui_activity.js';
 import { renderAiWorkbench, watchAiTasks } from './ui_ai_workbench.js';
+import { watchForUser } from './ui_ai_notify.js';
 import { showPromptPage } from './ui_prompt_composer.js';
 import { RAIL_PAGES } from './ui_shell_rail.js';
 import { railPageForKey } from './shell_open_rules.js';
@@ -288,6 +289,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
     // A dot on a rail entry: something new there (the AI workbench while the AI works elsewhere).
     owner.railNews = (page, on) => rail.items.get(page)?.classList.toggle('has-news', Boolean(on));
     watchAiTasks(owner);
+    watchForUser(owner);
     // Pages reached another way (the audio list's own entries) still mark the rail and title.
     owner.markShellPage = enter;
 }

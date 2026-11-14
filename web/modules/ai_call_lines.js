@@ -1,7 +1,8 @@
 /**
  * The lines the user can paste into the AI's chat for a task (ui_ai_call.js draws them over the
  * message box). Anomalous cannot wake an AI app, so when the AI has stopped the user tells it in a
- * word, picked by what waits: a run it was not told has ended (`call_ai`, api/ai_task_runs.py),
+ * word, picked by what waits: a run it was not told has ended (`call_ai`, api/ai_task_runs.py; with
+ * what a newcomer most often wants next: again, another composition, this one larger),
  * something the user gave it that it has not got yet, or nothing (go on). The last line picks the
  * task up in a new chat. A task that ended has lines only while a reply of the user's waits (writing
  * to it opens it again, api/ai_panels.py); one still waiting for its first AI has none
@@ -27,7 +28,7 @@ export function callLines(task) {
     if (!task || (task.waiting && steps.every(step => step.kind === 'user')) || haltOf(task)) return null;
     if (task.ended) return unseenReply(task) ? { lead: 'aiCallRepliedLead', lines: ['aiCallReplied', NEW_CHAT] } : null;
     const run = steps.findLast(step => step.tool === 'run_workflow' && step.call_ai);
-    if (run?.state === 'done') return { lead: 'aiCallDoneLead', lines: ['aiCallDone', 'aiCallAgain', NEW_CHAT] };
+    if (run?.state === 'done') return { lead: 'aiCallDoneLead', lines: ['aiCallDone', 'aiCallAgain', 'aiCallVary', 'aiCallBigger', NEW_CHAT] };
     if (run?.state === 'error') return { lead: 'aiCallFailedLead', lines: ['aiCallFailed', NEW_CHAT] };
     if (unseenReply(task)) return { lead: 'aiCallRepliedLead', lines: ['aiCallReplied', NEW_CHAT] };
     return { lead: 'aiCallLead', lines: ['aiCallGoOn', NEW_CHAT] };

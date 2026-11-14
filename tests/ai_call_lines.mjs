@@ -32,7 +32,7 @@ gate.gate.delivered = true;
 
 const run = ai('run_workflow', { kind: 'run', state: 'done', call_ai: true });
 task.steps.push(run, { tool: 'user_message', kind: 'user', delivered: false });
-assert.deepEqual(callLines(task), { lead: 'aiCallDoneLead', lines: ['aiCallDone', 'aiCallAgain', NEW_CHAT] }, 'a run that ended comes first');
+assert.deepEqual(callLines(task), { lead: 'aiCallDoneLead', lines: ['aiCallDone', 'aiCallAgain', 'aiCallVary', 'aiCallBigger', NEW_CHAT] }, 'a run that ended comes first');
 run.state = 'error';
 assert.deepEqual(callLines(task).lines, ['aiCallFailed', NEW_CHAT]);
 delete run.call_ai;

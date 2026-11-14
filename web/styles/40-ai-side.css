@@ -419,6 +419,8 @@
     font-weight: 800;
 }
 
+.anomalous-ai-notify { align-self: center; }
+
 .anomalous-ai-waiting-body {
     margin: 6px 0 18px;
     color: var(--amb-text-soft);

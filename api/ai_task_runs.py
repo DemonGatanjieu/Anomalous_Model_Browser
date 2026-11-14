@@ -173,7 +173,8 @@ def _finish_run(task_id, step_id, prompts, history, queued=None):
                 step["call_ai"] = True  # the workbench offers the user a line to paste to the AI
             task["updated"] = max(task["updated"], time.time())
         ai_tasks._save(task)
-    ai_tasks._notify(task_id)
+    # "ran": it is the user's to tell the AI; the page may say so while they are elsewhere (ui_ai_notify.js)
+    ai_tasks._notify(task_id, {"ran": step["state"]} if done >= len(prompts) and step.get("call_ai") else None)
     return done >= len(prompts)
 
 

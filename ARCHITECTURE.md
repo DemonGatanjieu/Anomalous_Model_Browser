@@ -526,7 +526,11 @@ covered by the `styles.css` manifest.
   does now (`ui_ai_now.js`: a gate to allow, a run's progress with stop, the AI's open question
   to answer there; with none of that, `ui_ai_call.js`'s lines to paste into the AI's chat once it
   has stopped, which `ai_call_lines.js` picks by what waits for the AI: a run it was not told has
-  ended, a reply it has not got, else go on, and a line for a new chat; `tests/ai_call_lines.mjs`). `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
+  ended (with what to do next: again, another composition, this one larger), a reply it has not got, else go on, and a
+  line for a new chat; `tests/ai_call_lines.mjs`). `ui_ai_notify.js` is the desktop notification for a user who is in
+  another window when the AI asks, a step waits for their OK or a run ended that the AI was not told of (`ai_notice.js`
+  reads that from the "anomalous.ai_task" event, `tests/ai_notice.mjs`); off until turned on in a task's ⋯ or on the
+  page of a waiting task, kept in the browser. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
   output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `ui_ai_mention.js` holds those refs
   and gives it "@" (the task's pictures, the gallery's newest and those its search finds,
   combos, models, workflows, prompts, node packs and node types from the materials picker's

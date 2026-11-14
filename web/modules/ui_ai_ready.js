@@ -2,7 +2,8 @@
  * A task the user started, waiting for an AI (ui_ai_workbench.js), on one page with one thing to
  * do: send the AI the sentence, with its Copy button. What to say first, and pictures, go in the
  * message box at the foot of the column, as its words there say; what was sent shows under the
- * sentence and the AI gets it when it takes the task. Until an AI has ever come, connecting comes
+ * sentence and the AI gets it when it takes the task; under that, the switch for a desktop
+ * notification when the AI waits for them (ui_ai_notify.js). Until an AI has ever come, connecting comes
  * first: an app that does not know AMB yet can do nothing with the sentence. With no task at all,
  * the welcome page stands in for it (welcomePage).
  */
@@ -10,6 +11,7 @@
 import { translate as t } from './locales.js';
 import { art, connectHint, copyLine } from './ui_ai_connect.js';
 import { iconButton } from './ui_ai_icons.js';
+import { notifyLine } from './ui_ai_notify.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -26,6 +28,8 @@ export function waitingView(task, ctx) {
         el('div', 'anomalous-ai-waiting-title', t('aiWaitingSay')),
         el('p', 'anomalous-ai-waiting-body', t('aiWaitingBody')),
         copyLine(sentence, { code: false, label: t('aiConnectCopySentence') }));
+    const notify = notifyLine(); // they leave for the AI app now: a word when it waits for them here
+    if (notify) view.append(notify);
     if (ctx.ready.length) {
         const done = el('section', 'anomalous-ai-ready-done');
         done.append(el('div', 'anomalous-ai-ready-label', t('aiWaitingReadyDone', { count: ctx.ready.length })), ...ctx.ready);

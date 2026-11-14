@@ -450,6 +450,10 @@ go of its tab: the page closes a copy Anomalous made (`ai_task_canvas.remember` 
 and a later change copies the open workflow anew. The summary's `halted`
 (`ai_task_handoff.halted`) holds while only the AI's reads and refused calls came after the halt;
 a message of the user's, or the AI acting again on their word in its chat, ends it.
+When a run ends that the AI did not wait for (`call_ai`), `ai_task_runs._finish_run` adds
+`ran: done | error` to that "anomalous.ai_task" event; a panel that asks and a gate already send
+`asks`. The page turns those three into a desktop notification while the user is in another
+window (`web/modules/ui_ai_notify.js`); the server keeps nothing about it.
 
 `POST /anomalous/mcp` (`api/mcp_server.py`) answers one JSON-RPC message per POST with
 one JSON object; GET and DELETE get 405, and nothing is sent unasked. A request whose

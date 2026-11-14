@@ -209,15 +209,17 @@ class NewsTests(unittest.TestCase):
             self.assertEqual(len(again["content"]), 1, "once per run")
 
     def test_a_line_to_paste_until_the_ai_knows(self):
-        with mock.patch.object(ai_tasks, "_notify"), mock.patch.object(ai_gates, "run_wait", return_value="call"):
+        with mock.patch.object(ai_tasks, "_notify") as notify, mock.patch.object(ai_gates, "run_wait", return_value="call"):
             ai_task_runs._finish_run(self.task, self.step["id"], ["p1"], {"p1": {"status": {"completed": True}}})
+        notify.assert_called_with(self.task, {"ran": "done"})  # the page can tell a user who is in another window
         self.assertTrue(ai_tasks.get_task(self.task)["steps"][-1]["call_ai"], "the workbench offers the line")
         self.told()
         self.assertNotIn("call_ai", ai_tasks.get_task(self.task)["steps"][-1], "gone once the AI is told")
 
     def test_no_line_when_the_ai_waits_or_a_new_run_starts(self):
-        with mock.patch.object(ai_tasks, "_notify"), mock.patch.object(ai_gates, "run_wait", return_value="wait"):
+        with mock.patch.object(ai_tasks, "_notify") as notify, mock.patch.object(ai_gates, "run_wait", return_value="wait"):
             ai_task_runs._finish_run(self.task, self.step["id"], ["p1"], {"p1": {"status": {"completed": True}}})
+        notify.assert_called_with(self.task, None)
         self.assertNotIn("call_ai", ai_tasks.get_task(self.task)["steps"][-1])
         with ai_tasks._lock:
             task = ai_tasks._load()[self.task]
