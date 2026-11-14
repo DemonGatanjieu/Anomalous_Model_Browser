@@ -1,5 +1,5 @@
 """The home page's AI cards (api/ai_starters.py, web/modules/ui_ai_starter_sheet.js): the saved workflows with
-their presets, which tool list the AI app that came last holds, and every card's words in both languages."""
+their presets and the print of their nodes, which tool list the AI app that came last holds, and every card's words in both languages."""
 import json
 import os
 import re
@@ -23,10 +23,17 @@ ai_tasks._tasks = None
 
 class StarterTests(unittest.TestCase):
     def test_workflows_come_by_name_with_their_presets(self):
-        recipes = [{"filename": "b.json", "data": {"name": "Beta"}}, {"filename": "a.json", "data": {}}]
-        with mock.patch.object(ai_starters, "_list_recipes", return_value=recipes), \
+        nodes = [{"id": 3, "type": "KSampler"}, {"id": 9, "type": "SaveImage"}, {"id": 12, "type": "CLIPTextEncode"}, {"id": 7, "type": "加载器"}]
+        recipes = [{"filename": "b.json", "data": {"name": "Beta", "workflow": {"nodes": nodes}}}, {"filename": "a.json", "data": {}}]
+        with mock.patch.object(ai_starters, "_list_recipes", return_value=recipes) as listed, \
                 mock.patch.object(ai_starters, "plans", return_value={"b.json": [("p1.json", "Night"), ("p2.json", "Snow")]}):
-            self.assertEqual(ai_starters.workflows(), [{"name": "a.json", "presets": []}, {"name": "Beta", "presets": ["Night", "Snow"]}])
+            self.assertEqual(ai_starters.workflows(), [
+                {"name": "a.json", "file": "a.json", "shape": "", "presets": []},
+                {"name": "Beta", "file": "b.json", "shape": "4:ef0c50ac",  # tests/preset_run_list.mjs holds the page to the same print
+                 "presets": [{"file": "p1.json", "name": "Night"}, {"file": "p2.json", "name": "Snow"}]}])
+        self.assertTrue(listed.call_args.kwargs["with_workflow"], "the print needs each card's nodes")
+        self.assertEqual(ai_starters.shape({"nodes": list(reversed(nodes))}), "4:ef0c50ac", "whatever order the nodes are saved in")
+        self.assertNotEqual(ai_starters.shape({"nodes": nodes[:3]}), "4:ef0c50ac")
 
     def test_the_app_that_came_last_is_told_with_the_tool_list_it_holds(self):
         self.addCleanup(setattr, mcp_directory, "_lists", None)  # the cache filled here must not reach other tests

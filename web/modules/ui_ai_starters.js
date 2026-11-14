@@ -2,8 +2,9 @@
  * The home page's "Let the AI do it" (ui_home.js puts it under the cards): which AI app came last, and a
  * warning when the tool list it holds is a short one (api/mcp_tool_sets.py) that cannot take a task
  * handed over here; then the six starter cards (ui_ai_starter_sheet.js), each with its tags. "Explain my
- * canvas" opens the canvas hand-off as the canvas menu does (ui_ai_canvas_hand.js). GET /anomalous/ai_starters;
- * without it (an older server) the section stays away.
+ * canvas" opens the canvas hand-off as the canvas menu does (ui_ai_canvas_hand.js). Under the cards, once
+ * presets were run from here with no AI, the line that runs that list again (ui_ai_preset_sheet.js againLine).
+ * GET /anomalous/ai_starters; without it (an older server) the section stays away.
  */
 
 import { translate as t } from './locales.js';
@@ -11,6 +12,7 @@ import { dayLabel, timeLabel } from './activity_log.js';
 import { openConnectGuide } from './ui_ai_connect.js';
 import { handCanvasToAi } from './ui_ai_canvas_hand.js';
 import { icon } from './ui_ai_icons.js';
+import { againLine } from './ui_ai_preset_sheet.js';
 import { STARTERS, cardTags, openStarter } from './ui_ai_starter_sheet.js';
 import { tourWhenShown } from './ui_ai_tour.js';
 
@@ -66,7 +68,8 @@ export function renderAiStarters(owner, after) {
         head.append(title, ...appLine(owner, data.app));
         const grid = el('div', 'anomalous-ai-start-cards');
         grid.append(...STARTERS.map(starter => card(owner, starter, data)));
-        section.append(head, grid);
+        const again = againLine(owner, data);
+        section.append(head, grid, ...(again ? [again] : []));
         after.after(section);
     }).catch(() => { /* the home page works without it */ });
 }

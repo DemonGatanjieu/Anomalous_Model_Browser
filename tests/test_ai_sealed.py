@@ -18,7 +18,7 @@ from api import ai_callers, ai_panels, ai_privacy, ai_sealed, ai_sealed_models, 
 from test_mcp import rpc  # noqa: E402  (its module keeps tasks and gates in temporary folders)
 
 SETTING = os.path.join(tempfile.mkdtemp(prefix="amb_sealed_"), "ai_privacy.json")
-CANARIES = ("canarypos", "canaryneg", "canaryfile", "canarytrigger", "canaryecho", "canarycombo", "canaryflow", "canarytag", "canarysaved")
+CANARIES = ("canarypos", "canaryneg", "canaryfile", "canarytrigger", "canaryecho", "canarycombo", "canaryflow", "canarytag", "canarysaved", "canarytab")
 MODEL_CANARIES = ("canarylora", "Canarycard", "canaryfolder", "canarysha", "civitai.com", "canarymissing")
 LORA = "loras:0:canaryfolder/canarylora v2.safetensors"
 LIBRARY = [{"id": LORA, "name": "Canarycard Pose", "file": "canarylora v2.safetensors"},
@@ -41,7 +41,8 @@ def canary_result(arguments=None):
             "models": [{"in_cards": ["canaryflow card"]}],
             "combos": [{"name": "Some LoRA · canarycombo, 1girl", "base_model": "Anima"}, {"name": "2", "base_model": "Anima"}],
             "images": [{"image": "sub/canaryfile_00001_.png"}, {"filename": "canaryfile_00002_.png", "subfolder": ""}],
-            "trigger_words": ["canarytrigger"], "echo": json.dumps(arguments or {}), "filled": {"prompt": ["6"]}}
+            "trigger_words": ["canarytrigger"], "echo": json.dumps(arguments or {}), "filled": {"prompt": ["6"]},
+            "opened": "canarytab night 010203"}
     return {"content": [{"type": "text", "text": json.dumps(data)}], "structuredContent": data, "isError": False}
 
 

@@ -365,7 +365,8 @@ covered by the `styles.css` manifest.
   `api/mcp_tool_sets.py` serves `?tools=core` (drawing in the AI app's own chat, no workbench) and `?tools=mine`
   (the user's pick, `anomalous/ai_tool_sets.json`), with the instructions cut to the listed tools; only the list
   shrinks, tools/call takes every tool (`tests/test_mcp_tool_sets.py`). `api/ai_starters.py` gives the home page's AI
-  cards what they need (GET /anomalous/ai_starters: saved workflows with their presets, whether downloads ask, the app
+  cards what they need (GET /anomalous/ai_starters: saved workflows with their presets by file and a print of their
+  nodes, `shape`, by which the page tells which of them an open canvas is; whether downloads ask, the app
   that came last and which of those lists it holds, whether any app has come and how many base models ComfyUI lists,
   for the line a card's sheet opens with; `tests/test_ai_starters.py`), and the Connect guide the app that
   called last since ComfyUI started (GET /anomalous/ai_callers, from `ai_callers.note` on every request). mcp_directory.py also keeps which
@@ -623,7 +624,15 @@ covered by the `styles.css` manifest.
   (the app that came last, a warning when its list is a short one, six starter cards); `ui_ai_starter_sheet.js`
   holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get), which starts a
   prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` startTask;
-  a card's tags name only what Anomalous makes sure of. `ui_ai_tour.js` holds a newcomer's notes: the workbench's
+  a card's tags name only what Anomalous makes sure of. `ui_ai_preset_sheet.js` is the fields of "Run my preset": a
+  saved workflow or an open canvas, the presets as chips a press lines up to run, each so many times, and what to
+  change (`preset_run_list.js`: that list, what of it is kept in the browser for "the same again", the print of a
+  canvas; `tests/preset_run_list.mjs`). With nothing to change `preset_runs.js` runs the list with no AI: the saved
+  workflow on a new tab (an open canvas copied into one), each preset put on as its Apply button does
+  (`recipe_actions.js`) and queued one after another, the tab closed once the run has ended and nobody changed, saved
+  or is looking at it. With a change the list goes to an AI as a task and its first message (`startTask`'s `note`),
+  in privacy mode with the names and a prompt of the user's marked to hide (`ai_hide_mark.js` marked); the private
+  card hands its prompt on the same way. `ui_ai_tour.js` holds a newcomer's notes: the workbench's
   spotlight tour (new task, connecting, gates, the list, a task's ⋯, the timeline, the message box), by itself the
   first time a task shows and from the home section's "How it works", and `firstHint`, one line with Got it under a
   control that only shows up later (a run's verdict, the undo of the AI's canvas changes, a private task's Hide).

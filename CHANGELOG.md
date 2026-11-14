@@ -2,6 +2,11 @@
 
 ## v1.64.0 — unreleased
 
+- 主页「跑我存的预设」重做了：选一张工作流卡（或画布上开着的工作流，AMB 认得出它是哪张卡就列那张卡的预设），点预设排成一行，每个填跑几次。什么都不改时 AMB 自己跑，不需要 AI、什么都不发出去：在新标签页打开工作流，挨个套预设排队，跑完自动关掉它开的那一页（你动过的留着）。写了「这次改什么」才交给 AI；勾上隐私模式，工作流和预设的名字、你填的提示词 AI 都只拿到代号。跑过一次以后，主页多一行「和上次一样再跑」，点一下就行。
+- "Run my preset" on the home page is rebuilt: pick a saved workflow (or an open canvas; Anomalous lists the presets of the saved workflow it recognizes it as), press presets to line them up, and say how many times each runs. With nothing to change Anomalous runs them itself, with no AI and nothing sent anywhere: the workflow opens on a new tab, each preset is put on and queued, and the tab closes when the run has ended (one you touched stays). Only a change goes to an AI; in privacy mode it gets tokens for the names of the workflow and presets and for a prompt you fill in. After a run, the home page has a line that runs the same list again with one press.
+- 「隐私模式出图」多了一格提示词：写在这里的完整提示词 AI 看不到，只拿到代号，由它原样放进提示词框。
+- "Draw in privacy mode" has a field for the prompt itself: the AI never sees what you write there, only a token it puts into the prompt box as it is.
+
 - 可以打开桌面通知（任务的 ⋯ 里「AI 等你时发桌面通知」，等 AI 接手的页面上也有）：你切去 AI 软件以后，AI 问你问题、要你点头、或者图跑完了而 AI 不知道，电脑上弹一条通知，点它回到 AI 工作台。默认关着，只在你打开的那个浏览器里有效。
 - A desktop notification can be turned on ("Notify me when the AI waits", in a task's ⋯ and on the page of a task waiting for an AI): once you are in the AI app, it shows when the AI asks you something, needs your OK, or a run ended that the AI does not know of; a press brings the AI workbench back. Off by default, and for the browser you turned it on in.
 - 图跑完、AI 没在等的时候，留言框上面可以复制给 AI 的话多了两句：「跑完了，换个构图再来一张」「跑完了，把这张放大」。

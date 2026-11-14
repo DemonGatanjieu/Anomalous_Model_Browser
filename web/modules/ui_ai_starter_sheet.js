@@ -5,16 +5,21 @@
  * not get, and what to mind. Start
  * makes a task with its switches set (ui_ai_handoff.js startTask: a new tab, privacy for the private card) and
  * shows the sentence for the AI. A starter is a prepared task and a sentence, never a workflow template. Each
- * card's tags name only what Anomalous makes sure of (`TAGS`), never what rests on the AI obeying.
+ * card's tags name only what Anomalous makes sure of (`TAGS`), never what rests on the AI obeying. The
+ * private card takes the prompt itself in a field the AI gets as a token (ai_hide_mark.js marked). "Run my
+ * preset" has its own fields (ui_ai_preset_sheet.js) and, with nothing to change, runs with no AI.
  */
 
+import { marked } from './ai_hide_mark.js';
 import { translate as t } from './locales.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { startTask } from './ui_ai_handoff.js';
 import { pictureGrid } from './ui_ai_gallery_pick.js';
 import { icon } from './ui_ai_icons.js';
+import { presetFields } from './ui_ai_preset_sheet.js';
 
 const NEW_TAB = { canvas: 'new' };
+const MAX_SEALED = 1500; // the prompt the private card hands on, inside a message to the AI
 const DRAWS = ['try', 'say', 'private']; // start from a base model of the user's
 const EXAMPLES = {
     say: ['aiStartSayEx1', 'aiStartSayEx2', 'aiStartSayEx3'],
@@ -24,7 +29,7 @@ const EXAMPLES = {
 // lines: [kind, key] shown in the sheet; kinds are the sheet's labels (aiStartSheet_<kind>).
 export const STARTERS = [
     { id: 'try', icon: 'sparkle', tags: ['newTab', 'small'], lines: [['start'], ['kept'], ['mind']] },
-    { id: 'preset', icon: 'workflows', tags: ['newTab', 'saved'], lines: [['start'], ['kept'], ['mind']] },
+    { id: 'preset', icon: 'workflows', tags: ['newTab', 'saved'], lines: [['kept']] },
     { id: 'say', icon: 'pencil', tags: ['newTab', 'download'], lines: [['start'], ['kept'], ['mind']] },
     { id: 'picture', icon: 'image', tags: ['original', 'newTab'], lines: [['start'], ['kept'], ['mind']] },
     { id: 'private', icon: 'lock', tags: ['sealed', 'newTab'], lines: [['start'], ['hidden'], ['out'], ['mind']] },
@@ -64,17 +69,7 @@ function textInput(placeholder) {
     return input;
 }
 
-function select(options) {
-    const box = el('select', 'anomalous-ai-start-select');
-    for (const [value, label] of options) {
-        const option = el('option', '', label);
-        option.value = value;
-        box.append(option);
-    }
-    return box;
-}
-
-/** What is in place before Start: an AI app that came (GET /anomalous/ai_starters `app`, `came`), a base model to draw from. */
+/** What is in place before Start, for a card that hands a task to an AI: an AI app that came (GET /anomalous/ai_starters `app`, `came`), a base model to draw from. */
 function readiness(card, data) {
     const box = el('div', 'anomalous-ai-start-ready');
     const line = (ok, text) => {
@@ -101,37 +96,12 @@ function examples(input, keys) {
     return row;
 }
 
-/** The card's fields and how they become the task: {nodes, task() -> {title, about} | an error key}. */
+/** The card's fields and how they become the task: {nodes, task() -> {title, about, note} | an error key}. */
 function fieldsOf(card, data, owner, close) {
     if (card.id === 'try') return { nodes: [], task: () => ({ title: t('aiStartTryTask') }) };
-    if (card.id === 'preset') {
-        if (!data.workflows.length) {
-            return { nodes: [el('p', 'anomalous-ai-start-empty', t('aiStartNoWorkflows')),
-                button('anomalous-ai-link', t('aiStartToWorkflows'), () => { close(); owner.goTo?.('recipes'); })], task: null };
-        }
-        const workflow = select(data.workflows.map((item, index) => [String(index), item.name]));
-        const preset = select([]);
-        const fill = () => {
-            const item = data.workflows[Number(workflow.value)];
-            preset.replaceChildren(...[['', t('aiStartOwnSettings')], ...item.presets.map(name => [name, name])].map(([value, label]) => {
-                const option = el('option', '', label);
-                option.value = value;
-                return option;
-            }));
-        };
-        workflow.onchange = fill;
-        fill();
-        const change = textInput(t('aiStartChangeHint'));
-        return {
-            nodes: [field(t('aiStartWorkflow'), workflow), field(t('aiStartPreset'), preset), field(t('aiStartChange'), change)],
-            task: () => {
-                const item = data.workflows[Number(workflow.value)];
-                const name = preset.value ? `${item.name} / ${preset.value}` : item.name;
-                const what = change.value.trim();
-                return { title: what ? t('aiStartPresetTaskChange', { name, change: what }) : t('aiStartPresetTask', { name }),
-                    about: [{ type: 'workflow', name: item.name, label: item.name }] };
-            },
-        };
+    if (card.id === 'preset') { // nothing saved to run yet
+        return { nodes: [el('p', 'anomalous-ai-start-empty', t('aiStartNoWorkflows')),
+            button('anomalous-ai-link', t('aiStartToWorkflows'), () => { close(); owner.goTo?.('recipes'); })], task: null };
     }
     if (card.id === 'picture') {
         let chosen = null;
@@ -152,9 +122,24 @@ function fieldsOf(card, data, owner, close) {
             },
         };
     }
-    const words = textInput(t(card.id === 'private' ? 'aiStartGistHint' : 'aiStartSayHint'));
+    if (card.id === 'private') {
+        const gist = textInput(t('aiStartGistHint'));
+        const prompt = el('textarea', 'anomalous-ai-start-input');
+        prompt.placeholder = t('aiStartSealedHint');
+        prompt.maxLength = MAX_SEALED;
+        prompt.rows = 3;
+        return {
+            nodes: [field(t('aiStartGist'), gist), examples(gist, EXAMPLES.private), field(t('aiStartSealed'), prompt)],
+            task: () => {
+                const sealed = prompt.value.trim();
+                if (!gist.value.trim() && !sealed) return 'aiStartNeedGist';
+                return { title: gist.value.trim() || t('aiStartPrivateTask'), note: sealed ? t('aiPresetSayPrompt', { prompt: marked(sealed) }) : '' };
+            },
+        };
+    }
+    const words = textInput(t('aiStartSayHint'));
     return {
-        nodes: [field(t(card.id === 'private' ? 'aiStartGist' : 'aiStartSay'), words), examples(words, EXAMPLES[card.id])],
+        nodes: [field(t('aiStartSay'), words), examples(words, EXAMPLES.say)],
         task: () => (words.value.trim() ? { title: words.value.trim() } : 'aiStartNeedText'),
     };
 }
@@ -163,28 +148,34 @@ function fieldsOf(card, data, owner, close) {
 export function openStarter(owner, card, data) {
     const body = el('div', 'anomalous-ai-start-sheet');
     let close = () => {};
-    const fields = fieldsOf(card, data, owner, () => close());
+    const error = el('div', 'anomalous-ai-start-error');
+    const go = button('anomalous-ai-start-go', t('aiStartGo'), async () => {
+        if (fields.start) {
+            go.disabled = true; // a second press while it starts would run it twice
+            error.textContent = await fields.start();
+            go.disabled = false;
+            return;
+        }
+        const task = fields.task();
+        if (typeof task === 'string') {
+            error.textContent = t(task);
+            return;
+        }
+        close();
+        await startTask(owner, task.title, task.about || [], null, card.id === 'private' ? { ...NEW_TAB, privacy: true } : NEW_TAB, task.note || '');
+    });
+    const fields = card.id === 'preset' && data.workflows.length ? presetFields({ data, owner, close: () => close(), go })
+        : fieldsOf(card, data, owner, () => close());
     const lines = el('div', 'anomalous-ai-start-lines');
     for (const [kind] of card.lines) {
         const line = el('div', `anomalous-ai-start-line is-${kind}`);
         line.append(el('span', 'anomalous-ai-start-line-label', t(`aiStartSheet_${kind}`)), el('span', '', t(`aiStart_${card.id}_${kind}`)));
         lines.append(line);
     }
-    const error = el('div', 'anomalous-ai-start-error');
     const actions = el('div', 'anomalous-ai-start-actions');
     actions.append(button('anomalous-ai-link', t('dialogCancel'), () => close()));
-    if (fields.task) {
-        actions.append(button('anomalous-ai-start-go', t('aiStartGo'), async () => {
-            const task = fields.task();
-            if (typeof task === 'string') {
-                error.textContent = t(task);
-                return;
-            }
-            close();
-            await startTask(owner, task.title, task.about || [], null, card.id === 'private' ? { ...NEW_TAB, privacy: true } : NEW_TAB);
-        }));
-    }
-    body.append(readiness(card, data), ...fields.nodes, lines, error, actions);
+    if (fields.task || fields.start) actions.append(go);
+    body.append(...(fields.start ? [] : [readiness(card, data)]), ...fields.nodes, lines, error, actions);
     body.addEventListener('input', () => { error.textContent = ''; });
     const shut = aiWindow(t(`aiStart_${card.id}_title`), body);
     close = () => { fields.stop?.(); shut(); };

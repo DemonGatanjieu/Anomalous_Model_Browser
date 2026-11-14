@@ -1,5 +1,6 @@
 """What the home page's "Let the AI do it" section needs in one read (web/modules/ui_ai_starters.js):
-the user's saved workflows with their presets (方案, mcp_tools.plans) for the "Run my preset" card,
+the user's saved workflows with their presets (方案, mcp_tools.plans) for the "Run my preset" card, each
+with a print of its nodes (shape) that tells the page which of them an open canvas is,
 whether the gates ask before a download (the card's tag shows only then), whether any AI app has come and
 how many base models ComfyUI lists (a card's sheet says what is in place before Start), and the AI app that came
 last with the tool list it holds: a short one (mcp_tool_sets.py) cannot take a task handed over in
@@ -8,6 +9,7 @@ Connect guide which app called last since ComfyUI started (ai_callers.latest), s
 """
 
 import asyncio
+import zlib
 
 import folder_paths
 from aiohttp import web
@@ -31,12 +33,21 @@ def base_models():
     return count
 
 
+def shape(workflow):
+    """A workflow's nodes as a short print: how many, and each one's id and type whatever their order
+    (web/modules/preset_run_list.js shapeOf makes the same of a canvas). "" for a workflow without nodes."""
+    nodes = [node for node in (workflow or {}).get("nodes") or [] if isinstance(node, dict)]
+    mix = sum(zlib.crc32(f"{node.get('id')}:{node.get('type')}".encode("utf-8")) for node in nodes) & 0xFFFFFFFF
+    return f"{len(nodes)}:{mix:08x}" if nodes else ""
+
+
 def workflows():
-    """[{name, presets: [names]}] of the saved workflows, by name."""
+    """[{name, file, shape, presets: [{file, name}]}] of the saved workflows, by name."""
     saved = plans()
-    found = [{"name": (recipe.get("data") or {}).get("name") or recipe["filename"],
-              "presets": [name for _file, name in saved.get(recipe["filename"], [])]}
-             for recipe in _list_recipes(get_recipes_dir())]
+    found = [{"name": recipe["data"].get("name") or recipe["filename"], "file": recipe["filename"],
+              "shape": shape(recipe["data"].get("workflow")),
+              "presets": [{"file": file, "name": name} for file, name in saved.get(recipe["filename"], [])]}
+             for recipe in _list_recipes(get_recipes_dir(), with_workflow=True)]
     return sorted(found, key=lambda item: item["name"].lower())[:MAX_WORKFLOWS]
 
 
@@ -63,7 +74,7 @@ def _tools(listing):
 
 def register_routes(app, listing):
     async def api_starters(_request):
-        return web.json_response({"workflows": workflows(), "download_asks": ai_gates.policies().get("download") == "ask",
+        return web.json_response({"workflows": await asyncio.to_thread(workflows), "download_asks": ai_gates.policies().get("download") == "ask",
                                   "app": last_app(listing), "came": any(task["client"] for task in ai_tasks.list_tasks(50)),
                                   "models": await asyncio.to_thread(base_models)})
 

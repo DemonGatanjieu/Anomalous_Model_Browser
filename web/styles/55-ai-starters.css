@@ -99,6 +99,92 @@
     font-weight: 600;
     cursor: pointer;
 }
+textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
+.anomalous-ai-start-field[hidden] { display: none; }
+
+/* "Run my preset" (ui_ai_preset_sheet.js): where the workflow comes from, its presets as chips, the row they line up in. */
+.anomalous-ai-preset-sources { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-ai-preset-source,
+.anomalous-ai-preset-chip,
+.anomalous-ai-preset-again {
+    padding: 4px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.anomalous-ai-preset-source:hover,
+.anomalous-ai-preset-chip:hover:not(:disabled),
+.anomalous-ai-preset-again:hover:not(:disabled) { border-color: var(--amb-link); color: var(--amb-text-main); }
+.anomalous-ai-preset-source.is-on,
+.anomalous-ai-preset-chip.is-on {
+    border-color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+.anomalous-ai-preset-chip:disabled { opacity: 0.45; cursor: not-allowed; }
+.anomalous-ai-preset-note { color: var(--amb-ok-text); font-size: 12px; line-height: 1.5; }
+.anomalous-ai-preset-note.is-warn { color: var(--amb-warn-text); }
+.anomalous-ai-preset-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 128px; overflow-y: auto; }
+.anomalous-ai-preset-run {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    box-sizing: border-box;
+    padding: 5px 8px;
+    border: 1px dashed var(--amb-border);
+    border-radius: 10px;
+}
+.anomalous-ai-preset-pick {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    padding: 2px 4px 2px 10px;
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+}
+.anomalous-ai-preset-pick-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-preset-by,
+.anomalous-ai-preset-none,
+.anomalous-ai-preset-sum { color: var(--amb-text-muted); font-size: 12px; }
+.anomalous-ai-preset-sum.is-over { color: var(--amb-danger-text); }
+.anomalous-ai-preset-times {
+    flex: none;
+    width: 44px;
+    padding: 2px 4px;
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+    background: var(--amb-bg-input);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    text-align: center;
+}
+.anomalous-ai-preset-checks { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.anomalous-ai-preset-check { display: inline-flex; align-items: center; gap: 6px; color: var(--amb-text-soft); font-size: 12.5px; cursor: pointer; }
+.anomalous-ai-preset-check input:disabled + span { opacity: 0.5; }
+/* Who runs it: green while Anomalous does and nothing leaves, plain once it goes to an AI. */
+.anomalous-ai-preset-who {
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--amb-ok) 12%, transparent);
+    color: var(--amb-ok-text);
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+.anomalous-ai-preset-who.is-ai { background: color-mix(in srgb, var(--amb-link) 12%, transparent); color: var(--amb-text-main); }
+/* The home page's line under the cards: the list run last, again with one press. */
+.anomalous-ai-preset-again { align-self: flex-start; }
+.anomalous-ai-preset-again:disabled { opacity: 0.5; cursor: default; }
 
 /* A newcomer's line under a control that shows up later (ui_ai_tour.js firstHint) */
 .anomalous-ai-first-hint {

@@ -40,9 +40,10 @@ async function handToAi(owner, wish, about, leave = null) {
 
 /**
  * Starts a task called `title` about `about` and shows the sentence to paste into the AI app (canvas hand-off,
- * the home page's AI cards). `switches` set on the new task first: {canvas: 'new' | 'current', privacy: true}.
+ * the home page's AI cards). `switches` set on the new task first: {canvas: 'new' | 'current', privacy: true};
+ * `note` is then left on it as the user's first message (words marked in it reach the AI as tokens).
  */
-export async function startTask(owner, title, about, leave = null, switches = {}) {
+export async function startTask(owner, title, about, leave = null, switches = {}, note = '') {
     try {
         const response = await fetch('/anomalous/ai_tasks', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: String(title).trim(), about }),
@@ -54,6 +55,12 @@ export async function startTask(owner, title, about, leave = null, switches = {}
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [key]: value }),
             });
             if (!set.ok) throw new Error((await set.json().catch(() => ({}))).error || `HTTP ${set.status}`);
+        }
+        if (note) {
+            const left = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(data.task.id)}/message`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: note }),
+            });
+            if (!left.ok) throw new Error((await left.json().catch(() => ({}))).error || `HTTP ${left.status}`);
         }
     } catch (error) {
         await anomalousAlert(error.message);

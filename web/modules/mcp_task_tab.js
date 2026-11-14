@@ -20,10 +20,14 @@ const CHANGES = new Set(['set_prompt', 'set_model', 'add_lora', 'place_combo', '
 const FOLLOWS = new Set(['describe_canvas', 'check_models', 'run_workflow', 'download_missing', 'fill_slots', 'job_sheet']);
 const OPENS = new Set(['new_workflow', 'open_workflow']);
 const SWITCH_WAIT_MS = 4000;
+const FRAME_MS = 300;
 
 const store = () => app.extensionManager?.workflow || null;
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const shown = path => store()?.activeWorkflow?.path === path && !store()?.activeWorkflow?.isLoading;
+
+/** The next frame, by when the canvas has drawn the tab just shown; a page in the background draws none, so a moment at most. */
+export const frame = () => Promise.race([new Promise(resolve => requestAnimationFrame(resolve)), wait(FRAME_MS)]);
 
 function frontTab(made = false) {
     const workflow = store()?.activeWorkflow;
@@ -32,7 +36,7 @@ function frontTab(made = false) {
 
 async function settled(path, limit = SWITCH_WAIT_MS) {
     for (let waited = 0; waited < limit && !shown(path); waited += 50) await wait(50);
-    if (shown(path)) await new Promise(resolve => requestAnimationFrame(resolve));
+    if (shown(path)) await frame();
     return shown(path);
 }
 

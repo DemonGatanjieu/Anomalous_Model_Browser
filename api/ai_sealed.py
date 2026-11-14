@@ -31,7 +31,8 @@ PICTURE = re.compile(r"[^\s\"'<>|*?,;()\[\]{}]*\.(?:png|jpe?g|webp|gif|bmp|mp4|w
 # Fields whose text is a prompt, or holds one (a workflow's settings, a change's before and after).
 PROMPT_KEYS = {"prompt", "prompts", "positive", "negative", "positive_prompt", "negative_prompt", "notes",
                "settings", "before", "after", "filename_prefix", "trigger_words", "trainedWords", "header_words",
-               "tags", "in_cards", "recipe", "combo", "said_as"}  # the last five: names the user gave, where they stand alone
+               "tags", "in_cards", "recipe", "combo", "said_as", "opened"}  # the last six: names the user gave, where they stand alone
+# ("opened": the tab a workflow opened on, named after the card and preset it came from)
 NAMED = ("combos", "workflows", "prompts")  # lists of what the user named: each one's name and tags are theirs
 TOOL_KEYS = {"get_model": {"description", "user_notes"}, "place_combo": {"name"},
              **{tool: {"more_names"} for tool in ("list_combos", "list_workflows", "list_saved_prompts")}}

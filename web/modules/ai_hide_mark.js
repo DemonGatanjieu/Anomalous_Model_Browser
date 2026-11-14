@@ -3,7 +3,7 @@
  * a message of a private task). The button marks what is selected \u27e6like this\u27e7; Anomalous seals
  * the marked words when the text is handed in (api/ai_sealed.py seal_marked), so the AI gets a
  * token in their place. withHidden() shows such a text to the user again, each token as the
- * words it stands for.
+ * words it stands for. marked() marks words Anomalous hands on for the user (a sheet's hidden prompt).
  */
 
 import { translate as t } from './locales.js';
@@ -30,6 +30,11 @@ export function hideButton(field, say) {
         field.focus();
     };
     return node;
+}
+
+/** `text` marked to hide, all of it. */
+export function marked(text) {
+    return `${OPEN}${String(text).replaceAll(OPEN, '').replaceAll(CLOSE, '')}${CLOSE}`;
 }
 
 /** `text` as the user wrote it: the tokens of `sealed` (the task's) as their words, marked. */
