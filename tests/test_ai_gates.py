@@ -318,6 +318,25 @@ class GateTests(unittest.TestCase):
                     ai_gates.set_level(wrong)
             self.assertEqual(ai_gates.level(), "balanced")
 
+    def test_reset_puts_every_setting_of_the_window_back(self):
+        def call(body):
+            request = mock.Mock()
+            request.method = "POST"
+            request.json = lambda: asyncio.sleep(0, body)
+            return json.loads(asyncio.run(ai_tasks_routes.api_gates(request)).text)
+
+        with self._isolated_settings():
+            for change in ({"level": "free"}, {"gate": "files", "policy": "never"}, {"canvas_tab": "current"}, {"privacy": True},
+                           {"privacy_models": False}, {"runs": "wait"}, {"answer_wait": 600}):
+                call(change)
+            self.assertEqual(call({"gate": "gpu", "policy": "ask"})["level"], "custom")
+            back = call({"reset": True})
+            self.assertEqual((back["level"], back["policies"]), ("balanced", ai_gates.DEFAULTS))
+            self.assertEqual((back["canvas_tab"], back["privacy"], back["privacy_models"], back["runs"], back["answer_wait"]),
+                             ("new", False, True, "call", 180))
+            self.assertEqual((back["nodes"], back["routes"], back["no_answer"]), ("any", "allow", "stop"))
+            self.assertIs(ai_plans.auto(), False)
+
     def test_safety_level_route(self):
         def call(method, body=None):
             request = mock.Mock()

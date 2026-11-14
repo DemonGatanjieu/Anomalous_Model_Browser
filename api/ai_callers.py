@@ -1,8 +1,10 @@
 """Who is calling Anomalous's MCP endpoint (mcp_server.py), for the AI workbench's record
 (ai_tasks.py): a short name for the AI app, the session it runs when it keeps several, and a task
-it names. Each comes from the request's headers or metadata and is cleaned to a short plain word."""
+it names. Each comes from the request's headers or metadata and is cleaned to a short plain word.
+And when each app last called since ComfyUI started (note, latest): the Connect guide's sign that one has come."""
 
 import re
+import time
 
 
 _CLIENT_NAMES = (
@@ -21,6 +23,25 @@ def reads_disk(client):
     what Anomalous sends it, not what it opens on its own (the output folder, the task records)."""
     lowered = str(client or "").lower()
     return any(word in lowered for word in _READS_DISK)
+
+
+MAX_SEEN = 40
+_seen = {}  # app -> when it last called, since ComfyUI started
+
+
+def note(client, now=None):
+    """The app `client` just called the endpoint."""
+    _seen[client] = time.time() if now is None else now
+    if len(_seen) > MAX_SEEN:
+        _seen.pop(min(_seen, key=_seen.get))
+
+
+def latest():
+    """{client, at} of the app that called last since ComfyUI started, or None."""
+    if not _seen:
+        return None
+    client = max(_seen, key=_seen.get)
+    return {"client": client, "at": _seen[client]}
 
 
 def client_of(headers, params):

@@ -202,9 +202,19 @@ async def api_gate(request):
     return web.json_response({"step": step})
 
 
+def _reset_gates():
+    """Every setting of the Gates window as a new install has it. The darkroom helper is a model the user picked: kept."""
+    ai_gates.set_level("balanced")
+    ai_task_canvas.set_default(ai_task_canvas.DEFAULT)
+    ai_privacy.set_default(False)
+    ai_privacy.set_hides_models(True)
+    ai_gates.set_run_wait("call")
+    ai_gates.set_answer_wait(180)
+
+
 async def api_gates(request):
     """GET /anomalous/ai_gates: {policies: {gate: policy}, canvas_tab, tools, level}; POST {level: careful | balanced | free}
-    applies a safety level, POST {gate, policy} changes one,
+    applies a safety level, POST {reset: true} sets every setting back to a new install's, POST {gate, policy} changes one,
     POST {canvas_tab: new | current} whether new tasks work in a tab of their own (ai_task_canvas.py),
     POST {privacy: bool} whether new tasks are private, POST {privacy_models: bool} whether a private task
     keeps its models' names too (ai_privacy.py),
@@ -223,7 +233,9 @@ async def api_gates(request):
         return web.json_response(settings())
     body = await _body(request)
     try:
-        if "level" in (body or {}):
+        if (body or {}).get("reset") is True:
+            _reset_gates()
+        elif "level" in (body or {}):
             ai_gates.set_level(body["level"])
         elif "canvas_tab" in (body or {}):
             ai_task_canvas.set_default(body["canvas_tab"])

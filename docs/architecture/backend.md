@@ -373,7 +373,11 @@ recommended, as a choice does (`ai_answer_wait.take_recommended`). Safety levels
 differs; `ai_gates.level`, `ai_gates.set_level`) let `GET/POST /anomalous/ai_gates` read `level`
 and apply the five gates together with `node_rule`, `route_rule`, `no_answer` and
 `ai_plans.auto()` in one write, leaving `canvas_tab`, `runs`, `answer_wait` and privacy settings
-unchanged. The user's word on a finished
+unchanged. POST `{reset: true}` puts the whole window back to a new install's: the balanced level and
+those four too (`ai_tasks_routes._reset_gates`; the darkroom helper, a model the user picked, stays).
+`ai_callers.note` keeps in memory when each app last made a request (`api_mcp`, after the loopback
+check, notifications apart); `GET /anomalous/ai_callers` gives the latest, so the Connect guide can
+say an app has come since it was opened. The user's word on a finished
 run (`POST /anomalous/ai_tasks/{id}/runs/{step}/verdict`, `ai_run_control.set_verdict`) stays on
 the run's step and reaches the AI as a `user_verdict` step; nothing else keeps it. With "bad" go
 `issues` (keys of `ai_run_control.ISSUES`: hands, face, body, composition, dark, bright, blurry, style,

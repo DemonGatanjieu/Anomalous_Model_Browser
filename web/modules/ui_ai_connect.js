@@ -1,17 +1,23 @@
 /**
  * How to connect an AI app to Anomalous (the AI workbench's "Connect an AI", its empty page and a
- * task waiting for an AI): the address, a sentence to paste to the AI so it sets itself up (and
- * starts on the task, when one waits), the way for each common app, and rules for the AI app to
- * keep (use Anomalous's tools, never edit pictures with code, say what it did outside). Only this computer can
- * connect; the address is this page's own. Connecting (connectHint) is a card that opens the guide
- * in place, under a task waiting for an AI (ui_ai_ready.js) and on the empty page. Without a waiting
- * task the guide also picks which tools the app is offered (ui_ai_tool_set.js), and the address follows.
+ * task waiting for an AI). One thing to do comes first: a sentence to paste to the AI so it sets
+ * itself up (and starts on the task, when one waits), and under it a line that turns green once an
+ * app has called (connectionLine, GET /anomalous/ai_callers, asked only while the line shows).
+ * The rest is folded: the address and the way for each common app, to add it by hand; and what few
+ * need, which tools the app is offered (ui_ai_tool_set.js, not with a task waiting: it needs every
+ * tool; the address follows the choice) and rules for the AI app to keep (use Anomalous's tools,
+ * never edit pictures with code, say what it did outside). Only this computer can connect; the
+ * address is this page's own. Connecting (connectHint) is a card that opens the guide in place,
+ * under a task waiting for an AI (ui_ai_ready.js) and on the empty page.
  */
 
 import { translate as t } from './locales.js';
 import { copyText } from './ui_dialog.js';
 import { iconButton } from './ui_ai_icons.js';
 import { toolSetPicker } from './ui_ai_tool_set.js';
+
+const LOOK_MS = 2500; // how often the guide asks whether an app has come
+const LOOKS_UNSHOWN = 40; // a line never put on the page stops asking
 
 const ART = {
     waiting: new URL('../assets/ai_waiting.webp', import.meta.url).href,
@@ -68,29 +74,63 @@ export function sentenceForAi(title = '', set = 'all') {
     return title ? `${add}${t('aiConnectSentenceTask', { task: title })}` : add;
 }
 
+/**
+ * Whether an AI app has come: asks while the line shows, and names the app once one calls after the
+ * line was made (an app that called before proves nothing about the sentence just sent).
+ */
+export function connectionLine() {
+    const line = el('div', 'anomalous-ai-connect-live');
+    line.setAttribute('role', 'status');
+    const words = el('span', '', t('aiConnectWaiting'));
+    line.append(el('span', 'anomalous-ai-visit-dot'), words);
+    let before = null; // when an app last called, as the first answer had it
+    let shown = false;
+    let unshown = 0;
+    const look = async () => {
+        if (line.isConnected) shown = true;
+        else if (shown || ++unshown > LOOKS_UNSHOWN) return; // the guide closed, or never came to the page
+        if (line.offsetParent) { // not while folded away
+            try {
+                const last = (await (await fetch('/anomalous/ai_callers')).json()).last;
+                if (before === null) before = last?.at || 0;
+                else if (last && last.at > before) {
+                    line.classList.add('is-known');
+                    words.textContent = t('aiConnectCame', { client: last.client });
+                    return;
+                }
+            } catch (_) { /* asked again in a moment */ }
+        }
+        setTimeout(look, LOOK_MS);
+    };
+    setTimeout(look, 300);
+    return line;
+}
+
 /** Everything about connecting, as one block. `title`: the task waiting for an AI, if any. */
 export function connectGuide(title = '') {
     const box = el('div', 'anomalous-ai-connect');
-    const linked = el('div', 'anomalous-ai-connect');
-    const apps = el('details', 'anomalous-ai-connect-apps');
+    const sentence = el('div', 'anomalous-ai-connect');
+    const byHand = el('details', 'anomalous-ai-connect-apps');
+    const more = el('details', 'anomalous-ai-connect-apps');
     const fill = (set) => {
-        linked.replaceChildren(copyLine(mcpAddress(set)), el('div', 'anomalous-ai-connect-step', t(title ? 'aiConnectStepSayTask' : 'aiConnectStepSay')),
-            copyLine(sentenceForAi(title, set), { code: false, label: t('aiConnectCopySentence') }));
-        appWays(apps, mcpAddress(set));
+        sentence.replaceChildren(copyLine(sentenceForAi(title, set), { code: false, label: t('aiConnectCopySentence') }));
+        appWays(byHand, mcpAddress(set));
+        if (set !== 'all') more.open = true; // the address carries a shorter tool list: why shows
     };
-    box.append(el('div', 'anomalous-ai-connect-step', t('aiConnectStepAddress')));
-    if (!title) box.append(toolSetPicker(fill));  // a task waiting in Anomalous needs every tool
+    more.append(el('summary', '', t('aiConnectMore')));
+    if (!title) more.append(el('div', 'anomalous-ai-connect-app', t('aiConnectTools')), toolSetPicker(fill)); // a task waiting in Anomalous needs every tool
     fill('all');
     const rules = copyLine(t('aiConnectRules'), { code: false, label: t('aiConnectCopyRules') });
     rules.classList.add('is-rules');
-    box.append(linked, apps, el('div', 'anomalous-ai-connect-step', t('aiConnectStepRules')), rules,
-        el('div', 'anomalous-ai-connect-note', t('aiConnectLocal')));
+    more.append(el('div', 'anomalous-ai-connect-app', t('aiConnectRulesWhy')), rules);
+    box.append(el('div', 'anomalous-ai-connect-step', t(title ? 'aiConnectSayTask' : 'aiConnectSay')), sentence, connectionLine(),
+        byHand, more, el('div', 'anomalous-ai-connect-note', t('aiConnectLocal')));
     return box;
 }
 
-/** The way to add `url` in each common app, into the folding `apps`. */
+/** The address and the way to add it in each common app, into the folding `apps`. */
 function appWays(apps, url) {
-    apps.replaceChildren(el('summary', '', t('aiConnectByApp')));
+    apps.replaceChildren(el('summary', '', t('aiConnectByApp')), el('div', 'anomalous-ai-connect-app', t('aiConnectAddress')), copyLine(url));
     const ways = [
         ['Claude Code', `claude mcp add --transport http anomalous ${url}`],
         ['Gemini CLI', `gemini mcp add --transport http anomalous ${url}`],

@@ -120,7 +120,7 @@ covered by the `styles.css` manifest.
   may not: `write` rewrites a sealed prompt the way the AI says (set_prompt's `rewrite`; the result leaves as a
   token), `check_picture` answers zoom_image with a fixed list of checks, each one of a few allowed words
   (`CHECKS`), so its word cannot carry what the picture shows. `web/modules/ui_ai_darkroom.js` is its part of the
-  Gates window (find the local servers, pick a model, drop it) (`tests/test_ai_darkroom.py`).
+  Gates window, folded until a helper is in use (find the local servers, pick a model, drop it) (`tests/test_ai_darkroom.py`).
   `api/ai_sent.py` keeps what a private task's AI wrote and was answered, as it went (a line per call beside the
   task, the newest 300, gone with it), and `web/modules/ui_ai_sent.js` is the window that lists it and looks for a
   word in it (the task's ⋯ "What the AI was sent"). Privacy mode covers what Anomalous sends, not what an AI app
@@ -364,7 +364,8 @@ covered by the `styles.css` manifest.
   (the user's pick, `anomalous/ai_tool_sets.json`), with the instructions cut to the listed tools; only the list
   shrinks, tools/call takes every tool (`tests/test_mcp_tool_sets.py`). `api/ai_starters.py` gives the home page's AI
   cards what they need (GET /anomalous/ai_starters: saved workflows with their presets, whether downloads ask, the app
-  that came last and which of those lists it holds; `tests/test_ai_starters.py`). mcp_directory.py also keeps which
+  that came last and which of those lists it holds; `tests/test_ai_starters.py`), and the Connect guide the app that
+  called last since ComfyUI started (GET /anomalous/ai_callers, from `ai_callers.note` on every request). mcp_directory.py also keeps which
   list each app fetched last (`anomalous/ai_tool_lists.json`), so a call from an app still holding
   the list of an older Anomalous is told so and the task header says how to reconnect it.
   `api/mcp_fill.py` gives run_workflow its blanks, a daily run in one call: a saved workflow, or
@@ -487,7 +488,8 @@ covered by the `styles.css` manifest.
   (`ai_marks.write_inpaint`, soft edges kept) before the answer is recorded, so the answer the AI
   reads carries `inpaint_image` and the inpaint note. Building the repaint stays the AI's.
   Options Anomalous makes name a page word (`label_key`). `tests/test_ai_repaint.py`.
-  `web/modules/ui_ai_gate.js` draws the card under a step that asks and the Gates window;
+  `web/modules/ui_ai_gate.js` draws the card under a step that asks and the Gates window (the safety level first, the
+  single settings folded under it, "restore every default": POST {reset: true});
   `ui_ai_flow.js` the flow over a task (its stages in order, each done, running, waiting or
   failed; a stage leads to its first step; a job sheet's run with how far it is), and under it the blueprint's line
   (`ai_task_view.js` planFlow: the newest plan card's kept steps, then picking a base, lit as the bases run, the pick
@@ -600,8 +602,9 @@ covered by the `styles.css` manifest.
   `ai_text_format.js` lays out what the AI writes (its notes and replies: headings, lists, bold,
   code) with textContent only. A note may answer the user's message or marks (`report`'s
   `reply_to`): the two steps point at each other, and the timeline links them both ways.
-  `ui_ai_connect.js` says how to connect an AI app (the address, a sentence to send the AI so
-  it sets itself up and starts on a waiting task, each common app's way), in a window from the
+  `ui_ai_connect.js` says how to connect an AI app: a sentence to send the AI so it sets itself up
+  and starts on a waiting task, a line that turns green once an app has called (`connectionLine`), and folded
+  under them the address, each common app's way, the tool list and the rules; in a window from the
   list's "Connect an AI", and as a card (`connectHint`) that opens the guide in place on the
   empty page and over a task waiting for an AI until one has ever come; without a waiting task
   `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the

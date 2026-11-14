@@ -138,7 +138,12 @@
 .anomalous-ai-gates-note { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
 
 /* The darkroom helper in the Gates window (ui_ai_darkroom.js): what is in use, then the buttons or the models to pick from. */
-.anomalous-ai-darkroom { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-top: 1px solid var(--amb-border); }
+.anomalous-ai-darkroom { padding: 10px 0; border-top: 1px solid var(--amb-border); }
+.anomalous-ai-darkroom[open] { display: flex; flex-direction: column; gap: 6px; }
+.anomalous-ai-darkroom > summary,
+.anomalous-ai-gates-each > summary { color: var(--amb-link); font-size: 12.5px; cursor: pointer; }
+.anomalous-ai-darkroom > summary:hover,
+.anomalous-ai-gates-each > summary:hover { text-decoration: underline; }
 .anomalous-ai-darkroom-state { color: var(--amb-text-main); font-size: 12.5px; }
 .anomalous-ai-darkroom-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .anomalous-ai-darkroom-pick { min-width: 0; max-width: 100%; padding: 5px 8px; border: 1px solid var(--amb-border-strong); border-radius: 7px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 12.5px; }
@@ -171,6 +176,13 @@
 .anomalous-ai-gates-tools { color: var(--amb-text-dim); font-size: 11.5px; }
 .anomalous-ai-gates-level .anomalous-ai-gates-tools { flex: 1 0 100%; line-height: 1.5; }
 .anomalous-ai-gates-level .anomalous-ai-gates-tools.is-custom { color: var(--amb-text-soft); }
+/* The single settings, folded under the level: two lines of each one's words until pressed. */
+.anomalous-ai-gates-each { padding-top: 10px; border-top: 1px solid var(--amb-border); }
+.anomalous-ai-gates-each[open] { display: flex; flex-direction: column; gap: 12px; }
+.anomalous-ai-gates-each .anomalous-ai-gates-tools { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; cursor: pointer; }
+.anomalous-ai-gates-each .anomalous-ai-gates-tools.is-open { display: block; }
+.anomalous-ai-gates-foot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; padding-top: 10px; border-top: 1px solid var(--amb-border); }
+.anomalous-ai-gates-foot .anomalous-ai-gates-note { flex: 1 1 260px; }
 .anomalous-ai-gates-choice { display: inline-flex; border: 1px solid var(--amb-border); border-radius: 8px; overflow: hidden; }
 .anomalous-ai-gates-option {
     padding: 5px 12px;

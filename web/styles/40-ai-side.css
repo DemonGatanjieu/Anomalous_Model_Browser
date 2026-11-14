@@ -504,6 +504,17 @@
     line-height: 1.6;
 }
 
+.anomalous-ai-connect-live {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--amb-text-dim);
+    font-size: 12px;
+}
+
+.anomalous-ai-connect-live.is-known { color: var(--amb-ok-text); }
+.anomalous-ai-connect-live.is-known .anomalous-ai-visit-dot { background: var(--amb-ok); opacity: 1; }
+
 .anomalous-ai-connect-apps > summary {
     color: var(--amb-link);
     font-size: 12.5px;

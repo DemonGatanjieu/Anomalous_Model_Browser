@@ -2,6 +2,11 @@
 
 ## v1.64.0 — unreleased
 
+- 「连接 AI」的说明只留一件事：复制一句话发给你的 AI。下面多了一行状态，AI 软件一连上就变绿，写出是哪个软件；地址、各个软件的写法、工具清单和规则都收了起来，要用再点开。第一次交任务时还没有 AI 连过，给你的那句话会让 AI 先连上、再接这个任务。
+- Connect an AI now asks one thing: copy a sentence to your AI. A line under it turns green and names the app once it has connected; the address, each app's way, the tool list and the rules are folded until wanted. Handing over a first task while no AI has ever connected gives a sentence that connects the app first, then starts the task.
+- 关卡窗口从两屏半缩到一屏：最上面选安全级别就行，十三项单独的设置收在「逐项设置」里（你单独改过时自动展开；每项说明先显示两行，点一下看全），暗房助手没在用时也收着。新增「全部恢复默认」，一下改回刚装好时的样子。
+- The Gates window went from two and a half screens to one: pick a safety level at the top; the thirteen single settings are folded under "Each setting" (open by themselves once you changed one, each showing two lines of its words until pressed), and the darkroom helper folds while not in use. New "Restore every default" sets the window back to a new install's.
+
 - 任务单停止时，刚提交、迟到回报的运行也会取消，暂停回报不会覆盖停止请求；清除或替换失联任务单会同时停止它已登记的运行。很快完成、早于 AI 步骤绑定的图片会补回工作台，重复绑定不重复添图；中断或被移出队列的运行计入未成功次数。
 - Stopping a job sheet also cancels runs reported just after the stop; a pause report cannot erase a stop request. Clearing or replacing a stale sheet stops its registered runs. Pictures completed before the AI step was attached are carried into the workbench without duplicates on reattachment; interrupted or removed runs count as unsuccessful.
 

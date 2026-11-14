@@ -300,6 +300,7 @@ async def api_mcp(request):
     id_, method = body["id"], body["method"]
     params = body.get("params") if isinstance(body.get("params"), dict) else {}
     names = mcp_tool_sets.chosen(request.query.get("tools"), TOOLS)  # ?tools=core | mine: a shorter list
+    ai_callers.note(ai_callers.client_of(request.headers, params))  # the Connect guide says an app has come
 
     if method == "initialize":
         return _result(id_, _initialize(params, names), modern=False)

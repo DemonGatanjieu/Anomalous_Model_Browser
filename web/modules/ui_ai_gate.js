@@ -7,11 +7,13 @@
  * (careful, balanced, free) that set them together with node/route rules, blueprint auto-build and timeout behavior,
  * whether a new task works in a canvas tab of its own (api/ai_task_canvas.py), how long the AI waits for the
  * user's answer and what happens when nobody answers, and whether the AI waits for a run or the user tells it when the run is done
- * (ui_ai_call.js).
+ * (ui_ai_call.js). The window shows the level first; the single settings are folded under it (open while the level is
+ * custom, or as the user left the fold in this browser), each with two lines of its words until pressed. "Restore every
+ * default" sets the window back to a new install's.
  */
 
 import { translate as t } from './locales.js';
-import { anomalousAlert } from './ui_dialog.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { darkroomPart } from './ui_ai_darkroom.js';
 import { icon } from './ui_ai_icons.js';
@@ -20,6 +22,7 @@ export const GATES = ['canvas', 'gpu', 'download', 'network', 'files'];
 const POLICIES = ['auto', 'ask', 'never'];
 const LEVELS = ['careful', 'balanced', 'free'];
 const LEVEL_VALUES = new Set([...LEVELS, 'custom']);
+const EACH_KEY = 'anomalous_ai_gates_each'; // the single settings left unfolded, in this browser
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -139,7 +142,10 @@ function levelRow(current, apply) {
 function choiceRow(key, choices, current, labelOf, save) {
     const row = el('div', 'anomalous-ai-gates-row');
     const words = el('div', 'anomalous-ai-gates-words');
-    words.append(el('div', 'anomalous-ai-gates-name', t(`aiGate_${key}`)), el('div', 'anomalous-ai-gates-tools', t(`aiGateWhy_${key}`)));
+    const why = el('div', 'anomalous-ai-gates-tools', t(`aiGateWhy_${key}`));
+    why.title = why.textContent; // two lines show; a press shows all of it
+    why.onclick = () => why.classList.toggle('is-open');
+    words.append(el('div', 'anomalous-ai-gates-name', t(`aiGate_${key}`)), why);
     const choice = el('div', 'anomalous-ai-gates-choice');
     choice.setAttribute('role', 'radiogroup');
     let kept = current;
@@ -206,7 +212,7 @@ export async function openGates() {
             if (hadFocus) rows.querySelector(`[data-level="${value}"]`)?.focus();
         };
         top = levelRow(data.level, applyLevel);
-        const list = [top.row];
+        const list = [];
         for (const gate of GATES) {
             list.push(choiceRow(gate, POLICIES, data.policies?.[gate], policy => t(`aiPolicy_${policy}`),
                 async policy => (await save({ gate, policy })).policies[gate]));
@@ -229,9 +235,29 @@ export async function openGates() {
             choiceRow('route', ['allow', 'ask'], data.routes || 'allow', mode => t(`aiRouteRule_${mode}`),
                 async mode => (await save({ routes: mode })).routes),
         );
-        rows.replaceChildren(...list);
+        const each = el('details', 'anomalous-ai-gates-each');
+        const head = el('summary', '', t('aiGatesEach', { count: list.length }));
+        head.onclick = () => { // before it folds or unfolds
+            try { localStorage.setItem(EACH_KEY, each.open ? '0' : '1'); } catch (_) { /* this viewer's convenience */ }
+        };
+        let left = false;
+        try { left = localStorage.getItem(EACH_KEY) === '1'; } catch (_) { /* folded */ }
+        each.open = data.level === 'custom' || left;
+        each.append(head, ...list);
+        rows.replaceChildren(top.row, each);
     };
     drawRows(known);
-    body.append(rows, darkroomPart(), el('p', 'anomalous-ai-gates-note', t('aiGatesNote')));
+    const reset = button('anomalous-ai-link', t('aiGatesReset'), async () => {
+        if (!await anomalousConfirm(t('aiGatesResetConfirm'), t('aiGatesReset'))) return;
+        try {
+            drawRows(await post('/anomalous/ai_gates', { reset: true }));
+            loaded = true;
+        } catch (error) {
+            await anomalousAlert(error.message);
+        }
+    });
+    const foot = el('div', 'anomalous-ai-gates-foot');
+    foot.append(el('p', 'anomalous-ai-gates-note', t('aiGatesNote')), reset);
+    body.append(rows, darkroomPart(), foot);
     aiWindow(t('aiGates'), body);
 }

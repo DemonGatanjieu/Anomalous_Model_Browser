@@ -13,7 +13,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_starters, ai_tasks, mcp_directory, mcp_server, mcp_tool_sets  # noqa: E402
+from api import ai_callers, ai_starters, ai_tasks, mcp_directory, mcp_server, mcp_tool_sets  # noqa: E402
 
 _ROOT = tempfile.mkdtemp(prefix="amb_starters_")
 ai_tasks.tasks_dir = lambda: os.path.join(_ROOT, "anomalous", "ai_tasks")
@@ -44,6 +44,19 @@ class StarterTests(unittest.TestCase):
             self.assertEqual(ai_starters.last_app(mcp_server._tools)["tools"], "all")
             mcp_directory.listed("antigravity-client", mcp_server._tools()[:3])
             self.assertEqual(ai_starters.last_app(mcp_server._tools)["tools"], "other", "an older Anomalous's list")
+
+    def test_the_app_that_called_last_is_kept_for_the_connect_guide(self):
+        self.addCleanup(ai_callers._seen.clear)
+        ai_callers._seen.clear()
+        self.assertIsNone(ai_callers.latest(), "nobody called since ComfyUI started")
+        ai_callers.note("Claude Code", now=10.0)
+        ai_callers.note("Cursor", now=20.0)
+        ai_callers.note("Claude Code", now=30.0)
+        self.assertEqual(ai_callers.latest(), {"client": "Claude Code", "at": 30.0})
+        for index in range(ai_callers.MAX_SEEN + 5):
+            ai_callers.note(f"app {index}", now=100.0 + index)
+        self.assertEqual(len(ai_callers._seen), ai_callers.MAX_SEEN, "the oldest go")
+        self.assertEqual(ai_callers.latest()["client"], f"app {ai_callers.MAX_SEEN + 4}")
 
     def test_every_card_has_its_words_in_both_languages(self):
         sheet = (PLUGIN / "web" / "modules" / "ui_ai_starter_sheet.js").read_text(encoding="utf-8")

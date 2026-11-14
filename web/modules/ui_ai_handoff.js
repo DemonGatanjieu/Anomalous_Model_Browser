@@ -3,7 +3,9 @@
  * image's inspector, on a combo card and on a saved workflow's page. The user says what they want (prefilled), Anomalous
  * starts a task with it (POST /anomalous/ai_tasks, `about` naming the model, image or combo, so
  * the AI gets their ids from begin_task) and shows the sentence to paste into the AI app:
- * Anomalous cannot wake an AI by itself. The task waits on the AI workbench until an AI takes it.
+ * Anomalous cannot wake an AI by itself. While no AI app has ever come, that sentence connects
+ * the app first (ui_ai_connect.js sentenceForAi) and a line says when it has.
+ * The task waits on the AI workbench until an AI takes it.
  * Pictures (the inspector's ✦, a gallery card's menu) can instead go to the task open now: the AI
  * gets the pictures themselves and what made them (POST /anomalous/ai_tasks/{id}/pictures). The canvas
  * (ui_ai_canvas_hand.js) starts its tasks here too.
@@ -12,7 +14,7 @@
 import { translate as t } from './locales.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
-import { aiWindow, copyLine, openConnectGuide } from './ui_ai_connect.js';
+import { aiWindow, connectionLine, copyLine, openConnectGuide, sentenceForAi } from './ui_ai_connect.js';
 import { taskTitle } from './ai_task_title.js';
 
 function el(tag, className, text) {
@@ -57,9 +59,13 @@ export async function startTask(owner, title, about, leave = null, switches = {}
         await anomalousAlert(error.message);
         return;
     }
+    const name = String(title).trim();
+    const known = await fetch('/anomalous/ai_tasks?limit=50').then(response => response.json())
+        .then(data => (data.tasks || []).some(task => task.client), () => true); // an AI app has come before
     const body = el('div', 'anomalous-ai-handoff');
-    body.append(el('p', 'anomalous-ai-handoff-text', t('aiHandMade')),
-        copyLine(t('aiHandSentence', { task: String(title).trim() }), { code: false, label: t('aiConnectCopySentence') }));
+    body.append(el('p', 'anomalous-ai-handoff-text', t(known ? 'aiHandMade' : 'aiHandMadeFirst')),
+        copyLine(known ? t('aiHandSentence', { task: name }) : sentenceForAi(name), { code: false, label: t('aiConnectCopySentence') }),
+        ...(known ? [] : [connectionLine()]));
     const actions = el('div', 'anomalous-ai-handoff-actions');
     const close = aiWindow(t('aiHand'), body);
     actions.append(button('anomalous-ai-link', t('aiHandWatch'), () => {
@@ -67,7 +73,7 @@ export async function startTask(owner, title, about, leave = null, switches = {}
         leave?.();
         owner?.show?.();
         owner?.goTo?.('ai');
-    }), button('anomalous-ai-link', t('aiHandNotConnected'), () => {
+    }), button('anomalous-ai-link', t(known ? 'aiHandNotConnected' : 'aiHandOtherWays'), () => {
         close();
         openConnectGuide();
     }));

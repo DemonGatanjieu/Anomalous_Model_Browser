@@ -14,7 +14,7 @@ PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
 from api import (  # noqa: E402
-    ai_gates, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_canvas_edit, mcp_model_use, mcp_server,
+    ai_callers, ai_gates, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_canvas_edit, mcp_model_use, mcp_server,
     mcp_task_tools, mcp_tools,
 )
 
@@ -54,6 +54,16 @@ def modern_headers(method, name=None):
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_a_request_notes_who_called_for_the_connect_guide(self):
+        self.addCleanup(ai_callers._seen.clear)
+        ai_callers._seen.clear()
+        post({"jsonrpc": "2.0", "id": 1, "method": "ping"}, headers={"User-Agent": "claude-code/2.1"})
+        self.assertEqual(ai_callers.latest()["client"], "Claude Code")
+        post({"jsonrpc": "2.0", "method": "notifications/initialized"}, headers={"User-Agent": "cursor/1"})
+        self.assertEqual(ai_callers.latest()["client"], "Claude Code", "a notification is not a call")
+        post({"jsonrpc": "2.0", "id": 2, "method": "ping"}, headers={"User-Agent": "cursor/1"}, remote="10.0.0.9")
+        self.assertEqual(ai_callers.latest()["client"], "Claude Code", "another computer is turned away first")
+
     def test_non_string_tool_names_return_protocol_error(self):
         for name in ([], {}, 123):
             status, body = post({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": name}})

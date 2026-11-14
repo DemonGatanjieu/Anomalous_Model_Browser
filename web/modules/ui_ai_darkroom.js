@@ -1,8 +1,8 @@
 /**
  * The Gates window's part for the darkroom helper (api/ai_darkroom.py): a model running on this
- * computer that reads for a private task what the AI app may not. It says which one is in use,
- * looks for servers on this computer (Ollama, LM Studio) and lets the user pick one of their
- * models, or drop it. GET/POST /anomalous/ai_darkroom.
+ * computer that reads for a private task what the AI app may not. Folded until one is in use; it
+ * says which, looks for servers on this computer (Ollama, LM Studio) and lets the user pick one of
+ * their models, or drop it. GET/POST /anomalous/ai_darkroom.
  */
 
 import { translate as t } from './locales.js';
@@ -30,12 +30,13 @@ async function post(body) {
 
 /** The part, drawn with what is kept once it is read. */
 export function darkroomPart() {
-    const box = el('div', 'anomalous-ai-darkroom');
+    const box = el('details', 'anomalous-ai-darkroom');
     const state = el('div', 'anomalous-ai-darkroom-state');
     const form = el('div', 'anomalous-ai-darkroom-form');
-    box.append(el('div', 'anomalous-ai-gates-name', t('aiDarkroom')), el('div', 'anomalous-ai-gates-tools', t('aiDarkroomWhy')), state, form);
+    box.append(el('summary', '', t('aiDarkroom')), el('div', 'anomalous-ai-gates-tools', t('aiDarkroomWhy')), state, form);
     const say = (error) => { state.textContent = error.message; };
     const draw = (helper) => {
+        if (helper) box.open = true;
         state.textContent = helper ? t('aiDarkroomOn', { model: helper.model, does: t(helper.vision ? 'aiDarkroomLooks' : 'aiDarkroomWrites') }) : t('aiDarkroomOff');
         form.replaceChildren(button(t('aiDarkroomDetect'), detect),
             ...(helper ? [button(t('aiDarkroomTurnOff'), () => post({ off: true }).then(answer => draw(answer.helper), say))] : []));

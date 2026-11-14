@@ -2,12 +2,13 @@
 the user's saved workflows with their presets (方案, mcp_tools.plans) for the "Run my preset" card,
 whether the gates ask before a download (the card's tag shows only then), and the AI app that came
 last with the tool list it holds: a short one (mcp_tool_sets.py) cannot take a task handed over in
-Anomalous, which the section says. GET /anomalous/ai_starters, a read.
+Anomalous, which the section says. GET /anomalous/ai_starters, a read. GET /anomalous/ai_callers tells the
+Connect guide which app called last since ComfyUI started (ai_callers.latest), so it can say one has come.
 """
 
 from aiohttp import web
 
-from . import ai_gates, ai_tasks, mcp_directory, mcp_tool_sets
+from . import ai_callers, ai_gates, ai_tasks, mcp_directory, mcp_tool_sets
 from .mcp_tools import plans
 from .recipe_store import _list_recipes, get_recipes_dir
 
@@ -49,4 +50,8 @@ def register_routes(app, listing):
         return web.json_response({"workflows": workflows(), "download_asks": ai_gates.policies().get("download") == "ask",
                                   "app": last_app(listing)})
 
+    async def api_callers(_request):
+        return web.json_response({"last": ai_callers.latest()})
+
     app.router.add_get("/anomalous/ai_starters", api_starters)
+    app.router.add_get("/anomalous/ai_callers", api_callers)
