@@ -58,6 +58,8 @@
     font: inherit;
     font-size: 13px;
 }
+/* The browser draws a select's list on the select's own background: see-through, its light words land on white. */
+.anomalous-ai-start-select { background: var(--amb-bg-input); }
 .anomalous-ai-start-pictures .anomalous-ai-pics-grid { max-height: 220px; }
 /* What is in place before Start: a line each, green when it is, amber when something is missing. */
 .anomalous-ai-start-ready { display: flex; flex-wrap: wrap; gap: 4px 16px; }
