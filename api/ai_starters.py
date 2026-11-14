@@ -1,11 +1,15 @@
 """What the home page's "Let the AI do it" section needs in one read (web/modules/ui_ai_starters.js):
 the user's saved workflows with their presets (方案, mcp_tools.plans) for the "Run my preset" card,
-whether the gates ask before a download (the card's tag shows only then), and the AI app that came
+whether the gates ask before a download (the card's tag shows only then), whether any AI app has come and
+how many base models ComfyUI lists (a card's sheet says what is in place before Start), and the AI app that came
 last with the tool list it holds: a short one (mcp_tool_sets.py) cannot take a task handed over in
 Anomalous, which the section says. GET /anomalous/ai_starters, a read. GET /anomalous/ai_callers tells the
 Connect guide which app called last since ComfyUI started (ai_callers.latest), so it can say one has come.
 """
 
+import asyncio
+
+import folder_paths
 from aiohttp import web
 
 from . import ai_callers, ai_gates, ai_tasks, mcp_directory, mcp_tool_sets
@@ -13,6 +17,18 @@ from .mcp_tools import plans
 from .recipe_store import _list_recipes, get_recipes_dir
 
 MAX_WORKFLOWS = 200
+BASE_FOLDERS = ("checkpoints", "diffusion_models")  # where ComfyUI keeps the models a picture starts from
+
+
+def base_models():
+    """How many base models ComfyUI lists (its own listing of its folders; nothing of Anomalous's is scanned)."""
+    count = 0
+    for name in BASE_FOLDERS:
+        try:
+            count += len(folder_paths.get_filename_list(name))
+        except KeyError:  # a ComfyUI without that folder
+            continue
+    return count
 
 
 def workflows():
@@ -48,7 +64,8 @@ def _tools(listing):
 def register_routes(app, listing):
     async def api_starters(_request):
         return web.json_response({"workflows": workflows(), "download_asks": ai_gates.policies().get("download") == "ask",
-                                  "app": last_app(listing)})
+                                  "app": last_app(listing), "came": any(task["client"] for task in ai_tasks.list_tasks(50)),
+                                  "models": await asyncio.to_thread(base_models)})
 
     async def api_callers(_request):
         return web.json_response({"last": ai_callers.latest()})

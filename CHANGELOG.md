@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 主页 AI 卡片的说明页最上面多了一行开工前的自检：有没有 AI 连过、这台电脑上有几个底模；缺哪样就用黄字写明接下来会怎样。要写字的框下面有三句现成的话，点一下就填进去，可以直接用也可以改。
+- A starter card's sheet on the home page now opens with what is in place before Start: whether an AI app has connected and how many base models this computer has, in amber with what follows when one is missing. Under each text field are three ready-made lines; a press writes one in, to use or to change.
+
 - 「连接 AI」的说明只留一件事：复制一句话发给你的 AI。下面多了一行状态，AI 软件一连上就变绿，写出是哪个软件；地址、各个软件的写法、工具清单和规则都收了起来，要用再点开。第一次交任务时还没有 AI 连过，给你的那句话会让 AI 先连上、再接这个任务。
 - Connect an AI now asks one thing: copy a sentence to your AI. A line under it turns green and names the app once it has connected; the address, each app's way, the tool list and the rules are folded until wanted. Handing over a first task while no AI has ever connected gives a sentence that connects the app first, then starts the task.
 - 关卡窗口从两屏半缩到一屏：最上面选安全级别就行，十三项单独的设置收在「逐项设置」里（你单独改过时自动展开；每项说明先显示两行，点一下看全），暗房助手没在用时也收着。新增「全部恢复默认」，一下改回刚装好时的样子。

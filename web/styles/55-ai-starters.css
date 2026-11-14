@@ -59,6 +59,24 @@
     font-size: 13px;
 }
 .anomalous-ai-start-pictures .anomalous-ai-pics-grid { max-height: 220px; }
+/* What is in place before Start: a line each, green when it is, amber when something is missing. */
+.anomalous-ai-start-ready { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.anomalous-ai-start-ready-line { display: inline-flex; align-items: center; gap: 5px; color: var(--amb-warn-text); font-size: 12px; line-height: 1.5; }
+.anomalous-ai-start-ready-line.is-ok { color: var(--amb-ok-text); }
+.anomalous-ai-start-ready-line svg { flex: none; }
+/* Ready-made words under a field. */
+.anomalous-ai-start-examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
+.anomalous-ai-start-example {
+    padding: 3px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.anomalous-ai-start-example:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
 .anomalous-ai-start-lines { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.04); }
 .anomalous-ai-start-line { color: var(--amb-text-main); font-size: 12.5px; line-height: 1.6; }
 .anomalous-ai-start-line-label { margin-right: 6px; color: var(--amb-text-muted); }

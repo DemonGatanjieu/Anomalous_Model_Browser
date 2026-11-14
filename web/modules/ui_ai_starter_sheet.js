@@ -1,6 +1,8 @@
 /**
- * The home page's AI starter cards (ui_ai_starters.js draws them) and the sheet each one opens: a field or
- * two, then what happens on Start, what stays as it is or what the AI does not get, and what to mind. Start
+ * The home page's AI starter cards (ui_ai_starters.js draws them) and the sheet each one opens: what is in
+ * place before Start (an AI app that has come, a base model for the cards that draw from one), a field or
+ * two with ready-made words to press, then what happens on Start, what stays as it is or what the AI does
+ * not get, and what to mind. Start
  * makes a task with its switches set (ui_ai_handoff.js startTask: a new tab, privacy for the private card) and
  * shows the sentence for the AI. A starter is a prepared task and a sentence, never a workflow template. Each
  * card's tags name only what Anomalous makes sure of (`TAGS`), never what rests on the AI obeying.
@@ -10,8 +12,15 @@ import { translate as t } from './locales.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { startTask } from './ui_ai_handoff.js';
 import { pictureGrid } from './ui_ai_gallery_pick.js';
+import { icon } from './ui_ai_icons.js';
 
 const NEW_TAB = { canvas: 'new' };
+const DRAWS = ['try', 'say', 'private']; // start from a base model of the user's
+const EXAMPLES = {
+    say: ['aiStartSayEx1', 'aiStartSayEx2', 'aiStartSayEx3'],
+    private: ['aiStartGistEx1', 'aiStartGistEx2', 'aiStartGistEx3'],
+    picture: ['aiStartHowEx1', 'aiStartHowEx2', 'aiStartHowEx3'],
+};
 // lines: [kind, key] shown in the sheet; kinds are the sheet's labels (aiStartSheet_<kind>).
 export const STARTERS = [
     { id: 'try', icon: 'sparkle', tags: ['newTab', 'small'], lines: [['start'], ['kept'], ['mind']] },
@@ -65,6 +74,33 @@ function select(options) {
     return box;
 }
 
+/** What is in place before Start: an AI app that came (GET /anomalous/ai_starters `app`, `came`), a base model to draw from. */
+function readiness(card, data) {
+    const box = el('div', 'anomalous-ai-start-ready');
+    const line = (ok, text) => {
+        const node = el('div', `anomalous-ai-start-ready-line${ok ? ' is-ok' : ''}`);
+        node.append(icon(ok ? 'check' : 'alert', 13), el('span', '', text));
+        box.append(node);
+    };
+    const came = Boolean(data.app || data.came);
+    line(came, came ? t(data.app ? 'aiStartReadyApp' : 'aiStartReadyCame', { client: data.app?.client }) : t('aiStartReadyNoApp'));
+    if (DRAWS.includes(card.id)) line(data.models > 0, data.models > 0 ? t('aiStartReadyModels', { count: data.models }) : t('aiStartReadyNoModels'));
+    return box;
+}
+
+/** Ready-made words under `input`; a press writes them in, to send or to change. */
+function examples(input, keys) {
+    const row = el('div', 'anomalous-ai-start-examples');
+    for (const key of keys) {
+        row.append(button('anomalous-ai-start-example', t(key), () => {
+            input.value = t(key);
+            input.dispatchEvent(new Event('input', { bubbles: true })); // the line that said it was missing goes
+            input.focus();
+        }));
+    }
+    return row;
+}
+
 /** The card's fields and how they become the task: {nodes, task() -> {title, about} | an error key}. */
 function fieldsOf(card, data, owner, close) {
     if (card.id === 'try') return { nodes: [], task: () => ({ title: t('aiStartTryTask') }) };
@@ -107,7 +143,7 @@ function fieldsOf(card, data, owner, close) {
         const pictures = el('div', 'anomalous-ai-start-pictures');
         pictures.append(grid.search, grid.grid);
         return {
-            nodes: [field(t('aiStartPicture'), pictures), field(t('aiStartHow'), how)],
+            nodes: [field(t('aiStartPicture'), pictures), field(t('aiStartHow'), how), examples(how, EXAMPLES.picture)],
             stop: () => grid.stop(),
             task: () => {
                 if (!chosen) return 'aiStartNeedPicture';
@@ -118,7 +154,7 @@ function fieldsOf(card, data, owner, close) {
     }
     const words = textInput(t(card.id === 'private' ? 'aiStartGistHint' : 'aiStartSayHint'));
     return {
-        nodes: [field(t(card.id === 'private' ? 'aiStartGist' : 'aiStartSay'), words)],
+        nodes: [field(t(card.id === 'private' ? 'aiStartGist' : 'aiStartSay'), words), examples(words, EXAMPLES[card.id])],
         task: () => (words.value.trim() ? { title: words.value.trim() } : 'aiStartNeedText'),
     };
 }
@@ -148,7 +184,7 @@ export function openStarter(owner, card, data) {
             await startTask(owner, task.title, task.about || [], null, card.id === 'private' ? { ...NEW_TAB, privacy: true } : NEW_TAB);
         }));
     }
-    body.append(...fields.nodes, lines, error, actions);
+    body.append(readiness(card, data), ...fields.nodes, lines, error, actions);
     body.addEventListener('input', () => { error.textContent = ''; });
     const shut = aiWindow(t(`aiStart_${card.id}_title`), body);
     close = () => { fields.stop?.(); shut(); };

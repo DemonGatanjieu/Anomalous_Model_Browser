@@ -45,6 +45,14 @@ class StarterTests(unittest.TestCase):
             mcp_directory.listed("antigravity-client", mcp_server._tools()[:3])
             self.assertEqual(ai_starters.last_app(mcp_server._tools)["tools"], "other", "an older Anomalous's list")
 
+    def test_base_models_are_counted_from_comfyuis_own_listing(self):
+        listed = {"checkpoints": ["a.safetensors", "b.safetensors"]}
+        with mock.patch.object(ai_starters.folder_paths, "get_filename_list", side_effect=lambda name: listed[name]):
+            self.assertEqual(ai_starters.base_models(), 2, "a folder this ComfyUI does not know counts nothing")
+        listed["diffusion_models"] = ["c.gguf"]
+        with mock.patch.object(ai_starters.folder_paths, "get_filename_list", side_effect=lambda name: listed[name]):
+            self.assertEqual(ai_starters.base_models(), 3)
+
     def test_the_app_that_called_last_is_kept_for_the_connect_guide(self):
         self.addCleanup(ai_callers._seen.clear)
         ai_callers._seen.clear()

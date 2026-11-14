@@ -364,7 +364,8 @@ covered by the `styles.css` manifest.
   (the user's pick, `anomalous/ai_tool_sets.json`), with the instructions cut to the listed tools; only the list
   shrinks, tools/call takes every tool (`tests/test_mcp_tool_sets.py`). `api/ai_starters.py` gives the home page's AI
   cards what they need (GET /anomalous/ai_starters: saved workflows with their presets, whether downloads ask, the app
-  that came last and which of those lists it holds; `tests/test_ai_starters.py`), and the Connect guide the app that
+  that came last and which of those lists it holds, whether any app has come and how many base models ComfyUI lists,
+  for the line a card's sheet opens with; `tests/test_ai_starters.py`), and the Connect guide the app that
   called last since ComfyUI started (GET /anomalous/ai_callers, from `ai_callers.note` on every request). mcp_directory.py also keeps which
   list each app fetched last (`anomalous/ai_tool_lists.json`), so a call from an app still holding
   the list of an older Anomalous is told so and the task header says how to reconnect it.
