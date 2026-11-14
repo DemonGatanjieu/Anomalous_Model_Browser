@@ -80,7 +80,9 @@ covered by the `styles.css` manifest.
   the queued prompt, with warnings (an upscaled picture sampled again, a size past the card,
   a huge decode). `api/ai_run_control.py` stops a run (`stop_run`, the workbench's stop
   button): only its own prompts leave the queue or are interrupted; the step ends `cancelled`
-  and a user's stop reaches the AI as a `stop` message. It also keeps the user's word on a
+  and a user's stop reaches the AI as a `stop` message. `halt` is the user's halt on a whole task
+  (Halt and take back, `web/modules/ui_ai_halt.js`): its runs stop, a step waiting for an OK is answered
+  no, and the AI gets the halt before it can act again (`ai_gates.check`). It also keeps the user's word on a
   finished run (`set_verdict`; the buttons under its pictures are `web/modules/ui_ai_verdict.js`, with what
   is off a click each under "not quite right", `ISSUES`),
   told to the AI as a `user_verdict` step. `tests/test_ai_run_watch.py`.
@@ -555,7 +557,11 @@ covered by the `styles.css` manifest.
   starts one while looking at a task; changed or taken off by the user, never a loop); `GET` of a
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
   decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
-  one to link; `ui_ai_task_menu.js` is the ⋯ of a task, in its head and on its row, and what it does; removing a task
+  one to link; `ui_ai_task_menu.js` is the ⋯ of a task, in its head and on its row, and what it does; `ui_ai_halt.js` is Halt and
+  take back beside it (asks, has the server halt the task, then closes the copy made for it, `mcp_task_tab.js` closeCopy,
+  or undoes what of the AI's changes on another tab still can be); `ui_ai_stuck.js` is "Stuck?" at the end of the task's
+  facts: a window with what the task waits for now (`ai_stuck.js`, from the task as the page has it; `tests/ai_stuck.mjs`),
+  the line to send the AI where it is the AI's move, when an AI app last called, and the usual causes Anomalous cannot see; removing a task
   (`ai_task_links.remove`) joins those after it to the one before. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
   step made and where it leads, `ui_ai_shared.js` what the page's parts share. `ui_ai_outputs.js` is what the whole task made: a line over the
   timeline counting it, and the side column's Results view (`ai_task_view.taskOutputs`: the

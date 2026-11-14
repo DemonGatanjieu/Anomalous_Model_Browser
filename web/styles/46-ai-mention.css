@@ -287,6 +287,9 @@
 .anomalous-ai-now-line.is-gate { border-color: color-mix(in srgb, var(--amb-warn) 60%, transparent); background: color-mix(in srgb, var(--amb-warn) 10%, var(--amb-bg-page)); color: var(--amb-text-main); }
 .anomalous-ai-now-words { flex: 0 1 auto; min-width: 0; overflow: hidden; color: var(--amb-text-main); text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-now-line.is-gate .anomalous-ai-now-words { flex: 1; }
+.anomalous-ai-now-line.is-halt { padding-block: 7px; border-color: color-mix(in srgb, var(--amb-danger) 45%, transparent); }
+.anomalous-ai-now-line.is-halt .anomalous-ai-now-words { white-space: normal; }
+.anomalous-ai-now-line.is-halt > .anomalous-tb-icon { flex: none; color: var(--amb-danger-text); }
 .anomalous-ai-now-percent { flex: none; color: var(--amb-text-main); font-variant-numeric: tabular-nums; }
 .anomalous-ai-now-pulse { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--amb-link); animation: anomalous-ai-now-pulse 1.4s ease-in-out infinite; }
 @keyframes anomalous-ai-now-pulse { 50% { opacity: 0.3; transform: scale(0.75); } }

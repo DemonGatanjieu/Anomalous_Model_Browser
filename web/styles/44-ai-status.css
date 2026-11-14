@@ -99,3 +99,4 @@
 }
 .anomalous-ai-execution-error { color: var(--amb-danger); margin-top: 8px; overflow-wrap: anywhere; }
 .anomalous-ai-state.is-idle, .anomalous-ai-state-icon.is-idle { color: var(--amb-text-dim); }
+.anomalous-ai-state.is-halted, .anomalous-ai-state-icon.is-halted { color: var(--amb-danger-text); }

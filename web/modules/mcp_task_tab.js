@@ -7,7 +7,8 @@
  * and use the canvas as it is before it has one; new_workflow and open_workflow make the tab
  * they open the task's. An existing task tab that cannot be opened stops the action. A canvas the user handed to the
  * task (`spec.from`, ui_ai_canvas_hand.js) comes to the front first while the task has no tab: it is the one read,
- * run and copied; closed since, the canvas open now is.
+ * run and copied; closed since, the canvas open now is. A halt on the task (ui_ai_halt.js) closes the copy made
+ * for it while nobody saved it (closeCopy); the task then has no tab, and a later change copies anew.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -49,6 +50,27 @@ export async function showTab(path) {
         await settled(path, 600);
     }
     return shown(path);
+}
+
+/** Whether `path` is open as a tab nobody saved, with another tab open to show in its place: closeCopy can close it. */
+export function copyOpen(path) {
+    const workflows = store()?.openWorkflows || [];
+    return workflows.length > 1 && typeof store().closeWorkflow === 'function'
+        && Boolean(workflows.find(workflow => workflow.path === path)?.isTemporary);
+}
+
+/** Closes the copy made for a task (copyOpen); in front, tab `back` or the one beside it is shown first. Whether it is gone. */
+export async function closeCopy(path, back = '') {
+    if (!copyOpen(path)) return false;
+    const workflows = store().openWorkflows;
+    const at = workflows.findIndex(workflow => workflow.path === path);
+    const copy = workflows[at];
+    if (store().activeWorkflow?.path === path) {
+        const next = workflows.find(workflow => workflow.path === back && workflow !== copy) || workflows[at - 1] || workflows[at + 1];
+        if (!await showTab(next.path)) return false;
+    }
+    await store().closeWorkflow(copy);
+    return !store().openWorkflows.some(workflow => workflow.path === path);
 }
 
 /** Runs page action `action` (`run()`) on the task's tab per `spec` ({mode, tab, title, from}); `opened(tab)`

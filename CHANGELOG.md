@@ -2,6 +2,11 @@
 
 ## v1.64.0 — unreleased
 
+- AI 工作台的任务标题栏多了「叫停并撤销」：AI 做的不对时一下全身而退。正在跑的图停下，AI 用的副本关掉（你自己的工作流它没动过；AI 改的不是副本时，撤销它还能撤销的改动），出好的图都留着。AI 下一次来先收到已叫停的通知，在那之前它改不了画布、跑不了图、下载不了东西；你再留言，任务就接着走。
+- The AI workbench's task head has "Halt and take back": one way out when the AI does the wrong thing. The run going on stops, the AI's copy closes (it never changed your own workflow; where the AI worked on another tab, what of its changes still can be is undone), and the pictures made stay. The AI is told of the halt the next time it comes, and until then it cannot change the canvas, run or download anything; writing to the task goes on with it.
+- 任务信息那一行多了「卡住了？」：写明这个任务现在在等什么、你该做什么，轮到 AI 时给一句可以复制给它的话，还写 AI 软件上次来是多久以前；下面列了三种 AMB 看不到的常见原因和处理办法。
+- "Stuck?" beside a task's facts says what the task waits for now and what to do, with the line to send the AI where it is the AI's move and how long ago an AI app last came; under it, the three usual causes Anomalous cannot see, each with its way out.
+
 - 主页 AI 卡片的说明页最上面多了一行开工前的自检：有没有 AI 连过、这台电脑上有几个底模；缺哪样就用黄字写明接下来会怎样。要写字的框下面有三句现成的话，点一下就填进去，可以直接用也可以改。
 - A starter card's sheet on the home page now opens with what is in place before Start: whether an AI app has connected and how many base models this computer has, in amber with what follows when one is missing. Under each text field are three ready-made lines; a press writes one in, to use or to change.
 

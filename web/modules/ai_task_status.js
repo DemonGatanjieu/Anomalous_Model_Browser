@@ -1,3 +1,14 @@
+/**
+ * The user's halt on `task` (api/ai_run_control.py halt) while it stands: nothing followed it but the
+ * AI's reads and calls that were refused. Its step, or null.
+ */
+export function haltOf(task) {
+    const steps = task?.steps || [];
+    const at = steps.findLastIndex(step => step.tool === 'user_halt');
+    if (at < 0) return null;
+    return steps.slice(at + 1).every(step => step.kind !== 'user' && (!step.kind || step.kind === 'look' || step.ok === false)) ? steps[at] : null;
+}
+
 /** Derive only confirmed execution facts. Recent contact is not proof that the AI is working. */
 export function taskStatus(task, now = Date.now() / 1000) {
     const steps = task?.steps || [];

@@ -17,7 +17,9 @@ when that time runs out (no_answer): "stop", the AI ends its turn and waits for 
 which custom nodes the AI may add itself (node_rule): any, or only those of the ready-made ways;
 a new route (route_rule): an AI placing nodes by itself rather than through a way, card or route
 builds something nobody tried. "allow" goes on with one reminder in the task that a stronger model
-suits that better; "ask" waits for the user's OK, once a task. Three safety levels (LEVELS:
+suits that better; "ask" waits for the user's OK, once a task. A halt the user called on the task
+(ai_run_control.halt) comes before every gate: the first acting call after it does nothing and
+carries the halt to the AI. Three safety levels (LEVELS:
 "careful", "balanced", "free") set those gates, rules, plan_auto and no_answer together.
 """
 
@@ -254,9 +256,24 @@ def _step(step_ref):
     return task, step
 
 
+def _halt(step_ref):
+    """The words of a halt on the call's task its AI has not got yet (ai_run_control.halt), now given; else None."""
+    with _decided:
+        task, _ = _step(step_ref)
+        halt = next((item for item in (task or {}).get("steps", []) if item.get("tool") == "user_halt" and not item.get("delivered")), None)
+        if not halt:
+            return None
+        halt.update(delivered=True, delivered_at=time.time())
+        ai_tasks._save(task)
+    return halt["text"]
+
+
 def check(tool, arguments, step_ref, now=None):
     """None when the call may go ahead; else the result to give the AI instead of running it."""
     gate = action_catalog.entry(tool).gate
+    halt = _halt(step_ref) if gate else None
+    if halt:
+        return _blocked(f"你叫停了任务 / {halt} This call did nothing.")
     if gate and set(arguments or {}) & set(action_catalog.ALSO_CANVAS.get(tool, ())):
         strict = {"auto": 0, "ask": 1, "never": 2}
         gate = max((gate, "canvas"), key=lambda name: strict.get(policies().get(name, "auto"), 0))

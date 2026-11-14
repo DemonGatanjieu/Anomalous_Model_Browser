@@ -43,7 +43,7 @@ def log(client, title, decision, reason="", rejected=None, by="user", related=No
 
 
 def decisions(task):
-    """Every decision of `task`, oldest first: {type: logged | answer | gate | toolbox | canvas | stop, step, at, …}."""
+    """Every decision of `task`, oldest first: {type: logged | answer | gate | toolbox | canvas | privacy | stop | halt, step, at, …}."""
     out = []
     for step in (task or {}).get("steps") or []:
         tool = step.get("tool")
@@ -69,8 +69,8 @@ def decisions(task):
             out.append({"type": "canvas", "step": step["id"], "at": step["at"], "mode": step.get("canvas")})
         elif tool == "user_privacy":
             out.append({"type": "privacy", "step": step["id"], "at": step["at"], "on": bool(step.get("privacy"))})
-        elif tool == "user_stop":
-            out.append({"type": "stop", "step": step["id"], "at": step["at"]})
+        elif tool in ("user_stop", "user_halt"):
+            out.append({"type": tool[5:], "step": step["id"], "at": step["at"]})
     return sorted(out, key=lambda item: item["at"])
 
 
@@ -103,5 +103,5 @@ def lines(task, limit=12):
         elif item["type"] == "privacy":
             words.append("The user turned privacy mode " + ("on: no pictures reach you" if item["on"] else "off"))
         else:
-            words.append("The user stopped a run")
+            words.append("The user stopped a run" if item["type"] == "stop" else "The user called a halt on the task")
     return words

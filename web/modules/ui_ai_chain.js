@@ -59,18 +59,27 @@ function changesOf(steps, entries) {
         .map(result => entries.get(result.activity)).filter(Boolean).reverse();
 }
 
-/**
- * Undoes the canvas changes `steps` made, newest first, once the user agrees (`ask`: the locale
- * key of the question); stops at a later change of theirs in the way. Whether it undid any.
- */
-export async function undoChanges(steps, entries, label, ask) {
-    const changes = changesOf(steps, entries);
-    const undoable = changes.filter(entry => canUndo(app, entry));
-    if (!undoable.length || !await anomalousConfirm(t(ask, { count: undoable.length }), label)) return false;
-    for (const entry of changes) {
+/** How many of the canvas changes `steps` made can be undone now. */
+export function undoableCount(steps, entries) {
+    return changesOf(steps, entries).filter(entry => canUndo(app, entry)).length;
+}
+
+/** Undoes the canvas changes `steps` made, newest first; stops at a later change of the user's in the way. How many it undid. */
+export function undoNow(steps, entries) {
+    let undone = 0;
+    for (const entry of changesOf(steps, entries)) {
         if (!canUndo(app, entry)) break;
         try { undoEntry(app, entry); } catch (_) { break; }
+        undone += 1;
     }
+    return undone;
+}
+
+/** undoNow once the user agrees (`ask`: the locale key of the question). Whether they did. */
+export async function undoChanges(steps, entries, label, ask) {
+    const count = undoableCount(steps, entries);
+    if (!count || !await anomalousConfirm(t(ask, { count }), label)) return false;
+    undoNow(steps, entries);
     return true;
 }
 

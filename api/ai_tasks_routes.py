@@ -1,7 +1,7 @@
 """The AI workbench's routes over ai_tasks.py (the record) and ai_panels.py (panels, answers,
 messages): the list and one task (reads, open like the other pages), and the writes the page
 makes - start a task, rename or remove one, answer a panel, write to the AI, answer a gate and
-set the gates' policies (ai_gates.py), stop a run or say how it turned out (ai_run_control.py),
+set the gates' policies (ai_gates.py), stop a run, say how it turned out or call a halt on the task (ai_run_control.py),
 hand the AI pictures (ai_pictures.py) - (local_guard.py keeps the writes to this computer)."""
 
 import asyncio
@@ -351,6 +351,19 @@ async def api_stop(request):
     return web.json_response(answer)
 
 
+async def api_halt(request):
+    """POST /anomalous/ai_tasks/{id}/halt {drop_tab?} - the user calls a halt on the task; an AI waiting in get_answers hears at once."""
+    from . import ai_panels
+
+    body = await _body(request) or {}
+    try:
+        answer = await asyncio.to_thread(ai_run_control.halt, request.match_info["task_id"], body.get("drop_tab") is True)
+    except ai_run_control.RunControlError as error:
+        return web.json_response({"error": str(error)}, status=404)
+    ai_panels.wake()
+    return web.json_response(answer)
+
+
 async def api_verdict(request):
     """POST /anomalous/ai_tasks/{id}/runs/{step}/verdict {verdict: good | bad | null, issues?: [what is off]} - the user's word on a run, told to the AI."""
     from . import ai_panels
@@ -423,6 +436,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}/way", api_way_pick)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/runs/{step_id}/stop", api_stop)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/runs/{step_id}/verdict", api_verdict)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/halt", api_halt)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/pictures", api_pictures)
     app.router.add_post("/anomalous/ai_pictures/upload", api_upload)
     app.router.add_get("/anomalous/ai_toolbox", api_toolbox)

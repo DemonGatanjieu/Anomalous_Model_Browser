@@ -235,6 +235,7 @@ export function lookTools(steps) {
  */
 export function taskState(summary) {
     if (summary?.waiting) return 'waiting';
+    if (summary?.halted) return 'halted'; // the user's halt stands (api/ai_task_handoff.py halted): nothing is asked of them
     if (summary?.asks) return 'asks';
     if (summary?.live) return 'live';
     return summary?.errors ? 'error' : summary?.ended ? 'done' : 'idle';

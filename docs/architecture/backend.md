@@ -441,6 +441,15 @@ task; pictures handed before the AI looked join one step.
 `api/ai_run_control.py` stops a run by its own prompt IDs only (dequeue, then
 `interrupt_if_running`); with `stop` set, an interrupted prompt's "error" history and a
 dequeued prompt's missing one both count as ended and the step becomes `cancelled`.
+`ai_run_control.halt` (`POST /anomalous/ai_tasks/{id}/halt`, `{drop_tab?}`) is the user's halt on a
+whole task: every run going is stopped that way, a step waiting at a gate is answered no, and a
+`user_halt` step tells the AI. `ai_gates.check` gives that step to the first call with a gate in
+place of running it (a read carries it as a `halt` message, `ai_panels._collect`), so nothing is
+changed, run or downloaded between the halt and the AI hearing of it. With `drop_tab` the task lets
+go of its tab: the page closes a copy Anomalous made (`ai_task_canvas.remember` keeps `made` on it),
+and a later change copies the open workflow anew. The summary's `halted`
+(`ai_task_handoff.halted`) holds while only the AI's reads and refused calls came after the halt;
+a message of the user's, or the AI acting again on their word in its chat, ends it.
 
 `POST /anomalous/mcp` (`api/mcp_server.py`) answers one JSON-RPC message per POST with
 one JSON object; GET and DELETE get 405, and nothing is sent unasked. A request whose

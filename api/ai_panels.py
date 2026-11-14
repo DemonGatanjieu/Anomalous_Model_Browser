@@ -411,6 +411,8 @@ def _collect(client, panel_id, task_id=None):
                     message.update(ai_message_refs.message_of(step))  # what its "@" point at, pictures attached
                 elif step.get("tool") == "user_stop":
                     message["kind"] = "stop"  # the user stopped the AI's run (ai_run_control.py)
+                elif step.get("tool") == "user_halt":
+                    message["kind"] = "halt"  # the user called a halt on the whole task (ai_run_control.halt)
                 elif step.get("tool") == "user_toolbox":
                     message["kind"] = "toolbox"  # what the user picked for the AI to work with (ai_toolbox.py)
                 elif step.get("tool") == "user_marks":
@@ -514,6 +516,7 @@ def attach_pending(result, client, task_id=None):
         "ask_user which fix to do, and log_decision the fix chosen (related: the marks' id); "
         "kind=toolbox messages are the nodes, combos, workflows, prompts, models and ways the user picked for you to use; "
         "kind=stop: the user stopped your run, so do not run it again until they say what to change; "
+        "kind=halt: the user called a halt on the whole task: do nothing more for it until they ask; "
         "kind=pictures: pictures the user handed you (attached), with made_with read from each picture's own workflow."
     )
     pictures = ai_marks.image_items(messages)

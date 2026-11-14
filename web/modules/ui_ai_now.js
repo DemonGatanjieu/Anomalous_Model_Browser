@@ -1,6 +1,7 @@
 /**
  * What the task needs or does now, over its message box (ui_ai_message.js, in the workbench's dock),
- * so the user follows it from the foot of the page: a step waiting at a gate (Allow, No, see the
+ * so the user follows it from the foot of the page: a halt they called (ui_ai_halt.js: nothing else
+ * shows until they write again), a step waiting at a gate (Allow, No, see the
  * step), a run going (where it stands, a thin bar, stop), the AI busy with a tool; and the newest
  * question nobody answered yet (one the user half answered stays in front), to answer there: a pick of one as buttons that
  * send at a press (and a line of one's own, folded, when the AI allows it), a line of text, or the
@@ -12,7 +13,7 @@
  */
 
 import { translate as t } from './locales.js';
-import { taskStatus } from './ai_task_status.js';
+import { haltOf, taskStatus } from './ai_task_status.js';
 import { toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
 import { progressWords, stopButton } from './ui_ai_run_live.js';
@@ -53,6 +54,12 @@ function openAsks(task) {
 
 /** The line of what goes on: a gate's question, a run, a tool; null when nothing does. */
 function statusLine(task, ctx) {
+    const halt = haltOf(task);
+    if (halt) {
+        const line = el('div', 'anomalous-ai-now-line is-halt');
+        line.append(icon('stop', 15), el('span', 'anomalous-ai-now-words', t(halt.delivered ? 'aiHaltedKnown' : 'aiHaltedWaiting')));
+        return line;
+    }
     const gate = (task.steps || []).findLast(step => step.state === 'asking' && step.gate);
     if (gate) {
         const line = el('div', 'anomalous-ai-now-line is-gate');
@@ -165,7 +172,7 @@ export function nowStrip() {
     strip.update = (task, ctx = kept) => {
         kept = ctx;
         line.replaceChildren(...[statusLine(task, ctx)].filter(Boolean));
-        const asks = task.ended ? [] : openAsks(task);
+        const asks = task.ended || haltOf(task) ? [] : openAsks(task);
         const held = asks.findIndex(({ step, block }) => hasDraft(task.id, step.id, block.id));
         if (held > 0) asks.unshift(...asks.splice(held, 1)); // a question half answered stays in front as others come
         const key = asks.length ? JSON.stringify([asks[0].step.id, asks[0].block.id, asks.length]) : '';

@@ -100,7 +100,8 @@ def remember(tab):
     holder = _call.get()
     if not holder or not holder.get("task") or not isinstance(tab, dict) or not isinstance(tab.get("path"), str):
         return
-    kept = {"path": tab["path"][:300], "name": str(tab.get("name") or "")[:120], "at": time.time()}
+    kept = {"path": tab["path"][:300], "name": str(tab.get("name") or "")[:120], "at": time.time(),
+            **({"made": True} if tab.get("made") else {})}  # a copy Anomalous made: a halt may close it (ai_run_control.halt)
     with ai_tasks._lock:
         task = ai_tasks._load().get(holder["task"])
         if not task:

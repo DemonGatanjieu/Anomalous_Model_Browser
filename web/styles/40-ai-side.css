@@ -504,6 +504,23 @@
     line-height: 1.6;
 }
 
+/* "Stuck?" (ui_ai_stuck.js), in the Connect guide's window: what the task waits for, then the usual causes. */
+.anomalous-ai-stuck { display: flex; flex-direction: column; gap: 16px; }
+.anomalous-ai-stuck-label { margin-bottom: 6px; color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-stuck-now { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--amb-link) 7%, transparent); }
+.anomalous-ai-stuck-now .anomalous-ai-stuck-label { margin: 0; }
+.anomalous-ai-stuck-what { color: var(--amb-text-main); font-size: 15px; font-weight: 650; }
+.anomalous-ai-stuck-do { margin: 0; color: var(--amb-text-soft); font-size: 13px; line-height: 1.55; }
+.anomalous-ai-stuck-last { color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-stuck-last:empty { display: none; }
+.anomalous-ai-stuck-more { display: flex; flex-direction: column; }
+.anomalous-ai-stuck-cause { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--amb-border); }
+.anomalous-ai-stuck-cause-text { flex: 1; min-width: 0; }
+.anomalous-ai-stuck-cause-title { color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
+.anomalous-ai-stuck-cause-do { margin-top: 2px; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
+.anomalous-ai-stuck-act { flex: none; align-self: flex-start; height: 28px; padding: 0 12px; border: 1px solid var(--amb-border-strong); border-radius: 8px; background: none; color: var(--amb-text-main); font: inherit; font-size: 12.5px; cursor: pointer; }
+.anomalous-ai-stuck-act:hover { background: rgba(var(--amb-ink-rgb), 0.07); }
+
 .anomalous-ai-connect-live {
     display: flex;
     align-items: center;

@@ -2,13 +2,15 @@
 waiting leave ComfyUI's queue and the one running is interrupted, only while it is still that one
 (ComfyUI's own cancel; never anyone else's prompt). The run's watcher (ai_task_runs.py) then ends
 the step as "cancelled" with who stopped it; when the user did, the AI is told with its next answer.
+The user's halt on a whole task (halt, the workbench's "Halt and take back"): its runs stop, a step
+waiting for their OK is answered no, and the AI gets the halt before it can act again (ai_gates.check).
 And the user's word on a finished run (set_verdict, the buttons under its pictures): it turned out
 well, or not, kept on the run's step and told to the AI as their message."""
 
 import time
 import uuid
 
-from . import ai_task_runs, ai_tasks
+from . import ai_gates, ai_task_runs, ai_tasks
 
 
 VERDICTS = ("good", "bad")
@@ -17,6 +19,11 @@ VERDICTS = ("good", "bad")
 ISSUES = {"hands": "the hands are wrong", "face": "the face is off", "body": "the body or the pose is wrong",
           "composition": "the framing is off", "dark": "too dark", "bright": "too bright", "blurry": "blurry or short of detail",
           "style": "not the style they want", "subject": "not the subject they asked for", "extra": "something is extra or missing"}
+
+
+HALT = ("The user called a halt on this task in Anomalous: your runs are stopped and what you changed on the canvas is "
+        "taken back. Stop here: change, run and download nothing more for it until they ask you to, and tell them in "
+        "a line that you stopped.")
 
 
 class RunControlError(ValueError):
@@ -59,19 +66,57 @@ def stop(step_id, by="user", task_id=None, now=None):
             del task["steps"][:-ai_tasks.MAX_STEPS]
         task["updated"] = max(task.get("updated", 0), now)
         ai_tasks._save(task)
+    removed, interrupted = _take_out(sheet, prompts)
+    ai_tasks._notify(task["id"])
+    return {"task": task["id"], "removed": removed, "interrupted": interrupted}
+
+
+def _take_out(sheet, prompts):
+    """Stops job sheet `sheet`, else takes `prompts` out of ComfyUI's queue and interrupts the one running: (removed, interrupted)."""
     if sheet:
         from . import job_sheets
         try:
             job_sheets.ask(sheet, "stop")
         except job_sheets.SheetError:
             pass  # gone or ended already: nothing left to stop
-        ai_tasks._notify(task["id"])
-        return {"task": task["id"], "removed": 0, "interrupted": 0}
+        return 0, 0
     queue = ai_task_runs._queue()
     removed = sum(1 for prompt_id in prompts if queue.delete_queue_item(lambda item, pid=prompt_id: item[1] == pid))
-    interrupted = sum(1 for prompt_id in prompts if _interrupt(queue, prompt_id))
-    ai_tasks._notify(task["id"])
-    return {"task": task["id"], "removed": removed, "interrupted": interrupted}
+    return removed, sum(1 for prompt_id in prompts if _interrupt(queue, prompt_id))
+
+
+def halt(task_id, drop_tab=False, now=None):
+    """The user calls a halt on task `task_id`: its runs stop, a step waiting for their OK is answered no, and
+    one step tells the AI. `drop_tab`: the page closes the tab made for the task, so the task lets go of it
+    (a later change copies the open workflow anew). Returns {"task", "stopped"}."""
+    now = time.time() if now is None else now
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id)
+        if not task:
+            raise RunControlError("No such task")
+        runs = [step for step in task["steps"] if step.get("tool") == "run_workflow" and step.get("state") == "running"
+                and (step.get("prompt_ids") or step.get("sheet"))]
+        for step in runs:
+            step["stop"] = "user"
+        asking = [step["id"] for step in task["steps"] if step.get("state") == "asking"]
+        if drop_tab:
+            (task.get("canvas") or {}).pop("tab", None)
+        task["steps"].append({
+            "id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "user_halt", "kind": "user", "ok": True, "state": "done",
+            "summary": "user_halt", "stopped": len(runs), "delivered": False, "results": [], "text": HALT,
+        })
+        del task["steps"][:-ai_tasks.MAX_STEPS]
+        task["updated"] = max(task.get("updated", 0), now)
+        ai_tasks._save(task)
+    for step_id in asking:
+        try:
+            ai_gates.decide(task_id, step_id, "deny", "They called a halt on the task.")
+        except ValueError:
+            pass  # answered meanwhile
+    for step in runs:
+        _take_out(step.get("sheet"), list(step.get("prompt_ids") or []))
+    ai_tasks._notify(task_id)
+    return {"task": task_id, "stopped": len(runs)}
 
 
 def set_verdict(task_id, step_id, verdict, issues=None):

@@ -112,6 +112,7 @@ export function stepBody(step, ctx) {
     case 'user_activity': return [userChange(step, ctx.entries)];
     case 'user_pictures': return [said(step.text || t('aiPicturesStep', { count: (step.results || []).length })), deliveryState(step, 'aiPicturesSeen')];
     case 'user_stop': return [said(t('aiRunStoppedByYou')), deliveryState(step)];
+    case 'user_halt': return [said(t('aiHaltedByYou')), deliveryState(step)];
     case 'user_canvas': return [said(t(step.canvas === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')), deliveryState(step)];
     case 'user_privacy': return [said(t(step.privacy ? 'aiPrivacyChoseOn' : 'aiPrivacyChoseOff')), deliveryState(step)];
     case 'outside_files': return outsideFiles(step, ctx.owner);

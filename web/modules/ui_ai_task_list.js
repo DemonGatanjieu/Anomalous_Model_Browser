@@ -20,7 +20,7 @@ import { openGates } from './ui_ai_gate.js';
 import { syncRows } from './sync_rows.js';
 import { taskTitle } from './ai_task_title.js';
 
-const STATE_ICONS = { waiting: 'sparkle', idle: 'pulse', live: 'pulse', asks: 'question', error: 'alert', done: 'check' };
+const STATE_ICONS = { waiting: 'sparkle', idle: 'pulse', live: 'pulse', asks: 'question', error: 'alert', done: 'check', halted: 'stop' };
 const FILTERS = { all: () => true, live: state => ['live', 'waiting', 'idle'].includes(state), asks: state => state === 'asks', error: state => state === 'error' };
 
 let filter = 'all';

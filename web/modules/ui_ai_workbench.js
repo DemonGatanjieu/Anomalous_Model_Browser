@@ -54,6 +54,8 @@ import { chainRow, looksRow, undoChanges } from './ui_ai_chain.js';
 import { taskLinks } from './ui_ai_task_links.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewTabs } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
+import { haltTool } from './ui_ai_halt.js';
+import { stuckLink } from './ui_ai_stuck.js';
 import { canvasControls } from './ui_ai_task_canvas.js';
 import { privacyChip, privacyReach } from './ui_ai_privacy.js';
 import { menuActions, openTaskMenu, taskMenu } from './ui_ai_task_menu.js';
@@ -250,7 +252,7 @@ function renderTask() {
     if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
         tools.append(iconButton('anomalous-ai-tool', 'undo', t('aiUndoAll'), () => undoAll(task)));
     }
-    tools.append(taskMenu(task, taskActions(task)));
+    tools.append(...haltTool(task, state.entries, () => void refresh()), taskMenu(task, taskActions(task)));
     const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
     titleLine.append(name, tools);
     const unseen = newOutputs(state.stage, task, shown && state.stage.view === 'outputs');
@@ -263,7 +265,8 @@ function renderTask() {
     const said = el('div', 'anomalous-ai-task-meta', meta.join(' · '));
     said.title = said.textContent;
     const sub = el('div', 'anomalous-ai-task-sub');
-    sub.append(said, taskLinks(task, { open: (id) => { state.pinned = true; void select(id); }, changed: refresh }));
+    sub.append(said, taskLinks(task, { open: (id) => { state.pinned = true; void select(id); }, changed: refresh }),
+        stuckLink(task, state.entries, () => void refresh()));
     header.replaceChildren(state.tabs(), titleLine, sub,
         ...(task.stale_tools ? [el('div', 'anomalous-ai-task-stale', t('aiStaleTools'))] : []), ...privacyReach(task)); // mcp_directory.stale
 

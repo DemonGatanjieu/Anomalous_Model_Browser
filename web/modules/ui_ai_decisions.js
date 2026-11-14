@@ -14,7 +14,7 @@ import { icon } from './ui_ai_icons.js';
 import { sideHead } from './ui_ai_side.js';
 
 const BY = { user: 'aiDecisionByUser', ai: 'aiDecisionByAi', together: 'aiDecisionByTogether' };
-const MARKS = { logged: 'pin', answer: 'question', gate: 'shield', toolbox: 'sparkle', canvas: 'copy', stop: 'stop' };
+const MARKS = { logged: 'pin', answer: 'question', gate: 'shield', toolbox: 'sparkle', canvas: 'copy', stop: 'stop', halt: 'stop' };
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -68,6 +68,7 @@ function described(item) {
     case 'toolbox': return [t('aiDecisionToolbox'), item.count ? t('aiDecisionToolboxText', { count: item.count, mode: t(`aiTbMode_${item.mode}`) }) : t('aiToolboxCleared')];
     case 'canvas': return [t('aiDecisionCanvas'), t(item.mode === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')];
     case 'privacy': return [t('aiPrivacy'), t(item.on ? 'aiPrivacyChoseOn' : 'aiPrivacyChoseOff')];
+    case 'halt': return [t('aiHalt'), t('aiHaltedByYou')];
     default: return [t('aiDecisionStop'), t('aiRunStoppedByYou')];
     }
 }

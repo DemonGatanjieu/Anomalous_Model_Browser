@@ -1,11 +1,17 @@
-"""A run's console, time left and size warnings (ai_run_watch.py), stopping it and the user's word on it (ai_run_control.py)."""
+"""A run's console, time left and size warnings (ai_run_watch.py), stopping it, the user's word on it and their halt
+on a whole task (ai_run_control.py)."""
+import os
+import tempfile
+import threading
 import time
 import unittest
 from datetime import datetime
 from unittest import mock
 
 from test_ai_tasks import isolate, ok
-from api import ai_panels, ai_run_control, ai_run_watch, ai_task_runs, ai_tasks
+from api import ai_decisions, ai_gates, ai_panels, ai_run_control, ai_run_watch, ai_task_runs, ai_tasks
+
+GATES = tempfile.mkdtemp(prefix="amb_ai_halt_")
 
 
 def logs(started, *chunks):
@@ -98,6 +104,79 @@ class EstimateTests(unittest.TestCase):
         loop = {"1": {"class_type": "X", "inputs": {"image": ["2", 0]}}, "2": {"class_type": "Y", "inputs": {"image": ["1", 0]}},
                 "3": {"class_type": "KSampler", "inputs": {"latent_image": ["1", 0]}}, "4": "junk"}
         self.assertEqual(ai_run_watch.estimate(loop), {"samplers": [], "warnings": [], "comfort_mp": 8.4})
+
+
+class HaltTests(unittest.TestCase):
+    def setUp(self):
+        isolate()
+        ai_gates._path = lambda: os.path.join(GATES, "ai_gates.json")
+        if os.path.exists(ai_gates._path()):
+            os.remove(ai_gates._path())
+        self.task = ai_tasks.begin_task("A", "Test")["id"]
+
+    def act(self):
+        """An acting call of the AI as mcp_server makes it: the gate's answer, recorded."""
+        ref = ai_tasks.begin_step("A", "set_prompt", {"prompt": "x"}, time.time(), False)
+        verdict = ai_gates.check("set_prompt", {"prompt": "x"}, ref)
+        ai_tasks.finish_step("A", "set_prompt", {"prompt": "x"}, verdict if verdict is not None else ok({}), time.time(), False, step_ref=ref)
+        return verdict
+
+    def test_its_runs_stop_and_the_ai_gets_it_before_it_can_act(self):
+        run = ai_tasks.record("A", "run_workflow", {}, ok({}), time.time())
+        with ai_tasks._lock:
+            task = ai_tasks._load()[self.task]
+            task["steps"][-1]["prompt_ids"] = ["running"]
+            task["canvas"] = {"mode": "new", "tab": {"path": "workflows/copy.json", "name": "copy", "made": True}}
+            ai_tasks._save(task)
+        queue = mock.Mock(spec=["delete_queue_item", "interrupt_if_running", "get_current_queue"])
+        queue.delete_queue_item.return_value = False
+        with mock.patch.object(ai_task_runs, "_queue", return_value=queue):
+            self.assertEqual(ai_run_control.halt(self.task, drop_tab=True), {"task": self.task, "stopped": 1})
+        queue.interrupt_if_running.assert_called_once_with("running")
+        task = ai_tasks.get_task(self.task)
+        self.assertEqual(next(step for step in task["steps"] if step["id"] == run["id"])["stop"], "user")
+        self.assertEqual(task["canvas"], {"mode": "new"}, "the copy the page closes is the task's no more")
+        self.assertEqual((task["steps"][-1]["tool"], task["steps"][-1]["delivered"]), ("user_halt", False))
+        self.assertEqual(ai_decisions.decisions(task)[-1]["type"], "halt")
+        self.assertTrue(ai_tasks.task_summary(task)["halted"])
+        refused = self.act()
+        self.assertTrue(refused["isError"])
+        self.assertIn("called a halt", refused["content"][0]["text"])
+        task = ai_tasks.get_task(self.task)
+        self.assertTrue(next(step for step in task["steps"] if step["tool"] == "user_halt")["delivered"])
+        self.assertTrue(ai_tasks.task_summary(task)["halted"], "a refused call leaves the halt standing")
+        self.assertIsNone(self.act(), "told once, the AI acts again when the user asks it to")
+        self.assertFalse(ai_tasks.task_summary(ai_tasks.get_task(self.task))["halted"])
+
+    def test_a_read_carries_it_too(self):
+        ai_run_control.halt(self.task)
+        result = ai_panels.attach_pending(ok({}), "A", task_id=self.task)
+        self.assertEqual(result["structuredContent"]["user_messages"][0]["kind"], "halt")
+        self.assertIsNone(self.act())
+
+    def test_a_message_of_the_user_lifts_it(self):
+        ai_run_control.halt(self.task)
+        ai_panels.leave_message(self.task, "again, at dusk")
+        self.assertFalse(ai_tasks.task_summary(ai_tasks.get_task(self.task))["halted"])
+
+    def test_a_step_waiting_for_their_ok_is_answered_no(self):
+        ai_gates.set_policy("canvas", "ask")
+        ref = ai_tasks.begin_step("A", "set_prompt", {"prompt": "x"}, time.time(), False)
+        answers = []
+        waiting = threading.Thread(target=lambda: answers.append(ai_gates.check("set_prompt", {"prompt": "x"}, ref)))
+        waiting.start()
+        for _ in range(200):
+            if any(step.get("state") == "asking" for step in ai_tasks.get_task(self.task)["steps"]):
+                break
+            time.sleep(0.02)
+        ai_run_control.halt(self.task)
+        waiting.join(5)
+        self.assertTrue(answers and answers[0]["isError"])
+        self.assertIn("said no", answers[0]["content"][0]["text"])
+
+    def test_no_such_task(self):
+        with self.assertRaises(ai_run_control.RunControlError):
+            ai_run_control.halt("nothing")
 
 
 class StopTests(unittest.TestCase):

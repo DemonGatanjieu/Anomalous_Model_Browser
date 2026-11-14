@@ -345,6 +345,11 @@
 
 .anomalous-ai-tool:hover { border-color: var(--amb-border-strong); background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
 .anomalous-ai-tool.is-icon { width: 30px; padding: 0; justify-content: center; }
+/* Halt and take back (ui_ai_halt.js): the way out, so it reads as one. */
+.anomalous-ai-halt:hover { border-color: var(--amb-danger); background: color-mix(in srgb, var(--amb-danger) 10%, transparent); color: var(--amb-danger-text); }
+.anomalous-ai-task-head.is-tight .anomalous-ai-halt > span { display: none; }
+/* "Stuck?" at the end of the task's facts (ui_ai_stuck.js). */
+.anomalous-ai-stuck-link { flex: none; margin-left: auto; white-space: nowrap; }
 .anomalous-ai-privacy.is-on { border-color: color-mix(in srgb, var(--amb-warn) 55%, transparent); color: var(--amb-warn); background: color-mix(in srgb, var(--amb-warn) 10%, transparent); }
 /* Where the AI works on the canvas (ui_ai_task_canvas.js): a copy or the open canvas, the list to pick from, and the copy's tab. */
 .anomalous-ai-canvas { position: relative; display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
