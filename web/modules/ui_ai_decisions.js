@@ -8,13 +8,14 @@
  */
 
 import { translate as t } from './locales.js';
+import { modelStem } from './ai_start_from.js';
 import { timeLabel } from './activity_log.js';
 import { toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
 import { sideHead } from './ui_ai_side.js';
 
 const BY = { user: 'aiDecisionByUser', ai: 'aiDecisionByAi', together: 'aiDecisionByTogether' };
-const MARKS = { logged: 'pin', answer: 'question', gate: 'shield', toolbox: 'sparkle', canvas: 'copy', stop: 'stop', halt: 'stop' };
+const MARKS = { logged: 'pin', answer: 'question', gate: 'shield', toolbox: 'sparkle', route: 'workflows', canvas: 'copy', stop: 'stop', halt: 'stop' };
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -66,6 +67,7 @@ function described(item) {
     case 'answer': return [item.question || t('aiDecisionAnswer'), item.skipped ? t('aiPanelSkipped') : item.timed_out ? t('aiPanelTookRecommended', { answer: item.answer }) : item.answer];
     case 'gate': return [t(toolKey(item.tool)), [t(item.allowed ? 'aiDecisionAllowed' : 'aiDecisionRefused'), item.text].filter(Boolean).join(t('wordColon'))];
     case 'toolbox': return [t('aiDecisionToolbox'), item.count ? t('aiDecisionToolboxText', { count: item.count, mode: t(`aiTbMode_${item.mode}`) }) : t('aiToolboxCleared')];
+    case 'route': return [t('aiDecisionRoute'), t(`aiRoute_${item.route}`, { a: modelStem(item.models?.[0]), b: modelStem(item.models?.[1]) })];
     case 'canvas': return [t('aiDecisionCanvas'), t(item.mode === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')];
     case 'privacy': return [t('aiPrivacy'), t(item.on ? 'aiPrivacyChoseOn' : 'aiPrivacyChoseOff')];
     case 'halt': return [t('aiHalt'), t('aiHaltedByYou')];

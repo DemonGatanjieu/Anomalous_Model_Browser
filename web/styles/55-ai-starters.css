@@ -102,9 +102,9 @@
 textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 .anomalous-ai-start-field[hidden] { display: none; }
 
-/* "Run my preset" (ui_ai_preset_sheet.js): where the workflow comes from, its presets as chips, the row they line up in. */
-.anomalous-ai-preset-sources { display: flex; flex-wrap: wrap; gap: 6px; }
-.anomalous-ai-preset-source,
+/* Shared choice pills (ui_ai_preset_sheet.js, ui_ai_start_from.js) and "Run my preset" chips/row. */
+.anomalous-ai-start-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-ai-start-pill,
 .anomalous-ai-preset-chip,
 .anomalous-ai-preset-again {
     padding: 4px 12px;
@@ -116,16 +116,17 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
     font-size: 12.5px;
     cursor: pointer;
 }
-.anomalous-ai-preset-source:hover,
+.anomalous-ai-start-pill:hover:not(:disabled),
 .anomalous-ai-preset-chip:hover:not(:disabled),
 .anomalous-ai-preset-again:hover:not(:disabled) { border-color: var(--amb-link); color: var(--amb-text-main); }
-.anomalous-ai-preset-source.is-on,
+.anomalous-ai-start-pill.is-on,
 .anomalous-ai-preset-chip.is-on {
     border-color: var(--amb-link);
     background: color-mix(in srgb, var(--amb-link) 16%, transparent);
     color: var(--amb-text-main);
     font-weight: 600;
 }
+.anomalous-ai-start-pill:disabled,
 .anomalous-ai-preset-chip:disabled { opacity: 0.45; cursor: not-allowed; }
 .anomalous-ai-preset-note { color: var(--amb-ok-text); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-preset-note.is-warn { color: var(--amb-warn-text); }
@@ -210,3 +211,44 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
     cursor: pointer;
 }
 .anomalous-ai-first-hint-done:hover { text-decoration: underline; }
+
+/* "Start from" section in the `say` and `private` starter sheets (ui_ai_start_from.js) */
+.anomalous-ai-start-from { gap: 8px; }
+.anomalous-ai-start-from-body { display: flex; flex-direction: column; gap: 8px; }
+.anomalous-ai-start-sub { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 5fr); gap: 4px 6px; }
+.anomalous-ai-start-sub > .anomalous-ai-start-input[hidden] + .anomalous-ai-start-select { grid-column: 1 / -1; }
+.anomalous-ai-start-sublabel { grid-column: 1 / -1; color: var(--amb-text-muted); font-size: 12px; }
+.anomalous-ai-start-from-note { color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.55; }
+.anomalous-ai-start-from-warn { color: var(--amb-warn-text); font-size: 12px; line-height: 1.55; }
+.anomalous-ai-start-ways { display: flex; flex-direction: column; gap: 6px; }
+.anomalous-ai-start-way {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-start-way:hover { border-color: var(--amb-link); }
+.anomalous-ai-start-way.is-on {
+    border-color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+}
+.anomalous-ai-start-way-title { font-size: 12.5px; font-weight: 600; }
+.anomalous-ai-start-way-detail { color: var(--amb-text-muted); font-size: 12px; line-height: 1.5; }
+.anomalous-ai-start-strip {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--amb-ok) 12%, transparent);
+    color: var(--amb-ok-text);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.anomalous-ai-start-strip[hidden],
+.anomalous-ai-start-input[hidden] { display: none; }

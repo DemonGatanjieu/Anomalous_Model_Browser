@@ -11,12 +11,14 @@
  */
 
 import { marked } from './ai_hide_mark.js';
+import { composeFirstNote, startFactSentence } from './ai_start_from.js';
 import { translate as t } from './locales.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { startTask } from './ui_ai_handoff.js';
 import { pictureGrid } from './ui_ai_gallery_pick.js';
 import { icon } from './ui_ai_icons.js';
 import { presetFields } from './ui_ai_preset_sheet.js';
+import { startFromSection } from './ui_ai_start_from.js';
 
 const NEW_TAB = { canvas: 'new' };
 const MAX_SEALED = 1500; // the prompt the private card hands on, inside a message to the AI
@@ -96,7 +98,19 @@ function examples(input, keys) {
     return row;
 }
 
-/** The card's fields and how they become the task: {nodes, task() -> {title, about, note} | an error key}. */
+function postRoute(picked) {
+    return async (taskId) => {
+        const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(taskId)}/route`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ route: picked.route, models: picked.models }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.message || payload.error || `HTTP ${response.status}`);
+    };
+}
+
+/** The card's fields and how they become the task: {nodes, task() -> {title, about, note, beforeNote} | error}. */
 function fieldsOf(card, data, owner, close) {
     if (card.id === 'try') return { nodes: [], task: () => ({ title: t('aiStartTryTask') }) };
     if (card.id === 'preset') { // nothing saved to run yet
@@ -123,24 +137,49 @@ function fieldsOf(card, data, owner, close) {
         };
     }
     if (card.id === 'private') {
+        const from = startFromSection({ data });
         const gist = textInput(t('aiStartGistHint'));
         const prompt = el('textarea', 'anomalous-ai-start-input');
         prompt.placeholder = t('aiStartSealedHint');
         prompt.maxLength = MAX_SEALED;
         prompt.rows = 3;
         return {
-            nodes: [field(t('aiStartGist'), gist), examples(gist, EXAMPLES.private), field(t('aiStartSealed'), prompt)],
+            nodes: [from.node, field(t('aiStartGist'), gist), examples(gist, EXAMPLES.private), field(t('aiStartSealed'), prompt)],
+            stop: () => from.stop(),
             task: () => {
+                const picked = from.read();
+                if (picked.errorKey || picked.errorText) return picked;
                 const sealed = prompt.value.trim();
                 if (!gist.value.trim() && !sealed) return 'aiStartNeedGist';
-                return { title: gist.value.trim() || t('aiStartPrivateTask'), note: sealed ? t('aiPresetSayPrompt', { prompt: marked(sealed) }) : '' };
+                from.save();
+                const fact = startFactSentence({ ...picked, secret: true }, t, marked);
+                const cardNote = sealed ? t('aiPresetSayPrompt', { prompt: marked(sealed) }) : '';
+                return {
+                    title: gist.value.trim() || t('aiStartPrivateTask'),
+                    note: composeFirstNote(fact, cardNote),
+                    beforeNote: picked.mode === 'new' ? postRoute(picked) : null,
+                };
             },
         };
     }
+    const from = startFromSection({ data });
     const words = textInput(t('aiStartSayHint'));
     return {
-        nodes: [field(t('aiStartSay'), words), examples(words, EXAMPLES.say)],
-        task: () => (words.value.trim() ? { title: words.value.trim() } : 'aiStartNeedText'),
+        nodes: [from.node, field(t('aiStartSay'), words), examples(words, EXAMPLES.say)],
+        stop: () => from.stop(),
+        task: () => {
+            const picked = from.read();
+            if (picked.errorKey || picked.errorText) return picked;
+            if (!words.value.trim()) return 'aiStartNeedText';
+            from.save();
+            const fact = startFactSentence({ ...picked, secret: false }, t);
+            return {
+                title: words.value.trim(),
+                about: picked.mode === 'card' && picked.cardName ? [{ type: 'workflow', name: picked.cardName }] : [],
+                note: composeFirstNote(fact, ''),
+                beforeNote: picked.mode === 'new' ? postRoute(picked) : null,
+            };
+        },
     };
 }
 
@@ -161,8 +200,14 @@ export function openStarter(owner, card, data) {
             error.textContent = t(task);
             return;
         }
+        if (task?.errorKey || task?.errorText) {
+            error.textContent = task.errorKey ? t(task.errorKey) : task.errorText;
+            return;
+        }
         close();
-        await startTask(owner, task.title, task.about || [], null, card.id === 'private' ? { ...NEW_TAB, privacy: true } : NEW_TAB, task.note || '');
+        await startTask(owner, task.title, task.about || [], null,
+            card.id === 'private' ? { ...NEW_TAB, privacy: true } : NEW_TAB,
+            task.note || '', task.beforeNote || null);
     });
     const fields = card.id === 'preset' && data.workflows.length ? presetFields({ data, owner, close: () => close(), go })
         : fieldsOf(card, data, owner, () => close());
@@ -177,8 +222,11 @@ export function openStarter(owner, card, data) {
     if (fields.task || fields.start) actions.append(go);
     body.append(...(fields.start ? [] : [readiness(card, data)]), ...fields.nodes, lines, error, actions);
     body.addEventListener('input', () => { error.textContent = ''; });
-    const shut = aiWindow(t(`aiStart_${card.id}_title`), body);
-    close = () => { fields.stop?.(); shut(); };
-    body.querySelector('input, select')?.focus();
+    body.addEventListener('change', () => { error.textContent = ''; });
+    body.addEventListener('click', (event) => {
+        if (event.target.closest('button') && event.target.closest('button') !== go) error.textContent = '';
+    });
+    close = aiWindow(t(`aiStart_${card.id}_title`), body, () => fields.stop?.());
+    body.querySelector('input:not([hidden]), select')?.focus();
 }
 

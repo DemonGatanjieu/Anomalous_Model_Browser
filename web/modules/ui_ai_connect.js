@@ -163,14 +163,18 @@ export function connectHint(title = '') {
 }
 
 /** A window over the page with `title` and `body` (Esc, ×, or the backdrop closes it); returns close. */
-export function aiWindow(title, body) {
+export function aiWindow(title, body, onClose = null) {
     const overlay = el('div', 'anomalous-ai-connect-overlay');
     const dialog = el('div', 'anomalous-ai-connect-dialog');
     dialog.setAttribute('role', 'dialog');
     dialog.setAttribute('aria-modal', 'true');
+    let open = true;
     const close = () => {
+        if (!open) return;
+        open = false;
         overlay.remove();
         window.removeEventListener('keydown', onKey, true);
+        onClose?.();
     };
     const onKey = (event) => {
         if (event.key !== 'Escape') return;

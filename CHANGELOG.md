@@ -2,6 +2,11 @@
 
 ## v1.64.0 — unreleased
 
+- 主页的「照我说的出图」和「隐私模式出图」最前面多了「从哪开始」四个选择：「新搭一张（文生图）」「我开着的画布」「我存的工作流卡」「让 AI 挑」（会记住上次选了哪一个）。选「新搭一张」就挑第一个模型、要不要第二个模型（同一类底模）和画法，下拉里只列 AMB 会从零搭的模型（SDXL 系、SD 1.5 的大模型和 Anima）；点「开始」后 AMB 先在新标签页把工作流搭好，AI 来了只管填提示词和跑图，不会再问你两个模型怎么用。选「我开着的画布」时窗口直接写明这张画布读不读图、读哪几张，并告诉 AI 从这张画布开始、图原样留着；选「我存的工作流卡」就把那张卡告诉 AI（隐私模式下工作流名和模型名仍只给 AI 代号）。
+- "Draw as I say" and "Draw in privacy mode" on the home page now open with a "Start from" row: "Build a new one (text to image)", "My open canvas", "A saved workflow", or "Let the AI choose" (remembering your last choice). With "Build a new one", pick the first model, a second one or none (same family) and a way; only the models Anomalous builds from scratch are listed (SDXL-family and SD 1.5 checkpoints, Anima). On Start Anomalous builds the workflow on a new tab before the AI comes, so the AI only fills in the prompt and runs, and no longer asks how to use the two models. "My open canvas" says in the sheet whether that canvas reads pictures and which, and tells the AI to start from it and leave the pictures as they are; "A saved workflow" tells the AI which one (workflow and model names still leave only as tokens in privacy mode).
+- 隐私任务里，AI 不再看到任务所在画布（标签页）的名字：它常常就是你工作流的名字，现在只给代号。
+- In a private task the AI no longer sees the name of the canvas (tab) the task works on, which is often your workflow's name: it gets a token.
+
 - 主页「跑我存的预设」重做了：选一张工作流卡（或画布上开着的工作流，AMB 认得出它是哪张卡就列那张卡的预设），点预设排成一行，每个填跑几次。什么都不改时 AMB 自己跑，不需要 AI、什么都不发出去：在新标签页打开工作流，挨个套预设排队，跑完自动关掉它开的那一页（你动过的留着）。写了「这次改什么」才交给 AI；勾上隐私模式，工作流和预设的名字、你填的提示词 AI 都只拿到代号。跑过一次以后，主页多一行「和上次一样再跑」，点一下就行。
 - "Run my preset" on the home page is rebuilt: pick a saved workflow (or an open canvas; Anomalous lists the presets of the saved workflow it recognizes it as), press presets to line them up, and say how many times each runs. With nothing to change Anomalous runs them itself, with no AI and nothing sent anywhere: the workflow opens on a new tab, each preset is put on and queued, and the tab closes when the run has ended (one you touched stays). Only a change goes to an AI; in privacy mode it gets tokens for the names of the workflow and presets and for a prompt you fill in. After a run, the home page has a line that runs the same list again with one press.
 - 「隐私模式出图」多了一格提示词：写在这里的完整提示词 AI 看不到，只拿到代号，由它原样放进提示词框。

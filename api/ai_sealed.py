@@ -31,8 +31,9 @@ PICTURE = re.compile(r"[^\s\"'<>|*?,;()\[\]{}]*\.(?:png|jpe?g|webp|gif|bmp|mp4|w
 # Fields whose text is a prompt, or holds one (a workflow's settings, a change's before and after).
 PROMPT_KEYS = {"prompt", "prompts", "positive", "negative", "positive_prompt", "negative_prompt", "notes",
                "settings", "before", "after", "filename_prefix", "trigger_words", "trainedWords", "header_words",
-               "tags", "in_cards", "recipe", "combo", "said_as", "opened"}  # the last six: names the user gave, where they stand alone
-# ("opened": the tab a workflow opened on, named after the card and preset it came from)
+               "tags", "in_cards", "recipe", "combo", "said_as", "opened", "workflow"}  # the last seven: names the user gave, where they stand alone
+# ("opened": the tab a workflow opened on, named after the card and preset it came from; "workflow": the canvas
+# a task works on, a tab named after the user's own workflow, as is the tab Anomalous makes for the task: canvas_tab)
 NAMED = ("combos", "workflows", "prompts")  # lists of what the user named: each one's name and tags are theirs
 TOOL_KEYS = {"get_model": {"description", "user_notes"}, "place_combo": {"name"},
              **{tool: {"more_names"} for tool in ("list_combos", "list_workflows", "list_saved_prompts")}}
@@ -144,6 +145,8 @@ def _walk(value, seals, info, keys):
                         else _walk(text, seals, info, keys) for name, text in item.items()}
         elif key in keys and (isinstance(item, str) or isinstance(item, list) and all(isinstance(text, str) for text in item)):
             out[key] = seal_text(seals, item)
+        elif key == "canvas_tab" and isinstance(item, dict) and isinstance(item.get("name"), str):
+            out[key] = {**item, "name": seal_text(seals, item["name"])}  # its note names the tab too: hidden once this is sealed
         elif key in NAMED and isinstance(item, list):
             out[key] = [{**named, **{part: seal_text(seals, named[part]) for part in ("name", "filename") if part in named}}
                         if isinstance(named, dict) else named for named in _walk(item, seals, info, keys)]

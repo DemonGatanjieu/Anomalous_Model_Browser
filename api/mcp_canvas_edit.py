@@ -237,9 +237,15 @@ def _base_of(name):
     return model_advice.base_of(path) if path else ""
 
 
+def draws_picture(kind, base):
+    """Whether use picture draws with a model of folder `kind` and base model `base`: an SDXL or SD 1.5 checkpoint,
+    or an Anima diffusion model (among diffusion-model files only Anima's text encoder and VAE are known)."""
+    return kind in model_advice.MAIN_TYPES and model_advice.family(base) in (("SDXL", "SD 1.x", "") if kind == "checkpoints" else ("anima",))
+
+
 def _picture_model(ctx, model_id, info):
     """(loader value, base model) of the model a standalone block draws with: `model_id`, else the first main
-    model the user picked for the task. Among diffusion-model files only Anima's text encoder and VAE are known."""
+    model the user picked for the task."""
     if not model_id:
         task = ai_tasks.get_task(ctx["task"]) if ctx.get("task") else None
         model_id = next((item for item in (ai_toolbox.effective(task) or {}).get("models") or []
@@ -250,8 +256,7 @@ def _picture_model(ctx, model_id, info):
     kind, _index, root, path = _resolve_model(model_id)
     base = model_advice.base_of(path)
     loader = {"checkpoints": ("CheckpointLoaderSimple", "ckpt_name")}.get(kind, ("UNETLoader", "unet_name"))
-    family = model_advice.family(base)
-    if kind not in model_advice.MAIN_TYPES or family not in (("anima",) if loader[0] == "UNETLoader" else ("SDXL", "SD 1.x", "")):
+    if not draws_picture(kind, base):
         raise ToolError(f"{model_id} is no model use picture draws with: an SDXL or SD 1.5 checkpoint, or an Anima diffusion model "
                         "(its text encoder and VAE are known). Open a saved workflow for it instead (list_workflows).")
     wanted = os.path.relpath(path, root).replace("\\", "/")

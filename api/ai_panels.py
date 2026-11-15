@@ -415,6 +415,8 @@ def _collect(client, panel_id, task_id=None):
                     message["kind"] = "halt"  # the user called a halt on the whole task (ai_run_control.halt)
                 elif step.get("tool") == "user_toolbox":
                     message["kind"] = "toolbox"  # what the user picked for the AI to work with (ai_toolbox.py)
+                elif step.get("tool") == "user_route":
+                    message["kind"] = "route"  # the starting route the user chose and Anomalous built (mcp_routes.py)
                 elif step.get("tool") == "user_marks":
                     # Marks on a picture: the picture's path for the AI, and the marked one attached (ai_marks.image_items).
                     message.update(kind="marks", image="/".join(part for part in (step["image"].get("subfolder"), step["image"]["filename"]) if part),
@@ -515,6 +517,7 @@ def attach_pending(result, client, task_id=None):
         "say what you see and how you would fix it (show_panel can show the picture with your own marks), "
         "ask_user which fix to do, and log_decision the fix chosen (related: the marks' id); "
         "kind=toolbox messages are the nodes, combos, workflows, prompts, models and ways the user picked for you to use; "
+        "kind=route messages are the starting route the user chose in Anomalous and Anomalous already built on the task's tab, with what to call next; "
         "kind=stop: the user stopped your run, so do not run it again until they say what to change; "
         "kind=halt: the user called a halt on the whole task: do nothing more for it until they ask; "
         "kind=pictures: pictures the user handed you (attached), with made_with read from each picture's own workflow."

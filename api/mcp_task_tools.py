@@ -43,7 +43,7 @@ def begin_task(ctx, title, new_task=False):
     box = ai_toolbox.effective(ai_tasks.get_task(task["id"]))
     if box:
         answer["toolbox"] = ai_toolbox.words(box)
-        if _routes(ctx, task["id"]):
+        if _routes_note(ctx, task["id"]):
             answer["next"] = mcp_routes.TOOLBOX_NOTE
     goes_on = ai_task_links.carried(task)
     if goes_on:
@@ -146,6 +146,14 @@ def _routes(ctx, task):
     task_id = task or ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")
     box = ai_toolbox.effective(ai_tasks.get_task(task_id)) if task_id else None
     return mcp_routes.offer(box, object_info(ctx)) if len(mcp_routes._main(box)) >= 2 else None
+
+
+def _routes_note(ctx, task):
+    """Whether to tell the AI to ask how the two picked models are used: there are routes for them, and the task's
+    picks still wait for one (mcp_routes.waiting: none chosen, in a question or in the starter sheet, and nothing run)."""
+    task_id = task or ctx.get("task") or ai_tasks.active_task_id(ctx.get("client") or "AI", ctx.get("session") or "")
+    record = ai_tasks.get_task(task_id) if task_id else None
+    return (not record or mcp_routes.waiting(record)) and bool(_routes(ctx, task_id))
 
 
 TRIAL_QUESTIONS = {"test", "testing", "test question", "hello", "hi", "ping", "测试", "试试", "试一下"}
@@ -312,7 +320,7 @@ def get_toolbox(ctx, task=None, skill=None):
         for model in answer["models"]:
             if not model.get("missing") and model["model_id"].split(":", 1)[0] != "loras":
                 model["in_cards"] = mcp_routes.cards_of(model["model_id"])  # its examples: how the user's own routes use it
-        if _routes(ctx, task_id):
+        if _routes_note(ctx, task_id):
             answer["routes"] = mcp_routes.TOOLBOX_NOTE
     return answer
 

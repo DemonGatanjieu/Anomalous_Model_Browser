@@ -104,7 +104,7 @@ covered by the `styles.css` manifest.
   messages) can put one through; a call tied to no task is private while the default is on or a
   private task is unfinished; the card shows none. `api/ai_sealed.py` seals prompt text and
   picture names as tokens ("[P1]", "[img1]", kept in task["sealed"]): `mask` on the way out (a
-  node's STRING inputs by ComfyUI's node list, prompt fields, picture names, any sealed text),
+  node's STRING inputs by ComfyUI's node list, prompt fields, picture names, the name of the canvas the task works on (`workflow`, `canvas_tab`: a tab named after the user's workflow), any sealed text),
   `expand` on a call's arguments, `seal_answer` for the user's prompt box (a "prompts" panel block,
   `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model;
   its first field is the gist, the picture in words the AI may read, handed on as written but for the
@@ -283,9 +283,9 @@ covered by the `styles.css` manifest.
   Once a plan of several steps is built, the user's rule holds in `mcp_actions.run_workflow`: its first run is
   three bases (task "plan_previews"), and the whole waits for their pick ("plan_pick": refused once without one).
   canvas_roles.js takes a "…model" path past size-bound patches (LLLite, ControlNet, T2I-Adapter) on that line.
-  `api/mcp_routes.py` (data: `api/routes.json`) turns two picked main models into choices the user makes: `ask_user(routes=true)`
-  shows the routes this ComfyUI can build for them, a saved card using both first, its answer says what to call, and
-  `add_nodes(route=…)` builds one from the ways on a new tab (a two-step chain); `get_toolbox` lists each picked model's cards as its examples.
+  `api/mcp_routes.py` (data: `api/routes.json`, `tests/test_mcp_routes.py`) turns picked main models into choices the user makes: `ask_user(routes=true)`
+  shows the routes this ComfyUI can build for them (only for models use picture draws with, `mcp_canvas_edit.draws_picture`, and two of the same loader kind), a saved card using both first, its answer says what to call, and
+  `add_nodes(route=…)` builds one from the ways on a new tab (a two-step chain); `get_toolbox` lists each picked model's cards as its examples. It also serves the starter sheets' `Start from` row (`main_models`: those use picture draws with, favourites first; `ways_for` without `card`; `apply` sets `[first, second?]` via `ai_toolbox.pick` keeping non-LoRA picks without LoRAs, marks the task's canvas in a context of its own (`ai_task_canvas.begin_call`), builds on the task's tab, and adds a `user_route` step with `routes: true`). `begin_task` and `get_toolbox` tell the AI to ask for a route only while the task's picks still wait for one (`mcp_task_tools._routes_note`, `mcp_routes.waiting`), so a route chosen in the sheet is not asked for again.
   An AI placing nodes itself is a new route (`ai_gates.route_rule`): one reminder a task, or the user's OK.
 - The job sheet (任务单): many runs of one canvas one after another, each row a prompt, settings by name or the canvas
   as it is, with its runs, and a rest between pictures if wanted (the viewers' prompt rotation and run interval).
@@ -499,14 +499,14 @@ covered by the `styles.css` manifest.
   (`ai_task_view.js` planFlow: the newest plan card's kept steps, then picking a base, lit as the bases run, the pick
   and the whole run after the card go; coming steps dashed; read from the steps, nothing asked of the AI). `ui_ai_handoff.js` is "Hand to AI" on a model's
   page, an output image's inspector and a combo card: a task the user starts with `about`
-  (the model's `model_id`, the image, the combo's name; checked in `ai_tasks.start_task`),
+  (the model's `model_id`, the image, the combo's name; checked in `ai_tasks.start_task`, with an optional `beforeNote` hook before leaving the first note and opening the handoff modal),
   which `begin_task` hands to the AI, and the sentence to paste into the AI app. `ui_ai_canvas_hand.js` is "Hand to
   AI…" in a node's and the empty canvas's right-click menu: ready wishes for the canvas or the node, sent to the task
   an AI is on now as a message or as a new task about the canvas (`about` {type: canvas, tab}: `ai_task_canvas.spec`
   gives the page that tab as `from`, so the task's reads, runs and copy start from it, `mcp_task_tab.js`); a run that
   fails on the page offers "Ask the AI" with ComfyUI's words. It tells the page through the
   `anomalous.ai_task` event; `api/ai_tasks_routes.py` serves `/anomalous/ai_tasks` (list, one
-  task, start, rename or remove, a panel's answer, a message). The user can start a task first
+  task, start, rename or remove, a panel's answer, a message, `/anomalous/ai_routes` for `main_models`/`ways_for`, and `POST /anomalous/ai_tasks/{id}/route` for `mcp_routes.apply`). The user can start a task first
   (New task): it waits, and the next app that calls takes it over, so its work starts there
   instead of joining its last task (one waiting at a time, found again after a restart).
   `begin_task` resumes a waiting or active task, including preliminary reads, and keeps a user's title;
@@ -550,7 +550,7 @@ covered by the `styles.css` manifest.
   `tests/test_ai_outside.py`.
   `api/ai_decisions.py` keeps a task's key decisions: `log_decision` (the AI records what was
   settled, why, what was left out, who decided, the steps it is about; a `decision` step), and
-  the user's own choices read from the task's steps (panel answers, gates, materials, the canvas
+  the user's own choices read from the task's steps (panel answers, gates, materials, pre-built routes — `user_route`, `ai_panels._collect` `kind: "route"` —, the canvas
   mode — `ai_task_canvas.set_mode` adds a `user_canvas` step — and stops); `GET` of a task adds
   `decisions` and `decisions_gap` (runs and canvas changes since the AI's last one), begin_task
   repeats them to an AI picking the task up. `ui_ai_decisions.js` draws the card and the side
@@ -622,9 +622,10 @@ covered by the `styles.css` manifest.
   `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the
   user's checklist by stage) and the address follows. `ui_ai_starters.js` is the home page's "Let the AI do it"
   (the app that came last, a warning when its list is a short one, six starter cards); `ui_ai_starter_sheet.js`
-  holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get), which starts a
-  prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` startTask;
-  a card's tags name only what Anomalous makes sure of. `ui_ai_preset_sheet.js` is the fields of "Run my preset": a
+  holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get; closing calls `onClose` via `ui_ai_connect.js` `aiWindow` to clean up reads), which starts a
+  prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` `startTask`;
+  a card's tags name only what Anomalous makes sure of. For "say" and "private", `web/modules/ui_ai_start_from.js` draws
+  the leading "Start from" row (four pills sharing `.anomalous-ai-start-pills`/`.anomalous-ai-start-pill` in `web/styles/55-ai-starters.css` with `ui_ai_preset_sheet.js`: new text-to-image route via `GET /anomalous/ai_routes` & `POST /anomalous/ai_tasks/{id}/route`, open canvas checking `preset_runs.js` `openTabs` & active `LoadImage` nodes, saved workflow card marked in private mode, or AI picks) backed by `web/modules/ai_start_from.js` (DOM-free selection, validation, and first-message rules; `tests/ai_start_from.mjs`). `ui_ai_preset_sheet.js` is the fields of "Run my preset": a
   saved workflow or an open canvas, the presets as chips a press lines up to run, each so many times, and what to
   change (`preset_run_list.js`: that list, what of it is kept in the browser for "the same again", the print of a
   canvas; `tests/preset_run_list.mjs`). With nothing to change `preset_runs.js` runs the list with no AI: the saved

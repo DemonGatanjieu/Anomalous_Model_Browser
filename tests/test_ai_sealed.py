@@ -18,7 +18,7 @@ from api import ai_callers, ai_panels, ai_privacy, ai_sealed, ai_sealed_models, 
 from test_mcp import rpc  # noqa: E402  (its module keeps tasks and gates in temporary folders)
 
 SETTING = os.path.join(tempfile.mkdtemp(prefix="amb_sealed_"), "ai_privacy.json")
-CANARIES = ("canarypos", "canaryneg", "canaryfile", "canarytrigger", "canaryecho", "canarycombo", "canaryflow", "canarytag", "canarysaved", "canarytab")
+CANARIES = ("canarypos", "canaryneg", "canaryfile", "canarytrigger", "canaryecho", "canarycombo", "canaryflow", "canarytag", "canarysaved", "canarytab", "canarycanvas")
 MODEL_CANARIES = ("canarylora", "Canarycard", "canaryfolder", "canarysha", "civitai.com", "canarymissing")
 LORA = "loras:0:canaryfolder/canarylora v2.safetensors"
 LIBRARY = [{"id": LORA, "name": "Canarycard Pose", "file": "canarylora v2.safetensors"},
@@ -42,7 +42,9 @@ def canary_result(arguments=None):
             "combos": [{"name": "Some LoRA · canarycombo, 1girl", "base_model": "Anima"}, {"name": "2", "base_model": "Anima"}],
             "images": [{"image": "sub/canaryfile_00001_.png"}, {"filename": "canaryfile_00002_.png", "subfolder": ""}],
             "trigger_words": ["canarytrigger"], "echo": json.dumps(arguments or {}), "filled": {"prompt": ["6"]},
-            "opened": "canarytab night 010203"}
+            "opened": "canarytab night 010203", "canvas": {"workflow": "canarycanvas dusk 101112", "node_count": 3},
+            "canvas_tab": {"name": "canarycanvas dusk 101112",
+                           "note": 'Anomalous copied the open workflow to a new tab "canarycanvas dusk 101112" for this task.'}}
     return {"content": [{"type": "text", "text": json.dumps(data)}], "structuredContent": data, "isError": False}
 
 
@@ -241,6 +243,48 @@ class SealedTests(unittest.TestCase):
             step = ai_task_changes.note_activity(entry)
         self.assertNotIn("canarypos", step["text"])
         self.assertIn("a.safetensors -> b.safetensors", step["text"], "the models it may know")
+
+    def test_start_from_route_and_saved_card_hide_models_and_card_name(self):
+        from api import ai_sealed, ai_sealed_models, mcp_actions, mcp_canvas_edit, mcp_routes
+
+        m1 = "checkpoints:0:canaryfolder/canarymain.safetensors"
+        m2 = "checkpoints:0:canarydir/Nova.safetensors"
+        lib = [*LIBRARY,
+               {"id": m1, "name": "Canarycard Main", "file": "canarymain.safetensors"},
+               {"id": m2, "name": "Nova", "file": "Nova.safetensors"}]
+        by_id = {m1: ("checkpoints", 0, "C:/ckpt", "C:/ckpt/canaryfolder/canarymain.safetensors"),
+                 m2: ("checkpoints", 0, "C:/ckpt", "C:/ckpt/canarydir/Nova.safetensors")}
+        added = iter([
+            {"block": "picture", "nodes": {"model": "1", "sampler": "5", "save": "7"}},
+            {"block": "switch_midway", "nodes": {"second_model": "9", "first": "11", "second": "13", "save": "15"}},
+        ])
+        with mock.patch.object(ai_sealed_models, "_library", return_value=lib), \
+                mock.patch.object(mcp_routes, "_resolve_model", side_effect=lambda mid: by_id[mid]), \
+                mock.patch.object(mcp_routes.model_advice, "base_of", return_value="SDXL 1.0"), \
+                mock.patch.object(mcp_canvas_edit, "new_workflow"), \
+                mock.patch.object(mcp_canvas_edit, "add_nodes", side_effect=lambda *a, **kw: next(added)), \
+                mock.patch.object(mcp_canvas_edit, "add_node"), \
+                mock.patch.object(mcp_canvas_edit, "set_values"), \
+                mock.patch.object(mcp_actions, "set_model"):
+            mcp_routes.apply(self.task, "midway", [m1, m2], "http://127.0.0.1:8188")
+
+        ai_panels.leave_message(self.task, 'Start from my saved workflow "\u27e6canaryflow\u27e7".\n\nPrompt: \u27e6canarypos\u27e7')
+        with mock.patch.object(ai_sealed_models, "_library", return_value=lib):
+            begun = rpc("tools/call", {"name": "begin_task", "arguments": {"task": self.task, "title": "private"}}, "begin_task")
+
+        self.assertFalse(begun["result"].get("isError"), begun)
+
+        dumped = json.dumps(begun, ensure_ascii=False)
+        for secret in ("canaryfolder", "canarymain", "Canarycard", "canarydir", "Nova", "canaryflow", "canarypos"):
+            self.assertNotIn(secret, dumped)
+        pending = begun["result"]["structuredContent"]["user_messages"]
+        route_msg = next(msg for msg in pending if msg.get("kind") == "route")
+        card_msg = next(msg for msg in pending if "saved workflow" in msg.get("text", ""))
+        self.assertRegex(route_msg["text"], r"\[M\d+\].*\[M\d+\]")
+        self.assertRegex(card_msg["text"], r'\[P\d+\]')
+        self.assertEqual(ai_sealed.expand(self.task, card_msg["text"]),
+                         'Start from my saved workflow "canaryflow".\n\nPrompt: canarypos')
+        self.assertEqual(ai_sealed.expand(self.task, {"models": route_msg["text"]})["models"].count("safetensors"), 2)
 
     def test_a_private_task_gets_its_own_skill_only(self):
         from api import ai_skills

@@ -102,5 +102,220 @@ class RouteTests(unittest.TestCase):
                 mcp_routes.build({"task": "t"}, "nope")
 
 
+class StartFromRouteTests(unittest.TestCase):
+    def _models_patch(self, entries):
+        by_id = {mid: (kind, idx, root, path) for mid, kind, idx, root, path, _base in entries}
+        bases = {path: base for _mid, _kind, _idx, _root, path, base in entries}
+        return (
+            mock.patch.object(mcp_routes, "_resolve_model", side_effect=lambda mid: by_id[mid]),
+            mock.patch.object(mcp_routes.model_advice, "base_of", side_effect=lambda path: bases[path]),
+        )
+
+    def test_main_models_orders_favourites_first_and_maps_families(self):
+        from api import ai_toolbox_catalog
+
+        catalog = [
+            {"id": LORA, "name": "my_lora", "type": "loras", "base": "SDXL 1.0"},
+            {"id": "checkpoints:0:zeta.safetensors", "name": "zeta", "type": "checkpoints", "metadata": {"base_guess": "SD 1.5"}},
+            {"id": A, "name": "alpha", "type": "checkpoints", "base": "SDXL 1.0"},
+            {"id": B, "name": "bravo", "type": "checkpoints", "base": "Illustrious"},
+            {"id": "diffusion_models:0:flux.safetensors", "name": "flux_d", "type": "diffusion_models", "base": "Flux.1 D"},
+        ]
+        with mock.patch.object(mcp_routes.ai_toolbox, "favorites", return_value={"models": [B, A]}), \
+                mock.patch.object(ai_toolbox_catalog, "everything", return_value={"models": catalog}):
+            got = mcp_routes.main_models()
+        self.assertEqual([item["model_id"] for item in got], [B, A, "checkpoints:0:zeta.safetensors"],
+                         "a LoRA and a Flux model are no model a new picture starts from")
+        self.assertEqual([item["favourite"] for item in got], [True, True, False])
+        self.assertEqual(got[2]["family"], "SD 1.x")
+
+    def test_ways_for_excludes_card_respects_family_loader_and_picture_fit(self):
+        ckpt_a = "checkpoints:0:sdxl_a.safetensors"
+        ckpt_b = "checkpoints:0:sdxl_b.safetensors"
+        entries = [
+            (A, "diffusion_models", 0, "C:/dm", "C:/dm/anima_a.safetensors", "Anima"),
+            (B, "diffusion_models", 0, "C:/dm", "C:/dm/anima_b.safetensors", "Anima"),
+            (ckpt_a, "checkpoints", 0, "C:/ckpt", "C:/ckpt/a.safetensors", "SDXL 1.0"),
+            (ckpt_b, "checkpoints", 0, "C:/ckpt", "C:/ckpt/b.safetensors", "Illustrious"),
+            ("checkpoints:0:sd15.safetensors", "checkpoints", 0, "C:/ckpt", "C:/ckpt/sd15.safetensors", "SD 1.5"),
+            ("diffusion_models:0:sdxl_u.safetensors", "diffusion_models", 0, "C:/dm", "C:/dm/sdxl_u.safetensors", "SDXL 1.0"),
+            ("diffusion_models:0:flux.safetensors", "diffusion_models", 0, "C:/dm", "C:/dm/flux.safetensors", "Flux.1 D"),
+        ]
+        p_res, p_base = self._models_patch(entries)
+        with p_res, p_base:
+            one = mcp_routes.ways_for(A, "", INFO)
+            same = mcp_routes.ways_for(A, A, INFO)
+            two_anima = mcp_routes.ways_for(A, B, INFO)
+            two_sdxl = mcp_routes.ways_for(ckpt_a, ckpt_b, INFO)
+            cross = mcp_routes.ways_for(ckpt_a, "checkpoints:0:sd15.safetensors", INFO)
+            no_tile = mcp_routes.ways_for(A, B, {k: v for k, v in INFO.items() if k != "AnimaLLLiteApply_sdscripts"})
+            empty_info = mcp_routes.ways_for(A, B, {})
+            flux = mcp_routes.ways_for("diffusion_models:0:flux.safetensors", "", INFO)
+            sdxl_dm = mcp_routes.ways_for("diffusion_models:0:sdxl_u.safetensors", "", INFO)
+        self.assertEqual([w["id"] for w in one], ["one_pass"])
+        self.assertEqual([w["id"] for w in same], ["one_pass"])
+        self.assertNotIn("card", [w["id"] for w in two_anima])
+        self.assertEqual([w["id"] for w in two_anima], ["tile_second", "midway_enlarge", "one_pass"])
+        self.assertEqual([w["id"] for w in two_sdxl], ["midway", "one_pass"])
+        self.assertEqual([w["id"] for w in cross], ["one_pass"])
+        self.assertEqual([w["id"] for w in no_tile], ["midway_enlarge", "one_pass"])
+        self.assertEqual(empty_info, [])
+        self.assertEqual(flux, [])
+        self.assertEqual(sdxl_dm, [])
+
+    def test_apply_picks_models_strips_loras_builds_and_records_user_route(self):
+        from test_ai_tasks import isolate
+        from api import ai_decisions, ai_panels, ai_task_canvas, ai_tasks
+
+        isolate()
+        tid = ai_tasks.begin_task("C", "draw")["id"]
+        mcp_routes.ai_toolbox.pick(tid, {"models": [A, LORA, "upscale_models:0:u.pth"], "nodes": ["KSampler"]}, "only")
+
+        entries = [
+            (A, "diffusion_models", 0, "C:/dm", "C:/dm/anima_a.safetensors", "Anima"),
+            (B, "diffusion_models", 0, "C:/dm", "C:/dm/anima_b.safetensors", "Anima"),
+        ]
+        seen_call_ctx = []
+        calls = []
+        added = iter([
+            {"block": "picture", "nodes": {"model": "1", "sampler": "5", "save": "7"}},
+            {"block": "switch_midway", "nodes": {"second_model": "9", "first": "11", "second": "13", "save": "15"}},
+        ])
+
+        def fake_new(ctx, name):
+            seen_call_ctx.append(ai_task_canvas._call.get())
+            calls.append(("new", name))
+
+        before_call = ai_task_canvas._call.get()
+        p_res, p_base = self._models_patch(entries)
+        with p_res, p_base, \
+                mock.patch.object(mcp_canvas_edit, "new_workflow", side_effect=fake_new), \
+                mock.patch.object(mcp_canvas_edit, "add_nodes", side_effect=lambda ctx, **kw: (calls.append(("add", kw)), next(added))[1]), \
+                mock.patch.object(mcp_canvas_edit, "add_node", side_effect=lambda ctx, *a, **kw: calls.append(("node", a[0]))), \
+                mock.patch.object(mcp_canvas_edit, "set_values", side_effect=lambda ctx, **kw: calls.append(("values", kw))), \
+                mock.patch.object(mcp_actions, "add_lora", side_effect=lambda *a, **kw: calls.append(("lora", a))), \
+                mock.patch.object(mcp_actions, "set_model", side_effect=lambda ctx, node, model: calls.append(("model", node, model))):
+            mcp_routes.apply(tid, "midway_enlarge", [B, A], "http://127.0.0.1:8188")
+
+        self.assertEqual([item["task"] for item in seen_call_ctx], [tid])
+        self.assertEqual(ai_task_canvas._call.get(), before_call)
+        self.assertFalse(any(c[0] == "lora" for c in calls), "sheet route strips LoRAs")
+        self.assertEqual(calls[0], ("new", "midway_enlarge"))
+        self.assertIn(("node", "LatentUpscaleBy"), calls)
+
+        eff = mcp_routes.ai_toolbox.effective(ai_tasks.get_task(tid))
+        self.assertEqual(eff["models"], [B, A, "upscale_models:0:u.pth"])
+        self.assertEqual(eff["nodes"], ["KSampler"])
+        self.assertEqual(eff["mode"], "only")
+
+        task = ai_tasks.get_task(tid)
+        self.assertFalse(mcp_routes.waiting(task))
+        step = task["steps"][-1]
+        self.assertEqual((step["tool"], step["routes"], step["delivered"], step["route"], step["models"]),
+                         ("user_route", True, False, "midway_enlarge", [B, A]))
+        self.assertIn(mcp_routes.NEXT, step["text"])
+        self.assertIn("midway_enlarge", step["text"])
+
+        decs = ai_decisions.decisions(task)
+        self.assertEqual([d["type"] for d in decs], ["toolbox", "toolbox", "route"])
+        self.assertEqual((decs[-1]["route"], decs[-1]["models"]), ("midway_enlarge", [B, A]))
+        self.assertIn("midway_enlarge", " ".join(ai_decisions.lines(task)))
+        _out, _waiting, messages, _changed = ai_panels._collect("C", None, task_id=tid)
+        self.assertEqual([msg.get("kind") for msg in messages], ["toolbox", "toolbox", "route"])
+
+    def test_a_route_chosen_already_is_not_asked_for_again(self):
+        from test_ai_tasks import isolate
+        from api import ai_tasks, mcp_task_tools
+
+        isolate()
+        tid = ai_tasks.begin_task("C", "draw")["id"]
+        mcp_routes.ai_toolbox.pick(tid, {"models": [A, B]})
+        with mock.patch.object(mcp_task_tools, "_routes", return_value={"options": [{"id": "midway"}, {"id": "one_pass"}]}):
+            self.assertTrue(mcp_task_tools._routes_note({}, tid), "two models picked, no route yet: the AI asks")
+            with ai_tasks._lock:
+                task = ai_tasks._load()[tid]
+                ai_tasks._add_step(task, {"id": "r1", "at": 1, "ms": 0, "tool": "user_route", "kind": "user", "ok": True,
+                                          "state": "done", "routes": True, "delivered": False, "results": []})
+                ai_tasks._save(task)
+            self.assertFalse(mcp_task_tools._routes_note({}, tid), "the user chose in the starter sheet: nothing to ask")
+
+    def test_http_routes_task_route_and_local_guard(self):
+        import asyncio
+        import json
+        from aiohttp import web
+        from aiohttp.test_utils import make_mocked_request
+        from test_ai_tasks import isolate
+        from api import ai_tasks, ai_tasks_routes, local_guard, mcp_bridge
+
+        isolate()
+        tid = ai_tasks.begin_task("C", "draw")["id"]
+        entries = [
+            (A, "diffusion_models", 0, "C:/dm", "C:/dm/anima_a.safetensors", "Anima"),
+            (B, "diffusion_models", 0, "C:/dm", "C:/dm/anima_b.safetensors", "Anima"),
+            ("checkpoints:0:sd15.safetensors", "checkpoints", 0, "C:/ckpt", "C:/ckpt/sd15.safetensors", "SD 1.5"),
+        ]
+        models_out = [
+            {"model_id": A, "name": "a", "family": "anima", "favourite": True},
+            {"model_id": B, "name": "b", "family": "anima", "favourite": False},
+            {"model_id": "checkpoints:0:sd15.safetensors", "name": "sd15", "family": "SD 1.5", "favourite": False},
+        ]
+        p_res, p_base = self._models_patch(entries)
+        with p_res, p_base, \
+                mock.patch.object(mcp_routes, "main_models", return_value=models_out), \
+                mock.patch.object(mcp_canvas_edit, "object_info", return_value=INFO):
+            req = make_mocked_request("GET", f"/anomalous/ai_routes?first={A}&second=checkpoints:0:sd15.safetensors",
+                                      headers={"Host": "127.0.0.1:8188"})
+            resp = asyncio.run(ai_tasks_routes.api_routes(req))
+        body = json.loads(resp.text)
+        self.assertEqual(resp.status, 200)
+        self.assertEqual((body["first"], body["second"]), (A, ""), "incompatible second is dropped cleanly")
+        self.assertEqual([w["id"] for w in body["ways"]], ["one_pass"])
+
+        def post(path_tid, payload):
+            req = make_mocked_request("POST", f"/anomalous/ai_tasks/{path_tid}/route",
+                                      headers={"Host": "127.0.0.1:8188", "Content-Type": "application/json"},
+                                      match_info={"task_id": path_tid})
+            req._read_bytes = json.dumps(payload).encode()
+            return asyncio.run(ai_tasks_routes.api_task_route(req))
+
+        p_res, p_base = self._models_patch(entries)
+        with p_res, p_base:
+            bad_route = post(tid, {"route": "nope", "models": [A]})
+            missing_task = post("no-such-task", {"route": "one_pass", "models": [A]})
+            with mock.patch.object(mcp_canvas_edit, "new_workflow", side_effect=mcp_bridge.PageUnavailable("no ComfyUI page")):
+                no_page = post(tid, {"route": "one_pass", "models": [A]})
+        self.assertEqual(bad_route.status, 400)
+        self.assertEqual(missing_task.status, 404)
+        self.assertEqual(no_page.status, 502)
+        self.assertIn("no ComfyUI page", json.loads(no_page.text)["error"])
+        self.assertIsNotNone(ai_tasks.get_task(tid), "task stays when route build fails")
+        self.assertFalse(any(s.get("tool") == "user_route" for s in ai_tasks.get_task(tid)["steps"]))
+
+        p_res, p_base = self._models_patch(entries)
+        with p_res, p_base, \
+                mock.patch.object(mcp_canvas_edit, "new_workflow"), \
+                mock.patch.object(mcp_canvas_edit, "add_nodes", return_value={"block": "picture", "nodes": {"model": "1", "sampler": "5", "save": "7"}}):
+            ok_resp = post(tid, {"route": "one_pass", "models": [A]})
+        self.assertEqual(ok_resp.status, 200)
+        self.assertIn(mcp_routes.ONE_PASS, json.loads(ok_resp.text)["next"])
+
+        class _Transport:
+            def __init__(self, peer):
+                self._peer = peer
+
+            def get_extra_info(self, name, default=None):
+                return self._peer if name == "peername" else default
+
+        remote = make_mocked_request("POST", f"/anomalous/ai_tasks/{tid}/route",
+                                     headers={"Host": "127.0.0.1:8188"},
+                                     transport=_Transport(("10.0.0.5", 12345)))
+
+        async def ok_handler(_req):
+            return web.json_response({"ok": True})
+
+        blocked = asyncio.run(local_guard.local_only_middleware(remote, ok_handler))
+        self.assertEqual(blocked.status, 403)
+
+
 if __name__ == "__main__":
     unittest.main()

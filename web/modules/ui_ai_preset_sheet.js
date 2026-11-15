@@ -108,9 +108,9 @@ export function presetFields({ data, owner, close, go }) {
     const tabOf = () => tabs.find(tab => tab.path === state.tab) || null;
     const usable = file => file === OWN || !state.tab || Boolean(state.fits?.has(file));
 
-    const fromCard = button('anomalous-ai-preset-source', t('aiPresetFromCard'), () => setSource(''));
-    const fromTab = button('anomalous-ai-preset-source', t('aiPresetFromTab'), () => setSource(tabs[0].path));
-    const sources = el('div', 'anomalous-ai-preset-sources');
+    const fromCard = button('anomalous-ai-start-pill', t('aiPresetFromCard'), () => setSource(''));
+    const fromTab = button('anomalous-ai-start-pill', t('aiPresetFromTab'), () => setSource(tabs[0].path));
+    const sources = el('div', 'anomalous-ai-start-pills');
     sources.append(fromCard, ...(tabs.length ? [fromTab] : []));
     const tabPick = el('select', 'anomalous-ai-start-select');
     tabPick.append(...tabs.map(tab => option(tab.path, tab.name)));

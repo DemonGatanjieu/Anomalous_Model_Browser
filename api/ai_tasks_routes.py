@@ -418,11 +418,58 @@ async def api_blocks(request):
                               "skills": ai_skills.status()})
 
 
+async def api_routes(request):
+    """GET /anomalous/ai_routes: main models and, with ?first=&second=, the routes this ComfyUI can build."""
+    from . import mcp_canvas_edit, mcp_routes
+    from .mcp_tools import ToolError
+
+    first = str(request.query.get("first") or "").strip()
+    second = str(request.query.get("second") or "").strip()
+    models = await asyncio.to_thread(mcp_routes.main_models)
+    known = {item["model_id"]: item for item in models}
+    if not models:
+        return web.json_response({"models": [], "first": "", "second": "", "ways": []})
+    if first not in known:
+        first, second = models[0]["model_id"], ""
+    elif second and (second not in known or second == first or not known[first]["family"]
+                     or known[second]["family"] != known[first]["family"]):
+        second = ""
+    try:
+        info = await asyncio.to_thread(mcp_canvas_edit.object_info, {"base_url": f"{request.scheme}://{request.host}"})
+    except ToolError as error:
+        return web.json_response({"error": str(error), "models": models, "first": first, "second": second}, status=502)
+    ways = await asyncio.to_thread(mcp_routes.ways_for, first, second, info)
+    return web.json_response({"models": models, "first": first, "second": second, "ways": ways})
+
+
+async def api_task_route(request):
+    """POST /anomalous/ai_tasks/{id}/route: {route, models: [first, second?]} - builds the chosen route on the task's tab."""
+    from . import mcp_routes, reference_blocks
+    from .mcp_bridge import PageRefused, PageUnavailable
+    from .mcp_tools import ToolError
+
+    body = await _body(request)
+    if body is None:
+        return web.json_response({"error": "Expected {route, models}"}, status=400)
+    base_url = f"{request.scheme}://{request.host}"
+    try:
+        got = await asyncio.to_thread(mcp_routes.apply, request.match_info["task_id"],
+                                      body.get("route"), body.get("models"), base_url)
+    except LookupError as error:
+        return web.json_response({"error": str(error)}, status=404)
+    except (ValueError, ai_toolbox.ToolboxError) as error:
+        return web.json_response({"error": str(error)}, status=400)
+    except (PageUnavailable, PageRefused, reference_blocks.BlockError, ToolError) as error:
+        return web.json_response({"error": str(error)}, status=502 if isinstance(error, (PageUnavailable, PageRefused)) else 400)
+    return web.json_response(got)
+
+
 def register_routes(app):
     activity_log.add_listener(ai_task_changes.note_activity)  # the user's changes while an AI works
     app.router.add_get("/anomalous/ai_tasks", api_list)
     app.router.add_post("/anomalous/ai_tasks", api_start)
     app.router.add_post("/anomalous/ai_plans/auto", api_plan_auto)
+    app.router.add_get("/anomalous/ai_routes", api_routes)
     app.router.add_get("/anomalous/ai_tasks/{task_id}", api_get)
     app.router.add_post("/anomalous/ai_tasks/{task_id}", api_change)
     app.router.add_get("/anomalous/ai_tasks/{task_id}/sent", api_sent)
@@ -433,6 +480,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}/marks", api_marks)
     app.router.add_get("/anomalous/ai_tasks/{task_id}/marks/{name}", api_marked)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/toolbox", api_toolbox_pick)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/route", api_task_route)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/way", api_way_pick)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/runs/{step_id}/stop", api_stop)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/runs/{step_id}/verdict", api_verdict)

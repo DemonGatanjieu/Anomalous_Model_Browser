@@ -65,6 +65,9 @@ def decisions(task):
             box = step.get("toolbox") or {}
             count = sum(len(value) for value in box.values() if isinstance(value, list))
             out.append({"type": "toolbox", "step": step["id"], "at": step["at"], "mode": box.get("mode", "prefer"), "count": count})
+        elif tool == "user_route":
+            out.append({"type": "route", "step": step["id"], "at": step["at"],
+                        "route": step.get("route") or "", "models": list(step.get("models") or [])})
         elif tool == "user_canvas":
             out.append({"type": "canvas", "step": step["id"], "at": step["at"], "mode": step.get("canvas")})
         elif tool == "user_privacy":
@@ -98,6 +101,9 @@ def lines(task, limit=12):
             words.append(f"The user {'allowed' if item['allowed'] else 'refused'} {item['tool']}" + (f": {item['text']}" if item["text"] else ""))
         elif item["type"] == "toolbox":
             words.append(f"The user handed over {item['count']} materials ({item['mode']})")
+        elif item["type"] == "route":
+            models = f" ({', '.join(item['models'])})" if item.get("models") else ""
+            words.append(f"The user chose route {item['route']}{models} and Anomalous built it")
         elif item["type"] == "canvas":
             words.append("The user set the canvas mode to " + ("the task's own tab" if item["mode"] == "new" else "their open canvas"))
         elif item["type"] == "privacy":

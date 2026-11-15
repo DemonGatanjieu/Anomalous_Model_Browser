@@ -435,6 +435,16 @@ in `mcp_tools` before limiting results; public list-tool searches remain fuzzy.
 The default mode is in `anomalous/ai_canvas.json` (GET/POST `/anomalous/ai_gates` `canvas_tab`),
 a task's own in its `canvas` record (POST `/anomalous/ai_tasks/{id}` `{canvas}`).
 
+The "say" and "private" starter sheets read `GET /anomalous/ai_routes` (`mcp_routes.main_models` and
+`ways_for`: only the models use picture draws with, `mcp_canvas_edit.draws_picture`, and without the saved workflow `card`) when opened with
+"Build a new one" available; on Start, `POST /anomalous/ai_tasks/{id}/route` (loopback-only via
+`local_guard`) runs `mcp_routes.apply` in a worker thread to pick `[first, second?]` without
+LoRAs while keeping other non-LoRA picks, marks `ai_task_canvas.begin_call`, builds the route on
+the task's tab, and records a `user_route` step (`routes: true`, `kind: "route"` in
+`ai_panels._collect`, `"route"` decision in `ai_decisions`) referencing models by `model_id` so
+`ai_privacy.guard` masks them as tokens in private tasks (`tests/test_mcp_routes.py`,
+`tests/test_ai_sealed.py`).
+
 `POST /anomalous/ai_tasks/{id}/pictures` (`api/ai_pictures.py`) hands output pictures to an open
 task; pictures handed before the AI looked join one step.
 

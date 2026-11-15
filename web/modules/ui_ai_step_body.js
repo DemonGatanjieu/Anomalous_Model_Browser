@@ -9,6 +9,7 @@
  */
 
 import { resolveLocale, translate as t } from './locales.js';
+import { modelStem } from './ai_start_from.js';
 import { skillsBefore } from './ai_task_view.js';
 import { entrySummary } from './activity_log.js';
 import { changeNodeId } from './activity_diff.js';
@@ -31,6 +32,11 @@ function el(tag, className, text) {
 
 const said = text => el('div', 'anomalous-ai-user-text', text);
 const words = value => (resolveLocale() === 'zh' ? value?.zh : value?.en) || value?.en || value?.zh || '';
+
+function routeStep(step) {
+    const [a, b] = (step.models || []).map(modelStem);
+    return [said(t(`aiRoute_${step.route}`, { a: a || '', b: b || '' })), deliveryState(step)];
+}
 
 /** A skill the AI fetched: its name and, for advice that goes by the model, the form it came in. */
 function skillUsed(step) {
@@ -109,6 +115,7 @@ export function stepBody(step, ctx) {
     switch (step.tool) {
     case 'user_marks': return [marksStep(step, ctx.taskId, ctx.owner)];
     case 'user_toolbox': return [toolboxStep(step)];
+    case 'user_route': return routeStep(step);
     case 'user_activity': return [userChange(step, ctx.entries)];
     case 'user_pictures': return [said(step.text || t('aiPicturesStep', { count: (step.results || []).length })), deliveryState(step, 'aiPicturesSeen')];
     case 'user_stop': return [said(t('aiRunStoppedByYou')), deliveryState(step)];
