@@ -52,7 +52,7 @@
 .anomalous-ai-mention-kind { flex: none; max-width: 45%; overflow: hidden; color: var(--amb-text-dim); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
 
 /* What the message carries: pictures with ✎ and ×, then chips. */
-.anomalous-ai-tray { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.anomalous-ai-tray { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; max-width: 100%; min-width: 0; }
 .anomalous-ai-tray[hidden] { display: none; }
 .anomalous-ai-tray-picture {
     position: relative;
@@ -98,17 +98,35 @@
 .anomalous-ai-tray-mark:hover { background: var(--amb-link); }
 .anomalous-ai-mention-chip {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    max-width: 240px;
-    padding: 2px 4px 2px 3px;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 3px 4px 3px 3px;
     border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
     border-radius: 8px;
     background: color-mix(in srgb, var(--amb-link) 10%, transparent);
     font-size: 12px;
 }
 .anomalous-ai-mention-chip .anomalous-ai-mention-lead { width: 20px; height: 20px; border-radius: 4px; }
-.anomalous-ai-mention-chip-name { min-width: 0; overflow: hidden; color: var(--amb-text-main); text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-mention-chip-name { flex: 0 1 auto; max-width: 190px; min-width: 0; overflow: hidden; color: var(--amb-text-main); text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-mention-chip-note {
+    flex: 1 1 150px;
+    min-width: 0;
+    width: clamp(150px, 24vw, 230px);
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 2px 7px;
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 11.5px;
+}
+.anomalous-ai-mention-chip-note:focus { border-color: color-mix(in srgb, var(--amb-link) 60%, transparent); outline: none; }
+.anomalous-ai-mention-chip-note::placeholder { color: var(--amb-text-dim); }
 .anomalous-ai-mention-chip-x { display: inline-flex; padding: 3px; border: 0; border-radius: 5px; background: none; color: var(--amb-text-soft); cursor: pointer; }
 .anomalous-ai-mention-chip-x:hover { background: rgba(var(--amb-ink-rgb), 0.1); color: var(--amb-text-main); }
 
@@ -419,3 +437,70 @@
     pointer-events: none;
 }
 .anomalous-ai-message.is-uploading .anomalous-ai-message-pics { animation: anomalous-ai-now-pulse 1.2s ease-in-out infinite; }
+
+/* The "+" menu over the message box (ui_ai_plus.js) and ref chips on timeline messages (ui_ai_step_body.js). */
+.anomalous-ai-plus {
+    position: absolute;
+    z-index: 6;
+    bottom: calc(100% - 6px);
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: min(460px, calc(100% - 24px));
+    max-height: min(400px, 60vh);
+    box-sizing: border-box;
+    padding: 8px;
+    border: 1px solid var(--amb-border-strong, var(--amb-border));
+    border-radius: 12px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
+}
+.anomalous-ai-plus-menu { display: flex; flex-direction: column; gap: 2px; }
+.anomalous-ai-plus-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 550;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-plus-item:hover, .anomalous-ai-plus-item:focus-visible { background: color-mix(in srgb, var(--amb-link) 18%, transparent); outline: none; }
+.anomalous-ai-plus-item-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-plus-arrow { flex: none; color: var(--amb-text-dim); }
+.anomalous-ai-plus-hint { padding: 6px 10px 2px; border-top: 1px solid var(--amb-border); color: var(--amb-text-dim); font-size: 11.5px; line-height: 1.4; }
+.anomalous-ai-plus-head { display: flex; align-items: center; gap: 6px; }
+.anomalous-ai-plus-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px 4px 4px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.anomalous-ai-plus-back:hover, .anomalous-ai-plus-back:focus-visible { background: rgba(var(--amb-ink-rgb), 0.08); outline: none; }
+.anomalous-ai-plus-list { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow-y: auto; }
+.anomalous-ai-plus-list .anomalous-ai-mention-row { min-height: 36px; padding: 5px 8px; }
+.anomalous-ai-plus-fav { flex: none; color: var(--amb-warn); }
+.anomalous-ai-plus-row-text { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
+.anomalous-ai-plus-row-title { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-plus-row-about { color: var(--amb-text-dim); font-size: 11.5px; line-height: 1.35; }
+.anomalous-ai-step-refs { margin-top: 6px; }
+.anomalous-ai-step-refs .anomalous-tb-chip { flex: 0 1 auto; flex-wrap: wrap; max-width: 100%; height: auto; min-height: 28px; padding: 3px 9px; }
+.anomalous-ai-step-refs .anomalous-tb-chip.is-ways { border-color: color-mix(in srgb, var(--amb-link) 45%, transparent); }
+.anomalous-ai-step-ref-note { color: var(--amb-text-soft); font-size: 11.5px; word-break: break-word; }
+.anomalous-ai-step-ref-note::before { content: "· "; color: var(--amb-text-dim); }

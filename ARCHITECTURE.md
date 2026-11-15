@@ -109,11 +109,11 @@ covered by the `styles.css` manifest.
   `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model;
   its first field is the gist, the picture in words the AI may read, handed on as written but for the
   words the user marked to hide, which go as tokens inside it; `web/modules/ai_hide_mark.js` is that
-  mark and its button, also in a private task's message box (`ai_sealed.seal_marked`);
-  the privacy skill tells the AI how to work). `api/ai_sealed_models.py` keeps a private task's model names too
+  mark and its single Hide button marking words in the chip note field that has the focus, else in the message input (`ai_sealed.seal_marked` seals marked words in both text and ref notes);
+  the privacy skill tells the AI how to work). `api/ai_sealed.py` also applies `get_model`'s field keys (`description`, `user_notes`) on any `model_id` dict anywhere in tool answers (including `"models"` message refs). `api/ai_sealed_models.py` keeps a private task's model names too
   (the Gates window's "Model names in a private task", on unless turned off): each model of the library is one
   token ("[M1]", sealed as its model_id) however an answer writes it (model_id, loader name, file name in a text,
-  card name), its own entry loses what tells it apart and keeps type, base model, the author's settings and the
+  card name; leaving `"ways"` ref `details` intact while still masking `user_note`), its own entry loses what tells it apart and keeps type, base model, the author's settings and the
   user's note for the AI (`ai_note`, set in the model editor, `note_for_ai` in the tools); `expand` writes a
   model token back as the model_id, as the loader's name among a node's values, as the card's name inside the AI's words.
   `web/modules/ui_ai_privacy.js` is the header's chip, the switch in its ⋯ and what the model tokens stand for.
@@ -521,9 +521,9 @@ covered by the `styles.css` manifest.
   step is drawn again only when it changed or the language did (`syncRows`), so a scrolled diagram or strip and
   half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box, made
   once per task and docked at the foot of its column (in view while the timeline scrolls; a task
-  opens at its newest step, and `ui_ai_newest.js` is the button back to it over the box): a growing input, the gallery and materials buttons beside it, and
+  opens at its newest step, and `ui_ai_newest.js` is the button back to it over the box): a growing input, `+` (`ui_ai_plus.js`), the gallery and materials buttons beside it, and
   over it what the message carries (`ui_ai_tray.js`: pictures to mark up with
-  `ui_ai_marker.js` or leave out, chips of what "@" names), and over that what the task needs or
+  `ui_ai_marker.js` or leave out, and chips of attached or `@`-named items each with an optional one-line note box whose placeholder switches in privacy mode), and over that what the task needs or
   does now (`ui_ai_now.js`: a gate to allow, a run's progress with stop, the AI's open question
   to answer there; with none of that, `ui_ai_call.js`'s lines to paste into the AI's chat once it
   has stopped, which `ai_call_lines.js` picks by what waits for the AI: a run it was not told has
@@ -532,15 +532,15 @@ covered by the `styles.css` manifest.
   another window when the AI asks, a step waits for their OK or a run ended that the AI was not told of (`ai_notice.js`
   reads that from the "anomalous.ai_task" event, `tests/ai_notice.mjs`); off until turned on in a task's ⋯ or on the
   page of a waiting task, kept in the browser. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
-  output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `ui_ai_mention.js` holds those refs
+  output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `web/modules/ai_chat_plus.js` holds the DOM-free logic (favourites-first model sorting, per-ref note sanitization and serialization; `tests/ai_chat_plus.mjs`); the ways to point at are `ai_toolbox_data.js` `wayItems` (usable and turned on only, read from `GET /anomalous/ai_blocks` and kept a minute by `fetchUsableWays`). `web/modules/ui_ai_plus.js` is the "+" menu (models with favourites first, usable active ways, shared `ui_ai_start_from.openBuildRouteWindow` dialog, and `@` hint; reads with `ui_lifecycle.createViewScope`). `ui_ai_mention.js` holds those refs
   and gives it "@" (the task's pictures, the gallery's newest and those its search finds,
-  combos, models, workflows, prompts, node packs and node types from the materials picker's
-  data) and "/" (`ui_ai_commands.js`: stop, undo, side views, new task, canvas mode, words to
+  combos, models, active usable ways, workflows, prompts, node packs and node types from the materials picker's
+  data) and "/" (`ui_ai_commands.js`: stop, undo, side views, new task, build a new one via shared dialog, canvas mode, words to
   fill in); `ui_ai_gallery_pick.js` is the gallery grid pictures are attached from.
-  `api/ai_message_refs.py` checks what the message names and gives each to the AI
-  with the message (in full, pictures attached; get_toolbox shares its `lookup`),
+  `api/ai_message_refs.py` checks what the message names (`models`, `combos`, `workflows`, `prompts`, `nodes`, `packs`, `ways`, `pictures`, plus optional per-ref `note` up to 200 chars -> `user_note`) and gives each to the AI
+  with the message (in full — `lookup("ways", ...)` gives name, title, about and `reference_blocks.call` —, pictures attached; get_toolbox shares its `lookup`),
   `tests/test_ai_message_refs.py`. `ui_ai_step_body.js` is what a timeline step says under its
-  title (the user's own steps with whether the AI has them, a decision's card, the AI's note, a
+  title (the user's own steps with attached non-picture ref chips and user notes beside their names, pictures, whether the AI has them, a decision's card, the AI's note, a
   skill fetched and, under a run, the skills fetched before it (`ai_task_view.skillsBefore`), what
   happened outside Anomalous). `api/ai_outside.py` is that last: when the AI calls (never in the
   background) it looks at the top of the output and input folders, by the files' own times, for
@@ -625,7 +625,7 @@ covered by the `styles.css` manifest.
   holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get; closing calls `onClose` via `ui_ai_connect.js` `aiWindow` to clean up reads), which starts a
   prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` `startTask`;
   a card's tags name only what Anomalous makes sure of. For "say" and "private", `web/modules/ui_ai_start_from.js` draws
-  the leading "Start from" row (four pills sharing `.anomalous-ai-start-pills`/`.anomalous-ai-start-pill` in `web/styles/55-ai-starters.css` with `ui_ai_preset_sheet.js`: new text-to-image route via `GET /anomalous/ai_routes` & `POST /anomalous/ai_tasks/{id}/route`, open canvas checking `preset_runs.js` `openTabs` & active `LoadImage` nodes, saved workflow card marked in private mode, or AI picks) backed by `web/modules/ai_start_from.js` (DOM-free selection, validation, and first-message rules; `tests/ai_start_from.mjs`). `ui_ai_preset_sheet.js` is the fields of "Run my preset": a
+  the leading "Start from" row and also exports `openBuildRouteWindow` + shared `newRoutePart` so both the starter sheets and the message box's "+" / `/build` command share the exact same "Build a new one (text to image)" fields and `localStorage` key (four pills sharing `.anomalous-ai-start-pills`/`.anomalous-ai-start-pill` in `web/styles/55-ai-starters.css` with `ui_ai_preset_sheet.js`: new text-to-image route via `GET /anomalous/ai_routes` & `POST /anomalous/ai_tasks/{id}/route`, open canvas checking `preset_runs.js` `openTabs` & active `LoadImage` nodes, saved workflow card marked in private mode, or AI picks) backed by `web/modules/ai_start_from.js` (DOM-free selection, validation, and first-message rules; `tests/ai_start_from.mjs`). `ui_ai_preset_sheet.js` is the fields of "Run my preset": a
   saved workflow or an open canvas, the presets as chips a press lines up to run, each so many times, and what to
   change (`preset_run_list.js`: that list, what of it is kept in the browser for "the same again", the print of a
   canvas; `tests/preset_run_list.mjs`). With nothing to change `preset_runs.js` runs the list with no AI: the saved

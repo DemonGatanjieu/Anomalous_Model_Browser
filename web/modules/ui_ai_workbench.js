@@ -225,7 +225,7 @@ function renderTask() {
             }, { task: () => state.task, commands: () => taskCommands({ task: () => state.task, undo: () => undoAll(state.task), newTask,
                 side: view => pickView(state.stage, view, false, state.task, renderTask, refresh), changed: refresh }),
             mark: (image, sent) => openMarker(image, task.id, () => { sent(); void refresh(); }),
-            openMaterials: () => pickView(state.stage, 'toolbox', false, state.task, renderTask, () => void refresh()) }),
+            openMaterials: () => pickView(state.stage, 'toolbox', false, state.task, renderTask, () => void refresh()), changed: () => void refresh() }),
             seen: (task.steps || []).length, newest: newestButton(box), now: nowStrip(), dock: el('div', 'anomalous-ai-dock'),
         };
         view.dock.append(view.newest, view.now, view.message); // at the foot of the column, in view while the timeline scrolls

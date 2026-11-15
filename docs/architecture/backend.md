@@ -262,13 +262,17 @@ A call's arguments pass `ai_sealed.expand` first (tokens back to their texts, fo
 the record keeps the tokens), and every tools/call result passes `ai_privacy.guard` last, after
 the run's pictures, the user's messages and the outside check were added: for a private task
 (ai_privacy.py) image content items are removed and the answer says why, then `ai_sealed.mask`
-turns prompt text and picture names into tokens (a node's STRING inputs by ComfyUI's node list,
+turns prompt text, picture names and marked words (`ai_panels.leave_message` seals ⟦...⟧ inside both
+`text` and each ref's `note` using the task's `Seals`) into tokens (a node's STRING inputs by ComfyUI's node list,
 prompt fields, the names and tags the user gave their combos, workflow cards and saved prompts
-(`NAMED`), picture file names, and any text already sealed, also in the text content).
-While `ai_privacy.hides_models()` (user/anomalous/ai_privacy.json `models`, true unless the user set false),
-`ai_sealed_models.hide` runs between the two: every form of a library model (the materials catalog's
-list, read at most every 15 s) becomes that model's "[M#]" token, sealed as its model_id; a
-model's own entry (a dict with `model_id`) drops name, file, folder, links and hash; a model file
+(`NAMED`), `description`/`user_notes` on any `model_id` dict (`_walk` merges `TOOL_KEYS["get_model"]`
+so `"models"` message refs seal them too), picture file names, and any text already sealed, also in
+the text content). While `ai_privacy.hides_models()` (user/anomalous/ai_privacy.json `models`,
+true unless the user set false), `ai_sealed_models.hide` runs between the two: every form of a
+library model (the materials catalog's list, read at most every 15 s) becomes that model's "[M#]"
+token, sealed as its model_id; `"ways"` ref `details` and `id` stay intact against model-name
+collisions while `user_note` and `said_as` still pass through; a model's own entry (a dict with
+`model_id`) drops name, file, folder, links and hash; a model file
 the library does not have is a token of its own. A card name of one plain ASCII word is replaced
 only where a name stands (`NAME_KEYS`), never inside a sentence. `expand` writes a model token as
 the model_id, as the loader's name under a node's values (`WIDGET_KEYS`), and as the card's name
@@ -430,12 +434,15 @@ adds `_task_canvas: {mode, tab, title}` to the page actions in `TAB_ACTIONS` and
 an outcome reports (`remember`); `tell` adds `canvas_tab` to the answer once when a tab was made.
 `download_missing` carries this context too. A recorded tab that is missing or cannot be
 activated fails on the page before executing the action, rather than using another workflow.
-Message `@` references resolve combo/workflow names with the internal `exact_name` filter
-in `mcp_tools` before limiting results; public list-tool searches remain fuzzy.
+Message `@` and `+` references (`api/ai_message_refs.py`: `models`, `combos`, `workflows`, `prompts`,
+`nodes`, `packs`, `ways`, `pictures`, with an optional stripped `note` up to 200 chars delivered
+as `user_note` without overwriting `nodes`/`packs` `note`, and `lookup("ways", name)` returning
+`{name, title, about, call}` from `reference_blocks`) resolve combo/workflow names with the internal
+`exact_name` filter in `mcp_tools` before limiting results; public list-tool searches remain fuzzy.
 The default mode is in `anomalous/ai_canvas.json` (GET/POST `/anomalous/ai_gates` `canvas_tab`),
 a task's own in its `canvas` record (POST `/anomalous/ai_tasks/{id}` `{canvas}`).
 
-The "say" and "private" starter sheets read `GET /anomalous/ai_routes` (`mcp_routes.main_models` and
+The "say" and "private" starter sheets and the message box's "+" / `/build` window read `GET /anomalous/ai_routes` (`mcp_routes.main_models` and
 `ways_for`: only the models use picture draws with, `mcp_canvas_edit.draws_picture`, and without the saved workflow `card`) when opened with
 "Build a new one" available; on Start, `POST /anomalous/ai_tasks/{id}/route` (loopback-only via
 `local_guard`) runs `mcp_routes.apply` in a worker thread to pick `[first, second?]` without

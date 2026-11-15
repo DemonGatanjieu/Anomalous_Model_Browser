@@ -1,13 +1,14 @@
 /**
  * The "/" commands of the AI workbench's message box (ui_ai_mention.js). Most act at once and need
  * no AI (Anomalous cannot wake one): stop the task's run, undo its changes on the canvas, show a
- * view of the side column, start a new task, choose where the AI works on the canvas. A few fill
+ * view of the side column, start a new task, build a new text-to-image workflow, choose where the AI works on the canvas. A few fill
  * in words to send (run it again, explain, go on), to change before sending.
  * `ctx`: {task(), undo(), side(view), newTask(), changed()}.
  */
 
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
+import { openBuildRouteWindow } from './ui_ai_start_from.js';
 
 async function post(url, body) {
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
@@ -39,6 +40,7 @@ export function taskCommands(ctx) {
         { id: 'tab', icon: 'copy', run: act(() => post(base, { canvas: 'new' })) },
         { id: 'canvas', icon: 'page', run: act(() => post(base, { canvas: 'current' })) },
         { id: 'new', icon: 'plus', run: ctx.newTask },
+        { id: 'build', icon: 'workflows', run: () => openBuildRouteWindow({ task: ctx.task, built: ctx.changed }) },
         { id: 'rerun', icon: 'pulse', fill: true },
         { id: 'explain', icon: 'chat', fill: true },
         { id: 'go', icon: 'arrowRight', fill: true },

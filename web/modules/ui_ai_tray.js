@@ -5,6 +5,7 @@
  * nodes…) as chips with ×. Nothing shows while nothing is attached.
  */
 
+import { MAX_REF_NOTE, refNote } from './ai_chat_plus.js';
 import { translate as t } from './locales.js';
 import { icon } from './ui_ai_icons.js';
 import { thumbUrl } from './ui_ai_gallery_pick.js';
@@ -50,12 +51,38 @@ function picture(ref, ctx) {
 
 function chip(ref, ctx) {
     const node = el('span', 'anomalous-ai-mention-chip');
-    node.append(ctx.lead(ref.item), el('span', 'anomalous-ai-mention-chip-name', ref.label),
+    const note = el('input', 'anomalous-ai-mention-chip-note');
+    const hint = t(ctx.privateTask?.() ? 'aiRefNotePrivate' : 'aiRefNote');
+    note.type = 'text';
+    note.maxLength = MAX_REF_NOTE;
+    note.value = refNote(ref.note);
+    note.placeholder = hint;
+    note.dataset.refKey = `${ref.kind}\0${ref.id}`;
+    note.dataset.refLabel = ref.label;
+    note.setAttribute('aria-label', `${ref.label}: ${hint}`);
+    note.addEventListener('keydown', (event) => {
+        event.stopPropagation();
+        if (event.key === 'Enter' && !event.isComposing) {
+            event.preventDefault();
+            ctx.focusField?.();
+        }
+    });
+    note.addEventListener('input', () => { ref.note = refNote(note.value); });
+    node.append(ctx.lead(ref.item), el('span', 'anomalous-ai-mention-chip-name', ref.label), note,
         tool('anomalous-ai-mention-chip-x', 'close', t('aiMentionRemove'), () => ctx.remove(ref)));
     return node;
 }
 
-/** `refs` into `tray`. `ctx`: {remove(ref), mark(ref) (or none), lead(item) (a chip's small picture or icon)}. */
+/** Updates existing chip note placeholders in place when privacy mode toggles. */
+export function syncTrayPrivacy(tray, isPrivate) {
+    const hint = t(isPrivate ? 'aiRefNotePrivate' : 'aiRefNote');
+    for (const note of tray.querySelectorAll('.anomalous-ai-mention-chip-note')) {
+        note.placeholder = hint;
+        note.setAttribute('aria-label', `${note.dataset.refLabel || ''}: ${hint}`);
+    }
+}
+
+/** `refs` into `tray`. `ctx`: {remove(ref), mark(ref) (or none), lead(item), privateTask(), focusField()}. */
 export function drawTray(tray, refs, ctx) {
     const pictures = refs.filter(ref => ref.kind === 'pictures');
     const others = refs.filter(ref => ref.kind !== 'pictures');

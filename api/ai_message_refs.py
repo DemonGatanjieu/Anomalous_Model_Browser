@@ -8,9 +8,10 @@ guessing which "that LoRA" is."""
 from . import ai_pictures
 from .mcp_tools import ToolError, _resolve_image
 
-KINDS = ("models", "combos", "workflows", "prompts", "nodes", "packs", "pictures")
+KINDS = ("models", "combos", "workflows", "prompts", "nodes", "packs", "ways", "pictures")
 MAX_REFS = 12
 MAX_NAME = 300
+MAX_NOTE = 200
 
 
 class RefsError(ValueError):
@@ -18,7 +19,8 @@ class RefsError(ValueError):
 
 
 def clean(refs):
-    """[{kind, id, label}] from the page: known kinds, text names, each thing once, at most MAX_REFS."""
+    """[{kind, id, label, note?}] from the page: known kinds, text names and optional note (up to
+    MAX_NOTE chars, omitted when empty), each thing once, at most MAX_REFS."""
     if refs in (None, []):
         return []
     if not isinstance(refs, list) or len(refs) > MAX_REFS:
@@ -30,15 +32,19 @@ def clean(refs):
         name = ref.get("id")
         if not isinstance(name, str) or not name.strip() or len(name) > MAX_NAME:
             raise RefsError(f"refs: an id is text of up to {MAX_NAME} characters")
+        note = ref.get("note")
+        if note is not None and not isinstance(note, str):
+            raise RefsError(f"refs: a note is text of up to {MAX_NOTE} characters")
+        note = (note or "").strip()[:MAX_NOTE]
         label = str(ref.get("label") or name).strip()[:MAX_NAME]
-        item = {"kind": ref["kind"], "id": name.strip(), "label": label}
+        item = {"kind": ref["kind"], "id": name.strip(), "label": label, **({"note": note} if note else {})}
         if not any(have["kind"] == item["kind"] and have["id"] == item["id"] for have in out):
             out.append(item)
     return out
 
 
 def lookup(kind, name):
-    """A combo, workflow, prompt or model as the AI's tools give it, or None when it is gone."""
+    """A combo, workflow, prompt, model or way as the AI's tools give it, or None when gone."""
     from . import mcp_tools
 
     if kind in ("combos", "workflows"):
@@ -54,6 +60,11 @@ def lookup(kind, name):
         except ToolError:
             return None
         return found[0] if isinstance(found, tuple) else found  # without its cover picture
+    if kind == "ways":
+        from . import reference_blocks
+
+        block = reference_blocks.BLOCKS.get(name)
+        return block and {"name": name, "title": block["title"]["en"], "about": block["about"]["en"], "call": reference_blocks.call(name)}
     return None
 
 
@@ -63,6 +74,8 @@ def message_of(step):
     items, files = [], []
     for ref in step.get("refs") or []:
         item = {"kind": ref["kind"], "id": ref["id"], "said_as": f"@{ref['label']}"}
+        if ref.get("note"):
+            item["user_note"] = ref["note"]
         if ref["kind"] == "pictures":
             try:
                 rel, path = _resolve_image(ref["id"])[:2]
@@ -82,7 +95,7 @@ def message_of(step):
             else:
                 item["details"] = found
         items.append(item)
-    out = {"refs": items, "refs_note": "What the user's @ names in their text point at, and the pictures they attached, exactly."}
+    out = {"refs": items, "refs_note": "What the user's @ names or attached items point at, pictures attached, and each item's optional user_note for what it is for."}
     if files:
         out["_pictures"] = files
     return out

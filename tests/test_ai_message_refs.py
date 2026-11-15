@@ -77,6 +77,36 @@ class RefsTests(unittest.TestCase):
                 self.assertIsNone(ai_message_refs.lookup(kind, 'missing'))
             self.assertEqual(ai_message_refs.lookup('workflows', 'unnamed.json')['name'], 'unnamed.json')
 
+    def test_ways_and_ref_notes_reach_the_ai(self):
+        from api import reference_blocks
+
+        self.assertIn("ways", ai_message_refs.KINDS)
+        self.assertIsNone(ai_message_refs.lookup("ways", "no_such_way"))
+        with self.assertRaises(ai_message_refs.RefsError):
+            ai_message_refs.clean([{"kind": "ways", "id": "upscale", "note": 123}])
+        cleaned = ai_message_refs.clean([
+            {"kind": "ways", "id": "upscale", "label": "放大", "note": "   "},
+            {"kind": "nodes", "id": "KSampler", "label": "KSampler", "note": "  " + ("x" * 250) + "  "},
+        ])
+        self.assertNotIn("note", cleaned[0])
+        self.assertEqual(len(cleaned[1]["note"]), ai_message_refs.MAX_NOTE)
+
+        step = ai_panels.leave_message(self.task, "", [
+            {"kind": "ways", "id": "upscale", "label": "放大", "note": "  final pass 1.5x  "},
+            {"kind": "nodes", "id": "KSampler", "label": "KSampler", "note": "use dpmpp_2m"},
+        ])
+        result = ai_panels.attach_pending(ok({}), "A", task_id=self.task)
+        message = result["structuredContent"]["user_messages"][0]
+        self.assertIn("user_note", message["refs_note"])
+        by_kind = {item["kind"]: item for item in message["refs"]}
+        self.assertEqual(by_kind["ways"]["details"]["name"], "upscale")
+        self.assertTrue(by_kind["ways"]["details"]["title"])
+        self.assertTrue(by_kind["ways"]["details"]["about"])
+        self.assertEqual(by_kind["ways"]["details"]["call"], reference_blocks.call("upscale"))
+        self.assertEqual(by_kind["ways"]["user_note"], "final pass 1.5x")
+        self.assertIn("find_nodes", by_kind["nodes"]["note"])
+        self.assertEqual(by_kind["nodes"]["user_note"], "use dpmpp_2m")
+
 
 if __name__ == "__main__":
     unittest.main()

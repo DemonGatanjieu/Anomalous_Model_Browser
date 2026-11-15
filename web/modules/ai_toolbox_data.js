@@ -171,6 +171,30 @@ export function wayTitle(name, locale) {
     return title?.[locale] || title?.en || title?.zh || name;
 }
 
+/**
+ * The ways of GET /anomalous/ai_blocks that can run on this ComfyUI (`usable`) and are turned on (`on`),
+ * as things to point at ("@", the message box's "+") in `locale`: nothing that fails when chosen.
+ */
+export function wayItems(blocks, locale = 'en') {
+    const words = value => value?.[locale] || value?.en || value?.zh || '';
+    return (blocks || []).filter(block => block?.usable && block.on && block.name).map(block => ({
+        kind: 'ways', id: block.name, title: words(block.title) || block.name, about: words(block.about), job: block.job || '',
+        haystack: lower([block.name, block.title?.zh, block.title?.en, block.about?.zh, block.about?.en, block.job].join(' ')),
+    }));
+}
+
+let keptWays = null; // { at, locale, items }
+
+/** The usable, turned-on ways in `locale`, kept a minute like the catalogue ("@" and "+" open often). */
+export async function fetchUsableWays(locale, { fetcher = globalThis.fetch, signal } = {}) {
+    if (keptWays && keptWays.locale === locale && Date.now() - keptWays.at < KEEP_MS) return keptWays.items;
+    const response = await fetcher('/anomalous/ai_blocks', signal ? { signal } : undefined);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    keptWays = { at: Date.now(), locale, items: wayItems(data.blocks || [], locale) };
+    return keptWays.items;
+}
+
 /** Reads the catalogue ahead, so the picker opens with it; errors wait for the window to say them. */
 export function prefetchToolbox() {
     loadCatalog().catch(() => {});

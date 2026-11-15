@@ -359,9 +359,16 @@ def leave_message(task_id, text, refs=None, now=None):
     except ai_message_refs.RefsError as error:
         raise PanelError(str(error))
     text = _text(text, MAX_MESSAGE, "text", not refs)
-    if ai_sealed.MARKED.search(text):  # words the user marked to hide reach the AI as tokens
-        seals = ai_sealed.Seals(task_id)
+    if ai_sealed.MARKED.search(text) or any(ai_sealed.MARKED.search(ref.get("note", "")) for ref in refs):
+        seals = ai_sealed.Seals(task_id)  # words the user marked to hide reach the AI as tokens
         text = ai_sealed.seal_marked(seals, text)
+        for ref in refs:
+            if ai_sealed.MARKED.search(ref.get("note", "")):
+                sealed = ai_sealed.seal_marked(seals, ref["note"]).strip()[:ai_message_refs.MAX_NOTE]
+                if sealed:
+                    ref["note"] = sealed
+                else:
+                    ref.pop("note", None)
         seals.save()
     now = time.time() if now is None else now
     step = {"id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "user_message", "kind": "user", "ok": True,

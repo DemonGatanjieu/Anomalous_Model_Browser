@@ -11,8 +11,8 @@ import { translate as t } from './locales.js';
 const OPEN = '\u27e6';
 const CLOSE = '\u27e7';
 
-/** The button for text field `field`; `say(text)` tells the user why nothing was marked. */
-export function hideButton(field, say) {
+/** The button for text field (or getter returning the last-focused field) `target`; `say(text)` tells the user why nothing was marked. */
+export function hideButton(target, say) {
     const node = document.createElement('button');
     node.type = 'button';
     node.className = 'anomalous-ai-hide-mark';
@@ -20,6 +20,8 @@ export function hideButton(field, say) {
     node.title = t('aiHideMarkHint');
     node.addEventListener('mousedown', event => event.preventDefault()); // the field keeps its selection
     node.onclick = () => {
+        const field = typeof target === 'function' ? target() : target;
+        if (!field) return;
         const picked = field.value.slice(field.selectionStart, field.selectionEnd);
         if (!picked.trim() || picked.includes(OPEN) || picked.includes(CLOSE)) {
             say?.(t('aiHideMarkNone'));

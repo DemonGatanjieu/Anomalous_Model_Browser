@@ -93,6 +93,8 @@ def hide(value, seals):
 
     def walk(item, key=""):
         if isinstance(item, dict):
+            if item.get("kind") == "ways" and isinstance(item.get("details"), dict):
+                return {name: walk(part, name) if name in ("said_as", "user_note") else part for name, part in item.items()}
             entry = isinstance(item.get("model_id"), str)
             return {text(name, "") if isinstance(name, str) else name: walk(part, name)
                     for name, part in item.items() if not (entry and name in ENTRY_DROPS)}

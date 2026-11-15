@@ -11,19 +11,20 @@
  * ↑↓ move, Enter or Tab take, Esc closes; the pointer works as well.
  */
 
-import { translate as t } from './locales.js';
-import { keptCatalog, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
+import { resolveLocale, translate as t } from './locales.js';
+import { serializeRefs } from './ai_chat_plus.js';
+import { fetchUsableWays, keptCatalog, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
 import { coverUrl } from './ui_ai_toolbox_cards.js';
 import { sourceBadge } from './ui_ai_toolbox_icons.js';
 import { packItems, pageNodes } from './ui_ai_toolbox.js';
 import { icon } from './ui_ai_icons.js';
 import { galleryPictures, pictureItem, thumbUrl } from './ui_ai_gallery_pick.js';
-import { drawTray } from './ui_ai_tray.js';
+import { drawTray, syncTrayPrivacy } from './ui_ai_tray.js';
 
 const SHOWN = 8;
 const RECENT = 30; // the gallery's newest pictures "@" offers
 const SEARCH_MS = 250;
-const ORDER = ['pictures', 'combos', 'models', 'workflows', 'prompts', 'packs', 'nodes'];
+const ORDER = ['pictures', 'combos', 'models', 'ways', 'workflows', 'prompts', 'packs', 'nodes'];
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -49,17 +50,17 @@ function pictures(task) {
 }
 
 /** Everything "@" can name for `task`, in the order a tie is shown. */
-function everything(task) {
+function everything(task, waysLoaded) {
     prefetchToolbox();
     const nodes = pageNodes();
     const packs = packItems(nodes).map(pack => ({ ...pack, title: pack.source.label || pack.id, haystack: `${pack.id} ${pack.source.label || ''}`.toLowerCase() }));
     const catalog = keptCatalog() || [];
-    const byKind = { pictures: pictures(task), packs, nodes };
+    const byKind = { pictures: pictures(task), ways: waysLoaded || [], packs, nodes };
     for (const item of catalog) (byKind[item.kind] ||= []).push(item);
     return ORDER.flatMap(kind => byKind[kind] || []);
 }
 
-function lead(item) {
+export function lead(item) {
     const box = el('span', 'anomalous-ai-mention-lead');
     const url = item.kind === 'pictures' ? thumbUrl(item.image) : ['combos', 'workflows', 'models'].includes(item.kind) ? coverUrl(item) : '';
     if (url) {
@@ -72,13 +73,13 @@ function lead(item) {
     } else if (item.kind === 'nodes' || item.kind === 'packs') {
         box.append(sourceBadge(item.source, 22));
     } else {
-        box.append(icon(item.kind === 'packs' ? 'nodes' : item.kind, 15));
+        box.append(icon({ packs: 'nodes', ways: 'blocks' }[item.kind] || item.kind, 15));
     }
     return box;
 }
 
-const kindWords = item => [item.kind === 'pictures' ? t(item.gallery ? 'aiMentionGallery' : 'aiMentionPicture') : t(`aiToolboxKind_${item.kind}`),
-    item.kind === 'models' ? item.type : item.kind === 'prompts' && item.source ? t(`aiTbPromptFrom_${item.source}`) : ''].filter(Boolean).join(' · ');
+export const kindWords = item => [item.kind === 'pictures' ? t(item.gallery ? 'aiMentionGallery' : 'aiMentionPicture') : t(`aiToolboxKind_${item.kind}`),
+    item.kind === 'models' ? item.type : item.kind === 'prompts' && item.source ? t(`aiTbPromptFrom_${item.source}`) : item.kind === 'ways' ? item.about : ''].filter(Boolean).join(' · ');
 
 /**
  * "@" and "/" for `field` in the message box `box`, what they name drawn into `tray`. `source`:
@@ -98,6 +99,24 @@ export function mentions(field, box, source, tray) {
     let recent = null; // the gallery's newest pictures, read when "@" first opens
     let found = { query: null, items: [] }; // what the gallery's search found for a query
     let timer = null;
+    let ways = null; // usable and enabled ways, read when "@" first opens
+    let waysAbort = null;
+
+    function waysList() {
+        if (ways === null && !waysAbort) {
+            const controller = new AbortController();
+            waysAbort = controller;
+            fetchUsableWays(resolveLocale(), { signal: controller.signal }).then((loaded) => {
+                if (controller.signal.aborted) return;
+                ways = loaded;
+                waysAbort = null;
+                if (open?.mode === 'at') update();
+            }).catch((error) => {
+                if (error?.name !== 'AbortError') waysAbort = null;
+            });
+        }
+        return ways || [];
+    }
 
     /** The gallery's pictures for `query`: the newest at once, what its search finds once it answers. */
     function gallery(query) {
@@ -123,14 +142,23 @@ export function mentions(field, box, source, tray) {
 
     const close = () => {
         open = null;
+        waysAbort?.abort();
+        waysAbort = null;
         list.hidden = true;
         list.replaceChildren();
     };
 
-    function drawChips() {
+    function focusNoteOf(key) {
+        const target = [...tray.querySelectorAll('.anomalous-ai-mention-chip-note')].find(node => node.dataset.refKey === key);
+        target?.focus();
+    }
+
+    function drawChips(focusKey = '') {
         box.dispatchEvent(new Event('anomalous-refs'));
         drawTray(tray, live(), {
             lead,
+            privateTask: () => Boolean(source.task?.()?.private),
+            focusField: () => field.focus(),
             remove: (ref) => {
                 drop(ref);
                 field.focus();
@@ -138,6 +166,7 @@ export function mentions(field, box, source, tray) {
             // Marked up, the picture goes to the AI with its marks: not with this message too.
             mark: source.mark ? ref => source.mark(ref.item.image, () => drop(ref)) : null,
         });
+        if (focusKey) focusNoteOf(focusKey);
     }
 
     function drop(ref) {
@@ -161,7 +190,7 @@ export function mentions(field, box, source, tray) {
         const before = `${field.value.slice(0, open.start)}@${label} `;
         field.value = before + after.replace(/^\S*/, '').trimStart();
         field.setSelectionRange(before.length, before.length);
-        if (!refs.some(ref => ref.kind === item.kind && ref.id === item.id)) refs.push({ kind: item.kind, id: item.id, label, item });
+        if (!refs.some(ref => ref.kind === item.kind && ref.id === item.id)) refs.push({ kind: item.kind, id: item.id, label, item, note: '' });
         close();
         drawChips();
     }
@@ -205,7 +234,7 @@ export function mentions(field, box, source, tray) {
             const words = query.toLowerCase();
             items = source.commands().filter(command => !words || command.name.toLowerCase().includes(words) || command.id.includes(words));
         } else {
-            const all = everything(source.task());
+            const all = everything(source.task(), waysList());
             const { newest, searched } = gallery(query);
             const known = new Set(all.filter(item => item.kind === 'pictures').map(item => item.id));
             const matched = searchItems([...all, ...newest.filter(item => !known.has(item.id))], query);
@@ -245,12 +274,17 @@ export function mentions(field, box, source, tray) {
             }
             return false;
         },
-        refs: () => live().map(({ kind, id, label }) => ({ kind, id, label })),
-        add(item) {
-            if (refs.some(ref => ref.kind === item.kind && ref.id === item.id)) return;
-            refs.push({ kind: item.kind, id: item.id, label: item.title, item, attached: true });
-            drawChips();
+        refs: () => serializeRefs(live()),
+        add(item, { focusNote = false } = {}) {
+            const key = `${item.kind}\0${item.id}`;
+            if (!refs.some(ref => ref.kind === item.kind && ref.id === item.id)) {
+                refs.push({ kind: item.kind, id: item.id, label: item.title, item, attached: true, note: '' });
+                drawChips(focusNote ? key : '');
+                return;
+            }
+            if (focusNote) focusNoteOf(key);
         },
+        syncPrivacy: () => syncTrayPrivacy(tray, Boolean(source.task?.()?.private)),
         pictures: () => live().filter(ref => ref.kind === 'pictures').length,
         count: () => live().length,
         clear() {

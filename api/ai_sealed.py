@@ -139,11 +139,12 @@ def _walk(value, seals, info, keys):
         return value
     out = {}
     node_type = value.get("class_type") or value.get("type")
+    row_keys = keys | TOOL_KEYS["get_model"] if isinstance(value.get("model_id"), str) else keys
     for key, item in value.items():
         if key in ("settings", "inputs", "widgets") and isinstance(item, dict) and isinstance(node_type, str):
             out[key] = {name: seals.seal(text) if isinstance(text, str) and _sealable(text) and _text_input(info, node_type, name, text)
                         else _walk(text, seals, info, keys) for name, text in item.items()}
-        elif key in keys and (isinstance(item, str) or isinstance(item, list) and all(isinstance(text, str) for text in item)):
+        elif key in row_keys and (isinstance(item, str) or isinstance(item, list) and all(isinstance(text, str) for text in item)):
             out[key] = seal_text(seals, item)
         elif key == "canvas_tab" and isinstance(item, dict) and isinstance(item.get("name"), str):
             out[key] = {**item, "name": seal_text(seals, item["name"])}  # its note names the tab too: hidden once this is sealed

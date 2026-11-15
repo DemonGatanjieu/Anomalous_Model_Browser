@@ -300,6 +300,44 @@ class SealedTests(unittest.TestCase):
         ai_privacy.set_private(self.task, True)
         self.assertEqual(mcp_task_tools.begin_task({"client": "test", "task": self.task}, "private")["privacy"], ai_privacy.NOTE)
 
+    def test_ref_notes_and_ways_and_model_refs_follow_privacy_mode(self):
+        from api import mcp_tools
+
+        lib = [*LIBRARY, {"id": "loras:0:upscale.safetensors", "name": "upscale", "file": "upscale.safetensors"}]
+        model_card = {
+            "model_id": LORA, "name": "Canarycard Pose", "file": "canarylora v2.safetensors", "folder": "canaryfolder",
+            "civitai_name": "Canarycard Civitai", "version": "v2", "sha256": "canarysha", "civitai_url": "https://civitai.com/models/1",
+            "type": "loras", "base_model": "Anima", "note_for_ai": "character LoRA",
+            "description": "canarypos author bio", "user_notes": "canaryneg user note", "trigger_words": ["canarytrigger"],
+        }
+        step = ai_panels.leave_message(self.task, "", [
+            {"kind": "models", "id": LORA, "label": "Canarycard Pose", "note": "base \u27e6canaryecho\u27e7 in canaryfile_00001_.png"},
+            {"kind": "ways", "id": "upscale", "label": "Upscale", "note": "apply after \u27e6canaryneg\u27e7 with canarylora v2.safetensors"},
+        ])
+        self.assertRegex(step["refs"][0]["note"], r"^base \[P\d+\] in canaryfile_00001_\.png$")
+        self.assertRegex(step["refs"][1]["note"], r"^apply after \[P\d+\] with canarylora v2\.safetensors$")
+        self.assertNotIn("canaryecho", json.dumps(step))
+
+        with mock.patch.object(ai_sealed_models, "_library", return_value=lib), \
+                mock.patch.object(mcp_tools, "get_model", return_value=(model_card, [])):
+            got = rpc("tools/call", {"name": "get_answers", "arguments": {"task": self.task}}, "get_answers")
+
+        self.assertFalse(got["result"].get("isError"), got)
+        dumped = json.dumps(got, ensure_ascii=False)
+        for secret in ("canaryecho", "canaryneg", "canarypos", "canarytrigger", "canarylora", "Canarycard", "canaryfolder", "canaryfile_00001_", "canarysha"):
+            self.assertNotIn(secret, dumped)
+        msg = next(item for item in got["result"]["structuredContent"]["messages"] if "refs" in item)
+        refs = {ref["kind"]: ref for ref in msg["refs"]}
+        self.assertEqual(refs["models"]["details"]["note_for_ai"], "character LoRA")
+        self.assertRegex(refs["models"]["id"], r"^\[M\d+\]$")
+        self.assertRegex(refs["models"]["details"]["description"], r"^\[P\d+\]$")
+        self.assertRegex(refs["models"]["details"]["user_notes"], r"^\[P\d+\]$")
+        self.assertEqual(ai_sealed.expand(self.task, refs["models"]["user_note"]), "base canaryecho in canaryfile_00001_.png")
+        self.assertEqual(refs["ways"]["details"]["name"], "upscale")
+        self.assertEqual(refs["ways"]["details"]["call"], "add_nodes(use='upscale')")
+        self.assertEqual(ai_sealed.expand(self.task, {"m": refs["ways"]["user_note"]}),
+                         {"m": "apply after canaryneg with Canarycard Pose"})
+
 
 if __name__ == "__main__":
     unittest.main()

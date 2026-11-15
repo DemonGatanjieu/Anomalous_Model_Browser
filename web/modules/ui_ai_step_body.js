@@ -9,7 +9,9 @@
  */
 
 import { resolveLocale, translate as t } from './locales.js';
+import { wayTitle } from './ai_toolbox_data.js';
 import { modelStem } from './ai_start_from.js';
+import { icon } from './ui_ai_icons.js';
 import { skillsBefore } from './ai_task_view.js';
 import { entrySummary } from './activity_log.js';
 import { changeNodeId } from './activity_diff.js';
@@ -32,6 +34,24 @@ function el(tag, className, text) {
 
 const said = text => el('div', 'anomalous-ai-user-text', text);
 const words = value => (resolveLocale() === 'zh' ? value?.zh : value?.en) || value?.en || value?.zh || '';
+const REF_ICON = { packs: 'nodes', ways: 'blocks' };
+
+/** Non-picture refs carried by a user message, with each ref's optional user note beside its name. */
+function namedRefs(step, sealed) {
+    const refs = (step.refs || []).filter(ref => ref.kind !== 'pictures');
+    if (!refs.length) return [];
+    const row = el('div', 'anomalous-tb-chips is-static anomalous-ai-step-refs');
+    const locale = resolveLocale();
+    for (const ref of refs) {
+        const chip = el('span', `anomalous-tb-chip is-${ref.kind}`);
+        const titled = ref.kind === 'ways' ? wayTitle(ref.id, locale) : '';
+        const label = titled && titled !== ref.id ? titled : (ref.label || ref.id);
+        chip.append(icon(REF_ICON[ref.kind] || ref.kind, 13), el('span', 'anomalous-tb-chip-name', label));
+        if (ref.note) chip.append(el('span', 'anomalous-ai-step-ref-note', withHidden(ref.note, sealed)));
+        row.append(chip);
+    }
+    return [row];
+}
 
 function routeStep(step) {
     const [a, b] = (step.models || []).map(modelStem);
@@ -134,7 +154,7 @@ export function stepBody(step, ctx) {
     }
     default:
         if (step.kind === 'decision') return [decisionCard(step.decision || {}, ctx.numberOf)];
-        if (step.kind === 'user') return [...(step.text ? [said(withHidden(step.text, ctx.sealed))] : []), ...namedPictures(step, ctx.owner), deliveryState(step)];
+        if (step.kind === 'user') return [...(step.text ? [said(withHidden(step.text, ctx.sealed))] : []), ...namedRefs(step, ctx.sealed), ...namedPictures(step, ctx.owner), deliveryState(step)];
         return step.text ? [note(step.text)] : [];
     }
 }

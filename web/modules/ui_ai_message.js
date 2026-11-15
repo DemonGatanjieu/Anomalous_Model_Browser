@@ -2,7 +2,8 @@
  * The AI workbench's message box (ui_ai_workbench.js keeps it at the foot of a task's column, in
  * view as the timeline scrolls): where the user writes to the AI on that task. Over the input
  * what the message carries (ui_ai_tray.js: pictures to mark up or leave out, what "@" names);
- * beside it the gallery (ui_ai_gallery_pick.js) and the materials picker, each lit with how many
+ * Beside it "+" (ui_ai_plus.js: models, ways, or build a new one), the gallery
+ * (ui_ai_gallery_pick.js) and the materials picker, each lit with how many
  * it gave; pictures dropped on it or pasted (ui_ai_drop.js); the input grows with what is typed
  * (Enter sends, Shift+Enter breaks the line), with "@" to point at things and "/" for commands
  * (ui_ai_mention.js). The words and what is attached
@@ -13,7 +14,9 @@
 
 import { translate as t } from './locales.js';
 import { firstHint } from './ui_ai_tour.js';
-import { mentions } from './ui_ai_mention.js';
+import { lead, kindWords, mentions } from './ui_ai_mention.js';
+import { plusMenu } from './ui_ai_plus.js';
+import { openBuildRouteWindow } from './ui_ai_start_from.js';
 import { galleryPicker } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
 import { iconButton } from './ui_ai_icons.js';
@@ -44,8 +47,8 @@ function sideTool(className, name, label, run) {
 }
 
 /**
- * The box; `source`: {task(), commands(), mark(image, sent), openMaterials()} for "@", "/", the
- * tray's ✎ and the materials button. With them, `box.setMaterials(count)` shows how many materials are picked.
+ * The box; `source`: {task(), commands(), mark(image, sent), openMaterials(), changed()} for "@",
+ * "/", "+", the tray's ✎ and the materials button. `box.setMaterials(count)` shows how many materials are picked.
  */
 export function messageBox(onSend, source) {
     const box = el('div', 'anomalous-ai-message');
@@ -59,6 +62,9 @@ export function messageBox(onSend, source) {
     const note = el('div', 'anomalous-ai-message-hint');
     const send = el('button', 'anomalous-ai-panel-send', t('aiMessageSend'));
     send.type = 'button';
+    // What the Hide button marks words in: the note field being typed in (it keeps the focus through the press), else the input.
+    const currentField = () => (document.activeElement?.matches?.('.anomalous-ai-mention-chip-note') && tray.contains(document.activeElement)
+        ? document.activeElement : field);
     let at = null; // "@" and "/" (made once the box is in place)
     const fit = () => {
         field.style.height = 'auto';
@@ -96,34 +102,53 @@ export function messageBox(onSend, source) {
     if (source) {
         at = mentions(field, box, source, tray);
         const room = () => Math.min(MAX_PICTURES - at.pictures(), MAX_REFS - at.count());
-        const pics = sideTool('anomalous-ai-message-pics', 'image', t('aiPicsButton'), () => picker.toggle());
+        let menu = null;
+        const pics = sideTool('anomalous-ai-message-pics', 'image', t('aiPicsButton'), () => {
+            menu?.close(false);
+            picker.toggle();
+        });
         pics.setAttribute('aria-expanded', 'false');
         const picker = galleryPicker(box, room, (items) => {
             for (const item of items) at.add(item);
             field.focus();
         }, pics);
+        const plus = sideTool('anomalous-ai-message-plus', 'plus', t('aiPlusButton'), () => {
+            picker.close();
+            menu.toggle();
+        });
+        plus.setAttribute('aria-expanded', 'false');
+        menu = plusMenu(box, field, {
+            button: plus,
+            lead,
+            kindWords,
+            onOpen: () => picker.close(),
+            onPick: item => at.add(item, { focusNote: true }),
+            onBuild: () => openBuildRouteWindow({ task: source.task, built: source.changed }),
+        });
         const materials = sideTool('anomalous-ai-message-materials', 'sparkle', t('aiMessageMaterials'), () => source.openMaterials());
         const counted = () => pics.setCount(at.pictures());
         box.addEventListener('anomalous-refs', counted);
         field.addEventListener('input', counted);
-        line.prepend(pics, materials);
-        const hide = hideButton(field, (text) => { note.textContent = text; }); // a private task: words the AI gets as a token
-        const shown = () => { hide.hidden = !source.task?.()?.private; };
-        field.addEventListener('focus', shown);
-        shown();
-        line.insertBefore(hide, send);
+        line.prepend(plus, pics, materials);
+        const hide = hideButton(currentField, (text) => { note.textContent = text; }); // a private task: words the AI gets as a token
         const hideHint = firstHint('hide', t('aiFirstHide'));
-        if (hideHint) {
-            box.insertBefore(hideHint, note);
-            const sync = () => { hideHint.hidden = hide.hidden; };
-            field.addEventListener('focus', sync);
-            sync();
-        }
+        if (hideHint) box.insertBefore(hideHint, note);
+        const syncVisibility = () => {
+            hide.hidden = !source.task?.()?.private;
+            if (hideHint) hideHint.hidden = hide.hidden;
+        };
+        field.addEventListener('focus', syncVisibility);
+        syncVisibility();
+        line.insertBefore(hide, send);
         takePictures(box, field, { add: item => at.add(item), room, say: (text) => {
             note.textContent = text;
             note.classList.add('is-error');
         } });
         box.setMaterials = count => materials.setCount(count);
+        box.syncPrivacy = () => {
+            syncVisibility();
+            at.syncPrivacy();
+        };
     }
     box.note = note;
     box.field = field;
@@ -140,4 +165,5 @@ export function updateMessageBox(box, ended, status, materials = 0) {
     box.field.title = box.note.textContent;
     box.field.placeholder = t(status === 'waiting' ? 'aiMessagePlaceholderWaiting' : 'aiMessagePlaceholder');
     box.setMaterials?.(materials);
+    box.syncPrivacy?.();
 }

@@ -18,7 +18,7 @@ import { startTask } from './ui_ai_handoff.js';
 import { pictureGrid } from './ui_ai_gallery_pick.js';
 import { icon } from './ui_ai_icons.js';
 import { presetFields } from './ui_ai_preset_sheet.js';
-import { startFromSection } from './ui_ai_start_from.js';
+import { applyTaskRoute, startFromSection } from './ui_ai_start_from.js';
 
 const NEW_TAB = { canvas: 'new' };
 const MAX_SEALED = 1500; // the prompt the private card hands on, inside a message to the AI
@@ -98,17 +98,7 @@ function examples(input, keys) {
     return row;
 }
 
-function postRoute(picked) {
-    return async (taskId) => {
-        const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(taskId)}/route`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ route: picked.route, models: picked.models }),
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(payload.message || payload.error || `HTTP ${response.status}`);
-    };
-}
+const postRoute = picked => taskId => applyTaskRoute(taskId, picked);
 
 /** The card's fields and how they become the task: {nodes, task() -> {title, about, note, beforeNote} | error}. */
 function fieldsOf(card, data, owner, close) {
