@@ -79,6 +79,18 @@ class KindTests(unittest.TestCase):
         lycoris = kind_of(tensors("lora_unet_down_blocks_0_attentions_0_proj_in.hada_w1_a"))
         self.assertEqual(lycoris["kind"], "loras")
 
+    def test_moss_image(self):
+        # ComfyUI tells MOSS Image by shared_block_modulation and layers.N.proj.ffn_up_gate (also
+        # in its INT8 copies, which add comfy_quant and weight_scale).
+        model = kind_of(tensors("layers.0.proj.ffn_up_gate.weight", "layers.0.proj.ffn_down.weight", "layers.0.norm1.weight",
+                                "shared_block_modulation.weight", "text_embedder.blocks.0.attn.qkv.weight", "time_embedding.0.weight",
+                                "final_linear_video.weight", "layers.0.proj.ffn_down.comfy_quant"))
+        self.assertEqual((model["kind"], model["base"], model["sure"]), ("diffusion_models", "MOSS Image", True))
+        kohya = kind_of(tensors("lora_unet_layers_0_proj_ffn_up_gate.lora_down.weight", "lora_unet_layers_0_proj_ffn_down.alpha"))
+        peft = kind_of(tensors("diffusion_model.layers.0.proj.ffn_up_gate.lora_A.weight", "diffusion_model.layers.0.proj.ffn_up_gate.lora_B.weight"))
+        for lora in (kohya, peft):
+            self.assertEqual((lora["kind"], lora["base"]), ("loras", "MOSS Image"))
+
     def test_whole_models_and_their_parts(self):
         checkpoint = kind_of(tensors("model.diffusion_model.input_blocks.0.0.weight", "model.diffusion_model.label_emb.0.0.weight",
                                      "first_stage_model.encoder.down.0.block.0.conv1.weight", "conditioner.embedders.1.model.ln_final.weight"))

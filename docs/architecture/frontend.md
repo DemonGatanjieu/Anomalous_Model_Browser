@@ -443,8 +443,9 @@ unrelated surfaces.
 
 Themes (`interface_settings.js`, Settings → Appearance → Theme and the ComfyUI setting
 `Anomalous.ModelBrowser.Theme`): follow ComfyUI (default), dark, light, or Abyssal Scarlet.
-Following ComfyUI reads `dark-theme` on `<html>`, which ComfyUI sets for a dark palette and
-removes for a light one, and repaints when it changes. The light theme is the class
+Following ComfyUI reads `comfy_palette.js`: the class `dark-theme` on `<html>` (frontends before
+1.59) or `color-scheme: dark` in `<html>`'s style (1.59 on), and repaints when either changes;
+`amb-comfy-dark` on `<html>` says the same to the CSS. The light theme is the class
 `amb-theme-light` on `<html>`; Abyssal Scarlet keeps `theme-abyssal-scarlet`. An older
 Abyssal Scarlet switch (`anomalous_theme_abyssal_scarlet`) reads as the Abyssal choice.
 

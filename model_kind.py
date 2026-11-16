@@ -18,7 +18,7 @@ import struct
 MAX_HEADER = 100 * 1024 * 1024
 GGUF_READ = 16 * 1024 * 1024
 # Raised whenever a rule changes: answers kept on disk (api/model_heads.py) are then read again.
-RULES = 3
+RULES = 4
 
 # Cross-attention width (the text encoder's output) -> base model, for the SD family.
 CONTEXT_WIDTH = {768: "SD 1.5", 1024: "SD 2.1", 2048: "SDXL"}
@@ -56,7 +56,8 @@ DIFFUSION_PREFIXES = ("model.diffusion_model.", "diffusion_model.", "model.model
 DIFFUSION_STARTS = ("double_blocks.", "single_blocks.", "joint_blocks.", "transformer_blocks.",
                     "single_transformer_blocks.", "input_blocks.", "blocks.0.self_attn", "net.blocks.", "net.x_embedder.",
                     "noise_refiner.", "context_refiner.", "double_stream_blocks.",  # Lumina 2 / Z-Image, HiDream
-                    "down_downscalers.")  # Stable Cascade's stages B and C
+                    "down_downscalers.",  # Stable Cascade's stages B and C
+                    "shared_block_modulation.")  # MOSS Image
 
 
 def parse_safetensors(data):
@@ -202,6 +203,10 @@ def _base_from_meta(meta):
 
 def _base_from_keys(header, text):
     """(base, sure) from tensor names; ("", False) when they do not tell."""
+    # MOSS Image: blocks with a fused up/gate projection under "layers.N.proj." (ComfyUI tells it
+    # by that and its shared_block_modulation; its LoRAs carry the projection only).
+    if "layers_0_proj_ffn_up_gate" in text:
+        return "MOSS Image", True
     if "individual_token_refiner" in text:
         return "Hunyuan Video", True
     if "noise_refiner" in text and "cap_embedder_1" in text:

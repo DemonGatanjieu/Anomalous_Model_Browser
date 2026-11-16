@@ -208,7 +208,7 @@ html.amb-theme-light :is(.anomalous-workbench-overlay, .anomalous-gallery-viewer
    windows those follow the plugin's theme when it differs from ComfyUI's: light here with a dark
    ComfyUI (or ComfyUI's grey light palette), dark here with a light ComfyUI. */
 html.amb-theme-light :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]),
-html:not(.dark-theme):not(.amb-theme-light) :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]) {
+html:not(.amb-comfy-dark):not(.amb-theme-light) :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]) {
     --bg-color: var(--amb-bg-card);
     --comfy-menu-bg: var(--amb-bg-card-hover);
     --comfy-input-bg: var(--amb-bg-input);

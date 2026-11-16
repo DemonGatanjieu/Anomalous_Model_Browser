@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-11-16 · v1.63.3：ComfyUI 更新后，主题跟随认错了深浅色
+
+**现象**：主题选"跟随 ComfyUI"，ComfyUI 是深色，AMB 却是浅色。用户更新 ComfyUI 后出现。
+
+**根因**：ComfyUI 前端 1.59 起不再在 `<html>` 上加 `dark-theme`，改成在 `<html>` 的 style 里写 `color-scheme`。AMB 只认旧类名。同一版里 ComfyUI 的对话框也不再是 `.p-dialog-mask`（v1.63.2 修的 Esc 问题）。
+
+**以后怎么做**
+- 读 ComfyUI 的状态时，不要只靠它某一版的类名：新旧标记都认（`comfy_palette.js`），能用 `role`、`color-scheme` 这类标准写法的就用标准写法。
+- 用户说"更新了 ComfyUI 之后"，先在测试 ComfyUI 上看它现在往页面上放了什么，再看代码。
+
+---
+
 ## 2026-11-16 · v1.63.2：AMB 挡住了 ComfyUI 的提示，Ctrl+Enter 在 AMB 里也出图
 
 **现象**：AMB 开着时，ComfyUI 的报错提示（层级 9999）和对话框（1700）被 AMB 的窗口（10000）挡住；一次 Esc 悄悄取消了看不见的对话框，又关掉了 AMB。在 AMB 的输入框里按 Ctrl+Enter，ComfyUI 同时出图。用新装的网页开发指南查前端时发现，在测试 ComfyUI 上实测确认。

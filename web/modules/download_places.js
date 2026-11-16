@@ -16,7 +16,7 @@ export const DEFAULT_FOLDER = FOLDER_PRESETS[0];
 const BASE_FAMILIES = [
     [/^sd ?1\.[45]/i, 'SD1.5'], [/^sd ?2/i, 'SD2'], [/^sdxl/i, 'SDXL'], [/^sd ?3/i, 'SD3'], [/^pony/i, 'Pony'],
     [/^illustrious/i, 'Illustrious'], [/^noob/i, 'NoobAI'], [/^flux/i, 'Flux'], [/^hunyuan/i, 'Hunyuan'],
-    [/^wan/i, 'Wan'], [/^qwen/i, 'Qwen'], [/^hidream/i, 'HiDream'], [/^chroma/i, 'Chroma'],
+    [/^wan/i, 'Wan'], [/^qwen/i, 'Qwen'], [/^hidream/i, 'HiDream'], [/^chroma/i, 'Chroma'], [/^moss/i, 'MOSS'],
 ];
 
 const slashes = (value) => String(value || '').replace(/\\/g, '/');
