@@ -648,7 +648,9 @@ takes it instead of reading the whole file again.
 `api/model_placement.py` serves the models page's Tidy view. `GET /anomalous/placement/check`
 also answers `loose`: files right in a type folder (no subfolder) with a known base model, from
 the model's info (`get_metadata` baseModel: Civitai or the user's edit) else its header when
-`sure`; the page keeps those its folder rule puts in a base model folder. The same check
+`sure`; a scan record whose files do not list the file it was saved for (`lists_file` on its
+`anomalous_file_identity`, kept by scans before v1.63.3) gives no base model. The page keeps
+those its folder rule puts in a base model folder. The same check
 walks every import type's folders once (a folder listed under two types counts for the first;
 real paths deduplicated) and reads each header through `model_kind.inspect_file`, kept in
 memory per path, size and time. A file whose header names another type than its folder, only

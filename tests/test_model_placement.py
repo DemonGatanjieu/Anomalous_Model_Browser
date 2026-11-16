@@ -18,6 +18,7 @@ PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
 from api import model_placement  # noqa: E402
+import model_sidecars  # noqa: E402
 
 
 def safetensors(*names):
@@ -72,7 +73,12 @@ class PlacementTests(unittest.TestCase):
         self.put("loras", "flux_style.safetensors", LORA)  # the header says Flux.1 D
         self.put("loras", "nobody_knows.safetensors", safetensors("lora_unet_mystery_0.lora_up.weight"))
         self.put("loras", "Mine/kept_here.safetensors", LORA)  # a folder of the user's own: left alone
-        infos = {civitai: "Illustrious"}
+        # Saved by an older scan: another model's page, whose files do not list this one.
+        stray = self.put("loras", "other_page.safetensors", safetensors("lora_unet_mystery_0.lora_up.weight"))
+        Path(model_sidecars.target(os.path.splitext(stray)[0], ".info")).write_text(json.dumps({
+            "id": 9, "baseModel": "MageFlow", "files": [{"hashes": {"SHA256": "B" * 64}}],
+            "anomalous_file_identity": {"value": "a" * 64}}), encoding="utf-8")
+        infos = {civitai: "Illustrious", stray: "MageFlow"}
         with mock.patch.object(model_placement, "get_metadata", side_effect=lambda path: {"baseModel": infos.get(path, "Unknown")}):
             found = {item["rel"]: item for item in model_placement.check()["loose"]}
         self.assertEqual(set(found), {"from_civitai.safetensors", "flux_style.safetensors"})

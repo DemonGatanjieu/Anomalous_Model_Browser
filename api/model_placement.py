@@ -12,7 +12,8 @@ GET  /anomalous/placement/check[?deep=1] -> {misplaced, duplicates, shared, unch
     model_patches and in controlnet): both are used, none is extra. unchecked: the same-size
     large files a deep check would still read. loose: models right in a type folder (no
     subfolder) whose base model is known, from the model's info (Civitai, or the user's own
-    edit) else its header when sure; the page lists those its folder rule ({base}) would put
+    edit) else its header when sure (not from a Civitai page that does not list the file: a
+    scan before v1.63.3 kept such pages); the page lists those its folder rule ({base}) would put
     in a base model's folder (Tidy step 3).
 GET  /anomalous/placement/look?type&root&rel -> {kind, sure, base}: what one model's header says
     it is, even when unsure (the models page's "Change type", ui_model_retype.js).
@@ -34,11 +35,11 @@ from aiohttp import web
 import folder_paths
 
 try:
-    from ..model_identity import file_sha256
+    from ..model_identity import file_sha256, lists_file, normalise_sha256, sidecar_info
     from ..model_kind import inspect_file
     from ..model_sidecars import drop_empty_hidden_dir, existing, follow
 except ImportError:  # loaded outside the package (tests)
-    from model_identity import file_sha256
+    from model_identity import file_sha256, lists_file, normalise_sha256, sidecar_info
     from model_kind import inspect_file
     from model_sidecars import drop_empty_hidden_dir, existing, follow
 from .activity_log import add_entry
@@ -240,6 +241,13 @@ def duplicates(files, deep=False):
 UNKNOWN_BASES = {"", "unknown", "other"}
 
 
+def _record_lists_file(path):
+    """Whether the model's scan record lists the file it was saved for. Scans before v1.63.3
+    kept a Civitai page that did not (a Flux.2 VAE took another model's base model)."""
+    record = sidecar_info(os.path.splitext(path)[0]) or {}
+    return lists_file(record, normalise_sha256((record.get("anomalous_file_identity") or {}).get("value")))
+
+
 def loose(files):
     """Models right in a type folder whose base model is known: [{type, root, rel, size, base,
     source ('info' | 'header'), name, version, preview_url}]."""
@@ -249,6 +257,8 @@ def loose(files):
             continue  # in a folder of the user's own (or one by base model already): left alone
         try:
             base = str(get_metadata(item["path"]).get("baseModel") or "").strip()
+            if base and not _record_lists_file(item["path"]):
+                base = ""  # another model's page: its base model is not this file's
         except Exception:
             base = ""
         source = "info"
