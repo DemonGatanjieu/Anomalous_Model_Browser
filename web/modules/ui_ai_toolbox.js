@@ -24,7 +24,7 @@ import {
     readPickerState, readRecent, rememberBase, rememberFacet, rememberKind,
     resolveOpenKind, savedLayout, standingInWithFavorites, taskEffectivePicks, totalPicks,
 } from './ai_toolbox_state.js';
-import { card, detail, el, refreshCard, renderPickedBar, rowCard, tbButton as button } from './ui_ai_toolbox_cards.js';
+import { card, detail, el, refreshCard, renderPickedBar, rowCard, syncNoteInputs, tbButton as button } from './ui_ai_toolbox_cards.js';
 import { facetOf, facets, packItems, pageNodes, renderBases, renderFacets, renderFilterTabs, renderKindRail, renderPackBar, renderSubhead } from './ui_ai_toolbox_sources.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture } from './ui_ai_toolbox_icons.js';
@@ -79,7 +79,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         facet: remembered.facets[initialKind] ?? null,
         base: initialKind === 'models' ? remembered.base : null,
         versions: new Map(), favorites: empty(), nodes: pageNodes(), catalog: keptCatalog(), ways: null,
-        error: '', waysError: '', notice: '', saving: false,
+        error: '', waysError: '', notice: '', saving: false, pinned: false, // pinned: the detail pane stays on what was pressed
     };
 
     const byKey = new Map();
@@ -186,9 +186,10 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         get showTakeBack() { return state.filter === 'given'; },
         privateTask: () => Boolean(currentTask?.private),
         noteOf: item => msg()?.noteOf?.(item.kind, item.id) || '',
-        setNote: (item, text) => { msg()?.setNote?.(item.kind, item.id, text); drawPickedRow(); },
+        setNote: (item, text) => { msg()?.setNote?.(item.kind, item.id, text); syncNoteInputs(body, item, text); drawPickedRow(); },
         focus: (item) => { state.focus = item; drawPane(); },
-        peek: (item) => { if (!body.classList.contains('is-side')) ctx.focus(item); },
+        peek: (item) => { if (!body.classList.contains('is-side') && !state.pinned) ctx.focus(item); },
+        pin: (item) => { state.pinned = true; state.focus = item; }, pinned: () => state.pinned, setPinned: (on) => { state.pinned = on; drawPane(); }, side: () => body.classList.contains('is-side'),
         toggle: (item, focusNote = true, focusPaneNote = false) => toggleItem(item, focusNote, focusPaneNote),
         star: item => setFavorite(item),
         promptPicked: id => Boolean(msg()?.has('prompts', id)),
@@ -482,6 +483,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         state.facet = mem.facets[kind] ?? null;
         state.base = kind === 'models' ? mem.base : null;
         state.focus = null;
+        state.pinned = false;
         state.notice = '';
         if (nextLayout && (body.classList.contains('is-side') ? 'side' : 'full') !== nextLayout) place(nextLayout);
         else drawAll();

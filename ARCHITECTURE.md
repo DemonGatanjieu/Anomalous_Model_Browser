@@ -428,7 +428,10 @@ covered by the `styles.css` manifest.
   `web/modules/ui_ai_facet_menu.js` is the side panel's list of sources (or types) under its
   "Source: All ▾" button: a search over the names, ↑ ↓ and Enter, the row under the pointer lit
   and the one shown ticked.
-  `web/modules/ui_ai_toolbox_cards.js` draws the cards, the side panel's rows, the detail pane (a model's
+  `web/modules/ui_ai_toolbox_cards.js` draws the cards (in the large window a bar over the cover on the pointer
+  or focus, Put on the message and a model's own page, and a picked card's note to the AI on the card,
+  `cardExtras`; the detail pane follows a card the pointer rests on, PEEK_DELAY, and keeps a pressed one
+  until it is unpinned), the side panel's rows, the detail pane (a model's
   "Open its page" shows it in the browser through `ui_scan_lists.openListedModel`; its Back reopens the picker on it)
   (including the live message remark box with Hide support) and the full modal's picked-chips bar
   (`renderPickedBar`); `web/modules/ui_ai_toolbox_sources.js` renders the kind tabs (`renderKindRail`),

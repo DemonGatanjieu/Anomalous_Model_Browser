@@ -23,6 +23,11 @@ import { versionLabel } from './ui_model_versions.js';
 import { typeLabel } from './ui_model_types.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 
+// How long the pointer rests on a card before the detail column shows it: passing over cards on the
+// way to the column changes nothing (the half-second "interest" delay of hovercards, made shorter).
+const PEEK_DELAY = 350;
+let peekTimer = 0;
+
 const SOCKETS_SHOWN = 4;
 const withQuery = (url, query) => `${url}${url.includes('?') ? '&' : '?'}${query}`;
 /** The icon of a kind of thing (ui_ai_icons.js): a pack shows as nodes do, a way as the ways view does. */
@@ -172,7 +177,8 @@ function versionMark(item, ctx) {
 
 /**
  * One card. `ctx`: { picked(item), favorite(item), toggle(item), star(item), focus(item), peek(item) }.
- * A press picks or unpicks; focus or the pointer peeks at it (the large window's detail pane),
+ * A press picks or unpicks and pins it in the large window's detail pane; focus, or the pointer resting
+ * on it (PEEK_DELAY), peeks at it there while nothing is pinned,
  * ⓘ opens its detail (the side panel's way: there the detail covers the cards).
  */
 export function card(item, ctx) {
@@ -203,7 +209,77 @@ export function card(item, ctx) {
     meta.prepend(givenBadge(ctx, item));
     body.append(meta, takeBackButton(ctx, item));
     node.append(body);
+    cardExtras(node, item, ctx);
     return controls(node, item, ctx);
+}
+
+/**
+ * What a card in the large window offers on the pointer or focus, over the bottom of its cover: put it on
+ * the message, and a model's own page (others: its detail, pinned). Once on the message, its note to
+ * the AI is a line on the card itself, so nothing needs the detail column across the other cards.
+ */
+function cardExtras(node, item, ctx) {
+    const body = node.querySelector('.anomalous-tb-card-body');
+    if (!body || node.classList.contains('is-row')) return;
+    let bar = body.querySelector('.anomalous-tb-card-bar');
+    if (!bar) {
+        bar = el('div', 'anomalous-tb-card-bar');
+        const take = el('button', 'anomalous-tb-card-act is-pick');
+        take.type = 'button';
+        take.onclick = (event) => {
+            event.stopPropagation();
+            ctx.pin?.(item);
+            ctx.toggle(item);
+        };
+        const page = el('button', 'anomalous-tb-card-act');
+        page.type = 'button';
+        const ownPage = item.kind === 'models' && ctx.openModel;
+        page.title = t(ownPage ? 'aiTbOpenModelPageHint' : 'aiTbDetail');
+        page.append(icon(ownPage ? 'page' : 'info', 14), el('span', '', t(ownPage ? 'aiTbOpenModelPage' : 'aiTbCardDetail')));
+        page.onclick = (event) => {
+            event.stopPropagation();
+            if (ownPage) {
+                ctx.openModel(item);
+                return;
+            }
+            ctx.pin?.(item);
+            ctx.focus(item);
+        };
+        bar.append(take, page);
+        body.prepend(bar);
+    }
+    const on = ctx.picked(item);
+    const take = bar.querySelector('.is-pick');
+    take.classList.toggle('is-on', on);
+    take.replaceChildren(icon(on ? 'check' : 'plus', 14), el('span', '', t(on ? 'aiTbPicked' : 'aiTbPick')));
+    const note = body.querySelector('.anomalous-tb-card-note');
+    if (on && ctx.setNote && !note) body.append(cardNote(item, ctx));
+    else if (!on) note?.remove();
+    else if (note && document.activeElement !== note.querySelector('input')) note.querySelector('input').value = ctx.noteOf?.(item) || '';
+}
+
+/** The note to the AI on a picked card: written there, kept with the message like the detail column's. */
+function cardNote(item, ctx) {
+    const row = el('label', 'anomalous-tb-card-note');
+    const input = el('input', 'anomalous-tb-note-input is-card');
+    input.type = 'text';
+    input.maxLength = MAX_REF_NOTE;
+    input.dataset.refKey = `${item.kind}\0${item.id}`;
+    input.value = ctx.noteOf?.(item) || '';
+    input.placeholder = t('aiTbCardNote');
+    for (const type of ['click', 'pointerdown', 'keydown']) input.addEventListener(type, event => event.stopPropagation());
+    input.addEventListener('input', () => ctx.setNote(item, input.value));
+    row.append(icon('pencil', 13), input);
+    if (ctx.privateTask?.()) row.append(hideButton(input, () => {}));
+    return row;
+}
+
+/** A note written on a card or in the detail column shows in the other one too (not where it is being typed). */
+export function syncNoteInputs(root, item, text) {
+    const key = `${item.kind}\0${item.id}`;
+    for (const input of root.querySelectorAll('.anomalous-tb-note-input')) {
+        if (input.dataset.refKey === key && input !== document.activeElement) input.value = text;
+    }
 }
 
 /** A card as one line, for the side panel: badge or small cover, name, where it is from. */
@@ -255,15 +331,23 @@ function controls(node, item, ctx) {
         ctx.focus(item);
     };
     node.append(info, star, check);
-    node.onclick = () => ctx.toggle(item);
+    node.onclick = () => {
+        ctx.pin?.(item);
+        ctx.toggle(item);
+    };
     node.onkeydown = (event) => {
         if (event.target === node && (event.key === 'Enter' || event.key === ' ')) {
             event.preventDefault();
+            ctx.pin?.(item);
             ctx.toggle(item);
         }
     };
     node.onfocus = () => ctx.peek(item);
-    node.onpointerenter = () => ctx.peek(item);
+    node.onpointerenter = () => {
+        clearTimeout(peekTimer);
+        peekTimer = setTimeout(() => node.isConnected && ctx.peek(item), PEEK_DELAY);
+    };
+    node.onpointerleave = () => clearTimeout(peekTimer);
     return node;
 }
 
@@ -279,6 +363,7 @@ export function refreshCard(node, item, ctx) {
     if (badge) badge.hidden = !isGiven;
     const takeBack = node.querySelector('.anomalous-tb-take-back');
     if (takeBack) takeBack.hidden = !(isGiven && ctx.showTakeBack);
+    cardExtras(node, item, ctx);
     const star = node.querySelector('.anomalous-tb-star');
     if (star) {
         const liked = ctx.favorite(item);
@@ -325,6 +410,16 @@ function settingList(settings) {
  */
 export function detail(item, ctx) {
     const box = el('div', `anomalous-tb-detail is-${item.kind}`);
+    if (ctx.setPinned && !ctx.side?.()) {
+        const pinned = ctx.pinned();
+        const pin = el('button', `anomalous-tb-pin${pinned ? ' is-on' : ''}`);
+        pin.type = 'button';
+        pin.title = t(pinned ? 'aiTbUnpinHint' : 'aiTbPinHint');
+        pin.setAttribute('aria-pressed', String(pinned));
+        pin.append(icon('pin', 13), el('span', '', t(pinned ? 'aiTbPinned' : 'aiTbPin')));
+        pin.onclick = () => ctx.setPinned(!pinned);
+        box.append(pin);
+    }
     const head = el('div', 'anomalous-tb-detail-head');
     if (item.kind === 'nodes' || item.kind === 'packs') {
         head.append(sourceBadge(item.source, 40));
