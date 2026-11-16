@@ -730,7 +730,8 @@ covered by the `styles.css` manifest.
   or Desktop and moves it (or uploads a copy), tells what it is, checks it against Civitai
   and the scanned models, never replaces a file (" (2)").
 - `api/model_placement.py` is the models page's Tidy check (`/anomalous/placement/*`): models
-  whose header names another type than their folder, identical files (by SHA-256), and moving
+  whose header names another type than their folder, identical files (by SHA-256), models
+  lying right in a type folder whose base model is known (`loose`, Tidy step 3), and moving
   a model with its sidecars to where it belongs; `belongs()` checks one file for the AI, `look()`
   says what one file's header suggests even when unsure. `web/modules/ui_model_retype.js` is
   "Change type" for one model (its page's actions, the toast after an import): the types with
@@ -1207,9 +1208,12 @@ covered by the `styles.css` manifest.
   many things it found, Sources) head the grid; under All models the type chips and the base
   model chips (`owner.modelBase`; `model_bases.js` names each model's family from its scanned
   base model or its header's guess). The Tidy tab is `ui_model_tidy.js` (`owner.modelView ===
-  'tidy'`): cards with covers in two steps — models in a folder whose loader cannot read them
-  (from → to, Move there), identical copies (pick the one to keep, recycle the rest);
-  `model_placement.js` does its requests and keeps the tab's count. Under the two steps
+  'tidy'`): cards with covers in steps — models in a folder whose loader cannot read them
+  (from → to, Move there), identical copies (pick the one to keep, recycle the rest), and,
+  when the download folder names the base model, models lying right in a type folder with the
+  base model folder it puts them in (`download_places.baseHome`; Move there or Move all; the
+  tab's count leaves this step out); `model_placement.js` does its requests and keeps the
+  tab's count. Under the steps
   `ui_model_usage.js` lists the models not used for 30 / 90 days or never (picked ones go to
   the Recycle Bin) and leads to Settings → Node packs, where `ui_pack_usage.js` lists the node
   packs: each opens ComfyUI Manager's node list searched for it (Manager 3; its name is copied

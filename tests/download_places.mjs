@@ -1,6 +1,6 @@
 // Where a downloaded model goes (web/modules/download_places.js).
 import assert from 'node:assert/strict';
-import { DEFAULT_FOLDER, FOLDER_PRESETS, baseFolder, destinationFor, expandFolder, unsafeFormat } from '../web/modules/download_places.js';
+import { DEFAULT_FOLDER, FOLDER_PRESETS, baseFolder, baseHome, destinationFor, expandFolder, unsafeFormat } from '../web/modules/download_places.js';
 
 const entry = (value) => ({ value });
 const workflow = { place: 'workflow', folder: 'Downloads' };
@@ -46,5 +46,14 @@ assert.equal(unsafeFormat('x.ckpt'), true);
 assert.equal(unsafeFormat('x.PT'), true);
 assert.equal(unsafeFormat('x.safetensors'), false);
 assert.equal(unsafeFormat('x.gguf'), false);
+
+// Tidy step 3: a model right in its type folder, by the {base} rule.
+assert.equal(baseHome('x.safetensors', 'MOSS Image', { folder: '{base}' }), 'MOSS/x.safetensors');
+assert.equal(baseHome('x.safetensors', 'Flux.1 D', { folder: '{base}' }, ['Flux_1_D', 'Flux_Fill']), 'Flux_1_D/x.safetensors');
+assert.equal(baseHome('x.safetensors', 'SDXL 1.0', { folder: 'Downloads/{base}' }), 'Downloads/SDXL/x.safetensors');
+assert.equal(baseHome('Mine/x.safetensors', 'SDXL 1.0', { folder: '{base}' }), '');
+assert.equal(baseHome('x.safetensors', 'SDXL 1.0', { folder: 'Downloads' }), '');
+assert.equal(baseHome('x.safetensors', '', { folder: '{base}' }), '');
+assert.equal(baseHome('x.safetensors', 'Pony', null), 'Pony/x.safetensors'); // settings not set yet: the default rule
 
 console.log('download_places: ok');

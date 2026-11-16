@@ -5,14 +5,17 @@
  * identical files side by side: the copy to keep is marked (the one in the folder that fits,
  * changeable by clicking another), "Recycle the extra copies". Models that load where they
  * are anyway, or an extra copy of a file in the right folder (step 2 has it), are not listed
- * in step 1. Nothing changes without a press; after one the tab checks again
+ * in step 1. Step 3, when the download settings' folder names the base model ({base}): models
+ * lying right in a type folder, with the base model folder that rule puts them in ("Move there",
+ * or "Move all" after a question); folders the user made are left alone. Saved workflows keep
+ * the old place, Model Check finds the new one. Nothing changes without a press; after one the tab checks again
  * and keeps a note of what was done (`owner.modelTidy.notes`). model_placement.js does the
  * requests. Under the two steps, "Not used lately" (ui_model_usage.js).
  */
 
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
-import { checkPlacement, moveErrorText, moveModel, recycleModel, tidyMisplaced } from './model_placement.js';
+import { checkPlacement, moveErrorText, moveModel, recycleModel, tidyByBase, tidyMisplaced } from './model_placement.js';
 import { fetchImportFolders } from './model_import.js';
 import { formatSize } from './file_size.js';
 import { joinPath } from './ui_model_download.js';
@@ -214,6 +217,70 @@ function sharedNote(groups) {
     return note;
 }
 
+const SHOWN = 12; // step 3's first cards; the rest behind "Show more"
+
+/** Step 3: one model right in its type folder, and the base model folder the rule puts it in. */
+function baseCard(owner, item) {
+    const card = el('div', 'anomalous-tidy-card');
+    const body = el('div', 'anomalous-tidy-body');
+    body.append(title(item), el('div', 'anomalous-tidy-file', `${fileName(item.rel)} · ${formatSize(item.size)}`),
+        el('div', 'anomalous-tidy-why', t(`tidyBaseFrom_${item.source}`, { base: item.base })));
+    const route = el('div', 'anomalous-tidy-route');
+    // Its type is right, only the folder changes: no red "from" here.
+    route.append(el('span', 'anomalous-tidy-place', t('tidyTypeRoot', { kind: kindName(item.type) })), el('span', 'anomalous-tidy-arrow', '→'),
+        el('span', 'anomalous-tidy-place is-to', place(item.type, item.to.rel)));
+    const failure = el('div', 'anomalous-download-note is-bad');
+    failure.hidden = true;
+    const go = button('anomalous-scan-primary anomalous-scan-small-btn', t('tidyMove'), async () => {
+        go.disabled = true;
+        failure.hidden = true;
+        try {
+            const moved = await moveModel(item, item.to);
+            const notes = [t('tidyMoved', { name: item.name, path: place(moved.type, moved.rel) })];
+            if (moved.left?.length) notes.push(t('tidyLeft', { count: moved.left.length }));
+            await changed(owner, notes.join(' '));
+        } catch (error) {
+            go.disabled = false;
+            failure.textContent = moveErrorText(error);
+            failure.hidden = false;
+        }
+    });
+    const actions = el('div', 'anomalous-tidy-actions');
+    actions.append(go);
+    body.append(route, actions, failure);
+    card.append(cover(item), body);
+    return card;
+}
+
+/** Step 3 whole: its head with "Move all", why, and the cards (the first SHOWN, then "Show more"). */
+function byBaseStep(owner, number, items) {
+    const head = step(number, 'tidyStepByBase', items.length);
+    const all = button('anomalous-scan-row-btn anomalous-tidy-step-all', t('tidyByBaseAll', { count: items.length }), async () => {
+        if (!confirm(t('tidyByBaseConfirm', { count: items.length }))) return;
+        all.disabled = true;
+        let done = 0;
+        let failed = 0;
+        for (const item of items) {
+            try {
+                await moveModel(item, item.to);
+                done += 1;
+            } catch (error) {
+                failed += 1;
+                console.warn('[AMB] Tidy: a model did not move into its base model folder.', item.rel, error);
+            }
+        }
+        await changed(owner, t(failed ? 'tidyByBaseSomeFailed' : 'tidyByBaseDone', { count: done, failed }));
+    });
+    head.append(all);
+    const cards = items.map(item => baseCard(owner, item));
+    const parts = [head, el('div', 'anomalous-tidy-why', t('tidyByBaseWhy')), ...cards.slice(0, SHOWN)];
+    if (cards.length > SHOWN) {
+        const more = button('anomalous-scan-row-btn', t('tidyByBaseMore', { count: cards.length - SHOWN }), () => more.replaceWith(...cards.slice(SHOWN)));
+        parts.push(more);
+    }
+    return parts;
+}
+
 function step(number, titleKey, count) {
     const head = el('div', 'anomalous-tidy-step');
     head.append(el('span', 'anomalous-tidy-step-number', String(number)), el('h3', '', t(titleKey, { count })));
@@ -237,17 +304,19 @@ export function renderModelTidyView(owner, grid) {
     Promise.all([checkPlacement(view.deep, controller.signal), fetchImportFolders().catch(() => null)]).then(([data, folders]) => {
         if (controller.signal.aborted || !section.isConnected) return;
         const misplaced = tidyMisplaced(data);
+        const byBase = tidyByBase(data, folders);
         const parts = [];
-        if (!misplaced.length && !data.duplicates.length) {
+        let number = 0;
+        if (!misplaced.length && !data.duplicates.length && !byBase.length) {
             const done = el('div', 'anomalous-tidy-done');
             done.append(el('strong', '', t('tidyAllGood')), el('span', '', t('tidyChecked', { count: data.checked })));
             parts.push(done);
         }
         if (misplaced.length) {
-            parts.push(step(1, 'tidyStepMisplaced', misplaced.length), ...misplaced.map(item => misplacedCard(owner, item, folders)));
+            parts.push(step(++number, 'tidyStepMisplaced', misplaced.length), ...misplaced.map(item => misplacedCard(owner, item, folders)));
         }
         if (data.duplicates.length) {
-            parts.push(step(misplaced.length ? 2 : 1, 'tidyStepDuplicates', data.duplicates.length), ...data.duplicates.map(group => duplicateCard(owner, group)));
+            parts.push(step(++number, 'tidyStepDuplicates', data.duplicates.length), ...data.duplicates.map(group => duplicateCard(owner, group)));
         }
         if (data.shared?.length) parts.push(sharedNote(data.shared));
         if (data.unchecked?.groups) {
@@ -259,6 +328,7 @@ export function renderModelTidyView(owner, grid) {
                 }));
             parts.push(more);
         }
+        if (byBase.length) parts.push(...byBaseStep(owner, ++number, byBase));
         body.replaceChildren(...parts);
     }).catch((error) => {
         if (controller.signal.aborted) return;

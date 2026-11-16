@@ -60,5 +60,15 @@ export function destinationFor(entry, info, settings, subfolders = []) {
     return folder ? `${folder}/${name}` : name;
 }
 
+/** Tidy step 3: where a model lying right in its type folder goes when the settings' folder
+ * names the base model ({base}): "folder/name.ext", or '' when the rule has no {base}, the
+ * base model is unknown, or the model is in a folder already (the user's own: left alone). */
+export function baseHome(rel, baseModel, settings, subfolders = []) {
+    const folder = String(settings?.folder ?? DEFAULT_FOLDER);
+    if (!/\{base\}/i.test(folder) || !String(baseModel || '').trim() || dirName(rel)) return '';
+    const target = expandFolder(folder, baseModel, subfolders);
+    return target ? `${target}/${fileName(rel)}` : '';
+}
+
 /** Whether a file of this kind can carry code that runs when it is loaded. */
 export const unsafeFormat = (value) => UNSAFE_FORMATS.test(String(value || ''));

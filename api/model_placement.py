@@ -1,7 +1,7 @@
 """Models in the wrong models folder, and identical copies (the models page's Tidy view,
 ui_model_tidy.js).
 
-GET  /anomalous/placement/check[?deep=1] -> {misplaced, duplicates, shared, unchecked}
+GET  /anomalous/placement/check[?deep=1] -> {misplaced, duplicates, shared, unchecked, loose}
     misplaced: models whose header (model_kind.py, only when sure) names another type than
     the folder they are in, with where they belong (the same subfolder in a folder of that
     type, on the same drive when there is one) and whether they still load where they are.
@@ -10,7 +10,10 @@ GET  /anomalous/placement/check[?deep=1] -> {misplaced, duplicates, shared, unch
     the same size (small ones always, large ones with deep). shared: identical files each in
     a folder of its own type where it loads (one per loader, e.g. an Anima LLLite in
     model_patches and in controlnet): both are used, none is extra. unchecked: the same-size
-    large files a deep check would still read.
+    large files a deep check would still read. loose: models right in a type folder (no
+    subfolder) whose base model is known, from the model's info (Civitai, or the user's own
+    edit) else its header when sure; the page lists those its folder rule ({base}) would put
+    in a base model's folder (Tidy step 3).
 GET  /anomalous/placement/look?type&root&rel -> {kind, sure, base}: what one model's header says
     it is, even when unsure (the models page's "Change type", ui_model_retype.js).
 POST /anomalous/placement/move {type, root, rel, to_type, to_root, to_rel} -> moves a model
@@ -234,10 +237,35 @@ def duplicates(files, deep=False):
     return found, shared, unchecked
 
 
+UNKNOWN_BASES = {"", "unknown", "other"}
+
+
+def loose(files):
+    """Models right in a type folder whose base model is known: [{type, root, rel, size, base,
+    source ('info' | 'header'), name, version, preview_url}]."""
+    found = []
+    for item in files:
+        if "/" in item["rel"]:
+            continue  # in a folder of the user's own (or one by base model already): left alone
+        try:
+            base = str(get_metadata(item["path"]).get("baseModel") or "").strip()
+        except Exception:
+            base = ""
+        source = "info"
+        if base.lower() in UNKNOWN_BASES:
+            head = _cached(_heads, item["path"], item["stat"], inspect_file)
+            base, source = (head.get("base") or "", "header") if head.get("sure") else ("", "")
+        if base:
+            found.append({"type": item["type"], "root": item["root"], "rel": item["rel"], "size": item["size"],
+                          "base": base, "source": source, **_card(item)})
+    return found
+
+
 def check(deep=False):
     files = library()
     found, shared, unchecked = duplicates(files, deep)
-    return {"misplaced": misplaced(files), "duplicates": found, "shared": shared, "unchecked": unchecked, "checked": len(files)}
+    return {"misplaced": misplaced(files), "duplicates": found, "shared": shared, "unchecked": unchecked,
+            "loose": loose(files), "checked": len(files)}
 
 
 def _sidecars(path):

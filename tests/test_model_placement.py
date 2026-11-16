@@ -66,6 +66,19 @@ class PlacementTests(unittest.TestCase):
         Path(path).write_bytes(data)
         return path
 
+    def test_loose_models_and_their_base_model(self):
+        # Right in a type folder: listed with a base model from the info, else a sure header.
+        civitai = self.put("loras", "from_civitai.safetensors", safetensors("lora_unet_mystery_0.lora_up.weight"))
+        self.put("loras", "flux_style.safetensors", LORA)  # the header says Flux.1 D
+        self.put("loras", "nobody_knows.safetensors", safetensors("lora_unet_mystery_0.lora_up.weight"))
+        self.put("loras", "Mine/kept_here.safetensors", LORA)  # a folder of the user's own: left alone
+        infos = {civitai: "Illustrious"}
+        with mock.patch.object(model_placement, "get_metadata", side_effect=lambda path: {"baseModel": infos.get(path, "Unknown")}):
+            found = {item["rel"]: item for item in model_placement.check()["loose"]}
+        self.assertEqual(set(found), {"from_civitai.safetensors", "flux_style.safetensors"})
+        self.assertEqual((found["from_civitai.safetensors"]["base"], found["from_civitai.safetensors"]["source"]), ("Illustrious", "info"))
+        self.assertEqual((found["flux_style.safetensors"]["base"], found["flux_style.safetensors"]["source"]), ("Flux.1 D", "header"))
+
     def test_misplaced_models_and_where_they_go(self):
         self.put("checkpoints", "Anima/realskin.safetensors", ANIMA)
         self.put("diffusion_models", "Flux/flux-fp8.safetensors", FLUX_WHOLE)

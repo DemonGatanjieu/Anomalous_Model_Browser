@@ -7,6 +7,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { baseHome } from './download_places.js';
 
 let counted = null;
 
@@ -41,7 +42,23 @@ export function tidyMisplaced(data) {
     return data.misplaced.filter(item => !item.works && !extra.has(key(item)));
 }
 
-/** How many things the Tidy tab has to show: listed misplaced models and groups of identical files. */
+/** Tidy step 3: models right in a type folder that the folder rule ({base}) puts in their base
+ * model's folder, each with `to` ({type, root, rel}); none that steps 1 and 2 list. Nothing
+ * without the folders and the settings (`folders`, model_import.fetchImportFolders). */
+export function tidyByBase(data, folders) {
+    if (!folders?.types) return [];
+    const key = (item) => `${item.type}|${item.root}|${item.rel}`;
+    const taken = new Set([...tidyMisplaced(data).map(key), ...data.duplicates.flatMap(group => group.files.map(key))]);
+    return (data.loose || []).flatMap(item => {
+        if (taken.has(key(item))) return [];
+        const subfolders = (folders.types[item.type] || []).find(root => root.index === item.root)?.subfolders || [];
+        const rel = baseHome(item.rel, item.base, folders.settings, subfolders);
+        return rel ? [{ ...item, to: { type: item.type, root: item.root, rel } }] : [];
+    });
+}
+
+/** How many things the Tidy tab has to show: listed misplaced models and groups of identical files
+ * (step 3 is a suggestion, not a fault: it does not count). */
 export function tidyCount() {
     counted ||= checkPlacement()
         .then(data => tidyMisplaced(data).length + data.duplicates.length)
