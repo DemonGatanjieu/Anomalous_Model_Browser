@@ -127,7 +127,7 @@
 - 「挑一张底图」选错了可以改：AI 出新底图之前，卡上别的几张都有「改选这张」，点了就换成新的那张（同样存进输出文件夹、锁住它的种子），AI 会收到；以前只能留言告诉 AI，它得停掉已经开跑的放大、把底图重画一遍。
 - Took the wrong base on "Pick a base"? Until the AI draws new bases, the other previews have Take this instead: the new one is kept in the output folder and its seed held the same way, and the AI is told. Before, you could only write to the AI, which had to stop the upscale it had started and draw the base again.
 
-## v1.63.2 (Fix: ComfyUI's messages hidden under the browser, Ctrl+Enter started a run, tooltips cut off; long lists faster) — unreleased
+## v1.63.2 (Fix: ComfyUI's messages hidden under the browser, Ctrl+Enter started a run, tooltips cut off; long lists faster) — 2026-11-16
 
 - AMB 开着的时候，ComfyUI 自己的报错提示和对话框（比如出图失败、"确定吗"）不再被挡住。以前 AMB 的窗口比它们高一层，提示只露出一条边，对话框完全看不见，按一下 Esc 还会把看不见的对话框悄悄"取消"、顺带关掉 AMB。现在 AMB 的所有窗口和弹窗都在 ComfyUI 的对话框、右键菜单和提示下面（AMB 自己的先后顺序不变）；ComfyUI 的对话框开着时，Esc 先关它，再按一次才关 AMB。
 - 在 AMB 的输入框里按 Ctrl+Enter 不会再让画布出图。以前在 AMB 的搜索框里，或者在用 Ctrl+Enter 确认的多行框里（工作流卡的备注、交给 AI 时写给图片的话、搭配里模型的备注），ComfyUI 会同时把画布上的工作流拿去跑。不在输入框里时，ComfyUI 的快捷键照常能用；在 ComfyUI 自己的提示词框里按 Ctrl+Enter 也照常出图。
