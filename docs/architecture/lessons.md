@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-11-16 · v1.63.1：样式管到了整个页面，弄坏别的插件
+
+**现象**：GitHub 议题 #28：装了 AMB 后，别的插件（报告里是 comfyui-model-resolver）的图标排布乱了、角标不见了；在 ComfyUI 里按住按钮，按钮上的图标会消失。
+
+**根因**：`web/styles.css` 装进的是 ComfyUI 的整个页面，几条规则没写 AMB 的名字：`[data-tooltip]`（悬停提示，把任何带这个常见属性的元素改成相对定位，还占用它的 `::before`、`::after`）、`button:active::before/::after`、“减少动画”里的 `*`，以及深渊绯红主题直接在 `<html>` 上改 `--bg-color`、`--p-primary-color` 这些 ComfyUI 自己的变量。
+
+**以后怎么做**
+- 每条样式都要落在 AMB 自己的元素上：选择器里写 AMB 的类名、id 或 `data-amb-*` 属性；`:not(.anomalous-…)` 不算。通用的属性名（`data-tooltip`）和元素名（`button`、`*`）不要单独写。
+- `<html>` 和 `:root` 上只放 `--amb-`、`--anomalous-` 开头的变量；要改 ComfyUI 的变量，放到 AMB 自己的窗口上（`#anomalous-modal`、`body > [id^="anomalous-"]` 等）。
+- `tests/css_scope.mjs` 会查出以上几种写法。
+
+---
+
 ## 2026-09-26 · v1.57.2：一条 `:has()` 样式让拖动画布掉帧（严重）
 
 **现象**：B 站用户反馈装了插件后拖动工作流 10% low 只有二十几帧；和 ComfyUI Prompt Assistant 一起装时，大工作流只剩个位数帧甚至卡死。插件界面关着也一样。

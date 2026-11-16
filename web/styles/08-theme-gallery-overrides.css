@@ -1,6 +1,6 @@
-/* 1. Global Scoped Theme Variables */
-html.theme-abyssal-scarlet,
-.theme-abyssal-scarlet {
+/* 1. Theme variables: inside the plugin's own windows only, never on ComfyUI's page */
+html.theme-abyssal-scarlet :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]),
+.theme-abyssal-scarlet:not(html) {
     --bg-color: #0a0510;
     --comfy-menu-bg: #12091c;
     --border-color: rgba(220, 20, 60, 0.25);
@@ -380,18 +380,18 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 }
 
 /* ==========================================================================
-   GLOBAL CUSTOM TOOLTIP SYSTEM ([data-tooltip])
+   AMB TOOLTIPS ([data-amb-tooltip]: its own attribute, so other extensions' data-tooltip stays theirs)
    Frosted Glass, Anime Dark Neon Aesthetic, Absolute Native Title Killer
    ========================================================================== */
-[data-tooltip]:not(.anomalous-card-action-btn),
+[data-amb-tooltip]:not(.anomalous-card-action-btn),
 .anomalous-tooltip-target:not(.anomalous-card-action-btn) {
     position: relative;
 }
 
 /* Base Tooltip Bubble (Default: Top) - Normal Mode (Neutral Clean Glass) */
-[data-tooltip]::after,
+[data-amb-tooltip]::after,
 .anomalous-tooltip-target::after {
-    content: attr(data-tooltip);
+    content: attr(data-amb-tooltip);
     position: absolute;
     bottom: calc(100% + 8px);
     left: 50%;
@@ -413,7 +413,7 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 }
 
 /* Base Arrow (Default: Top) */
-[data-tooltip]::before,
+[data-amb-tooltip]::before,
 .anomalous-tooltip-target::before {
     content: '';
     position: absolute;
@@ -430,10 +430,10 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 }
 
 /* Hover & Keyboard Focus Trigger (Standard 350ms Delay) */
-[data-tooltip]:hover::after,
-[data-tooltip]:hover::before,
-[data-tooltip]:focus-visible::after,
-[data-tooltip]:focus-visible::before,
+[data-amb-tooltip]:hover::after,
+[data-amb-tooltip]:hover::before,
+[data-amb-tooltip]:focus-visible::after,
+[data-amb-tooltip]:focus-visible::before,
 .anomalous-tooltip-target:hover::after,
 .anomalous-tooltip-target:hover::before,
 .anomalous-tooltip-target:focus-visible::after,
@@ -444,14 +444,14 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 }
 
 /* Right-aligned Tooltip (Ideal for Sidebar Icons) */
-[data-tooltip-pos="right"]::after {
+[data-amb-tooltip-pos="right"]::after {
     bottom: auto;
     top: 50%;
     left: calc(100% + 10px);
     transform: translateY(-50%) translateX(-6px);
 }
 
-[data-tooltip-pos="right"]::before {
+[data-amb-tooltip-pos="right"]::before {
     bottom: auto;
     top: 50%;
     left: calc(100% + 5px);
@@ -460,23 +460,23 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     border-color: transparent var(--amb-bg-tooltip) transparent transparent;
 }
 
-[data-tooltip-pos="right"]:hover::after,
-[data-tooltip-pos="right"]:hover::before,
-[data-tooltip-pos="right"]:focus-visible::after,
-[data-tooltip-pos="right"]:focus-visible::before {
+[data-amb-tooltip-pos="right"]:hover::after,
+[data-amb-tooltip-pos="right"]:hover::before,
+[data-amb-tooltip-pos="right"]:focus-visible::after,
+[data-amb-tooltip-pos="right"]:focus-visible::before {
     transform: translateY(-50%) translateX(0);
     transition-delay: 0.35s;
 }
 
 /* Bottom-aligned Tooltip */
-[data-tooltip-pos="bottom"]::after {
+[data-amb-tooltip-pos="bottom"]::after {
     bottom: auto;
     top: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%) translateY(-6px);
 }
 
-[data-tooltip-pos="bottom"]::before {
+[data-amb-tooltip-pos="bottom"]::before {
     bottom: auto;
     top: calc(100% + 3px);
     left: 50%;
@@ -485,31 +485,31 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     border-color: transparent transparent var(--amb-bg-tooltip) transparent;
 }
 
-[data-tooltip-pos="bottom"]:hover::after,
-[data-tooltip-pos="bottom"]:hover::before,
-[data-tooltip-pos="bottom"]:focus-visible::after,
-[data-tooltip-pos="bottom"]:focus-visible::before {
+[data-amb-tooltip-pos="bottom"]:hover::after,
+[data-amb-tooltip-pos="bottom"]:hover::before,
+[data-amb-tooltip-pos="bottom"]:focus-visible::after,
+[data-amb-tooltip-pos="bottom"]:focus-visible::before {
     transform: translateX(-50%) translateY(0);
     transition-delay: 0.35s;
 }
 
-.anomalous-card-action-btn[data-tooltip-pos="bottom"]::after {
+.anomalous-card-action-btn[data-amb-tooltip-pos="bottom"]::after {
     left: auto !important;
     right: 0 !important;
     transform: translateX(0) translateY(-6px) !important;
 }
-.anomalous-card-action-btn[data-tooltip-pos="bottom"]::before {
+.anomalous-card-action-btn[data-amb-tooltip-pos="bottom"]::before {
     left: auto !important;
     right: 8px !important;
     transform: translateX(0) translateY(-6px) !important;
 }
-.anomalous-card-action-btn[data-tooltip-pos="bottom"]:hover::after,
-.anomalous-card-action-btn[data-tooltip-pos="bottom"]:hover::before {
+.anomalous-card-action-btn[data-amb-tooltip-pos="bottom"]:hover::after,
+.anomalous-card-action-btn[data-amb-tooltip-pos="bottom"]:hover::before {
     transform: translateX(0) translateY(0) !important;
 }
 
 /* Left-aligned Tooltip */
-[data-tooltip-pos="left"]::after {
+[data-amb-tooltip-pos="left"]::after {
     bottom: auto;
     top: 50%;
     left: auto;
@@ -517,7 +517,7 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     transform: translateY(-50%) translateX(6px);
 }
 
-[data-tooltip-pos="left"]::before {
+[data-amb-tooltip-pos="left"]::before {
     bottom: auto;
     top: 50%;
     left: auto;
@@ -527,14 +527,14 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     border-color: transparent transparent transparent var(--amb-bg-tooltip);
 }
 
-[data-tooltip-pos="left"]:hover::after,
-[data-tooltip-pos="left"]:hover::before {
+[data-amb-tooltip-pos="left"]:hover::after,
+[data-amb-tooltip-pos="left"]:hover::before {
     transform: translateY(-50%) translateX(0);
 }
 
 /* Top-aligned Tooltip */
-[data-tooltip-pos="top"]::after,
-.anomalous-tooltip-target[data-tooltip-pos="top"]::after {
+[data-amb-tooltip-pos="top"]::after,
+.anomalous-tooltip-target[data-amb-tooltip-pos="top"]::after {
     top: auto;
     bottom: calc(100% + 8px);
     left: 50%;
@@ -542,8 +542,8 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     transform: translateX(-50%) translateY(4px);
 }
 
-[data-tooltip-pos="top"]::before,
-.anomalous-tooltip-target[data-tooltip-pos="top"]::before {
+[data-amb-tooltip-pos="top"]::before,
+.anomalous-tooltip-target[data-amb-tooltip-pos="top"]::before {
     top: auto;
     bottom: calc(100% + 3px);
     left: 50%;
@@ -554,16 +554,16 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     border-color: var(--amb-bg-tooltip) transparent transparent transparent;
 }
 
-[data-tooltip-pos="top"]:hover::after,
-[data-tooltip-pos="top"]:hover::before,
-.anomalous-tooltip-target[data-tooltip-pos="top"]:hover::after,
-.anomalous-tooltip-target[data-tooltip-pos="top"]:hover::before {
+[data-amb-tooltip-pos="top"]:hover::after,
+[data-amb-tooltip-pos="top"]:hover::before,
+.anomalous-tooltip-target[data-amb-tooltip-pos="top"]:hover::after,
+.anomalous-tooltip-target[data-amb-tooltip-pos="top"]:hover::before {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
 }
 
 /* Theme: Abyssal Scarlet Tooltip (Inner Shadow, Sharp Border, No Outer Neon Glow) */
-.theme-abyssal-scarlet [data-tooltip]::after,
+.theme-abyssal-scarlet [data-amb-tooltip]::after,
 .theme-abyssal-scarlet .anomalous-tooltip-target::after {
     background: rgba(22, 8, 16, 0.98);
     border-color: #dc143c;
@@ -571,25 +571,25 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.95), inset 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
-.theme-abyssal-scarlet [data-tooltip]::before,
+.theme-abyssal-scarlet [data-amb-tooltip]::before,
 .theme-abyssal-scarlet .anomalous-tooltip-target::before {
     border-color: rgba(22, 8, 16, 0.98) transparent transparent transparent;
 }
 
-.theme-abyssal-scarlet [data-tooltip-pos="top"]::before,
-.theme-abyssal-scarlet .anomalous-tooltip-target[data-tooltip-pos="top"]::before {
+.theme-abyssal-scarlet [data-amb-tooltip-pos="top"]::before,
+.theme-abyssal-scarlet .anomalous-tooltip-target[data-amb-tooltip-pos="top"]::before {
     border-color: rgba(22, 8, 16, 0.98) transparent transparent transparent;
 }
 
-.theme-abyssal-scarlet [data-tooltip-pos="right"]::before {
+.theme-abyssal-scarlet [data-amb-tooltip-pos="right"]::before {
     border-color: transparent rgba(22, 8, 16, 0.98) transparent transparent;
 }
 
-.theme-abyssal-scarlet [data-tooltip-pos="bottom"]::before {
+.theme-abyssal-scarlet [data-amb-tooltip-pos="bottom"]::before {
     border-color: transparent transparent rgba(22, 8, 16, 0.98) transparent;
 }
 
-.theme-abyssal-scarlet [data-tooltip-pos="left"]::before {
+.theme-abyssal-scarlet [data-amb-tooltip-pos="left"]::before {
     border-color: transparent transparent transparent rgba(22, 8, 16, 0.98);
 }
 

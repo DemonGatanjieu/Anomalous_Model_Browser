@@ -87,8 +87,8 @@ export function createShellRail(owner) {
             button.querySelector('.anomalous-rail-label').textContent = t(entry.railKey || entry.labelKey);
             button.setAttribute('aria-label', text);
             // Only the first nine have a number key.
-            button.dataset.tooltip = index < 9 ? t('shellRailKey', { name: text, key: index + 1 }) : text;
-            button.dataset.tooltipPos = 'right';
+            button.dataset.ambTooltip = index < 9 ? t('shellRailKey', { name: text, key: index + 1 }) : text;
+            button.dataset.ambTooltipPos = 'right';
         });
         syncCompact();
     };
