@@ -789,7 +789,9 @@ covered by the `styles.css` manifest.
   Flux Schnell from Dev (no guidance input) and Z-Image from Lumina 2 (the caption embedder's
   width; a GGUF by its parameter count); the families its model detection tells by names of
   their own are told by those names (`NAMED_FAMILIES`, LoRAs included), Flux.2's variant by
-  its width, Ming Image and Z-Image Pixel on Z-Image's layout as ComfyUI tells them. `header_words.py` reads what a LoRA's header suggests
+  its width (in Flux's own names, a LoRA's too, by its layers' rows: `FLUX_ROWS`), Ming Image
+  and Z-Image Pixel on Z-Image's layout as ComfyUI tells them; a GGUF by those tensors first,
+  then by ComfyUI-GGUF's architecture name. `header_words.py` reads what a LoRA's header suggests
   for its prompt when Civitai gives no trigger words: the maker's `modelspec.trigger_phrase`,
   else the tags most training pictures share (kohya's `ss_tag_frequency`, generic ones left
   out); the scanner keeps them in the `.info` (`anomalous_header_words`), metadata gives them as

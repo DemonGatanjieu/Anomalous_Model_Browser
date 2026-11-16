@@ -18,7 +18,7 @@ import struct
 MAX_HEADER = 100 * 1024 * 1024
 GGUF_READ = 16 * 1024 * 1024
 # Raised whenever a rule changes: answers kept on disk (api/model_heads.py) are then read again.
-RULES = 5
+RULES = 6
 
 # Cross-attention width (the text encoder's output) -> base model, for the SD family.
 CONTEXT_WIDTH = {768: "SD 1.5", 1024: "SD 2.1", 2048: "SDXL"}
@@ -26,6 +26,17 @@ CONTEXT_WIDTH = {768: "SD 1.5", 1024: "SD 2.1", 2048: "SDXL"}
 CAPTION_WIDTH = {2304: "Lumina", 3840: "Z-Image"}
 # Width (img_in's rows, where ComfyUI reads it) -> Flux.2's variant.
 FLUX2_WIDTH = {3072: "Flux.2 Klein 4B", 4096: "Flux.2 Klein 9B", 6144: "Flux.2 D"}
+# In Flux's own names (a LoRA's too) Flux.2 differs from Flux.1 only in its layers' rows. A double
+# block's MLP input and a single block's linear1 tell all four (Flux.2's MLP is 3x the width and
+# gated, Flux.1's 4x); the attention tells only the wider ones (Klein 4B is as wide as Flux.1).
+FLUX_ROWS = (
+    (("img_mlp_0", "txt_mlp_0"), {12288: "Flux.1 D", 18432: "Flux.2 Klein 4B", 24576: "Flux.2 Klein 9B", 36864: "Flux.2 D"}),
+    (("linear1", "to_qkv_mlp_proj"), {21504: "Flux.1 D", 27648: "Flux.2 Klein 4B", 36864: "Flux.2 Klein 9B", 55296: "Flux.2 D"}),
+    (("img_attn_proj", "txt_attn_proj", "linear2"), {4096: "Flux.2 Klein 9B", 6144: "Flux.2 D"}),
+    (("img_attn_qkv", "txt_attn_qkv"), {12288: "Flux.2 Klein 9B", 18432: "Flux.2 D"}),
+)
+# Where a layer's rows are read: the weight itself, a LoRA's up matrix (kohya, PEFT, LoHa).
+ROW_ENDS = ("_weight", "_lora_up_weight", "_lora_b_weight", "_hada_w1_a")
 # Families ComfyUI's model detection tells by names no other family has: (base, names in the
 # tensor names, "." written "_"). Civitai's base model name where it has one, else ComfyUI's
 # family. Their LoRAs carry the block names, so they are told too.
@@ -144,13 +155,14 @@ def _gguf_value(reader, kind):
 
 
 def parse_gguf(data):
-    """{"meta": general.* values, "keys": tensor names, "params": their parameters, 0 when not all
-    were read} from a .gguf's first bytes; None if not one. What did not fit in `data` is left out."""
+    """{"meta": general.* values, "keys": tensor names, "shapes": their shapes, "params": their
+    parameters, 0 when not all were read} from a .gguf's first bytes; None if not one. What did
+    not fit in `data` is left out."""
     if data[:4] != b"GGUF":
         return None
     reader = _Reader(data)
     reader.take(4)
-    meta, keys, params = {}, [], 0
+    meta, keys, shapes, params = {}, [], {}, 0
     try:
         if reader.number("I") < 2:
             return None
@@ -162,14 +174,16 @@ def parse_gguf(data):
                 meta[key] = value
         for _ in range(tensors):
             keys.append(reader.text())
+            dims = [reader.number("Q") for _ in range(reader.number("I"))]
+            shapes[keys[-1]] = dims[::-1]  # GGUF lists the fastest-changing first; torch's order
             size = 1
-            for _ in range(reader.number("I")):
-                size *= reader.number("Q")
+            for dim in dims:
+                size *= dim
             params += size
             reader.take(4 + 8)  # its type and offset
     except (EOFError, ValueError, struct.error):
         params = 0
-    return {"meta": meta, "keys": keys, "params": params}
+    return {"meta": meta, "keys": keys, "shapes": shapes, "params": params}
 
 
 def read_head(path):
@@ -237,18 +251,39 @@ def _base_from_meta(meta):
 
 
 def _named_base(header, text):
-    """(base, sure) of a family told by names of its own; ("", False) for none. Asked before a
-    trainer's architecture text, which knows only the older families ("flux" and "qwen" also
-    stand in Flux.2's and Qwen 2.1's)."""
+    """(base, sure) of a family told by names of its own, or by widths where it shares an older
+    family's names (Flux.2, Mage-Flow); ("", False) for none. Asked before a trainer's
+    architecture text, which knows only the older families ("flux" and "qwen" also stand in
+    Flux.2's and Qwen 2.1's)."""
     for base, names in NAMED_FAMILIES:
         if any(name in text for name in names):
             return base, True
     # Flux.2: Flux's blocks with modulation all of them share (ComfyUI's test); in diffusers names
-    # its single blocks' projections are one. A LoRA has no img_in to tell the variant.
+    # its single blocks' projections are one. The width tells the variant, a LoRA's layers' rows.
     if "double_stream_modulation_img" in text or "to_qkv_mlp_proj" in text:
-        name = FLUX2_WIDTH.get(_first_dim(header, "img_in.weight"), "")
-        return (name, True) if name else ("Flux.2 D", False)
+        name = FLUX2_WIDTH.get(_first_dim(header, "img_in.weight"), "") or _flux_rows(header)
+        return (name, True) if name.startswith("Flux.2") else ("Flux.2 D", False)
+    if "double_blocks_" in text or "single_blocks_" in text:
+        name = _flux_rows(header)
+        if name.startswith("Flux.2"):
+            return name, True
+    # Mage-Flow: Qwen-Image's blocks, its text norm 2560 wide and 128 rows out (Qwen-Image: 3584, 64).
+    if "txt_norm" in text and _first_dim(header, "txt_norm.weight") == 2560 and _first_dim(header, "proj_out.weight") == 128:
+        return "MageFlow", True
     return "", False
+
+
+def _flux_rows(header):
+    """Flux's base model by its layers' rows (FLUX_ROWS); "" when no layer tells."""
+    for key, value in header.items():
+        shape = value.get("shape") if isinstance(value, dict) else None
+        if not shape or not isinstance(shape[0], int):
+            continue
+        low = key.lower().replace(".", "_")
+        for parts, rows in FLUX_ROWS:
+            if shape[0] in rows and any(low.endswith(part + end) for part in parts for end in ROW_ENDS):
+                return rows[shape[0]]
+    return ""
 
 
 def _base_from_keys(header, text):
@@ -271,9 +306,6 @@ def _base_from_keys(header, text):
         return "Cosmos", True
     if "distilled_guidance_layer" in text:
         return "Chroma", True
-    # Mage-Flow: Qwen-Image's blocks, its text norm 2560 wide and 128 rows out (Qwen-Image: 3584, 64).
-    if "txt_norm" in text and _first_dim(header, "txt_norm.weight") == 2560 and _first_dim(header, "proj_out.weight") == 128:
-        return "MageFlow", True
     if "img_mod_1" in text or "txt_norm" in text or "img_mlp_net" in text:
         return "Qwen", True
     if "double_blocks_0_img_attn" in text or "single_blocks_0_linear1" in text:
@@ -396,11 +428,20 @@ def classify(fmt, header):
     if fmt == "gguf":
         meta, keys = header.get("meta") or {}, header.get("keys") or []
         arch = str(meta.get("general.architecture", "")).lower()
+        shaped = {key: {"shape": (header.get("shapes") or {}).get(key)} for key in keys}
         if arch in GGUF_DIFFUSION:
-            return {"kind": "diffusion_models", "base": _gguf_base(arch, header), "sure": True}
+            # The tensors ComfyUI tells the model by once ComfyUI-GGUF loaded it come first: an
+            # architecture name stands for a whole line (Flux.2 is "flux", Z-Image's kin "lumina2").
+            text = "\n".join(keys).lower().replace(".", "_")
+            base, sure = _named_base(shaped, text)
+            if not base and arch == "lumina2":
+                base, sure = _lumina_base(shaped, text)
+            if not base:
+                base, sure = _gguf_base(arch, header), True
+            return {"kind": "diffusion_models", "base": base, "sure": sure}
         if arch.startswith(GGUF_TEXT):
             return {"kind": "text_encoders", "base": "", "sure": True}
-        header = {key: {} for key in keys}
+        header = shaped
     meta = header.get("__metadata__") if isinstance(header.get("__metadata__"), dict) else {}
     keys = [key for key in header if key != "__metadata__"]
     raw = "\n".join(keys).lower()

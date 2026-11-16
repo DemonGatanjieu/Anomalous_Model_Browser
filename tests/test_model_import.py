@@ -35,7 +35,8 @@ def safetensors_bytes(header):
     return struct.pack("<Q", len(raw)) + raw + b"\0" * 64
 
 
-def gguf_bytes(arch, names=(), dims=(4, 4)):
+def gguf_bytes(arch, names=(), dims=(4, 4), shapes=None):
+    """`shapes`: torch's order, which GGUF lists the other way round."""
     def text(value):
         raw = value.encode("utf-8")
         return struct.pack("<Q", len(raw)) + raw
@@ -43,7 +44,8 @@ def gguf_bytes(arch, names=(), dims=(4, 4)):
     data += text("general.architecture") + struct.pack("<I", 8) + text(arch)
     data += text("tokenizer.tokens") + struct.pack("<I", 9) + struct.pack("<I", 8) + struct.pack("<Q", 2) + text("a") + text("b")
     for name in names:
-        data += text(name) + struct.pack("<I", len(dims)) + struct.pack("<" + "Q" * len(dims), *dims) + struct.pack("<I", 1) + struct.pack("<Q", 0)
+        own = (shapes or {}).get(name, dims[::-1])[::-1]
+        data += text(name) + struct.pack("<I", len(own)) + struct.pack("<" + "Q" * len(own), *own) + struct.pack("<I", 1) + struct.pack("<Q", 0)
     return data
 
 
@@ -173,7 +175,21 @@ class KindTests(unittest.TestCase):
         # Flux.2 in diffusers names: its single blocks' projections are one; a LoRA has no width to tell the variant.
         flux2 = kind_of(tensors("transformer.single_transformer_blocks.0.attn.to_qkv_mlp_proj.lora_A.weight"))
         self.assertEqual((flux2["kind"], flux2["base"], flux2["sure"]), ("loras", "Flux.2 D", False))
+        # In Flux's own names Flux.2 differs only in its layers' rows (a LoRA's up matrix): the MLP's
+        # input and linear1 tell all four, the attention only the wider Klein 9B and Dev.
+        kohya = lambda layer, rows, meta=None: kind_of(tensors(f"lora_unet_{layer}.lora_down.weight", f"lora_unet_{layer}.lora_up.weight",
+                                                               shapes={f"lora_unet_{layer}.lora_up.weight": [rows, 16]}, meta=meta))
+        for layer, rows, base in (("double_blocks_0_img_mlp_0", 18432, "Flux.2 Klein 4B"), ("single_blocks_0_linear1", 36864, "Flux.2 Klein 9B"),
+                                  ("single_blocks_0_linear1", 55296, "Flux.2 D"), ("double_blocks_0_img_attn_proj", 4096, "Flux.2 Klein 9B"),
+                                  ("single_blocks_0_linear1", 21504, "Flux.1 D"),
+                                  ("double_blocks_0_img_attn_proj", 3072, "Flux.1 D")):  # Klein 4B's attention is as wide as Flux.1's: not told
+            found = kohya(layer, rows)
+            self.assertEqual((found["kind"], found["base"], found["sure"]), ("loras", base, True), (layer, rows))
+        flux2 = kind_of(tensors("transformer.single_transformer_blocks.0.attn.to_qkv_mlp_proj.lora_B.weight",
+                                shapes={"transformer.single_transformer_blocks.0.attn.to_qkv_mlp_proj.lora_B.weight": [27648, 16]}))
+        self.assertEqual((flux2["base"], flux2["sure"]), ("Flux.2 Klein 4B", True))
         # Those names outweigh a trainer's architecture text, which knows only the older families.
+        self.assertEqual(kohya("single_blocks_0_linear1", 36864, meta={"modelspec.architecture": "flux-2-klein-9b/lora"})["base"], "Flux.2 Klein 9B")
         qwen21 = kind_of(tensors("diffusion_model.transformer_blocks.0.img_mlp.gate_layer.lora_A.weight", meta={"modelspec.architecture": "qwen-image/lora"}))
         self.assertEqual(qwen21["base"], "Qwen 2.1")
 
@@ -289,6 +305,19 @@ class KindTests(unittest.TestCase):
         self.assertEqual(model_kind.classify("gguf", zimage)["base"], "Z-Image")
         self.assertEqual(model_kind.classify("gguf", model_kind.parse_gguf(gguf_bytes("lumina2", ["a.weight"])))["base"], "Lumina")
         self.assertEqual(model_kind.parse_gguf(gguf_bytes("flux", ["a.weight"]))["keys"], ["a.weight"])
+        self.assertEqual(model_kind.parse_gguf(gguf_bytes("flux", ["img_in.weight"], shapes={"img_in.weight": [4096, 128]}))["shapes"],
+                         {"img_in.weight": [4096, 128]})
+        # The tensors ComfyUI tells a model by once ComfyUI-GGUF loaded it come before the architecture
+        # name, which stands for a whole line: Flux.2 is "flux", Qwen 2.1 "qwen_image", Z-Image's kin "lumina2".
+        base = lambda arch, shapes: model_kind.classify("gguf", model_kind.parse_gguf(gguf_bytes(arch, list(shapes), shapes=shapes)))["base"]
+        self.assertEqual(base("flux", {"double_stream_modulation_img.lin.weight": [24576, 4096], "img_in.weight": [4096, 128]}), "Flux.2 Klein 9B")
+        self.assertEqual(base("flux", {"double_blocks.0.img_attn.qkv.weight": [12288, 4096], "single_blocks.0.linear1.weight": [36864, 4096]}), "Flux.2 Klein 9B")
+        self.assertEqual(base("flux", {"double_blocks.0.img_attn.qkv.weight": [9216, 3072], "single_blocks.0.linear1.weight": [21504, 3072],
+                                       "guidance_in.in_layer.weight": [3072, 256]}), "Flux.1 D")
+        self.assertEqual(base("qwen_image", {"txt_in.text_norm.weight": [3584], "transformer_blocks.0.img_mlp.gate_up.weight": [24576, 3072]}), "Qwen 2.1")
+        lumina = {"noise_refiner.0.attention.k_norm.weight": [128], "cap_embedder.1.weight": [3840, 2560], "cap_pad_token": [1, 3840]}
+        self.assertEqual(base("lumina2", lumina), "Z-Image")  # by the width, as ComfyUI tells it, not the size
+        self.assertEqual(base("lumina2", {**lumina, "dec_net.cond_embed.weight": [64, 3840]}), "Z-Image Pixel")
         self.assertEqual(model_kind.classify("gguf", model_kind.parse_gguf(gguf_bytes("t5encoder")))["kind"], "text_encoders")
         # Cut short: what fits is still read.
         self.assertEqual(model_kind.parse_gguf(gguf_bytes("wan")[:70])["meta"].get("general.architecture"), "wan")
