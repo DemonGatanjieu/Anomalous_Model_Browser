@@ -1,45 +1,17 @@
 /**
- * Pure tests for web/modules/ai_chat_plus.js: model favourite ordering, usable/on way filtering,
- * and message ref serialization with optional notes.
+ * Pure tests for web/modules/ai_chat_plus.js (ref note and serialization) and
+ * ai_toolbox_data.js wayItems.
  */
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
     MAX_REF_NOTE,
-    orderModelsFavoritesFirst,
     refNote,
     serializeRef,
     serializeRefs,
 } from '../web/modules/ai_chat_plus.js';
 import { wayItems } from '../web/modules/ai_toolbox_data.js';
-
-const MODEL_FIXTURE = [
-    { kind: 'models', id: 'checkpoints:0:a.safetensors', title: 'Alpha', haystack: 'alpha a.safetensors checkpoints sdxl' },
-    { kind: 'models', id: 'loras:0:b.safetensors', title: 'Beta LoRA', haystack: 'beta lora b.safetensors loras sdxl' },
-    { kind: 'models', id: 'checkpoints:0:c.safetensors', title: 'Gamma', haystack: 'gamma c.safetensors checkpoints anima' },
-    { kind: 'models', id: 'loras:0:d.safetensors', title: 'Delta LoRA', haystack: 'delta lora d.safetensors loras sdxl' },
-];
-
-test('orderModelsFavoritesFirst places favourites first in favourite order and narrows by query', () => {
-    const all = orderModelsFavoritesFirst(MODEL_FIXTURE, [
-        'loras:0:d.safetensors',
-        'checkpoints:0:c.safetensors',
-    ]);
-    assert.deepEqual(all.map(m => [m.id, m.favourite]), [
-        ['loras:0:d.safetensors', true],
-        ['checkpoints:0:c.safetensors', true],
-        ['checkpoints:0:a.safetensors', false],
-        ['loras:0:b.safetensors', false],
-    ]);
-    // Search preserves narrowing while keeping matching favourites ahead of non-favourites.
-    const filtered = orderModelsFavoritesFirst(MODEL_FIXTURE, ['loras:0:d.safetensors'], 'lora');
-    assert.deepEqual(filtered.map(m => m.id), [
-        'loras:0:d.safetensors',
-        'loras:0:b.safetensors',
-    ]);
-    assert.equal(MODEL_FIXTURE[0].favourite, undefined, 'input items are not mutated');
-});
 
 test('wayItems offers only usable and enabled blocks with localized title, about and bilingual search', () => {
     const blocks = [
@@ -60,17 +32,17 @@ test('wayItems offers only usable and enabled blocks with localized title, about
     assert.equal(en[0].about, 'Colours a line drawing');
 });
 
-test('serializeRefs strips, truncates notes at 120 chars and omits empty notes', () => {
+test('serializeRefs strips, truncates notes at 120 chars, keeps attached when true, and omits empty notes', () => {
     const longNote = 'x'.repeat(MAX_REF_NOTE + 25);
     assert.equal(refNote(longNote).length, MAX_REF_NOTE);
-    assert.deepEqual(serializeRef({ kind: 'models', id: 'm1', label: 'M1', note: '   ' }), { kind: 'models', id: 'm1', label: 'M1' });
+    assert.deepEqual(serializeRef({ kind: 'models', id: 'm1', label: 'M1', note: '   ', attached: false }), { kind: 'models', id: 'm1', label: 'M1' });
     assert.deepEqual(serializeRefs([
-        { kind: 'models', id: 'm1', label: 'M1', note: '  base model  ' },
+        { kind: 'models', id: 'm1', label: 'M1', attached: true, note: '  base model  ' },
         { kind: 'ways', id: 'w1', label: 'W1', note: '' },
-        { kind: 'combos', id: 'c1', label: 'C1', note: longNote },
+        { kind: 'combos', id: 'c1', label: 'C1', attached: true, note: longNote },
     ]), [
-        { kind: 'models', id: 'm1', label: 'M1', note: 'base model' },
+        { kind: 'models', id: 'm1', label: 'M1', attached: true, note: 'base model' },
         { kind: 'ways', id: 'w1', label: 'W1' },
-        { kind: 'combos', id: 'c1', label: 'C1', note: 'x'.repeat(MAX_REF_NOTE) },
+        { kind: 'combos', id: 'c1', label: 'C1', attached: true, note: 'x'.repeat(MAX_REF_NOTE) },
     ]);
 });

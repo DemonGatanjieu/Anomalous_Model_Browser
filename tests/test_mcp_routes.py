@@ -117,8 +117,8 @@ class StartFromRouteTests(unittest.TestCase):
         catalog = [
             {"id": LORA, "name": "my_lora", "type": "loras", "base": "SDXL 1.0"},
             {"id": "checkpoints:0:zeta.safetensors", "name": "zeta", "type": "checkpoints", "metadata": {"base_guess": "SD 1.5"}},
-            {"id": A, "name": "alpha", "type": "checkpoints", "base": "SDXL 1.0"},
-            {"id": B, "name": "bravo", "type": "checkpoints", "base": "Illustrious"},
+            {"id": A, "name": "alpha", "type": "checkpoints", "base": "SDXL 1.0", "cover": "/anomalous/preview/a.png"},
+            {"id": B, "name": "bravo", "type": "checkpoints", "base": "Illustrious", "cover": "/anomalous/preview/b.png"},
             {"id": "diffusion_models:0:flux.safetensors", "name": "flux_d", "type": "diffusion_models", "base": "Flux.1 D"},
         ]
         with mock.patch.object(mcp_routes.ai_toolbox, "favorites", return_value={"models": [B, A]}), \
@@ -127,6 +127,7 @@ class StartFromRouteTests(unittest.TestCase):
         self.assertEqual([item["model_id"] for item in got], [B, A, "checkpoints:0:zeta.safetensors"],
                          "a LoRA and a Flux model are no model a new picture starts from")
         self.assertEqual([item["favourite"] for item in got], [True, True, False])
+        self.assertEqual([item["cover"] for item in got], ["/anomalous/preview/b.png", "/anomalous/preview/a.png", ""])
         self.assertEqual(got[2]["family"], "SD 1.x")
 
     def test_ways_for_excludes_card_respects_family_loader_and_picture_fit(self):

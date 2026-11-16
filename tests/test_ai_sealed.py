@@ -338,6 +338,38 @@ class SealedTests(unittest.TestCase):
         self.assertEqual(ai_sealed.expand(self.task, {"m": refs["ways"]["user_note"]}),
                          {"m": "apply after canaryneg with Canarycard Pose"})
 
+    def test_handed_attached_model_in_private_task_seals_in_message_and_get_toolbox(self):
+        from api import mcp_tools
+
+        lib = [*LIBRARY]
+        model_card = {
+            "model_id": LORA, "name": "Canarycard Pose", "file": "canarylora v2.safetensors", "folder": "canaryfolder",
+            "civitai_name": "Canarycard Civitai", "version": "v2", "sha256": "canarysha", "civitai_url": "https://civitai.com/models/1",
+            "type": "loras", "base_model": "Anima", "note_for_ai": "character LoRA",
+            "description": "canarypos author bio", "user_notes": "canaryneg user note", "trigger_words": ["canarytrigger"],
+        }
+        ai_panels.leave_message(self.task, "", [
+            {"kind": "models", "id": LORA, "label": "Canarycard Pose", "attached": True, "note": "only for \u27e6canaryecho\u27e7"},
+        ])
+        with mock.patch.object(ai_sealed_models, "_library", return_value=lib), \
+                mock.patch.object(mcp_tools, "get_model", return_value=(model_card, [])):
+            got = rpc("tools/call", {"name": "get_answers", "arguments": {"task": self.task}}, "get_answers")
+            toolbox = rpc("tools/call", {"name": "get_toolbox", "arguments": {"task": self.task}}, "get_toolbox")
+
+        self.assertFalse(got["result"].get("isError"), got)
+        self.assertFalse(toolbox["result"].get("isError"), toolbox)
+        for reply in (got, toolbox):
+            dumped = json.dumps(reply, ensure_ascii=False)
+            for secret in ("canaryecho", "canaryneg", "canarypos", "canarytrigger", "canarylora", "Canarycard", "canaryfolder", "canarysha"):
+                self.assertNotIn(secret, dumped)
+        msg_ref = next(item for item in got["result"]["structuredContent"]["messages"] if "refs" in item)["refs"][0]
+        self.assertTrue(msg_ref["handed"])
+        self.assertRegex(msg_ref["id"], r"^\[M\d+\]$")
+        self.assertRegex(msg_ref["user_note"], r"^only for \[P\d+\]$")
+        tb_model = toolbox["result"]["structuredContent"]["models"][0]
+        self.assertRegex(tb_model["model_id"], r"^\[M\d+\]$")
+        self.assertRegex(tb_model["description"], r"^\[P\d+\]$")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -75,7 +75,7 @@ def cards_of(model_id):
 
 def main_models():
     """The main models a new picture can start from (those use picture draws with), favourites first,
-    for the starter sheet: [{model_id, name, family, favourite}]."""
+    for the starter sheet: [{model_id, name, family, favourite, cover}]."""
     from . import ai_toolbox_catalog, mcp_canvas_edit
 
     liked = ai_toolbox.favorites().get("models") or []
@@ -88,7 +88,7 @@ def main_models():
             continue
         name = item.get("name") or item.get("file") or model_id
         out.append({"model_id": model_id, "name": name, "family": model_advice.family(base),
-                    "favourite": model_id in order})
+                    "favourite": model_id in order, "cover": item.get("cover") or ""})
     out.sort(key=lambda item: (0 if item["favourite"] else 1, order.get(item["model_id"], 0),
                                item["name"].lower(), item["model_id"].lower()))
     return out

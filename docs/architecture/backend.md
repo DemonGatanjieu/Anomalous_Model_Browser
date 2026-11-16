@@ -436,13 +436,20 @@ an outcome reports (`remember`); `tell` adds `canvas_tab` to the answer once whe
 activated fails on the page before executing the action, rather than using another workflow.
 Message `@` and `+` references (`api/ai_message_refs.py`: `models`, `combos`, `workflows`, `prompts`,
 `nodes`, `packs`, `ways`, `pictures`, with an optional stripped `note` up to 200 chars delivered
-as `user_note` without overwriting `nodes`/`packs` `note`, and `lookup("ways", name)` returning
+as `user_note` without overwriting `nodes`/`packs` `note`, an optional `attached: True` on what
+the picker put on the message, and `lookup("ways", name)` returning
 `{name, title, about, call}` from `reference_blocks`) resolve combo/workflow names with the internal
 `exact_name` filter in `mcp_tools` before limiting results; public list-tool searches remain fuzzy.
+An attached ref of a kind the picks hold is handed over, not only pointed at (`ai_toolbox.handed`;
+a picture is not, a way has to be a block): `ai_panels.leave_message` calls `ai_toolbox.hand_over`
+under the lock that stores the step, which puts it on the task's picks (the task's own, else the
+favourites standing in; the mode kept; a kind over `MAX_ITEMS` refuses the whole message; no step
+of its own), `message_of` marks it `handed: true` for the AI, and `ai_decisions.decisions` counts
+the message as a `toolbox` decision.
 The default mode is in `anomalous/ai_canvas.json` (GET/POST `/anomalous/ai_gates` `canvas_tab`),
 a task's own in its `canvas` record (POST `/anomalous/ai_tasks/{id}` `{canvas}`).
 
-The "say" and "private" starter sheets and the message box's "+" / `/build` window read `GET /anomalous/ai_routes` (`mcp_routes.main_models` and
+The "say" and "private" starter sheets and the message box's "+" / `/build` window read `GET /anomalous/ai_routes` (`mcp_routes.main_models` including `cover` and
 `ways_for`: only the models use picture draws with, `mcp_canvas_edit.draws_picture`, and without the saved workflow `card`) when opened with
 "Build a new one" available; on Start, `POST /anomalous/ai_tasks/{id}/route` (loopback-only via
 `local_guard`) runs `mcp_routes.apply` in a worker thread to pick `[first, second?]` without

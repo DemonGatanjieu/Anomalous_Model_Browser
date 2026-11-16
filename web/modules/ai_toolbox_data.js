@@ -8,7 +8,7 @@
  * opened meanwhile uses what is kept and refreshes it behind. searchItems matches and ranks.
  */
 
-export const KINDS = Object.freeze(['nodes', 'combos', 'workflows', 'prompts', 'models']);
+export const KINDS = Object.freeze(['models', 'ways', 'combos', 'workflows', 'prompts', 'nodes']);
 /** What can be picked: the kinds, and whole custom node packs (picked from the nodes' sources). */
 export const PICK_KINDS = Object.freeze(['nodes', 'packs', 'combos', 'workflows', 'prompts', 'models', 'ways']);
 const SETTING_TYPES = new Set(['INT', 'FLOAT', 'STRING', 'BOOLEAN', 'COMBO']);
@@ -130,19 +130,29 @@ export function catalogItems(payload) {
     return out;
 }
 
-/** `items` matching every word of `query`: titles that start with it first, then titles that hold it, then the rest. */
-export function searchItems(items, query) {
+/**
+ * `items` matching every word of `query`: titles/ids starting with the query first, then titles/ids
+ * holding every term, then the rest; when `favoriteIds` are given, favourites come first in
+ * favourite order (without a query) or first within each rank (with a query).
+ */
+export function searchItems(items, query, favoriteIds = null) {
     const terms = lower(query).split(/\s+/).filter(Boolean);
-    if (!terms.length) return items;
+    const favOrder = new Map();
+    for (const id of favoriteIds || []) {
+        if (typeof id === 'string' && !favOrder.has(id)) favOrder.set(id, favOrder.size);
+    }
+    if (!terms.length && !favOrder.size) return items;
     const whole = terms.join(' ');
-    return items.filter(item => terms.every(term => item.haystack.includes(term)))
+    const matched = (terms.length ? (items || []).filter(item => terms.every(term => item.haystack.includes(term))) : (items || []))
         .map((item, index) => {
             const title = lower(item.title);
             const id = lower(item.id);
-            return { item, index, rank: title.startsWith(whole) || id.startsWith(whole) ? 0 : terms.every(term => title.includes(term) || id.includes(term)) ? 1 : 2 };
-        })
-        .sort((a, b) => a.rank - b.rank || a.index - b.index)
-        .map(entry => entry.item);
+            const rank = !terms.length ? 0 : title.startsWith(whole) || id.startsWith(whole) ? 0 : terms.every(term => title.includes(term) || id.includes(term)) ? 1 : 2;
+            const fav = favOrder.has(item.id) ? favOrder.get(item.id) : Infinity;
+            return { item, index, rank, fav };
+        });
+    matched.sort((a, b) => (a.rank - b.rank) || (a.fav - b.fav) || (a.index - b.index));
+    return matched.map(entry => entry.item);
 }
 
 let kept = null; // { at, items }

@@ -44,6 +44,8 @@ def log(client, title, decision, reason="", rejected=None, by="user", related=No
 
 def decisions(task):
     """Every decision of `task`, oldest first: {type: logged | answer | gate | toolbox | canvas | privacy | stop | halt, step, at, …}."""
+    from . import ai_toolbox
+
     out = []
     for step in (task or {}).get("steps") or []:
         tool = step.get("tool")
@@ -65,6 +67,9 @@ def decisions(task):
             box = step.get("toolbox") or {}
             count = sum(len(value) for value in box.values() if isinstance(value, list))
             out.append({"type": "toolbox", "step": step["id"], "at": step["at"], "mode": box.get("mode", "prefer"), "count": count})
+        elif tool == "user_message" and (count := sum(ai_toolbox.handed(ref) for ref in step.get("refs") or [])):
+            # A message that handed things over (ai_toolbox.hand_over): how strictly is the task's, there is one for all its picks.
+            out.append({"type": "toolbox", "step": step["id"], "at": step["at"], "mode": (task.get("toolbox") or {}).get("mode", "prefer"), "count": count})
         elif tool == "user_route":
             out.append({"type": "route", "step": step["id"], "at": step["at"],
                         "route": step.get("route") or "", "models": list(step.get("models") or [])})

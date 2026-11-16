@@ -18,7 +18,7 @@ import { translate as t } from './locales.js';
 import { timeLabel } from './activity_log.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { runMapBox } from './ui_ai_run_map.js';
-import { closeToolbox, openToolbox, setToolboxHost, toolboxOpenFor } from './ui_ai_toolbox.js';
+import { closeToolbox, openToolbox, setToolboxHost, syncToolboxTask, toolboxOpenFor } from './ui_ai_toolbox.js';
 import { panelSteps, renderStage, sideHead } from './ui_ai_side.js';
 import { renderDecisionsView } from './ui_ai_decisions.js';
 import { renderOutputsView } from './ui_ai_outputs.js';
@@ -100,16 +100,27 @@ export function viewTabs(side, shown, badges, onPick, onTimeline) {
     return bar;
 }
 
+let connectedPage = null; // connectSide's `page`: where the picker gets the task's message box from
+
 /**
  * The switch was pressed on `view`: shows it, or closes the column when it is what is shown.
- * The materials view opens the picker first when it is not open (it comes in through its host).
+ * The materials view opens the picker first when it is not open (it comes in through its host),
+ * or switches its kind when opened from "+" (`openKind`).
  */
-export function pickView(side, view, shown, task, redraw, changed) {
-    if (shown && side.view === view && side.tab === 'stage') {
+export function pickView(side, view, shown, task, redraw, changed, openKind = null) {
+    if (!openKind && shown && side.view === view && side.tab === 'stage') {
         side.hidden = true;
         side.tab = 'timeline';
-    } else if (view === 'toolbox' && !toolboxOpenFor(task.id)) {
-        void openToolbox(task, changed);
+    } else if (view === 'toolbox' && (!toolboxOpenFor(task.id) || openKind)) {
+        void openToolbox(task, changed, {
+            kind: openKind,
+            layout: openKind ? (connectedPage.tabbed() ? 'full' : 'side') : null, // from "+": beside the message box, or over it with "Done"
+            messageBox: connectedPage.message(),
+            onShow: () => {
+                Object.assign(side, { view: 'toolbox', hidden: false, tab: 'stage' });
+                redraw();
+            },
+        });
         return;
     } else {
         Object.assign(side, { view, hidden: false, tab: 'stage', asked: view === 'stage' });
@@ -227,6 +238,7 @@ export function renderMapView(pane, task, side, ctx) {
 export function drawSide(box, task, side, ctx, arrived = null) {
     const panes = sidePanes(box);
     if (panes.toolbox.dataset.task && panes.toolbox.dataset.task !== task.id) closeToolbox();
+    syncToolboxTask(task);
     const opened = panes.blocks.hidden && side.view === 'blocks'; // the ways are read again when the view comes up
     for (const [view, pane] of Object.entries(panes)) pane.hidden = view !== side.view;
     box.querySelector(':scope > .anomalous-ai-tabs').replaceWith(ctx.tabs());
@@ -249,11 +261,14 @@ export function drawSide(box, task, side, ctx, arrived = null) {
 }
 
 /**
- * Once: the materials picker docks in the column while the AI page is shown (else on the right of
- * the screen). `page`: {side, task(), box() (the column, or null when the page is not shown),
- * redraw()}. Returns how a run's step shows its shape there at full size.
+ * Once: the materials picker docks in the column while the AI page is shown (else it is a window).
+ * `page`: {side, task(), box() (the column, or null when the page is not shown), redraw(),
+ * message() (the task's message box, whose `refs` the picker puts things on), tabbed() (no room
+ * for the column beside the timeline: it is a tab over it)}. Returns how a run's step shows its
+ * shape there at full size.
  */
 export function connectSide(page) {
+    connectedPage = page;
     setToolboxHost((body, expand) => {
         const box = page.box();
         const task = page.task();

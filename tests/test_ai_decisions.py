@@ -65,6 +65,18 @@ class DecisionTests(unittest.TestCase):
         gate = next(item for item in ai_decisions.decisions(ai_tasks.get_task(self.task)) if item["type"] == "gate")
         self.assertEqual((gate["tool"], gate["allowed"], gate["text"]), ("download_model", False, "先别下"))
 
+    def test_message_handing_things_over_counts_as_toolbox_decision(self):
+        ai_panels.leave_message(self.task, "", [
+            {"kind": "models", "id": "checkpoints:0:a.safetensors", "label": "A", "attached": True},
+            {"kind": "ways", "id": "upscale", "label": "Upscale", "attached": True},
+            {"kind": "ways", "id": "no_such_block", "label": "Nope", "attached": True},
+            {"kind": "nodes", "id": "KSampler", "label": "KSampler"},
+        ])
+        task = ai_tasks.get_task(self.task)
+        found = ai_decisions.decisions(task)
+        self.assertEqual([(item["type"], item["count"], item["mode"]) for item in found], [("toolbox", 2, "prefer")])
+        self.assertIn("2 materials (prefer)", " ".join(ai_decisions.lines(task)))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,20 +1,21 @@
 /**
  * The AI workbench's message box (ui_ai_workbench.js keeps it at the foot of a task's column, in
  * view as the timeline scrolls): where the user writes to the AI on that task. Over the input
- * what the message carries (ui_ai_tray.js: pictures to mark up or leave out, what "@" names);
- * Beside it "+" (ui_ai_plus.js: models, ways, or build a new one), the gallery
- * (ui_ai_gallery_pick.js) and the materials picker, each lit with how many
- * it gave; pictures dropped on it or pasted (ui_ai_drop.js); the input grows with what is typed
- * (Enter sends, Shift+Enter breaks the line), with "@" to point at things and "/" for commands
- * (ui_ai_mention.js). The words and what is attached
- * go to `onSend(text, refs)`, words optional when something is attached; the AI gets them the
- * next time it asks (get_answers), which the hint says, and says to ask in the AI app once the
- * task ended. Made once per task, so half-typed text survives the task's redraws.
+ * what the message carries (ui_ai_tray.js: pictures to mark up or leave out, what "@" names or
+ * the picker attached); beside it "+" (ui_ai_plus.js: opens the materials picker or builds a
+ * new route) and the gallery (ui_ai_gallery_pick.js), lit with how many pictures it gave;
+ * pictures dropped on it or pasted (ui_ai_drop.js); the input grows with what is typed (Enter
+ * sends, Shift+Enter breaks the line), with "@" to point at things and "/" for commands
+ * (ui_ai_mention.js). The words and what is attached go to `onSend(text, refs)`, words optional
+ * when something is attached; the AI gets them the next time it asks (get_answers), which the
+ * hint says, and says to ask in the AI app once the task ended. Made once per task, so half-typed
+ * text survives the task's redraws. Exposes `box.refs` as the picker's handle to the message.
  */
 
 import { translate as t } from './locales.js';
 import { firstHint } from './ui_ai_tour.js';
-import { lead, kindWords, mentions } from './ui_ai_mention.js';
+import { MAX_REFS, mentions } from './ui_ai_mention.js';
+import { recordRecent } from './ai_toolbox_state.js';
 import { plusMenu } from './ui_ai_plus.js';
 import { openBuildRouteWindow } from './ui_ai_start_from.js';
 import { galleryPicker } from './ui_ai_gallery_pick.js';
@@ -23,7 +24,6 @@ import { iconButton } from './ui_ai_icons.js';
 import { noteTyping } from './ui_ai_panel.js';
 import { hideButton } from './ai_hide_mark.js';
 
-const MAX_REFS = 12; // api/ai_message_refs.py
 const MAX_PICTURES = 8; // a message's pictures, as ai_pictures.py hands them
 const MAX_HEIGHT = 168; // the input grows up to about seven lines, then scrolls
 
@@ -47,8 +47,8 @@ function sideTool(className, name, label, run) {
 }
 
 /**
- * The box; `source`: {task(), commands(), mark(image, sent), openMaterials(), changed()} for "@",
- * "/", "+", the tray's ✎ and the materials button. `box.setMaterials(count)` shows how many materials are picked.
+ * The box; `source`: {task(), commands(), mark(image, sent), openMaterials(kind), changed()} for
+ * "@", "/", "+" and the tray's ✎. `box.refs` is the picker's handle to the message's refs.
  */
 export function messageBox(onSend, source) {
     const box = el('div', 'anomalous-ai-message');
@@ -77,6 +77,7 @@ export function messageBox(onSend, source) {
         send.disabled = true;
         try {
             await onSend(text, refs);
+            recordRecent(refs, { privateTask: Boolean(source?.task?.()?.private) });
             field.value = '';
             fit();
             at?.clear();
@@ -119,17 +120,14 @@ export function messageBox(onSend, source) {
         plus.setAttribute('aria-expanded', 'false');
         menu = plusMenu(box, field, {
             button: plus,
-            lead,
-            kindWords,
             onOpen: () => picker.close(),
-            onPick: item => at.add(item, { focusNote: true }),
+            onPickKind: kind => source.openMaterials(kind),
             onBuild: () => openBuildRouteWindow({ task: source.task, built: source.changed }),
         });
-        const materials = sideTool('anomalous-ai-message-materials', 'sparkle', t('aiMessageMaterials'), () => source.openMaterials());
         const counted = () => pics.setCount(at.pictures());
         box.addEventListener('anomalous-refs', counted);
         field.addEventListener('input', counted);
-        line.prepend(plus, pics, materials);
+        line.prepend(plus, pics);
         const hide = hideButton(currentField, (text) => { note.textContent = text; }); // a private task: words the AI gets as a token
         const hideHint = firstHint('hide', t('aiFirstHide'));
         if (hideHint) box.insertBefore(hideHint, note);
@@ -144,7 +142,8 @@ export function messageBox(onSend, source) {
             note.textContent = text;
             note.classList.add('is-error');
         } });
-        box.setMaterials = count => materials.setCount(count);
+        const { has, count, countOf, itemsOf, room: left, add, remove, swap } = at;
+        box.refs = { has, count, countOf, itemsOf, room: left, add, remove, swap }; // the picker's handle (ui_ai_toolbox.js)
         box.syncPrivacy = () => {
             syncVisibility();
             at.syncPrivacy();
@@ -158,12 +157,11 @@ export function messageBox(onSend, source) {
 /** The hint for where the task stands (the input's tooltip too: a short window shows the hint only
  * for a failure); quieter while the AI is not working on it. While a task waits for an AI
  * (`status` "waiting"), what is sent waits with it, and the input says it can be used for that. */
-export function updateMessageBox(box, ended, status, materials = 0) {
+export function updateMessageBox(box, ended, status) {
     box.classList.toggle('is-quiet', !['live', 'asks', 'waiting'].includes(status));
     box.note.textContent = t(ended ? 'aiMessageEnded' : status === 'waiting' ? 'aiMessageWaiting' : 'aiMessageHint');
     box.note.classList.remove('is-error');
     box.field.title = box.note.textContent;
     box.field.placeholder = t(status === 'waiting' ? 'aiMessagePlaceholderWaiting' : 'aiMessagePlaceholder');
-    box.setMaterials?.(materials);
     box.syncPrivacy?.();
 }

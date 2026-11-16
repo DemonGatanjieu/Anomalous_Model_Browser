@@ -65,4 +65,24 @@ await loadCatalog({ fetcher });
 assert.equal(calls, 1, 'kept');
 assert.equal(keptCatalog()[0].id, 'x');
 await assert.rejects(loadCatalog({ fresh: true, fetcher: async () => ({ ok: false, status: 502, json: async () => ({ error: 'no' }) }) }), /no/);
+
+// Favourites first without query (in favourite order), and within the same search rank with query.
+const favSample = catalogItems({
+    combos: [
+        { name: 'big cat', loras: [], prompt: 'meow' },
+        { name: 'cat_alpha', loras: [], prompt: '' },
+        { name: 'cat_beta', loras: [], prompt: '' },
+        { name: 'black cat', loras: [], prompt: '' },
+    ],
+});
+assert.deepEqual(
+    searchItems(favSample, '', ['cat_beta', 'black cat']).map(item => item.id),
+    ['cat_beta', 'black cat', 'big cat', 'cat_alpha'],
+    'without a query, favourites come first in favourite order',
+);
+assert.deepEqual(
+    searchItems(favSample, 'cat', ['black cat', 'cat_beta']).map(item => item.id),
+    ['cat_beta', 'cat_alpha', 'black cat', 'big cat'],
+    'with a query, searchItems rank stays and favourites lead inside each rank',
+);
 console.log('ai_toolbox_data: ok');

@@ -52,7 +52,8 @@
 .anomalous-ai-mention-kind { flex: none; max-width: 45%; overflow: hidden; color: var(--amb-text-dim); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
 
 /* What the message carries: pictures with ✎ and ×, then chips. */
-.anomalous-ai-tray { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; max-width: 100%; min-width: 0; }
+/* Up to twelve things, each with its note: past about six lines they scroll, the timeline stays in view. */
+.anomalous-ai-tray { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; max-width: 100%; min-width: 0; max-height: min(40vh, 232px); overflow-y: auto; }
 .anomalous-ai-tray[hidden] { display: none; }
 .anomalous-ai-tray-picture {
     position: relative;
@@ -97,13 +98,14 @@
 }
 .anomalous-ai-tray-mark:hover { background: var(--amb-link); }
 .anomalous-ai-mention-chip {
+    position: relative; /* its × sits at the top right, whether the note is beside the name or wrapped under it */
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
     max-width: 100%;
     box-sizing: border-box;
-    padding: 3px 4px 3px 3px;
+    padding: 3px 26px 3px 3px;
     border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
     border-radius: 8px;
     background: color-mix(in srgb, var(--amb-link) 10%, transparent);
@@ -127,7 +129,7 @@
 }
 .anomalous-ai-mention-chip-note:focus { border-color: color-mix(in srgb, var(--amb-link) 60%, transparent); outline: none; }
 .anomalous-ai-mention-chip-note::placeholder { color: var(--amb-text-dim); }
-.anomalous-ai-mention-chip-x { display: inline-flex; padding: 3px; border: 0; border-radius: 5px; background: none; color: var(--amb-text-soft); cursor: pointer; }
+.anomalous-ai-mention-chip-x { position: absolute; top: 3px; right: 3px; display: inline-flex; padding: 3px; border: 0; border-radius: 5px; background: none; color: var(--amb-text-soft); cursor: pointer; }
 .anomalous-ai-mention-chip-x:hover { background: rgba(var(--amb-ink-rgb), 0.1); color: var(--amb-text-main); }
 
 /* The gallery and materials buttons beside the input, and the gallery's panel over the box like the list. */
@@ -477,28 +479,6 @@
 .anomalous-ai-plus-item-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-plus-arrow { flex: none; color: var(--amb-text-dim); }
 .anomalous-ai-plus-hint { padding: 6px 10px 2px; border-top: 1px solid var(--amb-border); color: var(--amb-text-dim); font-size: 11.5px; line-height: 1.4; }
-.anomalous-ai-plus-head { display: flex; align-items: center; gap: 6px; }
-.anomalous-ai-plus-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px 4px 4px;
-    border: 0;
-    border-radius: 7px;
-    background: transparent;
-    color: var(--amb-text-main);
-    font: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-}
-.anomalous-ai-plus-back:hover, .anomalous-ai-plus-back:focus-visible { background: rgba(var(--amb-ink-rgb), 0.08); outline: none; }
-.anomalous-ai-plus-list { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow-y: auto; }
-.anomalous-ai-plus-list .anomalous-ai-mention-row { min-height: 36px; padding: 5px 8px; }
-.anomalous-ai-plus-fav { flex: none; color: var(--amb-warn); }
-.anomalous-ai-plus-row-text { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
-.anomalous-ai-plus-row-title { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-plus-row-about { color: var(--amb-text-dim); font-size: 11.5px; line-height: 1.35; }
 .anomalous-ai-step-refs { margin-top: 6px; }
 .anomalous-ai-step-refs .anomalous-tb-chip { flex: 0 1 auto; flex-wrap: wrap; max-width: 100%; height: auto; min-height: 28px; padding: 3px 9px; }
 .anomalous-ai-step-refs .anomalous-tb-chip.is-ways { border-color: color-mix(in srgb, var(--amb-link) 45%, transparent); }

@@ -351,8 +351,9 @@ MAX_MESSAGE = 2000
 def leave_message(task_id, text, refs=None, now=None):
     """A message from the user to the AI working on task `task_id`, with what its "@" point at and
     the pictures attached (ai_message_refs.py); words may be left out when something is attached.
-    Returns the step."""
-    from . import ai_message_refs, ai_sealed
+    What the picker put on it is handed over: it joins the task's picks (ai_toolbox.hand_over) with the
+    step, under the same lock. Returns the step."""
+    from . import ai_message_refs, ai_sealed, ai_toolbox
 
     try:
         refs = ai_message_refs.clean(refs)
@@ -377,6 +378,10 @@ def leave_message(task_id, text, refs=None, now=None):
         task = ai_tasks._load().get(task_id)
         if not task:
             raise PanelError("No such task")
+        try:
+            ai_toolbox.hand_over(task, refs)
+        except ai_toolbox.ToolboxError as error:
+            raise PanelError(str(error))
         task["steps"].append(step)
         del task["steps"][:-ai_tasks.MAX_STEPS]
         task["updated"] = max(task.get("updated", 0), now)

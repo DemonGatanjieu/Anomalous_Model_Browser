@@ -6,6 +6,7 @@ import {
     filterModels,
     filterWorkflows,
     loadImageInfo,
+    modelFamilies,
     modelStem,
     pickWay,
     resolveStartFrom,
@@ -41,17 +42,23 @@ test('loadImageInfo counts active LoadImage nodes with an image widget, ignoring
     assert.deepEqual(loadImageInfo({ _nodes: [] }), { count: 0, names: [] });
 });
 
-test('secondModelChoices keeps only distinct models from the same non-empty family', () => {
+test('secondModelChoices, filterModels and modelFamilies support family, query and favourite ordering', () => {
     const models = [
-        { model_id: 'a1', name: 'A1', family: 'anima' },
-        { model_id: 'a2', name: 'A2', family: 'anima' },
-        { model_id: 'x1', name: 'X1', family: 'SDXL' },
-        { model_id: 'u1', name: 'U1', family: '' },
-        { model_id: 'u2', name: 'U2', family: '' },
+        { model_id: 'a1', name: 'Alpha', family: 'Anima', favourite: false },
+        { model_id: 'a2', name: 'Beta', family: 'Anima', favourite: true },
+        { model_id: 'x1', name: 'Gamma XL', family: 'SDXL', favourite: false },
+        { model_id: 'x2', name: 'Delta XL', family: 'SDXL', favourite: true },
+        { model_id: 'u1', name: 'Unknown 1', family: '' },
+        { model_id: 'u2', name: 'Unknown 2', family: '' },
     ];
     assert.deepEqual(secondModelChoices(models, 'a1').map(m => m.model_id), ['a2']);
     assert.deepEqual(secondModelChoices(models, 'u1'), []);
-    assert.equal(filterModels(models, 'x1', 'a1').map(m => m.model_id).join(','), 'a1,x1');
+    assert.deepEqual(filterModels(models).map(m => m.model_id), ['a2', 'x2', 'a1', 'x1', 'u1', 'u2']);
+    assert.deepEqual(filterModels(models, { family: 'Anima' }).map(m => m.model_id), ['a2', 'a1']);
+    assert.deepEqual(filterModels(models, { family: '' }).map(m => m.model_id), ['u1', 'u2']);
+    assert.deepEqual(filterModels(models, { query: 'xl' }).map(m => m.model_id), ['x2', 'x1']);
+    assert.deepEqual(filterModels(models, { query: 'a', family: 'SDXL' }).map(m => m.model_id), ['x2', 'x1']);
+    assert.deepEqual(modelFamilies(models), [['', 2], ['Anima', 2], ['SDXL', 2]]);
     assert.equal(filterWorkflows([{ file: 'f1.json', name: 'Anime' }, { file: 'f2.json', name: 'Photo' }], 'pho', 'f1.json').length, 2);
 });
 

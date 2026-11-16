@@ -215,9 +215,96 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 /* "Start from" section in the `say` and `private` starter sheets (ui_ai_start_from.js) */
 .anomalous-ai-start-from { gap: 8px; }
 .anomalous-ai-start-from-body { display: flex; flex-direction: column; gap: 8px; }
-.anomalous-ai-start-sub { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 5fr); gap: 4px 6px; }
-.anomalous-ai-start-sub > .anomalous-ai-start-input[hidden] + .anomalous-ai-start-select { grid-column: 1 / -1; }
-.anomalous-ai-start-sublabel { grid-column: 1 / -1; color: var(--amb-text-muted); font-size: 12px; }
+.anomalous-ai-start-model-row { display: flex; flex-direction: column; gap: 4px; }
+.anomalous-ai-start-sublabel { color: var(--amb-text-muted); font-size: 12px; }
+/* Single-model inline expandable picker field (ui_ai_model_field.js) */
+.anomalous-ai-model-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.anomalous-ai-model-field-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    padding: 5px 10px 5px 6px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-bg-input);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-model-field-btn:hover,
+.anomalous-ai-model-field.is-open .anomalous-ai-model-field-btn { border-color: var(--amb-link); }
+.anomalous-ai-model-field-btn.is-none .anomalous-ai-model-field-name { color: var(--amb-text-soft); }
+.anomalous-ai-model-field-thumb {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-muted);
+}
+.anomalous-ai-model-field-thumb img,
+.anomalous-ai-model-field-thumb svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.anomalous-ai-model-field-thumb.is-none svg { width: 15px; height: 15px; }
+.anomalous-ai-model-field-name,
+.anomalous-ai-model-field-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-model-field-star { flex: none; display: inline-flex; color: #f2b544; }
+.anomalous-ai-model-field-family,
+.anomalous-ai-model-field-row-family {
+    flex: none;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-muted);
+    font-size: 11px;
+}
+.anomalous-ai-model-field-arrow { flex: none; display: inline-flex; color: var(--amb-text-muted); transition: transform 0.14s ease; }
+.anomalous-ai-model-field.is-open .anomalous-ai-model-field-arrow { transform: rotate(180deg); }
+.anomalous-ai-model-field-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+.anomalous-ai-model-field-panel[hidden],
+.anomalous-ai-model-field-bases[hidden] { display: none; }
+.anomalous-ai-model-field-search { display: flex; align-items: center; gap: 6px; color: var(--amb-text-muted); }
+.anomalous-ai-model-field-search .anomalous-ai-start-input { flex: 1; min-width: 0; }
+.anomalous-ai-model-field-bases { margin: 0; max-height: 68px; overflow-y: auto; }
+.anomalous-ai-model-field-list { display: flex; flex-direction: column; gap: 2px; max-height: 230px; overflow-y: auto; }
+.anomalous-ai-model-field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    padding: 5px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-model-field-row:hover,
+.anomalous-ai-model-field-row.is-active { background: rgba(var(--amb-ink-rgb), 0.06); }
+.anomalous-ai-model-field-row.is-on {
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    font-weight: 600;
+}
+.anomalous-ai-model-field-empty { padding: 10px 8px; color: var(--amb-text-muted); font-size: 12px; text-align: center; }
 .anomalous-ai-start-from-note { color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.55; }
 .anomalous-ai-start-from-warn { color: var(--amb-warn-text); font-size: 12px; line-height: 1.55; }
 .anomalous-ai-start-ways { display: flex; flex-direction: column; gap: 6px; }

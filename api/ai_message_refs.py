@@ -5,7 +5,7 @@ and given to the AI with it (message_of): each thing as get_toolbox gives a pick
 pictures attached with what made them, as ai_pictures.py hands them over, so the AI needs no
 guessing which "that LoRA" is."""
 
-from . import ai_pictures
+from . import ai_pictures, ai_toolbox
 from .mcp_tools import ToolError, _resolve_image
 
 KINDS = ("models", "combos", "workflows", "prompts", "nodes", "packs", "ways", "pictures")
@@ -35,9 +35,13 @@ def clean(refs):
         note = ref.get("note")
         if note is not None and not isinstance(note, str):
             raise RefsError(f"refs: a note is text of up to {MAX_NOTE} characters")
+        attached = ref.get("attached")
+        if attached is not None and not isinstance(attached, bool):
+            raise RefsError("refs: attached is true or false")
         note = (note or "").strip()[:MAX_NOTE]
         label = str(ref.get("label") or name).strip()[:MAX_NAME]
-        item = {"kind": ref["kind"], "id": name.strip(), "label": label, **({"note": note} if note else {})}
+        item = {"kind": ref["kind"], "id": name.strip(), "label": label,
+                **({"attached": True} if attached else {}), **({"note": note} if note else {})}
         if not any(have["kind"] == item["kind"] and have["id"] == item["id"] for have in out):
             out.append(item)
     return out
@@ -74,6 +78,8 @@ def message_of(step):
     items, files = [], []
     for ref in step.get("refs") or []:
         item = {"kind": ref["kind"], "id": ref["id"], "said_as": f"@{ref['label']}"}
+        if ai_toolbox.handed(ref):
+            item["handed"] = True
         if ref.get("note"):
             item["user_note"] = ref["note"]
         if ref["kind"] == "pictures":
@@ -95,7 +101,7 @@ def message_of(step):
             else:
                 item["details"] = found
         items.append(item)
-    out = {"refs": items, "refs_note": "What the user's @ names or attached items point at, pictures attached, and each item's optional user_note for what it is for."}
+    out = {"refs": items, "refs_note": "What the user's @ names or attached items point at, pictures attached, and each item's optional user_note for what it is for. handed=true: the user handed it over to work with on this task; it stays on the task's picks (get_toolbox)."}
     if files:
         out["_pictures"] = files
     return out

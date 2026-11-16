@@ -225,7 +225,7 @@ function renderTask() {
             }, { task: () => state.task, commands: () => taskCommands({ task: () => state.task, undo: () => undoAll(state.task), newTask,
                 side: view => pickView(state.stage, view, false, state.task, renderTask, refresh), changed: refresh }),
             mark: (image, sent) => openMarker(image, task.id, () => { sent(); void refresh(); }),
-            openMaterials: () => pickView(state.stage, 'toolbox', false, state.task, renderTask, () => void refresh()), changed: () => void refresh() }),
+            openMaterials: kind => pickView(state.stage, 'toolbox', false, state.task, renderTask, () => void refresh(), kind), changed: () => void refresh() }),
             seen: (task.steps || []).length, newest: newestButton(box), now: nowStrip(), dock: el('div', 'anomalous-ai-dock'),
         };
         view.dock.append(view.newest, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
@@ -294,7 +294,7 @@ function renderTask() {
         }) });
     } else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     syncRows(view.timeline, rows);
-    updateMessageBox(view.message, Boolean(task.ended), preparing ? 'waiting' : status, toolboxCount(task));
+    updateMessageBox(view.message, Boolean(task.ended), preparing ? 'waiting' : status);
     view.now.update(task, { refresh: () => void refresh(), showStep: id => showStep(view.timeline, id),
         openStage: () => pickView(state.stage, 'stage', false, task, renderTask, () => void refresh()) });
     view.timeline.classList.toggle('is-waiting', preparing);
@@ -452,7 +452,7 @@ setMarker(image => state.task && openMarker(image, state.task.id, () => void ref
  */
 function connectSideOnce() {
     shared.openMap ||= connectSide({
-        side: state.stage, task: () => state.task, redraw: () => renderTask(),
+        side: state.stage, task: () => state.task, redraw: () => renderTask(), message: () => state.view?.message, tabbed: () => state.page.classList.contains('uses-tabs'),
         box: () => (visible() && state.page?.querySelector('.anomalous-ai-stage')) || null,
     });
 }

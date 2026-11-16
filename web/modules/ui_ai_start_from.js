@@ -10,11 +10,11 @@ import { createViewScope } from './ui_lifecycle.js';
 import { openTabs } from './preset_runs.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { modelField } from './ui_ai_model_field.js';
 import {
     SEARCH_FROM,
     START_FROM_KEY,
     buildStrip,
-    filterModels,
     filterWorkflows,
     loadImageInfo,
     pickWay,
@@ -85,8 +85,6 @@ export async function applyTaskRoute(taskId, picked) {
     return payload;
 }
 
-const modelLabel = item => (item.favourite ? t('aiStartFavModel', { name: item.name }) : item.name);
-
 /** Shared fields/controller for "新搭一张（文生图）": used by both `startFromSection` and `openBuildRouteWindow`. */
 function newRoutePart({ scope, remembered, alwaysRemember = false, initialState = {}, onUnavailable, onChange }) {
     let models = null;
@@ -97,35 +95,43 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
     let waysError = '';
     let waysSeq = 0;
     let waysAbort = null;
-    scope.onDispose(() => waysAbort?.abort());
 
     const state = { first: initialState.first || '', second: initialState.second || '', route: initialState.route || '' };
-    const firstSearch = el('input', 'anomalous-ai-start-input');
-    firstSearch.type = 'search';
-    firstSearch.placeholder = t('aiStartModelSearch');
-    const firstPick = el('select', 'anomalous-ai-start-select');
-    const secondSearch = el('input', 'anomalous-ai-start-input');
-    secondSearch.type = 'search';
-    secondSearch.placeholder = t('aiStartModelSearch');
-    const secondPick = el('select', 'anomalous-ai-start-select');
     const waysBox = el('div', 'anomalous-ai-start-ways');
     const strip = el('div', 'anomalous-ai-start-strip');
     const findModel = id => (models || []).find(item => item.model_id === id) || null;
 
-    function drawFirstSelect() {
-        const list = models || [];
-        firstSearch.hidden = list.length < SEARCH_FROM;
-        const shown = filterModels(list, firstSearch.value, state.first);
-        firstPick.replaceChildren(...shown.map(item => option(item.model_id, modelLabel(item))));
-        firstPick.value = state.first;
-    }
+    const firstField = modelField({
+        ariaLabel: t('aiStartFirstModel'),
+        onChange: (id) => {
+            state.first = id;
+            if (!secondModelChoices(models || [], state.first).some(item => item.model_id === state.second)) state.second = '';
+            syncFields();
+            fetchWays();
+        },
+    });
+    const secondField = modelField({
+        noneLabel: t('aiStartSecondNone'),
+        ariaLabel: t('aiStartSecondModel'),
+        onChange: (id) => {
+            state.second = id;
+            fetchWays();
+        },
+    });
+    const firstWrap = el('div', 'anomalous-ai-start-model-row');
+    firstWrap.append(el('span', 'anomalous-ai-start-sublabel', t('aiStartFirstModel')), firstField.element);
+    const secondWrap = el('div', 'anomalous-ai-start-model-row');
+    secondWrap.append(el('span', 'anomalous-ai-start-sublabel', t('aiStartSecondModel')), secondField.element);
+    scope.onDispose(() => {
+        waysAbort?.abort();
+        firstField.dispose();
+        secondField.dispose();
+    });
 
-    function drawSecondSelect() {
-        const pool = secondModelChoices(models || [], state.first);
-        secondSearch.hidden = pool.length < SEARCH_FROM;
-        const shown = filterModels(pool, secondSearch.value, state.second);
-        secondPick.replaceChildren(option('', t('aiStartSecondNone')), ...shown.map(item => option(item.model_id, modelLabel(item))));
-        secondPick.value = shown.some(item => item.model_id === state.second) ? state.second : '';
+    function syncFields() {
+        const list = models || [];
+        firstField.setModels(list, state.first);
+        secondField.setModels(secondModelChoices(list, state.first), state.second);
     }
 
     function drawWays() {
@@ -177,15 +183,12 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
             body.replaceChildren(el('div', 'anomalous-ai-start-from-warn', t('aiStartNewOnly')));
             return;
         }
-        const firstWrap = el('div', 'anomalous-ai-start-sub');
-        firstWrap.append(el('span', 'anomalous-ai-start-sublabel', t('aiStartFirstModel')), firstSearch, firstPick);
-        const secondWrap = el('div', 'anomalous-ai-start-sub');
-        secondWrap.append(el('span', 'anomalous-ai-start-sublabel', t('aiStartSecondModel')), secondSearch, secondPick);
-        drawFirstSelect();
-        drawSecondSelect();
+        syncFields();
         drawWays();
-        body.replaceChildren(firstWrap, secondWrap, el('span', 'anomalous-ai-start-sublabel', t('aiStartWaysLabel')), waysBox, strip,
-            el('div', 'anomalous-ai-start-from-note', t('aiStartNewOnly')));
+        if (body.firstElementChild !== firstWrap) {
+            body.replaceChildren(firstWrap, secondWrap, el('span', 'anomalous-ai-start-sublabel', t('aiStartWaysLabel')), waysBox, strip,
+                el('div', 'anomalous-ai-start-from-note', t('aiStartNewOnly')));
+        }
     }
 
     async function fetchWays() {
@@ -271,22 +274,6 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
         }
     }
 
-    firstSearch.oninput = drawFirstSelect;
-    firstPick.onchange = () => {
-        state.first = firstPick.value;
-        if (!secondModelChoices(models || [], state.first).some(item => item.model_id === state.second)) {
-            state.second = '';
-            secondSearch.value = '';
-        }
-        drawSecondSelect();
-        fetchWays();
-    };
-    secondSearch.oninput = drawSecondSelect;
-    secondPick.onchange = () => {
-        state.second = secondPick.value;
-        fetchWays();
-    };
-
     return {
         state,
         renderInto,
@@ -318,7 +305,7 @@ export function openBuildRouteWindow({ task, built }) {
         alwaysRemember: true,
         onChange: () => {
             part.renderInto(routeBody);
-            if (!body.contains(document.activeElement)) routeBody.querySelector('input:not([hidden]), select')?.focus();
+            if (!body.contains(document.activeElement)) routeBody.querySelector('input:not([hidden]), .anomalous-ai-model-field-btn, select')?.focus();
         },
     });
     const go = button('anomalous-ai-start-go', t('aiStartBuildNow'), async () => {

@@ -167,6 +167,40 @@ class ToolboxTests(unittest.TestCase):
         with self.assertRaises(ai_toolbox.ToolboxError):
             ai_toolbox.catalog("nodes")
 
+    def test_handed_is_attached_and_of_a_kind_the_picks_hold(self):
+        model = {"kind": "models", "id": "checkpoints:0:a.safetensors", "label": "A"}
+        self.assertFalse(ai_toolbox.handed(model), "named with @: pointed at only")
+        self.assertTrue(ai_toolbox.handed({**model, "attached": True}))
+        self.assertFalse(ai_toolbox.handed({"kind": "pictures", "id": "a.png", "label": "a.png", "attached": True}), "a picture is no pick")
+        self.assertTrue(ai_toolbox.handed({"kind": "ways", "id": "upscale", "label": "Upscale", "attached": True}))
+        self.assertFalse(ai_toolbox.handed({"kind": "ways", "id": "no_such_block", "label": "Nope", "attached": True}))
+
+    def test_attached_message_refs_join_task_picks_without_extra_step(self):
+        from api import ai_panels
+
+        ai_toolbox.set_favorites({"nodes": ["FaceDetailer"]})
+        ai_panels.leave_message(self.task, "use this", [
+            {"kind": "ways", "id": "upscale", "label": "Upscale", "attached": True},
+            {"kind": "ways", "id": "not_a_block", "label": "Fake", "attached": True},
+            {"kind": "nodes", "id": "KSampler", "label": "KSampler", "attached": False},
+        ])
+        task = ai_tasks.get_task(self.task)
+        self.assertEqual(task["toolbox"]["nodes"], ["FaceDetailer"])
+        self.assertEqual(task["toolbox"]["ways"], ["upscale"])
+        self.assertNotIn("user_toolbox", [step["tool"] for step in task["steps"]])
+        self.assertEqual(task["steps"][-1]["tool"], "user_message")
+
+        ai_toolbox.pick(self.task, {"nodes": [f"N{i}" for i in range(ai_toolbox.MAX_ITEMS - 1)]}, "only")
+        before_steps = len(ai_tasks.get_task(self.task)["steps"])
+        with self.assertRaises(ai_panels.PanelError):
+            ai_panels.leave_message(self.task, "", [
+                {"kind": "nodes", "id": "ExtraA", "label": "ExtraA", "attached": True},
+                {"kind": "nodes", "id": "ExtraB", "label": "ExtraB", "attached": True},
+            ])
+        after = ai_tasks.get_task(self.task)
+        self.assertEqual(len(after["steps"]), before_steps)
+        self.assertEqual((after["toolbox"]["mode"], len(after["toolbox"]["nodes"])), ("only", ai_toolbox.MAX_ITEMS - 1))
+
 
 if __name__ == "__main__":
     unittest.main()

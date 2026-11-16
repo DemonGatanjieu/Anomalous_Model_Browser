@@ -285,7 +285,7 @@ covered by the `styles.css` manifest.
   canvas_roles.js takes a "…model" path past size-bound patches (LLLite, ControlNet, T2I-Adapter) on that line.
   `api/mcp_routes.py` (data: `api/routes.json`, `tests/test_mcp_routes.py`) turns picked main models into choices the user makes: `ask_user(routes=true)`
   shows the routes this ComfyUI can build for them (only for models use picture draws with, `mcp_canvas_edit.draws_picture`, and two of the same loader kind), a saved card using both first, its answer says what to call, and
-  `add_nodes(route=…)` builds one from the ways on a new tab (a two-step chain); `get_toolbox` lists each picked model's cards as its examples. It also serves the starter sheets' `Start from` row (`main_models`: those use picture draws with, favourites first; `ways_for` without `card`; `apply` sets `[first, second?]` via `ai_toolbox.pick` keeping non-LoRA picks without LoRAs, marks the task's canvas in a context of its own (`ai_task_canvas.begin_call`), builds on the task's tab, and adds a `user_route` step with `routes: true`). `begin_task` and `get_toolbox` tell the AI to ask for a route only while the task's picks still wait for one (`mcp_task_tools._routes_note`, `mcp_routes.waiting`), so a route chosen in the sheet is not asked for again.
+  `add_nodes(route=…)` builds one from the ways on a new tab (a two-step chain); `get_toolbox` lists each picked model's cards as its examples. It also serves the starter sheets' `Start from` row (`main_models`: those use picture draws with, favourites first, with `cover`; `ways_for` without `card`; `apply` sets `[first, second?]` via `ai_toolbox.pick` keeping non-LoRA picks without LoRAs, marks the task's canvas in a context of its own (`ai_task_canvas.begin_call`), builds on the task's tab, and adds a `user_route` step with `routes: true`). `begin_task` and `get_toolbox` tell the AI to ask for a route only while the task's picks still wait for one (`mcp_task_tools._routes_note`, `mcp_routes.waiting`), so a route chosen in the sheet is not asked for again.
   An AI placing nodes itself is a new route (`ai_gates.route_rule`): one reminder a task, or the user's OK.
 - The job sheet (任务单): many runs of one canvas one after another, each row a prompt, settings by name or the canvas
   as it is, with its runs, and a rest between pictures if wanted (the viewers' prompt rotation and run interval).
@@ -388,27 +388,44 @@ covered by the `styles.css` manifest.
   as data (`web/modules/mcp_run.js` refusal), each problem becomes a line naming the node, what
   is wrong and the tool that fixes it. `tests/test_run_refusal.py`, `tests/mcp_run.mjs`.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
-  `web/modules/ui_ai_toolbox.js`, from the task header a side panel (on the AI page a view of
-  its side column, `setToolboxHost`; elsewhere docked on the right) that leaves
-  the page usable (kinds as tabs, one line per item (`rowCard`), a card's detail over them) or, expanded, a large
-  window: search, kinds, a column by source / origin / type, a card grid drawn as it scrolls,
-  a detail pane, the picks below; the last choice is kept in the browser),
-  by the names the AI's tools use (and whole custom node packs by folder, `packs`: get_toolbox
+  `web/modules/ui_ai_toolbox.js`: the one picker, opened by the message box's "+" (`ui_ai_plus.js`),
+  the side column's switch (`ui_ai_side_views.js`) or `/素材`; a view of the workbench's side
+  column (`setToolboxHost`) or, expanded, a large window: the kinds models, ways, combos,
+  workflows, prompts and node types, the filters all / given / favourites / recent, a search with
+  favourites first (`searchItems`), a second column, the base model chips and a model's versions
+  as the Models page has them, and a bottom row saying what the task has, how strictly, and how
+  many things are on the message). A press puts a thing on the message being written (the message
+  box's `refs` handle, `ui_ai_mention.js`; at most 12) or takes it off; the picker keeps no copy
+  of that or of the task's picks and redraws when either changes (`anomalous-refs`,
+  `syncToolboxTask`). Sent, such a ref is handed over: `ai_toolbox.hand_over`, called by
+  `ai_panels.leave_message` under the lock that stores the step, puts the refs `ai_toolbox.handed`
+  accepts on the task's picks (its own, else the favourites standing in; their mode kept; no step
+  of its own). Taking a thing back and changing the mode post the picks at once (a `user_toolbox`
+  step). What the picker showed last (kind, second column per kind, base model) and what was sent
+  lately (kind and id, 30 at most, nothing from a private task) are kept on this browser:
+  `web/modules/ai_toolbox_state.js` (`tests/ai_toolbox_state.mjs`).
+  By the names the AI's tools use (and whole custom node packs by folder, `packs`: get_toolbox
   lists their node types, `chosen` counts them picked), with a mode: prefer, or only (add_node / new_workflow then
   refuse other custom or paid node types). Node types come from the page's own definitions
-  (`web/modules/ai_toolbox_data.js`: LiteGraph's registered types and their `nodeData`, so no
-  request; page-only helpers go with their pack when their name says which); the rest in one
-  answer from `api/ai_toolbox_catalog.py` (combos, workflows with covers and prompts, prompts
-  saved or inside combos and workflows as `combo:<name>` / `workflow:<name>`, models with
+  (`web/modules/ai_toolbox_data.js`: LiteGraph's registered types and their `nodeData`, plus
+  `wayItems`/`fetchUsableWays` from `GET /anomalous/ai_blocks`, so no extra ways table),
+  the rest in one answer from `api/ai_toolbox_catalog.py` (combos, workflows with covers and prompts,
+  prompts saved or inside combos and workflows as `combo:<name>` / `workflow:<name>`, models with
   covers), read ahead when a task header is drawn and kept a minute.
   `web/modules/ui_ai_facet_menu.js` is the side panel's list of sources (or types) under its
   "Source: All ▾" button: a search over the names, ↑ ↓ and Enter, the row under the pointer lit
   and the one shown ticked.
-  `web/modules/ui_ai_toolbox_cards.js` draws the cards (a node in miniature with its sockets in
-  ComfyUI's colours, covers, prompt text) and the detail pane; `web/modules/ui_ai_toolbox_icons.js`
+  `web/modules/ui_ai_toolbox_cards.js` draws the cards, the side panel's rows and the detail pane
+  (a node in miniature with its sockets in ComfyUI's colours, outputs on the right, how many
+  settings; covers; a prompt's text; what a way is for; "Given" on what the task has, and taking
+  it back); `web/modules/ui_ai_toolbox_sources.js` has the page's node types and the custom node
+  packs among them as items (`pageNodes`, `packItems`, which "@" lists too), the second column
+  (a node's source, a prompt's origin, a model's type, a way's job) and the bar that picks a pack
+  whole; `web/modules/ui_ai_toolbox_step.js` is the timeline row of a `user_toolbox` step;
+  `web/modules/ui_ai_toolbox_icons.js`
   each pack's badge, and the illustrations (`web/assets/toolbox_*.webp`, made
   with ChatGPT): the empty selection and the stand-in cover of a combo, workflow or model. Favourites (`anomalous/ai_toolbox.json`) stand in until the user picks for
-  a task. A pick is a `user_toolbox` step the AI gets as a message (kind `toolbox`); begin_task
+  a task. A pick is a `user_toolbox` step or handed-over message attachment the AI gets; begin_task
   names the picks, `get_toolbox` gives them in full, find_nodes lists them first.
   A rewired input shows in the receipt as a `wired` change
   (`activity_diff.js` keeps what feeds each input).
@@ -521,7 +538,7 @@ covered by the `styles.css` manifest.
   step is drawn again only when it changed or the language did (`syncRows`), so a scrolled diagram or strip and
   half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box, made
   once per task and docked at the foot of its column (in view while the timeline scrolls; a task
-  opens at its newest step, and `ui_ai_newest.js` is the button back to it over the box): a growing input, `+` (`ui_ai_plus.js`), the gallery and materials buttons beside it, and
+  opens at its newest step, and `ui_ai_newest.js` is the button back to it over the box): a growing input, `+` (`ui_ai_plus.js`), the gallery button beside it (no separate materials button), exposes `box.refs` (`ui_ai_mention.js` with `MAX_REFS = 12` and `swap` keeping per-ref note), records sent picker items via `recordRecent`, and
   over it what the message carries (`ui_ai_tray.js`: pictures to mark up with
   `ui_ai_marker.js` or leave out, and chips of attached or `@`-named items each with an optional one-line note box whose placeholder switches in privacy mode), and over that what the task needs or
   does now (`ui_ai_now.js`: a gate to allow, a run's progress with stop, the AI's open question
@@ -532,12 +549,12 @@ covered by the `styles.css` manifest.
   another window when the AI asks, a step waits for their OK or a run ended that the AI was not told of (`ai_notice.js`
   reads that from the "anomalous.ai_task" event, `tests/ai_notice.mjs`); off until turned on in a task's ⋯ or on the
   page of a waiting task, kept in the browser. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
-  output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `web/modules/ai_chat_plus.js` holds the DOM-free logic (favourites-first model sorting, per-ref note sanitization and serialization; `tests/ai_chat_plus.mjs`); the ways to point at are `ai_toolbox_data.js` `wayItems` (usable and turned on only, read from `GET /anomalous/ai_blocks` and kept a minute by `fetchUsableWays`). `web/modules/ui_ai_plus.js` is the "+" menu (models with favourites first, usable active ways, shared `ui_ai_start_from.openBuildRouteWindow` dialog, and `@` hint; reads with `ui_lifecycle.createViewScope`). `ui_ai_mention.js` holds those refs
+  output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `web/modules/ai_chat_plus.js` holds the DOM-free logic (per-ref note sanitization and `attached: true` serialization; `tests/ai_chat_plus.mjs`). `web/modules/ui_ai_plus.js` is the 4-row "+" menu (`models`, `ways`, `other` -> `combos|workflows|prompts|nodes` else `combos`, opening or switching the single picker in the side column; plus shared `ui_ai_start_from.openBuildRouteWindow` dialog, and `@` hint). `ui_ai_mention.js` holds those refs
   and gives it "@" (the task's pictures, the gallery's newest and those its search finds,
   combos, models, active usable ways, workflows, prompts, node packs and node types from the materials picker's
   data) and "/" (`ui_ai_commands.js`: stop, undo, side views, new task, build a new one via shared dialog, canvas mode, words to
   fill in); `ui_ai_gallery_pick.js` is the gallery grid pictures are attached from.
-  `api/ai_message_refs.py` checks what the message names (`models`, `combos`, `workflows`, `prompts`, `nodes`, `packs`, `ways`, `pictures`, plus optional per-ref `note` up to 200 chars -> `user_note`) and gives each to the AI
+  `api/ai_message_refs.py` checks what the message names (`models`, `combos`, `workflows`, `prompts`, `nodes`, `packs`, `ways`, `pictures`, optional `note` up to 200 chars -> `user_note`, and `attached: True` -> handed over into task picks with `handed: True`) and gives each to the AI
   with the message (in full — `lookup("ways", ...)` gives name, title, about and `reference_blocks.call` —, pictures attached; get_toolbox shares its `lookup`),
   `tests/test_ai_message_refs.py`. `ui_ai_step_body.js` is what a timeline step says under its
   title (the user's own steps with attached non-picture ref chips and user notes beside their names, pictures, whether the AI has them, a decision's card, the AI's note, a
@@ -550,7 +567,7 @@ covered by the `styles.css` manifest.
   `tests/test_ai_outside.py`.
   `api/ai_decisions.py` keeps a task's key decisions: `log_decision` (the AI records what was
   settled, why, what was left out, who decided, the steps it is about; a `decision` step), and
-  the user's own choices read from the task's steps (panel answers, gates, materials, pre-built routes — `user_route`, `ai_panels._collect` `kind: "route"` —, the canvas
+  the user's own choices read from the task's steps (panel answers, gates, materials from `user_toolbox` or handed-over `user_message` attachments, pre-built routes — `user_route`, `ai_panels._collect` `kind: "route"` —, the canvas
   mode — `ai_task_canvas.set_mode` adds a `user_canvas` step — and stops); `GET` of a task adds
   `decisions` and `decisions_gap` (runs and canvas changes since the AI's last one), begin_task
   repeats them to an AI picking the task up. `ui_ai_decisions.js` draws the card and the side
@@ -622,10 +639,10 @@ covered by the `styles.css` manifest.
   `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the
   user's checklist by stage) and the address follows. `ui_ai_starters.js` is the home page's "Let the AI do it"
   (the app that came last, a warning when its list is a short one, six starter cards); `ui_ai_starter_sheet.js`
-  holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get; closing calls `onClose` via `ui_ai_connect.js` `aiWindow` to clean up reads), which starts a
+  holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get; closing calls `onClose` via `ui_ai_connect.js` `aiWindow`, whose Esc handler defers to visible `[data-anomalous-escape]` pickers inside the dialog, to clean up reads), which starts a
   prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` `startTask`;
   a card's tags name only what Anomalous makes sure of. For "say" and "private", `web/modules/ui_ai_start_from.js` draws
-  the leading "Start from" row and also exports `openBuildRouteWindow` + shared `newRoutePart` so both the starter sheets and the message box's "+" / `/build` command share the exact same "Build a new one (text to image)" fields and `localStorage` key (four pills sharing `.anomalous-ai-start-pills`/`.anomalous-ai-start-pill` in `web/styles/55-ai-starters.css` with `ui_ai_preset_sheet.js`: new text-to-image route via `GET /anomalous/ai_routes` & `POST /anomalous/ai_tasks/{id}/route`, open canvas checking `preset_runs.js` `openTabs` & active `LoadImage` nodes, saved workflow card marked in private mode, or AI picks) backed by `web/modules/ai_start_from.js` (DOM-free selection, validation, and first-message rules; `tests/ai_start_from.mjs`). `ui_ai_preset_sheet.js` is the fields of "Run my preset": a
+  the leading "Start from" row and also exports `openBuildRouteWindow` + shared `newRoutePart` so both the starter sheets and the message box's "+" / `/build` command share the exact same "Build a new one (text to image)" fields (`web/modules/ui_ai_model_field.js`: single-model inline expandable picker with cover thumbnails via `ui_ai_toolbox_cards.js` `coverUrl` / `standInCover`, favourite stars, search, base-family chips when `>= 2` families, `↑↓`/Enter/Esc via `data-anomalous-escape`, and outside click close) and `localStorage` key (four pills sharing `.anomalous-ai-start-pills`/`.anomalous-ai-start-pill` in `web/styles/55-ai-starters.css` with `ui_ai_preset_sheet.js`: new text-to-image route via `GET /anomalous/ai_routes` & `POST /anomalous/ai_tasks/{id}/route`, open canvas checking `preset_runs.js` `openTabs` & active `LoadImage` nodes, saved workflow card marked in private mode, or AI picks) backed by `web/modules/ai_start_from.js` (`filterModels`, `modelFamilies`, selection, validation, and first-message rules; `tests/ai_start_from.mjs`). `ui_ai_preset_sheet.js` is the fields of "Run my preset": a
   saved workflow or an open canvas, the presets as chips a press lines up to run, each so many times, and what to
   change (`preset_run_list.js`: that list, what of it is kept in the browser for "the same again", the print of a
   canvas; `tests/preset_run_list.mjs`). With nothing to change `preset_runs.js` runs the list with no AI: the saved

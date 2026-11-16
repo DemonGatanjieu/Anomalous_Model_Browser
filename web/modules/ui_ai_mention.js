@@ -15,12 +15,13 @@ import { resolveLocale, translate as t } from './locales.js';
 import { serializeRefs } from './ai_chat_plus.js';
 import { fetchUsableWays, keptCatalog, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
 import { coverUrl } from './ui_ai_toolbox_cards.js';
+import { packItems, pageNodes } from './ui_ai_toolbox_sources.js';
 import { sourceBadge } from './ui_ai_toolbox_icons.js';
-import { packItems, pageNodes } from './ui_ai_toolbox.js';
 import { icon } from './ui_ai_icons.js';
 import { galleryPictures, pictureItem, thumbUrl } from './ui_ai_gallery_pick.js';
 import { drawTray, syncTrayPrivacy } from './ui_ai_tray.js';
 
+export const MAX_REFS = 12; // api/ai_message_refs.py
 const SHOWN = 8;
 const RECENT = 30; // the gallery's newest pictures "@" offers
 const SEARCH_MS = 250;
@@ -275,14 +276,40 @@ export function mentions(field, box, source, tray) {
             return false;
         },
         refs: () => serializeRefs(live()),
+        has: (kind, id) => live().some(ref => ref.kind === kind && ref.id === id),
+        countOf: kind => live().filter(ref => ref.kind === kind || (kind === 'nodes' && ref.kind === 'packs')).length,
+        itemsOf: kind => live().filter(ref => ref.kind === kind),
+        room: () => Math.max(0, MAX_REFS - live().length),
         add(item, { focusNote = false } = {}) {
             const key = `${item.kind}\0${item.id}`;
-            if (!refs.some(ref => ref.kind === item.kind && ref.id === item.id)) {
-                refs.push({ kind: item.kind, id: item.id, label: item.title, item, attached: true, note: '' });
-                drawChips(focusNote ? key : '');
-                return;
+            if (live().some(ref => ref.kind === item.kind && ref.id === item.id)) {
+                if (focusNote) focusNoteOf(key);
+                return true;
             }
-            if (focusNote) focusNoteOf(key);
+            if (live().length >= MAX_REFS) return false;
+            refs.push({ kind: item.kind, id: item.id, label: item.title, item, attached: true, note: '' });
+            drawChips(focusNote ? key : '');
+            return true;
+        },
+        remove(kind, id) {
+            const ref = live().find(other => other.kind === kind && other.id === id);
+            if (!ref) return false;
+            drop(ref);
+            return true;
+        },
+        swap(kind, oldId, newItem) {
+            const ref = live().find(other => other.kind === kind && other.id === oldId);
+            if (!ref) return false;
+            if (live().some(other => other !== ref && other.kind === newItem.kind && other.id === newItem.id)) {
+                drop(ref);
+                return true;
+            }
+            if (!ref.attached && ref.label) field.value = field.value.replace(`@${ref.label}`, `@${newItem.title}`);
+            ref.id = newItem.id;
+            ref.label = newItem.title;
+            ref.item = newItem;
+            drawChips();
+            return true;
         },
         syncPrivacy: () => syncTrayPrivacy(tray, Boolean(source.task?.()?.private)),
         pictures: () => live().filter(ref => ref.kind === 'pictures').length,

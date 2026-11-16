@@ -1,13 +1,15 @@
 /**
- * The materials picker's cards and detail pane (ui_ai_toolbox.js). A card is one node type,
- * combo, workflow, prompt or model: a node shows itself in miniature (its sockets in ComfyUI's
- * colours, outputs on the right, how many settings) under its source's badge; combos,
- * workflows and models show their cover; a prompt shows its text. A press picks or unpicks,
- * the star keeps it among the favourites. In the side panel a card is one line instead
- * (rowCard: its badge or a small cover, its name and where it is from), so a short panel still
- * lists many. The detail pane shows the card in focus in full, and for a combo or workflow can
- * pick just the prompt inside it. A model says its version apart from its name; one with several
- * is one card, whose version opens the list to show another (ctx.showVersion).
+ * The materials picker's cards and detail pane (ui_ai_toolbox.js). A card is one model, way,
+ * combo, workflow, prompt, node type or whole custom node pack: a node shows itself in miniature
+ * (its sockets in ComfyUI's colours, outputs on the right, how many settings) under its source's
+ * badge; combos, workflows and models show their cover; a prompt shows its text, a way what it is
+ * for. A press puts it on the message being written or takes it off, the star keeps it among the
+ * favourites; what the task already has says "Given" and, where the picker lists those, can be
+ * taken back. In the side panel a card is one line instead (rowCard: its badge or a small cover,
+ * its name and where it is from), so a short panel still lists many. The detail pane shows the
+ * card in focus in full, and for a combo or workflow can put just the prompt inside it on the
+ * message. A model says its version apart from its name; one with several is one card, whose
+ * version opens the list to show another (ctx.showVersion).
  */
 
 import { translate as t } from './locales.js';
@@ -21,11 +23,24 @@ import { openPopupMenu } from './ui_popup_menu.js';
 
 const SOCKETS_SHOWN = 4;
 const withQuery = (url, query) => `${url}${url.includes('?') ? '&' : '?'}${query}`;
+/** The icon of a kind of thing (ui_ai_icons.js): a pack shows as nodes do, a way as the ways view does. */
+export const kindIcon = kind => ({ packs: 'nodes', ways: 'blocks' }[kind] || kind);
 
-function el(tag, className, text) {
+/** An element with its class and text; the picker's other parts build with it too. */
+export function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
     if (text !== undefined && text !== null) node.textContent = text;
+    return node;
+}
+
+/** A button of the picker: `children` are nodes, or words that become spans. */
+export function tbButton(className, children, onClick, title) {
+    const node = el('button', className);
+    node.type = 'button';
+    node.append(...[].concat(children).map(child => (typeof child === 'string' ? el('span', '', child) : child)));
+    node.onclick = onClick;
+    if (title) node.title = title;
     return node;
 }
 
@@ -110,8 +125,31 @@ function tags(item) {
     } else if (item.kind === 'models') {
         add(typeLabel({ type: item.type }));
         if (item.base) add(item.base);
+    } else if (item.kind === 'ways') {
+        if (item.job) add(t(`aiBlocksJob_${item.job}`), 'soft');
+    } else if (item.kind === 'packs') {
+        add(t('aiTbPackCount', { count: item.count }));
     }
     return row;
+}
+
+/** "Given" on a thing the task already has (ctx.given). */
+function givenBadge(ctx, item) {
+    const badge = el('span', 'anomalous-tb-given-badge', t('aiTbGiven'));
+    badge.hidden = !ctx.given(item);
+    return badge;
+}
+
+/** Takes a thing the task has back from it: on its card where the picker lists those (ctx.showTakeBack), always in its detail. */
+function takeBackButton(ctx, item, detailView = false) {
+    const btn = el('button', `anomalous-tb-take-back${detailView ? ' is-detail' : ''}`, t('aiTbTakeBack'));
+    btn.type = 'button';
+    btn.hidden = !(ctx.given(item) && (detailView || ctx.showTakeBack));
+    btn.onclick = (event) => {
+        event.stopPropagation();
+        void ctx.takeBack(item);
+    };
+    return btn;
 }
 
 /** A model's version: a word, or with several a button listing them; nothing for a model not found on Civitai. */
@@ -136,16 +174,20 @@ function versionMark(item, ctx) {
  * ⓘ opens its detail (the side panel's way: there the detail covers the cards).
  */
 export function card(item, ctx) {
-    const node = el('div', `anomalous-tb-card is-${item.kind}${ctx.picked(item) ? ' is-picked' : ''}`);
+    const node = el('div', `anomalous-tb-card is-${item.kind}${ctx.picked(item) ? ' is-picked' : ''}${ctx.given(item) ? ' is-given' : ''}`);
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
     node.setAttribute('aria-pressed', String(ctx.picked(item)));
     node.dataset.key = `${item.kind}|${item.id}`;
     if (item.kind === 'nodes') {
         node.append(nodePreview(item));
-    } else if (item.kind === 'prompts') {
-        const quote = el('div', 'anomalous-tb-quote');
-        quote.append(el('p', 'anomalous-tb-quote-text', item.positive || item.negative || ''));
+    } else if (item.kind === 'packs') {
+        const preview = el('div', 'anomalous-tb-quote is-pack');
+        preview.append(sourceBadge(item.source, 28), el('div', 'anomalous-tb-card-sub', t('aiTbPackCount', { count: item.count })));
+        node.append(preview);
+    } else if (item.kind === 'prompts' || item.kind === 'ways') {
+        const quote = el('div', `anomalous-tb-quote${item.kind === 'ways' ? ' is-way' : ''}`);
+        quote.append(el('p', 'anomalous-tb-quote-text', item.kind === 'ways' ? (item.about || item.title) : (item.positive || item.negative || '')));
         node.append(quote);
     } else {
         node.append(picture(item, 'anomalous-tb-cover'));
@@ -155,32 +197,37 @@ export function card(item, ctx) {
     const version = item.kind === 'models' ? versionMark(item, ctx) : null;
     if (version) body.append(version);
     if (item.sub) body.append(el('div', 'anomalous-tb-card-sub', item.sub));
-    body.append(tags(item));
+    const meta = tags(item);
+    meta.prepend(givenBadge(ctx, item));
+    body.append(meta, takeBackButton(ctx, item));
     node.append(body);
     return controls(node, item, ctx);
 }
 
 /** A card as one line, for the side panel: badge or small cover, name, where it is from. */
 export function rowCard(item, ctx) {
-    const node = el('div', `anomalous-tb-card is-row is-${item.kind}${ctx.picked(item) ? ' is-picked' : ''}`);
+    const node = el('div', `anomalous-tb-card is-row is-${item.kind}${ctx.picked(item) ? ' is-picked' : ''}${ctx.given(item) ? ' is-given' : ''}`);
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
     node.setAttribute('aria-pressed', String(ctx.picked(item)));
     node.dataset.key = `${item.kind}|${item.id}`;
     const lead = el('span', 'anomalous-tb-row-lead');
-    if (item.kind === 'nodes') lead.append(sourceBadge(item.source, 26));
+    if (item.kind === 'nodes' || item.kind === 'packs') lead.append(sourceBadge(item.source, 26));
     else if (item.kind === 'prompts') lead.append(icon('prompts', 17));
+    else if (item.kind === 'ways') lead.append(icon('blocks', 17));
     else lead.append(picture(item, 'anomalous-tb-row-cover'));
     const text = el('div', 'anomalous-tb-row-text');
     const name = item.short || item.title || item.positive || item.id;
     const from = item.kind === 'nodes' ? [item.category?.split('/').pop(), item.paid ? t('aiTbPaid') : ''].filter(Boolean).join(' · ')
+        : item.kind === 'packs' ? t('aiTbPackCount', { count: item.count })
+        : item.kind === 'ways' ? item.about
         : item.kind === 'prompts' && item.title ? item.positive : item.sub;
     text.append(el('div', 'anomalous-tb-row-title', name));
     const version = item.kind === 'models' ? versionMark(item, ctx) : null;
     if (version) text.append(version);
     else if (from) text.append(el('div', 'anomalous-tb-row-sub', from));
     text.title = [name, from].filter(Boolean).join('\n');
-    node.append(lead, text);
+    node.append(lead, text, givenBadge(ctx, item), takeBackButton(ctx, item));
     return controls(node, item, ctx);
 }
 
@@ -218,12 +265,18 @@ function controls(node, item, ctx) {
     return node;
 }
 
-/** Updates a drawn card after a pick or a star, without drawing the grid again. */
+/** Updates a drawn card after a message ref change, task update, or star change, without drawing the grid again. */
 export function refreshCard(node, item, ctx) {
     const on = ctx.picked(item);
+    const isGiven = ctx.given(item);
     node.classList.toggle('is-picked', on);
+    node.classList.toggle('is-given', isGiven);
     node.classList.toggle('is-in-pack', Boolean(ctx.inPack?.(item)));
     node.setAttribute('aria-pressed', String(on));
+    const badge = node.querySelector('.anomalous-tb-given-badge');
+    if (badge) badge.hidden = !isGiven;
+    const takeBack = node.querySelector('.anomalous-tb-take-back');
+    if (takeBack) takeBack.hidden = !(isGiven && ctx.showTakeBack);
     const star = node.querySelector('.anomalous-tb-star');
     if (star) {
         const liked = ctx.favorite(item);
@@ -271,20 +324,24 @@ function settingList(settings) {
 export function detail(item, ctx) {
     const box = el('div', `anomalous-tb-detail is-${item.kind}`);
     const head = el('div', 'anomalous-tb-detail-head');
-    if (item.kind === 'nodes') {
+    if (item.kind === 'nodes' || item.kind === 'packs') {
         head.append(sourceBadge(item.source, 40));
-    } else if (item.kind !== 'prompts') {
+    } else if (['combos', 'workflows', 'models'].includes(item.kind)) {
         box.append(picture(item, 'anomalous-tb-detail-cover'));
     }
     const words = el('div', 'anomalous-tb-detail-words');
     words.append(el('div', 'anomalous-tb-detail-title', item.title));
     if (item.kind === 'nodes') {
         words.append(el('div', 'anomalous-tb-detail-sub', [item.id, item.source.kind === 'pack' ? item.source.label : t(`aiTbSource_${item.source.kind}`)].join(' · ')));
+    } else if (item.kind === 'packs') {
+        words.append(el('div', 'anomalous-tb-detail-sub', t('aiTbPackCount', { count: item.count })));
     } else if (item.sub) {
         words.append(el('div', 'anomalous-tb-detail-sub', item.sub));
     }
     head.append(words);
-    box.append(head, tags(item));
+    const meta = tags(item);
+    meta.prepend(givenBadge(ctx, item));
+    box.append(head, meta);
     const actions = el('div', 'anomalous-tb-detail-actions');
     const take = el('button', `anomalous-tb-take${ctx.picked(item) ? ' is-on' : ''}`);
     take.type = 'button';
@@ -304,6 +361,7 @@ export function detail(item, ctx) {
         prompt.onclick = () => ctx.pickPrompt(inner);
         actions.append(prompt);
     }
+    actions.append(takeBackButton(ctx, item, true));
     box.append(actions);
     if (item.kind === 'nodes') {
         if (item.description) box.append(textBlock(item.description));
@@ -313,6 +371,10 @@ export function detail(item, ctx) {
         if (item.inputs.length) box.append(section(t('aiTbInputs'), [socketList(item.inputs, 'in')]));
         if (item.settings.length) box.append(section(t('aiTbSettingsTitle'), [settingList(item.settings)]));
         if (item.outputs.length) box.append(section(t('aiTbOutputs'), [socketList(item.outputs, 'out')]));
+    } else if (item.kind === 'packs') {
+        box.append(textBlock(t('aiTbPackHint'), 'is-soft'));
+    } else if (item.kind === 'ways') {
+        if (item.about) box.append(textBlock(item.about));
     } else if (item.kind === 'combos') {
         if (item.model) box.append(section(t('aiTbMainModel'), [textBlock(item.model)]));
         if (item.loras?.length) box.append(section(t('aiTbLoraList'), [textBlock(item.loras.join('\n'), 'is-list')]));

@@ -29,10 +29,25 @@ export function secondModelChoices(models, firstId) {
     return (models || []).filter(item => item.model_id !== first.model_id && item.family === first.family);
 }
 
-/** Filters `models` by `query` on model name, always keeping `keepId` visible. */
-export function filterModels(models, query, keepId = '') {
+/** Filters `models` by optional `query` and `family`, keeping favourites first in relative order. */
+export function filterModels(models, { query = '', family = null } = {}) {
     const words = String(query || '').trim().toLowerCase();
-    return (models || []).filter(item => item.model_id === keepId || !words || String(item.name || '').toLowerCase().includes(words));
+    const matched = (models || []).filter((item) => {
+        if (family !== null && (item.family || '') !== family) return false;
+        if (!words) return true;
+        return `${item.name || ''} ${item.family || ''}`.toLowerCase().includes(words);
+    });
+    return [...matched.filter(item => item.favourite), ...matched.filter(item => !item.favourite)];
+}
+
+/** Distinct `[family, count]` entries in `models`, ordered by count descending. */
+export function modelFamilies(models) {
+    const counts = new Map();
+    for (const item of models || []) {
+        const family = item.family || '';
+        counts.set(family, (counts.get(family) || 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]));
 }
 
 /** Filters saved workflows by `query` on name, always keeping `keepFile` visible. */

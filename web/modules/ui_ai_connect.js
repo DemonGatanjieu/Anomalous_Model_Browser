@@ -178,6 +178,7 @@ export function aiWindow(title, body, onClose = null) {
     };
     const onKey = (event) => {
         if (event.key !== 'Escape') return;
+        if ([...dialog.querySelectorAll('[data-anomalous-escape]')].some(node => node.getClientRects().length)) return;
         event.stopPropagation();
         close();
     };

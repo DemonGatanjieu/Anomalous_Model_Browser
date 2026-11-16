@@ -85,20 +85,25 @@ class RefsTests(unittest.TestCase):
         with self.assertRaises(ai_message_refs.RefsError):
             ai_message_refs.clean([{"kind": "ways", "id": "upscale", "note": 123}])
         cleaned = ai_message_refs.clean([
-            {"kind": "ways", "id": "upscale", "label": "放大", "note": "   "},
-            {"kind": "nodes", "id": "KSampler", "label": "KSampler", "note": "  " + ("x" * 250) + "  "},
+            {"kind": "ways", "id": "upscale", "label": "放大", "attached": True, "note": "   "},
+            {"kind": "nodes", "id": "KSampler", "label": "KSampler", "attached": False, "note": "  " + ("x" * 250) + "  "},
         ])
+        self.assertTrue(cleaned[0]["attached"])
         self.assertNotIn("note", cleaned[0])
+        self.assertNotIn("attached", cleaned[1])
         self.assertEqual(len(cleaned[1]["note"]), ai_message_refs.MAX_NOTE)
 
         step = ai_panels.leave_message(self.task, "", [
-            {"kind": "ways", "id": "upscale", "label": "放大", "note": "  final pass 1.5x  "},
+            {"kind": "ways", "id": "upscale", "label": "放大", "attached": True, "note": "  final pass 1.5x  "},
             {"kind": "nodes", "id": "KSampler", "label": "KSampler", "note": "use dpmpp_2m"},
         ])
         result = ai_panels.attach_pending(ok({}), "A", task_id=self.task)
         message = result["structuredContent"]["user_messages"][0]
         self.assertIn("user_note", message["refs_note"])
+        self.assertIn("get_toolbox", message["refs_note"])
         by_kind = {item["kind"]: item for item in message["refs"]}
+        self.assertTrue(by_kind["ways"]["handed"])
+        self.assertNotIn("handed", by_kind["nodes"])
         self.assertEqual(by_kind["ways"]["details"]["name"], "upscale")
         self.assertTrue(by_kind["ways"]["details"]["title"])
         self.assertTrue(by_kind["ways"]["details"]["about"])

@@ -18,7 +18,7 @@ import { changeNodeId } from './activity_diff.js';
 import { noteNode } from './ai_text_format.js';
 import { locateNode } from './ui_ai_results.js';
 import { marksStep } from './ui_ai_marker.js';
-import { toolboxStep } from './ui_ai_toolbox.js';
+import { toolboxStep } from './ui_ai_toolbox_step.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import { deliveryState } from './ui_ai_delivery.js';
 import { decisionCard } from './ui_ai_decisions.js';

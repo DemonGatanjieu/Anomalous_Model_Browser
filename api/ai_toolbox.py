@@ -135,6 +135,32 @@ def pick_way(task_id, name, on):
     return pick(task_id, {**box, "ways": ways}, box.get("mode", "prefer"))
 
 
+def handed(ref):
+    """Whether a message's ref (ai_message_refs.py) was handed over, not only pointed at: put on the message from
+    the picker ("attached"), and of a kind the picks hold (a picture is not; a way has to be a block)."""
+    from . import reference_blocks
+
+    return bool(ref.get("attached")) and ref.get("kind") in KINDS and (ref["kind"] != "ways" or ref["id"] in reference_blocks.BLOCKS)
+
+
+def hand_over(task, refs):
+    """What a message hands over (handed) onto the picks of `task`, in place: its own picks, else the favourites
+    standing in, keep their mode and gain each thing once. No step of its own: the message is the step. The
+    caller holds the tasks' lock and saves. A kind that would pass MAX_ITEMS refuses the whole message."""
+    given = [ref for ref in refs or [] if handed(ref)]
+    if not given:
+        return
+    box = effective(task) or {"mode": "prefer"}
+    picks = {kind: list(box.get(kind) or []) for kind in KINDS}
+    for ref in given:
+        if ref["id"] not in picks[ref["kind"]]:
+            picks[ref["kind"]].append(ref["id"])
+    full = next((kind for kind in KINDS if len(picks[kind]) > MAX_ITEMS), None)
+    if full:
+        raise ToolboxError(f"The task already has {MAX_ITEMS} {full}: take some back in Materials before handing over more")
+    task["toolbox"] = {"mode": box["mode"], **picks}
+
+
 def builtin(info):
     """Whether a node type (its /object_info entry) is ComfyUI's own and free: not a custom node, not a paid API node."""
     module = str((info or {}).get("python_module") or "")
