@@ -1,5 +1,12 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.63.3 (Fix: the theme followed a new ComfyUI as light; MOSS Image models recognized) — unreleased
+
+- 主题选"跟随 ComfyUI"时，ComfyUI 是深色、AMB 却显示成浅色的问题修好了。ComfyUI 新版（前端 1.59 起）换了标记深色主题的方式，AMB 只认旧的标记，找不到就一律当成浅色。现在新旧两种都认，在 ComfyUI 里切换配色时 AMB 也会马上跟着变。
+- AMB 认得 MOSS Image 的模型了：底模文件（包括 INT8 版本）认成扩散模型，底模 MOSS Image；它的 LoRA 不联网也能认出底模。以前底模文件认不出是什么，导入时选"按底模分"也没法放进底模文件夹，只能放在类型文件夹本身。
+- Following ComfyUI, the theme no longer shows light on a dark ComfyUI. ComfyUI's frontend from 1.59 marks a dark palette another way, and AMB, reading only the old mark, took every palette for light. Both are read now, and AMB follows at once when the palette is switched in ComfyUI.
+- MOSS Image models are recognized: the model file (its INT8 copy too) as a diffusion model of MOSS Image, and its LoRAs' base model without going online. Before, the model file was not told at all, so an import into folders by base model could not put it in a MOSS folder and left it in the type's own folder.
+
 ## v1.63.2 (Fix: ComfyUI's messages hidden under the browser, Ctrl+Enter started a run, tooltips cut off; long lists faster) — 2026-11-16
 
 - AMB 开着的时候，ComfyUI 自己的报错提示和对话框（比如出图失败、"确定吗"）不再被挡住。以前 AMB 的窗口比它们高一层，提示只露出一条边，对话框完全看不见，按一下 Esc 还会把看不见的对话框悄悄"取消"、顺带关掉 AMB。现在 AMB 的所有窗口和弹窗都在 ComfyUI 的对话框、右键菜单和提示下面（AMB 自己的先后顺序不变）；ComfyUI 的对话框开着时，Esc 先关它，再按一次才关 AMB。

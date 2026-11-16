@@ -1,5 +1,6 @@
 import { app } from '../../../scripts/app.js';
 import { normalizeLocale, resolveLocale, translate } from './locales.js';
+import { comfyIsDark } from './comfy_palette.js';
 
 export const LANGUAGE_SETTING_ID = 'Anomalous.ModelBrowser.Language';
 export const THEME_SETTING_ID = 'Anomalous.ModelBrowser.Theme';
@@ -139,10 +140,11 @@ function showThemeNoticeToast(isEnabled) {
 }
 
 /*
- * The theme: 'auto' follows ComfyUI's palette (ComfyUI marks a dark one with `dark-theme` on
- * <html>, a light one without), 'dark', 'light', or 'abyssal' (Abyssal Scarlet, a dark palette).
- * Shown through classes on <html>: `amb-theme-light` and `theme-abyssal-scarlet`; the colors are
- * the --amb-* tokens of 00-foundation-models.css.
+ * The theme: 'auto' follows ComfyUI's palette (comfy_palette.js: the older `dark-theme` class,
+ * or `color-scheme` in <html>'s style from frontend 1.59), 'dark', 'light', or 'abyssal' (Abyssal
+ * Scarlet, a dark palette). Shown through classes on <html>: `amb-theme-light`,
+ * `theme-abyssal-scarlet`, and `amb-comfy-dark` while ComfyUI's palette is dark (for the CSS);
+ * the colors are the --amb-* tokens of 00-foundation-models.css.
  */
 const THEME_KEY = 'anomalous_theme';
 const THEMES = ['auto', 'dark', 'light', 'abyssal'];
@@ -162,7 +164,7 @@ export function themePreference() {
 /** What is shown: 'dark', 'light' or 'abyssal'. */
 export function effectiveTheme(preference = themePreference()) {
     if (preference !== 'auto') return preference;
-    return document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light';
+    return comfyIsDark() ? 'dark' : 'light';
 }
 
 let shownTheme = null;
@@ -172,6 +174,7 @@ function paintTheme() {
     const abyssal = theme === 'abyssal';
     document.documentElement.classList.toggle('theme-abyssal-scarlet', abyssal);
     document.documentElement.classList.toggle('amb-theme-light', theme === 'light');
+    document.documentElement.classList.toggle('amb-comfy-dark', comfyIsDark());
     document.getElementById('anomalous-modal')?.classList.toggle('theme-abyssal-scarlet', abyssal);
     document.getElementById('anomalous-container')?.classList.toggle('theme-abyssal-scarlet', abyssal);
     if (theme === shownTheme) return;
@@ -207,11 +210,10 @@ export function setAbyssalScarletTheme(enabled, notify = false) {
 
 window.setAbyssalScarletTheme = setAbyssalScarletTheme;
 paintTheme();
-// Following ComfyUI: its palette switch changes <html>'s classes (ours are toggled only when they
-// differ, so painting causes no further change).
-new MutationObserver(() => {
-    if (themePreference() === 'auto') paintTheme();
-}).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+// Following ComfyUI: its palette switch changes <html>'s class or style (ours are toggled only
+// when they differ, so painting causes no further change). Always painted: amb-comfy-dark counts
+// for a chosen theme too.
+new MutationObserver(paintTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style'] });
 
 export function createInterfaceSettings() {
     const translations = getSettingTranslationPatches();

@@ -17,6 +17,7 @@ assert.equal(destinationFor(entry('Flux/ink.safetensors'), {}, fixed), 'Download
 // {base}: the usual folder name of the base model, or the folder you already have for it.
 assert.equal(baseFolder('SDXL 1.0'), 'SDXL');
 assert.equal(baseFolder('Flux.1 D'), 'Flux');
+assert.equal(baseFolder('MOSS Image'), 'MOSS');
 assert.equal(baseFolder('SD 1.5'), 'SD1.5');
 assert.equal(baseFolder('Illustrious', ['illustrious', 'pony']), 'illustrious');
 assert.equal(baseFolder('SD 1.5', ['sd15']), 'sd15');

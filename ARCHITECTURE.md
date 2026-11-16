@@ -694,7 +694,8 @@ covered by the `styles.css` manifest.
   (`isValidSavedTriggerPosition`); `api/__init__.py` sends `Cache-Control: no-cache`
   for this plugin's static files so a normal refresh revalidates them (modules are
   imported without `?v=` query strings, which would create second module
-  instances); and `interface_settings.js` owns language and theme preferences.
+  instances); and `interface_settings.js` owns language and theme preferences (`comfy_palette.js`
+  tells whether ComfyUI's palette is dark, by the older class or the newer color-scheme).
 - `ui_domain_switcher.js` stores which side is active (image or audio: which list the
   list column shows, which guide "!" opens); the rail's pages switch it through
   `ui_shell_nav.js`. `browser.switchAudioTab` is the single entry for the audio panels
