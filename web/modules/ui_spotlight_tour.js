@@ -111,7 +111,7 @@ export function ensureTourStyles() {
         .anomalous-spotlight-overlay {
             position: fixed;
             inset: 0;
-            z-index: 999999;
+            z-index: calc(var(--amb-z-popup) - 1);
             pointer-events: auto;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -148,7 +148,7 @@ export function ensureTourStyles() {
             transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
                         left 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
                         top 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
-            z-index: 1000000;
+            z-index: var(--amb-z-popup);
         }
         .anomalous-spotlight-card-header {
             display: flex;

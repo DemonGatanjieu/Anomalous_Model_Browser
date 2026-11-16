@@ -322,7 +322,7 @@ dialog.anomalous-update-guide {
     outline: none;
     overflow-y: auto;
     box-sizing: border-box;
-    z-index: 1000000;
+    z-index: var(--amb-z-popup);
     animation: anomalous-guide-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

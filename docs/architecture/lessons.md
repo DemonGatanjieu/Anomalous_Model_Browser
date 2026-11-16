@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-11-16 · v1.63.2：AMB 挡住了 ComfyUI 的提示，Ctrl+Enter 在 AMB 里也出图
+
+**现象**：AMB 开着时，ComfyUI 的报错提示（层级 9999）和对话框（1700）被 AMB 的窗口（10000）挡住；一次 Esc 悄悄取消了看不见的对话框，又关掉了 AMB。在 AMB 的输入框里按 Ctrl+Enter，ComfyUI 同时出图。用新装的网页开发指南查前端时发现，在测试 ComfyUI 上实测确认。
+
+**根因**：层级是各文件自己写的数字（1000 到 999 万）；ComfyUI 新版的对话框不再是 `.p-dialog-mask`，Esc 的检查没认出来；ComfyUI 在 window 上监听快捷键，Ctrl+Enter 在输入框里也算。
+
+**以后怎么做**
+- 层级只用 `styles/52-layers.css` 的表（`--amb-z-window` / `popup` / `top`，加减几位）；AMB 的任何一层都低于 ComfyUI 的对话框层 1700。`tests/css_scope.mjs` 会查出 1700 以上的数字（样式和 JS 都查，包括 `XX_Z_INDEX` 这类常量）。
+- 认 ComfyUI 的对话框按 `role="dialog"`，不按某一版的类名。判断"是不是 AMB 的元素"不能用 `closest('[class*="anomalous-"]')`：`<html>` 和 `<body>` 上也有 anomalous- 类名，ComfyUI 的元素也会被算进来（`ui_key_guard.js` 的 `inOurWindow`）。
+- 按键要看事件发生那一刻的路径（`composedPath()`）：AMB 的框按 Ctrl+Enter 时已经关掉，等事件传到 document，元素已经不在页面里了。
+
+---
+
 ## 2026-11-16 · v1.63.1：样式管到了整个页面，弄坏别的插件
 
 **现象**：GitHub 议题 #28：装了 AMB 后，别的插件（报告里是 comfyui-model-resolver）的图标排布乱了、角标不见了；在 ComfyUI 里按住按钮，按钮上的图标会消失。

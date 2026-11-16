@@ -52,7 +52,7 @@
 
 .anomalous-ai-status-popover {
     position: fixed;
-    z-index: 1000000;
+    z-index: var(--amb-z-popup);
     width: 300px;
     box-sizing: border-box;
     padding: 14px 16px;

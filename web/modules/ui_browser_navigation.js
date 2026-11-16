@@ -4,6 +4,7 @@ import { stopAudioStudioPlayback } from './ui_audio_studio.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { leaveScanPage } from './ui_scan_page.js';
 import { leavePromptPage } from './ui_prompt_composer.js';
+import { comfyDialogOpen, guardComfyShortcuts } from './ui_key_guard.js';
 
 function restoreWorkspaceReturnPanel(owner) {
     const state = owner.workspaceReturnState;
@@ -71,15 +72,18 @@ const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-wfd
  * not while a text field has the key (Esc there belongs to the field). It
  * listens first (capture), so a dialog that closes on this same Esc still counts as above.
  * ComfyUI's own keybindings mark Esc as handled, so `defaultPrevented` says nothing here.
+ * ComfyUI's dialogs are found by role (comfyDialogOpen); `.p-dialog-mask` was the older ones'.
+ * The same setup keeps Ctrl+Enter typed in our fields from ComfyUI (ui_key_guard.js).
  */
 export function bindBrowserEscape(owner) {
+    guardComfyShortcuts();
     window.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape' || !owner.modal?.classList.contains('visible')) return;
         if (e.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
         const layered = [...document.body.children, ...(owner.nbPanel?.children || [])]
             .some(el => el !== owner.modal && el.getClientRects().length
                 && (el.getAttribute('role') === 'menu' || [...el.classList].some(c => c.startsWith('anomalous-') && c.endsWith('overlay'))));
-        if (layered || document.querySelector('dialog[open], .p-dialog-mask')) return;
+        if (layered || document.querySelector('dialog[open], .p-dialog-mask') || comfyDialogOpen()) return;
         if ([...document.querySelectorAll('[data-anomalous-escape]')].some(el => el.getClientRects().length)) return;
         // Voice-over lets go of its picked lines with this Esc (ui_script_director.js).
         if (owner.modal.querySelector('.anomalous-sd-line-card.is-picked')) return;

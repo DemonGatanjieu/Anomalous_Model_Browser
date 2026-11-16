@@ -334,7 +334,7 @@
 
 .anomalous-keep-menu {
     position: fixed;
-    z-index: 1000001;
+    z-index: calc(var(--amb-z-popup) + 1);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -456,7 +456,7 @@
     width: 100vw;
     height: 100vh;
     background: rgba(0, 0, 0, 0.95);
-    z-index: 9999999;
+    z-index: var(--amb-z-top);
     display: none;
     align-items: center;
     justify-content: center;
@@ -592,7 +592,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-dialog-overlay {
     position: absolute;
-    z-index: 10003;
+    z-index: calc(var(--amb-z-window) + 3);
     inset: 0;
     display: flex;
     align-items: center;
@@ -1566,7 +1566,7 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-share-overlay {
     position: fixed;
     inset: 0;
-    z-index: 999999;
+    z-index: calc(var(--amb-z-popup) - 1);
     display: flex;
     align-items: center;
     justify-content: center;

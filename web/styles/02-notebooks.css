@@ -7,7 +7,7 @@
     left: 0;
     width: 100%;
     background: var(--amb-bg-page, var(--amb-bg-page));
-    z-index: 10001;
+    z-index: calc(var(--amb-z-window) + 1);
     display: flex;
     align-items: center;
     justify-content: center;

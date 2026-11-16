@@ -22,7 +22,9 @@ node tools/run_tests.mjs
 
 它依次跑结构检查、每个 `tests/*.mjs`、全部 Python 测试，最后写 `All passed.` 或者列出失败的项目。其中 `tests/load_order.mjs` 把 `web/` 里的每个文件都当成第一个加载的试一遍（ComfyUI 会同时加载全部 js 文件，谁先跑不一定），用 `tests/load_order/` 里的假页面顶替浏览器和 ComfyUI，有文件碰到“还没准备好的变量”就失败。
 
-`tests/css_scope.mjs` 查每条样式都落在 AMB 自己的元素上：AMB 的样式装在 ComfyUI 的整个页面里，一条没写 AMB 名字的规则就会改到别的插件。
+`tests/css_scope.mjs` 查每条样式都落在 AMB 自己的元素上：AMB 的样式装在 ComfyUI 的整个页面里，一条没写 AMB 名字的规则就会改到别的插件；也查每一层的层级都低于 ComfyUI 的对话框（1700），不挡住 ComfyUI 的提示。
+
+`tests/key_guard.mjs` 查在 AMB 的输入框里按 Ctrl+Enter 不会传给 ComfyUI（ComfyUI 会拿去出图），其余按键照常传过去。
 
 Python 用哪个：
 

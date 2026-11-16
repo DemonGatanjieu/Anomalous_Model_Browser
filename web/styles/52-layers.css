@@ -1,0 +1,11 @@
+/* One table of the plugin's stacking levels (z-index). The plugin lives in ComfyUI's page, so
+   every layer of ours stays under ComfyUI's dialogs and context menus (--z-index-overlay 1700),
+   its tour (1800) and toasts (9999): what ComfyUI says while the browser is open stays in sight.
+   Inside the plugin the order is: the window, what lies in it (window + n), our popups and
+   dialogs over it (popup - n .. popup + n), then the one top layer. Rules use these names or a
+   small calc() on them, never a number of their own above 1700 (tests/css_scope.mjs). */
+:root {
+    --amb-z-window: 1640;
+    --amb-z-popup: 1670;
+    --amb-z-top: 1690;
+}

@@ -409,7 +409,7 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease, transform 0.15s ease;
-    z-index: 999999;
+    z-index: calc(var(--amb-z-popup) - 1);
 }
 
 /* Base Arrow (Default: Top) */
@@ -426,7 +426,7 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease, transform 0.15s ease;
-    z-index: 999999;
+    z-index: calc(var(--amb-z-popup) - 1);
 }
 
 /* Hover & Keyboard Focus Trigger (Standard 350ms Delay) */

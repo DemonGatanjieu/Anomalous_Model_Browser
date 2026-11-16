@@ -3,7 +3,7 @@
 .anomalous-structure-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1000001;
+    z-index: calc(var(--amb-z-popup) + 1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -415,7 +415,7 @@
 
 .anomalous-structure-translation {
     position: fixed;
-    z-index: 1000002;
+    z-index: calc(var(--amb-z-popup) + 2);
     display: flex;
     flex-direction: column;
     gap: 8px;

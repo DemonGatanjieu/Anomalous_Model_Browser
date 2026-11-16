@@ -1100,7 +1100,10 @@ covered by the `styles.css` manifest.
   `ui_rail_tools.js` owns the rail's tool buttons (scan, doctor, current node);
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
-  rail; the list column steps aside while it is open).
+  rail; the list column steps aside while it is open); `ui_key_guard.js` keeps Ctrl+Enter typed
+  in our fields from ComfyUI's shortcuts and tells Esc when a ComfyUI dialog is open. Every
+  layer of the plugin stays under ComfyUI's dialogs and toasts: `styles/52-layers.css` is the
+  one z-index table (window, popup, top).
   `ui_scan_page.js` is the scan page (a tool page like the doctor), quieter the further
   down: the scan card (a band of covers with an empty frame per model not scanned yet, what is left, the scan button with "pick
   models to scan" beside it, online or offline, what the scan will do in one sentence), the

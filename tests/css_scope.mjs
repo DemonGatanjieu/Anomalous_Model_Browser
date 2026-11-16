@@ -64,6 +64,31 @@ test('every style rule stays on AMB\'s own elements', () => {
     assert.deepEqual(leaks, []);
 });
 
+// ComfyUI's dialogs and context menus sit at 1700 (--z-index-overlay), its toasts at 9999: every
+// layer of ours stays under them, so what ComfyUI says while the browser is open is seen.
+const COMFY_OVERLAY = 1700;
+const MODULES = path.join(STYLES, '..', 'modules');
+
+test('every layer stays under ComfyUI\'s dialogs and toasts', () => {
+    const table = fs.readFileSync(path.join(STYLES, '52-layers.css'), 'utf8');
+    const level = (name) => Number(table.match(new RegExp(`--amb-z-${name}:\\s*(\\d+)`))[1]);
+    // window + 5 < popup - 10 and popup + 5 < top: the calc() steps in use never cross.
+    assert.ok(level('window') + 5 < level('popup') - 10, 'window and popup overlap');
+    assert.ok(level('popup') + 5 < level('top') && level('top') < COMFY_OVERLAY, 'top is not under ComfyUI');
+    const high = [];
+    const sources = [
+        ...fs.readdirSync(STYLES).filter(name => name.endsWith('.css')).map(name => path.join(STYLES, name)),
+        ...fs.readdirSync(MODULES).filter(name => name.endsWith('.js')).map(name => path.join(MODULES, name)),
+    ];
+    for (const file of sources) {
+        const text = fs.readFileSync(file, 'utf8');
+        for (const [, value] of text.matchAll(/z[-_]?index\w*\s*[:=]\s*['"]?(\d+)/gi)) {
+            if (Number(value) >= COMFY_OVERLAY) high.push(`${path.basename(file)}: z-index ${value}`);
+        }
+    }
+    assert.deepEqual(high, []);
+});
+
 test('the reader sees through comments, at-rules and keyframes', () => {
     const found = rules('/* a { } */ @media (x) { .anomalous-a, b { color: red; } } @keyframes k { from { top: 0; } }');
     assert.deepEqual(found.map(rule => rule.selector), ['.anomalous-a, b']);
