@@ -617,8 +617,8 @@ covered by the `styles.css` manifest.
   `api/sidecar_layout.py` is Settings → Models → "Files that come with models"
   (`/anomalous/sidecars/plan|apply`, apply this computer only): saves the place, moves the files
   there and drops Civitai pictures kept twice to the Recycle Bin.
-- `model_identity.py` owns file SHA-256 evidence and the base model a safetensors header
-  tells, shared with the standalone scanner (which runs as its own process, so the API
+- `model_identity.py` owns file SHA-256 evidence (`lists_file`: whether a Civitai record
+  lists the file) and the base model a safetensors header tells, shared with the standalone scanner (which runs as its own process, so the API
   never imports `scraper.py`). `known_hashes.py` hands the scanner the SHA-256 an import
   just read (`.known_hashes.json`, kept while the file's size and time are unchanged). `model_kind.py` reads a .safetensors / .gguf header (never
   formats that can carry code) and says which models folder the file belongs in and its base
