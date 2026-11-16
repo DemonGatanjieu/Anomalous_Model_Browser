@@ -13,6 +13,7 @@ import { getActiveDomain } from './ui_domain_switcher.js';
 import { renderAudioSidebar } from './ui_audio_sidebar.js';
 import { createGallerySearchBar } from './ui_gallery.js';
 import { bindBrowserEscape } from './ui_browser_navigation.js';
+import { bindTooltips } from './ui_tooltip.js';
 import { createShellRail } from './ui_shell_rail.js';
 import { installShellNavigation } from './ui_shell_nav.js';
 import { bindDockResize, bindShellDrag, bindShellMaximize, bindShellResize, morphFrame } from './ui_shell_frame.js';
@@ -227,6 +228,7 @@ export function createDOM() {
             if (e.target === this.nbPanel) this.closeWorkspace();
         };
         bindBrowserEscape(this);
+        bindTooltips();
 
         content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.aiPanel, this.promptPanel, this.scanPanel, this.settingsPanel, this.doctorPanel,
             this.assistantPanel, this.audioStudioPanel, this.scriptPanel, this.audioGalleryPanel);

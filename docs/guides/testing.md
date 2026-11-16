@@ -26,6 +26,8 @@ node tools/run_tests.mjs
 
 `tests/key_guard.mjs` 查在 AMB 的输入框里按 Ctrl+Enter 不会传给 ComfyUI（ComfyUI 会拿去出图），其余按键照常传过去。
 
+`tests/tooltip_place.mjs` 查提示气泡摆在元素旁边、没地方时换到另一边、总在窗口里面。
+
 Python 用哪个：
 
 - 设置了环境变量 `PYTHON` 就用它；

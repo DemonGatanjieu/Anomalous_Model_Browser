@@ -1,0 +1,51 @@
+/* The plugin's one tooltip bubble on <body> (ui_tooltip.js): placed by script beside the
+   element, flipped to the other side when it does not fit and kept inside the window, so no
+   card or panel that clips its overflow can cut it. --amb-tip-arrow is where the arrow meets
+   the bubble's edge, so it still points at the element when the bubble was pushed aside. */
+.anomalous-tip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: var(--amb-z-top);
+    box-sizing: border-box;
+    width: max-content;
+    max-width: min(320px, calc(100vw - 12px));
+    padding: 6px 12px;
+    background: var(--amb-bg-tooltip);
+    color: var(--amb-text-main);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.35;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: var(--amb-radius-control, 6px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.anomalous-tip[hidden] { display: none; }
+.anomalous-tip.is-shown { opacity: 1; transform: none; }
+.anomalous-tip[data-side="bottom"] { transform: translateY(-4px); }
+.anomalous-tip[data-side="right"] { transform: translateX(-4px); }
+.anomalous-tip[data-side="left"] { transform: translateX(4px); }
+.anomalous-tip.is-shown[data-side] { transform: none; }
+
+.anomalous-tip::before {
+    content: '';
+    position: absolute;
+    border: 5px solid transparent;
+}
+.anomalous-tip[data-side="top"]::before { top: 100%; left: var(--amb-tip-arrow, 50%); transform: translateX(-50%); border-bottom-width: 0; border-top-color: var(--amb-bg-tooltip); }
+.anomalous-tip[data-side="bottom"]::before { bottom: 100%; left: var(--amb-tip-arrow, 50%); transform: translateX(-50%); border-top-width: 0; border-bottom-color: var(--amb-bg-tooltip); }
+.anomalous-tip[data-side="right"]::before { right: 100%; top: var(--amb-tip-arrow, 50%); transform: translateY(-50%); border-left-width: 0; border-right-color: var(--amb-bg-tooltip); }
+.anomalous-tip[data-side="left"]::before { left: 100%; top: var(--amb-tip-arrow, 50%); transform: translateY(-50%); border-right-width: 0; border-left-color: var(--amb-bg-tooltip); }
+
+/* Abyssal Scarlet: inner shadow, sharp border, no outer glow (as the old ones). */
+html.theme-abyssal-scarlet .anomalous-tip {
+    --amb-bg-tooltip: rgba(22, 8, 16, 0.98);
+    border-color: #dc143c;
+    color: #e0d8db;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.95), inset 0 1px 3px rgba(0, 0, 0, 0.7);
+}

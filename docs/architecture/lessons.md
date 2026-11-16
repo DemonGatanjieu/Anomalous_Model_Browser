@@ -11,9 +11,10 @@
 **根因**：层级是各文件自己写的数字（1000 到 999 万）；ComfyUI 新版的对话框不再是 `.p-dialog-mask`，Esc 的检查没认出来；ComfyUI 在 window 上监听快捷键，Ctrl+Enter 在输入框里也算。
 
 **以后怎么做**
-- 层级只用 `styles/52-layers.css` 的表（`--amb-z-window` / `popup` / `top`，加减几位）；AMB 的任何一层都低于 ComfyUI 的对话框层 1700。`tests/css_scope.mjs` 会查出 1700 以上的数字（样式和 JS 都查，包括 `XX_Z_INDEX` 这类常量）。
+- 层级只用 `styles/56-layers.css` 的表（`--amb-z-window` / `popup` / `top`，加减几位）；AMB 的任何一层都低于 ComfyUI 的对话框层 1700。`tests/css_scope.mjs` 会查出 1700 以上的数字（样式和 JS 都查，包括 `XX_Z_INDEX` 这类常量）。
 - 认 ComfyUI 的对话框按 `role="dialog"`，不按某一版的类名。判断"是不是 AMB 的元素"不能用 `closest('[class*="anomalous-"]')`：`<html>` 和 `<body>` 上也有 anomalous- 类名，ComfyUI 的元素也会被算进来（`ui_key_guard.js` 的 `inOurWindow`）。
 - 按键要看事件发生那一刻的路径（`composedPath()`）：AMB 的框按 Ctrl+Enter 时已经关掉，等事件传到 document，元素已经不在页面里了。
+- 悬停提示不要画在元素里面（`::after`）：外层只要有一个裁边的框（卡片、面板的 overflow: hidden），提示就会被切掉；而且它会占用元素自己的 `::after`（AI 图标上的小绿点被设成透明，一直看不见）。提示用页面上单独的一个气泡（`ui_tooltip.js`），按元素位置摆放。
 
 ---
 

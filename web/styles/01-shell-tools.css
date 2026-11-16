@@ -48,17 +48,6 @@
     overflow: hidden;
 }
 
-/* A pressed element hides its tooltip so it never blocks the click (AMB's tooltips only) */
-[data-amb-tooltip]:active::before,
-[data-amb-tooltip]:active::after,
-.anomalous-tooltip-target:active::before,
-.anomalous-tooltip-target:active::after {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-}
-
 #anomalous-sidebar {
     flex: 1;
     overflow-y: auto;

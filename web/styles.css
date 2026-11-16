@@ -1,12 +1,12 @@
 @import url("./styles/00-foundation-models.css?v=20261116-layers");
-@import url("./styles/01-shell-tools.css?v=20261116-scope");
+@import url("./styles/01-shell-tools.css?v=20261116-tips");
 @import url("./styles/02-notebooks.css?v=20261116-layers");
 @import url("./styles/03-gallery-recipes.css?v=20261116-layers");
 @import url("./styles/04-dialogs-materials.css?v=20261020-tidy");
 @import url("./styles/05-recipe-studio-overrides.css?v=20261011-wfd-3");
 @import url("./styles/06-material-workbench.css?v=20261116-layers");
 @import url("./styles/07-prompt-studio.css?v=20261116-layers");
-@import url("./styles/08-theme-gallery-overrides.css?v=20261116-layers");
+@import url("./styles/08-theme-gallery-overrides.css?v=20261116-tips");
 @import url("./styles/09-prompt-drawers.css?v=20261116-layers");
 @import url("./styles/10-model-sources.css?v=20261116-layers");
 @import url("./styles/11-audio-studio.css?v=20261116-layers");
@@ -50,4 +50,7 @@
 @import url("./styles/49-model-versions.css?v=20261030-versions");
 @import url("./styles/50-snapshot-bar.css?v=20261104-marks");
 @import url("./styles/51-shell-motion.css?v=20261105-motion");
-@import url("./styles/52-layers.css?v=20261116-layers");
+@import url("./styles/56-layers.css?v=20261116-layers");
+@import url("./styles/57-long-lists.css?v=20261116-tips");
+@import url("./styles/58-tooltips.css?v=20261116-tips");
+@import url("./styles/59-focus.css?v=20261116-tips");

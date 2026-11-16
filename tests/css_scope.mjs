@@ -70,7 +70,7 @@ const COMFY_OVERLAY = 1700;
 const MODULES = path.join(STYLES, '..', 'modules');
 
 test('every layer stays under ComfyUI\'s dialogs and toasts', () => {
-    const table = fs.readFileSync(path.join(STYLES, '52-layers.css'), 'utf8');
+    const table = fs.readFileSync(path.join(STYLES, '56-layers.css'), 'utf8');
     const level = (name) => Number(table.match(new RegExp(`--amb-z-${name}:\\s*(\\d+)`))[1]);
     // window + 5 < popup - 10 and popup + 5 < top: the calc() steps in use never cross.
     assert.ok(level('window') + 5 < level('popup') - 10, 'window and popup overlap');

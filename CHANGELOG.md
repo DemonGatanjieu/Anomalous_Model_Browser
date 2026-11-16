@@ -1,11 +1,20 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.63.2 (Fix: ComfyUI's messages hidden under the browser, Ctrl+Enter in the browser started a run) — unreleased
+## v1.63.2 (Fix: ComfyUI's messages hidden under the browser, Ctrl+Enter started a run, tooltips cut off; long lists faster) — unreleased
 
 - AMB 开着的时候，ComfyUI 自己的报错提示和对话框（比如出图失败、"确定吗"）不再被挡住。以前 AMB 的窗口比它们高一层，提示只露出一条边，对话框完全看不见，按一下 Esc 还会把看不见的对话框悄悄"取消"、顺带关掉 AMB。现在 AMB 的所有窗口和弹窗都在 ComfyUI 的对话框、右键菜单和提示下面（AMB 自己的先后顺序不变）；ComfyUI 的对话框开着时，Esc 先关它，再按一次才关 AMB。
 - 在 AMB 的输入框里按 Ctrl+Enter 不会再让画布出图。以前在 AMB 的搜索框里，或者在用 Ctrl+Enter 确认的多行框里（工作流卡的备注、交给 AI 时写给图片的话、搭配里模型的备注），ComfyUI 会同时把画布上的工作流拿去跑。不在输入框里时，ComfyUI 的快捷键照常能用；在 ComfyUI 自己的提示词框里按 Ctrl+Enter 也照常出图。
 - With the browser open, ComfyUI's own toasts and dialogs (a run that failed, "are you sure?") are no longer hidden. The browser's window sat one level above them: a toast showed only its edge, a dialog could not be seen at all, and Esc then quietly cancelled that unseen dialog and closed the browser too. Every window and popup of the plugin now lies under ComfyUI's dialogs, context menus and toasts (the plugin's own order stays); with a ComfyUI dialog open, Esc closes it first and the browser on the next press.
 - Ctrl+Enter typed in one of the browser's fields no longer runs the canvas. In the search box, or in the multi-line boxes that confirm with Ctrl+Enter (a workflow card's note, the words for pictures handed to the AI, a model's note in a combo), ComfyUI also queued the workflow on the canvas. Outside a field ComfyUI's shortcuts work as before, and Ctrl+Enter in ComfyUI's own prompt box still runs.
+
+- 鼠标停在 AMB 的按钮上时出现的提示不会再被切掉。以前提示画在按钮里面，按钮所在的卡片或面板一裁边，提示也跟着被切：比如模型卡片上的"立即精准扫描此模型"前几个字看不到，标题栏靠边的提示也会少一截。现在提示是页面上单独的一个小气泡，摆在按钮旁边，放不下就换到另一边，总在窗口里面，箭头始终指着按钮。
+- 左边栏 AI 图标上的小绿点回来了。AI 做了新事情时它本该亮起来，以前被旧的提示写法占用，一直是透明的。
+- 模型很多时，模型库和图库更顺：看不到的卡片先不排版、不绘制，滚到附近才画。实测 2000 个模型时，画出全部卡片的时间缩短到原来的约 40%，滚动一遍时重新排版的时间缩短到原来的约十分之一。
+- 角色语音页的两个搜索框和搭配的标签编辑框，点进去时边框会变色，和其他搜索框一样；以前点进去看不出来。
+- The tips that show when the mouse rests on a button of the browser are no longer cut off. They were drawn inside the button, so a card or panel that clips its edges cut them too: the first words of "Scan Model Directly" on a model card were missing, and tips near the window's edge lost a piece. Now each tip is one small bubble of its own beside the button, on the other side when there is no room, always inside the window, its arrow pointing at the button.
+- The small green dot on the AI icon of the left bar is back. It should light up when the AI did something new; the old tips had taken its place and kept it invisible.
+- Long lists are smoother: model and gallery cards out of sight are not laid out or painted until they come near. With 2,000 models all cards were drawn in about 40% of the time, and a scroll through the list laid out in about a tenth.
+- The two search boxes of Voices and a combo's tag field now show focus on their frame like the other search boxes; before, nothing showed where the typing went.
 
 ## v1.63.1 (Fix: AMB's styles reached other extensions and ComfyUI itself) — 2026-11-16
 
