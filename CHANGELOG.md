@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.63.3 (Fix: the theme followed a new ComfyUI as light; MOSS Image models recognized) — unreleased
+## v1.63.3 (Fix: the theme followed a new ComfyUI as light, a scan took another model's Civitai page; MOSS Image models recognized) — 2026-11-16
 
 - 主题选"跟随 ComfyUI"时，ComfyUI 是深色、AMB 却显示成浅色的问题修好了。ComfyUI 新版（前端 1.59 起）换了标记深色主题的方式，AMB 只认旧的标记，找不到就一律当成浅色。现在新旧两种都认，在 ComfyUI 里切换配色时 AMB 也会马上跟着变。
 - AMB 认得 MOSS Image 的模型了：底模文件（包括 INT8 版本）认成扩散模型，底模 MOSS Image；它的 LoRA 不联网也能认出底模。以前底模文件认不出是什么，导入时选"按底模分"也没法放进底模文件夹，只能放在类型文件夹本身。
