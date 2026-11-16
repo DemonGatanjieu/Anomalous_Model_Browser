@@ -471,7 +471,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     width: 100vw;
     height: 100vh;
     pointer-events: none;
-    z-index: 10000;
+    z-index: var(--amb-z-window);
     display: none;
     filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.85));
 }
@@ -575,7 +575,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     width: 20px;
     height: 20px;
     cursor: se-resize;
-    z-index: 10000;
+    z-index: var(--amb-z-window);
 }
 
 .anomalous-resize-handle::after {
@@ -596,7 +596,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     top: 0;
     right: 0;
     bottom: 0;
-    z-index: 10000;
+    z-index: var(--amb-z-window);
     width: 6px;
     background: var(--amb-border);
     cursor: ew-resize;
@@ -1107,7 +1107,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     position: fixed;
     right: 24px;
     bottom: 104px;
-    z-index: 1000000;
+    z-index: var(--amb-z-popup);
     width: min(380px, calc(100vw - 32px));
     box-sizing: border-box;
     padding: 16px;

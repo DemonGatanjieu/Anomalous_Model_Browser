@@ -1071,7 +1071,7 @@
     background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.75));
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    z-index: 999999;
+    z-index: calc(var(--amb-z-popup) - 1);
     display: flex;
     align-items: center;
     justify-content: center;

@@ -106,7 +106,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
 
         const modal = document.createElement('div');
         modal.className = 'anomalous-picker-overlay'; // the browser's Esc leaves it to the picker (ui_browser_navigation.js)
-        modal.style.cssText = 'position:fixed;inset:0;background:var(--amb-lt-page,radial-gradient(circle at 15% 0%,rgba(53,73,118,0.34),transparent 35%),rgba(7,8,12,0.965));z-index:999999;display:flex;flex-direction:column;padding:22px 24px;box-sizing:border-box;color:var(--amb-lt-text,#fff);font-family:Inter,Arial,sans-serif;';
+        modal.style.cssText = 'position:fixed;inset:0;background:var(--amb-lt-page,radial-gradient(circle at 15% 0%,rgba(53,73,118,0.34),transparent 35%),rgba(7,8,12,0.965));z-index:calc(var(--amb-z-popup) - 1);display:flex;flex-direction:column;padding:22px 24px;box-sizing:border-box;color:var(--amb-lt-text,#fff);font-family:Inter,Arial,sans-serif;';
         const stopMedia = container => container?.querySelectorAll?.('video,audio').forEach(media => {
             media.pause();
             media.removeAttribute('src');

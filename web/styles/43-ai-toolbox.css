@@ -399,7 +399,7 @@
 /* The side panel: on the right of the screen, the workbench and canvas still usable beside it. */
 .anomalous-tb-dock {
     position: fixed;
-    z-index: 1000000;
+    z-index: var(--amb-z-popup);
     top: 12px;
     right: 12px;
     bottom: 12px;

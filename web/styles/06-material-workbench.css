@@ -326,7 +326,7 @@
 .anomalous-workbench-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1000000;
+    z-index: var(--amb-z-popup);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1486,7 +1486,7 @@
     left: 24px;
     top: 24px;
     max-width: 240px;
-    z-index: 1000002;
+    z-index: calc(var(--amb-z-popup) + 2);
     pointer-events: none;
     padding: 10px 14px;
     border: 1px solid #68cdb9;
@@ -1514,7 +1514,7 @@
 /* 3. Drag Follower Floating Badge */
 .anomalous-material-drag-hint {
     position: fixed;
-    z-index: 999999;
+    z-index: calc(var(--amb-z-popup) - 1);
     pointer-events: none;
     display: inline-flex;
     align-items: center;
@@ -1563,7 +1563,7 @@
 /* What a release would write, laid over the target box (and its partner) while the pointer is on it. */
 .anomalous-prompt-preview {
     position: fixed;
-    z-index: 999998;
+    z-index: calc(var(--amb-z-popup) - 2);
     box-sizing: border-box;
     overflow: hidden;
     padding: 6px 8px;

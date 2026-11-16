@@ -9,7 +9,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 999990;
+    z-index: calc(var(--amb-z-popup) - 10);
     pointer-events: none; /* Canvas passthrough: pan/zoom canvas freely */
     overflow: hidden;
 }
@@ -27,7 +27,7 @@
     pointer-events: auto;
     display: flex;
     flex-direction: column;
-    z-index: 999991;
+    z-index: calc(var(--amb-z-popup) - 9);
     box-sizing: border-box;
 }
 
@@ -65,7 +65,7 @@
 /* Eye-Catching Prompt Card Hover Preview Popover (Replaces unstyled browser tooltip) */
 .anomalous-card-preview-popover {
     position: fixed;
-    z-index: 1000005;
+    z-index: calc(var(--amb-z-popup) + 5);
     width: 320px;
     max-width: calc(100vw - 32px);
     background: var(--amb-bg-tooltip);

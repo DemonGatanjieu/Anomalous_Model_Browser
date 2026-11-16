@@ -159,7 +159,7 @@ export async function showGeneratedGallery(model) {
             overlay.style.width = '100%';
             overlay.style.height = '100%';
             overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
-            overlay.style.zIndex = '999999';
+            overlay.style.zIndex = 'calc(var(--amb-z-popup) - 1)';
             overlay.style.display = 'flex';
             overlay.style.alignItems = 'center';
             overlay.style.justifyContent = 'center';

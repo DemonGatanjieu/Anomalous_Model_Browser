@@ -305,7 +305,7 @@
 /* The small menu (ui_popup_menu.js) over the page and its dialogs. */
 .anomalous-popup-menu {
     position: fixed;
-    z-index: 1000003;
+    z-index: calc(var(--amb-z-popup) + 3);
     display: flex;
     flex-direction: column;
     min-width: 168px;

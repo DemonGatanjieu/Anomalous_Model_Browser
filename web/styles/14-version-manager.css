@@ -37,7 +37,7 @@
 .anomalous-version-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1000000;
+    z-index: var(--amb-z-popup);
     display: flex;
     align-items: center;
     justify-content: center;
