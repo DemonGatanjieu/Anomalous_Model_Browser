@@ -247,6 +247,7 @@ function makeCard(file, view) {
             }
         }
         if (card.state === 'done') line.append(el('span', 'anomalous-download-text is-ok', t('importPlaced', { path: card.message })));
+        if (card.state === 'done' && card.civitaiBase) line.append(el('span', 'anomalous-download-text', t('importByCivitai', { base: card.civitaiBase })));
         if (card.state === 'failed') line.append(el('span', 'anomalous-download-text is-bad', card.message));
         if (card.state === 'ready' && card.found?.duplicate) {
             const box = el('label', 'anomalous-import-include');
@@ -365,11 +366,33 @@ export function openImportDialog(owner, files) {
         }
     }
 
+    const byBase = () => String(view.folders?.settings?.folder ?? '{base}').includes('{base}');
+
+    /** Civitai's base model for a file just sent; moved into that base model's folder when it names
+     * one. Before the scan that follows the import, so the scan finds it where it stays. */
+    async function placeByCivitai(card, placed) {
+        card.setProgress(t('importAskingCivitai'));
+        try {
+            const base = (await identifyFile(placed.token)).civitai?.base_model;
+            if (!base) return placed;
+            const subfolders = (view.folders?.types?.[placed.type] || []).find(item => item.index === placed.root)?.subfolders || [];
+            const rel = importDestination(placed.file, base, view.folders?.settings, subfolders);
+            if (rel === placed.rel) return placed;
+            const moved = await placeFile(placed.token, { type: placed.type, root: placed.root, rel }, false);
+            card.civitaiBase = base;
+            return moved;
+        } catch (error) {
+            console.warn('[AMB] Import: could not ask Civitai about a sent file.', error);
+            return placed;
+        }
+    }
+
     async function putAll() {
         if (busy) return;
         busy = true;
         view.update();
         const placed = [];
+        const byCivitai = [];
         for (const card of toPut()) {
             const choice = { type: card.kind, root: card.rootIndex, rel: card.rel };
             card.state = 'busy';
@@ -384,9 +407,13 @@ export function openImportDialog(owner, files) {
                         const percent = total ? Math.floor((sent / total) * 100) : 0;
                         card.setProgress(t('importUploading', { percent }), percent);
                     });
+                    // Sent without a base model (its header did not say, and no copy on this computer
+                    // was looked up first): Civitai may know the file, then it goes into that folder.
+                    if (!card.base && !card.edited && result.token && byBase()) result = await placeByCivitai(card, result);
                 }
                 rememberRoot(card.kind, card.rootIndex);
                 placed.push(result);
+                if (card.civitaiBase) byCivitai.push(card.civitaiBase);
                 card.state = 'done';
                 card.message = result.rel;
             } catch (error) {
@@ -398,12 +425,15 @@ export function openImportDialog(owner, files) {
         busy = false;
         placedAny.push(...placed);
         view.update();
+        // The window may close at once: what Civitai named goes into the toast too.
+        const civitaiNote = byCivitai.length === 1 ? ` ${t('importByCivitai', { base: byCivitai[0] })}`
+            : byCivitai.length ? ` ${t('importByCivitaiMany', { count: byCivitai.length })}` : '';
         // One file put in place: a wrong type is easiest to fix now.
         if (placed.length === 1) {
             const [one] = placed;
-            showWorkbenchToast(t('importDone', { count: 1 }), { label: t('retypeWrong'), run: () => openRetype(owner, { type: one.type, root: one.root, rel: one.rel, name: one.file }) });
+            showWorkbenchToast(t('importDone', { count: 1 }) + civitaiNote, { label: t('retypeWrong'), run: () => openRetype(owner, { type: one.type, root: one.root, rel: one.rel, name: one.file }) });
         } else if (placed.length) {
-            showWorkbenchToast(t('importDone', { count: placed.length }));
+            showWorkbenchToast(t('importDone', { count: placed.length }) + civitaiNote);
         }
         // Open while something is left to do: a failure, or a file still without a type.
         if (view.cards.every(card => card.state === 'done' || (card.state === 'ready' && !card.include))) close();

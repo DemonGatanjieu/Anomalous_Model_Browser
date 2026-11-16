@@ -424,7 +424,11 @@ async def api_upload(request):
             print(f"[Anomalous Browser] Import: upload failed: {error}")
             return _error("io", 500)
         raise
-    return web.json_response(await asyncio.to_thread(_finish, folder_type, root_index, root, dest, "upload", received))
+    placed = await asyncio.to_thread(_finish, folder_type, root_index, root, dest, "upload", received)
+    # A handle on the copy, as for a file found on this computer: the page may ask Civitai about
+    # it (identify) and move it into its base model's folder (place).
+    placed["token"] = _remember(dest, os.path.basename(dest), received)
+    return web.json_response(placed)
 
 
 def register_routes(app):
