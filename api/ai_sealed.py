@@ -12,6 +12,10 @@ tool), what the user named (NAMED: the names and tags of combos, workflow cards 
 a combo's name is its model's name and the start of its prompt unless they renamed it), the models
 when asked to (`models`), picture file names anywhere, and last any sealed text wherever it still
 shows up.
+A text the user split in the Privacy Overview (ai_sealed_adjust.py) keeps its old token in
+task["sealed_legacy"] for expand(), and task["sealed_views"] says how it reads now: its kept runs
+as their own tokens, the words the user let through as written. Wherever the old text still shows
+up it is given as that view (cover(), _hide()), so the words kept hidden never go out with it.
 seal_answer() takes the user's prompt box (a "prompts" panel block, ui_ai_prompt_box.js): the
 prompts and reference pictures, sealed, with the tokens the AI gets for them, and the gist: the
 picture in words the user wrote for the AI to read, handed on as written but for the words they
@@ -55,7 +59,11 @@ class Seals:
             task = ai_tasks._load().get(task_id) if task_id else None
             self.tokens = dict(task.get("sealed") or {}) if task else _loose
             self.legacy = dict(task.get("sealed_legacy") or {}) if task else {}
+            views = dict(task.get("sealed_views") or {}) if task else {}
         self.texts = {text: token for token, text in self.tokens.items()}
+        # A split text as it reads now, unless the user hid it whole again (then its token wins).
+        self.views = {text: views[token] for token, text in self.legacy.items()
+                      if isinstance(views.get(token), str) and text not in self.texts}
         self.changed = False
 
     def seal(self, text, kind="P"):
@@ -68,6 +76,10 @@ class Seals:
         self.tokens[token], self.texts[text] = text, token
         self.changed = True
         return token
+
+    def cover(self, text):
+        """`text` as the AI gets it: a split text's view, else its token."""
+        return self.views.get(text) or self.seal(text)
 
     def save(self):
         if not self.changed or not self.task_id:
@@ -130,7 +142,7 @@ def _text_input(info, node_type, key, value):
 def seal_text(seals, value):
     """A prompt field's value sealed (a string, or strings in a list); a model file's name stays."""
     if isinstance(value, str):
-        return value if not _sealable(value) or value.lower().endswith(MODEL_FILE) else seals.seal(value)
+        return value if not _sealable(value) or value.lower().endswith(MODEL_FILE) else seals.cover(value)
     if isinstance(value, list):
         return [seal_text(seals, item) for item in value]
     return value
@@ -146,7 +158,7 @@ def _walk(value, seals, info, keys):
     row_keys = keys | TOOL_KEYS["get_model"] if isinstance(value.get("model_id"), str) else keys
     for key, item in value.items():
         if key in ("settings", "inputs", "widgets") and isinstance(item, dict) and isinstance(node_type, str):
-            out[key] = {name: seals.seal(text) if isinstance(text, str) and _sealable(text) and _text_input(info, node_type, name, text)
+            out[key] = {name: seals.cover(text) if isinstance(text, str) and _sealable(text) and _text_input(info, node_type, name, text)
                         else _walk(text, seals, info, keys) for name, text in item.items()}
         elif key in row_keys and (isinstance(item, str) or isinstance(item, list) and all(isinstance(text, str) for text in item)):
             out[key] = seal_text(seals, item)
@@ -171,6 +183,9 @@ def _strings(value, change):
 def _hide(seals, text):
     """`text` with every picture name in it, then every sealed text (longest first), as tokens."""
     text = PICTURE.sub(lambda match: seals.seal(match.group(0), "img"), text)
+    for split in sorted((item for item in seals.views if len(item) >= MIN_SEALED), key=len, reverse=True):
+        if split in text:
+            text = text.replace(split, seals.views[split])
     for sealed in sorted((item for item in seals.texts if len(item) >= MIN_SEALED), key=len, reverse=True):
         if sealed in text:
             text = text.replace(sealed, seals.texts[sealed])

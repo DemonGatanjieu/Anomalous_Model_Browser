@@ -121,11 +121,13 @@ covered by the `styles.css` manifest.
   `ai_panels` (`kind="sealed_notes"`) as well as in `begin_task` and `get_situation`, still masked by `ai_privacy.guard`.
   `api/ai_sealed_adjust.py` applies retroactive privacy overrides (`POST /anomalous/ai_tasks/{task_id}/privacy_rules`):
   per-task `privacy_models` toggles, per-model `public_models` / `private_models` switches (`sealed_legacy` preserves
-  prior-token `expand`), prompt `[P*]` splits into kept-hidden + exposed phrases, and retroactive message phrase sealing,
+  prior-token `expand`), letting some words of a `[P*]` through (`parts` spelling the text: each kept run its own token,
+  the old text read as its `sealed_views` view wherever it shows up, ai_sealed.py), and retroactive message phrase sealing,
   delivering pending updates once via `begin_task` / `get_situation` / `ai_panels._collect` (`kind="privacy_adjust"`).
   `web/modules/ai_privacy_view.js` builds the pure classification & AI-perspective preview of hidden tokens, per-model
-  catalog switches, tag-split helpers, and unsealed messages/gists; `web/modules/ui_ai_privacy_adjust.js` provides the
-  inline tag-pill / phrase selector adjusters; `web/modules/ui_ai_privacy_overview.js` draws the two-column "Privacy
+  catalog switches, a hidden prompt as Prompt Studio's tags and the parts a split sends, and unsealed messages/gists;
+  `web/modules/ui_ai_privacy_adjust.js` draws a hidden prompt as Prompt Studio's chips (meanings on request through
+  `prompt_gloss.js`) to pick words to let through, and the message phrase sealer; `web/modules/ui_ai_privacy_overview.js` draws the two-column "Privacy
   overview" modal (`隐私一览`, clean single outer scroll + 3-line clamped prompts) with thumbnails, model controls, and
   inline per-token AI notes; `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview), the switch
   in its ⋯, and what the model tokens stand for.
@@ -426,7 +428,8 @@ covered by the `styles.css` manifest.
   `web/modules/ui_ai_facet_menu.js` is the side panel's list of sources (or types) under its
   "Source: All ▾" button: a search over the names, ↑ ↓ and Enter, the row under the pointer lit
   and the one shown ticked.
-  `web/modules/ui_ai_toolbox_cards.js` draws the cards, the side panel's rows, the detail pane
+  `web/modules/ui_ai_toolbox_cards.js` draws the cards, the side panel's rows, the detail pane (a model's
+  "Open its page" shows it in the browser through `ui_scan_lists.openListedModel`; its Back reopens the picker on it)
   (including the live message remark box with Hide support) and the full modal's picked-chips bar
   (`renderPickedBar`); `web/modules/ui_ai_toolbox_sources.js` renders the kind tabs (`renderKindRail`),
   filter pills (`renderFilterTabs`), compact subhead (`renderSubhead`), facets, base chips, and

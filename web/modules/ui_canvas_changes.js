@@ -6,11 +6,11 @@
  * text shows the part that differs marked in both; a value cut short in the log loses its cut
  * tag at either end, so a half tag is never called changed.
  */
-import { resolveLocale, translate as t } from './locales.js';
+import { translate as t } from './locales.js';
 import { changeLine } from './activity_log.js';
 import { textDifference } from './param_compare.js';
 import { promptTagsOf } from './prompt_tags.js';
-import { fetchGlosses, glossOf } from './prompt_gloss.js';
+import { fetchGlosses, glossOf, pageGlossLang } from './prompt_gloss.js';
 
 const CUT = '…';
 
@@ -36,9 +36,6 @@ function whole(text) {
     return value;
 }
 
-/** The meaning language for tags: the page's own, when it is not English. */
-const glossLang = () => (String(resolveLocale()).startsWith('zh') ? 'zh-CN' : '');
-
 /** Taken-out and put-in tags as chips, each with its meaning once asked for. */
 function tagChips(diff) {
     const box = el('div', 'anomalous-canvas-tags');
@@ -55,7 +52,7 @@ function tagChips(diff) {
         }
         box.append(line);
     }
-    const lang = glossLang();
+    const lang = pageGlossLang();
     if (lang) {
         const show = () => chips.forEach(([chip, tag]) => {
             const meaning = glossOf(tag, lang);

@@ -1,12 +1,14 @@
 /**
  * Inline privacy adjusters inside Privacy Overview (ui_ai_privacy_overview.js):
- * - Split a `[P*]` prompt into kept-hidden tags/phrases + exposed plaintext (tag pills + text highlight)
+ * - A hidden `[P*]` prompt as Prompt Studio's chips (meanings on request): pick tags, or select words, to let through
  * - Retroactively seal an unsealed phrase from a user message in the "Visible" column
  * - Toggle per-task model hiding or individual model hide/expose (`POST /privacy_rules`)
  */
 
 import { translate as t } from './locales.js';
-import { splitPromptParts } from './ai_privacy_view.js';
+import { partsShowingRange, partsShowingTags, promptChunks } from './ai_privacy_view.js';
+import { fetchGlosses, glossOf, pageGlossLang } from './prompt_gloss.js';
+import { tagWeight } from './prompt_tags.js';
 import { icon } from './ui_ai_icons.js';
 import { anomalousAlert } from './ui_dialog.js';
 
@@ -42,121 +44,134 @@ export async function postPrivacyRule(task, payload) {
     return snapshot;
 }
 
+const MANY_TAGS = 16; // more than this: the chips fold to a few rows until "show all"
+
 /**
- * Inline tag-pill / phrase splitter mounted inside a `[P*]` card.
- * `onClose()` closes the panel; `onApplied()` redraws Privacy Overview cleanly.
+ * A hidden `[P*]` prompt in the Privacy Overview, as Prompt Studio shows it: its tags as chips, a
+ * meaning under each on request (pageGlossLang), or one text when it is no list of tags. Clicking chips
+ * (or selecting words of the text) picks what the AI may read; Let through sends the parts
+ * (partsShowingTags / partsShowingRange) and `onApplied()` redraws the overview.
  */
-export function renderPromptAdjuster(item, task, { onClose, onApplied }) {
-    const box = el('div', 'anomalous-ai-priv-adjust');
-    box.append(el('div', 'anomalous-ai-priv-adjust-warn', t('aiPrivacySplitWarn')));
-    const split = item.split || splitPromptParts(item.text);
+export function renderHiddenPrompt(item, task, { onApplied }) {
+    const box = el('div', 'anomalous-ai-priv-prompt');
+    const { mode, items } = item.chunks || promptChunks(item.text);
+    const shown = new Set();
+    let range = null;
 
-    let mode = split.mode === 'tags' ? 'tags' : 'text';
-    const exposedIdx = new Set();
-    let exposedPhrase = '';
-
-    const stage = el('div', 'anomalous-ai-priv-adjust-stage');
-    const modeSwitch = el('div', 'anomalous-ai-priv-adjust-modes');
-    const applyBtn = el('button', 'anomalous-ai-tool is-primary', t('aiPrivacySplitApply'));
-    applyBtn.type = 'button';
-
-    const syncApply = () => {
-        if (mode === 'tags') applyBtn.disabled = exposedIdx.size === 0;
-        else applyBtn.disabled = !exposedPhrase.trim() || exposedPhrase.trim() === item.text.trim() ? (!exposedPhrase.trim()) : false;
+    const bar = el('div', 'anomalous-ai-priv-letbar');
+    const picked = el('span', 'anomalous-ai-priv-letbar-count');
+    const clear = el('button', 'anomalous-ai-tool', t('aiPrivacyAdjustCancel'));
+    clear.type = 'button';
+    const apply = el('button', 'anomalous-ai-tool is-primary', t('aiPrivacyLetThroughApply'));
+    apply.type = 'button';
+    bar.append(el('div', 'anomalous-ai-priv-letbar-warn', t('aiPrivacySplitWarn')), picked, clear, apply);
+    const sync = () => {
+        bar.hidden = mode === 'tags' ? !shown.size : !range;
+        picked.textContent = mode === 'tags' ? t('aiPrivacyPickedTags', { count: shown.size })
+            : range ? t('aiPrivacyPickedText', { words: item.text.slice(range[0], range[1]) }) : '';
     };
 
-    const drawStage = () => {
-        stage.replaceChildren();
-        modeSwitch.replaceChildren();
-        if (split.mode === 'tags') {
-            for (const kind of ['tags', 'text']) {
-                const tab = el('button', `anomalous-ai-priv-mode${mode === kind ? ' is-on' : ''}`, t(kind === 'tags' ? 'aiPrivacyModeTags' : 'aiPrivacyModeText'));
-                tab.type = 'button';
-                tab.onclick = () => { mode = kind; drawStage(); syncApply(); };
-                modeSwitch.append(tab);
-            }
-            stage.append(modeSwitch);
-        }
+    const tools = el('div', 'anomalous-ai-priv-prompt-tools');
+    tools.append(el('span', '', t(mode === 'tags' ? 'aiPrivacyChipsHint' : 'aiPrivacyTextHint')));
+    box.append(tools);
 
-        if (mode === 'tags') {
-            stage.append(el('div', 'anomalous-ai-priv-adjust-hint', t('aiPrivacySplitTagsHint')));
-            const pills = el('div', 'anomalous-ai-priv-tags');
-            split.parts.forEach((part, idx) => {
-                const pill = el('button', `anomalous-ai-priv-tagpill${exposedIdx.has(idx) ? ' is-exposed' : ''}`, part);
-                pill.type = 'button';
-                pill.prepend(icon(exposedIdx.has(idx) ? 'check' : 'lock', 11));
-                pill.onclick = () => {
-                    if (exposedIdx.has(idx)) exposedIdx.delete(idx);
-                    else exposedIdx.add(idx);
-                    pill.classList.toggle('is-exposed', exposedIdx.has(idx));
-                    pill.replaceChildren(icon(exposedIdx.has(idx) ? 'check' : 'lock', 11), document.createTextNode(part));
-                    syncApply();
-                };
-                pills.append(pill);
-            });
-            stage.append(pills);
-        } else {
-            stage.append(el('div', 'anomalous-ai-priv-adjust-hint', t('aiPrivacySplitTextHint')));
-            const area = document.createElement('textarea');
-            area.className = 'anomalous-ai-priv-adjust-area';
-            area.readOnly = true;
-            area.rows = Math.min(4, Math.max(2, Math.ceil(item.text.length / 48)));
-            area.value = item.text;
-            const pickLine = el('div', 'anomalous-ai-priv-pick-line');
-            const chosenPreview = el('span', 'anomalous-ai-priv-pick-preview', exposedPhrase ? t('aiPrivacyPickedExpose', { words: exposedPhrase }) : t('aiPrivacyPickNone'));
-            const markBtn = el('button', 'anomalous-ai-tool', t('aiPrivacyMarkExposeBtn'));
-            markBtn.type = 'button';
-            markBtn.onmousedown = (e) => e.preventDefault();
-            markBtn.onclick = () => {
-                const start = area.selectionStart ?? 0;
-                const end = area.selectionEnd ?? 0;
-                const picked = area.value.slice(start, end).trim();
-                if (picked.length < 2) return;
-                exposedPhrase = picked;
-                chosenPreview.textContent = t('aiPrivacyPickedExpose', { words: exposedPhrase });
-                syncApply();
+    if (mode === 'tags') {
+        const chips = el('div', 'anomalous-ps-tags anomalous-ai-priv-chips');
+        const glosses = [];
+        items.forEach((part, index) => {
+            if (!part.text) return;
+            const { core, weight } = tagWeight(part.text);
+            const chip = el('button', 'anomalous-ps-tag anomalous-ai-priv-chip');
+            chip.type = 'button';
+            const main = el('span', 'anomalous-ps-tag-main');
+            const mark = () => main.firstChild.replaceWith(icon(shown.has(index) ? 'check' : 'lock', 11));
+            main.append(icon('lock', 11), el('span', 'anomalous-ps-tag-text', core));
+            if (weight !== 1) main.append(el('span', 'anomalous-ps-tag-weight', String(weight)));
+            const gloss = el('span', 'anomalous-ps-tag-gloss');
+            glosses.push([gloss, part.text]);
+            chip.append(main, gloss);
+            chip.onclick = () => {
+                if (shown.has(index)) shown.delete(index);
+                else shown.add(index);
+                chip.classList.toggle('is-shown', shown.has(index));
+                mark();
+                sync();
             };
-            pickLine.append(markBtn, chosenPreview);
-            stage.append(area, pickLine);
+            chips.append(chip);
+        });
+        clear.onclick = () => {
+            shown.clear();
+            for (const chip of chips.querySelectorAll('.is-shown')) {
+                chip.classList.remove('is-shown');
+                chip.querySelector('.anomalous-ps-tag-main').firstChild.replaceWith(icon('lock', 11));
+            }
+            sync();
+        };
+        box.append(chips);
+        if (glosses.length > MANY_TAGS) {
+            chips.classList.add('is-folded');
+            const more = el('button', 'anomalous-ai-link anomalous-ai-priv-chips-more', t('aiPrivacyShowAllTags', { count: glosses.length }));
+            more.type = 'button';
+            more.onclick = () => {
+                const folded = chips.classList.toggle('is-folded');
+                more.textContent = folded ? t('aiPrivacyShowAllTags', { count: glosses.length }) : t('aiPrivacyCollapseText');
+            };
+            box.append(more);
         }
-        syncApply();
-    };
-
-    const actions = el('div', 'anomalous-ai-priv-adjust-actions');
-    const cancelBtn = el('button', 'anomalous-ai-tool', t('aiPrivacyAdjustCancel'));
-    cancelBtn.type = 'button';
-    cancelBtn.onclick = onClose;
-
-    applyBtn.onclick = async () => {
-        let keepText = '';
-        let exposeText = '';
-        if (mode === 'tags') {
-            const kept = [];
-            const exposed = [];
-            split.parts.forEach((part, idx) => (exposedIdx.has(idx) ? exposed : kept).push(part));
-            keepText = kept.join(', ');
-            exposeText = exposed.join(', ');
-        } else {
-            exposeText = exposedPhrase.trim();
-            const at = item.text.indexOf(exposeText);
-            keepText = (at >= 0 ? `${item.text.slice(0, at)} ${item.text.slice(at + exposeText.length)}` : item.text)
-                .replace(/\s*[,，]\s*[,，]+\s*/g, ', ')
-                .replace(/^\s*[,，]\s*|\s*[,，]\s*$/g, '')
-                .trim();
+        const lang = pageGlossLang();
+        if (lang) {
+            const show = () => glosses.forEach(([span, tag]) => { span.textContent = glossOf(tag, lang) || ''; });
+            const ask = el('button', 'anomalous-ai-link', t('aiTagsMeaning'));
+            ask.type = 'button';
+            ask.onclick = async () => {
+                ask.disabled = true;
+                ask.textContent = t('aiTagsMeaningLoading');
+                const ok = await fetchGlosses(glosses.map(([, tag]) => tag), lang);
+                show();
+                if (ok) ask.remove();
+                else {
+                    ask.disabled = false;
+                    ask.textContent = t('aiTagsMeaningFailed');
+                }
+            };
+            show(); // meanings asked for before in this session show at once
+            if (glosses.some(([, tag]) => glossOf(tag, lang) === undefined)) tools.append(ask);
         }
-        applyBtn.disabled = true;
+    } else {
+        const area = document.createElement('textarea');
+        area.className = 'anomalous-ai-priv-adjust-area';
+        area.readOnly = true;
+        area.rows = Math.min(5, Math.max(2, Math.ceil(item.text.length / 48)));
+        area.value = item.text;
+        const take = () => {
+            const start = area.selectionStart ?? 0;
+            const end = area.selectionEnd ?? 0;
+            range = item.text.slice(start, end).trim().length >= 2 ? [start, end] : null;
+            sync();
+        };
+        area.onmouseup = take;
+        area.onkeyup = take;
+        clear.onclick = () => {
+            area.setSelectionRange(0, 0);
+            range = null;
+            sync();
+        };
+        box.append(area);
+    }
+
+    apply.onclick = async () => {
+        const parts = mode === 'tags' ? partsShowingTags(item.text, shown) : partsShowingRange(item.text, range[0], range[1]);
+        apply.disabled = true;
         try {
-            await postPrivacyRule(task, { action: 'split_prompt', token: item.token, keep_text: keepText, expose_text: exposeText });
+            await postPrivacyRule(task, { action: 'split_prompt', token: item.token, parts });
             onApplied();
         } catch (error) {
-            applyBtn.disabled = false;
+            apply.disabled = false;
             await anomalousAlert(error.message);
         }
     };
-
-    actions.append(cancelBtn, applyBtn);
-    drawStage();
-    box.append(stage, actions);
+    sync();
+    box.append(bar);
     return box;
 }
 

@@ -452,7 +452,7 @@ setMarker(image => state.task && openMarker(image, state.task.id, () => void ref
  */
 function connectSideOnce() {
     shared.openMap ||= connectSide({
-        side: state.stage, task: () => state.task, redraw: () => renderTask(), message: () => state.view?.message, tabbed: () => state.page.classList.contains('uses-tabs'),
+        side: state.stage, task: () => state.task, redraw: () => renderTask(), message: () => state.view?.message, owner: () => state.owner, tabbed: () => state.page.classList.contains('uses-tabs'),
         box: () => (visible() && state.page?.querySelector('.anomalous-ai-stage')) || null,
     });
 }

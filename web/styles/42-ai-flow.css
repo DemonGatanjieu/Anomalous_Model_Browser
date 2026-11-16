@@ -532,7 +532,7 @@
 .anomalous-ai-story-hint { display: flex; align-items: center; gap: 5px; padding-top: 2px; color: var(--amb-text-dim); font-size: 11px; }
 
 /* Privacy Overview window (ui_ai_privacy_overview.js): single main scroll surface, 3-line clamped cards, inline adjusters. */
-.anomalous-ai-connect-dialog.is-privacy-overview { width: min(980px, 94vw); max-height: 90vh; }
+.anomalous-ai-connect-dialog.is-privacy-overview { width: min(980px, 94vw); max-height: 90vh; background: var(--amb-bg-panel); }
 .anomalous-ai-priv-overview { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .anomalous-ai-priv-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 .anomalous-ai-priv-badges, .anomalous-ai-priv-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -563,8 +563,6 @@
 .anomalous-ai-priv-exposed-pill { padding: 1px 6px; border-radius: 5px; background: color-mix(in srgb, var(--amb-ok) 15%, transparent); color: var(--amb-ok-text, var(--amb-ok)); font-size: 11px; font-weight: 600; }
 .anomalous-ai-priv-kind-tag { padding: 1px 6px; border-radius: 5px; background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-soft); font-size: 11px; }
 .anomalous-ai-priv-model-name, .anomalous-ai-priv-pic-path { flex: 1 1 160px; font-size: 12.5px; font-weight: 600; color: var(--amb-text-main); overflow-wrap: anywhere; }
-.anomalous-ai-priv-secret-text { padding: 6px 8px; border-radius: 6px; background: rgba(var(--amb-ink-rgb), 0.055); color: var(--amb-text-main); font-size: 12px; line-height: 1.48; white-space: pre-wrap; overflow-wrap: anywhere; }
-.anomalous-ai-priv-secret-text.is-clamped { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: clip; }
 .anomalous-ai-priv-expand-btn, .anomalous-ai-priv-mini-btn { align-self: flex-start; padding: 2px 8px; border: 1px solid var(--amb-border); border-radius: 6px; background: rgba(var(--amb-ink-rgb), 0.04); color: var(--amb-text-soft); font: inherit; font-size: 11.5px; cursor: pointer; white-space: nowrap; }
 .anomalous-ai-priv-expand-btn:hover, .anomalous-ai-priv-mini-btn:hover { border-color: var(--amb-link); color: var(--amb-link); }
 .anomalous-ai-priv-pic-row { display: flex; align-items: center; gap: 9px; min-width: 0; }
@@ -574,18 +572,24 @@
 .anomalous-ai-priv-note-input { flex: 1 1 auto; min-width: 0; padding: 5px 8px; border: 1px solid var(--amb-border-strong); border-radius: 6px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 12px; }
 .anomalous-ai-priv-note-input:focus { outline: none; border-color: var(--amb-link); }
 .anomalous-ai-priv-note-state { flex: none; font-size: 11px; color: var(--amb-ok-text, var(--amb-ok)); white-space: nowrap; }
+/* A hidden prompt as Prompt Studio's chips (ui_ai_privacy_adjust.renderHiddenPrompt): green ones go to the AI. */
+.anomalous-ai-priv-prompt { display: flex; flex-direction: column; gap: 7px; }
+.anomalous-ai-priv-prompt-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-ai-priv-chip { color: inherit; font: inherit; font-size: 12px; text-align: start; }
+.anomalous-ai-priv-chip .anomalous-ps-tag-main > svg { flex: none; align-self: center; opacity: 0.55; }
+.anomalous-ai-priv-chip.is-shown { border-color: color-mix(in srgb, var(--amb-ok) 60%, transparent); background: color-mix(in srgb, var(--amb-ok) 15%, transparent); }
+.anomalous-ai-priv-chip.is-shown .anomalous-ps-tag-main > svg { color: var(--amb-ok); opacity: 1; }
+.anomalous-ai-priv-chip .anomalous-ps-tag-gloss:empty { display: none; }
+.anomalous-ai-priv-chips.is-folded { max-height: 132px; overflow: clip; mask-image: linear-gradient(to bottom, #000 72%, transparent); }
+.anomalous-ai-priv-chips-more { align-self: flex-start; }
+.anomalous-ai-priv-letbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--amb-ok) 40%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--amb-ok) 7%, transparent); }
+.anomalous-ai-priv-letbar[hidden] { display: none; }
+.anomalous-ai-priv-letbar-warn { flex-basis: 100%; color: var(--amb-text-soft); font-size: 11.5px; line-height: 1.45; }
+.anomalous-ai-priv-letbar-count { margin-right: auto; color: var(--amb-text-main); font-size: 12px; overflow-wrap: anywhere; }
 .anomalous-ai-priv-adjust { display: flex; flex-direction: column; gap: 7px; padding: 8px 9px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--amb-link) 35%, transparent); background: rgba(var(--amb-ink-rgb), 0.04); }
 .anomalous-ai-priv-adjust-warn { font-size: 11.5px; color: var(--amb-warn); line-height: 1.45; }
 .anomalous-ai-priv-adjust-hint { font-size: 11.5px; color: var(--amb-text-soft); }
-.anomalous-ai-priv-adjust-modes { display: flex; gap: 4px; }
-.anomalous-ai-priv-mode { padding: 2px 8px; border: 1px solid var(--amb-border); border-radius: 6px; background: none; color: var(--amb-text-soft); font: inherit; font-size: 11.5px; cursor: pointer; }
-.anomalous-ai-priv-mode.is-on { border-color: var(--amb-link); color: var(--amb-link); font-weight: 600; }
-.anomalous-ai-priv-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-.anomalous-ai-priv-tagpill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent); background: color-mix(in srgb, var(--amb-warn) 10%, transparent); color: var(--amb-text-main); font: inherit; font-size: 11.5px; cursor: pointer; }
-.anomalous-ai-priv-tagpill.is-exposed { border-color: color-mix(in srgb, var(--amb-ok) 55%, transparent); background: color-mix(in srgb, var(--amb-ok) 14%, transparent); color: var(--amb-ok-text, var(--amb-ok)); }
 .anomalous-ai-priv-adjust-area { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--amb-border-strong); border-radius: 6px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 12px; resize: vertical; }
-.anomalous-ai-priv-pick-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.anomalous-ai-priv-pick-preview { font-size: 11.5px; color: var(--amb-text-soft); overflow-wrap: anywhere; }
 .anomalous-ai-priv-adjust-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .anomalous-ai-priv-empty { padding: 8px 10px; border-radius: 8px; background: rgba(var(--amb-ink-rgb), 0.04); color: var(--amb-text-soft); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-priv-vcard { display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; border: 1px solid var(--amb-border); border-radius: 9px; background: rgba(var(--amb-ink-rgb), 0.03); }

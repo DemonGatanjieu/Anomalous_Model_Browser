@@ -1,7 +1,7 @@
 /**
  * Privacy Overview modal (Privacy chip in the header & ⋯ -> "隐私一览"):
  * - Clean single outer scroll surface (3-line clamped prompts + progressive message list, thin auto-hide scrollbars)
- * - Left ("已隐藏"): [P*] prompts (with split/expose tags adjuster), [img*] thumbnails, [M*] / task models
+ * - Left ("已隐藏"): [P*] prompts (Prompt Studio's chips: pick tags to let through), [img*] thumbnails, [M*] / task models
  *   (with per-task and per-model hide/expose switch), plus one-line "Note for AI" inputs
  * - Right ("没隐藏"): title, masked message previews (+ retroactive "藏词" adjuster), exposed snippets,
  *   exposed models, live notes mirror, canvas structure/parameters
@@ -12,7 +12,7 @@ import { MAX_SEALED_NOTE, buildPrivacyOverview, compareTokens } from './ai_priva
 import { aiWindow } from './ui_ai_connect.js';
 import { showStepRow } from './ui_ai_decisions.js';
 import { icon } from './ui_ai_icons.js';
-import { postPrivacyRule, renderMessageSealer, renderPromptAdjuster } from './ui_ai_privacy_adjust.js';
+import { postPrivacyRule, renderHiddenPrompt, renderMessageSealer } from './ui_ai_privacy_adjust.js';
 import { openSent } from './ui_ai_sent.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { outputThumbnail } from './ui_kept_toast.js';
@@ -67,41 +67,10 @@ function attachNoteInput(card, token, currentNote, placeholder, draftNotes, onDr
 function renderPromptCard(item, task, ctx) {
     const card = el('div', 'anomalous-ai-priv-item');
     const head = el('div', 'anomalous-ai-priv-item-head');
-    head.append(tokenBadge(item.token));
-
-    const splitBtn = el('button', 'anomalous-ai-priv-mini-btn', t('aiPrivacySplitBtn'));
-    splitBtn.type = 'button';
-    head.append(splitBtn);
-    card.append(head);
-
-    const textBox = el('div', 'anomalous-ai-priv-secret-text is-clamped', item.text);
-    card.append(textBox);
-    if (item.text.length > 105 || item.text.includes('\n')) {
-        let expanded = false;
-        const more = el('button', 'anomalous-ai-priv-expand-btn', t('aiPrivacyExpandText'));
-        more.type = 'button';
-        more.onclick = () => {
-            expanded = !expanded;
-            textBox.classList.toggle('is-clamped', !expanded);
-            more.textContent = t(expanded ? 'aiPrivacyCollapseText' : 'aiPrivacyExpandText');
-        };
-        card.append(more);
-    }
-
-    let adjuster = null;
-    splitBtn.onclick = () => {
-        if (adjuster) {
-            adjuster.remove();
-            adjuster = null;
-            return;
-        }
-        adjuster = renderPromptAdjuster(item, task, {
-            onClose: () => { adjuster?.remove(); adjuster = null; },
-            onApplied: () => ctx.onAdjusted(),
-        });
-        card.append(adjuster);
-    };
-
+    const tags = item.chunks.items.filter(part => part.text).length;
+    head.append(tokenBadge(item.token),
+        el('span', 'anomalous-ai-priv-kind-tag', item.chunks.mode === 'tags' ? t('aiPrivacyPromptTags', { count: tags }) : t('aiPrivacyPromptText')));
+    card.append(head, renderHiddenPrompt(item, task, { onApplied: () => ctx.onAdjusted() }));
     attachNoteInput(card, item.token, item.note, t('aiPrivacyNotePlaceholderP'),
         ctx.draftNotes, ctx.onDraftChange, ctx.onCommit);
     return card;

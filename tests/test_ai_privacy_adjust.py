@@ -113,13 +113,13 @@ class PrivacyAdjustTests(unittest.TestCase):
         snap = ai_sealed_adjust.apply_rule(self.task, {
             "action": "split_prompt",
             "token": p1,
-            "keep_text": "canarysecret, swimsuit",
-            "expose_text": "ocean, sunset",
+            "parts": [{"text": "canarysecret, swimsuit", "hide": True}, {"text": ", ocean, sunset"}],
         })
         self.assertNotIn(p1, snap["sealed"])
         self.assertEqual(snap["sealed_legacy"][p1], "canarysecret, swimsuit, ocean, sunset")
         self.assertIn("[P2]", snap["sealed"])
         self.assertEqual(snap["sealed"]["[P2]"], "canarysecret, swimsuit")
+        self.assertEqual(snap["sealed_views"][p1], "[P2], ocean, sunset")
         self.assertEqual(snap["sealed_notes"]["[P2]"], "keep hug main prompt")
         self.assertEqual(snap["exposed_prompts"][-1]["text"], "ocean, sunset")
 
@@ -139,6 +139,40 @@ class PrivacyAdjustTests(unittest.TestCase):
         # Next call does not duplicate
         res2 = rpc("tools/call", {"name": "list_voices", "arguments": {}}, "list_voices")["result"]
         self.assertFalse([m for m in (res2["structuredContent"].get("user_messages") or []) if m.get("kind") == "privacy_adjust"])
+
+    def test_a_word_let_through_in_the_middle_keeps_the_others_hidden(self):
+        # The page once sealed the kept tags joined ("a, c" of "a, b, c"): a text nowhere to be found, so
+        # the old prompt went out whole wherever it still showed up.
+        original = "canaryalpha, blue hair, canaryomega"
+        seals = ai_sealed.Seals(self.task)
+        p1 = seals.seal(original)
+        seals.save()
+        with ai_tasks._lock:
+            task = ai_tasks._load()[self.task]
+            task.setdefault("steps", []).extend([{"id": "m", "tool": "user_message", "kind": "user", "text": f"use {p1}"},
+                                                  {"id": "n", "tool": "user_privacy", "kind": "user", "text": "tokens like [P1]"}])
+            ai_tasks._save(task)
+        with self.assertRaises(ValueError):  # the parts must spell the text
+            ai_sealed_adjust.apply_rule(self.task, {"action": "split_prompt", "token": p1, "parts": [{"text": "blue hair"}]})
+        with self.assertRaises(ValueError):  # something must be let through
+            ai_sealed_adjust.apply_rule(self.task, {"action": "split_prompt", "token": p1, "parts": [{"text": original, "hide": True}]})
+        snap = ai_sealed_adjust.apply_rule(self.task, {"action": "split_prompt", "token": p1, "parts": [
+            {"text": "canaryalpha", "hide": True}, {"text": ", "}, {"text": "blue hair"}, {"text": ", "},
+            {"text": "canaryomega", "hide": True}]})
+        view = snap["sealed_views"][p1]
+        self.assertEqual(view, "[P2], blue hair, [P3]")
+        steps = {step["id"]: step["text"] for step in ai_tasks.get_task(self.task)["steps"] if step.get("id") in ("m", "n")}
+        self.assertEqual(steps, {"m": f"use {view}", "n": "tokens like [P1]"})  # the user's words, not Anomalous' example
+        free = {"content": [{"type": "text", "text": f"The user changed the prompt to: {original}"}]}
+        said = ai_privacy.guard(free, True, self.task)["content"][0]["text"]
+        self.assertEqual(said, f"The user changed the prompt to: {view}")
+        # A prompt box on the canvas holding the old text reads the same; the AI's tokens write it back.
+        self.assertEqual(ai_sealed.seal_text(ai_sealed.Seals(self.task), original), view)
+        self.assertEqual(ai_sealed.expand(self.task, {"text": view}), {"text": original})
+        # A second split of a kept run updates the first view too.
+        snap = ai_sealed_adjust.apply_rule(self.task, {"action": "split_prompt", "token": "[P2]", "parts": [
+            {"text": "canary"}, {"text": "alpha", "hide": True}]})
+        self.assertEqual(snap["sealed_views"][p1], "canary[P4], blue hair, [P3]")
 
     def test_seal_message_phrase_and_route(self):
         res = asyncio.run(ai_tasks_routes.api_privacy_rules(_FakeRequest(self.task, {

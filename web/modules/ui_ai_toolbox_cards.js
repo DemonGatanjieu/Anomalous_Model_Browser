@@ -363,6 +363,14 @@ export function detail(item, ctx) {
         prompt.onclick = () => ctx.pickPrompt(inner);
         actions.append(prompt);
     }
+    if (item.kind === 'models' && ctx.openModel) {
+        const page = el('button', 'anomalous-tb-like');
+        page.type = 'button';
+        page.title = t('aiTbOpenModelPageHint');
+        page.append(icon('page', 15), el('span', '', t('aiTbOpenModelPage')));
+        page.onclick = () => ctx.openModel(item);
+        actions.append(page);
+    }
     actions.append(takeBackButton(ctx, item, true));
     box.append(actions);
     if (ctx.picked(item) && ctx.setNote) box.append(pickedNoteBox(item, ctx));

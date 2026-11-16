@@ -6,6 +6,7 @@
  * No DOM here.
  */
 
+import { resolveLocale } from './locales.js';
 import { needsEnglish, translatePromptText } from './translation_service.js';
 import { tagWeight } from './prompt_tags.js';
 
@@ -14,6 +15,9 @@ export const GLOSS_LANGUAGES = [
     ['zh-CN', '简体中文'], ['zh-TW', '繁體中文'], ['ja', '日本語'], ['ko', '한국어'], ['ru', 'Русский'],
     ['es', 'Español'], ['fr', 'Français'], ['de', 'Deutsch'], ['pt', 'Português'],
 ];
+
+/** Where no picker says (Prompt Studio has one): the page's own language, when it is not English. */
+export const pageGlossLang = () => (String(resolveLocale()).startsWith('zh') ? 'zh-CN' : '');
 
 const BATCH_CHARS = 800;
 const MAX_KEPT = 3000;

@@ -33,6 +33,7 @@ import { groupByPage, pageId, versionId } from './model_versions.js';
 import { chosenVersion } from './ui_model_versions.js';
 import { taskTitle } from './ai_task_title.js';
 import { createViewScope } from './ui_lifecycle.js';
+import { openListedModel } from './ui_scan_lists.js';
 
 const MODES = ['prefer', 'only'];
 const CHUNK = 60;
@@ -89,6 +90,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         }
     };
     index();
+    if (options.focus) state.focus = byKey.get(keyOf('models', options.focus)) || null; // back from that model's page
 
     const msg = () => messageBox?.refs || null;
     const picked = item => Boolean(msg()?.has(item.kind, item.id));
@@ -200,7 +202,18 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         },
         removePicked: ref => msg()?.remove?.(ref.kind, ref.id),
         showVersion,
+        openModel: options.owner ? item => openModelPage(item) : null,
     };
+
+    /** The model's own page in the browser (details, pictures, versions); its Back reopens the picker on it. */
+    function openModelPage(item) {
+        const [, type, pathIdx, rel] = /^([\w-]+):(\d+):(.+)$/.exec(String(item.id)) || [];
+        if (!rel) return;
+        const again = { ...options, kind: state.kind, focus: item.id, layout: body.classList.contains('is-side') ? 'side' : 'full' };
+        close();
+        void openListedModel(options.owner, { type, path_idx: Number(pathIdx), rel, filename: item.file },
+            () => { options.owner.goTo('ai'); void openToolbox(currentTask, changed, { ...again, messageBox: options.messageBoxOf?.() || messageBox }); });
+    }
 
     function refreshAllCards() {
         for (const [key, node] of cards) {
@@ -553,6 +566,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         onCatalog: (items, error) => {
             if (items) { state.catalog = items; index(); drawRail(); drawFilters(); } else state.error = error;
             if (state.kind !== 'nodes' && state.kind !== 'ways' && (items || !state.catalog)) drawGrid();
+            if (options.focus && !state.focus && byKey.has(keyOf('models', options.focus))) ctx.focus(byKey.get(keyOf('models', options.focus)));
         },
     });
 }

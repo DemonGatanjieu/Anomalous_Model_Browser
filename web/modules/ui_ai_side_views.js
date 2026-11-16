@@ -116,6 +116,8 @@ export function pickView(side, view, shown, task, redraw, changed, openKind = nu
             kind: openKind,
             layout: openKind ? 'full' : null, // from "+": open the full window by default so cards and notes are easy to see
             messageBox: connectedPage.message(),
+            owner: connectedPage.owner(), // a model's own page opens from the picker; its Back comes back
+            messageBoxOf: () => connectedPage.message(),
             onShow: () => {
                 Object.assign(side, { view: 'toolbox', hidden: false, tab: 'stage' });
                 redraw();

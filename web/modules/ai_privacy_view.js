@@ -5,6 +5,8 @@
  * on tokens, canvas wiring and numeric settings), plus per-model exposure states and tag-split helpers.
  */
 
+import { splitPrompt } from './prompt_tags.js';
+
 export const MAX_SEALED_NOTE = 160;
 
 const TOKEN_KIND = { P: 'prompts', img: 'pictures', M: 'models' };
@@ -50,15 +52,41 @@ export function formatModelRef(raw) {
     };
 }
 
-/** Detect comma-separated prompt tags vs free-form text for selective keep/expose toggling. */
-export function splitPromptParts(text) {
-    const source = String(text || '').trim();
-    if (!source) return { mode: 'text', parts: [] };
-    const parts = source.split(/\s*[,，]\s*/).map(item => item.trim()).filter(Boolean);
-    if (parts.length >= 3 && parts.every(item => item.length <= 72)) {
-        return { mode: 'tags', parts };
-    }
-    return { mode: 'text', parts: [source] };
+/**
+ * A hidden prompt as Prompt Studio cuts it (prompt_tags.js): { mode, items: [{ text, sep }] }. Three or more
+ * short tags are picked one by one ('tags'); anything else is one text, picked by selecting ('text').
+ */
+export function promptChunks(text) {
+    const { items } = splitPrompt(text);
+    const tags = items.filter(item => item.text);
+    return { mode: tags.length >= 3 && tags.every(item => item.text.length <= 72) ? 'tags' : 'text', items };
+}
+
+/**
+ * The parts ({ text, hide }) of `text` for a split (POST privacy_rules split_prompt): they spell `text`
+ * exactly, the tags at `shown` (indexes into promptChunks().items) let through. A separator between two
+ * hidden tags stays hidden with them, so the AI gets one token for each run of hidden tags.
+ */
+export function partsShowingTags(text, shown) {
+    const { lead, items } = splitPrompt(text);
+    const parts = [{ text: lead, hide: false }];
+    items.forEach((item, index) => {
+        const hide = !shown.has(index);
+        parts.push({ text: item.text, hide }, { text: item.sep, hide: hide && index + 1 < items.length && !shown.has(index + 1) });
+    });
+    return parts.filter(part => part.text).reduce((runs, part) => {
+        const last = runs[runs.length - 1];
+        if (last && last.hide === part.hide) last.text += part.text;
+        else runs.push({ ...part });
+        return runs;
+    }, []);
+}
+
+/** The parts of `text` with `text.slice(start, end)` let through and the rest hidden. */
+export function partsShowingRange(text, start, end) {
+    return [[0, start, true], [start, end, false], [end, text.length, true]]
+        .map(([from, to, hide]) => ({ text: text.slice(from, to), hide }))
+        .filter(part => part.text);
 }
 
 /** Find a matching token like `[img1]` or `[M1]` for a raw value / basename inside `sealed`. */
@@ -253,7 +281,7 @@ export function buildPrivacyOverview(task) {
         if (!group) continue;
         const val = String(sealed[token] ?? '');
         const note = String(notes[token] || '');
-        if (group === 'prompts') hidden.prompts.push({ token, text: val, note, split: splitPromptParts(val) });
+        if (group === 'prompts') hidden.prompts.push({ token, text: val, note, chunks: promptChunks(val) });
         else if (group === 'pictures') hidden.pictures.push({ token, ...parsePictureRef(val), note });
         else if (group === 'models') {
             const override = privateSet.has(val) ? 'private' : publicSet.has(val) ? 'public' : 'default';

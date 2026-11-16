@@ -3,7 +3,7 @@
 // with sealed_legacy support, matchingTokenFor, generated picture counts, and unmasked previews.
 import assert from 'node:assert/strict';
 import {
-    buildPrivacyOverview, formatModelRef, maskTextForView, matchingTokenFor, parsePictureRef, splitPromptParts,
+    buildPrivacyOverview, formatModelRef, maskTextForView, matchingTokenFor, parsePictureRef, partsShowingRange, partsShowingTags, promptChunks,
 } from '../web/modules/ai_privacy_view.js';
 
 assert.deepEqual(parsePictureRef('ai_inbox\\ref_01.png'), {
@@ -16,11 +16,17 @@ assert.deepEqual(formatModelRef('checkpoints:0:2D_Anime/Anima/animaTurbo.safeten
     raw: 'checkpoints:0:2D_Anime/Anima/animaTurbo.safetensors',
 });
 
-assert.deepEqual(splitPromptParts('1girl, swimsuit, ocean, sunset'), {
-    mode: 'tags',
-    parts: ['1girl', 'swimsuit', 'ocean', 'sunset'],
-});
-assert.equal(splitPromptParts('两个少女在夕阳海边互相抱着对方，光线柔和温暖').mode, 'text');
+const chunks = promptChunks('1girl, swimsuit, ocean, sunset');
+assert.equal(chunks.mode, 'tags');
+assert.deepEqual(chunks.items.map(item => item.text), ['1girl', 'swimsuit', 'ocean', 'sunset']);
+assert.equal(promptChunks('两个少女在夕阳海边互相抱着对方，光线柔和温暖').mode, 'text');
+// Letting one tag through in the middle: the parts spell the text, each run of hidden tags one part.
+const spelled = parts => parts.map(part => part.text).join('');
+const middle = partsShowingTags('1girl,  swimsuit, ocean,sunset', new Set([2]));
+assert.equal(spelled(middle), '1girl,  swimsuit, ocean,sunset');
+assert.deepEqual(middle.filter(part => part.hide).map(part => part.text), ['1girl,  swimsuit', 'sunset']);
+assert.deepEqual(middle.filter(part => !part.hide).map(part => part.text), [', ocean,']);
+assert.deepEqual(partsShowingRange('海边的两个少女', 2, 3), [{ text: '海边', hide: true }, { text: '的', hide: false }, { text: '两个少女', hide: true }]);
 
 assert.equal(matchingTokenFor('animaTurbo', { '[M1]': 'checkpoints:0:2D_Anime/Anima/animaTurbo.safetensors' }, '[M'), '[M1]');
 assert.equal(matchingTokenFor('ref_01.png', { '[img2]': 'ai_inbox/ref_01.png' }, '[img'), '[img2]');
@@ -97,7 +103,7 @@ const overview = buildPrivacyOverview({
 
 assert.equal(overview.readsDisk, true);
 assert.deepEqual(overview.hidden.prompts.map(x => x.token), ['[P1]', '[P2]', '[P10]']);
-assert.equal(overview.hidden.prompts[0].split.mode, 'tags');
+assert.equal(overview.hidden.prompts[0].chunks.mode, 'tags');
 assert.equal(overview.hidden.prompts[0].note, '主正面提示词');
 assert.equal(overview.hidden.pictures[0].filename, 'ref.png');
 assert.equal(overview.hidden.generatedPictureCount, 2);

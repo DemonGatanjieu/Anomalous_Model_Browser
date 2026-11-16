@@ -2,7 +2,8 @@
 web/modules/ui_ai_privacy_overview.js):
 - `model_rule`: per-task `privacy_models` toggle or per-model override (`public_models` /
   `private_models`), restoring/moving `[M*]` tokens between `sealed` and `sealed_legacy`.
-- `split_prompt`: split `[P*]` into kept-hidden text (new `[P*]` token) + exposed plaintext.
+- `split_prompt`: let some words of a `[P*]` text through: `parts` spell the text exactly, each
+  kept run gets its own token, and the old text reads as its view (`sealed_views`, ai_sealed.py).
 - `seal_message_phrase`: retroactively seal an unsealed phrase on a step as `[P*]`.
 Pending notices arrive via begin_task / get_situation (`mark_seen`) or ai_panels._collect (`kind=privacy_adjust`)."""
 
@@ -11,9 +12,11 @@ import re
 import time
 
 from . import ai_privacy, ai_sealed, ai_tasks
+from .ai_sealed import WORD
 
 MAX_ADJUST_QUEUE = 12
 MAX_EXPOSED = 20
+USER_WORDS = {"user_message", "user_route", "user_marks", "user_pictures", "user_toolbox"}  # steps that keep the user's own words
 
 
 def _next_token(sealed, legacy, kind="P"):
@@ -97,66 +100,82 @@ def _apply_model_rule(task, payload):
     _save_maps(task, sealed, legacy, notes)
 
 
+def _runs(parts, original):
+    """[(text, hidden)] from the page's `parts` ({text, hide}): they spell `original` exactly, neighbours of
+    one kind joined, the spaces around a hidden run left out of it."""
+    if not isinstance(parts, list) or not parts:
+        raise ValueError("parts is a list of {text, hide}")
+    pieces = []
+    for part in parts:
+        if not isinstance(part, dict) or not isinstance(part.get("text"), str):
+            raise ValueError("parts is a list of {text, hide}")
+        pieces.append((part["text"], part.get("hide") is True))
+    if "".join(text for text, _ in pieces) != original:
+        raise ValueError("The parts do not spell the hidden text.")
+    runs = []
+    for text, hidden in pieces:
+        if hidden:
+            core = text.strip()
+            lead, trail = text[:len(text) - len(text.lstrip())], text[len(text.rstrip()):]
+            pieces_here = [(lead, False), (core, True), (trail, False)]
+        else:
+            pieces_here = [(text, False)]
+        for piece, kind in pieces_here:
+            if not piece:
+                continue
+            if runs and runs[-1][1] == kind:
+                runs[-1] = (runs[-1][0] + piece, kind)
+            else:
+                runs.append((piece, kind))
+    return runs
+
+
 def _apply_split_prompt(task, payload):
     sealed = dict(task.get("sealed") or {})
     legacy = dict(task.get("sealed_legacy") or {})
     notes = dict(task.get("sealed_notes") or {})
+    views = dict(task.get("sealed_views") or {})
     token = str(payload.get("token") or "").strip()
     if not token.startswith("[P") or token not in sealed:
         raise ValueError(f"Unknown active prompt token: {token}")
-    keep_text = str(payload.get("keep_text") or "").strip()[:ai_sealed.MAX_PROMPT]
-    expose_text = str(payload.get("expose_text") or "").strip()[:ai_sealed.MAX_PROMPT]
-    if not keep_text and not expose_text:
-        raise ValueError("Keep at least one kept or exposed segment.")
-    old_val = sealed[token]
-    if keep_text == old_val and not expose_text:
-        return
+    original = sealed[token]
+    runs = _runs(payload.get("parts"), original)
+    shown = "".join(text for text, hidden in runs if not hidden)
+    if not WORD.search(shown):
+        raise ValueError("Pick at least one word to let through.")
 
     old_note = notes.pop(token, "")
     legacy[token] = sealed.pop(token)
-    new_token = ""
-    if keep_text:
-        new_token = _find_token(sealed, keep_text, "P") or _next_token(sealed, legacy, "P")
-        sealed[new_token] = keep_text
-        if old_note:
-            notes[new_token] = old_note
+    view, kept = "", []
+    for text, hidden in runs:
+        if not hidden:
+            view += text
+            continue
+        tok = _find_token(sealed, text, "P") or _next_token(sealed, legacy, "P")
+        sealed[tok] = text
+        kept.append(tok)
+        view += tok
+        if old_note and tok not in notes:
+            notes[tok] = old_note
             task["sealed_notes_dirty"] = True
-
-    _rewrite_step_splits(task, token, old_val, new_token, keep_text, expose_text)
-    if expose_text:
-        exposed = list(task.get("exposed_prompts") or [])
-        exposed.append({"at": time.time(), "from": token, "kept": new_token, "text": expose_text[:400]})
-        task["exposed_prompts"] = exposed[-MAX_EXPOSED:]
-    if new_token and expose_text:
-        _queue_adjust(task, f"User split hidden text {token}: keep {new_token} hidden, and exposed this for you to read: {expose_text}")
-    elif expose_text:
-        _queue_adjust(task, f"User exposed earlier sealed text {token} for you to read: {expose_text}")
-    _save_maps(task, sealed, legacy, notes)
-
-
-def _rewrite_step_splits(task, token, old_val, new_token, keep_text, expose_text):
-    marked_old = f"\u27e6{old_val}\u27e7"
-    replacement = f"\u27e6{keep_text}\u27e7" if keep_text else ""
-    if replacement and expose_text:
-        replacement = f"{replacement}, {expose_text}"
-    elif expose_text:
-        replacement = expose_text
+    # The view stands for the old token where the user wrote it: other views, their messages (not the
+    # notes Anomalous wrote, whose "[P1]" is an example, nor the AI's own calls).
+    views = {old: written.replace(token, view) for old, written in views.items()}
+    views[token] = view
+    task["sealed_views"] = views
     for step in task.get("steps") or []:
+        if step.get("tool") in USER_WORDS and isinstance(step.get("text"), str):
+            step["text"] = step["text"].replace(token, view).replace(f"\u27e6{original}\u27e7", view)
         parts = step.get("sealed_parts")
-        if isinstance(parts, list):
-            next_parts = []
-            for part in parts:
-                if part.get("token") == token:
-                    if new_token and keep_text:
-                        next_parts.append({"token": new_token, "text": keep_text})
-                else:
-                    next_parts.append(part)
-            if next_parts:
-                step["sealed_parts"] = next_parts
-            else:
-                step.pop("sealed_parts", None)
-        if isinstance(step.get("text"), str) and marked_old in step["text"]:
-            step["text"] = step["text"].replace(marked_old, replacement)
+        if isinstance(parts, list) and any(part.get("token") == token for part in parts):
+            step["sealed_parts"] = [part for part in parts if part.get("token") != token] + [
+                {"token": tok, "text": sealed[tok]} for tok in kept]
+    exposed = list(task.get("exposed_prompts") or [])
+    exposed.append({"at": time.time(), "from": token, "kept": kept, "view": view, "text": shown.strip(" ,，\n")[:400]})
+    task["exposed_prompts"] = exposed[-MAX_EXPOSED:]
+    _queue_adjust(task, f"User let some words of hidden text {token} through. It now reads: {view} "
+                        f"(the words still hidden stay as their tokens; {token} still works).")
+    _save_maps(task, sealed, legacy, notes)
 
 
 def _apply_seal_phrase(task, payload):
@@ -219,6 +238,7 @@ def apply_rule(task_id, payload):
             "privacy_models_source": "task" if isinstance(task.get("privacy_models"), bool) else "default",
             "sealed": dict(task.get("sealed") or {}),
             "sealed_legacy": dict(task.get("sealed_legacy") or {}),
+            "sealed_views": dict(task.get("sealed_views") or {}),
             "sealed_notes": dict(task.get("sealed_notes") or {}),
             "public_models": list(task.get("public_models") or []),
             "private_models": list(task.get("private_models") or []),

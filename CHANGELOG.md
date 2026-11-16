@@ -2,6 +2,13 @@
 
 ## v1.64.0 — unreleased
 
+- 「隐私一览」里藏起来的提示词，现在像提示词工坊一样分成一个个词块，点「看词义」能看到每个词的意思。想让 AI 看到其中几个词，直接点那几个词块（成段的文字就划选），再点「放给 AI 看」：这些词之后 AI 能读到，没点的照样藏成代号。之前的做法有个漏洞：放开中间的词以后，该继续藏的词在某些地方会原样发给 AI；现在修好了。
+- In the Privacy Overview a hidden prompt is shown as tags, as in Prompt Studio, with "Show meanings" for what each one means. To let the AI read some of them, click those tags (or select words of a plain text) and press "Let the AI read them": from then on the AI reads those words, and the others stay behind tokens. This also closes a hole in the earlier way: after letting a word in the middle through, the words still meant to be hidden could reach the AI as written in some places.
+- 「给 AI 的素材」大窗里，模型的详情多了「看详情页」：到这个模型自己的页面看说明、作品和版本，那里点返回回到素材窗，还停在这个模型上。
+- In the large "Materials for the AI" window a model's details have "Open its page": the model's own page with its details, pictures and versions; Back there brings you to the window again, on that model.
+- 「给 AI 的素材」大窗和「隐私一览」的颜色统一了：整个窗口一个底色（原来是一道斜着的渐变，左右深浅不一），卡片、详情栏和选中状态用同一套深浅，封面空着时不再按种类染成紫、绿、橙色。
+- The "Materials for the AI" window and the Privacy Overview have one even colour (an angled gradient used to make one side darker than the other), cards, the detail column and what is selected share one set of shades, and an empty cover is no longer tinted purple, green or orange by kind.
+
 - 模型库的「整理」多了第 3 步“没放进底模文件夹”：设置里文件夹选的是“按底模分”时，列出直接放在类型文件夹里、底模已知（来自模型资料，或者文件头）的模型，写明会挪到哪个底模文件夹，可以一个个点「挪过去」，也可以「全部挪过去」（会先问一句）。你自己建的子文件夹不动。挪了以后，已存工作流里的路径会变，打开时模型检查能找到新位置。这一步只是建议，不算进「整理」旁边的数字。旧版扫描存下的、C 站页面里根本没列出这个文件的资料（见 v1.63.3），不拿来定底模。
 - The models page's Tidy has a step 3, "Not in a base model folder": with the download folder set by base model, models lying right in a type folder whose base model is known (from the model's info, or its header) are listed with the base model folder they would go to; Move there one by one, or Move all after a question. Folders you made yourself are left alone. After a move saved workflows point to the old place, and Model Check finds the new one when you open them. The step is a suggestion: Tidy's count leaves it out. A record an older scan saved from a Civitai page that does not list the file (see v1.63.3) does not set the base model.
 
