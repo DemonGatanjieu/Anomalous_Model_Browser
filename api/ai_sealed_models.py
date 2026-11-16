@@ -51,51 +51,108 @@ def _gather(value, out):
         out.append(value)
 
 
-def _forms(blob):
+def _forms(blob, only_ids=None, skip_ids=()):
     """What the strings of an answer (`blob`) may call the library's models: {form: model_id} for anywhere
     in a text, {name: model_id} for where a name stands. Only the models `blob` can be naming."""
     anywhere, names = {}, {}
+    skip = set(skip_ids or ())
+    only = set(only_ids) if only_ids is not None else None
+    seen = set()
     for model in _library():
-        shown, stem = str(model["name"] or ""), os.path.splitext(model["file"])[0]
-        if not any(form and form in blob for form in (shown, stem)):
+        mid = model["id"]
+        seen.add(mid)
+        if mid in skip or (only is not None and mid not in only):
             continue
-        place = model["id"].split(":", 2)[2]
-        for form in (model["id"], place, place.replace("/", "\\"), model["file"]):
-            anywhere.setdefault(form, model["id"])
+        shown, stem = str(model["name"] or ""), os.path.splitext(model["file"])[0]
+        if not any(form and form in blob for form in (shown, stem, model["file"], mid)):
+            continue
+        place = mid.split(":", 2)[2]
+        for form in (mid, place, place.replace("/", "\\"), model["file"]):
+            anywhere.setdefault(form, mid)
         for form in (shown, stem):
             if form:
-                names.setdefault(form, model["id"])
+                names.setdefault(form, mid)
                 if _distinct(form):
-                    anywhere.setdefault(form, model["id"])
+                    anywhere.setdefault(form, mid)
+    for mid in only or ():
+        if mid in seen or mid in skip:
+            continue
+        place = mid.split(":", 2)[2] if MODEL_ID.fullmatch(mid) else mid
+        base = os.path.basename(place.replace("\\", "/"))
+        stem = os.path.splitext(base)[0]
+        for form in (mid, place, place.replace("/", "\\"), base):
+            if form and form in blob:
+                anywhere.setdefault(form, mid)
+        if stem and _distinct(stem) and stem in blob:
+            anywhere.setdefault(stem, mid)
     return anywhere, names
 
 
-def hide(value, seals):
-    """Tool answer `value` (its data, or a text of it) with every model as its token of `seals`."""
+def _skip_files(skip_ids):
+    files = set()
+    if not skip_ids:
+        return files
+    skip = set(skip_ids)
+    for item in skip:
+        text = str(item or "")
+        if text:
+            place = text.split(":", 2)[2] if MODEL_ID.fullmatch(text) else text
+            for form in (text, place, place.replace("/", "\\"), os.path.basename(place.replace("\\", "/"))):
+                if form:
+                    files.add(form.lower())
+    for model in _library():
+        if model["id"] not in skip:
+            continue
+        place = model["id"].split(":", 2)[2]
+        for form in (model["file"], place, place.replace("/", "\\")):
+            if form:
+                files.add(form.lower())
+    return files
+
+
+def hide(value, seals, only_ids=None, skip_ids=()):
+    """Tool answer `value` (its data, or a text of it) with every scoped model as its token of `seals`."""
     strings = []
     _gather(value, strings)
     blob = "\n".join(strings)
-    anywhere, names = _forms(blob)
+    anywhere, names = _forms(blob, only_ids=only_ids, skip_ids=skip_ids)
+    skip = set(skip_ids or ())
+    only = set(only_ids) if only_ids is not None else None
+    hide_loose = only is None
+    allowed_loose = _skip_files(skip_ids)
     found = sorted((form for form in anywhere if form in blob), key=len, reverse=True)
     # A form counts where it stands by itself: "anima.safetensors" is not taken out of "my_anima.safetensors".
     known = re.compile(r"(?<![\w.-])(?:" + "|".join(re.escape(form) for form in found) + r")(?!\w)") if found else None
 
+    def model_is_hidden(mid):
+        if mid in skip:
+            return False
+        return True if only is None else (mid in only)
+
+    def loose_token(word):
+        if word.lower() in allowed_loose:
+            return word
+        return seals.seal(word, "M") if hide_loose else word
+
     def text(words, key):
         if key in PLAIN_KEYS:
             return words
-        whole = anywhere.get(words) or ((names.get(words) or _cut(words)) if key in NAME_KEYS else None)
-        if whole:
+        whole = anywhere.get(words) or ((names.get(words) or _cut(words)) if key in NAME_KEYS and only is None else None)
+        if whole and whole not in skip:
             return seals.seal(whole, "M")
+        if words.lower() in allowed_loose:
+            return words
         swapped = known.sub(lambda match: seals.seal(anywhere[match.group(0)], "M"), words) if known else words
-        if swapped == words and words.lower().endswith(MODEL_FILE) and len(words) <= MAX_NAME and "\n" not in words and ": " not in words:
-            return seals.seal(words, "M")  # a model file the library does not have, spaces in its name and all
-        return LOOSE.sub(lambda match: seals.seal(match.group(0), "M"), swapped)
+        if hide_loose and swapped == words and words.lower().endswith(MODEL_FILE) and len(words) <= MAX_NAME and "\n" not in words and ": " not in words:
+            return loose_token(words)  # a model file the library does not have, spaces in its name and all
+        return LOOSE.sub(lambda match: loose_token(match.group(0)), swapped) if hide_loose else swapped
 
     def walk(item, key=""):
         if isinstance(item, dict):
             if item.get("kind") == "ways" and isinstance(item.get("details"), dict):
                 return {name: walk(part, name) if name in ("said_as", "user_note") else part for name, part in item.items()}
-            entry = isinstance(item.get("model_id"), str)
+            mid = item.get("model_id")
+            entry = isinstance(mid, str) and model_is_hidden(mid)
             return {text(name, "") if isinstance(name, str) else name: walk(part, name)
                     for name, part in item.items() if not (entry and name in ENTRY_DROPS)}
         if isinstance(item, list):

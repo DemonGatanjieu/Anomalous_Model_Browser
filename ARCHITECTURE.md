@@ -119,10 +119,16 @@ covered by the `styles.css` manifest.
   `api/ai_sealed_notes.py` stores per-token brief notes (`task["sealed_notes"]`, `POST /anomalous/ai_tasks/{task_id}/sealed_notes`)
   so the user can describe each `[P*]`, `[img*]`, or `[M*]` token in plain words and deliver mid-task updates once via
   `ai_panels` (`kind="sealed_notes"`) as well as in `begin_task` and `get_situation`, still masked by `ai_privacy.guard`.
-  `web/modules/ai_privacy_view.js` builds the pure classification & AI-perspective preview of hidden tokens vs unsealed
-  messages/gists; `web/modules/ui_ai_privacy_overview.js` draws the two-column "Privacy overview" modal (`隐私一览`) with
-  thumbnails and inline per-token AI notes; `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview),
-  the switch in its ⋯, and what the model tokens stand for.
+  `api/ai_sealed_adjust.py` applies retroactive privacy overrides (`POST /anomalous/ai_tasks/{task_id}/privacy_rules`):
+  per-task `privacy_models` toggles, per-model `public_models` / `private_models` switches (`sealed_legacy` preserves
+  prior-token `expand`), prompt `[P*]` splits into kept-hidden + exposed phrases, and retroactive message phrase sealing,
+  delivering pending updates once via `begin_task` / `get_situation` / `ai_panels._collect` (`kind="privacy_adjust"`).
+  `web/modules/ai_privacy_view.js` builds the pure classification & AI-perspective preview of hidden tokens, per-model
+  catalog switches, tag-split helpers, and unsealed messages/gists; `web/modules/ui_ai_privacy_adjust.js` provides the
+  inline tag-pill / phrase selector adjusters; `web/modules/ui_ai_privacy_overview.js` draws the two-column "Privacy
+  overview" modal (`隐私一览`, clean single outer scroll + 3-line clamped prompts) with thumbnails, model controls, and
+  inline per-token AI notes; `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview), the switch
+  in its ⋯, and what the model tokens stand for.
   `api/ai_darkroom.py` is the darkroom helper, an extension: a model on this computer (an OpenAI-style server on
   a loopback address, nothing else taken, no proxy, no redirect) that reads for a private task what the AI app
   may not: `write` rewrites a sealed prompt the way the AI says (set_prompt's `rewrite`; the result leaves as a
@@ -134,7 +140,7 @@ covered by the `styles.css` manifest.
   word in it (the task's ⋯ "What the AI was sent"). Privacy mode covers what Anomalous sends, not what an AI app
   opens by itself: `ai_callers.reads_disk` knows the apps that read files and run commands, and the head of their
   private tasks says so (`ui_ai_privacy.privacyReach`)
-  (`tests/test_ai_privacy.py`, `tests/test_ai_sealed.py`, `tests/test_ai_sealed_notes.py`, `tests/ai_privacy_view.mjs`).
+  (`tests/test_ai_privacy.py`, `tests/test_ai_sealed.py`, `tests/test_ai_sealed_notes.py`, `tests/test_ai_privacy_adjust.py`, `tests/ai_privacy_view.mjs`, `tests/ai_run_recipe.mjs`).
   `ai_pictures.mark_gone` marks a task's pictures no longer in the output folder (`gone`) on its
   `GET`, which `ui_ai_images.gonePicture` shows instead of a broken picture.
   `api/ai_pictures.py` hands the AI output pictures (gallery card menu, the inspector's ✦): a
@@ -588,7 +594,10 @@ covered by the `styles.css` manifest.
   facts: a window with what the task waits for now (`ai_stuck.js`, from the task as the page has it; `tests/ai_stuck.mjs`),
   the line to send the AI where it is the AI's move, when an AI app last called, and the usual causes Anomalous cannot see; removing a task
   (`ai_task_links.remove`) joins those after it to the one before. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
-  step made and where it leads, `ui_ai_shared.js` what the page's parts share. `ui_ai_outputs.js` is what the whole task made: a line over the
+  step made and where it leads, `ui_ai_shared.js` what the page's parts share. `ui_ai_outputs.js` (with
+  `ai_run_recipe.js` and `ui_ai_run_recipe.js` extracting and showing each run's actual `LoadImage` thumbnails,
+  models/LoRAs, sampler settings, prompts, and parameter deltas aligned with privacy tokens above each run's
+  generated pictures) is what the whole task made: a line over the
   timeline counting it, and the side column's Results view (`ai_task_view.taskOutputs`: the
   pictures by the step that brought them, the workflow, the combos, the newest picture's prompts,
   the models used and download requests — `ai_tasks.results_of` names the downloads — and the sounds),

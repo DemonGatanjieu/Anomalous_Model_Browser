@@ -54,6 +54,7 @@ class Seals:
         with ai_tasks._lock:
             task = ai_tasks._load().get(task_id) if task_id else None
             self.tokens = dict(task.get("sealed") or {}) if task else _loose
+            self.legacy = dict(task.get("sealed_legacy") or {}) if task else {}
         self.texts = {text: token for token, text in self.tokens.items()}
         self.changed = False
 
@@ -61,7 +62,9 @@ class Seals:
         known = self.texts.get(text)
         if known and known.startswith(f"[{kind}"):
             return known
-        token = f"[{kind}{1 + sum(1 for item in self.tokens if item.startswith(f'[{kind}'))}]"
+        pattern = re.compile(rf"^\[{re.escape(kind)}(\d+)\]$")
+        used = [int(m.group(1)) for k in (self.tokens.keys() | self.legacy.keys()) if (m := pattern.match(k))]
+        token = f"[{kind}{1 + max(used, default=len(used))}]"
         self.tokens[token], self.texts[text] = text, token
         self.changed = True
         return token
@@ -80,7 +83,8 @@ def expand(task_id, value):
     """`value` (a tool's arguments) with every known token replaced by its text (a text sealed with a
     token in it, its text too). A model's token is its model_id, the name its loader lists it by among a
     node's values, and its card's name inside other words (ai_sealed_models.py)."""
-    tokens = Seals(task_id).tokens
+    seals = Seals(task_id)
+    tokens = {**seals.legacy, **seals.tokens}
 
     def put(match):
         token = match.group(0)
@@ -173,9 +177,20 @@ def _hide(seals, text):
     return text
 
 
+def _hide_models(value, seals, models):
+    if isinstance(models, dict):
+        hides_all = bool(models.get("hides_all"))
+        public_ids = models.get("public_ids") or ()
+        private_ids = models.get("private_ids") or ()
+        if not hides_all and not private_ids:
+            return value
+        return ai_sealed_models.hide(value, seals, only_ids=None if hides_all else private_ids, skip_ids=public_ids)
+    return ai_sealed_models.hide(value, seals) if models else value
+
+
 def mask(result, task_id, info, tool="", models=False):
     """Tool result `result` of a private task with its prompt text and picture names as tokens, and its
-    models too when `models` (the user keeps their names, ai_sealed_models.py)."""
+    models too when `models` says so (bool, or {hides_all, public_ids, private_ids}, ai_sealed_models.py)."""
     if not isinstance(result, dict):
         return result
     seals = Seals(task_id)
@@ -183,7 +198,7 @@ def mask(result, task_id, info, tool="", models=False):
     masked = None
 
     def hidden(value):
-        return _strings(ai_sealed_models.hide(value, seals) if models else value, lambda text: _hide(seals, text))
+        return _strings(_hide_models(value, seals, models), lambda text: _hide(seals, text))
     if isinstance(data, (dict, list)):
         masked = hidden(_walk(data, seals, info or {}, PROMPT_KEYS | TOOL_KEYS.get(tool, set())))
         result["structuredContent"] = masked

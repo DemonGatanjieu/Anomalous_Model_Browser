@@ -1,8 +1,8 @@
 /**
  * Pure classification and preview masking for the Privacy Overview window (no DOM): splits a task's
  * record into what stays hidden from the AI ([P*], [img*], [M*] tokens + pixel privacy) versus what
- * the AI reads directly (title, unsealed text in messages/gists, user notes on tokens, canvas wiring
- * and numeric settings), so the UI renders honestly and unit tests check the boundary.
+ * the AI reads directly (title, unsealed text in messages/gists, exposed prompt pieces, user notes
+ * on tokens, canvas wiring and numeric settings), plus per-model exposure states and tag-split helpers.
  */
 
 export const MAX_SEALED_NOTE = 160;
@@ -11,7 +11,7 @@ const TOKEN_KIND = { P: 'prompts', img: 'pictures', M: 'models' };
 const TOKEN_ORDER = { P: 0, img: 1, M: 2 };
 const TOKEN_RE = /^\[([A-Za-z]+)(\d+)\]$/;
 const MODEL_PREFIX_RE = /^([\w-]+):\d+:(.+)$/;
-const MODEL_EXT_RE = /\.(safetensors|ckpt|pt|pth|bin)$/i;
+const MODEL_EXT_RE = /\.(safetensors|ckpt|pt|pth|bin|gguf|sft|onnx)$/i;
 const ANY_TOKEN_RE = /^\[(?:P|img|M)\d+\]$/;
 const USER_MSG_TOOLS = new Set(['user_message', 'user_route', 'user_marks', 'user_pictures', 'user_toolbox']);
 
@@ -50,11 +50,40 @@ export function formatModelRef(raw) {
     };
 }
 
+/** Detect comma-separated prompt tags vs free-form text for selective keep/expose toggling. */
+export function splitPromptParts(text) {
+    const source = String(text || '').trim();
+    if (!source) return { mode: 'text', parts: [] };
+    const parts = source.split(/\s*[,，]\s*/).map(item => item.trim()).filter(Boolean);
+    if (parts.length >= 3 && parts.every(item => item.length <= 72)) {
+        return { mode: 'tags', parts };
+    }
+    return { mode: 'text', parts: [source] };
+}
+
+/** Find a matching token like `[img1]` or `[M1]` for a raw value / basename inside `sealed`. */
+export function matchingTokenFor(value, sealed, prefix = '[') {
+    const needle = String(value || '').replace(/\\/g, '/').trim();
+    if (!needle || !sealed) return '';
+    const lower = needle.toLowerCase();
+    const needleStem = lower.split('/').pop().replace(MODEL_EXT_RE, '');
+    for (const [token, rawVal] of Object.entries(sealed)) {
+        if (!token.startsWith(prefix)) continue;
+        const val = String(rawVal || '').replace(/\\/g, '/').toLowerCase();
+        const file = MODEL_PREFIX_RE.test(rawVal) ? rawVal.replace(MODEL_PREFIX_RE, '$2').replace(/\\/g, '/').toLowerCase() : val;
+        const stem = file.split('/').pop().replace(MODEL_EXT_RE, '');
+        if (val === lower || file === lower || file.split('/').pop() === lower || (needleStem.length >= 3 && stem === needleStem)) {
+            return token;
+        }
+    }
+    return '';
+}
+
 function escapeRegExp(text) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function collectReplacements(sealed, sealedParts, hideModels) {
+function collectReplacements(sealed, sealedParts, hideModels, publicSet, privateSet) {
     const pairs = new Map();
     const put = (needle, token) => {
         if (!needle || needle.length < 2 || ANY_TOKEN_RE.test(needle)) return;
@@ -75,7 +104,9 @@ function collectReplacements(sealed, sealedParts, hideModels) {
             put(val, token);
             put(pic.path, token);
             if (pic.filename && pic.filename.length >= 4) put(pic.filename, token);
-        } else if (token.startsWith('[M') && hideModels !== false) {
+        } else if (token.startsWith('[M')) {
+            const isHidden = privateSet?.has(val) ? true : publicSet?.has(val) ? false : hideModels !== false;
+            if (!isHidden) continue;
             const model = formatModelRef(val);
             const winFile = model.file.replace(/\//g, '\\');
             const stem = model.name.replace(MODEL_EXT_RE, '');
@@ -91,12 +122,12 @@ function collectReplacements(sealed, sealedParts, hideModels) {
 
 /**
  * Show `text` as the AI sees it (replacing sealed segments, hidden picture refs, and hidden model
- * names with `[P*]`, `[img*]`, `[M*]`). Also returns `{ preview, segments, hasPlaintext }`.
+ * names with `[P*]`, `[img*]`, `[M*]`). Returns `{ preview, segments, hasPlaintext }`.
  */
-export function maskTextForView(text, sealed = {}, sealedParts = null, { hideModels = true } = {}) {
+export function maskTextForView(text, sealed = {}, sealedParts = null, { hideModels = true, publicModels = [], privateModels = [] } = {}) {
     const source = String(text || '');
     if (!source) return { preview: '', segments: [], hasPlaintext: false };
-    const replacements = collectReplacements(sealed, sealedParts, hideModels);
+    const replacements = collectReplacements(sealed, sealedParts, hideModels, new Set(publicModels), new Set(privateModels));
     const map = new Map(replacements);
     const parts = [String.raw`\[(?:P|img|M)\d+\]`];
     for (const [needle] of replacements) parts.push(escapeRegExp(needle));
@@ -118,7 +149,7 @@ export function maskTextForView(text, sealed = {}, sealedParts = null, { hideMod
     return { preview, segments, hasPlaintext };
 }
 
-function collectVisibleMessages(task, { hideModels }) {
+function collectVisibleMessages(task, opts) {
     const sealed = task?.sealed || {};
     const messages = [];
     for (const step of task?.steps || []) {
@@ -126,7 +157,7 @@ function collectVisibleMessages(task, { hideModels }) {
         if (step.kind === 'user' && USER_MSG_TOOLS.has(step.tool)) {
             const raw = String(step.note || step.text || '').trim();
             if (!raw) continue;
-            const masked = maskTextForView(raw, sealed, step.sealed_parts, { hideModels });
+            const masked = maskTextForView(raw, sealed, step.sealed_parts, opts);
             messages.push({
                 stepId: step.id,
                 at: step.at || 0,
@@ -140,7 +171,7 @@ function collectVisibleMessages(task, { hideModels }) {
             const answerText = String(step.answers?.answer?.text || '').trim();
             const raw = promptGist || answerText;
             if (!raw) continue;
-            const masked = maskTextForView(raw, sealed, null, { hideModels });
+            const masked = maskTextForView(raw, sealed, step.sealed_parts, opts);
             messages.push({
                 stepId: step.id,
                 at: step.at || 0,
@@ -166,14 +197,40 @@ function countGeneratedPictures(task) {
     return seen.size;
 }
 
-function countUnassignedToolboxModels(task, sealedModels) {
-    const sealedIds = new Set(sealedModels.map(item => item.raw));
-    let missing = 0;
-    for (const item of task?.toolbox?.models || []) {
-        const id = typeof item === 'string' ? item : item?.model_id || item?.id || '';
-        if (id && !sealedIds.has(id)) missing += 1;
+function buildModelCatalog(task, sealed, legacy, notes, privacyModels, publicSet, privateSet) {
+    const byId = new Map();
+    const upsert = (rawId, token = '', legacyToken = '') => {
+        const id = String(rawId || '').trim();
+        if (!id) return;
+        const parsed = formatModelRef(id);
+        const existing = byId.get(id);
+        const override = privateSet.has(id) ? 'private' : publicSet.has(id) ? 'public' : 'default';
+        const hidden = override === 'private' ? true : override === 'public' ? false : privacyModels;
+        const activeToken = token || existing?.token || '';
+        const prevToken = legacyToken || existing?.legacyToken || '';
+        byId.set(id, {
+            ...parsed,
+            id,
+            token: activeToken,
+            legacyToken: prevToken,
+            override,
+            hidden,
+            note: activeToken ? String(notes[activeToken] || '') : existing?.note || '',
+        });
+    };
+    for (const tok of Object.keys(sealed).sort(compareTokens)) {
+        if (tok.startsWith('[M')) upsert(sealed[tok], tok, '');
     }
-    return missing;
+    for (const tok of Object.keys(legacy).sort(compareTokens)) {
+        if (tok.startsWith('[M')) upsert(legacy[tok], '', tok);
+    }
+    for (const item of task?.toolbox?.models || []) {
+        upsert(typeof item === 'string' ? item : item?.model_id || item?.id || '');
+    }
+    for (const item of task?.about || []) {
+        if (item?.type === 'model' && item?.model_id) upsert(item.model_id);
+    }
+    return [...byId.values()];
 }
 
 /** Build the complete structured view model for Privacy Overview from `task`. */
@@ -181,7 +238,13 @@ export function buildPrivacyOverview(task) {
     const isPrivate = task?.private === true;
     const privacyModels = task?.privacy_models !== false;
     const sealed = (task?.sealed && typeof task.sealed === 'object') ? task.sealed : {};
+    const legacy = (task?.sealed_legacy && typeof task.sealed_legacy === 'object') ? task.sealed_legacy : {};
     const notes = (task?.sealed_notes && typeof task.sealed_notes === 'object') ? task.sealed_notes : {};
+    const publicModels = Array.isArray(task?.public_models) ? task.public_models : [];
+    const privateModels = Array.isArray(task?.private_models) ? task.private_models : [];
+    const publicSet = new Set(publicModels);
+    const privateSet = new Set(privateModels);
+
     const hidden = { prompts: [], pictures: [], models: [], generatedPictureCount: countGeneratedPictures(task), total: 0 };
 
     for (const token of Object.keys(sealed).sort(compareTokens)) {
@@ -190,11 +253,18 @@ export function buildPrivacyOverview(task) {
         if (!group) continue;
         const val = String(sealed[token] ?? '');
         const note = String(notes[token] || '');
-        if (group === 'prompts') hidden.prompts.push({ token, text: val, note });
+        if (group === 'prompts') hidden.prompts.push({ token, text: val, note, split: splitPromptParts(val) });
         else if (group === 'pictures') hidden.pictures.push({ token, ...parsePictureRef(val), note });
-        else if (group === 'models') hidden.models.push({ token, ...formatModelRef(val), note, activeHidden: privacyModels });
+        else if (group === 'models') {
+            const override = privateSet.has(val) ? 'private' : publicSet.has(val) ? 'public' : 'default';
+            const activeHidden = override === 'private' ? true : override === 'public' ? false : privacyModels;
+            hidden.models.push({ token, ...formatModelRef(val), id: val, override, note, activeHidden });
+        }
     }
     hidden.total = hidden.prompts.length + hidden.pictures.length + hidden.models.length;
+
+    const modelCatalog = buildModelCatalog(task, sealed, legacy, notes, privacyModels, publicSet, privateSet);
+    const unassignedToolboxModels = modelCatalog.filter(m => !m.token && m.hidden).length;
 
     const noteItems = Object.keys(sealed)
         .sort(compareTokens)
@@ -204,15 +274,20 @@ export function buildPrivacyOverview(task) {
     return {
         private: isPrivate,
         privacyModels,
+        privacyModelsSource: task?.privacy_models_source || 'default',
+        publicModels,
+        privateModels,
+        modelCatalog,
+        exposedPrompts: Array.isArray(task?.exposed_prompts) ? task.exposed_prompts : [],
         readsDisk: Boolean(isPrivate && task?.reads_disk),
         client: task?.client || 'AI',
         notes: { ...notes },
         dirty: Boolean(task?.sealed_notes_dirty),
         hidden,
-        unassignedToolboxModels: countUnassignedToolboxModels(task, hidden.models),
+        unassignedToolboxModels,
         visible: {
             title: String(task?.title || '').trim(),
-            messages: collectVisibleMessages(task, { hideModels: privacyModels }),
+            messages: collectVisibleMessages(task, { hideModels: privacyModels, publicModels, privateModels }),
             notes: noteItems,
             decisionsCount: Array.isArray(task?.decisions) ? task.decisions.length : 0,
         },

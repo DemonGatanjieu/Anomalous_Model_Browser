@@ -162,13 +162,17 @@ body.anomalous-ai-resizing, body.anomalous-ai-resizing * { cursor: col-resize !i
 }
 @media (prefers-reduced-motion: reduce) { .anomalous-ai.tasks-collapsed .anomalous-ai-tasks { transition: none; } }
 
-/* Scrollbars on the AI page and in the materials picker: thin, and seen only while the pointer
+/* Scrollbars on the AI page, materials picker, and AI dialog windows: thin, and seen only while the pointer
    is over what scrolls (their room is kept, so nothing moves when they show). */
-#anomalous-container[data-page="ai"] *, .anomalous-tb, .anomalous-tb * {
+#anomalous-container[data-page="ai"] *, .anomalous-tb, .anomalous-tb *, .anomalous-ai-connect-dialog, .anomalous-ai-connect-dialog * {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
 }
-#anomalous-container[data-page="ai"] *:hover, .anomalous-tb:hover, .anomalous-tb *:hover {
+#anomalous-container[data-page="ai"] *:hover, .anomalous-tb:hover, .anomalous-tb *:hover, .anomalous-ai-connect-dialog:hover, .anomalous-ai-connect-dialog *:hover {
     scrollbar-color: rgba(var(--amb-ink-rgb), 0.24) transparent;
+}
+.anomalous-ai-connect-dialog {
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
 }
 .anomalous-tb.is-side .anomalous-tb-card-body { padding-right: 62px; }

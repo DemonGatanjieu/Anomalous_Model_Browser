@@ -267,7 +267,10 @@ A call's arguments pass `ai_sealed.expand` first (tokens back to their texts, fo
 the record keeps the tokens), and every tools/call result passes `ai_privacy.guard` last, after
 the run's pictures, the user's messages (including `api/ai_sealed_notes.py` per-token brief notes
 when edited mid-task via `POST /anomalous/ai_tasks/{task_id}/sealed_notes`, also returned on
-`begin_task` and `get_situation`), and the outside check were added: for a private task
+`begin_task` and `get_situation`), and `api/ai_sealed_adjust.py` overrides (`POST /anomalous/ai_tasks/{task_id}/privacy_rules`:
+per-task `privacy_models` or per-model `public_models` / `private_models` with `sealed_legacy` keeping old tokens
+expandable, prompt splitting, and retroactive message phrase sealing delivered via `kind="privacy_adjust"`),
+and the outside check were added: for a private task
 (ai_privacy.py) image content items are removed and the answer says why, then `ai_sealed.mask`
 turns prompt text, picture names and marked words (`ai_panels.leave_message` seals ⟦...⟧ inside both
 `text` and each ref's `note` using the task's `Seals`) into tokens (a node's STRING inputs by ComfyUI's node list,

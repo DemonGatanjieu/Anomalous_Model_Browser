@@ -8,7 +8,7 @@ import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_callers, ai_darkroom, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_sealed_notes, ai_sent, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
+from . import activity_log, ai_callers, ai_darkroom, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_sealed_adjust, ai_sealed_notes, ai_sent, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -47,7 +47,9 @@ async def api_get(request):
     if task:
         task["canvas_mode"] = ai_task_canvas.mode_of(task)  # the task's own choice, else the user's default
         task["private"] = ai_privacy.is_private(task)  # the same for privacy mode
-        task["privacy_models"] = ai_privacy.hides_models()  # whether model names are sealed in a private task
+        has_models_override = isinstance(task.get("privacy_models"), bool)
+        task["privacy_models"] = ai_privacy.hides_models_for(task["id"])  # whether model names are sealed in this private task
+        task["privacy_models_source"] = "task" if has_models_override else "default"
         task["reads_disk"] = ai_callers.reads_disk(task.get("client"))  # an app privacy mode cannot keep from the files
         task["decisions"], task["decisions_gap"] = ai_decisions.decisions(task), ai_decisions.gap(task)
         task["links"] = ai_task_links.links(task["id"])  # the task it goes on from, those going on from it
@@ -487,6 +489,23 @@ async def api_sealed_notes(request):
     return web.json_response({"sealed_notes": notes})
 
 
+async def api_privacy_rules(request):
+    """POST /anomalous/ai_tasks/{id}/privacy_rules - adjust per-model or selective prompt privacy overrides."""
+    from . import ai_panels
+
+    body = await _body(request)
+    if not isinstance(body, dict):
+        return web.json_response({"error": "Expected JSON object"}, status=400)
+    try:
+        snapshot = await asyncio.to_thread(ai_sealed_adjust.apply_rule, request.match_info["task_id"], body)
+    except LookupError as error:
+        return web.json_response({"error": str(error)}, status=404)
+    except ValueError as error:
+        return web.json_response({"error": str(error)}, status=400)
+    ai_panels.wake()
+    return web.json_response(snapshot)
+
+
 def register_routes(app):
     activity_log.add_listener(ai_task_changes.note_activity)  # the user's changes while an AI works
     app.router.add_get("/anomalous/ai_tasks", api_list)
@@ -497,6 +516,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}", api_change)
     app.router.add_get("/anomalous/ai_tasks/{task_id}/sent", api_sent)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/sealed_notes", api_sealed_notes)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/privacy_rules", api_privacy_rules)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/message", api_message)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/typing", api_typing)

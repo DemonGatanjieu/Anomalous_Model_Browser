@@ -49,6 +49,23 @@ def hides_models():
     return _kept().get("models") is not False
 
 
+def hides_models_for(task_id=None):
+    """Model-hiding setting for `task_id` (task's own override, else global Gates setting)."""
+    task = ai_tasks.get_task(task_id) if task_id else None
+    override = (task or {}).get("privacy_models")
+    return override if isinstance(override, bool) else hides_models()
+
+
+def model_rules_of(task_id=None):
+    """Per-task model privacy policy `{hides_all, public_ids, private_ids}` for ai_sealed.mask."""
+    task = ai_tasks.get_task(task_id) if task_id else None
+    override = (task or {}).get("privacy_models")
+    hides_all = override if isinstance(override, bool) else hides_models()
+    public_ids = [str(item) for item in ((task or {}).get("public_models") or []) if item]
+    private_ids = [str(item) for item in ((task or {}).get("private_models") or []) if item]
+    return {"hides_all": hides_all, "public_ids": public_ids, "private_ids": private_ids}
+
+
 def set_hides_models(on):
     if not isinstance(on, bool):
         raise ValueError("privacy_models is true or false")
@@ -118,4 +135,4 @@ def guard(result, private, task_id=None, info=None, tool=""):
         result["content"] = content
         if isinstance(result.get("structuredContent"), dict):
             result["structuredContent"] = {**result["structuredContent"], "privacy": NOTE}
-    return ai_sealed.mask(result, task_id, info, tool, hides_models())
+    return ai_sealed.mask(result, task_id, info, tool, model_rules_of(task_id))

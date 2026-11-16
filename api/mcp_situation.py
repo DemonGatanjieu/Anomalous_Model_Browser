@@ -9,7 +9,7 @@ and the task's history. Unread messages of the user's come with it as with every
 (ai_panels.attach_pending).
 """
 
-from . import ai_decisions, ai_sealed_notes, ai_task_runs, ai_tasks, mcp_routes
+from . import ai_decisions, ai_sealed_adjust, ai_sealed_notes, ai_task_runs, ai_tasks, mcp_routes
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import _schema, tool_text
 
@@ -74,6 +74,9 @@ def get_situation(ctx, task=None):
         sealed_notes = ai_sealed_notes.mark_seen(record["id"])
         if sealed_notes:
             answer["task"]["sealed_notes"] = sealed_notes
+        privacy_updates = ai_sealed_adjust.mark_seen(record["id"])
+        if privacy_updates:
+            answer["task"]["privacy_updates"] = privacy_updates
         status = ai_task_runs.status(client, session, task_id)
         run = {key: status[key] for key in ("state", "summary", "pictures") if status.get(key)}
     else:

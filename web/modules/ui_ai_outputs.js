@@ -21,6 +21,7 @@ import { imageResults } from './ui_ai_images.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { openComboNamed, openModel, playButton } from './ui_ai_results.js';
 import { showStepRow } from './ui_ai_decisions.js';
+import { renderRunRecipe } from './ui_ai_run_recipe.js';
 import { sideHead } from './ui_ai_side.js';
 
 const RUNS_SHOWN = 6; // steps with pictures drawn at first; the earlier ones on request
@@ -111,28 +112,31 @@ function keepButton(ctx, kind, name, picture) {
     return node;
 }
 
-/** A step's pictures, headed by its number and time (a way back to it in the timeline); groups sit side by side. */
-function runGroup(run, ctx) {
+/** A step's pictures, headed by its number and time, plus its actual input/params recipe card. */
+function runGroup(run, index, task, ctx) {
     const group = el('div', 'anomalous-ai-out-group');
     group.append(button('anomalous-ai-out-run', t('aiOutRun', { number: ctx.numberOf(run.step.id), time: timeLabel(run.step.at) }),
-        () => showStepRow(run.step.id), t('aiOutRunShow')), imageResults(run.pictures, ctx.owner, { compact: true }));
+        () => showStepRow(run.step.id), t('aiOutRunShow')));
+    const recipe = renderRunRecipe(run.step, task, { openDefault: index === 0 });
+    if (recipe) group.append(recipe);
+    group.append(imageResults(run.pictures, ctx.owner, { compact: true }));
     return group;
 }
 
-function picturesPart(outputs, ctx) {
+function picturesPart(outputs, task, ctx) {
     if (!outputs.runs.length) return null;
     const count = pictureCount(outputs);
     const box = section('image', t('aiOutPicturesTitle'), el('span', 'anomalous-ai-out-count', count));
     if (count > 1) box.firstChild.append(el('span', 'anomalous-ai-out-hint', t('aiTickHint')));
     const groups = el('div', 'anomalous-ai-out-groups');
     box.append(groups);
-    const draw = runs => groups.append(...runs.map(run => runGroup(run, ctx)));
-    draw(outputs.runs.slice(0, RUNS_SHOWN));
+    const draw = (runs, startIndex = 0) => groups.append(...runs.map((run, i) => runGroup(run, startIndex + i, task, ctx)));
+    draw(outputs.runs.slice(0, RUNS_SHOWN), 0);
     const earlier = outputs.runs.slice(RUNS_SHOWN);
     if (earlier.length) {
         const more = button('anomalous-ai-link anomalous-ai-out-more', t('aiOutEarlier', { count: earlier.length }), () => {
             more.remove();
-            draw(earlier);
+            draw(earlier, RUNS_SHOWN);
         });
         box.append(more);
     }
@@ -259,12 +263,12 @@ function soundsPart(outputs) {
 export function renderOutputsView(pane, task, ctx) {
     const outputs = taskOutputs(task);
     const where = workflowOf(task, outputs);
-    const key = JSON.stringify([task.id, outputs.runs.map(run => [run.step.id, ctx.numberOf(run.step.id), run.pictures]),
+    const key = JSON.stringify([task.id, task.private, task.sealed, outputs.runs.map(run => [run.step.id, ctx.numberOf(run.step.id), run.pictures, run.step.map, run.step.changes]),
         outputs.combos, outputs.models, outputs.downloads, outputs.audio, outputs.canvas, where]);
     if (pane.dataset.key === key) return;
     pane.dataset.key = key;
     const newest = newestPicture(outputs);
-    const parts = [picturesPart(outputs, ctx), workflowPart(where, outputs, newest, ctx), combosPart(outputs, newest, ctx),
+    const parts = [picturesPart(outputs, task, ctx), workflowPart(where, outputs, newest, ctx), combosPart(outputs, newest, ctx),
         newest && promptsPart(newest, ctx), modelsPart(outputs), soundsPart(outputs)].filter(Boolean);
     const body = el('div', 'anomalous-ai-stage-body anomalous-ai-outputs');
     body.append(...(parts.length ? parts : [el('div', 'anomalous-ai-stage-empty', t('aiOutNone'))]));

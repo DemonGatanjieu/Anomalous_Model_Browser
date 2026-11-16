@@ -466,10 +466,14 @@ def _collect(client, panel_id, task_id=None):
                 item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout", "prompts", "negative", "pictures", "gist", "plan") if key in given})
                 out.append(item)
         if panel_id is None or task is panel_task:
-            from . import ai_sealed_notes
+            from . import ai_sealed_adjust, ai_sealed_notes
             notes_msg = ai_sealed_notes.take_pending(task)
             if notes_msg:
                 messages.append(notes_msg)
+                changed.add(task["id"])
+            adjust_msg = ai_sealed_adjust.take_pending(task)
+            if adjust_msg:
+                messages.append(adjust_msg)
                 changed.add(task["id"])
     for tid in changed:
         ai_tasks._save(tasks[tid])
@@ -539,7 +543,8 @@ def attach_pending(result, client, task_id=None):
         "kind=stop: the user stopped your run, so do not run it again until they say what to change; "
         "kind=halt: the user called a halt on the whole task: do nothing more for it until they ask; "
         "kind=pictures: pictures the user handed you (attached), with made_with read from each picture's own workflow; "
-        "kind=sealed_notes: brief notes the user wrote for hidden tokens ([P*], [img*], [M*]) in Privacy Overview — read them as the meaning of those tokens without revealing sealed content."
+        "kind=sealed_notes: brief notes the user wrote for hidden tokens ([P*], [img*], [M*]) in Privacy Overview — read them as the meaning of those tokens without revealing sealed content; "
+        "kind=privacy_adjust: per-model visibility overrides or prompt splits/new tokens adjusted by the user in Privacy Overview — follow the updated tokens and exposed parts going forward."
     )
     pictures = ai_marks.image_items(messages)
     result["structuredContent"] = data
