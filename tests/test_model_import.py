@@ -358,6 +358,11 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(Path(self.loras, "up", "new.safetensors").read_bytes(), self.data)
         self.assertEqual((short_status, short_body["error"]), (400, "incomplete"))
         self.assertEqual(sorted(os.listdir(os.path.join(self.loras, "up"))), ["new.safetensors"])
+        # The answer carries a handle on the copy: the page can move it by Civitai's base model.
+        moved = model_import.place({"token": body["token"], "type": "loras", "root": 0, "rel": "MOSS/new.safetensors"})
+        self.assertEqual(moved["rel"], "MOSS/new.safetensors")
+        self.assertEqual(Path(self.loras, "MOSS", "new.safetensors").read_bytes(), self.data)
+        self.assertFalse(os.path.exists(os.path.join(self.loras, "up", "new.safetensors")))
 
     def test_upload_only_from_this_computer(self):
         async def run():

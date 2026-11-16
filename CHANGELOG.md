@@ -6,6 +6,8 @@
 - AMB 认得 MOSS Image 的模型了：底模文件（包括 INT8 版本）认成扩散模型，底模 MOSS Image；它的 LoRA 不联网也能认出底模。以前底模文件认不出是什么，导入时选"按底模分"也没法放进底模文件夹，只能放在类型文件夹本身。
 - Following ComfyUI, the theme no longer shows light on a dark ComfyUI. ComfyUI's frontend from 1.59 marks a dark palette another way, and AMB, reading only the old mark, took every palette for light. Both are read now, and AMB follows at once when the palette is switched in ComfyUI.
 - MOSS Image models are recognized: the model file (its INT8 copy too) as a diffusion model of MOSS Image, and its LoRAs' base model without going online. Before, the model file was not told at all, so an import into folders by base model could not put it in a MOSS folder and left it in the type's own folder.
+- 导入时，AMB 在"下载"和"桌面"里没找到原文件（比如浏览器存在别的盘），只能把文件发过去的话，现在发完也会去 C 站查底模：查到了，就按"按底模分"挪进对应的文件夹。以前这种情况不查，底模认不出的文件只能留在类型文件夹本身。
+- When an import cannot find the original file in Downloads or on the Desktop (say the browser saves to another drive) and sends a copy instead, AMB now asks Civitai about that copy too: when Civitai names the base model, the file moves into that base model's folder. Before, such a file whose base model the header did not tell stayed in the type's own folder.
 
 ## v1.63.2 (Fix: ComfyUI's messages hidden under the browser, Ctrl+Enter started a run, tooltips cut off; long lists faster) — 2026-11-16
 

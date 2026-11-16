@@ -538,7 +538,10 @@ matches. Both check the destination like downloads (`resolve_within`, model exte
 space) and never replace a file: a taken name becomes `name (2).ext`. A failed copy or
 upload removes only its own `.part`. Each import clears the file-list caches and adds a
 `model_import` activity entry; the page then scans the new files. The destination the page
-proposes follows the download settings' folder (`{base}` = the base model's folder).
+proposes follows the download settings' folder (`{base}` = the base model's folder). An upload
+answers with a `token` for the copy, as `inspect` does for a found file: when the base model was
+unknown and the folder is by base model, the page has `identify` ask Civitai and, if it names one,
+`place` moves the copy into that folder before the scan.
 
 ## Tidy check
 
