@@ -637,7 +637,9 @@ upload removes only its own `.part`. Each import clears the file-list caches and
 proposes follows the download settings' folder (`{base}` = the base model's folder). An upload
 answers with a `token` for the copy, as `inspect` does for a found file: when the base model was
 unknown and the folder is by base model, the page has `identify` ask Civitai and, if it names one,
-`place` moves the copy into that folder before the scan.
+`place` moves the copy into that folder before the scan. `identify` notes the hash it read
+(`known_hashes.py`) and `place` carries the note to the new place, so the scan that follows
+takes it instead of reading the whole file again.
 
 ## Tidy check
 
