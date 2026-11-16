@@ -142,8 +142,8 @@ export function messageBox(onSend, source) {
             note.textContent = text;
             note.classList.add('is-error');
         } });
-        const { has, count, countOf, itemsOf, room: left, add, remove, swap } = at;
-        box.refs = { has, count, countOf, itemsOf, room: left, add, remove, swap }; // the picker's handle (ui_ai_toolbox.js)
+        const { has, count, countOf, itemsOf, items, noteOf, setNote, room: left, add, remove, swap } = at;
+        box.refs = { has, count, countOf, itemsOf, items, noteOf, setNote, room: left, add, remove, swap }; // the picker's handle (ui_ai_toolbox.js)
         box.syncPrivacy = () => {
             syncVisibility();
             at.syncPrivacy();

@@ -101,8 +101,11 @@ test('recent items stay capped, newest-first, skipped for privacy, and drop miss
 test('layout persistence, effective picks, and filterPickerItems helpers', () => {
     const storage = memoryStorage();
     assert.equal(savedLayout(storage), 'side');
+    assert.equal(savedLayout(storage, 'full'), 'full');
     keepLayout('full', storage);
     assert.equal(savedLayout(storage), 'full');
+    keepLayout('side', storage);
+    assert.equal(savedLayout(storage, 'full'), 'side');
 
     const kinds = ['models', 'ways'];
     assert.equal(standingInWithFavorites({}, { models: ['m1'], ways: [] }, kinds), true);

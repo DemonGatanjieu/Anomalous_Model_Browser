@@ -43,3 +43,61 @@ export function marked(text) {
 export function withHidden(text, sealed) {
     return String(text ?? '').replace(/\[P\d+\]/g, token => (typeof sealed?.[token] === 'string' ? `${OPEN}${sealed[token]}${CLOSE}` : token));
 }
+
+/** Splits `text` into `{type: 'text', value}` and `{type: 'sealed', token, value}` segments for display. */
+export function sealedParts(text, sealed) {
+    const raw = String(text ?? '');
+    if (!raw) return [];
+    const parts = [];
+    const pattern = /(\[P\d+\]|\u27e6[^\u27e6\u27e7]*\u27e7)/g;
+    let at = 0;
+    for (const match of raw.matchAll(pattern)) {
+        if (match.index > at) parts.push({ type: 'text', value: raw.slice(at, match.index) });
+        const seg = match[0];
+        if (seg.startsWith(OPEN) && seg.endsWith(CLOSE)) {
+            const inner = seg.slice(1, -1);
+            parts.push(inner ? { type: 'sealed', token: '', value: inner } : { type: 'text', value: seg });
+        } else if (typeof sealed?.[seg] === 'string') {
+            parts.push({ type: 'sealed', token: seg, value: sealed[seg] });
+        } else {
+            parts.push({ type: 'text', value: seg });
+        }
+        at = match.index + seg.length;
+    }
+    if (at < raw.length) parts.push({ type: 'text', value: raw.slice(at) });
+    return parts;
+}
+
+/**
+ * Renders `text` into a DocumentFragment with sealed segments visually marked (`masked=true` shows the
+ * exact token string the AI receives). `lockIcon` optionally returns a lock SVG element for user view.
+ */
+export function renderHiddenText(text, sealed, { masked = false, lockIcon = null } = {}) {
+    const frag = document.createDocumentFragment();
+    for (const part of sealedParts(text, sealed)) {
+        if (part.type !== 'sealed') {
+            frag.append(document.createTextNode(part.value));
+            continue;
+        }
+        if (masked) {
+            const code = document.createElement('code');
+            code.className = 'anomalous-ai-sealed-token';
+            code.textContent = part.token || '[P]';
+            frag.append(code);
+            continue;
+        }
+        const wrap = document.createElement('span');
+        wrap.className = 'anomalous-ai-sealed-span';
+        if (part.token) wrap.title = t('aiSealedTokenTip', { token: part.token });
+        const tag = document.createElement('span');
+        tag.className = 'anomalous-ai-sealed-tag';
+        if (lockIcon) tag.append(lockIcon());
+        if (part.token) tag.append(document.createTextNode(part.token));
+        const words = document.createElement('span');
+        words.className = 'anomalous-ai-sealed-words';
+        words.textContent = part.value;
+        wrap.append(tag, words);
+        frag.append(wrap);
+    }
+    return frag;
+}

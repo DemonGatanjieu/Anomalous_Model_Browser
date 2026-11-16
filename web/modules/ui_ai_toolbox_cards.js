@@ -12,6 +12,8 @@
  * version opens the list to show another (ctx.showVersion).
  */
 
+import { MAX_REF_NOTE } from './ai_chat_plus.js';
+import { hideButton } from './ai_hide_mark.js';
 import { translate as t } from './locales.js';
 import { outputThumbnail } from './ui_kept_toast.js';
 import { recipeAssetUrl } from './ui_recipe_media.js';
@@ -346,7 +348,7 @@ export function detail(item, ctx) {
     const take = el('button', `anomalous-tb-take${ctx.picked(item) ? ' is-on' : ''}`);
     take.type = 'button';
     take.append(icon(ctx.picked(item) ? 'check' : 'plus', 15), el('span', '', t(ctx.picked(item) ? 'aiTbPicked' : 'aiTbPick')));
-    take.onclick = () => ctx.toggle(item);
+    take.onclick = () => ctx.toggle(item, true, true);
     const star = el('button', `anomalous-tb-like${ctx.favorite(item) ? ' is-on' : ''}`);
     star.type = 'button';
     star.append(icon(ctx.favorite(item) ? 'starOn' : 'star', 15), el('span', '', t(ctx.favorite(item) ? 'aiToolboxUnfavorite' : 'aiToolboxFavorite')));
@@ -363,6 +365,7 @@ export function detail(item, ctx) {
     }
     actions.append(takeBackButton(ctx, item, true));
     box.append(actions);
+    if (ctx.picked(item) && ctx.setNote) box.append(pickedNoteBox(item, ctx));
     if (item.kind === 'nodes') {
         if (item.description) box.append(textBlock(item.description));
         if (item.category) box.append(section(t('aiTbCategory'), [textBlock(item.category.replaceAll('/', ' › '), 'is-soft')]));
@@ -393,6 +396,56 @@ export function detail(item, ctx) {
         if (item.words?.length) box.append(section(t('aiTbWords'), [tagsOf(item.words)]));
     }
     return box;
+}
+
+function pickedNoteBox(item, ctx) {
+    const wrap = el('div', 'anomalous-tb-note-box');
+    const head = el('div', 'anomalous-tb-note-head');
+    head.append(el('span', 'anomalous-tb-section-title', t('aiTbRemarkLabel')));
+    const input = el('input', 'anomalous-tb-note-input');
+    input.type = 'text';
+    input.maxLength = MAX_REF_NOTE;
+    input.dataset.refKey = `${item.kind}\0${item.id}`;
+    input.value = ctx.noteOf?.(item) || '';
+    input.placeholder = t(ctx.privateTask?.() ? 'aiRefNotePrivate' : 'aiRefNote');
+    const hint = el('div', 'anomalous-tb-note-hint');
+    if (ctx.privateTask?.()) head.append(hideButton(input, (text) => { hint.textContent = text; }));
+    input.addEventListener('keydown', event => event.stopPropagation());
+    input.addEventListener('input', () => {
+        hint.textContent = '';
+        ctx.setNote(item, input.value);
+    });
+    wrap.append(head, input, hint);
+    return wrap;
+}
+
+/** Compact chips of the items currently on the message, for the full picker's tray. */
+export function renderPickedBar(row, items, ctx) {
+    row.hidden = !items.length;
+    if (!items.length) {
+        row.replaceChildren();
+        return;
+    }
+    row.replaceChildren(el('span', 'anomalous-tb-picked-label', t('aiTbPickedBar')), ...items.map((ref) => {
+        const chip = el('div', `anomalous-tb-picked-chip is-${ref.kind}`);
+        const pick = el('button', 'anomalous-tb-picked-jump');
+        pick.type = 'button';
+        pick.title = ref.note ? `${ref.label} · ${ref.note}` : ref.label;
+        pick.append(icon(kindIcon(ref.kind), 13), el('span', 'anomalous-tb-picked-name', ref.label));
+        if (ref.note) pick.append(el('span', 'anomalous-tb-picked-note', ref.note));
+        pick.onclick = () => ctx.focusPicked?.(ref);
+        const drop = el('button', 'anomalous-tb-picked-x');
+        drop.type = 'button';
+        drop.title = t('aiMentionRemove');
+        drop.setAttribute('aria-label', t('aiMentionRemove'));
+        drop.append(icon('close', 11));
+        drop.onclick = (event) => {
+            event.stopPropagation();
+            ctx.removePicked?.(ref);
+        };
+        chip.append(pick, drop);
+        return chip;
+    }));
 }
 
 function tagsOf(words) {

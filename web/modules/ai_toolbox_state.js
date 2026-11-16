@@ -28,11 +28,12 @@ const defaultStorage = () => {
     }
 };
 
-export function savedLayout(storage = defaultStorage()) {
+export function savedLayout(storage = defaultStorage(), fallback = 'side') {
     try {
-        return storage?.getItem(LAYOUT_KEY) === 'full' ? 'full' : 'side';
+        const kept = storage?.getItem(LAYOUT_KEY);
+        return kept === 'full' || kept === 'side' ? kept : fallback;
     } catch (_) {
-        return 'side';
+        return fallback;
     }
 }
 

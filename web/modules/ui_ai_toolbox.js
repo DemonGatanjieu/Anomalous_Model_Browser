@@ -18,14 +18,14 @@
 import { resolveLocale, translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
-import { KINDS, PICK_KINDS, fetchUsableWays, keptCatalog, loadCatalog, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
+import { KINDS, PICK_KINDS, keptCatalog, loadPickerSources, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
 import {
     countRecent, emptyPicks, filterPickerItems, keepLayout, keyOf, pickOffered,
     readPickerState, readRecent, rememberBase, rememberFacet, rememberKind,
     resolveOpenKind, savedLayout, standingInWithFavorites, taskEffectivePicks, totalPicks,
 } from './ai_toolbox_state.js';
-import { card, detail, el, kindIcon, refreshCard, rowCard, tbButton as button } from './ui_ai_toolbox_cards.js';
-import { facetOf, facets, packItems, pageNodes, renderBases, renderFacets, renderPackBar } from './ui_ai_toolbox_sources.js';
+import { card, detail, el, refreshCard, renderPickedBar, rowCard, tbButton as button } from './ui_ai_toolbox_cards.js';
+import { facetOf, facets, packItems, pageNodes, renderBases, renderFacets, renderFilterTabs, renderKindRail, renderPackBar, renderSubhead } from './ui_ai_toolbox_sources.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture } from './ui_ai_toolbox_icons.js';
 import { baseFamily, countBases } from './model_bases.js';
@@ -114,17 +114,20 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     const rail = el('nav', 'anomalous-tb-rail');
     const side = el('aside', 'anomalous-tb-facets');
     const gridWrap = el('div', 'anomalous-tb-grid-wrap');
+    const subhead = el('div', 'anomalous-tb-subhead');
     const gridHead = el('div', 'anomalous-tb-grid-head');
     const baseBar = el('div', 'anomalous-model-bases anomalous-tb-bases');
+    subhead.append(gridHead, baseBar);
     const scroller = el('div', 'anomalous-tb-scroller');
     const grid = el('div', 'anomalous-tb-grid');
     const sentinel = el('div', 'anomalous-tb-sentinel');
     scroller.append(grid, sentinel);
     const packBar = el('div', 'anomalous-tb-pack');
-    gridWrap.append(gridHead, baseBar, packBar, scroller);
+    gridWrap.append(subhead, packBar, scroller);
     const pane = el('div', 'anomalous-tb-pane');
     const main = el('div', 'anomalous-tb-main');
     main.append(rail, side, gridWrap, pane);
+    const pickedRow = el('div', 'anomalous-tb-picked');
     const tray = el('div', 'anomalous-tb-tray');
     body.append(top, main, tray);
 
@@ -140,6 +143,9 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
      * the pane and the bottom row). `keep`: the user chose this layout, so it is the one remembered. */
     function place(layout, keep = false) {
         const scrolled = scroller.scrollTop;
+        forTask.remove();
+        searchBox.remove();
+        rail.remove();
         body.remove();
         closeFrame();
         if (keep) keepLayout(layout);
@@ -147,13 +153,17 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         const changedLayout = body.classList.contains('is-side') !== Boolean(docked);
         body.classList.toggle('is-side', Boolean(docked));
         if (docked) {
+            top.replaceChildren(forTask, searchBox, filters);
+            main.replaceChildren(rail, side, gridWrap, pane);
             closeFrame = docked;
         } else {
+            top.replaceChildren(rail, filters);
+            main.replaceChildren(side, gridWrap, pane);
             closeFrame = aiWindow(t('aiToolboxTitle'), body);
             const dialog = body.closest('.anomalous-ai-connect-dialog');
             dialog?.classList.add('is-toolbox');
             const shut = dialog?.querySelector('.anomalous-ai-connect-close');
-            shut?.before(iconButton('anomalous-tb-dock-btn', 'panel', t('aiTbDock'), () => place('side', true), { iconOnly: true }));
+            shut?.before(forTask, searchBox, iconButton('anomalous-tb-dock-btn', 'panel', t('aiTbDock'), () => place('side', true), { iconOnly: true }));
         }
         if (changedLayout && grid.childElementCount) drawGrid();
         else scroller.scrollTop = scrolled;
@@ -172,13 +182,23 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     const ctx = {
         picked, inPack, favorite: liked, given,
         get showTakeBack() { return state.filter === 'given'; },
+        privateTask: () => Boolean(currentTask?.private),
+        noteOf: item => msg()?.noteOf?.(item.kind, item.id) || '',
+        setNote: (item, text) => { msg()?.setNote?.(item.kind, item.id, text); drawPickedRow(); },
         focus: (item) => { state.focus = item; drawPane(); },
         peek: (item) => { if (!body.classList.contains('is-side')) ctx.focus(item); },
-        toggle: (item, focusNote = true) => toggleItem(item, focusNote),
+        toggle: (item, focusNote = true, focusPaneNote = false) => toggleItem(item, focusNote, focusPaneNote),
         star: item => setFavorite(item),
         promptPicked: id => Boolean(msg()?.has('prompts', id)),
         pickPrompt: id => togglePrompt(id),
         takeBack: item => removeTaskItem(item),
+        focusPicked: (ref) => {
+            const found = ref.item || byKey.get(keyOf(ref.kind, ref.id));
+            if (!found) return;
+            state.focus = found;
+            drawPane(true);
+        },
+        removePicked: ref => msg()?.remove?.(ref.kind, ref.id),
         showVersion,
     };
 
@@ -189,15 +209,20 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         }
     }
 
-    function toggleItem(item, allowFocusNote = true) {
+    function toggleItem(item, allowFocusNote = true, focusPaneNote = false) {
         const handle = msg();
         if (!handle) return;
         state.notice = '';
         if (handle.has(item.kind, item.id)) {
             handle.remove(item.kind, item.id);
-        } else if (!handle.add(item, { focusNote: allowFocusNote && body.classList.contains('is-side') })) {
-            state.notice = t('aiTbMessageFull', { max: handle.count() + handle.room() });
-            drawTray();
+        } else {
+            if (!body.classList.contains('is-side')) state.focus = item;
+            if (!handle.add(item, { focusNote: allowFocusNote && body.classList.contains('is-side') })) {
+                state.notice = t('aiTbMessageFull', { max: handle.count() + handle.room() });
+                drawTray();
+            } else if (focusPaneNote && !body.classList.contains('is-side')) {
+                drawPane(true);
+            }
         }
     }
 
@@ -293,46 +318,33 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         const beforeFacet = items;
         const facet = pickOffered(state.facet, facets(beforeFacet, state.kind).map(each => each.key));
         if (facet) items = items.filter(item => facetOf(item)?.key === facet);
-        if (state.kind !== 'models') return { items, beforeFacet, beforeBase: [], facet, base: null };
+        if (state.kind !== 'models') return { items, matchedFiles: items.length, beforeFacet, beforeBase: [], facet, base: null };
         const beforeBase = items;
         const base = pickOffered(state.base, countBases(items).map(([family]) => family));
         if (base !== null) items = items.filter(item => baseFamily(item) === base);
+        const matchedFiles = items.length;
         // The versions of a model on one card, as the Models page has them: the one on the message, else the one last shown here or pinned there.
         const pickedVersions = new Map((msg()?.itemsOf('models') || []).map(ref => byKey.get(keyOf('models', ref.id))).filter(Boolean).map(item => [pageId(item), versionId(item)]));
         const folded = groupByPage(items, page => pickedVersions.get(page) || state.versions.get(page) || chosenVersion(page));
-        return { items: folded.map(({ model, versions }) => Object.assign(model, { versions })), beforeFacet, beforeBase, facet, base };
+        return { items: folded.map(({ model, versions }) => Object.assign(model, { versions })), matchedFiles, beforeFacet, beforeBase, facet, base };
     }
 
     function drawRail() {
-        rail.replaceChildren(...KINDS.map((kind) => {
-            const count = msg()?.countOf(kind) || 0; // on the message
-            const matches = state.query || state.filter !== 'all' ? listed(kind).length : null; // what the search or the filter lists of it
-            const node = button(`anomalous-tb-kind${state.kind === kind ? ' is-on' : ''}`, [icon(kindIcon(kind), 20), t(`aiToolboxKind_${kind}`)], () => {
-                switchTo(kind);
-            });
-            const meta = el('span', 'anomalous-tb-kind-meta');
-            if (matches !== null) meta.append(el('span', 'anomalous-tb-kind-matches', String(matches)));
-            if (count) meta.append(el('span', 'anomalous-tb-count', String(count)));
-            node.append(meta);
-            return node;
-        }));
+        const showMatches = Boolean(state.query || state.filter !== 'all');
+        renderKindRail({
+            rail, kinds: KINDS, activeKind: state.kind,
+            countOf: kind => msg()?.countOf(kind) || 0,
+            matchCountOf: kind => (showMatches ? listed(kind).length : null),
+            onSwitch: switchTo,
+        });
     }
 
     function drawFilters() {
-        const specs = [
-            ['all', t('aiTbAll'), null, 'list'],
-            ['given', t('aiTbGiven'), givenCount(), 'sparkle'],
-            ['liked', t('aiTbLiked'), total(state.favorites), 'star'],
-            ['recent', t('aiTbRecent'), recentCount(), 'clock'],
-        ];
-        filters.replaceChildren(...specs.map(([key, label, count, glyph]) => {
-            const node = button(`anomalous-tb-filter${state.filter === key ? ' is-on' : ''}`, [icon(glyph, 14), label], () => {
-                state.filter = key;
-                drawAll();
-            }, label);
-            if (count) node.append(el('span', 'anomalous-tb-count', String(count)));
-            return node;
-        }));
+        renderFilterTabs({
+            filters, activeFilter: state.filter,
+            counts: { given: givenCount(), liked: total(state.favorites), recent: recentCount() },
+            onPick: (key) => { state.filter = key; drawAll(); },
+        });
     }
 
     let facetOn = null; // the second column's choice the grid shows now (shown)
@@ -344,7 +356,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     function drawGrid() {
         observer?.disconnect();
         cards.clear();
-        const { items, beforeFacet, beforeBase, facet, base } = shown();
+        const { items, matchedFiles, beforeFacet, beforeBase, facet, base } = shown();
         facetOn = facet;
         renderFacets({
             side, main, isSide: body.classList.contains('is-side'), kind: state.kind, activeFacet: facet, beforeFacet,
@@ -353,8 +365,9 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         });
         renderBases({ baseBar, models: beforeBase, active: base, onPick: (family) => { state.base = family; rememberBase(family); drawGrid(); } });
         const facetLabel = facet ? (facets(beforeFacet, state.kind).find(each => each.key === facet)?.label || facet) : '';
-        gridHead.replaceChildren(el('span', 'anomalous-tb-grid-title', facetLabel || t(`aiToolboxKind_${state.kind}`)),
-            el('span', 'anomalous-tb-grid-count', t('aiTbCount', { count: items.length })));
+        const countText = state.kind === 'models' && matchedFiles > items.length
+            ? t('aiTbCountFolded', { cards: items.length, files: matchedFiles }) : t('aiTbCount', { count: items.length });
+        renderSubhead({ gridHead, baseBar, isSide: body.classList.contains('is-side'), kind: state.kind, facetLabel, countText });
         drawPackBar();
         const loadError = state.kind === 'ways' ? state.waysError : state.kind !== 'nodes' ? state.error : '';
         if (!kindLoaded(state.kind)) {
@@ -385,12 +398,15 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         scroller.scrollTop = 0;
     }
 
-    function drawPane() {
+    function drawPane(focusNote = false) {
         const isSide = body.classList.contains('is-side');
         pane.hidden = isSide && !state.focus;
         if (state.focus) {
+            const activeNote = pane.contains(document.activeElement) && document.activeElement.matches?.('.anomalous-tb-note-input');
+            if (activeNote && document.activeElement.dataset.refKey === keyOf(state.focus.kind, state.focus.id)) return;
             const back = button('anomalous-tb-pane-back', [icon('chevronLeft', 16), t('aiTbBack')], () => { state.focus = null; drawPane(); });
             pane.replaceChildren(...(isSide ? [back] : []), detail(state.focus, ctx));
+            if (focusNote) pane.querySelector('.anomalous-tb-note-input')?.focus();
             return;
         }
         const box = el('div', 'anomalous-tb-pane-empty');
@@ -400,9 +416,13 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         pane.replaceChildren(box);
     }
 
+    const drawPickedRow = () => renderPickedBar(pickedRow, body.classList.contains('is-side') ? [] : (msg()?.items?.() || []), ctx);
+
     function drawTray() {
         const nodes = [];
         if (state.notice) nodes.push(el('div', 'anomalous-tb-full-note', state.notice));
+        drawPickedRow();
+        if (!pickedRow.hidden) nodes.push(pickedRow);
         const row = el('div', 'anomalous-tb-bar');
         const status = el('div', 'anomalous-tb-status');
         const count = givenCount();
@@ -472,6 +492,11 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
             drawTray();
             drawPane();
         }, { signal: boxAbort.signal });
+        messageBox.addEventListener('anomalous-ref-note', () => {
+            drawPickedRow();
+            const active = pane.querySelector('.anomalous-tb-note-input');
+            if (active && active !== document.activeElement) active.value = msg()?.noteOf?.(state.focus?.kind, state.focus?.id) || '';
+        }, { signal: boxAbort.signal });
     }
     attachMessageBox(messageBox);
 
@@ -511,42 +536,24 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     drawAll();
     search.focus();
 
-    fetch('/anomalous/ai_toolbox/favorites', { signal: scope.signal })
-        .then(res => (res.ok ? res.json() : null))
-        .then((data) => {
-            if (!data || scope.signal.aborted) return;
-            state.favorites = { ...empty(), ...data.favorites };
+    loadPickerSources({
+        locale: resolveLocale(), signal: scope.signal, freshCatalog: Boolean(state.catalog),
+        onFavorites: (favorites) => {
+            state.favorites = { ...empty(), ...favorites };
             refreshAllCards();
             drawFilters();
             if (state.filter === 'liked' || (state.filter === 'given' && standingIn()) || (state.filter === 'all' && !state.query)) drawGrid();
             drawPane();
             drawTray();
-        }).catch(() => {});
-
-    fetchUsableWays(resolveLocale(), { signal: scope.signal }).then((items) => {
-        if (scope.signal.aborted) return;
-        state.ways = items;
-        index();
-        drawRail();
-        drawFilters();
-        if (state.kind === 'ways') drawGrid();
-    }).catch((error) => {
-        if (error?.name === 'AbortError' || scope.signal.aborted) return;
-        state.waysError = error.message;
-        if (state.kind === 'ways') drawGrid();
-    });
-
-    loadCatalog({ fresh: Boolean(state.catalog) }).then((items) => {
-        if (scope.signal.aborted) return;
-        state.catalog = items;
-        index();
-        drawRail();
-        drawFilters();
-        if (state.kind !== 'nodes' && state.kind !== 'ways') drawGrid();
-    }).catch((error) => {
-        if (scope.signal.aborted) return;
-        state.error = error.message;
-        if (state.kind !== 'nodes' && state.kind !== 'ways' && !state.catalog) drawGrid();
+        },
+        onWays: (items, error) => {
+            if (items) { state.ways = items; index(); drawRail(); drawFilters(); } else state.waysError = error;
+            if (state.kind === 'ways') drawGrid();
+        },
+        onCatalog: (items, error) => {
+            if (items) { state.catalog = items; index(); drawRail(); drawFilters(); } else state.error = error;
+            if (state.kind !== 'nodes' && state.kind !== 'ways' && (items || !state.catalog)) drawGrid();
+        },
     });
 }
 

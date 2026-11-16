@@ -119,6 +119,19 @@ class PrivacyTests(unittest.TestCase):
             ai_privacy.set_private(task, False)
             self.assertEqual(len(mcp_apps.task_view({"client": "test"}, task=task)["pictures"]), 1)
 
+    def test_api_get_reports_privacy_models_flag(self):
+        import asyncio
+        from types import SimpleNamespace
+        from api import ai_tasks_routes
+
+        task = self.task(True)
+        req = SimpleNamespace(match_info={"task_id": task})
+        with mock.patch.object(ai_tasks_routes.ai_pictures, "mark_gone"):
+            resp = asyncio.run(ai_tasks_routes.api_get(req))
+        payload = json.loads(resp.text)["task"]
+        self.assertTrue(payload["private"])
+        self.assertTrue(payload["privacy_models"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -45,7 +45,13 @@
 }
 .anomalous-ai-start-sheet { display: flex; flex-direction: column; gap: 10px; min-width: min(440px, 100%); }
 .anomalous-ai-start-field { display: flex; flex-direction: column; gap: 4px; }
-.anomalous-ai-start-label { color: var(--amb-text-soft); font-size: 12.5px; font-weight: 600; }
+.anomalous-ai-start-label { display: inline-flex; align-items: center; gap: 5px; color: var(--amb-text-soft); font-size: 12.5px; font-weight: 600; }
+.anomalous-ai-start-field.is-sealed .anomalous-ai-start-label { color: var(--amb-warn-text, var(--amb-warn)); }
+.anomalous-ai-start-field.is-sealed .anomalous-ai-start-input {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--amb-warn) 48%, var(--amb-border));
+    background: color-mix(in srgb, var(--amb-warn) 6%, rgba(var(--amb-ink-rgb), 0.04));
+}
 .anomalous-ai-start-input,
 .anomalous-ai-start-select {
     box-sizing: border-box;

@@ -133,8 +133,11 @@ function fieldsOf(card, data, owner, close) {
         prompt.placeholder = t('aiStartSealedHint');
         prompt.maxLength = MAX_SEALED;
         prompt.rows = 3;
+        const promptField = field(t('aiStartSealed'), prompt);
+        promptField.classList.add('is-sealed');
+        promptField.querySelector('.anomalous-ai-start-label')?.prepend(icon('lock', 13));
         return {
-            nodes: [from.node, field(t('aiStartGist'), gist), examples(gist, EXAMPLES.private), field(t('aiStartSealed'), prompt)],
+            nodes: [from.node, field(t('aiStartGist'), gist), examples(gist, EXAMPLES.private), promptField],
             stop: () => from.stop(),
             task: () => {
                 const picked = from.read();

@@ -12,6 +12,7 @@ import {
     serializeRefs,
 } from '../web/modules/ai_chat_plus.js';
 import { wayItems } from '../web/modules/ai_toolbox_data.js';
+import { sealedParts, withHidden } from '../web/modules/ai_hide_mark.js';
 
 test('wayItems offers only usable and enabled blocks with localized title, about and bilingual search', () => {
     const blocks = [
@@ -45,4 +46,20 @@ test('serializeRefs strips, truncates notes at 120 chars, keeps attached when tr
         { kind: 'ways', id: 'w1', label: 'W1' },
         { kind: 'combos', id: 'c1', label: 'C1', attached: true, note: 'x'.repeat(MAX_REF_NOTE) },
     ]);
+});
+
+test('sealedParts splits [P*] tokens and unsealed marks cleanly while leaving plain words alone', () => {
+    const sealed = { '[P1]': '1girl, swimsuit' };
+    assert.deepEqual(sealedParts('正面提示词原样用这个：[P1]。', sealed), [
+        { type: 'text', value: '正面提示词原样用这个：' },
+        { type: 'sealed', token: '[P1]', value: '1girl, swimsuit' },
+        { type: 'text', value: '。' },
+    ]);
+    assert.deepEqual(sealedParts('keep \u27e6secret\u27e7 and [P9]', sealed), [
+        { type: 'text', value: 'keep ' },
+        { type: 'sealed', token: '', value: 'secret' },
+        { type: 'text', value: ' and ' },
+        { type: 'text', value: '[P9]' },
+    ]);
+    assert.equal(withHidden('use [P1].', sealed), 'use \u27e61girl, swimsuit\u27e7.');
 });

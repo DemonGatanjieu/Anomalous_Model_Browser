@@ -67,7 +67,10 @@ function chip(ref, ctx) {
             ctx.focusField?.();
         }
     });
-    note.addEventListener('input', () => { ref.note = refNote(note.value); });
+    note.addEventListener('input', () => {
+        ref.note = refNote(note.value);
+        tray.closest('.anomalous-ai-message')?.dispatchEvent(new CustomEvent('anomalous-ref-note', { detail: { kind: ref.kind, id: ref.id, note: ref.note } }));
+    });
     node.append(ctx.lead(ref.item), el('span', 'anomalous-ai-mention-chip-name', ref.label), note,
         tool('anomalous-ai-mention-chip-x', 'close', t('aiMentionRemove'), () => ctx.remove(ref)));
     return node;

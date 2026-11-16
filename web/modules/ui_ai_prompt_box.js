@@ -13,7 +13,8 @@
 import { resolveLocale, translate as t } from './locales.js';
 import { galleryPicker, thumbUrl } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
-import { hideButton, withHidden } from './ai_hide_mark.js';
+import { hideButton, renderHiddenText } from './ai_hide_mark.js';
+import { icon } from './ui_ai_icons.js';
 
 const MAX_PROMPTS = 8;
 const MAX_PICTURES = 4;
@@ -59,7 +60,9 @@ function handedIn(answer, sealed) {
     };
     if (answer.gist) {
         const row = el('div', 'anomalous-ai-prompt-given-row');
-        row.append(el('span', 'anomalous-ai-prompt-label', t('aiPromptBoxGistGiven')), el('span', 'anomalous-ai-prompt-text', withHidden(answer.gist, sealed)));
+        const gistText = el('span', 'anomalous-ai-prompt-text');
+        gistText.append(renderHiddenText(answer.gist, sealed, { lockIcon: () => icon('lock', 11) }));
+        row.append(el('span', 'anomalous-ai-prompt-label', t('aiPromptBoxGistGiven')), gistText);
         box.append(row);
     }
     (answer.prompts || []).forEach((token, at) => line(token, t('aiPromptBoxPrompt', { n: at + 1 })));

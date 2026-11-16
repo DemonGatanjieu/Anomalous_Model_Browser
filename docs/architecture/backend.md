@@ -309,7 +309,7 @@ removed with the task; the card's own calls are not kept, they do not reach the 
 `GET /anomalous/ai_tasks/{id}/sent` reads it. The boundary of all this is the MCP channel: an AI
 app that reads the disk can open the output folder and the task records (their `sealed` holds the
 texts) by itself; `ai_callers.reads_disk(client)` names the known ones and `api_get` passes it to the
-page as `reads_disk`.
+page as `reads_disk` along with `privacy_models` (`ai_privacy.hides_models()`).
 
 Skills (`api/ai_skills.py`, one data file each in `api/skills/`) are advice an agent fetches
 for a kind of job, beside the blocks that build nodes. A skill holds judgment only: which blocks

@@ -532,6 +532,62 @@
     font-size: 13px;
     line-height: 1.6;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Sealed segments inside user messages and prompt gists (ai_hide_mark.js, ui_ai_step_body.js). */
+.anomalous-ai-sealed-span {
+    display: inline;
+    padding: 1px 6px 2px 3px;
+    border: 1px dashed color-mix(in srgb, var(--amb-warn) 52%, transparent);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--amb-warn) 12%, transparent);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+.anomalous-ai-sealed-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-right: 5px;
+    padding: 0 5px;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--amb-warn) 22%, transparent);
+    color: var(--amb-warn-text, var(--amb-warn));
+    font-size: 11px;
+    font-weight: 700;
+    vertical-align: 1px;
+}
+.anomalous-ai-sealed-token {
+    padding: 0 6px;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--amb-warn) 22%, transparent);
+    color: var(--amb-warn-text, var(--amb-warn));
+    font: 600 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.anomalous-ai-sealed-bar {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 8px;
+    align-self: flex-start;
+    color: var(--amb-warn-text, var(--amb-warn));
+    font-size: 12px;
+}
+.anomalous-ai-sealed-toggle {
+    padding: 1px 8px;
+    border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-warn-text, var(--amb-warn));
+    font: inherit;
+    font-size: 11.5px;
+    cursor: pointer;
+}
+.anomalous-ai-sealed-toggle:hover,
+.anomalous-ai-sealed-toggle:focus-visible {
+    background: color-mix(in srgb, var(--amb-warn) 16%, transparent);
+    outline: none;
 }
 
 .anomalous-ai-message-hint {

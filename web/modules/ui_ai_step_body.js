@@ -23,7 +23,7 @@ import { canvasChanges } from './ui_canvas_changes.js';
 import { deliveryState } from './ui_ai_delivery.js';
 import { decisionCard } from './ui_ai_decisions.js';
 import { imageResults } from './ui_ai_images.js';
-import { withHidden } from './ai_hide_mark.js';
+import { renderHiddenText, sealedParts } from './ai_hide_mark.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -37,7 +37,7 @@ const words = value => (resolveLocale() === 'zh' ? value?.zh : value?.en) || val
 const REF_ICON = { packs: 'nodes', ways: 'blocks' };
 
 /** Non-picture refs carried by a user message, with each ref's optional user note beside its name. */
-function namedRefs(step, sealed) {
+function namedRefs(step, sealed, masked = false) {
     const refs = (step.refs || []).filter(ref => ref.kind !== 'pictures');
     if (!refs.length) return [];
     const row = el('div', 'anomalous-tb-chips is-static anomalous-ai-step-refs');
@@ -47,15 +47,71 @@ function namedRefs(step, sealed) {
         const titled = ref.kind === 'ways' ? wayTitle(ref.id, locale) : '';
         const label = titled && titled !== ref.id ? titled : (ref.label || ref.id);
         chip.append(icon(REF_ICON[ref.kind] || ref.kind, 13), el('span', 'anomalous-tb-chip-name', label));
-        if (ref.note) chip.append(el('span', 'anomalous-ai-step-ref-note', withHidden(ref.note, sealed)));
+        if (ref.note) {
+            const noteNode = el('span', 'anomalous-ai-step-ref-note');
+            noteNode.append(renderHiddenText(ref.note, sealed, { masked, lockIcon: () => icon('lock', 10) }));
+            chip.append(noteNode);
+        }
         row.append(chip);
     }
     return [row];
 }
 
-function routeStep(step) {
-    const [a, b] = (step.models || []).map(modelStem);
-    return [said(t(`aiRoute_${step.route}`, { a: a || '', b: b || '' })), deliveryState(step)];
+function sealedNoteBar(label, onToggle) {
+    const bar = el('div', 'anomalous-ai-sealed-bar');
+    bar.append(icon('lock', 12), el('span', 'anomalous-ai-sealed-bar-text', label));
+    if (onToggle) {
+        const btn = el('button', 'anomalous-ai-sealed-toggle', t('aiSealedViewAi'));
+        btn.type = 'button';
+        btn.setAttribute('aria-pressed', 'false');
+        btn.onclick = () => {
+            const masked = btn.getAttribute('aria-pressed') !== 'true';
+            btn.setAttribute('aria-pressed', String(masked));
+            btn.textContent = t(masked ? 'aiSealedViewMine' : 'aiSealedViewAi');
+            onToggle(masked);
+        };
+        bar.append(btn);
+    }
+    return bar;
+}
+
+const modelToken = (modelId, sealed) => Object.entries(sealed || {})
+    .find(([token, value]) => token.startsWith('[M') && value === modelId)?.[0] || '';
+
+function routeStep(step, ctx) {
+    const models = step.models || [];
+    const [a, b] = models.map(modelStem);
+    const bubble = said(t(`aiRoute_${step.route}`, { a: a || '', b: b || '' }));
+    if (!ctx.privateTask) return [bubble, deliveryState(step)];
+    const tokens = models.map(id => modelToken(id, ctx.sealed)).filter(Boolean);
+    if (tokens.length) {
+        const bar = sealedNoteBar(t('aiSealedRouteNote', { tokens: tokens.join(t('listSeparator')) }), (masked) => {
+            const [ma, mb] = models.map((id, at) => (masked ? (modelToken(id, ctx.sealed) || (at ? b : a)) : (at ? b : a)));
+            bubble.textContent = t(`aiRoute_${step.route}`, { a: ma || '', b: mb || '' });
+        });
+        return [bubble, bar, deliveryState(step)];
+    }
+    if (ctx.privacyModels !== false) return [bubble, sealedNoteBar(t('aiSealedRoutePending')), deliveryState(step)];
+    return [bubble, deliveryState(step)];
+}
+
+function userMessageStep(step, ctx) {
+    const sealed = ctx.sealed;
+    const refs = (step.refs || []).filter(ref => ref.kind !== 'pictures');
+    const tokens = [...sealedParts(step.text, sealed), ...refs.flatMap(ref => sealedParts(ref.note, sealed))]
+        .filter(part => part.type === 'sealed');
+    const bubble = step.text ? el('div', 'anomalous-ai-user-text') : null;
+    let refsHolder = refs.length ? el('div', 'anomalous-ai-step-refs-wrap') : null;
+    const draw = (masked) => {
+        if (bubble) bubble.replaceChildren(renderHiddenText(step.text, sealed, { masked, lockIcon: () => icon('lock', 11) }));
+        if (refsHolder) refsHolder.replaceChildren(...namedRefs(step, sealed, masked));
+    };
+    draw(false);
+    const bar = tokens.length ? sealedNoteBar(t('aiSealedMessageNote', {
+        tokens: [...new Set(tokens.map(part => part.token || t('aiPrivacy')))].join(t('listSeparator')),
+    }), draw) : null;
+    return [...(bubble ? [bubble] : []), ...(refsHolder ? [refsHolder] : []),
+        ...namedPictures(step, ctx.owner), ...(bar ? [bar] : []), deliveryState(step)];
 }
 
 /** A skill the AI fetched: its name and, for advice that goes by the model, the form it came in. */
@@ -135,7 +191,7 @@ export function stepBody(step, ctx) {
     switch (step.tool) {
     case 'user_marks': return [marksStep(step, ctx.taskId, ctx.owner)];
     case 'user_toolbox': return [toolboxStep(step)];
-    case 'user_route': return routeStep(step);
+    case 'user_route': return routeStep(step, ctx);
     case 'user_activity': return [userChange(step, ctx.entries)];
     case 'user_pictures': return [said(step.text || t('aiPicturesStep', { count: (step.results || []).length })), deliveryState(step, 'aiPicturesSeen')];
     case 'user_stop': return [said(t('aiRunStoppedByYou')), deliveryState(step)];
@@ -154,7 +210,7 @@ export function stepBody(step, ctx) {
     }
     default:
         if (step.kind === 'decision') return [decisionCard(step.decision || {}, ctx.numberOf)];
-        if (step.kind === 'user') return [...(step.text ? [said(withHidden(step.text, ctx.sealed))] : []), ...namedRefs(step, ctx.sealed), ...namedPictures(step, ctx.owner), deliveryState(step)];
+        if (step.kind === 'user') return userMessageStep(step, ctx);
         return step.text ? [note(step.text)] : [];
     }
 }

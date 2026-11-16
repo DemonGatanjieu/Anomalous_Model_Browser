@@ -47,6 +47,7 @@ async def api_get(request):
     if task:
         task["canvas_mode"] = ai_task_canvas.mode_of(task)  # the task's own choice, else the user's default
         task["private"] = ai_privacy.is_private(task)  # the same for privacy mode
+        task["privacy_models"] = ai_privacy.hides_models()  # whether model names are sealed in a private task
         task["reads_disk"] = ai_callers.reads_disk(task.get("client"))  # an app privacy mode cannot keep from the files
         task["decisions"], task["decisions_gap"] = ai_decisions.decisions(task), ai_decisions.gap(task)
         task["links"] = ai_task_links.links(task["id"])  # the task it goes on from, those going on from it

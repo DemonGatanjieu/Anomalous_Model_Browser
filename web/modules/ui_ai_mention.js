@@ -12,7 +12,7 @@
  */
 
 import { resolveLocale, translate as t } from './locales.js';
-import { serializeRefs } from './ai_chat_plus.js';
+import { refNote, serializeRefs } from './ai_chat_plus.js';
 import { fetchUsableWays, keptCatalog, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
 import { coverUrl } from './ui_ai_toolbox_cards.js';
 import { packItems, pageNodes } from './ui_ai_toolbox_sources.js';
@@ -279,6 +279,17 @@ export function mentions(field, box, source, tray) {
         has: (kind, id) => live().some(ref => ref.kind === kind && ref.id === id),
         countOf: kind => live().filter(ref => ref.kind === kind || (kind === 'nodes' && ref.kind === 'packs')).length,
         itemsOf: kind => live().filter(ref => ref.kind === kind),
+        items: () => live().filter(ref => ref.kind !== 'pictures').map(ref => ({ kind: ref.kind, id: ref.id, label: ref.label, item: ref.item, note: ref.note || '' })),
+        noteOf: (kind, id) => live().find(ref => ref.kind === kind && ref.id === id)?.note || '',
+        setNote(kind, id, text) {
+            const ref = live().find(other => other.kind === kind && other.id === id);
+            if (!ref) return false;
+            ref.note = refNote(text);
+            const key = `${kind}\0${id}`;
+            const input = [...tray.querySelectorAll('.anomalous-ai-mention-chip-note')].find(node => node.dataset.refKey === key);
+            if (input && input.value !== ref.note) input.value = ref.note;
+            return true;
+        },
         room: () => Math.max(0, MAX_REFS - live().length),
         add(item, { focusNote = false } = {}) {
             const key = `${item.kind}\0${item.id}`;

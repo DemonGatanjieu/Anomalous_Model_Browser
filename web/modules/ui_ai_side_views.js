@@ -114,7 +114,7 @@ export function pickView(side, view, shown, task, redraw, changed, openKind = nu
     } else if (view === 'toolbox' && (!toolboxOpenFor(task.id) || openKind)) {
         void openToolbox(task, changed, {
             kind: openKind,
-            layout: openKind ? (connectedPage.tabbed() ? 'full' : 'side') : null, // from "+": beside the message box, or over it with "Done"
+            layout: openKind ? 'full' : null, // from "+": open the full window by default so cards and notes are easy to see
             messageBox: connectedPage.message(),
             onShow: () => {
                 Object.assign(side, { view: 'toolbox', hidden: false, tab: 'stage' });

@@ -109,7 +109,7 @@ covered by the `styles.css` manifest.
   `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model;
   its first field is the gist, the picture in words the AI may read, handed on as written but for the
   words the user marked to hide, which go as tokens inside it; `web/modules/ai_hide_mark.js` is that
-  mark and its single Hide button marking words in the chip note field that has the focus, else in the message input (`ai_sealed.seal_marked` seals marked words in both text and ref notes);
+  mark, its Hide button marking words in the focused chip note field or message input, and `sealedParts` / `renderHiddenText` rendering `[P*]` sealed segments in timeline messages (`ui_ai_step_body.js`, with a "View as AI" toggle alongside `[M*]` route token badges), ref notes, and prompt-box gists (`ai_sealed.seal_marked` seals marked words in both text and ref notes);
   the privacy skill tells the AI how to work). `api/ai_sealed.py` also applies `get_model`'s field keys (`description`, `user_notes`) on any `model_id` dict anywhere in tool answers (including `"models"` message refs). `api/ai_sealed_models.py` keeps a private task's model names too
   (the Gates window's "Model names in a private task", on unless turned off): each model of the library is one
   token ("[M1]", sealed as its model_id) however an answer writes it (model_id, loader name, file name in a text,
@@ -388,16 +388,15 @@ covered by the `styles.css` manifest.
   as data (`web/modules/mcp_run.js` refusal), each problem becomes a line naming the node, what
   is wrong and the tool that fixes it. `tests/test_run_refusal.py`, `tests/mcp_run.mjs`.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
-  `web/modules/ui_ai_toolbox.js`: the one picker, opened by the message box's "+" (`ui_ai_plus.js`),
-  the side column's switch (`ui_ai_side_views.js`) or `/素材`; a view of the workbench's side
-  column (`setToolboxHost`) or, expanded, a large window: the kinds models, ways, combos,
-  workflows, prompts and node types, the filters all / given / favourites / recent, a search with
-  favourites first (`searchItems`), a second column, the base model chips and a model's versions
-  as the Models page has them, and a bottom row saying what the task has, how strictly, and how
-  many things are on the message). A press puts a thing on the message being written (the message
-  box's `refs` handle, `ui_ai_mention.js`; at most 12) or takes it off; the picker keeps no copy
-  of that or of the task's picks and redraws when either changes (`anomalous-refs`,
-  `syncToolboxTask`). Sent, such a ref is handed over: `ai_toolbox.hand_over`, called by
+  `web/modules/ui_ai_toolbox.js`: the one picker, opened as the full large window by default from
+  the message box's "+" (`ui_ai_plus.js` via `ui_ai_side_views.js`), or docked in the side column
+  (`setToolboxHost`) from the switch or `/素材`: full mode places the task badge and search in
+  the modal header and the kinds (models, ways, combos, workflows, prompts, node types) in the top
+  toolbar beside the filters all / given / favourites / recent, with a compact 3-column body
+  (facets, card grid with base model chips and folded model versions, and detail pane with live
+  message-remark input and Hide button in private tasks) plus a picked-chips bar in the tray;
+  the picker keeps no copy of message refs or task picks and redraws via `anomalous-refs`,
+  `anomalous-ref-note`, and `syncToolboxTask`). Sent, such a ref is handed over: `ai_toolbox.hand_over`, called by
   `ai_panels.leave_message` under the lock that stores the step, puts the refs `ai_toolbox.handed`
   accepts on the task's picks (its own, else the favourites standing in; their mode kept; no step
   of its own). Taking a thing back and changing the mode post the picks at once (a `user_toolbox`
@@ -408,20 +407,18 @@ covered by the `styles.css` manifest.
   lists their node types, `chosen` counts them picked), with a mode: prefer, or only (add_node / new_workflow then
   refuse other custom or paid node types). Node types come from the page's own definitions
   (`web/modules/ai_toolbox_data.js`: LiteGraph's registered types and their `nodeData`, plus
-  `wayItems`/`fetchUsableWays` from `GET /anomalous/ai_blocks`, so no extra ways table),
+  `loadPickerSources`, `wayItems`/`fetchUsableWays` from `GET /anomalous/ai_blocks`, so no extra ways table),
   the rest in one answer from `api/ai_toolbox_catalog.py` (combos, workflows with covers and prompts,
   prompts saved or inside combos and workflows as `combo:<name>` / `workflow:<name>`, models with
   covers), read ahead when a task header is drawn and kept a minute.
   `web/modules/ui_ai_facet_menu.js` is the side panel's list of sources (or types) under its
   "Source: All ▾" button: a search over the names, ↑ ↓ and Enter, the row under the pointer lit
   and the one shown ticked.
-  `web/modules/ui_ai_toolbox_cards.js` draws the cards, the side panel's rows and the detail pane
-  (a node in miniature with its sockets in ComfyUI's colours, outputs on the right, how many
-  settings; covers; a prompt's text; what a way is for; "Given" on what the task has, and taking
-  it back); `web/modules/ui_ai_toolbox_sources.js` has the page's node types and the custom node
-  packs among them as items (`pageNodes`, `packItems`, which "@" lists too), the second column
-  (a node's source, a prompt's origin, a model's type, a way's job) and the bar that picks a pack
-  whole; `web/modules/ui_ai_toolbox_step.js` is the timeline row of a `user_toolbox` step;
+  `web/modules/ui_ai_toolbox_cards.js` draws the cards, the side panel's rows, the detail pane
+  (including the live message remark box with Hide support) and the full modal's picked-chips bar
+  (`renderPickedBar`); `web/modules/ui_ai_toolbox_sources.js` renders the kind tabs (`renderKindRail`),
+  filter pills (`renderFilterTabs`), compact subhead (`renderSubhead`), facets, base chips, and
+  pack bar while indexing LiteGraph node types and custom node packs; `web/modules/ui_ai_toolbox_step.js` is the timeline row of a `user_toolbox` step;
   `web/modules/ui_ai_toolbox_icons.js`
   each pack's badge, and the illustrations (`web/assets/toolbox_*.webp`, made
   with ChatGPT): the empty selection and the stand-in cover of a combo, workflow or model. Favourites (`anomalous/ai_toolbox.json`) stand in until the user picks for

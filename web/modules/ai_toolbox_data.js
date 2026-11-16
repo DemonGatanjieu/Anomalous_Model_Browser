@@ -209,3 +209,21 @@ export async function fetchUsableWays(locale, { fetcher = globalThis.fetch, sign
 export function prefetchToolbox() {
     loadCatalog().catch(() => {});
 }
+
+/** Loads favorites, usable ways and catalog in parallel, invoking callbacks only while `signal` is live. */
+export function loadPickerSources({ locale, signal, freshCatalog = false, onFavorites, onWays, onCatalog }) {
+    fetch('/anomalous/ai_toolbox/favorites', { signal })
+        .then(res => (res.ok ? res.json() : null))
+        .then((data) => { if (data && !signal.aborted) onFavorites(data.favorites); })
+        .catch(() => {});
+    fetchUsableWays(locale, { signal }).then((items) => {
+        if (!signal.aborted) onWays(items, '');
+    }).catch((error) => {
+        if (error?.name !== 'AbortError' && !signal.aborted) onWays(null, error.message);
+    });
+    loadCatalog({ fresh: freshCatalog }).then((items) => {
+        if (!signal.aborted) onCatalog(items, '');
+    }).catch((error) => {
+        if (!signal.aborted) onCatalog(null, error.message);
+    });
+}

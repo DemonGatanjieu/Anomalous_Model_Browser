@@ -9,7 +9,7 @@
 
 import { translate as t } from './locales.js';
 import { nodeItems, nodeSources } from './ai_toolbox_data.js';
-import { el, tbButton } from './ui_ai_toolbox_cards.js';
+import { el, kindIcon, tbButton } from './ui_ai_toolbox_cards.js';
 import { icon } from './ui_ai_icons.js';
 import { sourceBadge } from './ui_ai_toolbox_icons.js';
 import { closeFacetMenu, toggleFacetMenu } from './ui_ai_facet_menu.js';
@@ -116,4 +116,45 @@ export function renderPackBar({ packBar, pack, on, onToggle }) {
     packBar.replaceChildren(sourceBadge(pack.source, 26), text,
         tbButton(`anomalous-tb-pack-pick${on ? ' is-on' : ''}`, [icon(on ? 'check' : 'plus', 15), t(on ? 'aiTbPackPicked' : 'aiTbPackPick')],
             onToggle, t('aiTbPackHint')));
+}
+
+/** Renders the kind tabs (left rail in side mode, horizontal nav bar in full mode). */
+export function renderKindRail({ rail, kinds, activeKind, countOf, matchCountOf, onSwitch }) {
+    rail.replaceChildren(...kinds.map((kind) => {
+        const count = countOf(kind);
+        const matches = matchCountOf(kind);
+        const node = tbButton(`anomalous-tb-kind${activeKind === kind ? ' is-on' : ''}`, [icon(kindIcon(kind), 18), t(`aiToolboxKind_${kind}`)], () => onSwitch(kind));
+        const meta = el('span', 'anomalous-tb-kind-meta');
+        if (matches !== null) meta.append(el('span', 'anomalous-tb-kind-matches', String(matches)));
+        if (count) meta.append(el('span', 'anomalous-tb-count', String(count)));
+        node.append(meta);
+        return node;
+    }));
+}
+
+/** Renders the top filter tabs (All / Given / Favourites / Recent) with live counts. */
+export function renderFilterTabs({ filters, activeFilter, counts, onPick }) {
+    const specs = [
+        ['all', t('aiTbAll'), null, 'list'],
+        ['given', t('aiTbGiven'), counts.given, 'sparkle'],
+        ['liked', t('aiTbLiked'), counts.liked, 'star'],
+        ['recent', t('aiTbRecent'), counts.recent, 'clock'],
+    ];
+    filters.replaceChildren(...specs.map(([key, label, count, glyph]) => {
+        const node = tbButton(`anomalous-tb-filter${activeFilter === key ? ' is-on' : ''}`, [icon(glyph, 14), label], () => onPick(key), label);
+        if (count) node.append(el('span', 'anomalous-tb-count', String(count)));
+        return node;
+    }));
+}
+
+/** Updates the center column's subheader: folds the title/count into the base bar in full models view to avoid empty space. */
+export function renderSubhead({ gridHead, baseBar, isSide, kind, facetLabel, countText }) {
+    const compactBases = !baseBar.hidden && !isSide;
+    gridHead.hidden = compactBases;
+    if (compactBases) {
+        baseBar.append(el('span', 'anomalous-tb-bases-count', facetLabel ? `${facetLabel} · ${countText}` : countText));
+        return;
+    }
+    gridHead.replaceChildren(el('span', 'anomalous-tb-grid-title', facetLabel || t(`aiToolboxKind_${kind}`)),
+        el('span', 'anomalous-tb-grid-count', countText));
 }
