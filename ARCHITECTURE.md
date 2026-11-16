@@ -951,7 +951,8 @@ covered by the `styles.css` manifest.
   list page from `ui_scan_lists.js` (not scanned, unmatched, other formats, the last scan's
   models) with Back, a button for the whole list (scan these / look them up again) and rows
   that open a model, whose Back returns to the list, or scan it;
-  `scan_results.js` holds the words for scan results, shared with the activity page;
+  `scan_results.js` holds the words for scan results (a cover that did not come, with why:
+  `coverMissed`), shared with the activity page;
   `net_failure.js` the words for why Civitai could not be reached (net_proxy.py's codes), for
   the scan results and Settings → Network's connection test.
   `ui_scan_picker.js` is the scan page's model picker: every model a scan reads, by folder,

@@ -186,7 +186,10 @@ second: `civitai_client.api_hosts` gives both, the one that answered last first,
 request (the scan, import's and Model Check's lookups, `civitai_check`, which names the `host`)
 asks the other when the first does not answer at all; an HTTP error is Civitai's own answer and
 is not asked again. The pictures stay on image.civitai.com, so after `COVERS_DOWN_AFTER` (2)
-covers in a row that would not download the scan fetches no more covers (`covers_down`). One model's error is reported and
+covers in a row that would not download the scan fetches no more covers (`covers_down`). A cover
+that did not come is reported too: `cover` `failed` with `cover_error` (net_proxy.py's name,
+from `civitai_client.MediaUnreachable`) or `skipped` (after `covers_down`); the result counts
+them as `covers_missed`, and the next scan of such a model tries again (it has no cover). One model's error is reported and
 the scan goes on. `ScanJob` in `api/scan_report.py` reads each folder's report when its
 worker exits and, before the scan's marker is released, writes the scan's result to
 `user/anomalous/last_scan.json` and the activity log, so whoever sees the scan end can

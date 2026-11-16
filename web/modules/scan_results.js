@@ -5,12 +5,13 @@
  */
 
 import { translate as t } from './locales.js';
+import { failureWords } from './net_failure.js';
 
 const REASON_KEYS = { not_found: 'scanReasonNotFound', network: 'scanReasonNetwork', offline: 'scanReasonOffline', damaged: 'scanReasonDamaged' };
 const ERROR_KEYS = { name_conflict: 'scanErrorNameConflict', duplicate_kept: 'scanErrorDuplicateKept' };
 const COUNT_KEYS = [
     ['matched', 'scanCountMatched'], ['inferred', 'scanCountInferred'], ['failed', 'scanCountFailed'],
-    ['covers', 'scanCountCovers'], ['renamed', 'scanCountRenamed'],
+    ['covers', 'scanCountCovers'], ['covers_missed', 'scanCountCoversMissed'], ['renamed', 'scanCountRenamed'],
 ];
 
 /** The mark before a model's line. */
@@ -32,6 +33,13 @@ export function countsLine(counts = {}) {
     return parts.length ? parts.join(' · ') : t('scanCountNothing');
 }
 
+/** Why a model's cover did not come in a scan ('failed' with its `cover_error`, or 'skipped'), else ''. */
+export function coverMissed(item) {
+    if (item.cover === 'failed') return t('scanFileCoverFailed', { why: failureWords(item.cover_error) });
+    if (item.cover === 'skipped') return t('scanFileCoverSkipped');
+    return '';
+}
+
 /** What happened to one model in a scan. */
 export function fileOutcome(item) {
     let text;
@@ -40,10 +48,12 @@ export function fileOutcome(item) {
         text = item.base ? t('scanFileInferredBase', { reason: reasonText(item.reason), base: item.base })
             : t('scanFileInferred', { reason: reasonText(item.reason) });
     } else if (item.status === 'failed') text = t('scanFileFailed', { error: ERROR_KEYS[item.error] ? t(ERROR_KEYS[item.error]) : item.error || '?' });
-    else text = t('scanFileUpdated');
+    else text = coverMissed(item) ? '' : t('scanFileUpdated');
     if (item.renamed_from) text += ` · ${t('scanFileRenamed', { from: item.renamed_from })}`;
     if (item.duplicate) text += ` · ${t('scanFileDuplicate')}`;
     if (item.cover === 'kept') text += ` · ${t('scanFileCoverKept')}`;
+    const missed = coverMissed(item);
+    if (missed) text = text ? `${text} · ${missed}` : missed;
     return text;
 }
 
