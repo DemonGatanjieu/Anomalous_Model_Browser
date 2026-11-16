@@ -1102,8 +1102,10 @@ covered by the `styles.css` manifest.
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open); `ui_key_guard.js` keeps Ctrl+Enter typed
   in our fields from ComfyUI's shortcuts and tells Esc when a ComfyUI dialog is open. Every
-  layer of the plugin stays under ComfyUI's dialogs and toasts: `styles/52-layers.css` is the
-  one z-index table (window, popup, top).
+  layer of the plugin stays under ComfyUI's dialogs and toasts: `styles/56-layers.css` is the
+  one z-index table (window, popup, top). `ui_tooltip.js` draws every `data-amb-tooltip` as one
+  bubble on <body> (`styles/58-tooltips.css`), flipped and kept on screen, so no clipping box
+  cuts it; `styles/57-long-lists.css` lets off-screen model and gallery cards skip layout.
   `ui_scan_page.js` is the scan page (a tool page like the doctor), quieter the further
   down: the scan card (a band of covers with an empty frame per model not scanned yet, what is left, the scan button with "pick
   models to scan" beside it, online or offline, what the scan will do in one sentence), the

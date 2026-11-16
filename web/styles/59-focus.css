@@ -1,0 +1,7 @@
+/* Fields that hide the browser's focus outline show focus on their frame instead, as the
+   model search does (border in the link colour). These three had no focus look at all. */
+.anomalous-audio-search:focus-within,
+.anomalous-audio-sidebar-search:focus-within,
+.anomalous-nb-tag-edit:focus {
+    border-color: var(--amb-link);
+}

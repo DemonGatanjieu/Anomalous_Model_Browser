@@ -1,7 +1,7 @@
 import { translate } from './locales.js';
 
 const t = (key, params) => translate(key, params);
-// Confirmations must remain above the image workbench (--amb-z-popup in styles/52-layers.css).
+// Confirmations must remain above the image workbench (--amb-z-popup in styles/56-layers.css).
 const DIALOG_Z_INDEX = 'calc(var(--amb-z-popup) + 1)';
 
 /** Puts `text` on the clipboard; also on a page served over plain http, where only the old way works. */
