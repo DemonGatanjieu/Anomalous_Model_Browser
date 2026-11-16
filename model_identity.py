@@ -132,6 +132,18 @@ def computed_file_identity(path, digest):
     }
 
 
+def lists_file(record, digest):
+    """Whether a Civitai version record lists the file of this SHA-256 among its files.
+    Civitai has answered a hash with a model page whose files no longer hold that file (a
+    VAE once attached to another model's page): that page's name, cover and base model are
+    not the file's. A record whose files carry no SHA-256 cannot tell, and counts as listing it."""
+    digest = normalise_sha256(digest)
+    listed = {normalise_sha256((item.get("hashes") or {}).get("SHA256"))
+              for item in (record or {}).get("files") or [] if isinstance(item, dict)}
+    listed.discard("")
+    return not digest or not listed or digest in listed
+
+
 def sidecar_file_hash(data, path, selected_file):
     """Keep cached file evidence separate from unverified embedded model hashes."""
     identity = data.get("anomalous_file_identity")

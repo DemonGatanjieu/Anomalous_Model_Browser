@@ -13,7 +13,7 @@ sys.path.insert(0, str(PLUGIN_DIR))
 import isolated_layout  # noqa: F401 - side files beside the model, whatever this computer chose
 import scraper
 from api import metadata, scan_choice, scan_summary, scanner
-from model_identity import computed_file_identity
+from model_identity import computed_file_identity, lists_file
 
 DIGEST = "a" * 64
 
@@ -61,6 +61,24 @@ class ScanRetryTests(unittest.TestCase):
         self.assertEqual(info["id"], 7)
         self.assertEqual(json.loads(Path(str(self.matched)[:-12] + ".info").read_text(encoding="utf-8"))["id"], 5)
         self.assertFalse(Path(str(self.new)[:-12] + ".info").exists())
+
+    def test_a_page_that_does_not_list_the_file_is_no_match(self):
+        # Civitai answered a VAE's hash with another model's page whose files no longer hold it.
+        page = {"id": 9, "modelId": 4, "name": "V0.1", "baseModel": "MageFlow", "model": {"name": "Other"},
+                "images": [], "files": [{"hashes": {"SHA256": "B" * 64}}]}
+        header = json.dumps({"decoder.conv_in.weight": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}}).encode()
+        vae = Path(self.temp.name, "vae.safetensors")
+        vae.write_bytes(len(header).to_bytes(8, "little") + header + b"\0" * 4)
+        with mock.patch.object(sys, "argv", ["scraper.py", self.temp.name]), \
+                mock.patch.object(scraper, "fetch_civitai_info", return_value=page), \
+                mock.patch.object(scraper, "calculate_sha256", return_value=DIGEST), \
+                mock.patch.object(scraper.urllib.request, "urlopen", side_effect=OSError("offline test")):
+            scraper.main()
+        info = json.loads(Path(str(vae)[:-12] + ".info").read_text(encoding="utf-8"))
+        self.assertEqual((info["id"], info["baseModel"], info["anomalous_unmatched_reason"]), (-1, "", "not_found"))
+        self.assertTrue(lists_file({"files": [{"hashes": {"SHA256": DIGEST.upper()}}]}, DIGEST))
+        self.assertTrue(lists_file({"files": [{"hashes": {}}]}, DIGEST))  # no SHA-256 to compare: cannot tell
+        self.assertFalse(lists_file(page, DIGEST))
 
     def test_models_found_offline_keep_their_name(self):
         # Named after the file as model and version: renaming doubled the name on every scan.

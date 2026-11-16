@@ -19,7 +19,7 @@ import argparse
 import shutil
 from model_policies import is_physical_rename_protected
 from recycle_bin import move_to_trash
-from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, safetensors_damage, scan_choice, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
+from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, lists_file, safetensors_damage, scan_choice, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
 from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, download_media, fetch_civitai_info, fetch_model_description
 import model_sidecars as sidecars
 import header_words
@@ -151,6 +151,11 @@ def ask_civitai(args, state, file_hash):
             write_report(args, event="civitai_down", reason=str(unreachable))
         return None, "network"
     state["network_failures"] = 0
+    if data and not lists_file(data, file_hash):
+        # The page no longer holds this file (a VAE once attached to another model's page):
+        # its name, cover and base model would be another model's.
+        print(f"\033[93m[Skip] Civitai 给出的页面里没有这个文件 (Hash {file_hash})，当作没找到。\033[0m")
+        return None, "not_found"
     return data, ("" if data else "not_found")
 
 

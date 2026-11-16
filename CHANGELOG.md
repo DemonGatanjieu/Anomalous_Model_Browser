@@ -142,6 +142,8 @@
 - 导入时为了查 C 站算过一次指纹（哈希）的模型，导入后的扫描直接用这次的结果，不再把整个文件从头读第二遍。大模型（比如 10 GB）导入后能少等十几秒到一分钟。
 - A model whose fingerprint (hash) an import read to ask Civitai is not read a second time by the scan that follows: the scan takes that result. For a large model (10 GB, say) that saves from some seconds to a minute.
 - When an import cannot find the original file in Downloads or on the Desktop (say the browser saves to another drive) and sends a copy instead, AMB now asks Civitai about that copy too: when Civitai names the base model, the file moves into that base model's folder. Before, such a file whose base model the header did not tell stayed in the type's own folder.
+- 扫描时，C 站按指纹给出的页面如果根本没列出这个文件，现在当作“没找到”。以前照收不误：一个 Flux.2 的 VAE 被 C 站对到了别人的模型页（那个页面的作者大概挂过这个 VAE，后来删了），于是用了那个模型的名字、封面和底模，按底模整理时被放进了不相干的文件夹。已经存下的这种资料，对这个文件重新扫描（覆盖已有信息）就会换成从文件本身读出的信息。
+- A scan now takes a Civitai page that does not list the file at all as "not found". Before, it was taken anyway: a Flux.2 VAE was matched to someone else's model page (whose author once attached that VAE, then removed it), took that model's name, cover and base model, and was tidied into an unrelated base model folder. Such a record already saved is replaced by what the file itself tells when that file is scanned again with overwrite.
 
 ## v1.63.2 (Fix: ComfyUI's messages hidden under the browser, Ctrl+Enter started a run, tooltips cut off; long lists faster) — 2026-11-16
 
