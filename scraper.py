@@ -20,7 +20,7 @@ import shutil
 from model_policies import is_physical_rename_protected
 from recycle_bin import move_to_trash
 from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, lists_file, safetensors_damage, scan_choice, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
-from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, download_media, fetch_civitai_info, fetch_model_description
+from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, MediaUnreachable, download_media, fetch_civitai_info, fetch_model_description
 import model_sidecars as sidecars
 import header_words
 import known_hashes
@@ -263,14 +263,23 @@ def scan_one(args, state, rename_log, root, filename, previous):
         media_url = next((img.get("url") for img in civitai_data.get("images") or [] if img.get("url")), None)
     civitai_covers, user_covers = sidecars.cover_owners(old_base)
     # Download when the data is fresh, or when the model has no cover at all.
-    if media_url and not state["civitai_down"] and not state["covers_down"] and (fresh or not (civitai_covers or user_covers)):
+    wants_cover = bool(media_url) and not state["civitai_down"] and (fresh or not (civitai_covers or user_covers))
+    if wants_cover and state["covers_down"]:
+        entry["cover"] = "skipped"  # covers stopped downloading earlier in this scan: the next scan tries
+    elif wants_cover:
         if not args.dry_run:
             print(f"[*] 正在下载预览媒体...")
             # Fetched under a working name, so a broken download never replaces a cover.
             working = old_base + ".amb_download"
-            fetched = download_media(media_url, working)
+            try:
+                fetched, why = download_media(media_url, working), ""
+            except MediaUnreachable as failed:
+                fetched, why = None, str(failed.args[0] if failed.args else "")
             if not fetched:
                 drop_partial(working)
+                # Told in the scan's result: the name and trigger words came, the picture did not.
+                entry["cover"], entry["cover_error"] = "failed", why or "other"
+                print(f"\033[93m[-] 封面没下载成功 ({entry['cover_error']})，下次扫描会再试。\033[0m")
             saved_path = None
             if fetched and user_covers:
                 # Civitai's picture is kept aside (in .amb when the setting says), to bring back later.

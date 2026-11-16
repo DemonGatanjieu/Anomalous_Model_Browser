@@ -22,7 +22,7 @@ from .model_catalog import _model_info_for_path
 from .path_utils import atomic_write_json, resolve_folder_subdir
 
 MAX_FILES = 2000  # models kept in the last scan's result
-FILE_FIELDS = ("status", "reason", "name", "base", "cover", "error")
+FILE_FIELDS = ("status", "reason", "name", "base", "cover", "cover_error", "error")
 
 
 def last_scan_path():
@@ -112,6 +112,7 @@ class ScanJob:
             "inferred": sum(item["status"] == "inferred" for item in files),
             "failed": sum(item["status"] == "failed" for item in files),
             "covers": sum(item.get("cover") == "new" for item in files),
+            "covers_missed": sum(item.get("cover") in ("failed", "skipped") for item in files),
             "renamed": sum(bool(item.get("renamed_from")) for item in files),
             "unchanged": self.unchanged,
         }

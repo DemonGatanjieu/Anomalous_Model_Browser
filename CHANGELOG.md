@@ -132,6 +132,11 @@
 - 「挑一张底图」选错了可以改：AI 出新底图之前，卡上别的几张都有「改选这张」，点了就换成新的那张（同样存进输出文件夹、锁住它的种子），AI 会收到；以前只能留言告诉 AI，它得停掉已经开跑的放大、把底图重画一遍。
 - Took the wrong base on "Pick a base"? Until the AI draws new bases, the other previews have Take this instead: the new one is kept in the output folder and its seed held the same way, and the AI is told. Before, you could only write to the AI, which had to stop the upscale it had started and draw the base again.
 
+## v1.63.4 (A cover that could not be downloaded is now told) — unreleased
+
+- 扫描时封面没下载成功，现在会说出来，还写明原因（比如等了很久没有回应、C 站返回了错误）。以前名字和触发词照常拿到，封面却悄悄没了，扫描结果里只少算一张，要自己去 C 站对比才发现。扫描结果、动态和进度条都会写“封面没下到”，下次扫描这个模型会自动再试。
+- A cover that could not be downloaded in a scan is now told, with why (no answer for a long time, an error from Civitai…). Before, the name and trigger words came and the picture quietly did not: the result only counted one cover fewer, and you found out by comparing with Civitai. The scan result, the activity page and the progress line say "cover not downloaded", and the next scan of that model tries again.
+
 ## v1.63.3 (Fix: the theme followed a new ComfyUI as light, a scan took another model's Civitai page; MOSS Image models recognized) — 2026-11-16
 
 - 主题选"跟随 ComfyUI"时，ComfyUI 是深色、AMB 却显示成浅色的问题修好了。ComfyUI 新版（前端 1.59 起）换了标记深色主题的方式，AMB 只认旧的标记，找不到就一律当成浅色。现在新旧两种都认，在 ComfyUI 里切换配色时 AMB 也会马上跟着变。

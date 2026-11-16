@@ -121,6 +121,7 @@ function resultNotes(result) {
         const why = civitaiDownWhy(result.civitai_error);
         if (why) notes.push(el('p', 'anomalous-scan-muted', why));
     }
+    if (result.counts?.covers_missed) notes.push(el('p', 'anomalous-scan-note is-warn', t('scanResultCoversMissed', { count: result.counts.covers_missed })));
     for (const error of result.errors || []) notes.push(el('p', 'anomalous-scan-note is-error', error));
     return notes;
 }

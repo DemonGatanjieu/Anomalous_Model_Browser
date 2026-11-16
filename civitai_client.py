@@ -43,6 +43,11 @@ class CivitaiUnreachable(Exception):
     why ('timeout', 'refused', 'http:503' …)."""
 
 
+class MediaUnreachable(Exception):
+    """A preview image or video could not be fetched after the retries; args[0] says why
+    ('timeout', 'http:404' …, as net_proxy.failure)."""
+
+
 def _load_api_key():
     plugin_dir = os.path.dirname(os.path.abspath(__file__))
     for config_path in (os.path.join(plugin_dir, "api", "config.json"), os.path.join(plugin_dir, "config.json")):
@@ -113,7 +118,9 @@ def fetch_model_description(model_id) -> str:
 
 
 def download_media(url: str, base_path: str, max_retries: int = 3):
-    """Downloads an image or video to base_path + the extension its type calls for; the path, or None."""
+    """Downloads an image or video to base_path + the extension its type calls for and returns
+    that path; raises MediaUnreachable with why when every try failed."""
+    why = "other"
     for attempt in range(max_retries):
         try:
             with urlopen(urllib.request.Request(url, headers=_headers()), timeout=15) as response:
@@ -133,9 +140,12 @@ def download_media(url: str, base_path: str, max_retries: int = 3):
                         f.write(chunk)
                 return final_path
         except urllib.error.HTTPError as e:
+            why = failure(e)
             print(f"[-] 媒体下载失败，状态码: {e.code} (尝试 {attempt+1}/{max_retries})")
         except urllib.error.URLError as e:
+            why = failure(e)
             print(f"[-] 媒体下载网络异常: {e.reason} (尝试 {attempt+1}/{max_retries})")
-        except Exception:
-            pass
-    return None
+        except Exception as e:  # a read that timed out half-way, a file that could not be written
+            why = failure(e)
+            print(f"[-] 媒体下载出错: {e} (尝试 {attempt+1}/{max_retries})")
+    raise MediaUnreachable(why)

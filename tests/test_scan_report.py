@@ -87,6 +87,21 @@ class ScanReportTests(unittest.TestCase):
             asked, _lines = self.scan(lambda h: dict(pictured))
         self.assertEqual(len(asked), 4)  # names and trigger words still come
         self.assertEqual(len(tried), scraper.COVERS_DOWN_AFTER)
+        # Each model says its cover did not come: tried and failed, or not tried any more.
+        covers = sorted((line.get("cover"), line.get("cover_error")) for line in _lines if "file" in line)
+        self.assertEqual(covers, [("failed", "other")] * 2 + [("skipped", None)] * 2)
+
+    def test_a_cover_that_would_not_download_says_why(self):
+        self.model("pic")
+        pictured = {**FOUND, "images": [{"url": "https://image.civitai.com/a/b/orig"}]}
+
+        def refused(url, base):
+            raise scraper.MediaUnreachable("http:503")
+
+        with mock.patch.object(scraper, "download_media", side_effect=refused):
+            _asked, lines = self.scan(lambda h: dict(pictured))
+        line = next(line for line in lines if "file" in line)
+        self.assertEqual((line["status"], line["cover"], line["cover_error"]), ("matched", "failed", "http:503"))
 
     def test_when_civitai_stops_answering_the_rest_is_inferred_without_asking(self):
         for name in ("m1", "m2", "m3", "m4"):
@@ -136,6 +151,7 @@ class ScanReportTests(unittest.TestCase):
         self.report.write_text("\n".join(json.dumps(line) for line in (
             {"file": str(sub / "a.safetensors"), "status": "matched", "name": "A · v1", "cover": "new"},
             {"file": str(self.dir / "b.safetensors"), "status": "inferred", "reason": "network", "base": "Flux.1 D"},
+            {"file": str(self.dir / "c.safetensors"), "status": "unchanged", "cover": "failed", "cover_error": "timeout"},
             {"file": str(self.dir / "old.safetensors"), "status": "unchanged", "renamed_to": str(self.dir / "New_v1.safetensors")},
             {"event": "civitai_down", "reason": "refused"},
             {"event": "done", "unchanged": 5},
@@ -150,16 +166,17 @@ class ScanReportTests(unittest.TestCase):
             entry = activity_log.list_entries()[0]
             activity_log._entries = None
         self.assertFalse(self.report.exists())
-        self.assertEqual(result["counts"], {"matched": 1, "inferred": 1, "failed": 0, "covers": 1, "renamed": 1, "unchanged": 5})
+        self.assertEqual(result["counts"], {"matched": 1, "inferred": 1, "failed": 0, "covers": 1, "covers_missed": 1, "renamed": 1, "unchanged": 5})
         self.assertTrue(result["civitai_down"])
         self.assertEqual(result["civitai_error"], "refused")
-        first, _, renamed = result["files"]
+        first, _, missed, renamed = result["files"]
+        self.assertEqual((missed["cover"], missed["cover_error"]), ("failed", "timeout"))
         self.assertEqual((first["type"], first["rel"], first["filename"]), ("loras", "sub/a.safetensors", "a.safetensors"))
         self.assertEqual((renamed["filename"], renamed["renamed_from"]), ("New_v1.safetensors", "old.safetensors"))
         self.assertEqual(json.loads((self.dir / "last_scan.json").read_text(encoding="utf-8"))["counts"]["matched"], 1)
         self.assertEqual(entry["action"], "scan_done")
         self.assertEqual(entry["detail"]["scan"]["counts"]["inferred"], 1)
-        self.assertEqual(len(entry["detail"]["files"]), 3)
+        self.assertEqual(len(entry["detail"]["files"]), 4)
 
     def test_summary_lists_unmatched_and_new_models_with_why(self):
         self.model("new")

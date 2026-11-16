@@ -33,6 +33,17 @@ def _network(asked, blocked=("civitai.com",), body=b'{"id": 7}'):
     return opened
 
 
+class MediaTests(unittest.TestCase):
+    def test_a_picture_that_would_not_download_says_why(self):
+        def missing(request, timeout):
+            raise urllib.error.HTTPError(request.full_url, 404, "Not Found", {}, None)
+        with mock.patch.object(civitai_client, "urlopen", side_effect=missing), \
+                mock.patch.object(civitai_client.time, "sleep"):
+            with self.assertRaises(civitai_client.MediaUnreachable) as caught:
+                civitai_client.download_media("https://image.civitai.com/a/b/orig", "unused", max_retries=2)
+        self.assertEqual(caught.exception.args[0], "http:404")
+
+
 class CivitaiHostsTests(unittest.TestCase):
     def setUp(self):
         patcher = mock.patch.object(civitai_client, "_answered", ["civitai.com"])
