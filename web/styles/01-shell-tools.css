@@ -48,9 +48,9 @@
     overflow: hidden;
 }
 
-/* Suppress all tooltips and action labels on clicked/active elements so they never block vision or interaction */
-button:active::before,
-button:active::after,
+/* A pressed element hides its tooltip so it never blocks the click (AMB's tooltips only) */
+[data-amb-tooltip]:active::before,
+[data-amb-tooltip]:active::after,
 .anomalous-tooltip-target:active::before,
 .anomalous-tooltip-target:active::after {
     display: none !important;
@@ -192,7 +192,7 @@ button:active::after,
 }
 
 .theme-abyssal-scarlet #anomalous-materials-btn {
-    color: var(--c-amber, #d97706) !important;
+    color: var(--amb-c-amber, #d97706) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-materials-btn:hover {
@@ -202,7 +202,7 @@ button:active::after,
 }
 
 .theme-abyssal-scarlet #anomalous-doctor-btn {
-    color: var(--c-crimson, #dc143c) !important;
+    color: var(--amb-c-crimson, #dc143c) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-doctor-btn:hover {
@@ -212,7 +212,7 @@ button:active::after,
 }
 
 .theme-abyssal-scarlet #anomalous-assistant-btn {
-    color: var(--c-purple, #8b5cf6) !important;
+    color: var(--amb-c-purple, #8b5cf6) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-assistant-btn:hover {
@@ -222,7 +222,7 @@ button:active::after,
 }
 
 .theme-abyssal-scarlet #anomalous-global-settings-btn {
-    color: var(--c-silver, #94a3b8) !important;
+    color: var(--amb-c-silver, #94a3b8) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-global-settings-btn:hover {

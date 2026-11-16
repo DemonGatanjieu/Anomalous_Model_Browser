@@ -275,7 +275,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         rail.refreshLanguage();
         setTitle(current);
         listToggle.setAttribute('aria-label', t('sidebarToggle'));
-        listToggle.dataset.tooltip = t('sidebarToggle');
+        listToggle.dataset.ambTooltip = t('sidebarToggle');
         owner.onActivityRecorded();
     };
 

@@ -157,8 +157,8 @@ function modelCard(owner, model, index, pin = null) {
     applyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
     applyBtn.className = 'anomalous-card-action-btn action-apply anomalous-tooltip-target';
     applyBtn.removeAttribute('title');
-    applyBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '一键发布到画布' : 'Add Node to Canvas');
-    applyBtn.setAttribute('data-tooltip-pos', 'bottom');
+    applyBtn.setAttribute('data-amb-tooltip', window.anomalous_browser_lang === 'zh' ? '一键发布到画布' : 'Add Node to Canvas');
+    applyBtn.setAttribute('data-amb-tooltip-pos', 'bottom');
     applyBtn.onclick = (e) => {
         e.stopPropagation();
         focusModel(owner, model);
@@ -171,8 +171,8 @@ function modelCard(owner, model, index, pin = null) {
     editBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
     editBtn.className = 'anomalous-card-action-btn action-edit anomalous-tooltip-target';
     editBtn.removeAttribute('title');
-    editBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '编辑模型信息' : 'Edit Model Info');
-    editBtn.setAttribute('data-tooltip-pos', 'bottom');
+    editBtn.setAttribute('data-amb-tooltip', window.anomalous_browser_lang === 'zh' ? '编辑模型信息' : 'Edit Model Info');
+    editBtn.setAttribute('data-amb-tooltip-pos', 'bottom');
     editBtn.onclick = (e) => {
         e.stopPropagation();
         focusModel(owner, model);
@@ -185,8 +185,8 @@ function modelCard(owner, model, index, pin = null) {
     singleScanBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
     singleScanBtn.className = 'anomalous-card-action-btn action-scan anomalous-tooltip-target';
     singleScanBtn.removeAttribute('title');
-    singleScanBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '立即精准扫描此模型' : 'Scan Model Directly');
-    singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
+    singleScanBtn.setAttribute('data-amb-tooltip', window.anomalous_browser_lang === 'zh' ? '立即精准扫描此模型' : 'Scan Model Directly');
+    singleScanBtn.setAttribute('data-amb-tooltip-pos', 'bottom');
     singleScanBtn.onclick = (e) => {
         e.stopPropagation();
         focusModel(owner, model);

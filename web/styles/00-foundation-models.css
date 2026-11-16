@@ -2,22 +2,22 @@
    ANOMALOUS UI GLOBAL DESIGN SYSTEM (Design Tokens & Semantic Colors)
    ========================================================================== */
 :root {
-    --c-amber: #d97706;
-    --c-amber-glow: rgba(217, 119, 6, 0.25);
-    --c-cyan: #06b6d4;
-    --c-cyan-glow: rgba(6, 182, 212, 0.25);
-    --c-purple: #8b5cf6;
-    --c-purple-glow: rgba(139, 92, 246, 0.25);
-    --c-silver: #9ca3af;
-    --c-silver-glow: rgba(156, 163, 175, 0.2);
-    --c-blue: #9ca3af;
-    --c-blue-glow: rgba(156, 163, 175, 0.2);
-    --c-crimson: #ef4444;
-    --c-crimson-glow: rgba(239, 68, 68, 0.25);
-    --c-wine: #4b5563;
-    --c-wine-glow: rgba(75, 85, 99, 0.2);
-    --c-emerald: #10b981;
-    --c-emerald-glow: rgba(16, 185, 129, 0.25);
+    --amb-c-amber: #d97706;
+    --amb-c-amber-glow: rgba(217, 119, 6, 0.25);
+    --amb-c-cyan: #06b6d4;
+    --amb-c-cyan-glow: rgba(6, 182, 212, 0.25);
+    --amb-c-purple: #8b5cf6;
+    --amb-c-purple-glow: rgba(139, 92, 246, 0.25);
+    --amb-c-silver: #9ca3af;
+    --amb-c-silver-glow: rgba(156, 163, 175, 0.2);
+    --amb-c-blue: #9ca3af;
+    --amb-c-blue-glow: rgba(156, 163, 175, 0.2);
+    --amb-c-crimson: #ef4444;
+    --amb-c-crimson-glow: rgba(239, 68, 68, 0.25);
+    --amb-c-wine: #4b5563;
+    --amb-c-wine-glow: rgba(75, 85, 99, 0.2);
+    --amb-c-emerald: #10b981;
+    --amb-c-emerald-glow: rgba(16, 185, 129, 0.25);
 
     /* AMB Base Design System Tokens - Normal Mode (Neutral Dark Charcoal & Obsidian Studio) */
     --amb-bg-page: #131315;

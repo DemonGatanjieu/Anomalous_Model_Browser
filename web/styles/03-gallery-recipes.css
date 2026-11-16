@@ -887,9 +887,9 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
+    :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]), :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]) *,
+    :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]) *::before,
+    :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]) *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;

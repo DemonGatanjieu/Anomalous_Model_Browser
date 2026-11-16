@@ -127,6 +127,11 @@
 - 「挑一张底图」选错了可以改：AI 出新底图之前，卡上别的几张都有「改选这张」，点了就换成新的那张（同样存进输出文件夹、锁住它的种子），AI 会收到；以前只能留言告诉 AI，它得停掉已经开跑的放大、把底图重画一遍。
 - Took the wrong base on "Pick a base"? Until the AI draws new bases, the other previews have Take this instead: the new one is kept in the output folder and its seed held the same way, and the AI is told. Before, you could only write to the AI, which had to stop the upscale it had started and draw the base again.
 
+## v1.63.1 (Fix: AMB's styles reached other extensions and ComfyUI itself) — unreleased
+
+- AMB 的样式不再改到别的插件和 ComfyUI 本身（GitHub 议题 #28）。以前有几条样式管到了整个页面：别的插件里带 `data-tooltip` 属性的元素会被改成相对定位，它自己用 `::before`、`::after` 画的小图标、角标被 AMB 的提示气泡顶掉；在 ComfyUI 里按住任何一个按钮，按钮上这两处画的东西会消失；选了深渊绯红主题，整个 ComfyUI 的底色、边框和主色都跟着变；系统里开了“减少动画”，整个 ComfyUI 的动画都被关掉。现在 AMB 的悬停提示用它自己的属性 `data-amb-tooltip`，其他几条只在 AMB 自己的窗口里生效；新加的测试会找出任何管到 AMB 以外的样式。
+- AMB's styles no longer change other extensions or ComfyUI itself (GitHub issue #28). Some rules reached the whole page: an element of another extension with a `data-tooltip` attribute was made position: relative, and what it drew with `::before` / `::after` (icons, badges) gave way to AMB's tooltip bubble; pressing any button in ComfyUI hid what those two drew; the Abyssal Scarlet theme recoloured ComfyUI's background, borders and primary colour; and with "reduce motion" on in the system, every animation in ComfyUI was cut. AMB's tooltips now use an attribute of their own, `data-amb-tooltip`, and the other rules hold inside AMB's own windows only. A new test finds any style that reaches outside AMB.
+
 ## v1.63.0 (AI Ways and Skills, Saves, Official Example Workflows, Privacy Mode) — 2026-11-10
 
 - 画布左上角的立方体入口不再压在 ComfyUI 自己的菜单上面：以前它在最顶层，打开左上角的 C 菜单时会盖住“新建”那一行。现在它在画布上面、顶栏和菜单、对话框下面。README 的安装第 2 步也配上了图，写明装好后入口在哪、看不到时怎么办。

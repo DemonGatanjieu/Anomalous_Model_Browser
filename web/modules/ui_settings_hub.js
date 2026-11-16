@@ -73,8 +73,8 @@ export function createSettingsHub(owner, {
     settingsBtn.className = 'anomalous-tooltip-target';
     settingsBtn.innerHTML = icons.SETTINGS;
     settingsBtn.setAttribute('aria-label', t('sidebarSettings'));
-    settingsBtn.setAttribute('data-tooltip', t('sidebarSettings'));
-    settingsBtn.setAttribute('data-tooltip-pos', 'right');
+    settingsBtn.setAttribute('data-amb-tooltip', t('sidebarSettings'));
+    settingsBtn.setAttribute('data-amb-tooltip-pos', 'right');
     // The gear opens the settings page; on it, the gear goes back to where you were.
     settingsBtn.onclick = (event) => {
         event.stopPropagation();
@@ -86,20 +86,20 @@ export function createSettingsHub(owner, {
         updateLangClass();
         owner.renderRailTools?.();
         settingsBtn.setAttribute('aria-label', t('sidebarSettings'));
-        settingsBtn.setAttribute('data-tooltip', t('sidebarSettings'));
+        settingsBtn.setAttribute('data-amb-tooltip', t('sidebarSettings'));
         owner.refreshShellLanguage?.();
         if (dockBtn) {
             dockBtn.removeAttribute('title');
             dockBtn.setAttribute('aria-label', t('dockTitle'));
-            dockBtn.setAttribute('data-tooltip', t('dockTitle'));
-            dockBtn.setAttribute('data-tooltip-pos', 'bottom');
+            dockBtn.setAttribute('data-amb-tooltip', t('dockTitle'));
+            dockBtn.setAttribute('data-amb-tooltip-pos', 'bottom');
         }
         if (maxBtn) {
             maxBtn.setAttribute('aria-label', t('maximizeTitle'));
-            maxBtn.setAttribute('data-tooltip', t('maximizeTitle'));
+            maxBtn.setAttribute('data-amb-tooltip', t('maximizeTitle'));
         }
         if (updateNoticeBtn) {
-            updateNoticeBtn.setAttribute('data-tooltip', t('updateGuideNoticeTooltip'));
+            updateNoticeBtn.setAttribute('data-amb-tooltip', t('updateGuideNoticeTooltip'));
             updateNoticeBtn.setAttribute('aria-label', t('updateGuideNoticeTooltip'));
         }
 

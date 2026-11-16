@@ -21,8 +21,8 @@ export function renderRailTools(owner, { isScanning, settingsButton }) {
         button.id = tool.id;
         button.className = 'anomalous-tooltip-target';
         button.setAttribute('aria-label', t(tool.nameKey));
-        button.setAttribute('data-tooltip', t(tool.nameKey));
-        button.setAttribute('data-tooltip-pos', 'right');
+        button.setAttribute('data-amb-tooltip', t(tool.nameKey));
+        button.setAttribute('data-amb-tooltip-pos', 'right');
         if (tool.icon) button.innerHTML = tool.icon; // static markup only
         else setScanButtonState(button, isScanning());
         button.onclick = (event) => {

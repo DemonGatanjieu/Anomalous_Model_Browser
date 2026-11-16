@@ -65,8 +65,8 @@ function headerButton(id, html, tooltip) {
     button.className = 'anomalous-tooltip-target';
     button.innerHTML = html; // static markup only
     button.setAttribute('aria-label', tooltip);
-    button.setAttribute('data-tooltip', tooltip);
-    button.setAttribute('data-tooltip-pos', 'bottom');
+    button.setAttribute('data-amb-tooltip', tooltip);
+    button.setAttribute('data-amb-tooltip-pos', 'bottom');
     return button;
 }
 
