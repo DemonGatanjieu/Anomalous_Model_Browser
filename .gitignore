@@ -29,6 +29,7 @@ temp/
 *.scan_progress.json
 .global_scan_in_progress
 .global_scan_progress.json
+.known_hashes.json
 *.bak
 *.backup
 *.sqlite

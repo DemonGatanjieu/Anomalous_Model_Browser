@@ -30,9 +30,11 @@ from aiohttp import web
 import folder_paths
 
 try:
+    from .. import known_hashes
     from ..model_identity import file_sha256
     from ..model_kind import classify, inspect_file, parse_gguf, parse_safetensors
 except ImportError:  # loaded outside the package (tests)
+    import known_hashes
     from model_identity import file_sha256
     from model_kind import classify, inspect_file, parse_gguf, parse_safetensors
 from .activity_log import add_entry
@@ -202,7 +204,8 @@ def _same_hash(sha256):
 def identify(token):
     """SHA-256, Civitai's record, and an already scanned copy, of a found file."""
     item = _original(token)
-    sha256 = file_sha256(item["path"])
+    sha256 = known_hashes.known(item["path"]) or file_sha256(item["path"])
+    known_hashes.note(item["path"], sha256)  # for the scan that follows the import
     result = {"sha256": sha256, "civitai": None, "reason": "", "duplicate": _same_hash(sha256)}
     try:
         found = civitai_by_hash(sha256)
@@ -335,6 +338,7 @@ def place(data):
     keep = data.get("keep") is True
     folder_type, root_index, root, dest = destination(data, item["size"] if keep else 0)
     move_into(item["path"], dest, keep)
+    known_hashes.carried(item["path"], dest)
     if not keep:
         with _lock:
             _tokens.pop(str(data.get("token")), None)

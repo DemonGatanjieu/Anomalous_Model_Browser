@@ -18,9 +18,21 @@ from aiohttp.test_utils import TestClient, TestServer
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
+import known_hashes  # noqa: E402
 import model_identity  # noqa: E402
 import model_kind  # noqa: E402
 from api import model_import  # noqa: E402
+
+# identify() notes hashes for the scan (known_hashes.py): in a folder of the tests' own.
+_NOTES = tempfile.TemporaryDirectory()
+
+
+def setUpModule():
+    known_hashes.PATH = os.path.join(_NOTES.name, ".known_hashes.json")
+
+
+def tearDownModule():
+    _NOTES.cleanup()
 
 
 def tensors(*names, shapes=None, meta=None):

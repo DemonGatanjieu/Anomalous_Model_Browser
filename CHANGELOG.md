@@ -7,6 +7,8 @@
 - Following ComfyUI, the theme no longer shows light on a dark ComfyUI. ComfyUI's frontend from 1.59 marks a dark palette another way, and AMB, reading only the old mark, took every palette for light. Both are read now, and AMB follows at once when the palette is switched in ComfyUI.
 - MOSS Image models are recognized: the model file (its INT8 copy too) as a diffusion model of MOSS Image, and its LoRAs' base model without going online. Before, the model file was not told at all, so an import into folders by base model could not put it in a MOSS folder and left it in the type's own folder.
 - 导入时，AMB 在"下载"和"桌面"里没找到原文件（比如浏览器存在别的盘），只能把文件发过去的话，现在发完也会去 C 站查底模：查到了，就按"按底模分"挪进对应的文件夹。以前这种情况不查，底模认不出的文件只能留在类型文件夹本身。
+- 导入时为了查 C 站算过一次指纹（哈希）的模型，导入后的扫描直接用这次的结果，不再把整个文件从头读第二遍。大模型（比如 10 GB）导入后能少等十几秒到一分钟。
+- A model whose fingerprint (hash) an import read to ask Civitai is not read a second time by the scan that follows: the scan takes that result. For a large model (10 GB, say) that saves from some seconds to a minute.
 - When an import cannot find the original file in Downloads or on the Desktop (say the browser saves to another drive) and sends a copy instead, AMB now asks Civitai about that copy too: when Civitai names the base model, the file moves into that base model's folder. Before, such a file whose base model the header did not tell stayed in the type's own folder.
 
 ## v1.63.2 (Fix: ComfyUI's messages hidden under the browser, Ctrl+Enter started a run, tooltips cut off; long lists faster) — 2026-11-16

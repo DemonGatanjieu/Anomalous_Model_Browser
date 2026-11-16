@@ -22,6 +22,7 @@ from recycle_bin import move_to_trash
 from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, safetensors_damage, scan_choice, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
 from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, download_media, fetch_civitai_info, fetch_model_description
 import model_sidecars as sidecars
+import known_hashes
 
 
 # Fixed tuples avoid rebuilding long extension lists for every scanned model.
@@ -85,7 +86,11 @@ def count_scan_files(target_folder, target_files_basenames, unmatched_only=False
     return total
 
 def calculate_sha256(file_path: str) -> str:
-    """计算文件的 SHA256 哈希值 (用于 Civitai 匹配)"""
+    """计算文件的 SHA256 哈希值 (用于 Civitai 匹配)；导入时刚算过的直接用 (known_hashes.py)"""
+    noted = known_hashes.known(file_path)
+    if noted:
+        print(f"[*] 使用导入时算好的 Hash: {os.path.basename(file_path)}")
+        return noted
     print(f"[*] 正在计算 Hash (大文件可能需要几分钟): {os.path.basename(file_path)}")
     return file_sha256(file_path)
 
