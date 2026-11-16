@@ -48,7 +48,8 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | 任务信息那一行最右边的「卡住了？」 | 打开窗口「卡住了？先看这里」。「现在的情况」写这个任务在等什么、你该做什么，轮到 AI 时给一句可以复制给它的话，还写 AI 软件上次来是多久以前；「还可能是」列三种 AMB 看不到的常见原因，各配一个处理办法（`ui_ai_stuck.js`，判断在 `ai_stuck.js`） | `GET /anomalous/ai_callers` |
 | ⋯ 里的「AI 等你时发桌面通知」 / 「不再发桌面通知」 | 打开时浏览器先问一次要不要允许通知，允许后弹一条样子给你看。之后你在别的窗口时，AI 问你问题、要你点头、或者图跑完了而 AI 不知道，电脑上弹一条通知，点它回到 AI 工作台。只记在这个浏览器里；从别的电脑用 http 打开时浏览器不给通知，这一项不出现（`ui_ai_notify.js`） | 无 |
 | ⋯ 里的「改名」 / 「从列表移除」 | 移除只删这条记录，图、画布、工作流都不动 | `POST /anomalous/ai_tasks/{task_id}` |
-| ⋯ 里的「打开隐私模式」 | 这个任务的图不再发给 AI；开着时标题栏多一个「隐私模式」，点它关掉（`ui_ai_privacy.js`） | `POST /anomalous/ai_tasks/{task_id}`（privacy） |
+| ⋯ 里的「打开隐私模式」/「关掉隐私模式」 | 切换这个任务的隐私模式：开着时图不发给 AI，标题栏多一个「隐私模式」；点标题栏的「隐私模式」或 ⋯ 里的「隐私一览」打开总览窗（`ui_ai_privacy.js`、`ui_ai_privacy_overview.js`） | `POST /anomalous/ai_tasks/{task_id}`（privacy） |
+| 标题栏的「隐私模式」/ ⋯ 里的「隐私一览」 | 左右对照列出「已隐藏（[P*] 提示词、[img*] 图片与缩略图、[M*] 模型）」和「没隐藏（标题、未加密文字、画布结构参数与备注）」，每个代号都能写一句「给 AI 的备注」（`ai_privacy_view.js`、`ui_ai_privacy_overview.js`），里面也可点「发给 AI 了什么」或切换关闭 | `POST /anomalous/ai_tasks/{task_id}/sealed_notes` |
 | 提示词框“画面大意”旁和隐私任务留言框里的「藏」 | 先选中几个字再点：这几个字 AI 只拿到代号，其余照常看（`ai_hide_mark.js`） | 随回答或留言一起交出，`ai_sealed.seal_marked` |
 | 关卡窗口最下面的「暗房助手（拓展功能）」 | 「检测本地模型」找这台电脑上的 Ollama / LM Studio，选一个模型后点「就用它」，「不用了」关掉（`ui_ai_darkroom.js`） | `GET/POST /anomalous/ai_darkroom` |
 | ⋯ 里的「发给 AI 了什么」 | 隐私任务才有：列出 AI 每次调用发来的参数和 AMB 回给它的文字，能搜一个词看它出没出去过（`ui_ai_sent.js`） | `GET /anomalous/ai_tasks/{task_id}/sent` |

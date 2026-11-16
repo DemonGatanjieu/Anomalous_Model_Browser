@@ -465,6 +465,12 @@ def _collect(client, panel_id, task_id=None):
                 item = {"panel": panel["id"], "question": block["id"], "asked": block.get("question", "")}
                 item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout", "prompts", "negative", "pictures", "gist", "plan") if key in given})
                 out.append(item)
+        if panel_id is None or task is panel_task:
+            from . import ai_sealed_notes
+            notes_msg = ai_sealed_notes.take_pending(task)
+            if notes_msg:
+                messages.append(notes_msg)
+                changed.add(task["id"])
     for tid in changed:
         ai_tasks._save(tasks[tid])
     return out, waiting, messages, changed
@@ -532,7 +538,8 @@ def attach_pending(result, client, task_id=None):
         "kind=route messages are the starting route the user chose in Anomalous and Anomalous already built on the task's tab, with what to call next; "
         "kind=stop: the user stopped your run, so do not run it again until they say what to change; "
         "kind=halt: the user called a halt on the whole task: do nothing more for it until they ask; "
-        "kind=pictures: pictures the user handed you (attached), with made_with read from each picture's own workflow."
+        "kind=pictures: pictures the user handed you (attached), with made_with read from each picture's own workflow; "
+        "kind=sealed_notes: brief notes the user wrote for hidden tokens ([P*], [img*], [M*]) in Privacy Overview — read them as the meaning of those tokens without revealing sealed content."
     )
     pictures = ai_marks.image_items(messages)
     result["structuredContent"] = data

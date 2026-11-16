@@ -10,6 +10,7 @@
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { icon } from './ui_ai_icons.js';
+import { openPrivacyOverview } from './ui_ai_privacy_overview.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -43,12 +44,20 @@ export function privacyReach(task) {
     return task.private === true && task.reads_disk ? [el('div', 'anomalous-ai-task-stale', t('aiPrivacyReach', { app: task.client || 'AI' }))] : [];
 }
 
-/** What says that `task` is private, and turns it off. */
+/** Opens Privacy Overview (`ui_ai_privacy_overview.js`) for `task`. */
+export function openTaskPrivacy(task, changed) {
+    return openPrivacyOverview(task, {
+        onTogglePrivacy: nextOn => setPrivacy(task, nextOn, changed),
+        onChanged: changed,
+    });
+}
+
+/** What says that `task` is private, and opens Privacy Overview. */
 export function privacyChip(task, changed) {
     const chip = el('button', 'anomalous-ai-tool anomalous-ai-privacy is-on');
     chip.type = 'button';
     chip.title = t('aiPrivacyHint_on');
     chip.append(icon('lock', 15), el('span', '', t('aiPrivacy')));
-    chip.onclick = () => void setPrivacy(task, false, changed);
+    chip.onclick = () => void openTaskPrivacy(task, changed);
     return chip;
 }

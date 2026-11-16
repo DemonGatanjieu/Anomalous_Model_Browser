@@ -116,7 +116,13 @@ covered by the `styles.css` manifest.
   card name; leaving `"ways"` ref `details` intact while still masking `user_note`), its own entry loses what tells it apart and keeps type, base model, the author's settings and the
   user's note for the AI (`ai_note`, set in the model editor, `note_for_ai` in the tools); `expand` writes a
   model token back as the model_id, as the loader's name among a node's values, as the card's name inside the AI's words.
-  `web/modules/ui_ai_privacy.js` is the header's chip, the switch in its ⋯ and what the model tokens stand for.
+  `api/ai_sealed_notes.py` stores per-token brief notes (`task["sealed_notes"]`, `POST /anomalous/ai_tasks/{task_id}/sealed_notes`)
+  so the user can describe each `[P*]`, `[img*]`, or `[M*]` token in plain words and deliver mid-task updates once via
+  `ai_panels` (`kind="sealed_notes"`) as well as in `begin_task` and `get_situation`, still masked by `ai_privacy.guard`.
+  `web/modules/ai_privacy_view.js` builds the pure classification & AI-perspective preview of hidden tokens vs unsealed
+  messages/gists; `web/modules/ui_ai_privacy_overview.js` draws the two-column "Privacy overview" modal (`隐私一览`) with
+  thumbnails and inline per-token AI notes; `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview),
+  the switch in its ⋯, and what the model tokens stand for.
   `api/ai_darkroom.py` is the darkroom helper, an extension: a model on this computer (an OpenAI-style server on
   a loopback address, nothing else taken, no proxy, no redirect) that reads for a private task what the AI app
   may not: `write` rewrites a sealed prompt the way the AI says (set_prompt's `rewrite`; the result leaves as a
@@ -128,7 +134,7 @@ covered by the `styles.css` manifest.
   word in it (the task's ⋯ "What the AI was sent"). Privacy mode covers what Anomalous sends, not what an AI app
   opens by itself: `ai_callers.reads_disk` knows the apps that read files and run commands, and the head of their
   private tasks says so (`ui_ai_privacy.privacyReach`)
-  (`tests/test_ai_privacy.py`, `tests/test_ai_sealed.py`).
+  (`tests/test_ai_privacy.py`, `tests/test_ai_sealed.py`, `tests/test_ai_sealed_notes.py`, `tests/ai_privacy_view.mjs`).
   `ai_pictures.mark_gone` marks a task's pictures no longer in the output folder (`gone`) on its
   `GET`, which `ui_ai_images.gonePicture` shows instead of a broken picture.
   `api/ai_pictures.py` hands the AI output pictures (gallery card menu, the inspector's ✦): a
