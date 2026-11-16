@@ -91,6 +91,92 @@ class KindTests(unittest.TestCase):
         for lora in (kohya, peft):
             self.assertEqual((lora["kind"], lora["base"]), ("loras", "MOSS Image"))
 
+    def test_comfyui_families(self):
+        # One header per family ComfyUI's model_detection tells, with the keys it tells it by: a
+        # drawing model each, its base model Civitai's name or else ComfyUI's family.
+        zimage = ("noise_refiner.0.attention.k_norm.weight", "cap_embedder.1.weight", "layers.0.attention.qkv.weight")
+        wide = {"cap_embedder.1.weight": [3840, 2560]}
+        flux2 = lambda width: tensors("double_blocks.0.img_attn.qkv.weight", "img_in.weight", "double_stream_modulation_img.lin.weight",
+                                      "single_blocks.0.linear1.weight", shapes={"img_in.weight": [width, 128]})
+        qwen_like = lambda text, out: tensors("transformer_blocks.0.img_mod.1.weight", "img_in.weight", "txt_norm.weight", "proj_out.weight",
+                                              shapes={"txt_norm.weight": [text], "proj_out.weight": [out, 3072]})
+        families = [
+            ("Krea 2", tensors("first.weight", "blocks.0.attn.wq.weight", "txtfusion.projector.weight", "txtfusion.layerwise_blocks.0.prenorm.scale")),
+            ("Flux.2 D", flux2(6144)), ("Flux.2 Klein 9B", flux2(4096)), ("Flux.2 Klein 4B", flux2(3072)),
+            ("Flux.3 Klein", tensors("content_mode_blocks.image.0.attn_out.weight", "single_stream_modulations.txt.lin.weight",
+                                     "txt_mode_blocks.0.qkv.weight", "single_blocks.0.mlp_in.weight")),
+            ("Qwen 2.1", tensors("txt_in.text_norm.weight", "modulation.1.weight", "transformer_blocks.0.attn.norm_q.weight", "img_in.weight",
+                                 "proj_out.weight", "transformer_blocks.0.img_mlp.gate_up.weight")),
+            ("Ernie", tensors("x_embedder.proj.weight", "layers.0.adaLN_sa_ln.weight", "layers.0.self_attention.to_q.weight",
+                              "layers.0.mlp.linear_fc2.weight", "final_linear.weight")),
+            ("Fibo 2", tensors("noise_refiner.0.attention.qkv.weight", "perceiver.latent_queries", "layers.0.attention.qkv.weight",
+                               "layers.0.feed_forward.w13.weight", "final_layer.linear.weight")),
+            ("Boogu", tensors("time_caption_embed.caption_embedder.1.weight", "noise_refiner.0.attn.to_q.weight", "ref_image_refiner.0.attn.to_q.weight",
+                              "double_stream_layers.0.img_instruct_attn.processor.img_to_q.weight", "single_stream_layers.0.attn.to_q.weight")),
+            ("OmniGen2", tensors("time_caption_embed.timestep_embedder.linear_1.bias", "noise_refiner.0.attn.to_q.weight",
+                                 "ref_image_refiner.0.attn.to_q.weight", "layers.0.attn.to_q.weight")),
+            ("Ideogram 4.0", tensors("embed_image_indicator.weight", "input_proj.weight", "layers.0.attention.qkv.weight", "layers.0.attention.o.weight")),
+            ("Kandinsky 5", tensors("visual_embeddings.in_layer.weight", "text_transformer_blocks.0.self_attention.to_query.weight",
+                                    "visual_transformer_blocks.0.cross_attention.key_norm.weight")),
+            ("MageFlow", qwen_like(2560, 128)), ("Qwen", qwen_like(3584, 64)),
+            ("Z-Image", tensors(*zimage, "cap_pad_token", "x_pad_token", shapes=wide)),
+            ("Z-Image Pixel", tensors(*zimage, "cap_pad_token", "dec_net.cond_embed.weight", shapes=wide)),
+            # Ming Image Design has no caption pad token; its Layer model has, and a mark (a key or the repack's config).
+            ("Ming Image Design 0.1", tensors(*zimage, shapes=wide)),
+            ("Ming Image Design Layer 0.1", tensors(*zimage, "cap_pad_token", "__ming_image__", shapes=wide)),
+            ("Ming Image Design Layer 0.1", tensors(*zimage, "cap_pad_token", shapes=wide,
+                                                    meta={"config": '{"transformer": {"image_model": "ming_image"}}'})),
+            ("MiniMax H3", tensors("video_patch_proj.weight", "condition_proj.weight", "blocks.0.attn.qkv_proj.weight",
+                                   "token_refiner.blocks.0.attn.qkv_proj.weight", "final_layer.video_out.weight")),
+            ("Chroma", tensors("double_blocks.0.img_attn.norm.key_norm.scale", "distilled_guidance_layer.norms.0.scale",
+                               "nerf_blocks.0.norm.scale", "img_in_patch.weight")),  # Chroma Radiance: Civitai's Chroma
+            ("Lens", tensors("transformer_blocks.0.attn.img_qkv.weight", "transformer_blocks.0.img_mlp.w1.weight", "img_in.weight", "txt_norm.weight")),
+            ("JoyImage", tensors("double_blocks.0.attn.img_attn_qkv.weight", "condition_embedder.time_embedder.linear_1.weight",
+                                 "img_in.weight", "double_blocks.0.img_mlp.net.0.proj.weight")),
+            # Both hold a language model, and are not taken for a text encoder.
+            ("HiDream-O1", tensors("t_embedder1.mlp.0.weight", "x_embedder.proj1.weight", "language_model.model.layers.0.self_attn.q_proj.weight",
+                                   "language_model.model.embed_tokens.weight")),
+            ("SenseNova U1.5", tensors("fm_modules.vision_model_mot_gen.embeddings.patch_embedding.weight",
+                                       "language_model.model.layers.0.self_attn.q_proj_mot_gen.weight", "language_model.model.embed_tokens.weight")),
+            ("HiDream", tensors("caption_projection.0.linear.weight", "double_stream_blocks.0.block.attn1.to_q.weight")),
+            ("Stable Cascade", tensors("clf.1.weight", "clip_txt_mapper.weight", "down_downscalers.0.weight")),
+            ("AuraFlow", tensors("double_layers.0.attn.w1q.weight", "single_layers.0.attn.w1q.weight", "cond_seq_linear.weight")),
+            ("PixArt E", tensors("t_block.1.weight", "blocks.0.attn.qkv.weight", "y_embedder.y_embedding")),
+            ("PixArt a", tensors("t_block.1.weight", "blocks.0.attn.qkv.weight", "y_embedder.y_embedding", "ar_embedder.mlp.0.weight")),
+            ("Hunyuan 1", tensors("mlp_t5.0.weight", "blocks.0.attn1.Wqkv.weight", "extra_embedder.0.weight")),
+            ("Mochi", tensors("t5_yproj.weight", "blocks.0.attn.qkv_x.weight")),
+            ("Cosmos", tensors("blocks.block0.blocks.0.block.attn.to_q.0.weight", "x_embedder.proj.1.weight")),
+            ("LTXV", tensors("adaln_single.emb.timestep_embedder.linear_1.bias", "transformer_blocks.0.attn2.to_k.weight")),
+            ("PixelDiT", tensors("core.pixel_embedder.proj.weight", "core.blocks.0.attn.qkv.weight")),
+        ]
+        for base, header in families:
+            found = kind_of(header)
+            self.assertEqual((found["kind"], found["base"], found["sure"]), ("diffusion_models", base, True), base)
+        # Guesses: a width not known, LTX-2 (its versions are not told); PixArt in diffusers names is no LTXV.
+        self.assertEqual((kind_of(flux2(5000))["base"], kind_of(flux2(5000))["sure"]), ("Flux.2 D", False))
+        ltx2 = kind_of(tensors("adaln_single.emb.timestep_embedder.linear_1.bias", "audio_adaln_single.linear.weight", "transformer_blocks.0.attn1.to_q.weight"))
+        self.assertEqual((ltx2["base"], ltx2["sure"]), ("LTXV2", False))
+        self.assertEqual(kind_of(tensors("adaln_single.emb.timestep_embedder.linear_1.bias", "pos_embed.proj.bias", "transformer_blocks.0.attn1.to_q.weight"))["base"], "")
+
+    def test_loras_of_comfyui_families(self):
+        # Where a family's block names are its own, its LoRAs (kohya, PEFT and diffusers names) carry them.
+        layers = [("Krea 2", "diffusion_model.blocks.0.attn.wq"), ("Flux.3 Klein", "diffusion_model.single_blocks.0.mlp_in"),
+                  ("Qwen 2.1", "diffusion_model.transformer_blocks.0.img_mlp.gate_layer"), ("Ernie", "lora_unet_layers_0_mlp_linear_fc2"),
+                  ("Fibo 2", "diffusion_model.layers.3.cross_attention.to_kv"), ("Boogu", "transformer.single_stream_layers.0.attn.to_q"),
+                  ("Ideogram 4.0", "diffusion_model.layers.0.attention.o"), ("Kandinsky 5", "visual_transformer_blocks.0.self_attention.to_query"),
+                  ("MiniMax H3", "diffusion_model.blocks.0.attn.qkv_proj"), ("Lens", "diffusion_model.transformer_blocks.0.attn.img_qkv"),
+                  ("JoyImage", "double_blocks.0.attn.img_attn_qkv"), ("HiDream", "diffusion_model.double_stream_blocks.0.block.attn1.to_q"),
+                  ("AuraFlow", "lora_unet_double_layers_0_attn_w1q"), ("Hunyuan 1", "blocks.0.attn1.Wqkv")]
+        for base, layer in layers:
+            found = kind_of(tensors(layer + ".lora_A.weight", layer + ".lora_B.weight"))
+            self.assertEqual((found["kind"], found["base"], found["sure"]), ("loras", base, True), layer)
+        # Flux.2 in diffusers names: its single blocks' projections are one; a LoRA has no width to tell the variant.
+        flux2 = kind_of(tensors("transformer.single_transformer_blocks.0.attn.to_qkv_mlp_proj.lora_A.weight"))
+        self.assertEqual((flux2["kind"], flux2["base"], flux2["sure"]), ("loras", "Flux.2 D", False))
+        # Those names outweigh a trainer's architecture text, which knows only the older families.
+        qwen21 = kind_of(tensors("diffusion_model.transformer_blocks.0.img_mlp.gate_layer.lora_A.weight", meta={"modelspec.architecture": "qwen-image/lora"}))
+        self.assertEqual(qwen21["base"], "Qwen 2.1")
+
     def test_whole_models_and_their_parts(self):
         checkpoint = kind_of(tensors("model.diffusion_model.input_blocks.0.0.weight", "model.diffusion_model.label_emb.0.0.weight",
                                      "first_stage_model.encoder.down.0.block.0.conv1.weight", "conditioner.embedders.1.model.ln_final.weight"))
@@ -105,7 +191,7 @@ class KindTests(unittest.TestCase):
         self.assertEqual(schnell["base"], "Flux.1 S")
         # Lumina 2 and Z-Image share a layout: the caption embedder's width tells them apart.
         lumina = lambda width: kind_of(tensors("noise_refiner.0.attention.k_norm.weight", "cap_embedder.1.weight", "layers.0.attention.qkv.weight",
-                                               shapes={"cap_embedder.1.weight": [width, 2304]}))
+                                               "cap_pad_token", shapes={"cap_embedder.1.weight": [width, 2304]}))
         self.assertEqual((lumina(3840)["kind"], lumina(3840)["base"], lumina(3840)["sure"]), ("diffusion_models", "Z-Image", True))
         self.assertEqual(lumina(2304)["base"], "Lumina")
         self.assertEqual(lumina(1000)["base"], "", "a width not known is no guess")

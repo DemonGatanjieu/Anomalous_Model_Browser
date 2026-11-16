@@ -18,12 +18,41 @@ import struct
 MAX_HEADER = 100 * 1024 * 1024
 GGUF_READ = 16 * 1024 * 1024
 # Raised whenever a rule changes: answers kept on disk (api/model_heads.py) are then read again.
-RULES = 4
+RULES = 5
 
 # Cross-attention width (the text encoder's output) -> base model, for the SD family.
 CONTEXT_WIDTH = {768: "SD 1.5", 1024: "SD 2.1", 2048: "SDXL"}
 # Caption embedder width -> base model, for the Lumina 2 layout (ComfyUI tells them apart the same way).
 CAPTION_WIDTH = {2304: "Lumina", 3840: "Z-Image"}
+# Width (img_in's rows, where ComfyUI reads it) -> Flux.2's variant.
+FLUX2_WIDTH = {3072: "Flux.2 Klein 4B", 4096: "Flux.2 Klein 9B", 6144: "Flux.2 D"}
+# Families ComfyUI's model detection tells by names no other family has: (base, names in the
+# tensor names, "." written "_"). Civitai's base model name where it has one, else ComfyUI's
+# family. Their LoRAs carry the block names, so they are told too.
+NAMED_FAMILIES = (
+    ("MOSS Image", ("layers_0_proj_ffn_up_gate",)),
+    ("Krea 2", ("txtfusion_", "blocks_0_attn_wq")),
+    ("Flux.3 Klein", ("content_mode_blocks", "txt_mode_blocks", "single_blocks_0_mlp_in")),
+    ("Qwen 2.1", ("txt_in_text_norm", "img_mlp_gate_up", "img_mlp_gate_layer")),
+    ("Ernie", ("adaln_sa_ln", "layers_0_mlp_linear_fc2")),
+    ("Fibo 2", ("perceiver_latent_queries", "cross_attention_to_kv")),
+    ("Boogu", ("img_instruct_attn", "double_stream_layers", "single_stream_layers")),  # before OmniGen2, which it grew from
+    ("OmniGen2", ("ref_image_refiner",)),  # its blocks are named as Lumina 2's in diffusers: its LoRAs are not told
+    ("Ideogram 4.0", ("embed_image_indicator", "layers_0_attention_o_")),
+    ("Kandinsky 5", ("visual_transformer_blocks",)),
+    ("MiniMax H3", ("video_patch_proj", "blocks_0_attn_qkv_proj")),
+    ("Lens", ("attn_img_qkv", "img_mlp_w1")),
+    ("JoyImage", ("attn_img_attn_qkv",)),
+    ("HiDream-O1", ("t_embedder1_mlp", "x_embedder_proj1")),
+    ("SenseNova U1.5", ("_mot_gen",)),
+    ("HiDream", ("double_stream_blocks_0_block", "single_stream_blocks_0_block")),
+    ("Stable Cascade", ("down_downscalers",)),
+    ("AuraFlow", ("attn_w1q",)),
+    ("Hunyuan 1", ("mlp_t5_", "attn1_wqkv")),  # Hunyuan-DiT
+    ("Mochi", ("t5_yproj", "attn_qkv_x")),
+    ("Cosmos", ("blocks_block0_blocks",)),  # Cosmos 1 (Predict2 is told below)
+    ("PixelDiT", ("core_pixel_embedder",)),
+)
 # ComfyUI-GGUF's architecture names.
 GGUF_DIFFUSION = {
     "flux": "Flux.1 D", "sd1": "SD 1.5", "sdxl": "SDXL", "sd3": "SD3", "aura": "AuraFlow",
@@ -57,7 +86,13 @@ DIFFUSION_STARTS = ("double_blocks.", "single_blocks.", "joint_blocks.", "transf
                     "single_transformer_blocks.", "input_blocks.", "blocks.0.self_attn", "net.blocks.", "net.x_embedder.",
                     "noise_refiner.", "context_refiner.", "double_stream_blocks.",  # Lumina 2 / Z-Image, HiDream
                     "down_downscalers.",  # Stable Cascade's stages B and C
-                    "shared_block_modulation.")  # MOSS Image
+                    "shared_block_modulation.",  # MOSS Image
+                    # Krea 2, Ernie, Ideogram 4, Kandinsky 5, MiniMax H3, HiDream-O1 and SenseNova U1.5
+                    # (the last two hold a language model: not a text encoder)
+                    "txtfusion.", "layers.0.adaLN_sa_ln.", "embed_image_indicator.", "visual_transformer_blocks.",
+                    "video_patch_proj.", "t_embedder1.", "fm_modules.vision_model_mot_gen.",
+                    # AuraFlow, PixArt, Hunyuan-DiT, Mochi, Cosmos 1, PixelDiT
+                    "double_layers.", "t_block.", "mlp_t5.", "t5_yproj.", "blocks.block0.", "core.pixel_embedder.")
 
 
 def parse_safetensors(data):
@@ -201,17 +236,33 @@ def _base_from_meta(meta):
     return ""
 
 
+def _named_base(header, text):
+    """(base, sure) of a family told by names of its own; ("", False) for none. Asked before a
+    trainer's architecture text, which knows only the older families ("flux" and "qwen" also
+    stand in Flux.2's and Qwen 2.1's)."""
+    for base, names in NAMED_FAMILIES:
+        if any(name in text for name in names):
+            return base, True
+    # Flux.2: Flux's blocks with modulation all of them share (ComfyUI's test); in diffusers names
+    # its single blocks' projections are one. A LoRA has no img_in to tell the variant.
+    if "double_stream_modulation_img" in text or "to_qkv_mlp_proj" in text:
+        name = FLUX2_WIDTH.get(_first_dim(header, "img_in.weight"), "")
+        return (name, True) if name else ("Flux.2 D", False)
+    return "", False
+
+
 def _base_from_keys(header, text):
     """(base, sure) from tensor names; ("", False) when they do not tell."""
-    # MOSS Image: blocks with a fused up/gate projection under "layers.N.proj." (ComfyUI tells it
-    # by that and its shared_block_modulation; its LoRAs carry the projection only).
-    if "layers_0_proj_ffn_up_gate" in text:
-        return "MOSS Image", True
     if "individual_token_refiner" in text:
         return "Hunyuan Video", True
     if "noise_refiner" in text and "cap_embedder_1" in text:
-        name = CAPTION_WIDTH.get(_first_dim(header, "cap_embedder.1.weight"), "")
-        return name, bool(name)
+        return _lumina_base(header, text)
+    # LTX-Video; LTX-2 adds audio (its versions are not told). PixArt in diffusers names has the
+    # same embedder, beside a patch embedder of its own.
+    if "adaln_single_emb" in text and "pos_embed_proj" not in text:
+        return ("LTXV2", False) if "audio_adaln_single" in text else ("LTXV", True)
+    if "y_embedder_y_embedding" in text:  # PixArt: Alpha has the aspect ratio embedder, Sigma (Civitai's "E") not
+        return ("PixArt a" if "ar_embedder" in text else "PixArt E"), True
     # Cosmos-Predict2 (with or without "net."); Anima adds an adapter for its Qwen3 text
     # encoder. Before Wan: their blocks' attention names look alike.
     if "llm_adapter" in text:
@@ -220,6 +271,9 @@ def _base_from_keys(header, text):
         return "Cosmos", True
     if "distilled_guidance_layer" in text:
         return "Chroma", True
+    # Mage-Flow: Qwen-Image's blocks, its text norm 2560 wide and 128 rows out (Qwen-Image: 3584, 64).
+    if "txt_norm" in text and _first_dim(header, "txt_norm.weight") == 2560 and _first_dim(header, "proj_out.weight") == 128:
+        return "MageFlow", True
     if "img_mod_1" in text or "txt_norm" in text or "img_mlp_net" in text:
         return "Qwen", True
     if "double_blocks_0_img_attn" in text or "single_blocks_0_linear1" in text:
@@ -241,6 +295,24 @@ def _base_from_keys(header, text):
     if "input_blocks_1_1_transformer_blocks" in text or "lora_unet_down_blocks" in text:
         return "SD 1.5", False
     return "", False
+
+
+def _lumina_base(header, text):
+    """(base, sure) of the Lumina 2 layout: the caption embedder's width tells Lumina 2 from
+    Z-Image. Z-Image's layout, as ComfyUI tells it: a pixel decoder is Z-Image Pixel; no caption
+    pad token is Ming Image Design; a Ming Image mark (a key, or the repack's config) with the
+    token is its Layer model."""
+    name = CAPTION_WIDTH.get(_first_dim(header, "cap_embedder.1.weight"), "")
+    if name != "Z-Image":
+        return name, bool(name)
+    if "dec_net_cond_embed" in text:
+        return "Z-Image Pixel", True
+    if "cap_pad_token" not in text:
+        return "Ming Image Design 0.1", True
+    meta = header.get("__metadata__") if isinstance(header.get("__metadata__"), dict) else {}
+    if "__ming_image__" in text or "ming_image" in str(meta.get("config", "")):
+        return "Ming Image Design Layer 0.1", True
+    return name, True
 
 
 def _embedding_base(header):
@@ -339,8 +411,10 @@ def classify(fmt, header):
     elif kind == "embeddings":
         base, base_sure = _embedding_base(header), True
     else:
-        base = _base_from_meta(meta)
-        base_sure = bool(base)
+        base, base_sure = _named_base(header, text)
+        if not base:
+            base = _base_from_meta(meta)
+            base_sure = bool(base)
         if not base:
             base, base_sure = _base_from_keys(header, text)
     if base == "SDXL":

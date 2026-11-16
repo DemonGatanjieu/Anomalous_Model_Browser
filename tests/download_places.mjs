@@ -18,6 +18,10 @@ assert.equal(destinationFor(entry('Flux/ink.safetensors'), {}, fixed), 'Download
 assert.equal(baseFolder('SDXL 1.0'), 'SDXL');
 assert.equal(baseFolder('Flux.1 D'), 'Flux');
 assert.equal(baseFolder('MOSS Image'), 'MOSS');
+assert.equal(baseFolder('Ming Image Design Layer 0.1'), 'Ming'); // a family's versioned names share one folder
+assert.equal(baseFolder('Ideogram 4.0'), 'Ideogram');
+assert.equal(baseFolder('Flux.2 Klein 9B'), 'Flux');
+assert.equal(baseFolder('Krea 2'), 'Krea 2');
 assert.equal(baseFolder('SD 1.5'), 'SD1.5');
 assert.equal(baseFolder('Illustrious', ['illustrious', 'pony']), 'illustrious');
 assert.equal(baseFolder('SD 1.5', ['sd15']), 'sd15');
