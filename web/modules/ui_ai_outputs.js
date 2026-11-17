@@ -10,6 +10,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { emptyState } from './ui_ai_art.js';
 import { timeLabel } from './activity_log.js';
 import { newestPicture, outputCount, pictureKey, taskOutputs } from './ai_task_view.js';
 import { imagePrompts } from './image_keep.js';
@@ -271,6 +272,6 @@ export function renderOutputsView(pane, task, ctx) {
     const parts = [picturesPart(outputs, task, ctx), workflowPart(where, outputs, newest, ctx), combosPart(outputs, newest, ctx),
         newest && promptsPart(newest, ctx), modelsPart(outputs), soundsPart(outputs)].filter(Boolean);
     const body = el('div', 'anomalous-ai-stage-body anomalous-ai-outputs');
-    body.append(...(parts.length ? parts : [el('div', 'anomalous-ai-stage-empty', t('aiOutNone'))]));
+    body.append(...(parts.length ? parts : [emptyState('frame', t('aiOutNone'))]));
     pane.replaceChildren(sideHead(t('aiSideOutputs'), ctx.close), body);
 }

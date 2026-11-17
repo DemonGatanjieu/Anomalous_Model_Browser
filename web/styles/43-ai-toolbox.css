@@ -733,7 +733,11 @@
 .anomalous-tb-type-art.is-embedding { --tb-type-hue: 88; }
 .anomalous-tb-ai-gets { display: flex; align-items: center; gap: 6px; color: var(--amb-text-soft); font-size: 12px; line-height: 1.5; }
 .anomalous-tb-ai-gets > .anomalous-tb-icon { flex: none; color: var(--amb-text-dim); }
-.anomalous-tb-about-list { display: flex; flex-direction: column; gap: 2px; color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-tb-about-list { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; color: var(--amb-text-dim); font-size: 12px; }
+/* What a detail folds away (the description's paragraphs, a model's file and trigger words). */
+.anomalous-tb-more > summary { color: var(--amb-text-soft); font-size: 12.5px; cursor: pointer; }
+.anomalous-tb-more > summary:hover { color: var(--amb-text-main); }
+.anomalous-tb-more[open] > summary { margin-bottom: 4px; }
 .anomalous-tb-about-row {
     display: flex;
     align-items: flex-start;

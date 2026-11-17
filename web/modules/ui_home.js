@@ -1,7 +1,7 @@
 /**
  * The home page: first what to hand the AI (ui_ai_starters.js, drawn into a slot once read), the
  * first-run setup above it while nothing is scanned (ui_first_run.js); under it "Do it yourself", one
- * small card per task, each opening its page; then the first steps (set up, scan, the tour, what's new).
+ * small card per task (its icon and name; what it does on hover), each opening its page; then the first steps (set up, scan, the tour, what's new).
  * Rendered again on each visit, so text follows the language.
  */
 
@@ -78,10 +78,8 @@ export function renderHome(owner, panel) {
         node.dataset.card = card.name.toLowerCase();
         const icon = el('span', 'anomalous-home-card-icon');
         icon.innerHTML = card.icon; // static markup only
-        const text = el('span', 'anomalous-home-card-text');
-        text.append(el('span', 'anomalous-home-card-title', t(`homeCard${card.name}Title`)),
-            el('span', 'anomalous-home-card-body', t(`homeCard${card.name}Body`)));
-        node.append(icon, text);
+        node.title = t(`homeCard${card.name}Body`);
+        node.append(icon, el('span', 'anomalous-home-card-title', t(`homeCard${card.name}Title`)));
         grid.appendChild(node);
     }
 

@@ -9,7 +9,8 @@
  * private card takes the prompt itself in a field the AI gets as a token (ai_hide_mark.js marked). "Run my
  * preset" has its own fields (ui_ai_preset_sheet.js) and, with nothing to change, runs with no AI. The
  * private card puts that prompt first, then where to start, optional LoRAs and, second and said so, the line
- * that goes to the AI as it is; a drawing (ui_ai_private_sheet.js) says what happens to the prompt.
+ * that goes to the AI as it is; a picture (ui_ai_private_sheet.js) says what happens to the prompt. A sheet
+ * opens on its card's picture; what happens on Start, what stays and what to mind fold under one question.
  */
 
 import { marked } from './ai_hide_mark.js';
@@ -212,7 +213,8 @@ export function openStarter(owner, card, data) {
     });
     const fields = card.id === 'preset' && data.workflows.length ? presetFields({ data, owner, close: () => close(), go })
         : fieldsOf(card, data, owner, () => close());
-    const lines = el('div', 'anomalous-ai-start-lines');
+    const lines = el('details', 'anomalous-ai-start-lines');
+    lines.append(el('summary', '', t('aiStartSheetMore')));
     for (const [kind] of card.lines) {
         const line = el('div', `anomalous-ai-start-line is-${kind}`);
         line.append(el('span', 'anomalous-ai-start-line-label', t(`aiStartSheet_${kind}`)), el('span', '', t(`aiStart_${card.id}_${kind}`)));
@@ -223,7 +225,12 @@ export function openStarter(owner, card, data) {
     if (fields.task || fields.start) actions.append(go);
     // The fields scroll; what is missing and the buttons stay in sight at the foot of the window.
     const scroll = el('div', 'anomalous-ai-start-scroll');
-    scroll.append(...(fields.start ? [] : [readiness(card, data)]), ...fields.nodes, lines);
+    const head = el('div', 'anomalous-ai-start-sheet-head');
+    const picture = el('img', 'anomalous-ai-start-sheet-art');
+    picture.src = new URL(`../assets/start_${card.id}.webp`, import.meta.url).href;
+    picture.alt = '';
+    head.append(picture, ...(fields.start ? [] : [readiness(card, data)]));
+    scroll.append(head, ...fields.nodes, lines);
     body.append(scroll, error, actions);
     body.addEventListener('input', () => { error.textContent = ''; });
     body.addEventListener('change', () => { error.textContent = ''; });

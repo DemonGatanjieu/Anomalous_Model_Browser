@@ -44,7 +44,6 @@
     font-size: 12px;
     line-height: 1.5;
 }
-.anomalous-ai-decisions-none { line-height: 1.7; text-align: left; }
 .anomalous-ai-decisions-row { display: flex; gap: 10px; padding: 8px 6px; border-bottom: 1px solid var(--amb-border); }
 .anomalous-ai-decisions-row:last-child { border-bottom: 0; }
 .anomalous-ai-decisions-mark {

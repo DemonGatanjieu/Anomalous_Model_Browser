@@ -2,6 +2,8 @@
 
 ## v1.64.0 — unreleased
 
+- 字少了，图多了，其余画面也照着改了：等 AI 接手的三步各配一张小图；「面板」「成果」「定下的事」空着时是一张小图加一句话；素材窗详情只留开关、备注和一行「AI 收到」，作者介绍、文件位置和触发词都折起来；各个开始窗顶上是这张卡的小图，“点开始后会怎样”折成一句「开始以后会怎样？」；隐私出图的四格小图换成隐私那张图配一句话；主页「自己动手」的工具卡只剩图标和名字；「连接 AI」和「先问我」窗口开头各有一张小图；几处长说明缩成一句。
+- Fewer words and more pictures everywhere else too: the waiting page's three steps have pictures; the empty Panels, Results and Settled views are a picture and one line; the materials window's detail keeps the switch, the note and one "The AI gets" line, with the description, file and trigger words folded; each starter sheet opens on its card's picture and folds what happens on Start under one question; the private sheet's four boxes are the privacy picture and one line; the home tool cards are an icon and a name; the connect guide and the Ask first window open on a picture; long notes became one line.
 - 字少了，图多了（先改了两处）：主页「让 AI 帮你做」的六张卡换成一张小图、名字和一句话，原来的绿色小标签改成鼠标停在卡上才显示；「隐私一览」顶上换成一张小图（原文 → 带锁的代号 → AI），说明缩成一行，“能自己读硬盘的软件拦不住”那段缩成一行黄字，鼠标停上去看全文。小图是 ChatGPT 照素材窗插画的样子画的。
 - Fewer words, more pictures (two places first): the home page's six "Let the AI do it" cards are a picture, a name and one line, with what each makes sure of on hover; the Privacy overview opens on a small picture (words → a locked code word → the AI) and one line, and the note about apps that read the disk is one line with the rest on hover. The pictures were drawn with ChatGPT in the style of the materials window's.
 

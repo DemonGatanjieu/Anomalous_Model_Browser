@@ -17,6 +17,7 @@ import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { darkroomPart } from './ui_ai_darkroom.js';
 import { icon } from './ui_ai_icons.js';
+import { art } from './ui_ai_art.js';
 
 export const GATES = ['canvas', 'gpu', 'download', 'network', 'files'];
 const POLICIES = ['auto', 'ask', 'never'];
@@ -175,7 +176,9 @@ function choiceRow(key, choices, current, labelOf, save) {
 /** The Gates window: safety levels, each kind of action the AI may do, where it works, which tools it gets. */
 export async function openGates() {
     const body = el('div', 'anomalous-ai-gates');
-    body.append(el('p', 'anomalous-ai-gates-intro', t('aiGatesIntro')));
+    const intro = el('div', 'anomalous-ai-gates-intro has-art');
+    intro.append(art('askFirst', 'anomalous-ai-gates-art'), el('span', '', t('aiGatesIntro')));
+    body.append(intro);
     let known = {};
     let loaded = false;
     try {

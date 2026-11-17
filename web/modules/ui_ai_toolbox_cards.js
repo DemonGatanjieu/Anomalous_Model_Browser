@@ -482,10 +482,11 @@ export function detail(item, ctx) {
     } else if (item.kind === 'prompts') {
         if (item.positive) box.append(section(t('aiTbPositive'), [textBlock(item.positive, 'is-prompt')]));
         if (item.negative) box.append(section(t('aiTbNegative'), [textBlock(item.negative, 'is-prompt is-negative')]));
-    } else if (item.kind === 'models') {
-        box.append(textBlock([item.folder, item.file].filter(Boolean).join('/'), 'is-soft'));
-        if (item.words?.length) box.append(section(t('aiTbWords'), [tagsOf(item.words)]));
-        box.append(aboutSection(item, ctx));
+    } else if (item.kind === 'models') { // where it lives and its trigger words fold away
+        const more = el('details', 'anomalous-tb-more');
+        more.append(el('summary', '', t(item.words?.length ? 'aiTbMoreFileWords' : 'aiTbMoreFile')), textBlock([item.folder, item.file].filter(Boolean).join('/'), 'is-soft'));
+        if (item.words?.length) more.append(section(t('aiTbWords'), [tagsOf(item.words)]));
+        box.append(aboutSection(item, ctx), more);
     }
     return box;
 }

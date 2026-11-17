@@ -15,6 +15,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { emptyState } from './ui_ai_art.js';
 import { timeLabel } from './activity_log.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { runMapBox } from './ui_ai_run_map.js';
@@ -247,7 +248,7 @@ export function drawSide(box, task, side, ctx, arrived = null) {
     if (panelSteps(task).length) renderStage(panes.stage, task, side, ctx, arrived);
     else {
         const body = el('div', 'anomalous-ai-stage-body');
-        body.append(el('div', 'anomalous-ai-stage-empty', t('aiStageNone')));
+        body.append(emptyState('board', t('aiStageNone')));
         panes.stage.replaceChildren(sideHead(t('aiStage'), ctx.close), body);
     }
     if (side.view === 'map') renderMapView(panes.map, task, side, ctx);

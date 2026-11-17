@@ -3,16 +3,16 @@
  * main model: picked one at a time (ui_ai_model_field.js) from the materials catalog (ai_toolbox_data.js),
  * each a chip with ×; the first message names them by file name, which the task's privacy hands the AI as
  * tokens (api/ai_sealed_models.py), so a LoRA the user lets the AI see by name is not offered. And what
- * happens to the prompt, drawn as four boxes in place of lines of text.
+ * happens to the prompt: the privacy picture (ui_ai_art.js) and one line in place of lines of text.
  */
 
 import { loadCatalog } from './ai_toolbox_data.js';
 import { translate as t } from './locales.js';
+import { art } from './ui_ai_art.js';
 import { icon } from './ui_ai_icons.js';
 import { modelField } from './ui_ai_model_field.js';
 
 const MAX_LORAS = 6;
-const FLOW = [['pencil', 1], ['lock', 2], ['sparkle', 3], ['image', 4]]; // aiSealFlow<n> / aiSealFlow<n>Sub
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -76,16 +76,9 @@ export function loraPicker() {
     return { node, read: () => chosen.map(item => item.file), stop: () => field.dispose() };
 }
 
-/** What happens to the prompt: written here, swapped for codes, the AI works with the codes, swapped back to run. */
+/** What happens to the prompt: the picture (words → a locked code word → the AI) and one line. */
 export function sealFlow() {
-    const list = el('ol', 'anomalous-ai-seal-flow');
-    list.setAttribute('aria-label', t('aiSealFlowLabel'));
-    for (const [name, step] of FLOW) {
-        const item = el('li', 'anomalous-ai-seal-flow-step');
-        const mark = el('span', 'anomalous-ai-seal-flow-icon');
-        mark.append(icon(name, 16));
-        item.append(mark, el('span', 'anomalous-ai-seal-flow-title', t(`aiSealFlow${step}`)), el('span', 'anomalous-ai-seal-flow-sub', t(`aiSealFlow${step}Sub`)));
-        list.append(item);
-    }
-    return list;
+    const box = el('div', 'anomalous-ai-seal-flow');
+    box.append(art('codes', 'anomalous-ai-seal-flow-art'), el('span', '', t('aiSealFlowCaption')));
+    return box;
 }

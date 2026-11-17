@@ -143,13 +143,19 @@ function getsLine(item, ctx, picked) {
     return line;
 }
 
-/** The detail's section: what the AI gets, and the author's description to tick paragraphs of. */
+/** The detail's section: one line of what the AI gets, and folded under it the author's description to tick
+ * paragraphs of (its summary says how many are ticked). */
 export function aboutSection(item, ctx) {
     const box = node('section', 'anomalous-tb-section anomalous-tb-about');
     let picked = [];
     const line = getsLine(item, ctx, () => picked);
     const list = node('div', 'anomalous-tb-about-list', t('aiTbAboutLoading'));
-    box.append(node('h4', 'anomalous-tb-section-title', t('aiTbAboutTitle')), line, list);
+    const fold = node('details', 'anomalous-tb-more');
+    const summary = node('summary');
+    const count = () => { summary.textContent = picked.length ? t('aiTbAboutTitlePicked', { count: picked.length }) : t('aiTbAboutTitle'); };
+    count();
+    fold.append(summary, list);
+    box.append(line, fold);
     const save = async () => {
         const ticked = [...list.querySelectorAll('input:checked')].map(input => input.value);
         ctx.ticked?.(item);
@@ -159,12 +165,14 @@ export function aboutSection(item, ctx) {
             showWorkbenchToast(t('aiTbNameFailed', { error: error.message }));
         }
         draws.get(line)?.();
+        count();
     };
     void fetch(`/anomalous/ai_model_choice?model_id=${encodeURIComponent(item.id)}`)
         .then(response => response.json().then(data => (response.ok ? data : Promise.reject(new Error(data.error || `HTTP ${response.status}`)))))
         .then((data) => {
             picked = data.picked || [];
             item.ai_name = data.name || '';
+            count();
             redraw(box.closest('.anomalous-tb') || box, item);
             if (!data.paragraphs?.length) {
                 list.textContent = t('aiTbAboutNone');

@@ -68,6 +68,9 @@
 .anomalous-ai-start-pictures .anomalous-ai-pics-grid { max-height: 220px; }
 /* What is in place before Start: a line each, green when it is, amber when something is missing. */
 .anomalous-ai-start-ready { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+/* The sheet opens on its card's picture, the readiness line beside it. */
+.anomalous-ai-start-sheet-head { display: flex; align-items: center; gap: 12px; }
+.anomalous-ai-start-sheet-art { flex: none; width: 52px; height: 52px; object-fit: contain; }
 .anomalous-ai-start-ready-line { display: inline-flex; align-items: center; gap: 5px; color: var(--amb-warn-text); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-start-ready-line.is-ok { color: var(--amb-ok-text); }
 .anomalous-ai-start-ready-line svg { flex: none; }
@@ -84,7 +87,11 @@
     cursor: pointer;
 }
 .anomalous-ai-start-example:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
-.anomalous-ai-start-lines { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.04); }
+/* What happens on Start, folded under one question. */
+.anomalous-ai-start-lines { padding: 8px 12px; border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.04); }
+.anomalous-ai-start-lines > summary { color: var(--amb-text-soft); font-size: 12.5px; cursor: pointer; }
+.anomalous-ai-start-lines[open] > summary { margin-bottom: 6px; }
+.anomalous-ai-start-lines > .anomalous-ai-start-line + .anomalous-ai-start-line { margin-top: 4px; }
 .anomalous-ai-start-line { color: var(--amb-text-main); font-size: 12.5px; line-height: 1.6; }
 .anomalous-ai-start-line-label { margin-right: 6px; color: var(--amb-text-muted); }
 .anomalous-ai-start-line.is-out { color: var(--amb-warn-text); }
@@ -376,14 +383,6 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 }
 .anomalous-ai-start-lora-drop:hover { background: rgba(var(--amb-ink-rgb), 0.1); color: var(--amb-text-main); }
 
-/* What happens to the private card's prompt, drawn: four boxes with arrows between, stacked when narrow. */
-.anomalous-ai-seal-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin: 4px 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.04); list-style: none; }
-.anomalous-ai-seal-flow-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; text-align: center; }
-.anomalous-ai-seal-flow-step:not(:last-child)::after { content: "→"; position: absolute; top: 4px; right: -15px; color: var(--amb-text-dim); font-size: 13px; }
-.anomalous-ai-seal-flow-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-link); }
-.anomalous-ai-seal-flow-title { color: var(--amb-text-main); font-size: 12px; font-weight: 600; line-height: 1.4; }
-.anomalous-ai-seal-flow-sub { color: var(--amb-text-muted); font-size: 11.5px; line-height: 1.4; }
-@media (max-width: 560px) {
-    .anomalous-ai-seal-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .anomalous-ai-seal-flow-step:nth-child(2)::after { content: none; }
-}
+/* What happens to the private card's prompt: the privacy picture and one line. */
+.anomalous-ai-seal-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 12px; border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.04); color: var(--amb-text-soft); font-size: 12.5px; }
+.anomalous-ai-seal-flow-art { flex: none; width: 168px; height: auto; }

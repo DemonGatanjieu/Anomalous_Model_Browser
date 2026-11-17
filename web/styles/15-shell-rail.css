@@ -311,9 +311,9 @@
 
 .anomalous-home-card {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 10px;
-    padding: 11px 12px;
+    padding: 10px 12px;
     border: 1px solid var(--amb-border);
     border-radius: 12px;
     background: rgba(var(--amb-ink-rgb), 0.03);
@@ -345,23 +345,10 @@
     height: 16px;
 }
 
-.anomalous-home-card-text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-}
-
 .anomalous-home-card-title {
     color: var(--amb-text-main);
     font-size: 0.88em;
     font-weight: 600;
-}
-
-.anomalous-home-card-body {
-    color: var(--amb-text-muted);
-    font-size: 0.76em;
-    line-height: 1.5;
 }
 
 .anomalous-home-start {

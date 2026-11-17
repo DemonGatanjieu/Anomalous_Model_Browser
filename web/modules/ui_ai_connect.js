@@ -15,23 +15,10 @@ import { translate as t } from './locales.js';
 import { copyText } from './ui_dialog.js';
 import { iconButton } from './ui_ai_icons.js';
 import { toolSetPicker } from './ui_ai_tool_set.js';
+import { art } from './ui_ai_art.js';
 
 const LOOK_MS = 2500; // how often the guide asks whether an app has come
 const LOOKS_UNSHOWN = 40; // a line never put on the page stops asking
-
-const ART = {
-    waiting: new URL('../assets/ai_waiting.webp', import.meta.url).href,
-    connect: new URL('../assets/ai_connect.webp', import.meta.url).href,
-};
-
-export function art(name, className) {
-    const img = el('img', className);
-    img.src = ART[name];
-    img.alt = '';
-    img.decoding = 'async';
-    img.setAttribute('aria-hidden', 'true');
-    return img;
-}
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -123,7 +110,9 @@ export function connectGuide(title = '') {
     const rules = copyLine(t('aiConnectRules'), { code: false, label: t('aiConnectCopyRules') });
     rules.classList.add('is-rules');
     more.append(el('div', 'anomalous-ai-connect-app', t('aiConnectRulesWhy')), rules);
-    box.append(el('div', 'anomalous-ai-connect-step', t(title ? 'aiConnectSayTask' : 'aiConnectSay')), sentence, connectionLine(),
+    const say = el('div', 'anomalous-ai-connect-step has-art');
+    say.append(art('connect', 'anomalous-ai-connect-art'), el('span', '', t(title ? 'aiConnectSayTask' : 'aiConnectSay')));
+    box.append(say, sentence, connectionLine(),
         byHand, more, el('div', 'anomalous-ai-connect-note', t('aiConnectLocal')));
     return box;
 }

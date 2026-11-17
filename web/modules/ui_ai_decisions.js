@@ -8,6 +8,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { emptyState } from './ui_ai_art.js';
 import { modelStem } from './ai_start_from.js';
 import { timeLabel } from './activity_log.js';
 import { toolKey } from './ai_task_view.js';
@@ -91,7 +92,7 @@ export function renderDecisionsView(pane, task, ctx) {
         const parts = [gap.runs ? t('aiDecisionGapRuns', { count: gap.runs }) : '', gap.canvas ? t('aiDecisionGapCanvas', { count: gap.canvas }) : ''].filter(Boolean);
         body.append(el('div', 'anomalous-ai-decisions-gap', t('aiDecisionGap', { what: parts.join(t('listSeparator')) })));
     }
-    if (!items.length) body.append(el('div', 'anomalous-ai-stage-empty anomalous-ai-decisions-none', t('aiDecisionsNone')));
+    if (!items.length) body.append(emptyState('notes', t('aiDecisionsNone')));
     for (const item of items) {
         const row = el('div', `anomalous-ai-decisions-row is-${item.type}`);
         const mark = el('span', 'anomalous-ai-decisions-mark');
