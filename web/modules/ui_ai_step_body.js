@@ -18,6 +18,7 @@ import { changeNodeId } from './activity_diff.js';
 import { noteNode } from './ai_text_format.js';
 import { locateNode } from './ui_ai_results.js';
 import { marksStep } from './ui_ai_marker.js';
+import { standinStep } from './ui_ai_released.js';
 import { toolboxStep } from './ui_ai_toolbox_step.js';
 import { canvasChanges } from './ui_canvas_changes.js';
 import { deliveryState } from './ui_ai_delivery.js';
@@ -195,6 +196,7 @@ function userChange(step, entries) {
 export function stepBody(step, ctx) {
     switch (step.tool) {
     case 'user_marks': return [marksStep(step, ctx.taskId, ctx.owner)];
+    case 'user_standin': return [standinStep(step, ctx.taskId, ctx.owner)];
     case 'user_toolbox': return [toolboxStep(step)];
     case 'user_route': return routeStep(step, ctx);
     case 'user_activity': return [userChange(step, ctx.entries)];

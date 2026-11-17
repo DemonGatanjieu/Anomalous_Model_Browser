@@ -2,6 +2,11 @@
 
 ## v1.64.0 — unreleased
 
+- 隐私任务也能让 AI 看一小块图了：标图窗口里，方框旁点「给 AI 看」，只有那一块（周围留一圈、你框的地方用红色虚线标出）发给 AI，用来看这一处的光影和衔接；图里的工作流、提示词这些文字全部去掉，跑图还是用本机的原图，重绘的范围照你画的不变。框得超过整张图一半会先问一句。AI 自己没有办法裁图，只有你框的才会发出去。
+- 「隐私一览」里多了「跑一张替身样图给 AI 看」：用这个任务最后一张图的工作流（同样的模型、LoRA、参数、种子），只把提示词换成无害的静物跑一张，让 AI 看光影和画风；用了参考图的工作流不跑。放给 AI 看过的图都列在「你放给 AI 看的图」里。
+- In a private task the AI can now see a small part of a picture: "Show the AI" beside a box in the marker sends only that part (with a margin, your box in red dashes), drawn anew with no workflow or prompt text in it; the run still uses the original here and the repaint area stays as drawn. Boxes over half the picture ask first. The AI cannot cut pictures itself.
+- The Privacy overview can "Release a stand-in picture": the task's last workflow (the same models, LoRAs, settings and seed) run with a harmless still-life prompt, for the AI to judge the look; not for a workflow that reads a picture. Every released picture is listed under "Pictures you released".
+
 - 「隐私一览」可以在「单栏阅读」和「左右对照」之间切换（记在浏览器里）。左右对照时，左边是留在本机的、右边是 AI 看得到的，各有一条颜色横条；提示词左右按原来的位置一一对照：左边放出去的词变成虚线空位，右边藏着的词是带锁的空位，点任意一边的词两边一起选中，可以「放给 AI 看」，放出去的也能「再藏起来」，词序始终不变。每个模型多了「AI 能看到它的哪些信息」（AI 拿到什么、什么留在本机）和「在素材窗里改」，改完关掉素材窗就回到隐私一览。
 - The Privacy overview reads in one column or side by side (kept in this browser). Side by side, what stays here and what the AI reads face each other under a coloured bar, and each prompt is mirrored word for word in its own order: a word let through is a dashed gap on the left, a hidden one a locked gap on the right; pressing a word on either side picks it on both, to let it through or hide it again. Each model unfolds what the AI gets of it and what stays here, and "Change in materials" opens it in the materials window, coming back on close.
 

@@ -285,6 +285,22 @@ async def api_marks(request):
     return web.json_response({"step": step})
 
 
+async def api_standin(request):
+    """POST /anomalous/ai_tasks/{id}/standin: a stand-in of the task's last picture (its workflow, a harmless
+    prompt) the user releases to the AI of a private task (ai_release.py)."""
+    from . import ai_panels, ai_privacy, ai_release
+
+    task_id = request.match_info["task_id"]
+    if not ai_privacy.is_private(ai_tasks.get_task(task_id)):
+        return web.json_response({"error": "Only a private task needs a stand-in"}, status=400)
+    try:
+        step = await asyncio.to_thread(ai_release.standin, task_id, f"{request.scheme}://{request.host}")
+    except ai_release.ReleaseError as error:
+        return web.json_response({"error": str(error), "code": error.code}, status=400)
+    ai_panels.wake()
+    return web.json_response({"step": step})
+
+
 async def api_marked(request):
     """GET /anomalous/ai_tasks/{id}/marks/{name}: a marked picture the user sent."""
     path = ai_marks.path_of(request.match_info["task_id"], request.match_info["name"])
@@ -532,6 +548,7 @@ def register_routes(app):
     app.router.add_post("/anomalous/ai_tasks/{task_id}/gate", api_gate)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/marks", api_marks)
     app.router.add_get("/anomalous/ai_tasks/{task_id}/marks/{name}", api_marked)
+    app.router.add_post("/anomalous/ai_tasks/{task_id}/standin", api_standin)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/toolbox", api_toolbox_pick)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/route", api_task_route)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/way", api_way_pick)

@@ -415,6 +415,9 @@ def _collect(client, panel_id, task_id=None):
                 message = {"id": step["id"], "task": task["id"], "text": step["text"], "at": step["at"]}
                 if step.get("tool") == "user_activity":
                     message["kind"] = "change"  # something the user changed in Anomalous, not words to the AI
+                elif step.get("tool") == "user_standin":  # a stand-in picture the user released (ai_release.py)
+                    message.update(kind="standin", text=step.get("text") or "",
+                                   _released=[path for path in (ai_marks.path_of(task["id"], item["file"]) for item in step.get("released") or []) if path])
                 elif step.get("tool") == "user_pictures":
                     from . import ai_pictures
                     message.update(ai_pictures.message_of(step))  # the pictures themselves go with it
@@ -433,7 +436,8 @@ def _collect(client, panel_id, task_id=None):
                     # Marks on a picture: the picture's path for the AI, and the marked one attached (ai_marks.image_items).
                     message.update(kind="marks", image="/".join(part for part in (step["image"].get("subfolder"), step["image"]["filename"]) if part),
                                    mode=step.get("mode") or ("local" if step.get("inpaint") else "auto"),
-                                   _marked=ai_marks.path_of(task["id"], step.get("marked")))
+                                   _marked=ai_marks.path_of(task["id"], step.get("marked")),
+                                   _released=[path for path in (ai_marks.path_of(task["id"], item["file"]) for item in step.get("released") or []) if path])
                     if step.get("inpaint"):
                         message.update(inpaint_image=step["inpaint"], inpaint_note=INPAINT_NOTE)
                 messages.append(message)
@@ -543,6 +547,7 @@ def attach_pending(result, client, task_id=None):
         "kind=stop: the user stopped your run, so do not run it again until they say what to change; "
         "kind=halt: the user called a halt on the whole task: do nothing more for it until they ask; "
         "kind=pictures: pictures the user handed you (attached), with made_with read from each picture's own workflow; "
+        "kind=standin: in a private task, a stand-in picture the user released (attached) to judge the look by; "
         "kind=sealed_notes: brief notes the user wrote for hidden tokens ([P*], [img*], [M*]) in Privacy Overview — read them as the meaning of those tokens without revealing sealed content; "
         "kind=privacy_adjust: per-model visibility overrides or prompt splits/new tokens adjusted by the user in Privacy Overview — follow the updated tokens and exposed parts going forward."
     )

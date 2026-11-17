@@ -9,11 +9,14 @@
  * also a mask (white where boxes, circles, lines and brush strokes are) that the server turns into
  * the picture ready to repaint. The AI gets the notes and the marked picture with its next step.
  * Also the timeline's row for marks sent (marksStep), which says the choice. Every listener lives
- * as long as the window and goes with it.
+ * as long as the window and goes with it. In a private task, where the AI sees no picture, a box can be
+ * released ("show the AI this part"): only that part, cut out on the server (api/ai_release.py), reaches
+ * the AI; boxes over half the picture ask first.
  */
 
 import { translate as t } from './locales.js';
-import { anomalousAlert } from './ui_dialog.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
+import { releasedThumbs } from './ui_ai_released.js';
 import { pictureShown } from './ai_task_view.js';
 import { deliveryState } from './ui_ai_delivery.js';
 
@@ -26,6 +29,7 @@ const MODES = ['auto', 'local', 'whole'];
 const COLORS = ['#ff4d4f', '#fadb14', '#36cfc9'];
 const MAX_EDGE = 2048;
 const MAX_MARKS = 20;
+const BIG_RELEASE = 0.5; // released boxes past this share of the picture ask first
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -141,9 +145,9 @@ function paint(ctx, mark, number, w, h) {
 
 /**
  * Opens the marker on output picture `image` ({filename, subfolder}) for task `taskId`;
- * `sent()` runs once the marks are with the task.
+ * `sent()` runs once the marks are with the task. `secret`: the task is private (boxes can be released).
  */
-export function openMarker(image, taskId, sent) {
+export function openMarker(image, taskId, sent, { secret = false } = {}) {
     const marks = [];
     let tool = 'box';
     let mode = 'auto';
@@ -233,7 +237,8 @@ export function openMarker(image, taskId, sent) {
             way.querySelector('.anomalous-ai-marker-mode-why').textContent = t(id === 'local' && !areas ? 'aiMarkModeNeedArea' : `aiMarkModeWhy_${id}`);
         }
     }
-    side.append(empty, list, whole, ways, send, el('div', 'anomalous-ai-marker-note', t('aiMarkNote')));
+    side.append(empty, list, ...(secret ? [el('div', 'anomalous-ai-marker-note is-private', t('aiMarkReleaseNote'))] : []),
+        whole, ways, send, el('div', 'anomalous-ai-marker-note', t('aiMarkNote')));
 
     const body = el('div', 'anomalous-ai-marker-body');
     const left = el('div', 'anomalous-ai-marker-left');
@@ -264,7 +269,12 @@ export function openMarker(image, taskId, sent) {
                 const note = el('input', 'anomalous-ai-marker-input');
                 note.placeholder = t('aiMarkNotePlaceholder');
                 note.addEventListener('input', () => { noted()[[...list.children].indexOf(row)].note = note.value; });
-                row.append(el('span', 'anomalous-ai-marker-badge'), el('span', 'anomalous-ai-marker-shape'), note,
+                const share = button('anomalous-ai-marker-share', '', () => { // a private task: this box's part goes to the AI
+                    const mark = noted()[[...list.children].indexOf(row)];
+                    mark.release = !mark.release;
+                    redraw();
+                }, t('aiMarkReleaseHint'));
+                row.append(el('span', 'anomalous-ai-marker-badge'), el('span', 'anomalous-ai-marker-shape'), note, share,
                     button('anomalous-ai-marker-remove', '×', () => { marks.splice(marks.indexOf(noted()[[...list.children].indexOf(row)]), 1); redraw(); }, t('aiMarkRemove')));
                 list.append(row);
                 requestAnimationFrame(() => note.focus());
@@ -274,6 +284,11 @@ export function openMarker(image, taskId, sent) {
             badge.style.background = mark.color;
             row.querySelector('.anomalous-ai-marker-shape').textContent = t(`aiMarkTool_${mark.shape}`);
             row.querySelector('input').value = mark.note || '';
+            const share = row.querySelector('.anomalous-ai-marker-share');
+            share.hidden = !secret || mark.shape !== 'box';
+            share.textContent = t(mark.release ? 'aiMarkReleaseOn' : 'aiMarkReleaseOff');
+            share.classList.toggle('is-on', Boolean(mark.release));
+            share.setAttribute('aria-pressed', String(Boolean(mark.release)));
         });
     }
 
@@ -358,13 +373,17 @@ export function openMarker(image, taskId, sent) {
             await anomalousAlert(t(marks.length && mode === 'local' ? 'aiMarkModeNeedArea' : 'aiMarkNeedOne'));
             return;
         }
+        const released = secret ? noted().filter(mark => mark.release && mark.shape === 'box') : [];
+        const share = Math.min(1, released.reduce((sum, mark) => sum + bounds(mark).w * bounds(mark).h, 0));
+        if (share > BIG_RELEASE && await anomalousConfirm(t('aiMarkReleaseBig', { percent: Math.round(share * 100) }), t('aiMarkTitle'),
+            { okLabel: t('aiMarkReleaseBigOk'), okClass: 'anomalous-btn-primary' }) !== true) return;
         send.disabled = true;
         try {
             const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(taskId)}/marks`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     image: [image.subfolder, image.filename].filter(Boolean).join('/'), png: composite(), text: whole.value.trim(),
-                    marks: noted().map(mark => ({ shape: mark.shape, note: (mark.note || '').trim(), ...bounds(mark) })), mode,
+                    marks: noted().map(mark => ({ shape: mark.shape, note: (mark.note || '').trim(), ...bounds(mark), ...(released.includes(mark) ? { release: true } : {}) })), mode,
                     ...(mode === 'local' ? { mask: repaintMask() } : {}),
                 }),
             });
@@ -401,6 +420,7 @@ export function marksStep(step, taskId, owner) {
     const mode = step.mode || (step.inpaint ? 'local' : ''); // marks sent before there was a choice: none, or a mask
     if (mode) words.append(el('div', `anomalous-ai-marks-mode is-${mode}`, t('aiMarkModeChosen', { mode: t(`aiMarkMode_${mode}`) })));
     if (step.inpaint) words.append(el('div', 'anomalous-ai-marks-inpaint', t('aiMarkInpaintReady', { file: step.inpaint })));
+    if (step.released?.length) words.append(el('div', 'anomalous-ai-marks-released', t('aiMarkReleasedLine', { count: step.released.length })), releasedThumbs(taskId, step.released, owner));
     words.append(notes, deliveryState(step));
     return box;
 }

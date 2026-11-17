@@ -516,7 +516,15 @@ covered by the `styles.css` manifest.
   (`POST /anomalous/ai_tasks/{id}/marks`: the marked PNG, checked, kept in
   `anomalous/ai_marks/<task>/`, never the output folder, gone with the task; the marks as
   fractions with notes): a `user_marks` step the AI receives like a message (kind `marks`) with
-  the marked picture attached as an image to the same answer. `web/modules/ui_ai_marker.js` is
+  the marked picture attached as an image to the same answer. In a private task, where the AI sees no
+  picture, the user may release boxes: `api/ai_release.py` cuts each part out of the original (a quarter of
+  the box as margin, the box framed in red dashes, drawn anew as a plain PNG with no text in it, at most
+  768 px) and keeps it beside the marks; it also makes a stand-in (`POST /anomalous/ai_tasks/{id}/standin`:
+  the task's last picture's own workflow with the positive prompt replaced by a harmless one, previewed,
+  refused when it reads a picture), a `user_standin` step. These reach the AI marked (`ai_release.RELEASED`)
+  and are the only pictures `ai_privacy.guard` keeps in a private call; nothing of `brief()` goes with them,
+  and the AI has no tool that cuts. `web/modules/ui_ai_released.js` shows them (the marks' and the stand-in's
+  timeline rows, the privacy overview's list) and asks for a stand-in. `web/modules/ui_ai_marker.js` is
   the marker window (box, circle, arrow, pen; three colours; a note per mark; a brush for the
   area to repaint) opened from a picture's ✎ on the AI page, and the timeline row of marks sent.
   The user also picks how to change it (`ai_marks.MODES`: leave it to the AI, only the marked

@@ -220,7 +220,7 @@ function renderTask() {
                 box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' }); // what one sent, in view
             }, { task: () => state.task, commands: () => taskCommands({ task: () => state.task, undo: () => undoAll(state.task), newTask,
                 side: view => pickView(state.stage, view, false, state.task, renderTask, refresh), changed: refresh }),
-            mark: (image, sent) => openMarker(image, task.id, () => { sent(); void refresh(); }),
+            mark: (image, sent) => openMarker(image, task.id, () => { sent(); void refresh(); }, { secret: Boolean(state.task?.private) }),
             openMaterials: kind => pickView(state.stage, 'toolbox', false, state.task, renderTask, () => void refresh(), kind), changed: () => void refresh() }),
             seen: (task.steps || []).length, newest: newestButton(box), now: nowStrip(), dock: el('div', 'anomalous-ai-dock'),
         };
@@ -414,7 +414,7 @@ async function select(id) {
 }
 
 /** Pictures on the AI page can be marked for the task shown (ui_ai_marker.js). */
-setMarker(image => state.task && openMarker(image, state.task.id, () => void refresh()));
+setMarker(image => state.task && openMarker(image, state.task.id, () => void refresh(), { secret: Boolean(state.task.private) }));
 
 /**
  * The materials picker docks in the side column while this page is shown; a run's step opens its shape there.

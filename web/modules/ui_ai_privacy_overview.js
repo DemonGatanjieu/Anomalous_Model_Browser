@@ -24,6 +24,7 @@ import { promptMirrors } from './ui_ai_privacy_mirror.js';
 import { openToolbox } from './ui_ai_toolbox.js';
 import { loadCatalog } from './ai_toolbox_data.js';
 import { typeLabel } from './ui_model_types.js';
+import { releasedOf, releasedThumbs, requestStandin } from './ui_ai_released.js';
 import { openSent } from './ui_ai_sent.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { outputThumbnail } from './ui_kept_toast.js';
@@ -458,7 +459,8 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         stats.append(
             stat(t('aiPrivacyStatPrompts'), t('aiPrivacyStatPromptsN', { n: overview.hidden.prompts.length })),
             stat(t('aiPrivacyStatModels'), t('aiPrivacyStatModelsN', { n: overview.modelCatalog.filter(m => m.hidden).length })),
-            stat(t('aiPrivacyStatPictures'), t(overview.private ? 'aiPrivacyStatPicturesNone' : 'aiPrivacyStatPicturesAll'),
+            stat(t('aiPrivacyStatPictures'), !overview.private ? t('aiPrivacyStatPicturesAll')
+                : releasedOf(task).length ? t('aiPrivacyStatPicturesReleased', { count: releasedOf(task).length }) : t('aiPrivacyStatPicturesNone'),
                 overview.private && pictures ? t('aiPrivacyStatPicturesKept', { count: pictures }) : ''),
         );
         parts.push(stats);
@@ -508,6 +510,28 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
             msgContent = el('div', '', t('aiPrivacyVisibleMessagesNone'));
         }
         visibleSec.append(visibleRow('chat', t('aiPrivacyVisibleMessages'), msgContent));
+        if (overview.private) { // the pictures the user released, every one in sight; and a stand-in to release
+            const released = releasedOf(task);
+            const standin = el('button', 'anomalous-ai-tool', t('aiPrivacyStandin'));
+            standin.type = 'button';
+            standin.title = t('aiPrivacyStandinHint');
+            const said = el('div', 'anomalous-ai-priv-standin-state');
+            standin.onclick = async () => {
+                standin.disabled = true;
+                said.textContent = t('aiPrivacyStandinRunning');
+                try {
+                    await requestStandin(task);
+                    const fresh = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(task.id)}`).then(r => (r.ok ? r.json() : null)).catch(() => null);
+                    if (Array.isArray(fresh?.task?.steps)) task.steps = fresh.task.steps;
+                    onAdjusted();
+                } catch (error) {
+                    standin.disabled = false;
+                    said.textContent = error.message;
+                }
+            };
+            visibleSec.append(visibleRow('image', t('aiPrivacyVisibleReleased'),
+                released.length ? releasedThumbs(task.id, released, window.anomalousBrowserInstance) : el('div', '', t('aiPrivacyVisibleReleasedNone')), standin, said));
+        }
         visibleSec.append(visibleRow('pencil', t('aiPrivacyVisibleNotes'), visibleNotesList));
         const canvas = [el('div', '', t('aiPrivacyVisibleCanvasDesc'))];
         if (overview.visible.decisionsCount > 0) canvas.push(el('div', '', t('aiPrivacyVisibleDecisions', { n: overview.visible.decisionsCount })));

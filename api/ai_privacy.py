@@ -12,7 +12,8 @@ All of it happens at one place: mcp_server.py puts the texts back into a call's 
 (ai_sealed.expand) and hands every tool result to guard() before it leaves, whatever tool or later
 step (run pictures, the user's messages) put a picture or a prompt in it. A call that
 cannot be tied to a task is private while the default is on or any private task is unfinished:
-when in doubt, nothing is shown. The card in the AI app (mcp_apps.py) shows no pictures either.
+when in doubt, nothing is shown, but for the pictures the user released themselves (ai_release.py: a part they
+boxed, a stand-in), marked on their way and let through. The card in the AI app (mcp_apps.py) shows no pictures either.
 """
 
 import json
@@ -21,6 +22,7 @@ import time
 import uuid
 
 from . import ai_model_choice, ai_sealed, ai_tasks
+from .ai_release import RELEASED
 from .path_utils import atomic_write_json
 
 NOTE = ("Privacy mode: no pictures or prompt text reach you, only tokens like [P1], [img1] and [M1] (a model) to pass "
@@ -130,6 +132,8 @@ def guard(result, private, task_id=None, info=None, tool=""):
     Any other call still names the models the user hides by token (ai_model_choice.py)."""
     if not isinstance(result, dict):
         return result
+    items = [item for item in result.get("content") or [] if isinstance(item, dict)]
+    released = {id(item) for item in items if item.pop(RELEASED, False)}  # the user's own release: the mark goes either way
     if not private:
         hidden = ai_model_choice.marks()["hidden"]
         if not hidden:
@@ -139,7 +143,7 @@ def guard(result, private, task_id=None, info=None, tool=""):
         if json.dumps(result, ensure_ascii=False) != before and isinstance(result.get("content"), list):
             result["content"].append({"type": "text", "text": MODEL_NOTE})
         return result
-    content = [item for item in result.get("content") or [] if not (isinstance(item, dict) and item.get("type") == "image")]
+    content = [item for item in result.get("content") or [] if not (isinstance(item, dict) and item.get("type") == "image" and id(item) not in released)]
     if len(content) != len(result.get("content") or []):
         content.append({"type": "text", "text": NOTE})
         result["content"] = content

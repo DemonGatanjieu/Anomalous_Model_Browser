@@ -6,7 +6,9 @@ the gallery stays the user's pictures) and adds a "user_marks" step to the task.
 like a message (ai_panels._collect, kind "marks": the notes with where each mark is, in
 fractions of the picture) and, attached to the same answer, the marked picture as a thumbnail
 (image_items), so an AI that can see pictures sees the marks. Only an output picture can be
-marked; the PNG is checked (signature, size, dimensions) before it is kept.
+marked; the PNG is checked (signature, size, dimensions) before it is kept. In a private task a box can be
+released (its "release"): ai_release.py cuts that part out of the original, the only picture of it the AI
+then gets, with what it is for.
 The user also says how to change the picture (MODES), and the AI reads that choice first, as the
 user's: leave it to the AI, change only the marked areas, or make the whole picture anew. For
 "only the marked areas" the page sends a mask (the marker's "repaint" brush, and the boxes,
@@ -42,7 +44,7 @@ MODES = {
     "whole": "The user chose: make the whole picture anew with these changes (its own model and prompt, "
              "changed as the notes say; a new seed or img2img). Do not repaint only a part of it.",
 }
-FILE_NAME = re.compile(r"[0-9a-f]{10}\.png")
+FILE_NAME = re.compile(r"[0-9a-f]{10}(?:_r\d+|_s)?\.png")  # the marked picture, a released part, a stand-in
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
@@ -98,7 +100,8 @@ def _clean(marks, masked=False):
             raise MarksError(f"Each mark is one of {', '.join(SHAPES)}")
         x, y, w, h = (_fraction(mark.get(key, 0)) for key in ("x", "y", "w", "h"))
         out.append({"shape": mark["shape"], "x": x, "y": y, "w": min(w, 1 - x), "h": min(h, 1 - y),
-                    "note": ai_tasks._short(str(mark.get("note") or "").strip(), MAX_NOTE)})
+                    "note": ai_tasks._short(str(mark.get("note") or "").strip(), MAX_NOTE),
+                    **({"release": True} if mark.get("release") is True and mark["shape"] == "box" else {})})
     return out
 
 
@@ -178,6 +181,16 @@ def save(task_id, image, png, marks, text="", now=None, mask=None, mode=None):
     if not ai_tasks.get_task(task_id):
         raise MarksError("No such task")
     inpaint = _inpaint_file(picture, mask, step_id) if mask else None  # outside the lock: a picture takes a moment
+    released, released_words = [], ""
+    if any(mark.get("release") for mark in marks):
+        from . import ai_privacy, ai_release
+
+        if ai_privacy.is_private(ai_tasks.get_task(task_id)):  # elsewhere the AI sees the whole picture anyway
+            try:
+                released = ai_release.keep_crops(task_id, step_id, picture_path(picture), marks)
+            except ai_release.ReleaseError as error:
+                raise MarksError(str(error))
+            released_words = ai_release.CROP_WORDS.format(count=len(released))  # for the AI, not the user's own words
     with ai_tasks._lock:
         task = ai_tasks._load().get(task_id)
         if not task:
@@ -186,8 +199,9 @@ def save(task_id, image, png, marks, text="", now=None, mask=None, mode=None):
         with open(os.path.join(ai_tasks.marks_dir(task_id), f"{step_id}.png"), "xb") as target:  # a new name: never replaces
             target.write(data)
         step = {"id": step_id, "at": now, "ms": 0, "tool": "user_marks", "kind": "user", "ok": True, "state": "done",
-                "summary": "user_marks", "text": _words(marks, text, mode), "note": text, "image": picture, "marks": marks, "mode": mode,
-                "marked": f"{step_id}.png", "delivered": False, "results": [], **({"inpaint": inpaint} if inpaint else {})}
+                "summary": "user_marks", "text": "\n".join(part for part in (_words(marks, text, mode), released_words) if part), "note": text, "image": picture, "marks": marks, "mode": mode,
+                "marked": f"{step_id}.png", "delivered": False, "results": [], **({"inpaint": inpaint} if inpaint else {}),
+                **({"released": released} if released else {})}
         task["steps"].append(step)
         del task["steps"][:-ai_tasks.MAX_STEPS]
         task["updated"] = max(task.get("updated", 0), now)
@@ -200,11 +214,18 @@ def save(task_id, image, png, marks, text="", now=None, mask=None, mode=None):
 def image_items(messages):
     """MCP image items of the marked pictures among `messages` and of the pictures the user handed
     over (ai_pictures.py), their thumbnails, taking their private "_marked" / "_pictures" paths off
-    the messages."""
+    the messages; the pictures the user released in a private task ("_released", ai_release.py)
+    marked so the privacy guard lets those, and only those, through."""
+    from .ai_release import RELEASED
+
     items = []
     for message in messages:
         for path in [message.pop("_marked", None), *message.pop("_pictures", [])]:
             item = _image_content(path) if path else None
             if item:
                 items.append(item)
+        for path in message.pop("_released", []):
+            item = _image_content(path) if path else None
+            if item:
+                items.append({**item, RELEASED: True})
     return items
