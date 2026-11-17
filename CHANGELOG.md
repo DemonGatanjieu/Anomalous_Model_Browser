@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 字少了，图多了（先改了两处）：主页「让 AI 帮你做」的六张卡换成一张小图、名字和一句话，原来的绿色小标签改成鼠标停在卡上才显示；「隐私一览」顶上换成一张小图（原文 → 带锁的代号 → AI），说明缩成一行，“能自己读硬盘的软件拦不住”那段缩成一行黄字，鼠标停上去看全文。小图是 ChatGPT 照素材窗插画的样子画的。
+- Fewer words, more pictures (two places first): the home page's six "Let the AI do it" cards are a picture, a name and one line, with what each makes sure of on hover; the Privacy overview opens on a small picture (words → a locked code word → the AI) and one line, and the note about apps that read the disk is one line with the rest on hover. The pictures were drawn with ChatGPT in the style of the materials window's.
+
 - 「给 AI 的素材」大窗：点卡片只是选中它，右边显示它的详情，鼠标划过别的卡不再跟着换（原来的「钉住」去掉了）。放进留言用卡片右上角的圆圈、封面下沿的「加进留言」，或右边详情的「加进留言」。右边总有一格「告诉 AI 用它干什么」，写了字就自动加进留言。勾了某个模型的作者介绍、却没把它加进留言时，按「好了」会问一句要不要加进去。
 - In the large "Materials for the AI" window a press on a card only selects it and shows it on the right; passing over other cards no longer changes that ("Pin" is gone). The circle on a card's corner, "Put on the message" over its cover, or the same button in the detail puts it on the message. The detail always has "Tell the AI what to do with it", and writing there puts the thing on the message. Ticking paragraphs of a model's description without putting it on the message is asked about on "Done".
 - 模型名字给不给 AI 看：卡片上不再每张都挂一个按钮，只有藏了名字的模型左上角有个小锁「藏名」；右边详情里换成一个开关「AI 能看到它的名字」，下面写着现在是什么意思。素材窗底下的「只能用」换成漏斗图标，不再和锁混在一起。

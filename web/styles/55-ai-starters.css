@@ -15,13 +15,15 @@
 .anomalous-ai-start-app.is-known .anomalous-ai-visit-dot { background: var(--amb-ok); opacity: 1; }
 .anomalous-ai-start-warn { flex-basis: 100%; color: var(--amb-warn-text); font-size: 0.8em; line-height: 1.55; }
 .anomalous-ai-start-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+/* A picture, a name and one line: what the card makes sure of is its tooltip. */
 .anomalous-ai-start-card {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
+    align-items: center;
+    gap: 4px;
     min-width: 0;
-    padding: 12px 14px;
+    padding: 12px 14px 14px;
+    text-align: center;
     border: 1px solid var(--amb-border);
     border-radius: 12px;
     background: rgba(var(--amb-ink-rgb), 0.03);
@@ -32,17 +34,10 @@
 }
 .anomalous-ai-start-card:hover { border-color: color-mix(in srgb, var(--amb-link) 40%, transparent); background: rgba(var(--amb-ink-rgb), 0.07); }
 .anomalous-ai-start-card[data-starter="try"] { border-color: color-mix(in srgb, var(--amb-link) 55%, transparent); }
-.anomalous-ai-start-card-head { display: inline-flex; align-items: center; gap: 7px; color: var(--amb-text-main); }
-.anomalous-ai-start-card-title { font-size: 0.92em; font-weight: 600; }
-.anomalous-ai-start-card-body { color: var(--amb-text-muted); font-size: 0.8em; line-height: 1.55; }
-.anomalous-ai-start-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; padding-top: 2px; }
-.anomalous-ai-start-tag {
-    padding: 1px 7px;
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--amb-ok) 16%, transparent);
-    color: var(--amb-ok-text);
-    font-size: 0.72em;
-}
+.anomalous-ai-start-card-art { width: 84px; height: 84px; object-fit: contain; }
+.anomalous-ai-start-card > .anomalous-tb-icon { margin: 28px 0; color: var(--amb-link); }
+.anomalous-ai-start-card-title { color: var(--amb-text-main); font-size: 0.95em; font-weight: 600; }
+.anomalous-ai-start-card-body { color: var(--amb-text-muted); font-size: 0.8em; line-height: 1.5; }
 .anomalous-ai-start-sheet { display: flex; flex-direction: column; gap: 10px; min-width: min(440px, 100%); min-height: 0; }
 /* The fields scroll inside the window (its own height capped) so the buttons under them stay in sight. */
 .anomalous-ai-start-scroll { display: flex; flex-direction: column; gap: 10px; min-height: 0; margin: 0 -6px; padding: 2px 6px; overflow-y: auto; }

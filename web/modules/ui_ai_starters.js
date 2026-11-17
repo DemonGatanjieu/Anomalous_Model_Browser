@@ -1,7 +1,9 @@
 /**
  * The home page's "Let the AI do it" (ui_home.js gives it the first place, above the tool cards): which AI app came last, and a
  * warning when the tool list it holds is a short one (api/mcp_tool_sets.py) that cannot take a task
- * handed over here; then the six starter cards (ui_ai_starter_sheet.js), each with its tags. "Explain my
+ * handed over here; then the six starter cards (ui_ai_starter_sheet.js): a picture (web/assets/start_*.webp,
+ * drawn with ChatGPT in the style of the others), a name and one short line; what each one makes sure of
+ * (its tags) is said on hover, not in chips. "Explain my
  * canvas" opens the canvas hand-off as the canvas menu does (ui_ai_canvas_hand.js). Under the cards, once
  * presets were run from here with no AI, the line that runs that list again (ui_ai_preset_sheet.js againLine).
  * GET /anomalous/ai_starters; without it (an older server) the section stays away.
@@ -45,15 +47,14 @@ function appLine(owner, app) {
 function card(owner, starter, data) {
     const node = button('anomalous-ai-start-card', '', () => (starter.id === 'canvas' ? handCanvasToAi(() => owner) : openStarter(owner, starter, data)));
     node.dataset.starter = starter.id;
-    const head = el('span', 'anomalous-ai-start-card-head');
-    head.append(icon(starter.icon, 17), el('span', 'anomalous-ai-start-card-title', t(`aiStart_${starter.id}_title`)));
-    const tags = el('span', 'anomalous-ai-start-tags');
-    for (const tag of cardTags(starter, data)) {
-        const chip = el('span', 'anomalous-ai-start-tag', t(`aiStartTag_${tag}`));
-        chip.title = t(`aiStartTagHint_${tag}`);
-        tags.append(chip);
-    }
-    node.append(head, el('span', 'anomalous-ai-start-card-body', t(`aiStart_${starter.id}_body`)), tags);
+    const art = el('img', 'anomalous-ai-start-card-art');
+    art.src = new URL(`../assets/start_${starter.id}.webp`, import.meta.url).href;
+    art.alt = '';
+    art.decoding = 'async';
+    art.onerror = () => art.replaceWith(icon(starter.icon, 28)); // the picture is missing: its icon
+    node.title = cardTags(starter, data).map(tag => t('aiStartTagLine', { tag: t(`aiStartTag_${tag}`), hint: t(`aiStartTagHint_${tag}`) })).join('\n');
+    node.append(art, el('span', 'anomalous-ai-start-card-title', t(`aiStart_${starter.id}_title`)),
+        el('span', 'anomalous-ai-start-card-body', t(`aiStart_${starter.id}_body`)));
     return node;
 }
 

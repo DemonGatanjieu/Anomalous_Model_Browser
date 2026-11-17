@@ -329,11 +329,12 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         const recommended = overview.private && overview.privacyModels;
         const state = recommended ? 'On' : overview.private ? 'Custom' : 'Off';
         const head = el('div', 'anomalous-ai-priv-head');
-        const mark = el('span', `anomalous-ai-priv-head-mark${overview.private ? ' is-on' : ''}`);
-        mark.append(icon('shield', 20));
+        // A picture says what the settings do (words → a code word → the AI): the words can be one line.
+        const mark = el('img', `anomalous-ai-priv-head-art${overview.private ? ' is-on' : ''}`);
+        mark.src = new URL('../assets/ai_privacy_codes.webp', import.meta.url).href;
+        mark.alt = '';
         const copy = el('div', 'anomalous-ai-priv-head-copy');
-        copy.append(el('strong', '', t(`aiPrivacyHead${state}`)), el('span', '', t(`aiPrivacyHead${state}Sub`)),
-            el('span', 'anomalous-ai-priv-head-locks', t('aiPrivacyLocksLine')));
+        copy.append(el('strong', '', t(`aiPrivacyHead${state}`)), el('span', '', t(`aiPrivacyHead${state}Sub`)));
         if (!recommended && onTogglePrivacy) {
             copy.append(linkButton(t('aiPrivacyUseRecommended'), async (event) => {
                 event.currentTarget.disabled = true;
@@ -354,7 +355,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         if (onTogglePrivacy) {
             switches.append(switchRow(t('aiPrivacySwitchMain'), overview.private, (input) => { close(); void onTogglePrivacy(input.checked); }));
         }
-        switches.append(switchRow(t('aiPrivacyHideModels'), overview.privacyModels, async (input) => {
+        const modelSwitch = switches.appendChild(switchRow(t('aiPrivacyHideModels'), overview.privacyModels, async (input) => {
             input.disabled = true;
             try {
                 await postPrivacyRule(task, { action: 'model_rule', privacy_models: input.checked });
@@ -365,12 +366,14 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
                 await anomalousAlert(error.message);
             }
         }));
+        modelSwitch.title = t('aiPrivacyLocksLine');
         head.append(mark, copy, switches);
         const parts = [head];
 
         if (overview.readsDisk) {
             const reach = el('div', 'anomalous-ai-priv-reach');
-            reach.append(icon('alert', 15), el('span', '', t('aiPrivacyReach', { app: overview.client })));
+            reach.title = t('aiPrivacyReach', { app: overview.client }); // the whole of it on hover
+            reach.append(icon('alert', 15), el('span', '', t('aiPrivacyReachLine', { app: overview.client })), icon('info', 13));
             parts.push(reach);
         }
 
@@ -388,7 +391,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         const hiddenSec = section('lock', t('aiPrivacyHiddenHead'));
         if (overview.hidden.total || overview.modelCatalog.length) {
             const hint = el('p', 'anomalous-ai-priv-hint');
-            hint.append(el('span', '', t('aiPrivacyNotesBanner')), statusLine);
+            hint.append(statusLine);
             hiddenSec.append(hint);
         }
         overview.hidden.prompts.forEach((item, at) => hiddenSec.append(renderPromptRow(item, at + 1, task, rowCtx)));
