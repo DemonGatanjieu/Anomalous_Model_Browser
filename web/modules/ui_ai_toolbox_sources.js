@@ -4,7 +4,8 @@
  * the second column that narrows a kind by a node's source, a prompt's origin, a model's type or
  * a way's job (a column in the large window; in the side panel one "Source: All ▾" button opening
  * a list to search, ui_ai_facet_menu.js), the base model chips of the models listed (as the Models
- * page has them, model_bases.js), and the bar over the cards that picks the pack shown.
+ * page has them, model_bases.js), the bar over the cards that picks the pack shown, and the bottom row's
+ * two buttons for how strictly the AI keeps to the task's picks.
  */
 
 import { translate as t } from './locales.js';
@@ -145,6 +146,22 @@ export function renderFilterTabs({ filters, activeFilter, counts, onPick }) {
         if (count) node.append(el('span', 'anomalous-tb-count', String(count)));
         return node;
     }));
+}
+
+const MODES = ['prefer', 'only'];
+
+/** "Prefer these" / "Only these" as a radio pair: `active` the task's, `onPick(mode)` applies another. */
+export function renderModes({ active, disabled, onPick }) {
+    const modes = el('div', 'anomalous-tb-modes');
+    modes.setAttribute('role', 'radiogroup');
+    for (const mode of MODES) {
+        const option = tbButton(`anomalous-tb-mode${active === mode ? ' is-on' : ''}`, [icon(mode === 'only' ? 'filter' : 'target', 16), t(`aiTbMode_${mode}`)], () => onPick(mode), t(`aiTbModeHint_${mode}`));
+        option.setAttribute('role', 'radio');
+        option.setAttribute('aria-checked', String(active === mode));
+        option.disabled = disabled;
+        modes.append(option);
+    }
+    return modes;
 }
 
 /** Updates the center column's subheader: folds the title/count into the base bar in full models view to avoid empty space. */

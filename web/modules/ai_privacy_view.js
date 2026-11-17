@@ -2,7 +2,8 @@
  * Pure classification and preview masking for the Privacy Overview window (no DOM): splits a task's
  * record into what stays hidden from the AI ([P*], [img*], [M*] tokens + pixel privacy) versus what
  * the AI reads directly (title, unsealed text in messages/gists, exposed prompt pieces, user notes
- * on tokens, canvas wiring and numeric settings), plus per-model exposure states and tag-split helpers.
+ * on tokens, canvas wiring and numeric settings), plus per-model exposure states and tag-split helpers,
+ * and the prompts as written, slot by slot, for the side-by-side view (promptMirror).
  */
 
 import { splitPrompt } from './prompt_tags.js';
@@ -87,6 +88,52 @@ export function partsShowingRange(text, start, end) {
     return [[0, start, true], [start, end, false], [end, text.length, true]]
         .map(([from, to, hide]) => ({ text: text.slice(from, to), hide }))
         .filter(part => part.text);
+}
+
+/**
+ * The prompts as the user wrote them, for the overview's side-by-side view: each written once (a prompt split
+ * by letting words through, `sealed_views`, as its first text, the tokens kept of it inside it), as
+ * { token, slots } in its own order. A slot { text, shown } let through is shown; hidden again afterwards
+ * (seal_message_phrase) it names the token now covering it. A hidden slot names the active token holding
+ * it and its index among that token's tags (partsShowingTags), -1 when the token is one text.
+ */
+export function promptMirror(task, prompts) {
+    const sealed = task?.sealed || {};
+    const legacy = task?.sealed_legacy || {};
+    const views = task?.sealed_views || {};
+    const kept = new Set((task?.exposed_prompts || []).flatMap(item => item?.kept || []));
+    const byText = new Map(prompts.map(item => [item.text, item.token]));
+    const inside = new Set();
+    const hiddenSlots = (token, asTags) => {
+        inside.add(token);
+        const own = String(sealed[token] ?? '');
+        if (!asTags) return [{ text: own, shown: false, token, index: -1 }];
+        return splitPrompt(own).items.map((item, index) => ({ text: item.text, shown: false, token, index })).filter(slot => slot.text);
+    };
+    const shownSlots = text => splitPrompt(text).items.filter(item => item.text).map((item) => {
+        const token = byText.get(item.text);
+        if (!token) return { text: item.text, shown: true };
+        inside.add(token);
+        return { text: item.text, shown: false, token, index: -1 };
+    });
+    const rows = [];
+    for (const [token, view] of Object.entries(views)) {
+        if (legacy[token] === undefined || kept.has(token)) continue;
+        const asTags = promptChunks(String(legacy[token])).mode === 'tags';
+        const slots = [];
+        for (const piece of String(view).split(/(\[P\d+\])/)) {
+            if (/^\[P\d+\]$/.test(piece)) {
+                if (sealed[piece] !== undefined) slots.push(...hiddenSlots(piece, asTags));
+            } else if (piece.trim()) {
+                slots.push(...(asTags ? shownSlots(piece) : [{ text: piece.trim(), shown: true }]));
+            }
+        }
+        rows.push({ token, slots });
+    }
+    for (const item of prompts) {
+        if (!kept.has(item.token) && !inside.has(item.token)) rows.push({ token: item.token, slots: hiddenSlots(item.token, item.chunks?.mode === 'tags') });
+    }
+    return rows.sort((a, b) => compareTokens(a.token, b.token));
 }
 
 /** Find a matching token like `[img1]` or `[M1]` for a raw value / basename inside `sealed`. */

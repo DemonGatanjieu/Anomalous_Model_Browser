@@ -3,8 +3,29 @@
 // with sealed_legacy support, matchingTokenFor, generated picture counts, and unmasked previews.
 import assert from 'node:assert/strict';
 import {
-    buildPrivacyOverview, formatModelRef, maskTextForView, matchingTokenFor, parsePictureRef, partsShowingRange, partsShowingTags, promptChunks,
+    buildPrivacyOverview, formatModelRef, maskTextForView, matchingTokenFor, parsePictureRef, partsShowingRange, partsShowingTags, promptChunks, promptMirror,
 } from '../web/modules/ai_privacy_view.js';
+
+// The side-by-side view: a prompt split by letting 'ocean' through reads as written, slot for slot.
+{
+    const task = {
+        sealed: { '[P2]': '1girl, swimsuit', '[P3]': 'sunset', '[P4]': 'red hair, long hair, smile', '[P5]': 'ocean' },
+        sealed_legacy: { '[P1]': '1girl, swimsuit, ocean, sunset' },
+        sealed_views: { '[P1]': '[P2], ocean, [P3]' },
+        exposed_prompts: [{ from: '[P1]', kept: ['[P2]', '[P3]'], text: 'ocean' }],
+    };
+    const prompts = ['[P2]', '[P3]', '[P4]'].map(token => ({ token, text: task.sealed[token], chunks: promptChunks(task.sealed[token]) }));
+    const rows = promptMirror(task, prompts);
+    assert.deepEqual(rows.map(row => row.token), ['[P1]', '[P4]'], 'what was kept of [P1] is inside it, not a prompt of its own');
+    assert.deepEqual(rows[0].slots.map(slot => [slot.text, slot.shown, slot.token || '', slot.index ?? null]), [
+        ['1girl', false, '[P2]', 0], ['swimsuit', false, '[P2]', 1], ['ocean', true, '', null], ['sunset', false, '[P3]', 0],
+    ]);
+    assert.deepEqual(rows[1].slots.map(slot => [slot.text, slot.index]), [['red hair', 0], ['long hair', 1], ['smile', 2]]);
+    // 'ocean' hidden again afterwards ([P5] covers it): its slot says so, and [P5] is no row of its own.
+    const again = promptMirror(task, [...prompts, { token: '[P5]', text: 'ocean', chunks: promptChunks('ocean') }]);
+    assert.deepEqual(again[0].slots[2], { text: 'ocean', shown: false, token: '[P5]', index: -1 });
+    assert.deepEqual(again.map(row => row.token), ['[P1]', '[P4]']);
+}
 
 assert.deepEqual(parsePictureRef('ai_inbox\\ref_01.png'), {
     path: 'ai_inbox/ref_01.png', subfolder: 'ai_inbox', filename: 'ref_01.png',

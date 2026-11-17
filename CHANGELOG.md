@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 「隐私一览」可以在「单栏阅读」和「左右对照」之间切换（记在浏览器里）。左右对照时，左边是留在本机的、右边是 AI 看得到的，各有一条颜色横条；提示词左右按原来的位置一一对照：左边放出去的词变成虚线空位，右边藏着的词是带锁的空位，点任意一边的词两边一起选中，可以「放给 AI 看」，放出去的也能「再藏起来」，词序始终不变。每个模型多了「AI 能看到它的哪些信息」（AI 拿到什么、什么留在本机）和「在素材窗里改」，改完关掉素材窗就回到隐私一览。
+- The Privacy overview reads in one column or side by side (kept in this browser). Side by side, what stays here and what the AI reads face each other under a coloured bar, and each prompt is mirrored word for word in its own order: a word let through is a dashed gap on the left, a hidden one a locked gap on the right; pressing a word on either side picks it on both, to let it through or hide it again. Each model unfolds what the AI gets of it and what stays here, and "Change in materials" opens it in the materials window, coming back on close.
+
 - 字少了，图多了，其余画面也照着改了：等 AI 接手的三步各配一张小图；「面板」「成果」「定下的事」空着时是一张小图加一句话；素材窗详情只留开关、备注和一行「AI 收到」，作者介绍、文件位置和触发词都折起来；各个开始窗顶上是这张卡的小图，“点开始后会怎样”折成一句「开始以后会怎样？」；隐私出图的四格小图换成隐私那张图配一句话；主页「自己动手」的工具卡只剩图标和名字；「连接 AI」和「先问我」窗口开头各有一张小图；几处长说明缩成一句。
 - Fewer words and more pictures everywhere else too: the waiting page's three steps have pictures; the empty Panels, Results and Settled views are a picture and one line; the materials window's detail keeps the switch, the note and one "The AI gets" line, with the description, file and trigger words folded; each starter sheet opens on its card's picture and folds what happens on Start under one question; the private sheet's four boxes are the privacy picture and one line; the home tool cards are an icon and a name; the connect guide and the Ask first window open on a picture; long notes became one line.
 - 字少了，图多了（先改了两处）：主页「让 AI 帮你做」的六张卡换成一张小图、名字和一句话，原来的绿色小标签改成鼠标停在卡上才显示；「隐私一览」顶上换成一张小图（原文 → 带锁的代号 → AI），说明缩成一行，“能自己读硬盘的软件拦不住”那段缩成一行黄字，鼠标停上去看全文。小图是 ChatGPT 照素材窗插画的样子画的。

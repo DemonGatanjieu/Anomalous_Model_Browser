@@ -24,7 +24,7 @@ import {
     resolveOpenKind, savedLayout, standingInWithFavorites, taskEffectivePicks, totalPicks,
 } from './ai_toolbox_state.js';
 import { card, detail, el, refreshCard, renderPickedBar, rowCard, syncNoteInputs, tbButton as button } from './ui_ai_toolbox_cards.js';
-import { facetOf, facets, packItems, pageNodes, renderBases, renderFacets, renderFilterTabs, renderKindRail, renderPackBar, renderSubhead } from './ui_ai_toolbox_sources.js';
+import { facetOf, facets, packItems, pageNodes, renderBases, renderFacets, renderFilterTabs, renderKindRail, renderModes, renderPackBar, renderSubhead } from './ui_ai_toolbox_sources.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { emptyPicture } from './ui_ai_toolbox_icons.js';
 import { baseFamily, countBases } from './model_bases.js';
@@ -35,7 +35,6 @@ import { createViewScope } from './ui_lifecycle.js';
 import { openListedModel } from './ui_scan_lists.js';
 import { remindUnpicked } from './ui_ai_model_lock.js';
 
-const MODES = ['prefer', 'only'];
 const CHUNK = 60;
 const SEARCH_DELAY_MS = 120;
 let openNow = null; // {task, body, close, switchKind, updateTask}
@@ -53,7 +52,7 @@ const total = box => totalPicks(box, PICK_KINDS);
 
 /**
  * Opens or switches the single picker for `task`; `changed()` runs after a task pick update.
- * `options`: `{ kind: 'models' | 'ways' | 'other' | null, layout, messageBox, onShow }`.
+ * `options`: `{ kind: 'models' | 'ways' | 'other' | null, layout, messageBox, onShow, focus, onClose }`.
  */
 export async function openToolbox(task, changed = () => {}, options = {}) {
     if (openNow?.body.isConnected) {
@@ -134,6 +133,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     body.append(top, main, tray);
 
     let closeFrame = () => {};
+    let moving = false; // place() closes the frame to move the body, which is no closing of the picker
     let observer = null;
     let timer = null;
     scope.onDispose(() => {
@@ -149,7 +149,9 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         searchBox.remove();
         rail.remove();
         body.remove();
+        moving = true;
         closeFrame();
+        moving = false;
         if (keep) keepLayout(layout);
         const docked = layout === 'side' ? sideHost?.(body, () => place('full', true)) : null; // no column to dock in: the window
         const changedLayout = body.classList.contains('is-side') !== Boolean(docked);
@@ -161,7 +163,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         } else {
             top.replaceChildren(rail, filters);
             main.replaceChildren(side, gridWrap, pane);
-            closeFrame = aiWindow(t('aiToolboxTitle'), body);
+            closeFrame = aiWindow(t('aiToolboxTitle'), body, () => { if (!moving) options.onClose?.(); }); // opened from elsewhere: back there
             const dialog = body.closest('.anomalous-ai-connect-dialog');
             dialog?.classList.add('is-toolbox');
             const shut = dialog?.querySelector('.anomalous-ai-connect-close');
@@ -450,17 +452,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         if (currentTask?.toolbox && count) status.append(button('anomalous-tb-status-btn', t('aiTbTaskHas', { count }), showGiven));
         else if (standingIn()) status.append(button('anomalous-tb-status-btn is-soft', t('aiTbFavStandIn', { count }), showGiven));
         status.append(el('span', 'anomalous-tb-msg-count', t('aiTbOnMessage', { count: msg()?.count() || 0 })));
-        const activeMode = taskEffective()?.mode || 'prefer';
-        const modes = el('div', 'anomalous-tb-modes');
-        modes.setAttribute('role', 'radiogroup');
-        for (const mode of MODES) {
-            const option = button(`anomalous-tb-mode${activeMode === mode ? ' is-on' : ''}`, [icon(mode === 'only' ? 'filter' : 'target', 16), t(`aiTbMode_${mode}`)], () => void setMode(mode), t(`aiTbModeHint_${mode}`));
-            option.setAttribute('role', 'radio');
-            option.setAttribute('aria-checked', String(activeMode === mode));
-            option.disabled = state.saving || !count;
-            modes.append(option);
-        }
-        row.append(status, modes);
+        row.append(status, renderModes({ active: taskEffective()?.mode || 'prefer', disabled: state.saving || !count, onPick: mode => void setMode(mode) }));
         if (!body.classList.contains('is-side')) row.append(button('anomalous-tb-done', t('aiTbDone'), async () => { if (await remindUnpicked(state.ticked, picked, item => toggleItem(item, false))) close(); }));
         nodes.push(row);
         tray.replaceChildren(...nodes);

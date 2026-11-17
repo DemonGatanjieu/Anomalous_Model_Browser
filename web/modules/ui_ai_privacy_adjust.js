@@ -41,6 +41,8 @@ export async function postPrivacyRule(task, payload) {
     else delete task.private_models;
     if (snapshot.exposed_prompts?.length) task.exposed_prompts = snapshot.exposed_prompts;
     else delete task.exposed_prompts;
+    if (snapshot.sealed_views && Object.keys(snapshot.sealed_views).length) task.sealed_views = snapshot.sealed_views;
+    else delete task.sealed_views;
     if (payload.action !== 'model_rule') {
         // Letting words through or hiding more rewrites the user's messages on the server: read them again.
         const fresh = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(task.id)}`).then(r => (r.ok ? r.json() : null)).catch(() => null);

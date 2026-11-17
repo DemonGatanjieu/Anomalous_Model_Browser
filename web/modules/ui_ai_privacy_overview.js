@@ -8,6 +8,10 @@
  *   a model's trigger words under it), each with the token the AI gets and a note for the AI
  * - "What the AI can see": the title, real model names, words let through, the messages as the AI
  *   got them (+ hide more words afterwards), the notes, the canvas
+ * A model row unfolds what the AI gets of it and what stays here, and opens it in the materials window
+ * (its switch and description paragraphs, ui_ai_toolbox.js), coming back here when that closes. The window
+ * reads in one column or side by side (the choice kept in this browser), the prompts then mirrored slot by
+ * slot on both sides (ui_ai_privacy_mirror.js); narrow windows stay one column.
  */
 
 import { translate as t } from './locales.js';
@@ -16,11 +20,30 @@ import { aiWindow } from './ui_ai_connect.js';
 import { showStepRow } from './ui_ai_decisions.js';
 import { icon } from './ui_ai_icons.js';
 import { postPrivacyRule, renderHiddenPrompt, renderMessageSealer } from './ui_ai_privacy_adjust.js';
+import { promptMirrors } from './ui_ai_privacy_mirror.js';
+import { openToolbox } from './ui_ai_toolbox.js';
+import { loadCatalog } from './ai_toolbox_data.js';
+import { typeLabel } from './ui_model_types.js';
 import { openSent } from './ui_ai_sent.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { outputThumbnail } from './ui_kept_toast.js';
 
 const INITIAL_MESSAGES = 4;
+const LAYOUT_KEY = 'anomalous_privacy_layout'; // 'split' (side by side) or one column
+
+function readLayout() {
+    try {
+        return localStorage.getItem(LAYOUT_KEY) === 'split' ? 'split' : 'single';
+    } catch (_) {
+        return 'single';
+    }
+}
+
+function keepLayout(layout) {
+    try {
+        localStorage.setItem(LAYOUT_KEY, layout);
+    } catch (_) { /* this browser keeps nothing: one column next time */ }
+}
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -149,6 +172,43 @@ function renderPictureRow(item, ctx) {
     return row;
 }
 
+/** What the AI gets of `model` and what stays here, read when unfolded (the catalog's base model, the ticked paragraphs). */
+function modelReach(model, task) {
+    const box = el('details', 'anomalous-ai-priv-reach-model');
+    box.append(el('summary', '', t('aiPrivacyReachSummary')));
+    box.addEventListener('toggle', async () => {
+        if (!box.open || box.dataset.read) return;
+        box.dataset.read = '1';
+        const [item, choice] = await Promise.all([
+            loadCatalog().then(items => items.find(entry => entry.kind === 'models' && entry.id === model.id)).catch(() => null),
+            fetch(`/anomalous/ai_model_choice?model_id=${encodeURIComponent(model.id)}`).then(r => (r.ok ? r.json() : {})).catch(() => ({})),
+        ]);
+        const whole = !model.hidden && !task.private; // as the materials window's "The AI gets" line says
+        const picked = choice.picked?.length || 0;
+        const base = item?.base || item?.metadata?.base_guess || '';
+        const gets = [
+            model.hidden ? t('aiPrivacyReachCode', { token: model.token || '[M…]' }) : t('aiPrivacyReachName'),
+            t('aiPrivacyReachType', { type: typeLabel({ type: model.type || '' }) }), base ? t('aiPrivacyReachBase', { base }) : '',
+            t('aiPrivacyReachSettings'),
+            whole ? t('aiPrivacyReachAboutAll') : picked ? t('aiPrivacyReachAboutN', { count: picked }) : t('aiPrivacyReachAboutNone'),
+            item?.words?.length ? t(model.hidden ? 'aiPrivacyReachWordsCode' : 'aiPrivacyReachWords') : '',
+            t('aiPrivacyReachAiNote'),
+        ];
+        const keeps = model.hidden
+            ? ['aiPrivacyKeepName', 'aiPrivacyKeepFolder', 'aiPrivacyKeepCover', 'aiPrivacyKeepCivitai', 'aiPrivacyKeepAboutRest', 'aiPrivacyKeepNotes']
+            : [...(task.private ? ['aiPrivacyKeepCover'] : []), ...(whole ? [] : ['aiPrivacyKeepAboutRest'])];
+        const column = (title, lines, kind) => {
+            const list = el('div', `anomalous-ai-priv-reach-list is-${kind}`);
+            list.append(el('strong', '', title), ...lines.filter(Boolean).map(line => el('span', '', line)));
+            return list;
+        };
+        const columns = el('div', 'anomalous-ai-priv-reach-cols');
+        columns.append(column(t('aiPrivacyReachGets'), gets, 'gets'), column(t('aiPrivacyReachKeeps'), keeps.length ? keeps.map(key => t(key)) : [t('aiPrivacyKeepNothing')], 'keeps'));
+        box.append(columns);
+    });
+    return box;
+}
+
 function renderModelRow(model, task, ctx) {
     const { row, head } = itemRow(model.file || model.id, model.type, model.hidden ? model.token : '');
     if (!model.hidden) {
@@ -168,6 +228,10 @@ function renderModelRow(model, task, ctx) {
     });
     flip.title = t('aiPrivacyModelFlipHint');
     head.append(flip);
+    const open = linkButton(t('aiPrivacyModelOpen'), () => ctx.openModel(model));
+    open.title = t('aiPrivacyModelOpenHint');
+    head.append(open);
+    row.append(modelReach(model, task));
     if (model.words?.length) {
         const words = el('div', 'anomalous-ai-priv-model-words');
         words.append(el('span', '', t('aiPrivacyModelWords')));
@@ -322,7 +386,19 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
             draw();
         };
 
-        const rowCtx = { draftNotes, onDraftChange, onCommit, onAdjusted };
+        const split = readLayout() === 'split';
+        const openModel = (model) => { // the materials window on it; closing it comes back here
+            close();
+            void openToolbox(task, () => onChanged?.(), { kind: 'models', focus: model.id, layout: 'full', onClose: () => openPrivacyOverview(task, { onTogglePrivacy, onChanged }) });
+        };
+        const rowCtx = { draftNotes, onDraftChange, onCommit, onAdjusted, openModel };
+        const noteFor = (token) => {
+            const line = el('div', 'anomalous-ai-priv-mirror-note');
+            line.append(tokenBadge(token));
+            attachNoteInput(line, token, savedNotes[token], t('aiPrivacyNotePlaceholderP'), rowCtx);
+            return line;
+        };
+        const mirrors = split ? promptMirrors(task, overview.hidden.prompts, { noteFor, onApplied: onAdjusted }) : null;
 
         // Head: the privacy settings as they stand (the recommended ones: both switches on), a press for those,
         // and the two switches; models the user chose for hold in every task (ui_ai_model_lock.js).
@@ -394,18 +470,18 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
             hint.append(statusLine);
             hiddenSec.append(hint);
         }
-        overview.hidden.prompts.forEach((item, at) => hiddenSec.append(renderPromptRow(item, at + 1, task, rowCtx)));
+        if (mirrors) hiddenSec.append(...mirrors.left);
+        else overview.hidden.prompts.forEach((item, at) => hiddenSec.append(renderPromptRow(item, at + 1, task, rowCtx)));
         for (const item of overview.hidden.pictures) hiddenSec.append(renderPictureRow(item, rowCtx));
         for (const model of overview.modelCatalog) hiddenSec.append(renderModelRow(model, task, rowCtx));
         if (!overview.hidden.total && !overview.modelCatalog.length) {
             hiddenSec.append(el('div', 'anomalous-ai-priv-empty', t('aiPrivacyHiddenEmpty')));
         }
-        parts.push(hiddenSec);
-
         // What the AI can see.
         const visibleSec = section('eye', t('aiPrivacyVisibleHead'));
         visibleSec.append(visibleRow('page', t('aiPrivacyVisibleTitle'),
             el('div', 'anomalous-ai-priv-vrow-value', overview.visible.title || t('aiPrivacyVisibleTitleEmpty'))));
+        if (mirrors?.right.length) visibleSec.append(visibleRow('prompts', t('aiPrivacyMirrorHead'), ...mirrors.right));
 
         const publicModels = overview.modelCatalog.filter(m => !m.hidden);
         if (publicModels.length) {
@@ -436,7 +512,9 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         const canvas = [el('div', '', t('aiPrivacyVisibleCanvasDesc'))];
         if (overview.visible.decisionsCount > 0) canvas.push(el('div', '', t('aiPrivacyVisibleDecisions', { n: overview.visible.decisionsCount })));
         visibleSec.append(visibleRow('nodes', t('aiPrivacyVisibleCanvas'), ...canvas));
-        parts.push(visibleSec);
+        const columns = el('div', `anomalous-ai-priv-columns${split ? ' is-split' : ''}`);
+        columns.append(hiddenSec, visibleSec);
+        parts.push(columns);
 
         const foot = el('div', 'anomalous-ai-priv-foot');
         doneBtn = el('button', 'anomalous-ai-tool anomalous-ai-priv-done', t(dirtyTokens.size > 0 ? 'aiPrivacyOverviewSaveClose' : 'aiPrivacyOverviewSaveDone'));
@@ -461,6 +539,29 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         if (unsaved.length) void flushPatch(unsaved).finally(() => onChanged?.());
         else if (anyChanged) onChanged?.();
     });
-    body.closest('.anomalous-ai-connect-dialog')?.classList.add('is-privacy-overview');
+    const dialog = body.closest('.anomalous-ai-connect-dialog');
+    dialog?.classList.add('is-privacy-overview');
+    dialog?.classList.toggle('is-split', readLayout() === 'split');
+    // One column or side by side, beside the close button; the choice stays in this browser.
+    const layouts = el('div', 'anomalous-ai-priv-layouts');
+    layouts.setAttribute('role', 'radiogroup');
+    layouts.setAttribute('aria-label', t('aiPrivacyLayout'));
+    for (const layout of ['single', 'split']) {
+        const choice = el('button', 'anomalous-ai-priv-layout');
+        choice.type = 'button';
+        choice.setAttribute('role', 'radio');
+        choice.append(icon(layout === 'split' ? 'sidebar' : 'list', 13), el('span', '', t(layout === 'split' ? 'aiPrivacyLayoutSplit' : 'aiPrivacyLayoutSingle')));
+        const mark = () => choice.setAttribute('aria-checked', String(readLayout() === layout));
+        choice.onclick = () => {
+            keepLayout(layout);
+            dialog?.classList.toggle('is-split', layout === 'split');
+            for (const each of layouts.children) each.dispatchEvent(new Event('anomalous-layout'));
+            draw();
+        };
+        choice.addEventListener('anomalous-layout', mark);
+        mark();
+        layouts.append(choice);
+    }
+    dialog?.querySelector('.anomalous-ai-connect-close')?.before(layouts);
     return close;
 }

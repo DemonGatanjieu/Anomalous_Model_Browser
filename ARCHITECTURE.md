@@ -136,8 +136,10 @@ covered by the `styles.css` manifest.
   catalog switches, a hidden prompt as Prompt Studio's tags and the parts a split sends, and unsealed messages/gists;
   `web/modules/ui_ai_privacy_adjust.js` draws a hidden prompt as Prompt Studio's chips (meanings on request through
   `prompt_gloss.js`) to pick words to let through, and the message phrase sealer; `web/modules/ui_ai_privacy_overview.js` draws the "Privacy
-  overview" modal (`隐私一览`, one column: a head with the privacy and model-name switches, three counts, what the AI
-  can't see with the token it gets for each and a note for the AI, then what it can see); `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview), the switch
+  overview" modal (`隐私一览`, one column or side by side: a head with the privacy and model-name switches, three counts, what the AI
+  can't see with the token it gets for each and a note for the AI, then what it can see; a model row unfolds what the AI gets of it
+  and opens it in the materials window, back here on close); side by side, `web/modules/ui_ai_privacy_mirror.js` mirrors each
+  prompt slot for slot (`ai_privacy_view.js` `promptMirror`), letting words through or hiding them again; `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview), the switch
   in its ⋯, and what the model tokens stand for.
   `api/ai_darkroom.py` is the darkroom helper, an extension: a model on this computer (an OpenAI-style server on
   a loopback address, nothing else taken, no proxy, no redirect) that reads for a private task what the AI app

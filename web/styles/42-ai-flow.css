@@ -534,6 +534,41 @@
 /* Privacy Overview window (ui_ai_privacy_overview.js): one column to read down. A head with its two switches,
    three counts, then rows of what the AI can't see (each with the token it gets) and what it can. */
 .anomalous-ai-connect-dialog.is-privacy-overview { width: min(760px, 94vw); max-height: 90vh; background: var(--amb-bg-panel); }
+.anomalous-ai-connect-dialog.is-privacy-overview.is-split { width: min(1080px, 96vw); }
+/* One column or side by side (ui_ai_privacy_overview.js), beside the close button. */
+.anomalous-ai-priv-layouts { display: inline-flex; margin-left: auto; margin-right: 8px; padding: 2px; border: 1px solid var(--amb-border); border-radius: 9px; }
+.anomalous-ai-priv-layout { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border: 0; border-radius: 7px; background: transparent; color: var(--amb-text-dim); font: inherit; font-size: 12px; cursor: pointer; }
+.anomalous-ai-priv-layout[aria-checked="true"] { background: var(--amb-bg-input); color: var(--amb-text-main); }
+.anomalous-ai-priv-columns { display: flex; flex-direction: column; gap: 18px; }
+/* Side by side: the same cards; a bar over each column says which side it is (one outer scroll only). */
+.anomalous-ai-priv-columns.is-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 20px; }
+.anomalous-ai-priv-columns.is-split > .anomalous-ai-priv-section { padding-top: 10px; border-top: 3px solid color-mix(in srgb, var(--amb-warn) 70%, transparent); }
+.anomalous-ai-priv-columns.is-split > .anomalous-ai-priv-section + .anomalous-ai-priv-section { border-top-color: color-mix(in srgb, var(--amb-ok) 70%, transparent); }
+@media (max-width: 900px) {
+    .anomalous-ai-connect-dialog.is-privacy-overview.is-split { width: min(760px, 94vw); }
+    .anomalous-ai-priv-columns.is-split { grid-template-columns: minmax(0, 1fr); }
+    .anomalous-ai-priv-layouts { display: none; }
+}
+/* A prompt mirrored on both sides (ui_ai_privacy_mirror.js): the same slots, the same widths. */
+.anomalous-ai-priv-slots { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
+.anomalous-ai-priv-slot { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid var(--amb-border); border-radius: 7px; background: rgba(var(--amb-ink-rgb), 0.05); color: var(--amb-text-main); font: inherit; font-size: 12px; cursor: pointer; }
+.anomalous-ai-priv-mirror.is-left .anomalous-ai-priv-slot.is-hidden { border-color: color-mix(in srgb, var(--amb-warn) 40%, transparent); }
+.anomalous-ai-priv-mirror.is-left .anomalous-ai-priv-slot.is-shown { border-style: dashed; background: transparent; color: var(--amb-text-dim); }
+.anomalous-ai-priv-mirror.is-right .anomalous-ai-priv-slot.is-shown { border-color: color-mix(in srgb, var(--amb-ok) 45%, transparent); }
+.anomalous-ai-priv-mirror.is-right .anomalous-ai-priv-slot.is-hidden { border-style: dashed; background: repeating-linear-gradient(135deg, rgba(var(--amb-ink-rgb), 0.08) 0 4px, transparent 4px 8px); color: var(--amb-text-dim); }
+.anomalous-ai-priv-slot-text.is-masked { color: transparent; }
+.anomalous-ai-priv-slot.is-picked { outline: 2px solid var(--amb-link); outline-offset: 1px; }
+.anomalous-ai-priv-mirror-note { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.anomalous-ai-priv-mirror-note > .anomalous-ai-priv-note { flex: 1; margin: 0; }
+/* What the AI gets of a model and what stays here, unfolded under its row. */
+.anomalous-ai-priv-reach-model { margin-top: 6px; font-size: 12px; }
+.anomalous-ai-priv-reach-model > summary { color: var(--amb-text-soft); cursor: pointer; }
+.anomalous-ai-priv-reach-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-top: 6px; }
+.anomalous-ai-priv-reach-list { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; border-radius: 9px; line-height: 1.5; }
+.anomalous-ai-priv-reach-list.is-gets { background: color-mix(in srgb, var(--amb-ok) 9%, transparent); }
+.anomalous-ai-priv-reach-list.is-keeps { background: color-mix(in srgb, var(--amb-warn) 9%, transparent); }
+.anomalous-ai-priv-reach-list > strong { font-size: 12px; }
+.anomalous-ai-priv-reach-list > span { color: var(--amb-text-soft); font-weight: 400; }
 .anomalous-ai-priv-overview { display: flex; flex-direction: column; gap: 18px; min-height: 0; }
 .anomalous-ai-priv-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; }
 .anomalous-ai-priv-head-art { flex: none; width: 176px; height: auto; filter: grayscale(0.85) opacity(0.6); }
