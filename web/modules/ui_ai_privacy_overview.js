@@ -182,11 +182,18 @@ function renderModelRow(model, task, ctx) {
 function renderMessagePreview(msg, task, { closeOverview, onAdjusted }) {
     const wrap = el('div', 'anomalous-ai-priv-msg');
     const body = el('div', 'anomalous-ai-priv-msg-text');
+    const late = new Set(msg.late || []);
     for (const seg of msg.segments || []) {
-        if (seg.type === 'token') body.append(tokenBadge(seg.token));
+        if (seg.type === 'token') body.append(Object.assign(tokenBadge(seg.token), late.has(seg.token) ? { className: 'anomalous-ai-priv-token is-late' } : {}));
         else body.append(document.createTextNode(seg.text));
     }
     wrap.append(body);
+    if (late.size) {
+        wrap.classList.add('is-late');
+        const line = el('div', 'anomalous-ai-priv-msg-late');
+        line.append(icon('alert', 12), el('span', '', t('aiPrivacyMsgLate', { tokens: [...late].join(t('listSeparator')) })));
+        wrap.append(line);
+    }
     if (!msg.hasPlaintext) wrap.append(el('div', 'anomalous-ai-priv-msg-only-tokens', t('aiPrivacyMsgAllSealed')));
 
     const foot = el('div', 'anomalous-ai-priv-msg-foot');

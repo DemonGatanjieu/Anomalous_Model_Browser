@@ -198,6 +198,15 @@ class PrivacyAdjustTests(unittest.TestCase):
         body = json.loads(res.text)
         self.assertEqual(body["sealed"].get("[P1]"), "secretphrase")
 
+    def test_a_phrase_sealed_in_a_message_keeps_when(self):
+        # The overview marks a message the AI read before a phrase of it was hidden (ai_privacy_view.js `late`).
+        from api import ai_panels
+        step_id = ai_panels.leave_message(self.task, "say secretphrase twice")["id"]
+        ai_sealed_adjust.apply_rule(self.task, {"action": "seal_message_phrase", "phrase": "secretphrase", "step_id": step_id})
+        parts = next(s for s in ai_tasks.get_task(self.task)["steps"] if s["id"] == step_id).get("sealed_parts")
+        self.assertEqual([part["token"] for part in parts], ["[P1]"])
+        self.assertIsInstance(parts[0].get("at"), float)
+
 
 if __name__ == "__main__":
     unittest.main()

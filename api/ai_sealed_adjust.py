@@ -196,7 +196,7 @@ def _apply_seal_phrase(task, payload):
                 continue
             parts = list(step.get("sealed_parts") or [])
             if not any(part.get("token") == tok and part.get("text") == phrase for part in parts):
-                parts.append({"token": tok, "text": phrase})
+                parts.append({"token": tok, "text": phrase, "at": time.time()})  # after delivered_at: the AI read it before
                 step["sealed_parts"] = parts
             break
     _queue_adjust(task, f"User additionally sealed a phrase from earlier messages as {tok}. Stop repeating that raw text and use {tok}.")

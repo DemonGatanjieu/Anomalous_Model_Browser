@@ -96,6 +96,7 @@ const overview = buildPrivacyOverview({
     steps: [
         { id: 's1', kind: 'user', tool: 'user_route', delivered: true, text: '只用 animaTurbo 配 hug_v1 一次出图' },
         { id: 's2', kind: 'user', tool: 'user_message', delivered: false, text: '正面：『main hug, swimsuit, twintails』', sealed_parts: [{ token: '[P1]', text: 'main hug, swimsuit, twintails' }] },
+        { id: 's2b', kind: 'user', tool: 'user_message', delivered: true, delivered_at: 100, text: '海边 twintails 再来一张', sealed_parts: [{ token: '[P10]', text: 'twintails', at: 150 }] },
         { id: 's3', kind: 'panel', answers: { prompts: { gist: '雨夜海边', delivered: true } } },
         { id: 's4', kind: 'tool', results: [{ type: 'image', filename: 'out_01.png', subfolder: '' }, { type: 'image', filename: 'out_02.png', subfolder: '' }] },
     ],
@@ -119,8 +120,10 @@ assert.deepEqual(overview.visible.notes, [
 assert.deepEqual(overview.visible.messages.map(m => [m.stepId, m.preview, m.delivered]), [
     ['s1', '只用 animaTurbo 配 [M2] 一次出图', true],
     ['s2', '正面：『[P1]』', false],
+    ['s2b', '海边 [P10] 再来一张', true],
     ['s3', '雨夜海边', true],
 ]);
+assert.deepEqual(overview.visible.messages.map(m => m.late), [[], [], ['[P10]'], []], 'a phrase hidden after the AI read the message is marked');
 assert.equal(overview.exposedPrompts.length, 1);
 
 // A hidden model's trigger words show under it (model_words from the task's GET), not as prompts of their own.

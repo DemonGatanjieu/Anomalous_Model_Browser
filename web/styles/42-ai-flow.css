@@ -617,6 +617,10 @@
 .anomalous-ai-priv-vrow-label { color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
 .anomalous-ai-priv-vrow-value { color: var(--amb-text-main); }
 .anomalous-ai-priv-vrow.is-warn > svg, .anomalous-ai-priv-vrow.is-warn .anomalous-ai-priv-vrow-label { color: var(--amb-danger, #e0645c); }
+/* A message the AI read before some of its words were hidden: those words and a line saying so. */
+.anomalous-ai-priv-token.is-late { outline: 1px dashed var(--amb-danger-text, var(--amb-warn)); }
+.anomalous-ai-priv-msg-late { display: flex; align-items: flex-start; gap: 5px; margin-top: 6px; color: var(--amb-danger-text, var(--amb-warn)); font-size: 12px; line-height: 1.5; }
+.anomalous-ai-priv-msg-late > svg { flex: none; margin-top: 3px; }
 .anomalous-ai-priv-token { margin: 0 1px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--amb-warn) 20%, transparent); color: var(--amb-warn-text, var(--amb-warn)); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
 .anomalous-ai-priv-msgs { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .anomalous-ai-priv-msg { display: flex; flex-direction: column; gap: 3px; align-self: stretch; }

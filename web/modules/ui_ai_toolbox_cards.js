@@ -4,13 +4,16 @@
  * (its sockets in ComfyUI's colours, outputs on the right, how many settings) under its source's
  * badge; combos, workflows and models show their cover; a prompt shows its text, a way what it is
  * for. A press puts it on the message being written or takes it off, the star keeps it among the
- * favourites; what the task already has says "Given" and, where the picker lists those, can be
+ * favourites; in the large window a press shows it in the detail column and its circle (or the bar over
+ * its cover, or the detail's main button) puts it on the message; what the task already has says "Given" and, where the picker lists those, can be
  * taken back. In the side panel a card is one line instead (rowCard: its badge or a small cover,
  * its name and where it is from), so a short panel still lists many. The detail pane shows the
  * card in focus in full, and for a combo or workflow can put just the prompt inside it on the
  * message. A model says its version apart from its name; one with several is one card, whose
- * version opens the list to show another (ctx.showVersion). A model's card and detail say whether AIs
- * get its name, and its detail which paragraphs of its description they read (ui_ai_model_lock.js).
+ * version opens the list to show another (ctx.showVersion); a version its name already ends with is not said
+ * twice. A model without a cover shows its type's picture (ui_ai_toolbox_icons.js). A model's card has a lock
+ * while AIs get a code word for its name, its detail the switch and which paragraphs of its description
+ * they read (ui_ai_model_lock.js).
  */
 
 import { MAX_REF_NOTE } from './ai_chat_plus.js';
@@ -19,16 +22,11 @@ import { translate as t } from './locales.js';
 import { outputThumbnail } from './ui_kept_toast.js';
 import { recipeAssetUrl } from './ui_recipe_media.js';
 import { icon } from './ui_ai_icons.js';
-import { aboutSection, nameButton } from './ui_ai_model_lock.js';
+import { aboutSection, nameBadge, nameSwitch } from './ui_ai_model_lock.js';
 import { socketColor, sourceBadge, standInCover } from './ui_ai_toolbox_icons.js';
 import { versionLabel } from './ui_model_versions.js';
 import { typeLabel } from './ui_model_types.js';
 import { openPopupMenu } from './ui_popup_menu.js';
-
-// How long the pointer rests on a card before the detail column shows it: passing over cards on the
-// way to the column changes nothing (the half-second "interest" delay of hovercards, made shorter).
-const PEEK_DELAY = 350;
-let peekTimer = 0;
 
 const SOCKETS_SHOWN = 4;
 const withQuery = (url, query) => `${url}${url.includes('?') ? '&' : '?'}${query}`;
@@ -67,7 +65,7 @@ export function coverUrl(item) {
 function picture(item, className) {
     const box = el('div', className);
     const url = coverUrl(item);
-    const fallback = () => box.replaceChildren(standInCover(item.kind));
+    const fallback = () => box.replaceChildren(standInCover(item.kind, item.type));
     if (!url) {
         fallback();
         return box;
@@ -165,6 +163,8 @@ function takeBackButton(ctx, item, detailView = false) {
 function versionMark(item, ctx) {
     const several = item.versions?.length > 1;
     if (!several && !item.metadata?.version_name) return null;
+    const said = String(item.short || item.title || '').trim().toLowerCase(); // "Lantern Glow - v1" needs no "v1" under it
+    if (!several && said.endsWith(String(item.metadata.version_name).trim().toLowerCase())) return null;
     if (!several) return el('span', 'anomalous-tb-version', item.metadata.version_name);
     const mark = el('button', 'anomalous-tb-version is-several');
     mark.type = 'button';
@@ -178,13 +178,12 @@ function versionMark(item, ctx) {
 }
 
 /**
- * One card. `ctx`: { picked(item), favorite(item), toggle(item), star(item), focus(item), peek(item) }.
- * A press picks or unpicks and pins it in the large window's detail pane; focus, or the pointer resting
- * on it (PEEK_DELAY), peeks at it there while nothing is pinned,
- * ⓘ opens its detail (the side panel's way: there the detail covers the cards).
+ * One card. `ctx`: { picked(item), favorite(item), toggle(item), star(item), focus(item), select(item), isFocus(item) }.
+ * A press shows it in the large window's detail column (ctx.select); its circle puts it on the message or
+ * takes it off; ⓘ opens its detail (the side panel's way: there the detail covers the cards).
  */
 export function card(item, ctx) {
-    const node = el('div', `anomalous-tb-card is-${item.kind}${ctx.picked(item) ? ' is-picked' : ''}${ctx.given(item) ? ' is-given' : ''}`);
+    const node = el('div', `anomalous-tb-card is-${item.kind}${ctx.picked(item) ? ' is-picked' : ''}${ctx.given(item) ? ' is-given' : ''}${ctx.isFocus?.(item) ? ' is-focus' : ''}`);
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
     node.setAttribute('aria-pressed', String(ctx.picked(item)));
@@ -210,16 +209,16 @@ export function card(item, ctx) {
     const meta = tags(item);
     meta.prepend(givenBadge(ctx, item));
     body.append(meta, takeBackButton(ctx, item));
-    if (item.kind === 'models') body.append(nameButton(item, ctx));
     node.append(body);
+    if (item.kind === 'models') node.append(nameBadge(item, ctx));
     cardExtras(node, item, ctx);
     return controls(node, item, ctx);
 }
 
 /**
  * What a card in the large window offers on the pointer or focus, over the bottom of its cover: put it on
- * the message, and a model's own page (others: its detail, pinned). Once on the message, its note to
- * the AI is a line on the card itself, so nothing needs the detail column across the other cards.
+ * the message, and a model's own page. Once on the message, its note to the AI is a line on the card
+ * itself, so nothing needs the detail column across the other cards.
  */
 function cardExtras(node, item, ctx) {
     const body = node.querySelector('.anomalous-tb-card-body');
@@ -231,24 +230,20 @@ function cardExtras(node, item, ctx) {
         take.type = 'button';
         take.onclick = (event) => {
             event.stopPropagation();
-            ctx.pin?.(item);
             ctx.toggle(item);
         };
-        const page = el('button', 'anomalous-tb-card-act');
-        page.type = 'button';
-        const ownPage = item.kind === 'models' && ctx.openModel;
-        page.title = t(ownPage ? 'aiTbOpenModelPageHint' : 'aiTbDetail');
-        page.append(icon(ownPage ? 'page' : 'info', 14), el('span', '', t(ownPage ? 'aiTbOpenModelPage' : 'aiTbCardDetail')));
-        page.onclick = (event) => {
-            event.stopPropagation();
-            if (ownPage) {
+        bar.append(take);
+        if (item.kind === 'models' && ctx.openModel) { // others: a press on the card shows its detail
+            const page = el('button', 'anomalous-tb-card-act');
+            page.type = 'button';
+            page.title = t('aiTbOpenModelPageHint');
+            page.append(icon('page', 14), el('span', '', t('aiTbOpenModelPage')));
+            page.onclick = (event) => {
+                event.stopPropagation();
                 ctx.openModel(item);
-                return;
-            }
-            ctx.pin?.(item);
-            ctx.focus(item);
-        };
-        bar.append(take, page);
+            };
+            bar.append(page);
+        }
         body.prepend(bar);
     }
     const on = ctx.picked(item);
@@ -312,11 +307,19 @@ export function rowCard(item, ctx) {
     return controls(node, item, ctx);
 }
 
-/** The tick, the star and ⓘ of a card, and what a press, a key and the pointer do. */
+/** The circle, the star and ⓘ of a card, and what a press and a key do: in the large window a press shows the
+ * card's detail and the circle puts it on the message; in the side panel a press does that. */
 function controls(node, item, ctx) {
     node.classList.toggle('is-in-pack', Boolean(ctx.inPack?.(item))); // its whole pack is picked
-    const check = el('span', 'anomalous-tb-check');
+    const check = el('button', 'anomalous-tb-check');
+    check.type = 'button';
+    check.title = t('aiTbPick');
+    check.setAttribute('aria-label', t('aiTbPick'));
     check.append(icon('check', 14));
+    check.onclick = (event) => {
+        event.stopPropagation();
+        ctx.toggle(item);
+    };
     const star = el('button', `anomalous-tb-star${ctx.favorite(item) ? ' is-on' : ''}`);
     star.type = 'button';
     star.title = t(ctx.favorite(item) ? 'aiToolboxUnfavorite' : 'aiToolboxFavorite');
@@ -334,23 +337,14 @@ function controls(node, item, ctx) {
         ctx.focus(item);
     };
     node.append(info, star, check);
-    node.onclick = () => {
-        ctx.pin?.(item);
-        ctx.toggle(item);
-    };
+    const press = () => (ctx.select && !ctx.side?.() ? ctx.select(item) : ctx.toggle(item));
+    node.onclick = press;
     node.onkeydown = (event) => {
         if (event.target === node && (event.key === 'Enter' || event.key === ' ')) {
             event.preventDefault();
-            ctx.pin?.(item);
-            ctx.toggle(item);
+            press();
         }
     };
-    node.onfocus = () => ctx.peek(item);
-    node.onpointerenter = () => {
-        clearTimeout(peekTimer);
-        peekTimer = setTimeout(() => node.isConnected && ctx.peek(item), PEEK_DELAY);
-    };
-    node.onpointerleave = () => clearTimeout(peekTimer);
     return node;
 }
 
@@ -413,16 +407,6 @@ function settingList(settings) {
  */
 export function detail(item, ctx) {
     const box = el('div', `anomalous-tb-detail is-${item.kind}`);
-    if (ctx.setPinned && !ctx.side?.()) {
-        const pinned = ctx.pinned();
-        const pin = el('button', `anomalous-tb-pin${pinned ? ' is-on' : ''}`);
-        pin.type = 'button';
-        pin.title = t(pinned ? 'aiTbUnpinHint' : 'aiTbPinHint');
-        pin.setAttribute('aria-pressed', String(pinned));
-        pin.append(icon('pin', 13), el('span', '', t(pinned ? 'aiTbPinned' : 'aiTbPin')));
-        pin.onclick = () => ctx.setPinned(!pinned);
-        box.append(pin);
-    }
     const head = el('div', 'anomalous-tb-detail-head');
     if (item.kind === 'nodes' || item.kind === 'packs') {
         head.append(sourceBadge(item.source, 40));
@@ -461,7 +445,6 @@ export function detail(item, ctx) {
         prompt.onclick = () => ctx.pickPrompt(inner);
         actions.append(prompt);
     }
-    if (item.kind === 'models') actions.append(nameButton(item, ctx));
     if (item.kind === 'models' && ctx.openModel) {
         const page = el('button', 'anomalous-tb-like');
         page.type = 'button';
@@ -472,7 +455,8 @@ export function detail(item, ctx) {
     }
     actions.append(takeBackButton(ctx, item, true));
     box.append(actions);
-    if (ctx.picked(item) && ctx.setNote) box.append(pickedNoteBox(item, ctx));
+    if (item.kind === 'models') box.append(nameSwitch(item, ctx));
+    if (ctx.setNote && item.kind !== 'packs') box.append(pickedNoteBox(item, ctx)); // written first, it puts the thing on the message
     if (item.kind === 'nodes') {
         if (item.description) box.append(textBlock(item.description));
         if (item.category) box.append(section(t('aiTbCategory'), [textBlock(item.category.replaceAll('/', ' › '), 'is-soft')]));

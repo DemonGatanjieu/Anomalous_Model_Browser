@@ -1,12 +1,17 @@
 /**
  * What the user lets an AI see of one model, from the materials window (api/ai_model_choice.py): a
- * button on its card and in its detail saying whether AIs get its name or a code word ([M1]), chosen
- * once and kept for every task; and in the detail its author's description in paragraphs, the ticked
- * ones being all an AI reads of it where the rest stays home (its name hidden, or the task private),
- * under a line saying what the AI gets. A model nobody chose for follows the task (a private task's
- * "hide unchosen models" switch); its button looks lighter and says so.
+ * small lock on its card while AIs get a code word ([M1]) for its name, nothing while they get the name;
+ * in its detail the switch "The AI may see its name", chosen once and kept for every task; and its
+ * author's description in paragraphs, the ticked ones being all an AI reads of it where the rest stays
+ * home (its name hidden, or the task private), under a line saying what the AI gets. A model nobody
+ * chose for follows the task (a private task's "hide unchosen models" switch), which the switch says.
+ * Ticking paragraphs of a model not on the message is told on Done (remindUnpicked). Before a message goes,
+ * a hidden model it names in words the way to the AI leaves as they are is asked about (guardNames, ai_name_guard.js).
  */
 
+import { keptCatalog, loadCatalog } from './ai_toolbox_data.js';
+import { namedHidden, swapNames } from './ai_name_guard.js';
+import { anomalousConfirm } from './ui_dialog.js';
 import { translate as t } from './locales.js';
 import { icon } from './ui_ai_icons.js';
 import { typeLabel } from './ui_model_types.js';
@@ -45,35 +50,79 @@ function redraw(root, item) {
     for (const drawn of root?.querySelectorAll?.(`[data-model-choice="${CSS.escape(String(item.id))}"]`) || []) draws.get(drawn)?.();
 }
 
-/** The card's and the detail's button: the name or a code word; a press chooses the other, for every task. */
-export function nameButton(item, ctx) {
-    const button = node('button', 'anomalous-tb-name-lock');
-    button.type = 'button';
-    button.dataset.modelChoice = item.id;
+/** The card's lock: shown only while AIs get a code word for the name (the detail's switch changes it). */
+export function nameBadge(item, ctx) {
+    const badge = node('span', 'anomalous-tb-name-badge');
+    badge.dataset.modelChoice = item.id;
+    badge.title = t('aiTbNameBadgeHint');
+    const draw = () => {
+        badge.hidden = !nameHidden(item, ctx.task?.());
+        badge.replaceChildren(icon('lock', 11), node('span', '', t('aiTbNameBadge')));
+    };
+    draws.set(badge, draw);
+    draw();
+    return badge;
+}
+
+/** The detail's switch "The AI may see its name": on, the name; off, a code word; chosen for every task. */
+export function nameSwitch(item, ctx) {
+    const row = node('label', 'anomalous-ai-priv-switch anomalous-tb-name-switch');
+    row.dataset.modelChoice = item.id;
+    const words = node('span', 'anomalous-tb-name-switch-words');
+    const input = node('input');
+    input.type = 'checkbox';
+    input.setAttribute('role', 'switch');
     const draw = () => {
         const hidden = nameHidden(item, ctx.task?.());
-        button.classList.toggle('is-hidden', hidden);
-        button.classList.toggle('is-chosen', item.ai_name === 'hidden' || item.ai_name === 'shown');
-        button.replaceChildren(icon(hidden ? 'lock' : 'eye', 13), node('span', '', t(hidden ? 'aiTbNameHidden' : 'aiTbNameShown')));
-        button.title = t(item.ai_name ? 'aiTbNameChosenHint' : 'aiTbNameDefaultHint');
+        input.checked = !hidden;
+        row.classList.toggle('is-chosen', Boolean(item.ai_name));
+        const sub = item.ai_name ? (hidden ? 'aiTbNameSwitchOff' : 'aiTbNameSwitchOn') : 'aiTbNameSwitchDefault';
+        words.replaceChildren(node('span', 'anomalous-tb-name-switch-title', t('aiTbNameSwitch')), node('span', 'anomalous-tb-name-switch-sub', t(sub)));
     };
-    draws.set(button, draw);
-    for (const type of ['pointerdown', 'keydown']) button.addEventListener(type, event => event.stopPropagation());
-    button.onclick = async (event) => {
-        event.stopPropagation();
-        const root = button.closest('.anomalous-tb') || document;
-        button.disabled = true;
+    draws.set(row, draw);
+    input.onchange = async () => {
+        const root = row.closest('.anomalous-tb') || document;
+        input.disabled = true;
         try {
-            await post(item, { ai_name: nameHidden(item, ctx.task?.()) ? 'shown' : 'hidden' });
+            await post(item, { ai_name: input.checked ? 'shown' : 'hidden' });
         } catch (error) {
             showWorkbenchToast(t('aiTbNameFailed', { error: error.message }));
         } finally {
-            button.disabled = false;
+            input.disabled = false;
             redraw(root, item);
         }
     };
     draw();
-    return button;
+    row.append(words, input);
+    return row;
+}
+
+/** The words of a message about to go to `task`'s AI: as they are, with hidden models' loose names swapped for
+ * their file names (which become code words on the way), or null to go back and edit. */
+export async function guardNames(text, task) {
+    if (!text) return text;
+    let items = keptCatalog();
+    if (!items) items = await loadCatalog().catch(() => null);
+    const found = namedHidden(text, items, item => nameHidden(item, task));
+    if (!found.length) return text;
+    const names = [...new Set(found.flatMap(each => each.names))].join(t('listSeparator'));
+    const answer = await anomalousConfirm(t('aiNameGuardAsk', { names }), t('aiNameGuardTitle'),
+        { okLabel: t('aiNameGuardSwap'), noLabel: t('aiNameGuardAsIs'), okClass: 'anomalous-btn-primary' });
+    if (answer === null) return null;
+    return answer ? swapNames(text, found) : text;
+}
+
+/** On Done: models whose paragraphs were ticked here (`ticked`, id → item) but are not on the message are
+ * offered to be put on it. Resolves true to close the window, false to stay. */
+export async function remindUnpicked(ticked, picked, add) {
+    const left = [...ticked.values()].filter(item => !picked(item));
+    if (!left.length) return true;
+    const names = left.map(item => item.short || item.title).join(t('listSeparator'));
+    const answer = await anomalousConfirm(t('aiTbAboutNotPicked', { names }), t('aiToolboxTitle'),
+        { okLabel: t('aiTbAboutAddAndClose'), noLabel: t('aiTbAboutJustClose'), okClass: 'anomalous-btn-primary' });
+    if (answer === null) return false;
+    if (answer) left.forEach(add);
+    return true;
 }
 
 /** "The AI gets: a code word · LoRA · Illustrious · 2 picked paragraphs", as things stand. */
@@ -103,6 +152,7 @@ export function aboutSection(item, ctx) {
     box.append(node('h4', 'anomalous-tb-section-title', t('aiTbAboutTitle')), line, list);
     const save = async () => {
         const ticked = [...list.querySelectorAll('input:checked')].map(input => input.value);
+        ctx.ticked?.(item);
         try {
             picked = (await post(item, { ai_about: ticked })).picked || [];
         } catch (error) {

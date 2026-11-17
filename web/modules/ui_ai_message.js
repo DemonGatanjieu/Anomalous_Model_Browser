@@ -6,7 +6,8 @@
  * new route) and the gallery (ui_ai_gallery_pick.js), lit with how many pictures it gave;
  * pictures dropped on it or pasted (ui_ai_drop.js); the input grows with what is typed (Enter
  * sends, Shift+Enter breaks the line), with "@" to point at things and "/" for commands
- * (ui_ai_mention.js). The words and what is attached go to `onSend(text, refs)`, words optional
+ * (ui_ai_mention.js); a hidden model named loosely is asked about first (ui_ai_model_lock.js guardNames).
+ * The words and what is attached go to `onSend(text, refs)`, words optional
  * when something is attached; the AI gets them the next time it asks (get_answers), which the
  * hint says, and says to ask in the AI app once the task ended. Made once per task, so half-typed
  * text survives the task's redraws. Exposes `box.refs` as the picker's handle to the message.
@@ -23,6 +24,7 @@ import { takePictures } from './ui_ai_drop.js';
 import { iconButton } from './ui_ai_icons.js';
 import { noteTyping } from './ui_ai_panel.js';
 import { hideButton } from './ai_hide_mark.js';
+import { guardNames } from './ui_ai_model_lock.js';
 
 const MAX_PICTURES = 8; // a message's pictures, as ai_pictures.py hands them
 const MAX_HEIGHT = 168; // the input grows up to about seven lines, then scrolls
@@ -76,7 +78,9 @@ export function messageBox(onSend, source) {
         if (!text && !refs.length) return;
         send.disabled = true;
         try {
-            await onSend(text, refs);
+            const words = await guardNames(text, source?.task?.());
+            if (words === null) return; // back to the box to change the words
+            await onSend(words, refs);
             recordRecent(refs, { privateTask: Boolean(source?.task?.()?.private) });
             field.value = '';
             fit();

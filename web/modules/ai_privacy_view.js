@@ -186,11 +186,15 @@ function collectVisibleMessages(task, opts) {
             const raw = String(step.note || step.text || '').trim();
             if (!raw) continue;
             const masked = maskTextForView(raw, sealed, step.sealed_parts, opts);
+            // Words hidden after the AI read the message: it saw them as they were.
+            const late = step.delivered && step.delivered_at
+                ? [...new Set((step.sealed_parts || []).filter(part => Number(part?.at) > step.delivered_at).map(part => part.token))] : [];
             messages.push({
                 stepId: step.id,
                 at: step.at || 0,
                 tool: step.tool,
                 delivered: Boolean(step.delivered),
+                late,
                 raw,
                 ...masked,
             });
@@ -205,6 +209,7 @@ function collectVisibleMessages(task, opts) {
                 at: step.at || 0,
                 tool: 'panel',
                 delivered: Boolean(step.answers?.prompts?.delivered || step.answers?.answer?.delivered),
+                late: [],
                 raw,
                 ...masked,
             });

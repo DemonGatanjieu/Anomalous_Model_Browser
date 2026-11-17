@@ -2,6 +2,19 @@
 
 ## v1.64.0 — unreleased
 
+- 「给 AI 的素材」大窗：点卡片只是选中它，右边显示它的详情，鼠标划过别的卡不再跟着换（原来的「钉住」去掉了）。放进留言用卡片右上角的圆圈、封面下沿的「加进留言」，或右边详情的「加进留言」。右边总有一格「告诉 AI 用它干什么」，写了字就自动加进留言。勾了某个模型的作者介绍、却没把它加进留言时，按「好了」会问一句要不要加进去。
+- In the large "Materials for the AI" window a press on a card only selects it and shows it on the right; passing over other cards no longer changes that ("Pin" is gone). The circle on a card's corner, "Put on the message" over its cover, or the same button in the detail puts it on the message. The detail always has "Tell the AI what to do with it", and writing there puts the thing on the message. Ticking paragraphs of a model's description without putting it on the message is asked about on "Done".
+- 模型名字给不给 AI 看：卡片上不再每张都挂一个按钮，只有藏了名字的模型左上角有个小锁「藏名」；右边详情里换成一个开关「AI 能看到它的名字」，下面写着现在是什么意思。素材窗底下的「只能用」换成漏斗图标，不再和锁混在一起。
+- Whether the AI sees a model's name: cards no longer each carry a button; only a model with its name hidden has a small lock, "Name hidden", on its corner, and the detail has a switch, "The AI may see its name", saying what it means now. "Only these" at the bottom of the materials window has a funnel icon instead of a lock.
+- 留言防漏：留言里写了一个藏名字的模型，而这种写法 AMB 在路上不会自己换掉（比如一个英文单词的名字、名字的第一个词，或换了大小写和空格的写法：文件叫 meadow_light 却写成 Meadow Light），发送前会问你「换成代号再发」还是「照原样发」。写全名或文件名不会问，路上本来就换成代号。
+- A message naming a model whose name is hidden, in words Anomalous would let through as they are (a one-word name, the first word of its name, or the name with other case or spacing, such as Meadow Light for meadow_light), asks before it goes: "Swap and send" or "Send as written". Its full name or file name asks nothing: those become code words on the way anyway.
+- 「隐私一览」：代号旁边写「已换成代号 [P1]」；词块的提示写清楚了，点词只是选中，按「放给 AI 看」才生效；AI 已经读过、后来才补藏的字，在那条留言下面用红字标出来，说它已经看过原文。
+- The Privacy overview says "Swapped for [P1]" beside each code; the tag hint says a click selects and "Let the AI read them" applies; words hidden after the AI read a message are marked under it in red, saying the AI has seen them.
+- 没有封面的模型按类型显示一张图（Checkpoint、LoRA、ControlNet、放大、VAE……各有颜色和线条图）；名字末尾已经带版本号的不再在下面重复一个；底模那排的「看不出」改叫「底模未知」。
+- A model without a cover shows its type's picture (Checkpoint, LoRA, ControlNet, Upscale, VAE… each with its colour and drawing); a version its name already ends with is not repeated under it; the base model chips' "Unknown" is "Base unknown".
+- 同一个东西只用一个叫法：「关卡」改叫「先问我」，「展台」改叫「面板」，「做法」改叫「出图方法」，「我存的工作流卡」改叫「我存的工作流」，「隐私模式」改叫「隐私设置」（主页那张卡叫「隐私出图」），「暗房助手」改叫「本机小模型」，「改副本」改叫「在副本上改」，「决策」改叫「定下的事」。说明文档也跟着改了。
+- One name for each thing: "Gates" is now "Ask first", the stage is "Panels", privacy mode is "Privacy settings" (the home card is "Draw privately"), the darkroom helper is "Local small model", "Edit a copy" is "Work on a copy", and decisions are "Settled"; the Chinese names of ways and saved workflows changed too. The guides follow.
+
 - 主页一打开就是「让 AI 帮你做」那六张卡，不用再往下滚；原来的工具卡变小了，放在下面的「自己动手」里，一行四张。
 - The home page opens on the six "Let the AI do it" cards, with no scrolling; the tool cards are smaller and sit under them in "Do it yourself", four to a row.
 - AI 工作台的「新任务」永远开一个全新的任务，不会再接到你正看着的任务后面（要接，用 ⋯ 里的「接着哪个任务…」）。等 AI 接手的那页改成「三步让 AI 接手」：① 写想要什么（就在下面的留言框，可以先不写，写了这一步会打勾）② 一个大按钮「复制给 AI 的话」③ 粘到 AI 软件里发送。那句带工具名的原话折在「要发的这句话写了什么？」里。

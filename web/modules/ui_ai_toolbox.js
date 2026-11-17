@@ -6,13 +6,12 @@
  * everything, the kinds on the left (models, ways, combos, workflows, prompts, node types), the
  * filters all / given / favourites / recent, a second column to narrow by source, type or job
  * (ui_ai_toolbox_sources.js), the base model chips and a model's versions on one card as the
- * Models page has them, a grid of cards (ui_ai_toolbox_cards.js) drawn as it scrolls, the card in
- * focus in full on the right. A press puts a thing on the message being written (a chip with its
- * note, ui_ai_mention.js) or takes it off; sent, it is on the task's picks. The row at the bottom
- * says what the task has, how strictly the AI keeps to it (applied at once) and how many things
- * are on the message. The picker keeps neither: it asks the message box's `refs` handle and the
- * task as the page has it, and redraws when either changes. What it showed last (kind, second
- * column, base model) and what was sent lately are kept on this browser (ai_toolbox_state.js).
+ * Models page has them, a grid of cards (ui_ai_toolbox_cards.js) drawn as it scrolls, the card pressed in
+ * full on the right. A card's circle or the detail's button (or a note there) puts it on the message (a chip,
+ * ui_ai_mention.js) or takes it off; sent, it is on the task's picks; Done asks about ticked paragraphs of
+ * a model not on it (ui_ai_model_lock.js). The bottom row: what the task has, how strictly the AI keeps to it,
+ * how many things are on the message. The picker keeps neither: it asks the message box's `refs` handle
+ * and the task as the page has it. What it showed last and what was sent lately: ai_toolbox_state.js.
  */
 
 import { resolveLocale, translate as t } from './locales.js';
@@ -34,6 +33,7 @@ import { chosenVersion } from './ui_model_versions.js';
 import { taskTitle } from './ai_task_title.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { openListedModel } from './ui_scan_lists.js';
+import { remindUnpicked } from './ui_ai_model_lock.js';
 
 const MODES = ['prefer', 'only'];
 const CHUNK = 60;
@@ -79,7 +79,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         facet: remembered.facets[initialKind] ?? null,
         base: initialKind === 'models' ? remembered.base : null,
         versions: new Map(), favorites: empty(), nodes: pageNodes(), catalog: keptCatalog(), ways: null,
-        error: '', waysError: '', notice: '', saving: false, pinned: false, // pinned: the detail pane stays on what was pressed
+        error: '', waysError: '', notice: '', saving: false, ticked: new Map(), // ticked: models whose paragraphs were ticked here
     };
 
     const byKey = new Map();
@@ -186,10 +186,10 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         get showTakeBack() { return state.filter === 'given'; },
         privateTask: () => Boolean(currentTask?.private), task: () => currentTask,
         noteOf: item => msg()?.noteOf?.(item.kind, item.id) || '',
-        setNote: (item, text) => { msg()?.setNote?.(item.kind, item.id, text); syncNoteInputs(body, item, text); drawPickedRow(); },
+        setNote: (item, text) => { if (!picked(item)) toggleItem(item, false); msg()?.setNote?.(item.kind, item.id, text); syncNoteInputs(body, item, text); drawPickedRow(); },
         focus: (item) => { state.focus = item; drawPane(); },
-        peek: (item) => { if (!body.classList.contains('is-side') && !state.pinned) ctx.focus(item); },
-        pin: (item) => { state.pinned = true; state.focus = item; }, pinned: () => state.pinned, setPinned: (on) => { state.pinned = on; drawPane(); }, side: () => body.classList.contains('is-side'),
+        select: (item) => { state.focus = item; for (const [key, node] of cards) node.classList.toggle('is-focus', key === keyOf(item.kind, item.id)); drawPane(); },
+        isFocus: item => state.focus?.kind === item.kind && state.focus?.id === item.id, ticked: item => state.ticked.set(item.id, item), side: () => body.classList.contains('is-side'),
         toggle: (item, focusNote = true, focusPaneNote = false) => toggleItem(item, focusNote, focusPaneNote),
         star: item => setFavorite(item),
         promptPicked: id => Boolean(msg()?.has('prompts', id)),
@@ -230,7 +230,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         if (handle.has(item.kind, item.id)) {
             handle.remove(item.kind, item.id);
         } else {
-            if (!body.classList.contains('is-side')) state.focus = item;
+            if (!body.classList.contains('is-side')) ctx.select(item);
             if (!handle.add(item, { focusNote: allowFocusNote && body.classList.contains('is-side') })) {
                 state.notice = t('aiTbMessageFull', { max: handle.count() + handle.room() });
                 drawTray();
@@ -454,14 +454,14 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         const modes = el('div', 'anomalous-tb-modes');
         modes.setAttribute('role', 'radiogroup');
         for (const mode of MODES) {
-            const option = button(`anomalous-tb-mode${activeMode === mode ? ' is-on' : ''}`, [icon(mode === 'only' ? 'lock' : 'target', 16), t(`aiTbMode_${mode}`)], () => void setMode(mode), t(`aiTbModeHint_${mode}`));
+            const option = button(`anomalous-tb-mode${activeMode === mode ? ' is-on' : ''}`, [icon(mode === 'only' ? 'filter' : 'target', 16), t(`aiTbMode_${mode}`)], () => void setMode(mode), t(`aiTbModeHint_${mode}`));
             option.setAttribute('role', 'radio');
             option.setAttribute('aria-checked', String(activeMode === mode));
             option.disabled = state.saving || !count;
             modes.append(option);
         }
         row.append(status, modes);
-        if (!body.classList.contains('is-side')) row.append(button('anomalous-tb-done', t('aiTbDone'), close));
+        if (!body.classList.contains('is-side')) row.append(button('anomalous-tb-done', t('aiTbDone'), async () => { if (await remindUnpicked(state.ticked, picked, item => toggleItem(item, false))) close(); }));
         nodes.push(row);
         tray.replaceChildren(...nodes);
     }
@@ -483,7 +483,6 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         state.facet = mem.facets[kind] ?? null;
         state.base = kind === 'models' ? mem.base : null;
         state.focus = null;
-        state.pinned = false;
         state.notice = '';
         if (nextLayout && (body.classList.contains('is-side') ? 'side' : 'full') !== nextLayout) place(nextLayout);
         else drawAll();
