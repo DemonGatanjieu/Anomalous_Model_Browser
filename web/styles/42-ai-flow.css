@@ -541,6 +541,8 @@
 .anomalous-ai-priv-head-copy { display: flex; flex: 1 1 220px; flex-direction: column; gap: 2px; min-width: 0; }
 .anomalous-ai-priv-head-copy > strong { color: var(--amb-text-main); font-size: 15px; font-weight: 600; }
 .anomalous-ai-priv-head-copy > span { color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
+.anomalous-ai-priv-head-copy > .anomalous-ai-priv-head-locks { color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-priv-head-copy > .anomalous-ai-priv-link { align-self: flex-start; margin-top: 4px; }
 .anomalous-ai-priv-switches { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 /* A checkbox drawn as a switch: the knob is a background image that slides when checked. */
 .anomalous-ai-priv-switch { display: inline-flex; align-items: center; gap: 10px; color: var(--amb-text-main); font-size: 13px; cursor: pointer; }
@@ -576,6 +578,9 @@
 .anomalous-ai-priv-row-title { min-width: 0; color: var(--amb-text-main); font-size: 13.5px; font-weight: 600; overflow-wrap: anywhere; }
 .anomalous-ai-priv-row-meta { color: var(--amb-text-dim); font-size: 12px; }
 .anomalous-ai-priv-sees { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 2px 9px; border-radius: 999px; background: color-mix(in srgb, var(--amb-warn) 15%, transparent); color: var(--amb-warn-text, var(--amb-warn)); font-size: 12px; white-space: nowrap; }
+.anomalous-ai-priv-model-words { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-priv-model-words > .anomalous-ai-priv-sees { margin-left: 0; }
+.anomalous-ai-priv-model-word { color: var(--amb-text-soft); }
 .anomalous-ai-priv-sees.is-open { background: color-mix(in srgb, var(--amb-danger, #e0645c) 13%, transparent); color: var(--amb-danger, #e0645c); }
 .anomalous-ai-priv-link { padding: 2px 0; border: 0; background: none; color: var(--amb-link); font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer; }
 .anomalous-ai-priv-link:hover { text-decoration: underline; }

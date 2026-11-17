@@ -194,8 +194,11 @@ def source_of(info):
 
 def catalog(kind):
     """What the picker lists besides node types (ai_toolbox_catalog.py); the page has those itself."""
+    from . import ai_model_choice
     from .ai_toolbox_catalog import everything
 
     if kind != "all":
         raise ToolboxError("kind is all; node types come from the page")
-    return everything()
+    found = everything()
+    ai_model_choice.notice(found["models"])
+    return found

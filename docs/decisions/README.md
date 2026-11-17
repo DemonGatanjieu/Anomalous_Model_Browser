@@ -262,3 +262,15 @@ Anomalous's short set or their own pick, named in the address. A tool is never a
 it would run someone else's code inside ComfyUI, and privacy mode could not seal what such a tool
 sends. An AI app can connect other MCP servers beside Anomalous for that. A set only shortens the
 list; the full list stays the default, because a task handed over in Anomalous needs the workbench.
+
+## AD-028 — What an AI sees of a model is the model's, chosen once
+
+Privacy mode used to decide for all models of a task at once: every name a token, or none. Whether
+a name says too much belongs to the model, not to the task, so the user chooses it once on the
+model (kept in its own `.anomalous.json`, moving with it) and it holds in every task, private or
+not. A model nobody chose for follows the task, so nothing changes for a user who never chooses.
+A hidden model keeps what an AI picks by (type, base model, the user's note) and loses what names
+it: cover, description, notes, plain trigger words. Of a description only the paragraphs the user
+ticks go where the rest stays home: an author's text is long, often off topic, and may name what
+the model draws. Privacy mode itself becomes the recommended settings, one press away; covers
+never go in a private task, whatever the model's choice, because a picture says more than a name.

@@ -14,7 +14,7 @@ PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
 from api import (  # noqa: E402
-    ai_callers, ai_gates, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_canvas_edit, mcp_model_use, mcp_server,
+    ai_callers, ai_gates, ai_model_choice, ai_panels, ai_tasks, lora_info, mcp_actions, mcp_apps, mcp_bridge, mcp_canvas_edit, mcp_model_use, mcp_server,
     mcp_task_tools, mcp_tools,
 )
 
@@ -26,6 +26,7 @@ ai_tasks.tasks_dir = lambda: _AI_TASKS
 ai_tasks._tasks = None
 _GATES = tempfile.mkdtemp(prefix="amb_mcp_gates_")
 ai_gates._path = lambda: os.path.join(_GATES, "ai_gates.json")
+ai_model_choice._path = lambda: os.path.join(_GATES, "ai_model_choice.json")  # no model chosen for: the library is not read
 
 
 def meta(version=MODERN):

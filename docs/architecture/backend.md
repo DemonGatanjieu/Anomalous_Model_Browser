@@ -278,14 +278,20 @@ that view wherever the old text still shows up, so the words kept hidden never g
 `ai_panels.leave_message` seals ⟦...⟧ inside both
 `text` and each ref's `note` using the task's `Seals`) into tokens (a node's STRING inputs by ComfyUI's node list,
 prompt fields, the names and tags the user gave their combos, workflow cards and saved prompts
-(`NAMED`), `description`/`user_notes` on any `model_id` dict (`_walk` merges `TOOL_KEYS["get_model"]`
-so `"models"` message refs seal them too), picture file names, and any text already sealed, also in
-the text content). While `ai_privacy.hides_models()` (user/anomalous/ai_privacy.json `models`,
-true unless the user set false), `ai_sealed_models.hide` runs between the two: every form of a
+(`NAMED`), `user_notes` on any `model_id` dict (`_walk` merges `TOOL_KEYS["get_model"]` so `"models"`
+message refs seal them too; the dict's `description` is left out, the paragraphs the user picked go as
+`about_for_ai`), picture file names, and any text already sealed, also in the text content, which is
+masked as data whenever it is JSON). While `ai_privacy.hides_models_for(task)` (the task's own switch,
+else user/anomalous/ai_privacy.json `models`, true unless the user set false), and always for the models
+the user chose to hide (`api/ai_model_choice.py`: `ai_name` in the model's `.anomalous.json`, read
+through the materials catalog only once anything was ever chosen, `user/anomalous/ai_model_choice.json`;
+"shown" models keep their names), `ai_sealed_models.hide` runs between the two; outside private tasks
+`guard` runs `mask(prompts=False)` for the hidden models alone, with a line on what the token is (`MODEL_NOTE`): every form of a
 library model (the materials catalog's list, read at most every 15 s) becomes that model's "[M#]"
 token, sealed as its model_id; `"ways"` ref `details` and `id` stay intact against model-name
 collisions while `user_note` and `said_as` still pass through; a model's own entry (a dict with
-`model_id`) drops name, file, folder, links and hash; a model file
+`model_id`) drops name, file, folder, links, hash, description and the user's notes, and its trigger
+words become `[P#]` tokens; `get_model` attaches no cover of a hidden model; a model file
 the library does not have is a token of its own. A card name of one plain ASCII word is replaced
 only where a name stands (`NAME_KEYS`), never inside a sentence. `expand` writes a model token as
 the model_id, as the loader's name under a node's values (`WIDGET_KEYS`), and as the card's name

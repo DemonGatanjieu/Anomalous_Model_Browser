@@ -330,8 +330,8 @@ class SealedTests(unittest.TestCase):
         refs = {ref["kind"]: ref for ref in msg["refs"]}
         self.assertEqual(refs["models"]["details"]["note_for_ai"], "character LoRA")
         self.assertRegex(refs["models"]["id"], r"^\[M\d+\]$")
-        self.assertRegex(refs["models"]["details"]["description"], r"^\[P\d+\]$")
-        self.assertRegex(refs["models"]["details"]["user_notes"], r"^\[P\d+\]$")
+        self.assertNotIn("description", refs["models"]["details"])  # its author's words and the user's notes stay home
+        self.assertNotIn("user_notes", refs["models"]["details"])
         self.assertEqual(ai_sealed.expand(self.task, refs["models"]["user_note"]), "base canaryecho in canaryfile_00001_.png")
         self.assertEqual(refs["ways"]["details"]["name"], "upscale")
         self.assertEqual(refs["ways"]["details"]["call"], "add_nodes(use='upscale')")
@@ -368,7 +368,7 @@ class SealedTests(unittest.TestCase):
         self.assertRegex(msg_ref["user_note"], r"^only for \[P\d+\]$")
         tb_model = toolbox["result"]["structuredContent"]["models"][0]
         self.assertRegex(tb_model["model_id"], r"^\[M\d+\]$")
-        self.assertRegex(tb_model["description"], r"^\[P\d+\]$")
+        self.assertNotIn("description", tb_model)
 
 
 if __name__ == "__main__":

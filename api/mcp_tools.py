@@ -235,8 +235,12 @@ def get_model(model_id, include_cover=False):
     })
     if meta.get("info_source") == "local":
         detail["why_not_on_civitai"] = meta.get("unmatched_reason") or "unknown"
+    if meta.get("ai_about"):
+        detail["about_for_ai"] = meta["ai_about"]  # what the user picked of the description: all that goes where it stays home
     extra = []
-    if include_cover:
+    if include_cover and meta.get("ai_name") == "hidden":
+        detail["cover"] = "kept: the user keeps this model to themselves"
+    elif include_cover:
         base = os.path.splitext(file_path)[0]
         cover = next((base + suffix for suffix in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS
                       if os.path.splitext(suffix)[1].lower() in IMAGE_TYPES and os.path.isfile(base + suffix)), None)

@@ -25,7 +25,7 @@ class CompactModelsTest(unittest.TestCase):
         self.assertEqual(found, [{
             "type": "loras", "path_idx": 0, "subfolder": "chars", "filename": "a.safetensors",
             "name": "Ahri", "civitai_name": "Ahri LoRA", "base": "Illustrious", "base_guess": "", "page": 0, "version": 0, "version_name": "",
-            "words": ["ahri", "fox ears", "a", "b", "c", "d"], "preview_url": "/anomalous/image?x",
+            "words": ["ahri", "fox ears", "a", "b", "c", "d"], "preview_url": "/anomalous/image?x", "ai_name": "",
         }])
 
     def test_one_line_per_file_and_no_node_pack_files(self):

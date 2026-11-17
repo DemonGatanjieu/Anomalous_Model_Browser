@@ -5,7 +5,8 @@ reach it as tokens it passes on (ai_sealed.py); the user writes prompts in a pro
 in the task's header); new tasks follow the default the user sets in the Gates window
 (user/anomalous/ai_privacy.json, {default, models}). Turning it on or off is a step the AI is told of, and one of the
 task's decisions (ai_decisions.py). A private task keeps its models' names too, as tokens the AI picks by type,
-base model and the user's note (ai_sealed_models.py), unless the user lets the names through in the Gates window.
+base model and the user's note (ai_sealed_models.py), unless the user lets the names through in the Gates window
+or the task. What the user chose for one model wins over both, in every task (ai_model_choice.py).
 
 All of it happens at one place: mcp_server.py puts the texts back into a call's arguments
 (ai_sealed.expand) and hands every tool result to guard() before it leaves, whatever tool or later
@@ -19,11 +20,13 @@ import os
 import time
 import uuid
 
-from . import ai_sealed, ai_tasks
+from . import ai_model_choice, ai_sealed, ai_tasks
 from .path_utils import atomic_write_json
 
 NOTE = ("Privacy mode: no pictures or prompt text reach you, only tokens like [P1], [img1] and [M1] (a model) to pass "
         "on as they are. get_toolbox(skill=\"privacy\") first.")
+MODEL_NOTE = ("A model the user keeps to themselves comes as a token like [M1]: pass it where a model_id or a loader's value "
+              "goes, its trigger words ([P] tokens) into the prompt; pick by type, base_model, note_for_ai, about_for_ai.")
 
 
 def _path():
@@ -57,13 +60,10 @@ def hides_models_for(task_id=None):
 
 
 def model_rules_of(task_id=None):
-    """Per-task model privacy policy `{hides_all, public_ids, private_ids}` for ai_sealed.mask."""
-    task = ai_tasks.get_task(task_id) if task_id else None
-    override = (task or {}).get("privacy_models")
-    hides_all = override if isinstance(override, bool) else hides_models()
-    public_ids = [str(item) for item in ((task or {}).get("public_models") or []) if item]
-    private_ids = [str(item) for item in ((task or {}).get("private_models") or []) if item]
-    return {"hides_all": hides_all, "public_ids": public_ids, "private_ids": private_ids}
+    """Which models a private task's answers name by token, for ai_sealed.mask: {hides_all (the task's
+    switch for models the user has not chosen for), public_ids / private_ids (chosen: ai_model_choice.py)}."""
+    marks = ai_model_choice.marks()
+    return {"hides_all": hides_models_for(task_id), "public_ids": marks["shown"], "private_ids": marks["hidden"]}
 
 
 def set_hides_models(on):
@@ -126,8 +126,18 @@ def applies(task_id):
 
 def guard(result, private, task_id=None, info=None, tool=""):
     """`result` as it may leave: a private call's pictures taken out (with a word on why), its prompt
-    text, picture names and (hides_models) models as tokens (ai_sealed.mask; `info`: ComfyUI's node list)."""
-    if not private or not isinstance(result, dict):
+    text, picture names and (hides_models) models as tokens (ai_sealed.mask; `info`: ComfyUI's node list).
+    Any other call still names the models the user hides by token (ai_model_choice.py)."""
+    if not isinstance(result, dict):
+        return result
+    if not private:
+        hidden = ai_model_choice.marks()["hidden"]
+        if not hidden:
+            return result
+        before = json.dumps(result, ensure_ascii=False)
+        result = ai_sealed.mask(result, task_id, None, tool, {"hides_all": False, "public_ids": [], "private_ids": hidden}, prompts=False)
+        if json.dumps(result, ensure_ascii=False) != before and isinstance(result.get("content"), list):
+            result["content"].append({"type": "text", "text": MODEL_NOTE})
         return result
     content = [item for item in result.get("content") or [] if not (isinstance(item, dict) and item.get("type") == "image")]
     if len(content) != len(result.get("content") or []):

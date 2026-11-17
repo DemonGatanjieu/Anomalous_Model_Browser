@@ -2,6 +2,13 @@
 
 ## v1.64.0 — unreleased
 
+- 模型给不给 AI 看真名，现在一个个手动选，选一次就记住，所有任务都按它来。在留言框 **+** 打开的「给 AI 的素材」里，每张模型卡片上有个小按钮：「给 AI 看真名」或「名字藏起来」，点一下就换。藏了名字的模型，在任何任务里（不只是隐私任务）AI 都只拿到一个代号（[M1] 这样），外加类型、底模和你写给 AI 的备注；封面、你的笔记都不发，触发词也只给代号。没选过的模型照旧跟着任务的隐私设置走。「隐私一览」里每个模型的「给 AI 看真名 / 藏起来」也改成这样，记在模型身上；模型的触发词显示在那个模型下面，不再单独算一段提示词。
+- Whether the AI may know a model by name is now chosen per model, once, for every task. In "Materials for the AI" (the **+** beside the message box) each model card has a small button, "AI sees its name" or "Name hidden"; a press switches it. A model with its name hidden reaches the AI as a code word ([M1] and so on) in any task, private or not, with its type, base model and your note for the AI; never its cover or your notes, and its trigger words as code words too. A model you never chose for follows the task's privacy settings as before. The Privacy overview's "Show its name / Hide it" works the same way now, kept with the model, and a model's trigger words show under it instead of as a prompt of their own.
+- 模型的作者介绍可以挑着发：在素材窗里点开模型的详情，「发给 AI 的作者介绍」把介绍分成一段段，勾上的段落（比如推荐参数）才发给 AI，上面一行写着 AI 实际收到什么。藏了名字的模型、或者开着隐私设置的任务，只发你勾的段落；段落里如果出现模型名，也换成代号。
+- A model's description can be sent in part: in the materials window's detail, "Description for the AI" lists its paragraphs, and only the ticked ones (recommended settings, say) go to the AI, under a line saying what the AI gets. For a model whose name is hidden, or in a private task, only those paragraphs go, with the model's name inside them as its code word.
+- 隐私模式变成了一套现成的隐私设置：「隐私一览」顶上写着现在用的是不是推荐设置，「一键用推荐设置」一下打开两项（「图和提示词不给 AI」「没选过的模型也藏名字」），两项也可以分开开关。
+- Privacy mode is now a ready set of privacy settings: the top of the Privacy overview says whether the recommended ones are in use, "Use the recommended settings" turns on both ("Keep pictures and prompts from the AI", "Hide models you haven't chosen for"), and each can be switched on its own.
+
 - 「隐私一览」换了样子：一栏从上往下读，顶上一句话说隐私模式现在在做什么，旁边两个开关（隐私模式、藏模型名）；下面三格数字：藏了几段提示词、几个模型名、发了几张图（隐私模式下是 0 张）。再往下分「AI 看不到的」和「AI 看得到的」两块：每段藏起来的提示词右边标着「AI 看到 [P1]」，下面写给 AI 的备注；你的留言按 AI 收到的样子列出。放词给 AI 看或补充藏词以后，留言马上按新的样子显示。
 - The Privacy overview has a new look: one column to read down, a line on what privacy mode does now with two switches beside it (privacy mode, hide model names), then three counts (hidden prompts, hidden model names, pictures sent: none in privacy mode). Below, "What the AI can't see" and "What the AI can see": each hidden prompt says "The AI sees [P1]" with its note for the AI under it, and your messages show as the AI got them, at once after you let words through or hide more.
 - 隐私任务的对话里，藏了字的留言下面多一行「AI 收到」，直接写出 AI 拿到的那句话（藏起来的地方是 [P1] 这样的代号，素材备注里藏的字也算），原来的「看 AI 视角」切换按钮去掉了。

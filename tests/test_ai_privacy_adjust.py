@@ -1,4 +1,4 @@
-"""Per-task & per-model privacy overrides, prompt splitting, retroactive phrase sealing,
+"""Per-task privacy overrides and models shown or hidden by name, prompt splitting, retroactive phrase sealing,
 legacy token expansion compatibility, and route validation (api/ai_sealed_adjust.py)."""
 
 import asyncio
@@ -13,7 +13,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import ai_gates, ai_privacy, ai_sealed, ai_sealed_adjust, ai_sealed_models, ai_sealed_notes, ai_tasks, ai_tasks_routes, mcp_server, mcp_situation, mcp_task_tools  # noqa: E402
+from api import ai_gates, ai_model_choice, ai_privacy, ai_sealed, ai_sealed_adjust, ai_sealed_models, ai_sealed_notes, ai_tasks, ai_tasks_routes, mcp_server, mcp_situation, mcp_task_tools  # noqa: E402
 from test_mcp import rpc  # noqa: E402
 
 SETTING = os.path.join(tempfile.mkdtemp(prefix="amb_priv_adj_"), "ai_privacy.json")
@@ -41,8 +41,21 @@ class PrivacyAdjustTests(unittest.TestCase):
             os.remove(os.path.join(ai_tasks.tasks_dir(), name))
         if os.path.exists(SETTING):
             os.remove(SETTING)
+        chosen = {}  # what the user chose per model, as each model's own file would keep it (ai_model_choice.py)
+
+        def choose(model_id, name=None, about=None):
+            if name:
+                chosen[model_id] = name
+            elif name == "":
+                chosen.pop(model_id, None)
+
+        def marks_of(ids):
+            return {kind: [mid for mid in ids if chosen.get(mid) == kind] for kind in ("hidden", "shown")}
         for patcher in (
             mock.patch.object(ai_privacy, "_path", lambda: SETTING),
+            mock.patch.object(ai_model_choice, "choose", side_effect=choose),
+            mock.patch.object(ai_model_choice, "marks_of", side_effect=marks_of),
+            mock.patch.object(ai_model_choice, "marks", side_effect=lambda: marks_of(list(chosen))),
             mock.patch.object(ai_sealed_models, "_library", return_value=LIBRARY),
             mock.patch.object(ai_gates, "check", return_value=None),
             mock.patch.object(mcp_server, "_node_list", return_value={}),
@@ -87,7 +100,7 @@ class PrivacyAdjustTests(unittest.TestCase):
         self.assertNotIn("NSFW Pose Lora", text)
         self.assertIn(m_lora, text)
 
-        # Flip task default off, yet private_models override still keeps explicit LoRA hidden!
+        # Flip task default off, yet the LoRA the user hides stays hidden.
         ai_sealed_adjust.apply_rule(self.task, {"action": "model_rule", "privacy_models": False})
         ai_sealed_adjust.apply_rule(self.task, {"action": "model_rule", "model_id": LORA, "hidden": True})
         raw2 = {

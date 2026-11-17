@@ -1,7 +1,7 @@
 """Per-task privacy overrides and retroactive prompt/model controls (api/ai_privacy.py,
 web/modules/ui_ai_privacy_overview.js):
-- `model_rule`: per-task `privacy_models` toggle or per-model override (`public_models` /
-  `private_models`), restoring/moving `[M*]` tokens between `sealed` and `sealed_legacy`.
+- `model_rule`: per-task `privacy_models` toggle, or one model shown / hidden by name (kept with the
+  model for every task, ai_model_choice.py), restoring/moving `[M*]` tokens between `sealed` and `sealed_legacy`.
 - `split_prompt`: let some words of a `[P*]` text through: `parts` spell the text exactly, each
   kept run gets its own token, and the old text reads as its view (`sealed_views`, ai_sealed.py).
 - `seal_message_phrase`: retroactively seal an unsealed phrase on a step as `[P*]`.
@@ -11,8 +11,9 @@ import os
 import re
 import time
 
-from . import ai_privacy, ai_sealed, ai_tasks
+from . import ai_model_choice, ai_privacy, ai_sealed, ai_tasks
 from .ai_sealed import WORD
+from .mcp_tools import ToolError
 
 MAX_ADJUST_QUEUE = 12
 MAX_EXPOSED = 20
@@ -40,6 +41,17 @@ def _queue_adjust(task, line):
     task["privacy_adjust_pending"] = queue[-MAX_ADJUST_QUEUE:]
 
 
+def model_lists(task):
+    """{public_models, private_models, model_words}: the models of `task` the user chose to show or hide by
+    name, and the trigger words of its models (their tokens show under the model), for the page."""
+    ids = [value for token, value in {**(task.get("sealed_legacy") or {}), **(task.get("sealed") or {})}.items() if token.startswith("[M")]
+    ids += [item if isinstance(item, str) else (item or {}).get("model_id") or (item or {}).get("id")
+            for item in ((task.get("toolbox") or {}).get("models") or [])]
+    ids += [item.get("model_id") for item in task.get("about") or [] if isinstance(item, dict) and item.get("type") == "model"]
+    marks = ai_model_choice.marks_of(ids)
+    return {"public_models": marks["shown"], "private_models": marks["hidden"], "model_words": ai_model_choice.words_of(ids)}
+
+
 def _apply_model_rule(task, payload):
     override = task.get("privacy_models")
     hides_all = override if isinstance(override, bool) else ai_privacy.hides_models()
@@ -61,20 +73,10 @@ def _apply_model_rule(task, payload):
     hidden = payload.get("hidden")
     if hidden is not None and not isinstance(hidden, bool):
         raise ValueError("hidden must be true, false, or null")
-    pub = [item for item in (task.get("public_models") or []) if item != mid]
-    priv = [item for item in (task.get("private_models") or []) if item != mid]
-    if hidden is True:
-        priv.append(mid)
-    elif hidden is False:
-        pub.append(mid)
-    if pub:
-        task["public_models"] = pub
-    else:
-        task.pop("public_models", None)
-    if priv:
-        task["private_models"] = priv
-    else:
-        task.pop("private_models", None)
+    try:  # kept with the model, for every task (ai_model_choice.py)
+        ai_model_choice.choose(mid, name="" if hidden is None else "hidden" if hidden else "shown")
+    except ToolError as error:
+        raise ValueError(str(error)) from error
 
     effective_hidden = hidden if isinstance(hidden, bool) else hides_all
     sealed = dict(task.get("sealed") or {})
@@ -96,7 +98,7 @@ def _apply_model_rule(task, payload):
             legacy[tok] = sealed.pop(tok)
             notes.pop(tok, None)
         short = os.path.basename(mid.split(":", 2)[-1].replace("\\", "/")) or mid
-        _queue_adjust(task, f"User allowed model {short} by name for this task (previous [M*] tokens still work).")
+        _queue_adjust(task, f"User allowed model {short} by name (previous [M*] tokens still work).")
     _save_maps(task, sealed, legacy, notes)
 
 
@@ -240,8 +242,7 @@ def apply_rule(task_id, payload):
             "sealed_legacy": dict(task.get("sealed_legacy") or {}),
             "sealed_views": dict(task.get("sealed_views") or {}),
             "sealed_notes": dict(task.get("sealed_notes") or {}),
-            "public_models": list(task.get("public_models") or []),
-            "private_models": list(task.get("private_models") or []),
+            **model_lists(task),
             "exposed_prompts": list(task.get("exposed_prompts") or []),
         }
     ai_tasks._notify(task_id)

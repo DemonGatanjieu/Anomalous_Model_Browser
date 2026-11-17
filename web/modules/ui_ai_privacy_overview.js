@@ -1,9 +1,11 @@
 /**
  * Privacy Overview window (the header's Privacy chip, ⋯ -> "隐私一览"), one column to read down:
- * - a head saying what privacy mode does now, with its two switches (privacy mode, hide model names)
+ * - a head saying which privacy settings are in use (the recommended ones: both switches on, one press
+ *   away), with its two switches (pictures and prompts kept from the AI, unchosen models hidden)
  * - three counts: hidden prompts, hidden model names, pictures sent
  * - "What the AI can't see": each hidden prompt as Prompt Studio's chips (pick words to let through),
- *   pictures and models (hide / show each), each with the token the AI gets and a note for the AI
+ *   pictures and models (hide / show each, kept with the model for every task, api/ai_model_choice.py;
+ *   a model's trigger words under it), each with the token the AI gets and a note for the AI
  * - "What the AI can see": the title, real model names, words let through, the messages as the AI
  *   got them (+ hide more words afterwards), the notes, the canvas
  */
@@ -164,7 +166,14 @@ function renderModelRow(model, task, ctx) {
             await anomalousAlert(error.message);
         }
     });
+    flip.title = t('aiPrivacyModelFlipHint');
     head.append(flip);
+    if (model.words?.length) {
+        const words = el('div', 'anomalous-ai-priv-model-words');
+        words.append(el('span', '', t('aiPrivacyModelWords')));
+        for (const word of model.words) words.append(el('span', 'anomalous-ai-priv-model-word', word.text), seesPill(word.token));
+        row.append(words);
+    }
     if (model.hidden && model.token) attachNoteInput(row, model.token, model.note, t('aiPrivacyNotePlaceholderM'), ctx);
     return row;
 }
@@ -308,16 +317,35 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
 
         const rowCtx = { draftNotes, onDraftChange, onCommit, onAdjusted };
 
-        // Head: what privacy mode does now, and its switches.
+        // Head: the privacy settings as they stand (the recommended ones: both switches on), a press for those,
+        // and the two switches; models the user chose for hold in every task (ui_ai_model_lock.js).
+        const recommended = overview.private && overview.privacyModels;
+        const state = recommended ? 'On' : overview.private ? 'Custom' : 'Off';
         const head = el('div', 'anomalous-ai-priv-head');
         const mark = el('span', `anomalous-ai-priv-head-mark${overview.private ? ' is-on' : ''}`);
         mark.append(icon('shield', 20));
         const copy = el('div', 'anomalous-ai-priv-head-copy');
-        copy.append(el('strong', '', t(overview.private ? 'aiPrivacyHeadOn' : 'aiPrivacyHeadOff')),
-            el('span', '', t(overview.private ? 'aiPrivacyHeadOnSub' : 'aiPrivacyHeadOffSub')));
+        copy.append(el('strong', '', t(`aiPrivacyHead${state}`)), el('span', '', t(`aiPrivacyHead${state}Sub`)),
+            el('span', 'anomalous-ai-priv-head-locks', t('aiPrivacyLocksLine')));
+        if (!recommended && onTogglePrivacy) {
+            copy.append(linkButton(t('aiPrivacyUseRecommended'), async (event) => {
+                event.currentTarget.disabled = true;
+                try {
+                    if (!overview.privacyModels) await postPrivacyRule(task, { action: 'model_rule', privacy_models: true });
+                } catch (error) {
+                    await anomalousAlert(error.message);
+                }
+                if (overview.private) {
+                    onAdjusted();
+                    return;
+                }
+                close();
+                void onTogglePrivacy(true);
+            }));
+        }
         const switches = el('div', 'anomalous-ai-priv-switches');
         if (onTogglePrivacy) {
-            switches.append(switchRow(t('aiPrivacy'), overview.private, (input) => { close(); void onTogglePrivacy(input.checked); }));
+            switches.append(switchRow(t('aiPrivacySwitchMain'), overview.private, (input) => { close(); void onTogglePrivacy(input.checked); }));
         }
         switches.append(switchRow(t('aiPrivacyHideModels'), overview.privacyModels, async (input) => {
             input.disabled = true;

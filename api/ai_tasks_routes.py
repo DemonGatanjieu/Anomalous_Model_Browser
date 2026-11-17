@@ -8,7 +8,7 @@ import asyncio
 
 from aiohttp import web
 
-from . import activity_log, ai_callers, ai_darkroom, ai_decisions, ai_gates, ai_marks, ai_pictures, ai_privacy, ai_sealed_adjust, ai_sealed_notes, ai_sent, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
+from . import activity_log, ai_callers, ai_darkroom, ai_decisions, ai_gates, ai_marks, ai_model_choice, ai_pictures, ai_privacy, ai_sealed_adjust, ai_sealed_notes, ai_sent, ai_run_control, ai_task_canvas, ai_task_changes, ai_task_links, ai_tasks, ai_toolbox
 
 
 async def api_list(request):
@@ -50,6 +50,7 @@ async def api_get(request):
         has_models_override = isinstance(task.get("privacy_models"), bool)
         task["privacy_models"] = ai_privacy.hides_models_for(task["id"])  # whether model names are sealed in this private task
         task["privacy_models_source"] = "task" if has_models_override else "default"
+        task.update(ai_sealed_adjust.model_lists(task))  # its models the user chose to show or hide by name (ai_model_choice.py)
         task["reads_disk"] = ai_callers.reads_disk(task.get("client"))  # an app privacy mode cannot keep from the files
         task["decisions"], task["decisions_gap"] = ai_decisions.decisions(task), ai_decisions.gap(task)
         task["links"] = ai_task_links.links(task["id"])  # the task it goes on from, those going on from it
@@ -517,6 +518,8 @@ def register_routes(app):
     app.router.add_get("/anomalous/ai_tasks/{task_id}/sent", api_sent)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/sealed_notes", api_sealed_notes)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/privacy_rules", api_privacy_rules)
+    app.router.add_get("/anomalous/ai_model_choice", ai_model_choice.api_choice)
+    app.router.add_post("/anomalous/ai_model_choice", ai_model_choice.api_choice)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/answer", api_answer)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/message", api_message)
     app.router.add_post("/anomalous/ai_tasks/{task_id}/typing", api_typing)

@@ -11,7 +11,8 @@ prompt fields of saved prompts, combos, workflows, models and changes (PROMPT_KE
 tool), what the user named (NAMED: the names and tags of combos, workflow cards and saved prompts;
 a combo's name is its model's name and the start of its prompt unless they renamed it), the models
 when asked to (`models`), picture file names anywhere, and last any sealed text wherever it still
-shows up.
+shows up. A model's description stays home (only the paragraphs the user picked go, ai_model_choice.py).
+In a task that is not private, mask(prompts=False) only names the models the user hides by token.
 A text the user split in the Privacy Overview (ai_sealed_adjust.py) keeps its old token in
 task["sealed_legacy"] for expand(), and task["sealed_views"] says how it reads now: its kept runs
 as their own tokens, the words the user let through as written. Wherever the old text still shows
@@ -39,7 +40,7 @@ PROMPT_KEYS = {"prompt", "prompts", "positive", "negative", "positive_prompt", "
 # ("opened": the tab a workflow opened on, named after the card and preset it came from; "workflow": the canvas
 # a task works on, a tab named after the user's own workflow, as is the tab Anomalous makes for the task: canvas_tab)
 NAMED = ("combos", "workflows", "prompts")  # lists of what the user named: each one's name and tags are theirs
-TOOL_KEYS = {"get_model": {"description", "user_notes"}, "place_combo": {"name"},
+TOOL_KEYS = {"get_model": {"user_notes"}, "place_combo": {"name"},
              **{tool: {"more_names"} for tool in ("list_combos", "list_workflows", "list_saved_prompts")}}
 MIN_SEALED = 3  # shorter texts are not looked for elsewhere (they would match inside other words)
 MAX_PROMPTS = 8
@@ -155,8 +156,11 @@ def _walk(value, seals, info, keys):
         return value
     out = {}
     node_type = value.get("class_type") or value.get("type")
-    row_keys = keys | TOOL_KEYS["get_model"] if isinstance(value.get("model_id"), str) else keys
+    model_row = isinstance(value.get("model_id"), str)
+    row_keys = keys | TOOL_KEYS["get_model"] if model_row else keys
     for key, item in value.items():
+        if model_row and key == "description":
+            continue  # its author's words stay home; the paragraphs the user picked go as "about_for_ai" (ai_model_choice.py)
         if key in ("settings", "inputs", "widgets") and isinstance(item, dict) and isinstance(node_type, str):
             out[key] = {name: seals.cover(text) if isinstance(text, str) and _sealable(text) and _text_input(info, node_type, name, text)
                         else _walk(text, seals, info, keys) for name, text in item.items()}
@@ -203,9 +207,10 @@ def _hide_models(value, seals, models):
     return ai_sealed_models.hide(value, seals) if models else value
 
 
-def mask(result, task_id, info, tool="", models=False):
+def mask(result, task_id, info, tool="", models=False, prompts=True):
     """Tool result `result` of a private task with its prompt text and picture names as tokens, and its
-    models too when `models` says so (bool, or {hides_all, public_ids, private_ids}, ai_sealed_models.py)."""
+    models too when `models` says so (bool, or {hides_all, public_ids, private_ids}, ai_sealed_models.py).
+    `prompts` False: only the models (a task that is not private, ai_privacy.guard)."""
     if not isinstance(result, dict):
         return result
     seals = Seals(task_id)
@@ -213,18 +218,26 @@ def mask(result, task_id, info, tool="", models=False):
     masked = None
 
     def hidden(value):
-        return _strings(_hide_models(value, seals, models), lambda text: _hide(seals, text))
+        value = _hide_models(value, seals, models)
+        return _strings(value, lambda text: _hide(seals, text)) if prompts else value
+
+    def whole(value):
+        return hidden(_walk(value, seals, info or {}, PROMPT_KEYS | TOOL_KEYS.get(tool, set())) if prompts else value)
     if isinstance(data, (dict, list)):
-        masked = hidden(_walk(data, seals, info or {}, PROMPT_KEYS | TOOL_KEYS.get(tool, set())))
+        masked = whole(data)
         result["structuredContent"] = masked
     content = []
     for item in result.get("content") or []:
         if isinstance(item, dict) and item.get("type") == "text":
             try:
-                same = masked is not None and json.loads(item.get("text") or "") == data
+                parsed = json.loads(item.get("text") or "")
             except ValueError:
-                same = False
-            item = {**item, "text": tool_text(masked) if same else hidden(str(item.get("text") or ""))}
+                parsed = None
+            # A text of the answer's data reads as it does; other data (the answer with a note added) is masked as data too,
+            # so what is left out of an entry (a model's description) is left out there as well.
+            text = (tool_text(masked) if masked is not None and parsed == data else tool_text(whole(parsed))
+                    if isinstance(parsed, (dict, list)) else hidden(str(item.get("text") or "")))
+            item = {**item, "text": text}
         content.append(item)
     if "content" in result:
         result["content"] = content

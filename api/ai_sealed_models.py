@@ -4,8 +4,10 @@ model of the library is one token ("[M1]", sealed in the task as its model_id, a
 a tool's answer writes it: its model_id, the name a loader lists it by, its file name inside a text;
 its card's name where a name stands (NAME_KEYS), and inside a text when it is more than one plain
 word (a model called "Anima" is not taken out of every sentence about Anima). A model's own entry
-(anything with a model_id) loses what tells it apart (ENTRY_DROPS); its type, base model, author's
-settings and the user's note for the AI stay, to pick by. A model file the library does not have
+(anything with a model_id) loses what tells it apart (ENTRY_DROPS: its description and the user's own
+notes too) and its trigger words become tokens (WORD_KEYS); its type, base model, author's settings,
+the paragraphs of its description the user picked and the user's note for the AI stay, to pick by.
+The models the user hides by name (ai_model_choice.py) go through here in tasks that are not private too. A model file the library does not have
 (one a workflow names) is a token of its own. written() and named() are the way back: the model_id
 where a tool takes one, the loader's name among a node's values, the card's name inside the AI's words."""
 
@@ -17,7 +19,10 @@ from . import ai_toolbox_catalog
 MODEL_FILE = (".safetensors", ".gguf", ".ckpt", ".pt", ".pth", ".bin", ".sft", ".onnx")
 MODEL_ID = re.compile(r"[\w-]+:\d+:.+")
 LOOSE = re.compile(r"[^\s\"'<>|*?,;()\[\]{}]+\.(?:safetensors|gguf|ckpt|pth|pt|bin|sft|onnx)\b", re.IGNORECASE)
-ENTRY_DROPS = ("name", "file", "folder", "rel", "cover", "civitai_name", "version", "civitai_url", "download_link", "sha256")
+ENTRY_DROPS = ("name", "file", "folder", "rel", "cover", "civitai_name", "version", "civitai_url", "download_link", "sha256",
+               "description", "user_notes")
+WORD_KEYS = {"trigger_words", "words"}  # a hidden model's trigger words can name what it draws: tokens, as a prompt's
+TOKEN = re.compile(r"\[(?:P|img|M)\d+\]")
 NAME_KEYS = {"name", "names", "more_names", "model", "models", "main_model", "loras", "label", "labels"}
 PLAIN_KEYS = {"type", "kind", "base", "base_model", "baseModel", "family", "source"}  # never a model's name
 WIDGET_KEYS = {"values", "settings", "inputs", "widgets", "widgets_values"}  # a node's values: models by their loader's names
@@ -147,13 +152,18 @@ def hide(value, seals, only_ids=None, skip_ids=()):
             return loose_token(words)  # a model file the library does not have, spaces in its name and all
         return LOOSE.sub(lambda match: loose_token(match.group(0)), swapped) if hide_loose else swapped
 
+    def words(items):
+        if not isinstance(items, list):
+            return items
+        return [seals.seal(word) if isinstance(word, str) and word.strip() and not TOKEN.fullmatch(word) else word for word in items]
+
     def walk(item, key=""):
         if isinstance(item, dict):
             if item.get("kind") == "ways" and isinstance(item.get("details"), dict):
                 return {name: walk(part, name) if name in ("said_as", "user_note") else part for name, part in item.items()}
             mid = item.get("model_id")
             entry = isinstance(mid, str) and model_is_hidden(mid)
-            return {text(name, "") if isinstance(name, str) else name: walk(part, name)
+            return {text(name, "") if isinstance(name, str) else name: words(part) if entry and name in WORD_KEYS else walk(part, name)
                     for name, part in item.items() if not (entry and name in ENTRY_DROPS)}
         if isinstance(item, list):
             return [walk(part, key) for part in item]

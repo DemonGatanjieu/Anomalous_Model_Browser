@@ -45,6 +45,7 @@ def compact_models(models):
             "version_name": str(meta.get("version_name") or "").strip(),
             "words": _words(meta),
             "preview_url": model.get("preview_url") or "",
+            "ai_name": meta.get("ai_name") or "",  # the user's choice for AIs (ai_model_choice.py)
         })
     return found
 

@@ -9,7 +9,8 @@
  * its name and where it is from), so a short panel still lists many. The detail pane shows the
  * card in focus in full, and for a combo or workflow can put just the prompt inside it on the
  * message. A model says its version apart from its name; one with several is one card, whose
- * version opens the list to show another (ctx.showVersion).
+ * version opens the list to show another (ctx.showVersion). A model's card and detail say whether AIs
+ * get its name, and its detail which paragraphs of its description they read (ui_ai_model_lock.js).
  */
 
 import { MAX_REF_NOTE } from './ai_chat_plus.js';
@@ -18,6 +19,7 @@ import { translate as t } from './locales.js';
 import { outputThumbnail } from './ui_kept_toast.js';
 import { recipeAssetUrl } from './ui_recipe_media.js';
 import { icon } from './ui_ai_icons.js';
+import { aboutSection, nameButton } from './ui_ai_model_lock.js';
 import { socketColor, sourceBadge, standInCover } from './ui_ai_toolbox_icons.js';
 import { versionLabel } from './ui_model_versions.js';
 import { typeLabel } from './ui_model_types.js';
@@ -208,6 +210,7 @@ export function card(item, ctx) {
     const meta = tags(item);
     meta.prepend(givenBadge(ctx, item));
     body.append(meta, takeBackButton(ctx, item));
+    if (item.kind === 'models') body.append(nameButton(item, ctx));
     node.append(body);
     cardExtras(node, item, ctx);
     return controls(node, item, ctx);
@@ -458,6 +461,7 @@ export function detail(item, ctx) {
         prompt.onclick = () => ctx.pickPrompt(inner);
         actions.append(prompt);
     }
+    if (item.kind === 'models') actions.append(nameButton(item, ctx));
     if (item.kind === 'models' && ctx.openModel) {
         const page = el('button', 'anomalous-tb-like');
         page.type = 'button';
@@ -497,6 +501,7 @@ export function detail(item, ctx) {
     } else if (item.kind === 'models') {
         box.append(textBlock([item.folder, item.file].filter(Boolean).join('/'), 'is-soft'));
         if (item.words?.length) box.append(section(t('aiTbWords'), [tagsOf(item.words)]));
+        box.append(aboutSection(item, ctx));
     }
     return box;
 }

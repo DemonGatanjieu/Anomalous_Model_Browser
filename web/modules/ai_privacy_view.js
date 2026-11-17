@@ -289,9 +289,15 @@ export function buildPrivacyOverview(task) {
             hidden.models.push({ token, ...formatModelRef(val), id: val, override, note, activeHidden });
         }
     }
-    hidden.total = hidden.prompts.length + hidden.pictures.length + hidden.models.length;
-
     const modelCatalog = buildModelCatalog(task, sealed, legacy, notes, privacyModels, publicSet, privateSet);
+    // A hidden model's trigger words go out as tokens too: shown under the model, not as prompts of their own.
+    const wordsOf = (task?.model_words && typeof task.model_words === 'object') ? task.model_words : {};
+    for (const model of modelCatalog) {
+        const words = new Set(wordsOf[model.id] || []);
+        model.words = hidden.prompts.filter(item => words.has(item.text)).map(item => ({ token: item.token, text: item.text }));
+        hidden.prompts = hidden.prompts.filter(item => !model.words.some(word => word.token === item.token));
+    }
+    hidden.total = hidden.prompts.length + hidden.pictures.length + hidden.models.length;
     const unassignedToolboxModels = modelCatalog.filter(m => !m.token && m.hidden).length;
 
     const noteItems = Object.keys(sealed)

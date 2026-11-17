@@ -16,6 +16,7 @@ try:
 except ImportError:
     from model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info, unmatched_reason
     from model_sidecars import find
+from .description_parts import picked
 from .model_heads import inspect as inspect_file  # the header, read once per file version
 
 # Fields the model editor sets: <model>.anomalous.json key -> metadata key.
@@ -116,6 +117,8 @@ def _read_metadata(file_path):
         "custom_name": "",
         "custom_notes": "",
         "ai_note": "",  # the user's words for an AI on what it is for; a private task hiding model names gives it too
+        "ai_name": "",  # "hidden" / "shown": whether an AI may know it by name, in every task (ai_model_choice.py)
+        "ai_about": [],  # the paragraphs of its description the user lets an AI read (description_parts.py)
         "version_name": "",  # the Civitai version ("v2.0", "Illustrious"…), told apart on the card
         "base_guess": "",  # no base model known yet (not scanned): what the file's header tells
         # "civitai" (matched), "local" (only what the file tells: no match, or offline) or "" (not scanned)
@@ -206,6 +209,10 @@ def _read_metadata(file_path):
         if isinstance(user.get(key), str):
             metadata[field] = user[key]
             metadata["user_fields"].append(field)
+    if user.get("ai_name") in ("hidden", "shown"):
+        metadata["ai_name"] = user["ai_name"]
+    if isinstance(user.get("ai_about"), list):
+        metadata["ai_about"] = picked(metadata["description"], user["ai_about"])
     return metadata
 
 

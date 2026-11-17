@@ -110,18 +110,25 @@ covered by the `styles.css` manifest.
   its first field is the gist, the picture in words the AI may read, handed on as written but for the
   words the user marked to hide, which go as tokens inside it; `web/modules/ai_hide_mark.js` is that
   mark, its Hide button marking words in the focused chip note field or message input, and `sealedParts` / `renderHiddenText` rendering `[P*]` sealed segments in timeline messages (`ui_ai_step_body.js`, with a line under the bubble saying what the AI got: the same words with its tokens, `[M*]` too for a route), ref notes, and prompt-box gists (`ai_sealed.seal_marked` seals marked words in both text and ref notes);
-  the privacy skill tells the AI how to work). `api/ai_sealed.py` also applies `get_model`'s field keys (`description`, `user_notes`) on any `model_id` dict anywhere in tool answers (including `"models"` message refs). `api/ai_sealed_models.py` keeps a private task's model names too
+  the privacy skill tells the AI how to work). `api/ai_sealed.py` also seals `get_model`'s `user_notes` and leaves out a model's `description` on any `model_id` dict anywhere in tool answers (including `"models"` message refs; a text copy of the answer is masked as data too). `api/ai_sealed_models.py` keeps a private task's model names too
   (the Gates window's "Model names in a private task", on unless turned off): each model of the library is one
   token ("[M1]", sealed as its model_id) however an answer writes it (model_id, loader name, file name in a text,
   card name; leaving `"ways"` ref `details` intact while still masking `user_note`), its own entry loses what tells it apart and keeps type, base model, the author's settings and the
   user's note for the AI (`ai_note`, set in the model editor, `note_for_ai` in the tools); `expand` writes a
   model token back as the model_id, as the loader's name among a node's values, as the card's name inside the AI's words.
+  `api/ai_model_choice.py` is what the user chose for one model, chosen once in its `<model>.anomalous.json` (moves with
+  it): `ai_name` hidden (a token in any task, private or not: `ai_privacy.guard` runs `ai_sealed.mask(prompts=False)` outside
+  private tasks; no cover, description, notes or plain trigger words) or shown (by name in private tasks too), and `ai_about`,
+  the paragraphs of its description an AI may read (`api/description_parts.py`; `get_model`'s `about_for_ai`). `GET` / `POST
+  /anomalous/ai_model_choice`; `user/anomalous/ai_model_choice.json` only says something was ever chosen, so tasks read
+  no library for it before. `web/modules/ui_ai_model_lock.js` is its button on the materials window's model cards and
+  detail, and the detail's description to tick paragraphs of under a line saying what the AI gets (`tests/test_ai_model_choice.py`).
   `api/ai_sealed_notes.py` stores per-token brief notes (`task["sealed_notes"]`, `POST /anomalous/ai_tasks/{task_id}/sealed_notes`)
   so the user can describe each `[P*]`, `[img*]`, or `[M*]` token in plain words and deliver mid-task updates once via
   `ai_panels` (`kind="sealed_notes"`) as well as in `begin_task` and `get_situation`, still masked by `ai_privacy.guard`.
   `api/ai_sealed_adjust.py` applies retroactive privacy overrides (`POST /anomalous/ai_tasks/{task_id}/privacy_rules`):
-  per-task `privacy_models` toggles, per-model `public_models` / `private_models` switches (`sealed_legacy` preserves
-  prior-token `expand`), letting some words of a `[P*]` through (`parts` spelling the text: each kept run its own token,
+  per-task `privacy_models` toggles, one model shown or hidden by name (written to the model through ai_model_choice.py;
+  the page gets the task's models so chosen as `public_models` / `private_models`; `sealed_legacy` preserves prior-token `expand`), letting some words of a `[P*]` through (`parts` spelling the text: each kept run its own token,
   the old text read as its `sealed_views` view wherever it shows up, ai_sealed.py), and retroactive message phrase sealing,
   delivering pending updates once via `begin_task` / `get_situation` / `ai_panels._collect` (`kind="privacy_adjust"`).
   `web/modules/ai_privacy_view.js` builds the pure classification & AI-perspective preview of hidden tokens, per-model

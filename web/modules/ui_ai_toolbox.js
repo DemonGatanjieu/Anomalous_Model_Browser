@@ -184,7 +184,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     const ctx = {
         picked, inPack, favorite: liked, given,
         get showTakeBack() { return state.filter === 'given'; },
-        privateTask: () => Boolean(currentTask?.private),
+        privateTask: () => Boolean(currentTask?.private), task: () => currentTask,
         noteOf: item => msg()?.noteOf?.(item.kind, item.id) || '',
         setNote: (item, text) => { msg()?.setNote?.(item.kind, item.id, text); syncNoteInputs(body, item, text); drawPickedRow(); },
         focus: (item) => { state.focus = item; drawPane(); },

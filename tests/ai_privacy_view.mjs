@@ -123,4 +123,17 @@ assert.deepEqual(overview.visible.messages.map(m => [m.stepId, m.preview, m.deli
 ]);
 assert.equal(overview.exposedPrompts.length, 1);
 
+// A hidden model's trigger words show under it (model_words from the task's GET), not as prompts of their own.
+const withWords = buildPrivacyOverview({
+    id: 't2',
+    private: false,
+    private_models: ['loras:0:lamp.safetensors'],
+    model_words: { 'loras:0:lamp.safetensors': ['lampglow'] },
+    sealed: { '[M1]': 'loras:0:lamp.safetensors', '[P1]': 'lampglow', '[P2]': 'a quiet street' },
+});
+assert.deepEqual(withWords.hidden.prompts.map(x => x.token), ['[P2]']);
+assert.deepEqual(withWords.modelCatalog[0].words, [{ token: '[P1]', text: 'lampglow' }]);
+assert.equal(withWords.modelCatalog[0].hidden, true);
+assert.equal(withWords.hidden.total, 2);
+
 console.log('ai_privacy_view: ok');

@@ -33,6 +33,7 @@ MAX_CHANGES = 60
 ROUTE_ACTIONS = {
     '/anomalous/delete_model': 'model_delete',
     '/anomalous/update_metadata': 'model_edit',
+    '/anomalous/ai_model_choice': 'model_edit',
     '/anomalous/set_custom_cover': 'model_cover',
     '/anomalous/upload_custom_cover': 'model_cover',
     '/anomalous/save_recipe': 'recipe_save',
