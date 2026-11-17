@@ -430,7 +430,8 @@ async def api_blocks(request):
 
 
 async def api_routes(request):
-    """GET /anomalous/ai_routes: main models and, with ?first=&second=, the routes this ComfyUI can build."""
+    """GET /anomalous/ai_routes: main models and, with ?first=&second=, the routes this ComfyUI can build.
+    With no `first` asked (or one gone), the first model it can build from, so a sheet does not open on a warning."""
     from . import mcp_canvas_edit, mcp_routes
     from .mcp_tools import ToolError
 
@@ -440,7 +441,8 @@ async def api_routes(request):
     known = {item["model_id"]: item for item in models}
     if not models:
         return web.json_response({"models": [], "first": "", "second": "", "ways": []})
-    if first not in known:
+    asked = first in known
+    if not asked:
         first, second = models[0]["model_id"], ""
     elif second and (second not in known or second == first or not known[first]["family"]
                      or known[second]["family"] != known[first]["family"]):
@@ -450,6 +452,8 @@ async def api_routes(request):
     except ToolError as error:
         return web.json_response({"error": str(error), "models": models, "first": first, "second": second}, status=502)
     ways = await asyncio.to_thread(mcp_routes.ways_for, first, second, info)
+    if not asked and not ways:
+        first, ways = await asyncio.to_thread(mcp_routes.first_buildable, models, info) or (first, ways)
     return web.json_response({"models": models, "first": first, "second": second, "ways": ways})
 
 

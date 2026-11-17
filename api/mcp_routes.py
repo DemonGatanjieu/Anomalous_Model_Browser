@@ -118,6 +118,15 @@ def ways_for(first, second, info):
             if route["models"] <= limit and _can_build(route, base, info, kind)]
 
 
+def first_buildable(models, info, tries=24):
+    """(model_id, ways) for the first of `models` (main_models' order) this ComfyUI can build from, or None."""
+    for item in models[:tries]:
+        ways = ways_for(item["model_id"], "", info)
+        if ways:
+            return item["model_id"], ways
+    return None
+
+
 def offer(box, info):
     """{"options": [ask_user's choices], "calls": {option id: what to call}} for the two main models in `box`,
     or None: fewer picked, one gone, or of different families (a switch reuses the first's prompts and VAE)."""

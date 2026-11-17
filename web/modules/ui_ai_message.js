@@ -159,6 +159,7 @@ export function messageBox(onSend, source) {
  * (`status` "waiting"), what is sent waits with it, and the input says it can be used for that. */
 export function updateMessageBox(box, ended, status) {
     box.classList.toggle('is-quiet', !['live', 'asks', 'waiting'].includes(status));
+    box.classList.toggle('is-waiting', status === 'waiting' && !ended); // the first of the waiting page's steps is here
     box.note.textContent = t(ended ? 'aiMessageEnded' : status === 'waiting' ? 'aiMessageWaiting' : 'aiMessageHint');
     box.note.classList.remove('is-error');
     box.field.title = box.note.textContent;

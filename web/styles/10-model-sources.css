@@ -265,9 +265,12 @@
    ============================================================================= */
 /* Header skin uses important padding/colors; keep this control square within that skin. */
 #anomalous-header button.anomalous-update-notice-btn {
-    width: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    width: auto;
     min-width: 32px;
-    padding: 0 !important;
+    padding: 0 10px !important;
     background: transparent !important;
     border-color: var(--amb-border-strong) !important;
     color: var(--amb-text-primary, var(--amb-text-main)) !important;
@@ -275,15 +278,10 @@
 #anomalous-header button.anomalous-update-notice-btn:hover {
     background: rgba(var(--amb-ink-rgb), 0.08) !important;
 }
-.anomalous-update-notice-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    border: 1px solid currentColor;
-    border-radius: 50%;
-    font: 700 12px/1 system-ui, sans-serif;
+.anomalous-update-notice-label {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
 }
 #anomalous-update-notice-btn:focus-visible,
 .anomalous-update-guide button:focus-visible {

@@ -23,7 +23,9 @@ let running = false;
 
 export function setScanButtonState(btn, isScanning) {
     if (!btn) return;
+    const label = btn.querySelector('.anomalous-rail-label'); // the rail's word under the icon stays
     btn.innerHTML = SCAN_RADAR_ICON_SVG;
+    if (label) btn.append(label);
     btn.classList.toggle('anomalous-radar-spinning', Boolean(isScanning));
     btn.style.opacity = isScanning ? '0.85' : '1';
     btn.style.animation = '';

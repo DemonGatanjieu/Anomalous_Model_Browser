@@ -7,7 +7,9 @@
  * shows the sentence for the AI. A starter is a prepared task and a sentence, never a workflow template. Each
  * card's tags name only what Anomalous makes sure of (`TAGS`), never what rests on the AI obeying. The
  * private card takes the prompt itself in a field the AI gets as a token (ai_hide_mark.js marked). "Run my
- * preset" has its own fields (ui_ai_preset_sheet.js) and, with nothing to change, runs with no AI.
+ * preset" has its own fields (ui_ai_preset_sheet.js) and, with nothing to change, runs with no AI. The
+ * private card puts that prompt first, then where to start, optional LoRAs and, second and said so, the line
+ * that goes to the AI as it is; a drawing (ui_ai_private_sheet.js) says what happens to the prompt.
  */
 
 import { marked } from './ai_hide_mark.js';
@@ -18,6 +20,7 @@ import { startTask } from './ui_ai_handoff.js';
 import { pictureGrid } from './ui_ai_gallery_pick.js';
 import { icon } from './ui_ai_icons.js';
 import { presetFields } from './ui_ai_preset_sheet.js';
+import { loraPicker, sealFlow } from './ui_ai_private_sheet.js';
 import { applyTaskRoute, startFromSection } from './ui_ai_start_from.js';
 
 const NEW_TAB = { canvas: 'new' };
@@ -34,7 +37,7 @@ export const STARTERS = [
     { id: 'preset', icon: 'workflows', tags: ['newTab', 'saved'], lines: [['kept']] },
     { id: 'say', icon: 'pencil', tags: ['newTab', 'download'], lines: [['start'], ['kept'], ['mind']] },
     { id: 'picture', icon: 'image', tags: ['original', 'newTab'], lines: [['start'], ['kept'], ['mind']] },
-    { id: 'private', icon: 'lock', tags: ['sealed', 'newTab'], lines: [['start'], ['hidden'], ['out'], ['mind']] },
+    { id: 'private', icon: 'lock', tags: ['sealed', 'newTab'], lines: [['out']] },
     { id: 'canvas', icon: 'nodes', tags: ['undo'] },
 ];
 
@@ -128,17 +131,20 @@ function fieldsOf(card, data, owner, close) {
     }
     if (card.id === 'private') {
         const from = startFromSection({ data });
+        const loras = loraPicker();
         const gist = textInput(t('aiStartGistHint'));
         const prompt = el('textarea', 'anomalous-ai-start-input');
         prompt.placeholder = t('aiStartSealedHint');
         prompt.maxLength = MAX_SEALED;
-        prompt.rows = 3;
+        prompt.rows = 4;
         const promptField = field(t('aiStartSealed'), prompt);
         promptField.classList.add('is-sealed');
         promptField.querySelector('.anomalous-ai-start-label')?.prepend(icon('lock', 13));
+        const gistField = field(t('aiStartGist'), gist);
+        gistField.classList.add('is-plain'); // goes to the AI as it is: second, and quieter
         return {
-            nodes: [from.node, field(t('aiStartGist'), gist), examples(gist, EXAMPLES.private), promptField],
-            stop: () => from.stop(),
+            nodes: [promptField, from.node, loras.node, gistField, examples(gist, EXAMPLES.private), sealFlow()],
+            stop: () => { from.stop(); loras.stop(); },
             task: () => {
                 const picked = from.read();
                 if (picked.errorKey || picked.errorText) return picked;
@@ -146,7 +152,9 @@ function fieldsOf(card, data, owner, close) {
                 if (!gist.value.trim() && !sealed) return 'aiStartNeedGist';
                 from.save();
                 const fact = startFactSentence({ ...picked, secret: true }, t, marked);
-                const cardNote = sealed ? t('aiPresetSayPrompt', { prompt: marked(sealed) }) : '';
+                const files = loras.read(); // by file name: the task's privacy makes each a token
+                const cardNote = [sealed ? t('aiPresetSayPrompt', { prompt: marked(sealed) }) : '',
+                    files.length ? t('aiStartUseLoras', { loras: files.join(t('listSeparator')) }) : ''].filter(Boolean).join(' ');
                 return {
                     title: gist.value.trim() || t('aiStartPrivateTask'),
                     note: composeFirstNote(fact, cardNote),
@@ -213,13 +221,16 @@ export function openStarter(owner, card, data) {
     const actions = el('div', 'anomalous-ai-start-actions');
     actions.append(button('anomalous-ai-link', t('dialogCancel'), () => close()));
     if (fields.task || fields.start) actions.append(go);
-    body.append(...(fields.start ? [] : [readiness(card, data)]), ...fields.nodes, lines, error, actions);
+    // The fields scroll; what is missing and the buttons stay in sight at the foot of the window.
+    const scroll = el('div', 'anomalous-ai-start-scroll');
+    scroll.append(...(fields.start ? [] : [readiness(card, data)]), ...fields.nodes, lines);
+    body.append(scroll, error, actions);
     body.addEventListener('input', () => { error.textContent = ''; });
     body.addEventListener('change', () => { error.textContent = ''; });
     body.addEventListener('click', (event) => {
         if (event.target.closest('button') && event.target.closest('button') !== go) error.textContent = '';
     });
     close = aiWindow(t(`aiStart_${card.id}_title`), body, () => fields.stop?.());
-    body.querySelector('input:not([hidden]), select')?.focus();
+    body.querySelector('textarea, input:not([hidden]), select')?.focus();
 }
 

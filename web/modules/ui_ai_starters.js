@@ -1,5 +1,5 @@
 /**
- * The home page's "Let the AI do it" (ui_home.js puts it under the cards): which AI app came last, and a
+ * The home page's "Let the AI do it" (ui_home.js gives it the first place, above the tool cards): which AI app came last, and a
  * warning when the tool list it holds is a short one (api/mcp_tool_sets.py) that cannot take a task
  * handed over here; then the six starter cards (ui_ai_starter_sheet.js), each with its tags. "Explain my
  * canvas" opens the canvas hand-off as the canvas menu does (ui_ai_canvas_hand.js). Under the cards, once
@@ -57,10 +57,10 @@ function card(owner, starter, data) {
     return node;
 }
 
-/** Draws the section after `after` (the home page's cards) once its data is read. */
-export function renderAiStarters(owner, after) {
+/** Draws the section into `slot` (the home page's place for it) once its data is read. */
+export function renderAiStarters(owner, slot) {
     fetch('/anomalous/ai_starters').then(response => (response.ok ? response.json() : null)).then((data) => {
-        if (!data || !after.isConnected) return;
+        if (!data || !slot.isConnected) return;
         const section = el('section', 'anomalous-ai-start');
         const head = el('div', 'anomalous-ai-start-head');
         const title = el('span', 'anomalous-ai-start-title');
@@ -70,6 +70,6 @@ export function renderAiStarters(owner, after) {
         grid.append(...STARTERS.map(starter => card(owner, starter, data)));
         const again = againLine(owner, data);
         section.append(head, grid, ...(again ? [again] : []));
-        after.after(section);
+        slot.replaceChildren(section);
     }).catch(() => { /* the home page works without it */ });
 }

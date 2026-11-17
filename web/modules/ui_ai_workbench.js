@@ -329,7 +329,7 @@ function showOnStage(panelId) {
 async function newTask() {
     try {
         const response = await fetch('/anomalous/ai_tasks', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: '', from: state.task?.id }), // goes on from the task shown
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: '' }), // a task of its own: going on from another is the ⋯'s 接着哪个任务
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);

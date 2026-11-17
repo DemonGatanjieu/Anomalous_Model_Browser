@@ -2,6 +2,17 @@
 
 ## v1.64.0 — unreleased
 
+- 主页一打开就是「让 AI 帮你做」那六张卡，不用再往下滚；原来的工具卡变小了，放在下面的「自己动手」里，一行四张。
+- The home page opens on the six "Let the AI do it" cards, with no scrolling; the tool cards are smaller and sit under them in "Do it yourself", four to a row.
+- AI 工作台的「新任务」永远开一个全新的任务，不会再接到你正看着的任务后面（要接，用 ⋯ 里的「接着哪个任务…」）。等 AI 接手的那页改成「三步让 AI 接手」：① 写想要什么（就在下面的留言框，可以先不写，写了这一步会打勾）② 一个大按钮「复制给 AI 的话」③ 粘到 AI 软件里发送。那句带工具名的原话折在「要发的这句话写了什么？」里。
+- The AI workbench's "New task" always starts a task of its own and no longer hangs it under the one you are looking at (the ⋯'s "Goes on from…" does that). The page while a task waits for an AI is "Three steps to hand it to the AI": say what you want (in the message box below, or not yet; the step is ticked once you did), one big "Copy the line for the AI" button, and paste it in the AI app. The line itself, with its tool names, is folded under "What does the line say?".
+- 「隐私模式出图」的准备窗重新排了：最上面是保密的「完整提示词（原文留在本机，AI 只拿到代号）」；再选从哪开始和模型；有 LoRA 时可以「加一个 LoRA…」，AI 同样只拿到代号；会原样发给 AI 的「给 AI 看的一句话」放到后面，写明了会发出去。底下几行说明换成一张四格小图：你写的提示词 → AMB 换成代号 → AI 只看到代号 → 跑图时换回原文。
+- The "Draw in privacy mode" sheet is reordered: the secret "Full prompt (its words stay here; the AI gets a code)" comes first, then where to start and the model, then, when you have LoRAs, "Add a LoRA…" (codes to the AI as well), and last the "Line for the AI", which says it is sent as it is. Lines of text at the bottom gave way to a four-box drawing: your prompt → Anomalous swaps in codes → the AI sees codes only → swapped back to run.
+- 「照我说的出图」「隐私模式出图」和留言框里「新搭一张」的小窗，第一次打开时默认选一个这台 ComfyUI 搭得起来的模型，不再一打开就是“这个模型不能在这里从零新搭”的黄字。你自己选过的模型照旧记住。
+- "Draw what I say", "Draw in privacy mode" and the message box's "Build a new one" open, the first time, on a model this ComfyUI can build from, instead of on the amber "can't build this model here" line. A model you picked yourself is still remembered.
+- 左边栏下面三个只有图标的按钮配上了字：「当前节点」「模型检查」「扫描」（窗口太矮时和上面的一样只留图标）。右上角那个像报错的 (!) 换成一本书加「说明」，点开还是更新说明（在角色语音页是使用说明）。
+- The rail's three icon-only buttons have words under them: "Node", "Check", "Scan" (gone in a short window, like the pages' words). The header's "!", which looked like an error, is a book and "Guide"; it still opens what's new (the how-to on the voice pages).
+
 - AI 工作台的任务页清爽了：标题右边只留三样——隐私按钮（「隐私：推荐」「隐私：自定」「隐私：关」，每个任务都有，点开就是隐私一览）、「暂停」、⋯。「暂停」让 AI 先停下，正在出的图停掉，什么都不撤销，你再写一句它就接着做；原来的「叫停并撤销」改名「停下并撤销改动」放进 ⋯。⋯ 里还有“AI 改画布时：改副本 / 改当前画布”、「撤销画布上的改动」和「卡住了？」；「卡住了？」在 AI 停下时也出现在留言框上方那一行的末尾。隐私任务顶上那段很长的黄色提醒，缩成隐私按钮旁的一个 ⓘ。
 - The AI workbench's task page is calmer: right of the title only three things stay — the privacy button ("Privacy: recommended / changed / off", on every task, opening the Privacy overview), "Pause" and ⋯. "Pause" stops the AI for now: a run going is stopped, nothing is taken back, and writing to it lets it go on; the old "Halt and take back" is "Stop and take back changes" in the ⋯. The ⋯ also has where the AI changes the canvas (a copy or the open canvas), "Undo its canvas changes" and "Stuck?", which also shows at the end of the row over the message box once the AI stopped. The long yellow note on private tasks is now a ⓘ beside the privacy button.
 - AI 问你的问题只在留言框上方出现一次：右边的面板栏不再自己弹出来（想要的话，在面板栏顶上打开「有新东西就打开」）。选项下面直接写着 AI 给的说明（比如“768×1024，约 20 秒”），推荐的那个标着「推荐」。右栏的「展台」改叫「面板」，「决策」改叫「定下的事」，「做法」里的 Skill 改叫「给 AI 的建议」。

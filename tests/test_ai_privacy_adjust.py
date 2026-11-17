@@ -13,7 +13,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1]), str(PLUGIN / "tests")]
 
-from api import ai_gates, ai_model_choice, ai_privacy, ai_sealed, ai_sealed_adjust, ai_sealed_models, ai_sealed_notes, ai_tasks, ai_tasks_routes, mcp_server, mcp_situation, mcp_task_tools  # noqa: E402
+from api import ai_gates, ai_model_choice, ai_privacy, ai_sealed, ai_sealed_adjust, ai_sealed_models, ai_sealed_notes, ai_tasks, ai_tasks_routes, mcp_actions, mcp_server, mcp_situation, mcp_task_tools  # noqa: E402
 from test_mcp import rpc  # noqa: E402
 
 SETTING = os.path.join(tempfile.mkdtemp(prefix="amb_priv_adj_"), "ai_privacy.json")
@@ -62,6 +62,8 @@ class PrivacyAdjustTests(unittest.TestCase):
             mock.patch.object(mcp_situation, "_canvas", return_value={"node_count": 0}),
             mock.patch.object(mcp_task_tools, "_node_list", return_value={}),
             mock.patch.object(mcp_task_tools, "_canvas_model", return_value=None),
+            # list_voices carries the messages here; it must not ask a ComfyUI that may be running for real
+            mock.patch.object(mcp_actions, "_tts_characters", return_value=[]),
         ):
             patcher.start()
             self.addCleanup(patcher.stop)

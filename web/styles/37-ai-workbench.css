@@ -569,6 +569,7 @@
 }
 
 .anomalous-ai-message:focus-within { border-color: color-mix(in srgb, var(--amb-link) 55%, transparent); }
+.anomalous-ai-message.is-waiting { border-color: color-mix(in srgb, var(--amb-link) 55%, transparent); } /* step one of the waiting page */
 
 .anomalous-ai-message[hidden] { display: none; }
 

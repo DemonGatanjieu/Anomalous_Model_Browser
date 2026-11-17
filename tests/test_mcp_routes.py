@@ -272,6 +272,22 @@ class StartFromRouteTests(unittest.TestCase):
         self.assertEqual((body["first"], body["second"]), (A, ""), "incompatible second is dropped cleanly")
         self.assertEqual([w["id"] for w in body["ways"]], ["one_pass"])
 
+        def ways(first, second, info):
+            return [{"id": "one_pass", "models": 1, "enlarge": False}] if first.startswith("checkpoints") else []
+
+        def routes(query):
+            with mock.patch.object(mcp_routes, "main_models", return_value=models_out), \
+                    mock.patch.object(mcp_canvas_edit, "object_info", return_value=INFO), \
+                    mock.patch.object(mcp_routes, "ways_for", side_effect=ways):
+                req = make_mocked_request("GET", f"/anomalous/ai_routes{query}", headers={"Host": "127.0.0.1:8188"})
+                return json.loads(asyncio.run(ai_tasks_routes.api_routes(req)).text)
+
+        fresh = routes("")
+        self.assertEqual((fresh["first"], [w["id"] for w in fresh["ways"]]), ("checkpoints:0:sd15.safetensors", ["one_pass"]),
+                         "nothing asked: the first model this ComfyUI can build from, not one that opens on a warning")
+        self.assertEqual((routes(f"?first={A}")["first"], routes(f"?first={A}")["ways"]), (A, []),
+                         "a model the user chose stays, buildable or not")
+
         def post(path_tid, payload):
             req = make_mocked_request("POST", f"/anomalous/ai_tasks/{path_tid}/route",
                                       headers={"Host": "127.0.0.1:8188", "Content-Type": "application/json"},

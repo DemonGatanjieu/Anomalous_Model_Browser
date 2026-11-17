@@ -598,8 +598,8 @@ covered by the `styles.css` manifest.
   app from its client info or User-Agent, a session, a task it names); an app whose task ended or
   paused goes on in the task the user wrote to and it has not read (`ai_tasks._take_replied`,
   which opens it again). `api/ai_task_links.py` keeps which task
-  a task goes on from (`from`: set when an AI begins a new task while on another, or the user
-  starts one while looking at a task; changed or taken off by the user, never a loop); `GET` of a
+  a task goes on from (`from`: set when an AI begins a new task while on another, or by the user
+  with the ⋯'s "goes on from"; New task always starts one of its own; changed or taken off by the user, never a loop); `GET` of a
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
   decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
   one to link; `ui_ai_task_head.js` is a task's head: title, state, the privacy button, Pause, the run's status while one goes,
@@ -668,7 +668,10 @@ covered by the `styles.css` manifest.
   (the app that came last, a warning when its list is a short one, six starter cards); `ui_ai_starter_sheet.js`
   holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get; closing calls `onClose` via `ui_ai_connect.js` `aiWindow`, whose Esc handler defers to visible `[data-anomalous-escape]` pickers inside the dialog, to clean up reads), which starts a
   prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` `startTask`;
-  a card's tags name only what Anomalous makes sure of. For "say" and "private", `web/modules/ui_ai_start_from.js` draws
+  a card's tags name only what Anomalous makes sure of. The private card's sheet puts the prompt the AI gets as a token
+  first; `web/modules/ui_ai_private_sheet.js` adds its optional LoRAs (from the materials catalog, named in the first
+  message by file name so the task's privacy turns them into tokens) and the four-box drawing of what happens to the prompt.
+  For "say" and "private", `web/modules/ui_ai_start_from.js` draws
   the leading "Start from" row and also exports `openBuildRouteWindow` + shared `newRoutePart` so both the starter sheets and the message box's "+" / `/build` command share the exact same "Build a new one (text to image)" fields (`web/modules/ui_ai_model_field.js`: single-model inline expandable picker with cover thumbnails via `ui_ai_toolbox_cards.js` `coverUrl` / `standInCover`, favourite stars, search, base-family chips when `>= 2` families, `↑↓`/Enter/Esc via `data-anomalous-escape`, and outside click close) and `localStorage` key (four pills sharing `.anomalous-ai-start-pills`/`.anomalous-ai-start-pill` in `web/styles/55-ai-starters.css` with `ui_ai_preset_sheet.js`: new text-to-image route via `GET /anomalous/ai_routes` & `POST /anomalous/ai_tasks/{id}/route`, open canvas checking `preset_runs.js` `openTabs` & active `LoadImage` nodes, saved workflow card marked in private mode, or AI picks) backed by `web/modules/ai_start_from.js` (`filterModels`, `modelFamilies`, selection, validation, and first-message rules; `tests/ai_start_from.mjs`). `ui_ai_preset_sheet.js` is the fields of "Run my preset": a
   saved workflow or an open canvas, the presets as chips a press lines up to run, each so many times, and what to
   change (`preset_run_list.js`: that list, what of it is kept in the browser for "the same again", the print of a

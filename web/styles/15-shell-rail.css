@@ -104,8 +104,14 @@
     padding: 7px 0 5px;
 }
 
-.anomalous-rail-tools button,
-.anomalous-rail-foot button {
+.anomalous-rail-tools button {
+    width: 52px;
+    gap: 3px;
+    padding: 7px 0 5px;
+}
+
+.anomalous-rail-foot button,
+#anomalous-rail.is-compact .anomalous-rail-tools button {
     width: 40px;
     height: 36px;
     padding: 0;
@@ -147,9 +153,14 @@
 
 /* Older id rules style these as bottom-bar buttons (with !important); the rail's look wins. */
 #anomalous-rail #anomalous-scan-btn {
+    width: 52px !important;
+    height: auto !important;
+    border-radius: 9px !important;
+}
+
+#anomalous-rail.is-compact #anomalous-scan-btn {
     width: 40px !important;
     height: 36px !important;
-    border-radius: 9px !important;
 }
 
 #anomalous-rail #anomalous-materials-btn.active {
@@ -256,9 +267,9 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    width: min(780px, 100%);
+    width: min(880px, 100%);
     margin: auto;
-    padding: 36px 28px;
+    padding: 32px 28px;
     box-sizing: border-box;
 }
 
@@ -279,18 +290,30 @@
     text-align: center;
 }
 
+/* The AI section's place (ui_ai_starters.js): no box of its own, so an empty one takes no room. */
+.anomalous-home-ai-slot {
+    display: contents;
+}
+
+/* "Do it yourself": a quieter heading over the smaller tool cards. */
+.anomalous-home-section-title {
+    margin: 10px 0 -6px;
+    color: var(--amb-text-soft);
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
 .anomalous-home-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 10px;
-    margin-top: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
 }
 
 .anomalous-home-card {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 14px;
+    gap: 10px;
+    padding: 11px 12px;
     border: 1px solid var(--amb-border);
     border-radius: 12px;
     background: rgba(var(--amb-ink-rgb), 0.03);
@@ -308,18 +331,18 @@
 
 .anomalous-home-card-icon {
     display: flex;
-    flex: 0 0 34px;
+    flex: 0 0 28px;
     align-items: center;
     justify-content: center;
-    height: 34px;
-    border-radius: 9px;
+    height: 28px;
+    border-radius: 8px;
     background: color-mix(in srgb, var(--amb-link) 12%, transparent);
     color: var(--amb-text-main);
 }
 
 .anomalous-home-card-icon svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
 }
 
 .anomalous-home-card-text {
@@ -331,14 +354,14 @@
 
 .anomalous-home-card-title {
     color: var(--amb-text-main);
-    font-size: 0.92em;
+    font-size: 0.88em;
     font-weight: 600;
 }
 
 .anomalous-home-card-body {
     color: var(--amb-text-muted);
-    font-size: 0.8em;
-    line-height: 1.55;
+    font-size: 0.76em;
+    line-height: 1.5;
 }
 
 .anomalous-home-start {

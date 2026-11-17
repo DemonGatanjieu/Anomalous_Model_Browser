@@ -47,8 +47,9 @@ function modelThumb(model) {
 
 /**
  * Builds an inline model selector returning `{ element, value, setModels, setValue, dispose }`.
+ * `noneLabel` is the button's words while nothing is picked and, unless `noneInList` is false, the list's first row.
  */
-export function modelField({ models = [], value = '', noneLabel = '', ariaLabel = '', onChange } = {}) {
+export function modelField({ models = [], value = '', noneLabel = '', noneInList = true, ariaLabel = '', onChange } = {}) {
     const scope = createViewScope();
     let allModels = [...(models || [])];
     let selectedId = value || '';
@@ -139,7 +140,7 @@ export function modelField({ models = [], value = '', noneLabel = '', ariaLabel 
     function drawList(resetCursor = false) {
         const words = query.trim().toLowerCase();
         const filtered = filterModels(allModels, { query, family });
-        const includeNone = Boolean(noneLabel) && (!words || noneLabel.toLowerCase().includes(words));
+        const includeNone = Boolean(noneLabel) && noneInList && (!words || noneLabel.toLowerCase().includes(words));
         entries = includeNone ? [{ isNone: true, model_id: '', name: noneLabel }, ...filtered] : filtered;
         rows = [];
         if (!entries.length) {

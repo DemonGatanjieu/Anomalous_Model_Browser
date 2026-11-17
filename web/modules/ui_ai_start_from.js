@@ -167,7 +167,7 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
         }));
         const line = buildStrip(state.route, first?.name || '', second?.name || '', t);
         strip.textContent = line;
-        strip.hidden = !line;
+        strip.hidden = !line || ways.length < 2; // with one way its card above says the same
     }
 
     function renderInto(body) {

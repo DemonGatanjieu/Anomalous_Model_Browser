@@ -1,9 +1,8 @@
 /**
- * The home page: what you can do here, one card per task, each opening its page; the
- * first-run setup above them while nothing is scanned (ui_first_run.js); under them, what to hand the AI
- * (ui_ai_starters.js); and the first steps
- * (set up, scan, the tour, what's new). Rendered again on each visit, so text follows the
- * language.
+ * The home page: first what to hand the AI (ui_ai_starters.js, drawn into a slot once read), the
+ * first-run setup above it while nothing is scanned (ui_first_run.js); under it "Do it yourself", one
+ * small card per task, each opening its page; then the first steps (set up, scan, the tour, what's new).
+ * Rendered again on each visit, so text follows the language.
  */
 
 import { translate as t } from './locales.js';
@@ -70,6 +69,9 @@ export function renderHome(owner, panel) {
     const page = el('div', 'anomalous-home');
     page.append(el('h1', 'anomalous-home-title', t('homeTitle')), el('p', 'anomalous-home-lead', t('homeLead')));
 
+    // The AI section comes back later; the slot keeps its place (and the first-run card's) above the cards.
+    const slot = el('div', 'anomalous-home-ai-slot');
+    const self = el('h2', 'anomalous-home-section-title', t('homeSelfTitle'));
     const grid = el('div', 'anomalous-home-cards');
     for (const card of CARDS) {
         const node = button('anomalous-home-card', '', () => card.open(owner));
@@ -85,15 +87,15 @@ export function renderHome(owner, panel) {
 
     const start = el('div', 'anomalous-home-start');
     start.append(el('span', 'anomalous-home-start-label', t('homeStartLabel')),
-        button('anomalous-home-link', t('homeStartSetup'), () => void showFirstRun(owner, page, grid)),
+        button('anomalous-home-link', t('homeStartSetup'), () => void showFirstRun(owner, page, slot)),
         button('anomalous-home-link', t('homeStartScan'), () => owner.openScanPage()),
         button('anomalous-home-link', t('homeStartTour'), () => startSpotlightTour(owner)),
         button('anomalous-home-link', t('homeStartNews'), () => showUpdateGuide(owner, { force: true })));
 
-    page.append(grid, start, feedbackBand(owner));
+    page.append(slot, self, grid, start, feedbackBand(owner));
     panel.replaceChildren(page);
-    void renderFirstRun(owner, page, grid);
-    renderAiStarters(owner, grid);
+    void renderFirstRun(owner, page, slot);
+    renderAiStarters(owner, slot);
     renderRecentActivity(owner, page);
     renderRecentAiTasks(owner, page);
 }
