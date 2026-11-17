@@ -13,6 +13,7 @@ const ACTION_KEYS = {
     model_delete: 'activityModelDelete',
     model_edit: 'activityModelEdit',
     model_cover: 'activityModelCover',
+    model_ai_choice: 'activityModelAiChoice',
     scan: 'activityScan', // entries from before scans were recorded with their result
     recipe_save: 'activityRecipeSave',
     recipe_edit: 'activityRecipeEdit',
@@ -93,6 +94,7 @@ function formatSize(bytes) {
 const FIELD_KEYS = {
     custom_name: 'modelSourceFieldName', custom_notes: 'modelSourceFieldNotes',
     source_url: 'modelSourceFieldLink', filename: 'activityFieldFilename', ai_note: 'modelSourceFieldAiNote',
+    ai_name: 'activityFieldAiName', ai_about: 'activityFieldAiAbout',
 };
 
 /**

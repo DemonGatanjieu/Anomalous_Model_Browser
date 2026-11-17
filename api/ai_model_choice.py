@@ -7,7 +7,8 @@ so it moves along when Tidy moves the file) for every task:
 - `ai_about`: the paragraphs of its author's description an AI may read where the rest of it stays home
   (its name hidden, or the task private; description_parts.py, mcp_tools.get_model "about_for_ai").
 GET /anomalous/ai_model_choice?model_id= gives the description's paragraphs and the choice (the materials
-window's detail, web/modules/ui_ai_model_lock.js); POST {model_id, filename, name?, about?} sets them."""
+window's detail, web/modules/ui_ai_model_lock.js); POST {model_id, filename, ai_name?, ai_about?} sets them
+(the activity log's model_ai_choice; not a step of an AI's task)."""
 
 import asyncio
 import os
@@ -130,7 +131,7 @@ def choose(model_id, name=None, about=None):
 
 
 async def api_choice(request):
-    """GET ?model_id= : {model_id, name, paragraphs, picked, note}; POST {model_id, filename, name?, about?}: the same after setting them."""
+    """GET ?model_id= : {model_id, name, paragraphs, picked, note}; POST {model_id, filename, ai_name?, ai_about?}: the same after setting them."""
     try:
         if request.method == "GET":
             return web.json_response(await asyncio.to_thread(view, request.query.get("model_id", "")))
@@ -139,8 +140,8 @@ async def api_choice(request):
         except (ValueError, UnicodeDecodeError):
             body = None
         if not isinstance(body, dict):
-            return web.json_response({"error": "Expected {model_id, name?, about?}"}, status=400)
-        before, after, answer = await asyncio.to_thread(choose, body.get("model_id"), body.get("name"), body.get("about"))
+            return web.json_response({"error": "Expected {model_id, ai_name?, ai_about?}"}, status=400)
+        before, after, answer = await asyncio.to_thread(choose, body.get("model_id"), body.get("ai_name"), body.get("ai_about"))
     except (ToolError, ValueError) as error:
         return web.json_response({"error": str(error)}, status=400)
     request[ACTIVITY_DETAIL] = {"fields": [{"field": key, "before": before[key], "after": after[key]}

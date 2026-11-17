@@ -64,7 +64,7 @@ export function nameButton(item, ctx) {
         const root = button.closest('.anomalous-tb') || document;
         button.disabled = true;
         try {
-            await post(item, { name: nameHidden(item, ctx.task?.()) ? 'shown' : 'hidden' });
+            await post(item, { ai_name: nameHidden(item, ctx.task?.()) ? 'shown' : 'hidden' });
         } catch (error) {
             showWorkbenchToast(t('aiTbNameFailed', { error: error.message }));
         } finally {
@@ -104,7 +104,7 @@ export function aboutSection(item, ctx) {
     const save = async () => {
         const ticked = [...list.querySelectorAll('input:checked')].map(input => input.value);
         try {
-            picked = (await post(item, { about: ticked })).picked || [];
+            picked = (await post(item, { ai_about: ticked })).picked || [];
         } catch (error) {
             showWorkbenchToast(t('aiTbNameFailed', { error: error.message }));
         }
