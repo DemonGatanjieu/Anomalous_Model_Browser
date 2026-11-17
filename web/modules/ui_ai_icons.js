@@ -40,6 +40,7 @@ const PATHS = {
     chevronDown: '<path d="m6 9.5 6 6 6-6"/>',
     chevronRight: '<path d="m9.5 6 6 6-6 6"/>',
     pulse: '<path d="M3 12h4l2.5-5.5 4 11L16 12h5"/>',
+    pause: '<rect x="7" y="5.5" width="3.5" height="13" rx="1"/><rect x="13.5" y="5.5" width="3.5" height="13" rx="1"/>',
     stop: '<rect x="6" y="6" width="12" height="12" rx="2.4" fill="currentColor"/>',
     info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".9" fill="currentColor"/>',
     sidebar: '<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M9.5 4v16"/>',

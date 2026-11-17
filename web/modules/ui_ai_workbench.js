@@ -8,7 +8,7 @@
  * The column on the right shows one view, picked by the switch at the top right
  * in the window's title bar (ui_ai_side_views.js): the stage with the panels the AI drew (ui_ai_side.js; a line in the
  * timeline brings it there, its questions are answered there, a toast says so while the user is
- * elsewhere), a run's shape at full size, the materials picker, or what the task made. The header stays on top while
+ * elsewhere), a run's shape at full size, the materials picker, or what the task made. The head (ui_ai_task_head.js) stays on top while
  * the timeline scrolls. The task list folds from the title bar's button and peeks from it.
  * Under a task's title, the task it goes on from and those going on from it (ui_ai_task_links.js).
  * A step's words are ui_ai_step_body.js's; a decision the AI records shows as a card and the
@@ -28,7 +28,7 @@
 import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { resolveLocale, translate as t } from './locales.js';
-import { dayLabel, fetchActivity, timeLabel } from './activity_log.js';
+import { fetchActivity, timeLabel } from './activity_log.js';
 import { canUndo } from './canvas_undo.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
@@ -40,7 +40,7 @@ import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageBadg
 import { waitingView, welcomePage } from './ui_ai_ready.js';
 import { gateCard } from './ui_ai_gate.js';
 import { iconButton } from './ui_ai_icons.js';
-import { listToggle, renderTaskList, stateIcon } from './ui_ai_task_list.js';
+import { listToggle, renderTaskList } from './ui_ai_task_list.js';
 import { flowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
 import { locateNode, openModel, resultLinks, updateRunProgress } from './ui_ai_results.js';
@@ -51,20 +51,16 @@ import { openMarker } from './ui_ai_marker.js';
 import { toolboxCount } from './ui_ai_toolbox.js';
 import { stepBody } from './ui_ai_step_body.js';
 import { chainRow, looksRow, undoChanges } from './ui_ai_chain.js';
-import { taskLinks } from './ui_ai_task_links.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewTabs } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
-import { haltTool } from './ui_ai_halt.js';
-import { stuckLink } from './ui_ai_stuck.js';
-import { canvasControls } from './ui_ai_task_canvas.js';
-import { privacyChip, privacyReach } from './ui_ai_privacy.js';
-import { menuActions, openTaskMenu, taskMenu } from './ui_ai_task_menu.js';
+import { drawTaskHead } from './ui_ai_task_head.js';
+import { openStuck } from './ui_ai_stuck.js';
+import { menuActions, openTaskMenu } from './ui_ai_task_menu.js';
 import { syncRows } from './sync_rows.js';
 import { keptTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
 import {
-    activityIds, duration, groupSteps, stepDetail, taskCounts, taskResults, taskState, toolKey,
+    activityIds, duration, groupSteps, stepDetail, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
-import { taskTitle } from './ai_task_title.js';
 import { aiTourOnce } from './ui_ai_tour.js';
 
 const NARROW_PX = 720;
@@ -161,7 +157,7 @@ function stepRow(step, number) {
     row.append(el('span', 'anomalous-ai-step-dot', number));
     const body = el('div', 'anomalous-ai-step-body');
     const line = el('div', 'anomalous-ai-step-line');
-    line.append(el('span', 'anomalous-ai-kind', t(`aiKind_${step.kind}`)), el('span', 'anomalous-ai-step-title', t(toolKey(step.tool))));
+    line.append(el('span', 'anomalous-ai-kind', t(`aiKind_${step.kind}`)), el('span', 'anomalous-ai-step-title', t(step.pause ? 'aiTool_user_pause' : toolKey(step.tool))));
     const detail = ['panel', 'outside'].includes(step.kind) || step.tool === 'user_activity' ? '' : stepDetail(step); // their body says it
     if (detail) {
         const text = el('span', 'anomalous-ai-step-detail', detail);
@@ -240,35 +236,16 @@ function renderTask() {
     const typing = state.page.contains(document.activeElement) && document.activeElement.matches('textarea, input:not([type]), input[type=text]');
     bringStage(state.stage, news, state.page.classList.contains('is-tabbed') || state.page.classList.contains('is-narrow'), typing);
     const asking = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
-    const header = view.header;
-    const titleLine = el('div', 'anomalous-ai-task-title-line');
-    const name = el('div', 'anomalous-ai-task-name');
-    const title = el('h2', 'anomalous-ai-task-title', taskTitle(task));
-    title.title = title.textContent;
-    name.append(button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => { state.narrowView = 'list'; layout(); }), title, stateChip(status));
-    const tools = el('div', 'anomalous-ai-task-tools');
-    tools.append(executionStatus(task, refresh), canvasControls(task, () => void refresh(), () => state.owner?.close?.()));
-    if (task.private === true) tools.append(privacyChip(task, () => void refresh()));
-    if (taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)))) {
-        tools.append(iconButton('anomalous-ai-tool', 'undo', t('aiUndoAll'), () => undoAll(task)));
-    }
-    tools.append(...haltTool(task, state.entries, () => void refresh()), taskMenu(task, taskActions(task)));
     const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
-    titleLine.append(name, tools);
     const unseen = newOutputs(state.stage, task, shown && state.stage.view === 'outputs');
     const badges = { stage: stageBadge(task, state.stage, shown && state.stage.view === 'stage'), asking, toolbox: toolboxCount(task), outputs: unseen };
     state.tabs = () => viewTabs(state.stage, shown, badges, view => pickView(state.stage, view, false, task, renderTask, () => void refresh()), showTimeline);
     state.owner?.headerTools?.replaceChildren(...(state.page.classList.contains('uses-tabs') ? [] : [sideSwitch(state.stage, shown, badges,
         view => pickView(state.stage, view, shown, task, renderTask, () => void refresh()))]));
-    const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
-        ...taskCounts(summary).map(say)].filter(Boolean);
-    const said = el('div', 'anomalous-ai-task-meta', meta.join(' · '));
-    said.title = said.textContent;
-    const sub = el('div', 'anomalous-ai-task-sub');
-    sub.append(said, taskLinks(task, { open: (id) => { state.pinned = true; void select(id); }, changed: refresh }),
-        stuckLink(task, state.entries, () => void refresh()));
-    header.replaceChildren(state.tabs(), titleLine, sub,
-        ...(task.stale_tools ? [el('div', 'anomalous-ai-task-stale', t('aiStaleTools'))] : []), ...privacyReach(task)); // mcp_directory.stale
+    drawTaskHead(view.header, task, { summary, status, entries: state.entries, refresh: () => void refresh(), tabs: state.tabs,
+        back: () => { state.narrowView = 'list'; layout(); }, showCanvas: () => state.owner?.close?.(), actions: taskActions(task),
+        canUndoAll: taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity))),
+        undoAll: () => undoAll(task), open: (id) => { state.pinned = true; void select(id); } });
 
     const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
     view.flow.replaceChildren(...(flow ? [flow] : []));
@@ -295,7 +272,7 @@ function renderTask() {
     } else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     syncRows(view.timeline, rows);
     updateMessageBox(view.message, Boolean(task.ended), preparing ? 'waiting' : status);
-    view.now.update(task, { refresh: () => void refresh(), showStep: id => showStep(view.timeline, id),
+    view.now.update(task, { refresh: () => void refresh(), showStep: id => showStep(view.timeline, id), stuck: () => openStuck(state.task, state.entries, () => void refresh()),
         openStage: () => pickView(state.stage, 'stage', false, task, renderTask, () => void refresh()) });
     view.timeline.classList.toggle('is-waiting', preparing);
     // Opened, at its newest step (a page being prepared, at its top); read at the foot, kept there.
@@ -340,12 +317,6 @@ function drawStage(task, arrived = null) {
         tabs: state.tabs,
     }, arrived);
     layout();
-}
-
-function stateChip(status) {
-    const chip = el('span', `anomalous-ai-state is-${status}`);
-    chip.append(stateIcon(status, 12), el('span', '', t(`aiState_${status}`)));
-    return chip;
 }
 
 function showOnStage(panelId) {

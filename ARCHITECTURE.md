@@ -81,7 +81,8 @@ covered by the `styles.css` manifest.
   a huge decode). `api/ai_run_control.py` stops a run (`stop_run`, the workbench's stop
   button): only its own prompts leave the queue or are interrupted; the step ends `cancelled`
   and a user's stop reaches the AI as a `stop` message. `halt` is the user's halt on a whole task
-  (Halt and take back, `web/modules/ui_ai_halt.js`): its runs stop, a step waiting for an OK is answered
+  (Pause in the head, `take_back` false: nothing is taken back and the AI is told so; Stop and take back in the
+  ⋯; `web/modules/ui_ai_halt.js`): its runs stop, a step waiting for an OK is answered
   no, and the AI gets the halt before it can act again (`ai_gates.check`). It also keeps the user's word on a
   finished run (`set_verdict`; the buttons under its pictures are `web/modules/ui_ai_verdict.js`, with what
   is off a click each under "not quite right", `ISSUES`),
@@ -96,8 +97,8 @@ covered by the `styles.css` manifest.
   the Gates window or per task): `mcp_bridge.ask_page` gives canvas actions the task's tab,
   `web/modules/mcp_task_tab.js` brings it to the front by clicking ComfyUI's tab (the store
   alone would not load its graph) or copies the open workflow into a new one before the first
-  change; `web/modules/ui_ai_task_canvas.js` is the header's chip saying which ("AI edits a
-  copy ▾", opening the two to pick from with what each means) and the copy's "Show the copy".
+  change; `web/modules/ui_ai_task_canvas.js` is the two to pick from in the task's ⋯ (with what each
+  means) and the "Show the AI's copy" link among the task's facts.
   `api/ai_privacy.py` is privacy mode: a task kept private (its own switch, else the Gates
   window's default for new tasks) sends the AI none of its pictures and no prompt text. mcp_server.py
   hands every result to `guard` last, so no tool or later addition (run pictures, the user's
@@ -601,10 +602,11 @@ covered by the `styles.css` manifest.
   starts one while looking at a task; changed or taken off by the user, never a loop); `GET` of a
   task adds `links` {from, next}, begin_task gives an AI the task it continues and what was
   decided there (`continues`). `ui_ai_task_links.js` shows them under the task's title and picks
-  one to link; `ui_ai_task_menu.js` is the ⋯ of a task, in its head and on its row, and what it does; `ui_ai_halt.js` is Halt and
-  take back beside it (asks, has the server halt the task, then closes the copy made for it, `mcp_task_tab.js` closeCopy,
-  or undoes what of the AI's changes on another tab still can be); `ui_ai_stuck.js` is "Stuck?" at the end of the task's
-  facts: a window with what the task waits for now (`ai_stuck.js`, from the task as the page has it; `tests/ai_stuck.mjs`),
+  one to link; `ui_ai_task_head.js` is a task's head: title, state, the privacy button, Pause, the run's status while one goes,
+  ⋯ (its own items first), and the facts line; `ui_ai_task_menu.js` is the ⋯ of a task, in its head and on its row, and what it does; `ui_ai_halt.js` is Pause and
+  Stop and take back (asks, has the server halt the task, then closes the copy made for it, `mcp_task_tab.js` closeCopy,
+  or undoes what of the AI's changes on another tab still can be); `ui_ai_stuck.js` is "Stuck?" (in the ⋯, and at the end of
+  the row over the message box once the AI stopped): a window with what the task waits for now (`ai_stuck.js`, from the task as the page has it; `tests/ai_stuck.mjs`),
   the line to send the AI where it is the AI's move, when an AI app last called, and the usual causes Anomalous cannot see; removing a task
   (`ai_task_links.remove`) joins those after it to the one before. `tests/test_ai_task_links.py`. `ui_ai_recent.js` the home page's list, `ui_ai_results.js` what a
   step made and where it leads, `ui_ai_shared.js` what the page's parts share. `ui_ai_outputs.js` (with

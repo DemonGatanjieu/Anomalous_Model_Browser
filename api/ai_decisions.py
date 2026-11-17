@@ -78,7 +78,7 @@ def decisions(task):
         elif tool == "user_privacy":
             out.append({"type": "privacy", "step": step["id"], "at": step["at"], "on": bool(step.get("privacy"))})
         elif tool in ("user_stop", "user_halt"):
-            out.append({"type": tool[5:], "step": step["id"], "at": step["at"]})
+            out.append({"type": "pause" if step.get("pause") else tool[5:], "step": step["id"], "at": step["at"]})
     return sorted(out, key=lambda item: item["at"])
 
 

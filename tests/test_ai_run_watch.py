@@ -154,6 +154,20 @@ class HaltTests(unittest.TestCase):
         self.assertEqual(result["structuredContent"]["user_messages"][0]["kind"], "halt")
         self.assertIsNone(self.act())
 
+    def test_a_pause_takes_nothing_back_and_says_so(self):
+        ai_run_control.halt(self.task, take_back=False)
+        step = next(step for step in ai_tasks.get_task(self.task)["steps"] if step["tool"] == "user_halt")
+        self.assertTrue(step["pause"])
+        self.assertEqual(step["text"], ai_run_control.PAUSE)
+        self.assertNotIn("canvas is taken back", step["text"])
+        self.assertTrue(ai_tasks.task_summary(ai_tasks.get_task(self.task))["halted"], "a pause stands until the user writes")
+        self.assertTrue(ai_tasks.task_summary(ai_tasks.get_task(self.task))["paused"], "the page says paused, not halted")
+        refused = self.act()
+        self.assertIn("你暂停了任务", refused["content"][0]["text"], "the first acting call hears it")
+        self.assertIsNone(self.act())
+        ai_panels.leave_message(self.task, "go on")
+        self.assertFalse(ai_tasks.task_summary(ai_tasks.get_task(self.task))["halted"])
+
     def test_a_message_of_the_user_lifts_it(self):
         ai_run_control.halt(self.task)
         ai_panels.leave_message(self.task, "again, at dusk")

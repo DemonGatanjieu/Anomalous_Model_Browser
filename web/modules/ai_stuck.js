@@ -21,7 +21,7 @@ const THINKING = 90; // seconds after its last call in which an AI may well be a
 export function stuckReason(task, now = Date.now() / 1000) {
     const steps = task?.steps || [];
     if (task?.waiting && steps.every(step => step.kind === 'user')) return { why: 'unstarted' };
-    if (haltOf(task)) return { why: 'halted' };
+    if (haltOf(task)) return { why: haltOf(task).pause ? 'paused' : 'halted' };
     const gate = steps.findLast(step => step.state === 'asking' && step.gate);
     if (gate) return { why: 'gate', tool: gate.tool };
     const count = task?.ended ? 0 : steps.reduce((sum, step) => sum + (step.panel && !step.panel.closed

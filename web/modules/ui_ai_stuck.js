@@ -1,5 +1,5 @@
 /**
- * "Stuck?" beside a task's facts in its head (ui_ai_workbench.js): a window that says what the
+ * "Stuck?" (the task's ⋯, and the row over the message box once the AI stopped, ui_ai_call.js): a window that says what the
  * task waits for now (ai_stuck.js) with the one thing to do about it - the line to send the AI
  * where it is the AI's move - and when an AI app last called (GET /anomalous/ai_callers); under
  * it the three usual causes that Anomalous cannot see, each with its way out.
@@ -44,7 +44,7 @@ function cause(title, words, act) {
 }
 
 /** The window for `task`. `entries`: activity entries by id (a halt undoes by them); `refresh()` draws the page again. */
-function openStuck(task, entries, refresh) {
+export function openStuck(task, entries, refresh) {
     const body = el('div', 'anomalous-ai-stuck');
     const reason = stuckReason(task);
     const values = { what: reason.tool ? t(toolKey(reason.tool)) : '', count: reason.count, span: span(reason.seconds || 0) };
@@ -68,12 +68,4 @@ function openStuck(task, entries, refresh) {
             : cause(t('aiStuckPage'), t('aiStuckPageDo'), button(t('aiExecutionRefresh'), () => { close(); refresh(); })));
     body.append(now, more);
     const close = aiWindow(t('aiStuckTitle'), body);
-}
-
-/** The link in the head of `task`. */
-export function stuckLink(task, entries, refresh) {
-    const link = el('button', 'anomalous-ai-link anomalous-ai-stuck-link', t('aiStuck'));
-    link.type = 'button';
-    link.onclick = () => openStuck(task, entries, refresh);
-    return link;
 }

@@ -1,6 +1,7 @@
 /**
- * "Halt and take back" in a task's head (ui_ai_workbench.js): one way out of a task that goes
- * wrong. The server stops its runs, says no where a step waits for an OK and tells the AI, which
+ * "Pause" in a task's head (ui_ai_task_head.js): the AI stops and nothing is taken back; it hears so
+ * before it can act again and the task waits until the user writes (POST .../halt {take_back: false}).
+ * "Stop and take back" in its ⋯: one way out of a task that goes wrong. The server stops its runs, says no where a step waits for an OK and tells the AI, which
  * gets the halt before it can act again (POST /anomalous/ai_tasks/{id}/halt, api/ai_run_control.py).
  * The page then closes the copy Anomalous made for the task (mcp_task_tab.js closeCopy; the user's
  * own workflow was never changed) or, where the AI worked on another tab, undoes what of its
@@ -56,8 +57,23 @@ export async function haltTask(task, entries, changed) {
     changed();
 }
 
-/** The head's button for `task`, as a list: none when there is nothing to halt. */
-export function haltTool(task, entries, changed) {
+/** Pauses `task`: the AI stops, nothing is taken back; `changed()` afterwards. */
+async function pauseTask(task, changed) {
+    try {
+        const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(task.id)}/halt`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ take_back: false }),
+        });
+        if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || response.statusText);
+    } catch (error) {
+        await anomalousAlert(error.message);
+        return;
+    }
+    showWorkbenchToast(t('aiPausedDone'));
+    changed();
+}
+
+/** The head's "Pause" for `task`, as a list: none when there is nothing to stop. */
+export function pauseTool(task, changed) {
     if (!canHalt(task)) return [];
-    return [iconButton('anomalous-ai-tool anomalous-ai-halt', 'stop', t('aiHalt'), () => void haltTask(task, entries, changed), { title: t('aiHaltHint') })];
+    return [iconButton('anomalous-ai-tool anomalous-ai-pause', 'pause', t('aiPause'), () => void pauseTask(task, changed), { title: t('aiPauseHint') })];
 }

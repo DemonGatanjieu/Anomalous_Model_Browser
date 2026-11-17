@@ -71,6 +71,7 @@ function described(item) {
     case 'canvas': return [t('aiDecisionCanvas'), t(item.mode === 'new' ? 'aiCanvasChoseNew' : 'aiCanvasChoseCurrent')];
     case 'privacy': return [t('aiPrivacy'), t(item.on ? 'aiPrivacyChoseOn' : 'aiPrivacyChoseOff')];
     case 'halt': return [t('aiHalt'), t('aiHaltedByYou')];
+    case 'pause': return [t('aiPause'), t('aiPausedByYou')];
     default: return [t('aiDecisionStop'), t('aiRunStoppedByYou')];
     }
 }

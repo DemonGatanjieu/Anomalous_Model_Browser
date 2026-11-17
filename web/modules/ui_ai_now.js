@@ -56,8 +56,9 @@ function openAsks(task) {
 function statusLine(task, ctx) {
     const halt = haltOf(task);
     if (halt) {
-        const line = el('div', 'anomalous-ai-now-line is-halt');
-        line.append(icon('stop', 15), el('span', 'anomalous-ai-now-words', t(halt.delivered ? 'aiHaltedKnown' : 'aiHaltedWaiting')));
+        const line = el('div', `anomalous-ai-now-line is-halt${halt.pause ? ' is-pause' : ''}`);
+        const words = halt.pause ? (halt.delivered ? 'aiPausedKnown' : 'aiPausedWaiting') : halt.delivered ? 'aiHaltedKnown' : 'aiHaltedWaiting';
+        line.append(icon(halt.pause ? 'pause' : 'stop', 15), el('span', 'anomalous-ai-now-words', t(words)));
         return line;
     }
     const gate = (task.steps || []).findLast(step => step.state === 'asking' && step.gate);
@@ -141,9 +142,12 @@ function askCard(task, { step, block }, more, ctx) {
             const chip = button(`anomalous-ai-now-option${option.recommended ? ' is-recommended' : ''}`, '', () => {
                 chip.classList.add('is-picked'); // which one goes shows at once
                 void send({ choice: [option.id] }, [...card.querySelectorAll('button, input')]);
-            }, optionDetail(option) || '');
-            if (option.recommended) chip.append(icon('star', 12));
-            chip.append(el('span', '', optionLabel(option)), icon('arrowRight', 13, 'anomalous-ai-now-option-go'));
+            });
+            const words = el('span', 'anomalous-ai-now-option-words');
+            if (option.recommended) words.append(el('span', 'anomalous-ai-now-option-tag', t('aiPanelRecommended')));
+            words.append(el('span', 'anomalous-ai-now-option-label', optionLabel(option)));
+            if (optionDetail(option)) words.append(el('span', 'anomalous-ai-now-option-detail', optionDetail(option))); // as the stage's card shows it
+            chip.append(words, icon('arrowRight', 13, 'anomalous-ai-now-option-go'));
             answers.append(chip);
         }
         if (block.other) answers.append(ownWords('anomalous-ai-panel-own', () => ownLine(t('aiNowOther')), hasDraft(task.id, step.id, block.id)));
@@ -159,16 +163,16 @@ function askCard(task, { step, block }, more, ctx) {
 
 /**
  * The strip, made once per task view; `update(task, ctx)` with ctx {refresh(), openStage(),
- * showStep(id)}, kept for the next update: a run's progress coming in alone updates it with
+ * showStep(id), stuck()}, kept for the next update: a run's progress coming in alone updates it with
  * `update(task)`, as it moves the run's bar on the timeline.
  */
 export function nowStrip() {
     const strip = el('div', 'anomalous-ai-now');
     const line = el('div', 'anomalous-ai-now-status');
     const ask = el('div', 'anomalous-ai-now-asks');
-    const call = callRow();
-    strip.append(ask, line, call);
     let kept = null;
+    const call = callRow(() => kept?.stuck?.());
+    strip.append(ask, line, call);
     strip.update = (task, ctx = kept) => {
         kept = ctx;
         line.replaceChildren(...[statusLine(task, ctx)].filter(Boolean));

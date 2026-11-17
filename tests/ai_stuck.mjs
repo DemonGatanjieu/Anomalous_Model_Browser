@@ -48,6 +48,8 @@ task.steps.push(ai('describe_canvas'), ai('set_prompt', { kind: 'canvas', ok: fa
 assert.equal(why(task), 'halted', "the AI's reads and refused calls leave it standing");
 task.steps.push(ai('set_prompt', { kind: 'canvas' }));
 assert.equal(haltOf(task), null, 'the AI acting again, on the user\'s word in its chat, ends it');
+task.steps.push({ ...user('user_halt'), pause: true });
+assert.equal(why(task), 'paused', 'a pause says so: nothing was taken back');
 
 assert.equal(why({ ended: NOW - 50, steps: [ai('report', { kind: 'note' })] }), 'ended');
 console.log('ai_stuck: what a task waits for passed');

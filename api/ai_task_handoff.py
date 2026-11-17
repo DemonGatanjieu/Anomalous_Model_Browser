@@ -77,10 +77,12 @@ def recovery_target(tool, arguments):
 
 
 def halted(steps):
-    """Whether a halt the user called (ai_run_control.halt) stands: only the AI's reads and refused calls came after it."""
+    """The halt the user called (ai_run_control.halt) when it stands: only the AI's reads and refused calls came
+    after it; else None. Its "pause" says whether it was a pause (nothing taken back)."""
     at = next((at for at in range(len(steps) - 1, -1, -1) if steps[at].get("tool") == "user_halt"), None)
-    return at is not None and all(step.get("kind") != "user" and (step.get("kind") in (None, "look") or not step.get("ok"))
-                                  for step in steps[at + 1:])
+    standing = at is not None and all(step.get("kind") != "user" and (step.get("kind") in (None, "look") or not step.get("ok"))
+                                      for step in steps[at + 1:])
+    return steps[at] if standing else None
 
 
 def unresolved(steps):

@@ -24,6 +24,8 @@ ISSUES = {"hands": "the hands are wrong", "face": "the face is off", "body": "th
 HALT = ("The user called a halt on this task in Anomalous: your runs are stopped and what you changed on the canvas is "
         "taken back. Stop here: change, run and download nothing more for it until they ask you to, and tell them in "
         "a line that you stopped.")
+PAUSE = ("The user paused this task in Anomalous: your runs are stopped, nothing was taken back. Stop here: change, run "
+         "and download nothing more for it until they write to you again, and tell them in a line that you stopped.")
 
 
 class RunControlError(ValueError):
@@ -85,10 +87,11 @@ def _take_out(sheet, prompts):
     return removed, sum(1 for prompt_id in prompts if _interrupt(queue, prompt_id))
 
 
-def halt(task_id, drop_tab=False, now=None):
+def halt(task_id, drop_tab=False, now=None, take_back=True):
     """The user calls a halt on task `task_id`: its runs stop, a step waiting for their OK is answered no, and
     one step tells the AI. `drop_tab`: the page closes the tab made for the task, so the task lets go of it
-    (a later change copies the open workflow anew). Returns {"task", "stopped"}."""
+    (a later change copies the open workflow anew). `take_back` False is a pause: the page takes nothing back
+    and the AI is told so. Returns {"task", "stopped"}."""
     now = time.time() if now is None else now
     with ai_tasks._lock:
         task = ai_tasks._load().get(task_id)
@@ -103,7 +106,8 @@ def halt(task_id, drop_tab=False, now=None):
             (task.get("canvas") or {}).pop("tab", None)
         task["steps"].append({
             "id": uuid.uuid4().hex[:10], "at": now, "ms": 0, "tool": "user_halt", "kind": "user", "ok": True, "state": "done",
-            "summary": "user_halt", "stopped": len(runs), "delivered": False, "results": [], "text": HALT,
+            "summary": "user_halt", "stopped": len(runs), "delivered": False, "results": [], "text": HALT if take_back else PAUSE,
+            **({} if take_back else {"pause": True}),
         })
         del task["steps"][:-ai_tasks.MAX_STEPS]
         task["updated"] = max(task.get("updated", 0), now)

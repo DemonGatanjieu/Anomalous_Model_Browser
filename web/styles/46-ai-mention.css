@@ -310,6 +310,8 @@
 .anomalous-ai-now-line.is-halt { padding-block: 7px; border-color: color-mix(in srgb, var(--amb-danger) 45%, transparent); }
 .anomalous-ai-now-line.is-halt .anomalous-ai-now-words { white-space: normal; }
 .anomalous-ai-now-line.is-halt > .anomalous-tb-icon { flex: none; color: var(--amb-danger-text); }
+.anomalous-ai-now-line.is-halt.is-pause { border-color: color-mix(in srgb, var(--amb-warn) 45%, transparent); }
+.anomalous-ai-now-line.is-halt.is-pause > .anomalous-tb-icon { color: var(--amb-warn); }
 .anomalous-ai-now-percent { flex: none; color: var(--amb-text-main); font-variant-numeric: tabular-nums; }
 .anomalous-ai-now-pulse { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--amb-link); animation: anomalous-ai-now-pulse 1.4s ease-in-out infinite; }
 @keyframes anomalous-ai-now-pulse { 50% { opacity: 0.3; transform: scale(0.75); } }
@@ -347,10 +349,11 @@
 .anomalous-ai-now-option {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
+    gap: 8px;
+    padding: 6px 12px;
     border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
-    border-radius: 999px;
+    border-radius: 10px;
+    text-align: left;
     background: var(--amb-bg-panel);
     color: var(--amb-text-main);
     font: inherit;
@@ -360,6 +363,11 @@
 .anomalous-ai-now-option:hover { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 20%, var(--amb-bg-panel)); }
 .anomalous-ai-now-option.is-recommended { border-color: var(--amb-link); }
 .anomalous-ai-now-option.is-picked { border-color: var(--amb-ok); background: color-mix(in srgb, var(--amb-ok) 18%, var(--amb-bg-panel)); }
+/* An option says what it is and, under it, what it means (the AI's detail); the recommended one says so in words. */
+.anomalous-ai-now-option-words { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.anomalous-ai-now-option-tag { align-self: flex-start; padding: 0 6px; border-radius: 5px; background: var(--amb-link); color: var(--amb-on-link); font-size: 10.5px; line-height: 16px; }
+.anomalous-ai-now-option-label { font-weight: 600; }
+.anomalous-ai-now-option-detail { color: var(--amb-text-dim); font-size: 11.5px; }
 .anomalous-ai-now-option-go { color: var(--amb-text-dim); transition: color 0.15s, transform 0.15s; }
 .anomalous-ai-now-option:hover:not(:disabled) .anomalous-ai-now-option-go { color: var(--amb-link); transform: translateX(2px); }
 .anomalous-ai-now-ask .anomalous-ai-panel-skip { margin-left: auto; }
@@ -417,6 +425,7 @@
 }
 .anomalous-ai-call-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-call-line:hover { border-color: var(--amb-border-strong); }
+.anomalous-ai-call-stuck { margin-left: auto; white-space: nowrap; }
 .anomalous-ai-call-line.is-main { border-color: color-mix(in srgb, var(--ai-run) 60%, transparent); background: color-mix(in srgb, var(--ai-run) 12%, var(--amb-bg-panel)); font-weight: 600; }
 .anomalous-ai-call-line.is-new { flex: 0 1 auto; color: var(--amb-text-soft); }
 .anomalous-ai-call-line.is-done { border-color: var(--amb-ok); color: var(--amb-ok); }

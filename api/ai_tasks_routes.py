@@ -361,12 +361,14 @@ async def api_stop(request):
 
 
 async def api_halt(request):
-    """POST /anomalous/ai_tasks/{id}/halt {drop_tab?} - the user calls a halt on the task; an AI waiting in get_answers hears at once."""
+    """POST /anomalous/ai_tasks/{id}/halt {drop_tab?, take_back?} - the user calls a halt on the task (take_back false: a pause,
+    nothing taken back); an AI waiting in get_answers hears at once."""
     from . import ai_panels
 
     body = await _body(request) or {}
     try:
-        answer = await asyncio.to_thread(ai_run_control.halt, request.match_info["task_id"], body.get("drop_tab") is True)
+        answer = await asyncio.to_thread(ai_run_control.halt, request.match_info["task_id"], body.get("drop_tab") is True,
+                                         take_back=body.get("take_back") is not False)
     except ai_run_control.RunControlError as error:
         return web.json_response({"error": str(error)}, status=404)
     ai_panels.wake()

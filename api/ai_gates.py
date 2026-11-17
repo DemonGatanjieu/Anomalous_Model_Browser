@@ -257,7 +257,7 @@ def _step(step_ref):
 
 
 def _halt(step_ref):
-    """The words of a halt on the call's task its AI has not got yet (ai_run_control.halt), now given; else None."""
+    """The words of a halt (or pause) on the call's task its AI has not got yet (ai_run_control.halt), now given; else None."""
     with _decided:
         task, _ = _step(step_ref)
         halt = next((item for item in (task or {}).get("steps", []) if item.get("tool") == "user_halt" and not item.get("delivered")), None)
@@ -265,7 +265,7 @@ def _halt(step_ref):
             return None
         halt.update(delivered=True, delivered_at=time.time())
         ai_tasks._save(task)
-    return halt["text"]
+    return f"{'你暂停了任务' if halt.get('pause') else '你叫停了任务'} / {halt['text']}"
 
 
 def check(tool, arguments, step_ref, now=None):
@@ -273,7 +273,7 @@ def check(tool, arguments, step_ref, now=None):
     gate = action_catalog.entry(tool).gate
     halt = _halt(step_ref) if gate else None
     if halt:
-        return _blocked(f"你叫停了任务 / {halt} This call did nothing.")
+        return _blocked(f"{halt} This call did nothing.")
     if gate and set(arguments or {}) & set(action_catalog.ALSO_CANVAS.get(tool, ())):
         strict = {"auto": 0, "ask": 1, "never": 2}
         gate = max((gate, "canvas"), key=lambda name: strict.get(policies().get(name, "auto"), 0))

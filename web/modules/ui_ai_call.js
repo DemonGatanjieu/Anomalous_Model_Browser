@@ -3,7 +3,8 @@
  * message box by ui_ai_now.js while the AI is not busy with a call, a run or a question: when it
  * has stopped, a click copies the word that sets it going again. After a run it did not wait for
  * (api/ai_gates.py run_wait "call") the lines are about the run; the server takes `call_ai` off
- * the step once the AI knows, and the row goes back to "go on" by itself.
+ * the step once the AI knows, and the row goes back to "go on" by itself. At its end, "Stuck?" opens the
+ * window of what the task waits for (ui_ai_stuck.js, through `onStuck`).
  */
 
 import { translate as t } from './locales.js';
@@ -21,8 +22,8 @@ function el(tag, className, text) {
     return node;
 }
 
-/** The row, made once per task view; `update(task)` draws it again when what it offers changes (null: hidden). */
-export function callRow() {
+/** The row, made once per task view; `update(task)` draws it again when what it offers changes (null: hidden). `onStuck()`: "Stuck?". */
+export function callRow(onStuck) {
     const row = el('div', 'anomalous-ai-call');
     row.title = t('aiCallHint');
     let said = 0;
@@ -59,6 +60,11 @@ export function callRow() {
             });
             row.append(line);
         });
+        const stuck = el('button', 'anomalous-ai-link anomalous-ai-call-stuck', t('aiStuck'));
+        stuck.type = 'button';
+        stuck.title = t('aiStuckHint');
+        stuck.onclick = onStuck;
+        row.append(stuck);
     };
     return row;
 }

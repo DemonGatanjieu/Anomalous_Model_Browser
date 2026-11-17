@@ -1,14 +1,16 @@
 /**
- * The AI workbench's stage (展台): the column on the right where the panels the AI draws are
+ * The AI workbench's panels column (面板): the column on the right where the panels the AI draws are
  * shown (ui_ai_panel.js), so they stay in view however many steps come after them. Like the
  * timeline it reads from the top down: the task's panels in the order they came, each with its
  * step number, the newest at the bottom. A new or updated latest panel follows to the bottom
  * while the user is there; otherwise a "See latest ↓" button says it changed. A panel's card in
  * the timeline (what it holds, "Show on the right") brings the stage to that panel, and says so
- * while that panel is in view on the stage. A new panel opens the column on the stage, even after the user
- * closed it or was on another view, unless they turned that off in its head (kept on this browser).
+ * while that panel is in view on the stage. The column stays shut until the user opens it (its tab, a
+ * panel's card): a question is answered over the message box (ui_ai_now.js), so it does not take the
+ * screen a second time. Who wants each new panel in view turns on the switch in its head (kept on
+ * this browser); then a new panel opens the column, even after the user closed it.
  * In a window too narrow for three columns, the timeline and the side column take turns behind
- * two tabs: a panel that asks something brings the stage forward, another lights its tab.
+ * two tabs: a new panel or one that asks lights its tab.
  * The stage is one of the side column's views (ui_ai_side_views.js).
  *
  * `stage` is the workbench's `{ taskId, latestKey, latestPanel, atBottom, focus, tab, view, mapStep, unseen, placed, hidden, lit,
@@ -25,9 +27,9 @@ const BOTTOM_PX = 60;
 const AUTO_KEY = 'anomalous_ai_stage_auto';
 const inView = new Set(); // the panels in view on the stage now: their cards in the timeline say so
 
-/** Whether a new panel opens the column (the user's choice on this browser; on unless they turned it off). */
+/** Whether a new panel opens the column (the user's choice on this browser; off unless they turned it on). */
 function autoOpen() {
-    try { return localStorage.getItem(AUTO_KEY) !== '0'; } catch (_) { return true; }
+    try { return localStorage.getItem(AUTO_KEY) === '1'; } catch (_) { return false; }
 }
 
 function el(tag, className, text) {
@@ -64,7 +66,7 @@ export function stageNews(task, stage) {
     const latestKey = JSON.stringify(latest?.panel || null);
     if (stage.taskId !== task?.id) {
         Object.assign(stage, { taskId: task?.id, latestKey, latestPanel: latest?.id, atBottom: true, focus: null, unseen: false, placed: false,
-            hidden: false, view: 'stage', mapStep: null, lit: false, outputsSeen: null, panelKey: null, panelUnread: false });
+            hidden: !autoOpen(), view: 'stage', mapStep: null, lit: false, outputsSeen: null, panelKey: null, panelUnread: false });
         return { arrived: null, asking: 0, fresh: false };
     }
     const arrived = latestKey !== stage.latestKey ? latest : null;
@@ -85,18 +87,15 @@ export function stageBadge(task, stage, shown) {
 }
 
 /**
- * Brings the stage forward for `news` (stageNews): a panel that asks shows it (in a narrow window
- * `tabbed`, its tab comes forward); a new one opens the column on the stage at its newest panel
- * when the user lets it, lighting the tab of a narrow window instead of taking it; and while they
- * type (`typing`), a narrow window lights the tab of one that asks too, the field staying before them.
+ * Brings the stage forward for `news` (stageNews) when the user lets new panels open the column: it
+ * opens on the newest panel. A narrow window (`tabbed`) and one where the user types (`typing`) light
+ * the tab instead of taking it, as a panel that asks does: its question is over the message box.
  */
 export function bringStage(stage, news, tabbed, typing = false) {
     const open = news.fresh && autoOpen();
-    if (news.asking || open) stage.view = 'stage';
-    if (open) Object.assign(stage, { hidden: false, atBottom: true });
-    const take = news.asking || (open && !tabbed);
-    if (take && !(tabbed && typing)) stage.tab = 'stage';
-    else if (take || open) stage.lit = stage.tab !== 'stage';
+    if (open) Object.assign(stage, { view: 'stage', hidden: false, atBottom: true });
+    if (open && !tabbed && !typing) stage.tab = 'stage';
+    else if (open || news.asking) stage.lit = stage.tab !== 'stage';
 }
 
 /** The switch in the stage's head: whether a new panel opens the column. */
