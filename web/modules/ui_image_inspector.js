@@ -14,6 +14,7 @@ import {
     materialNodeHeading,
     renderDetailedNodeCards,
     applyPromptRolesToBlocks,
+    byPromptRole,
     mergePromptRoleOverrides,
 } from './material_inspector.js';
 
@@ -171,7 +172,7 @@ function buildPromptsStation(blocks, fallbackPrompt, item, suggestedName, contex
     );
     if (promptBlocks.length) {
         text(wrap, 'p', t('materialPromptRoleHelp'), 'anomalous-workbench-muted');
-        renderDetailedNodeCards(wrap, promptBlocks, {
+        renderDetailedNodeCards(wrap, byPromptRole(promptBlocks), {
             onSaveBlock: (block, button) => saveSelectedBlocks(item, suggestedName, [block], button),
             onPromptRoleChange: async (block, selectedRole) => {
                 const key = String(block.node_id);

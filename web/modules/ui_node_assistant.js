@@ -57,11 +57,11 @@ export function renderAssistantModelCard(node, w, container) {
         const pickerType = inferPickerModelType(node, w);
 
         const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'margin:12px 16px 16px;padding:10px;border:1px solid var(--amb-border);border-radius:14px;background:var(--amb-lt-surface,linear-gradient(160deg,rgba(31,33,42,0.96),rgba(20,21,27,0.96)));display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 35px rgba(0,0,0,0.2);';
+        wrapper.className = 'anomalous-node-model';
 
         // Preview image
         const previewBox = document.createElement('div');
-        previewBox.style.cssText = 'width:100%;aspect-ratio:1.65;max-height:260px;background:radial-gradient(circle at 50% 20%,var(--amb-lt-card-hover,#252a3b),var(--amb-bg-page) 70%);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--amb-border);';
+        previewBox.className = 'anomalous-node-model-cover';
         previewBox.innerHTML = `<span style="color:var(--amb-lt-muted,#444);font-size:13px;">${t('doctorLoadingPreview')}</span>`;
         wrapper.appendChild(previewBox);
 
@@ -92,12 +92,11 @@ export function renderAssistantModelCard(node, w, container) {
 
         // Secondary action; model replacement lives in the prominent node toolbar.
         const actionRow = document.createElement('div');
-        actionRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+        actionRow.className = 'anomalous-node-model-actions';
         const profileBtn = document.createElement('button');
+        profileBtn.type = 'button';
+        profileBtn.className = 'anomalous-node-model-profile';
         profileBtn.textContent = t('doctorProfile');
-        profileBtn.style.cssText = 'flex:1;padding:10px 12px;background:color-mix(in srgb, var(--amb-link) 9%, transparent);color:var(--amb-link);border:1px solid color-mix(in srgb, var(--amb-link) 22%, transparent);border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;transition:filter 0.2s;';
-        profileBtn.onmouseover = () => profileBtn.style.filter = 'brightness(1.2)';
-        profileBtn.onmouseout = () => profileBtn.style.filter = 'brightness(1)';
 
         actionRow.appendChild(profileBtn);
         wrapper.appendChild(actionRow);
@@ -396,7 +395,7 @@ for (const w of node.widgets) {
         nodeContent.appendChild(titleBar);
 
         const quickActions = document.createElement('div');
-        quickActions.style.cssText = 'padding:14px 16px 4px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;flex-shrink:0;';
+        quickActions.className = 'anomalous-node-actions';
         const actionsLabel = document.createElement('div');
         actionsLabel.textContent = t('assistantQuickActions');
         actionsLabel.style.cssText = 'grid-column:1/-1;color:var(--amb-text-muted);font-size:10px;font-weight:750;letter-spacing:0.1em;text-transform:uppercase;padding:0 2px 2px;';
@@ -406,8 +405,9 @@ for (const w of node.widgets) {
             const button = document.createElement('button');
             const enabled = !capability || capability.supported;
             button.disabled = !enabled;
-            const gridPlacement = primary ? 'grid-column:1/-1;' : '';
-            button.style.cssText = gridPlacement + (enabled
+            button.type = 'button';
+            button.className = `anomalous-node-action${primary ? ' is-primary' : ''}`;
+            button.style.cssText = (enabled
                 ? `min-width:0;padding:${primary ? '13px 14px' : '11px 10px'};background:${accent};color:#fff;border:1px solid var(--amb-border-strong);border-radius:11px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:transform 0.15s,filter 0.15s,box-shadow 0.15s;box-shadow:0 8px 18px rgba(0,0,0,0.14);`
                 : 'min-width:0;padding:11px 10px;background:rgba(var(--amb-ink-rgb), 0.035);color:var(--amb-text-dim);border:1px solid var(--amb-border);border-radius:11px;cursor:not-allowed;text-align:left;display:flex;align-items:center;gap:9px;');
             const iconEl = document.createElement('span');

@@ -2,6 +2,11 @@
 
 ## v1.64.0 — unreleased
 
+- 「当前节点」在全屏或很宽的窗口里不再拉成长条：快捷按钮（换模型、前方 / 后方插入 LoRA）保持按钮宽度排成一行，模型封面放在名字左边，存下的参数排成几列卡片。停靠在侧边的窄面板不变。
+- "Current node" no longer stretches in full screen or a very wide window: the quick buttons (change the model, a LoRA before / after) keep a button's width in one row, the model's cover sits left of its name, and saved parameter sets fill the width as columns of cards. The narrow docked panel is unchanged.
+- 图库看图的「提示词」页把正面提示词放在上面、负面在下面，不再跟着节点在工作流里的先后。
+- The Gallery's Prompts tab lists the positive prompts first and the negative after, instead of following the nodes' order in the workflow.
+
 - 「给 AI 的素材」大窗的卡片更顺手了：鼠标停在卡片上（或用键盘选到它），封面下沿就出现「加进留言」和「看详情页」；加进留言后，给 AI 的备注直接写在卡片上，不用再去右边。右边的详情要鼠标停稳一下才换，快速划过不换；点过的卡会钉在右边，划过别的卡也不换，点「已钉住」取消。卡片平时不画边框，标签变成一行小字，底下的“已加进这条留言”和“好了”合成一条。触屏上卡片的按钮一直显示，也更好点。
 - The cards of the large "Materials for the AI" window are easier to use: with the pointer on a card (or the keyboard on it) "Put on the message" and "Open its page" show over the bottom of its cover, and once on the message its note to the AI is written on the card itself, with no trip to the right. The detail column changes only when the pointer rests on a card, not while it passes over; a card you press stays pinned there until you press "Pinned". Cards have no frame at rest, their tags are one quiet line, and the picked items and "Done" share one strip at the bottom. On a touch screen the card buttons always show, and are larger.
 

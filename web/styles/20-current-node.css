@@ -2,12 +2,96 @@
    (saved sets as cards with their picture and source, or side by side). */
 
 .anomalous-node-body {
+    container: amb-node / inline-size;
     display: flex;
     flex: 1;
     flex-direction: column;
     min-height: 0;
     overflow-y: auto;
     padding-bottom: 16px;
+}
+
+/* Quick actions (change the model, a LoRA before or after) and the model the node loads. */
+.anomalous-node-actions {
+    display: grid;
+    flex-shrink: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    padding: 14px 16px 4px;
+}
+
+.anomalous-node-action.is-primary { grid-column: 1 / -1; }
+
+.anomalous-node-model {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 12px 16px 16px;
+    padding: 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 14px;
+    background: var(--amb-lt-surface, linear-gradient(160deg, rgba(31, 33, 42, 0.96), rgba(20, 21, 27, 0.96)));
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.2);
+}
+
+.anomalous-node-model-cover {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1.65;
+    max-height: 260px;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: radial-gradient(circle at 50% 20%, var(--amb-lt-card-hover, #252a3b), var(--amb-bg-page) 70%);
+}
+
+.anomalous-node-model-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.anomalous-node-model-profile {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 22%, transparent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--amb-link) 9%, transparent);
+    color: var(--amb-link);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+.anomalous-node-model-profile:hover { filter: brightness(1.2); }
+
+/* A wide window (full screen): buttons keep a button's width instead of stretching across it, and
+   the cover sits beside the model's name. */
+@container amb-node (min-width: 760px) {
+    .anomalous-node-actions { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+    .anomalous-node-action.is-primary { grid-column: auto; }
+
+    .anomalous-node-model {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        gap: 12px 18px;
+        max-width: 860px;
+    }
+
+    .anomalous-node-model-cover {
+        grid-row: 1 / -1;
+        aspect-ratio: 4 / 5;
+        max-height: none;
+    }
+
+    .anomalous-node-model > :not(.anomalous-node-model-cover) { grid-column: 2; }
+    .anomalous-node-model-actions { align-self: end; }
+    .anomalous-node-model-profile { flex: 0 0 auto; padding-inline: 18px; }
 }
 
 .anomalous-node-section {
@@ -95,6 +179,17 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+/* A wide window: the saved sets fill the width as a grid of cards. */
+@container amb-node (min-width: 760px) {
+    .anomalous-node-param-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+        align-items: start;
+    }
+
+    .anomalous-node-param-list > :not(.anomalous-node-param) { grid-column: 1 / -1; }
 }
 
 /* On top: the set last put into this node and what changed since, or the set the values match. */

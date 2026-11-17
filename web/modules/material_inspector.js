@@ -310,6 +310,14 @@ export function applyPromptRolesToBlocks(blocks, promptRoles) {
     return blocks;
 }
 
+const ROLE_ORDER = ['positive', 'both', 'unknown', 'negative', 'ignored'];
+
+/** Prompt nodes positive first, negative after: node order often puts the negative first. */
+export function byPromptRole(blocks) {
+    const rank = block => (ROLE_ORDER.includes(block.promptRole) ? ROLE_ORDER.indexOf(block.promptRole) : 2);
+    return [...blocks].sort((a, b) => rank(a) - rank(b));
+}
+
 export function mergePromptRoleOverrides(promptRoles, overrides) {
     const roles = { ...(promptRoles || {}) };
     if (!overrides || typeof overrides !== 'object') return roles;

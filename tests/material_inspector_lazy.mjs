@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { renderDetailedNodeCards } from '../web/modules/material_inspector.js';
+import { byPromptRole, renderDetailedNodeCards } from '../web/modules/material_inspector.js';
 
 // Minimal DOM double: exercise allocation and toggle/copy handlers without a browser dependency.
 class Element {
@@ -58,4 +58,10 @@ assert.equal(copy.textContent, '复制失败，请重试');
 navigator.clipboard.writeText = async value => assert.equal(value, '  exact prompt\n');
 await copy.onclick({ stopPropagation() {} });
 assert.notEqual(copy.textContent, '复制失败，请重试');
-console.log('material inspector: 2001 cards, one initial body, lazy toggles and clipboard feedback OK');
+
+// The gallery's Prompts tab: the positive before the negative, whatever the node order.
+const roles = [['7', 'negative'], ['9', 'ignored'], ['6', 'positive'], ['8', undefined], ['5', 'both']]
+    .map(([node_id, promptRole]) => ({ node_id, promptRole }));
+assert.deepEqual(byPromptRole(roles).map(block => block.node_id), ['6', '5', '8', '7', '9']);
+assert.deepEqual(roles.map(block => block.node_id), ['7', '9', '6', '8', '5'], 'the blocks given are left in their order');
+console.log('material inspector: 2001 cards, one initial body, lazy toggles, clipboard feedback and prompt order OK');
