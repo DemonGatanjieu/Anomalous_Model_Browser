@@ -36,43 +36,54 @@ const said = text => el('div', 'anomalous-ai-user-text', text);
 const words = value => (resolveLocale() === 'zh' ? value?.zh : value?.en) || value?.en || value?.zh || '';
 const REF_ICON = { packs: 'nodes', ways: 'blocks' };
 
+function refLabel(ref, locale) {
+    const titled = ref.kind === 'ways' ? wayTitle(ref.id, locale) : '';
+    return titled && titled !== ref.id ? titled : (ref.label || ref.id);
+}
+
 /** Non-picture refs carried by a user message, with each ref's optional user note beside its name. */
-function namedRefs(step, sealed, masked = false) {
-    const refs = (step.refs || []).filter(ref => ref.kind !== 'pictures');
-    if (!refs.length) return [];
+function namedRefs(refs, sealed) {
     const row = el('div', 'anomalous-tb-chips is-static anomalous-ai-step-refs');
     const locale = resolveLocale();
     for (const ref of refs) {
         const chip = el('span', `anomalous-tb-chip is-${ref.kind}`);
-        const titled = ref.kind === 'ways' ? wayTitle(ref.id, locale) : '';
-        const label = titled && titled !== ref.id ? titled : (ref.label || ref.id);
-        chip.append(icon(REF_ICON[ref.kind] || ref.kind, 13), el('span', 'anomalous-tb-chip-name', label));
+        chip.append(icon(REF_ICON[ref.kind] || ref.kind, 13), el('span', 'anomalous-tb-chip-name', refLabel(ref, locale)));
         if (ref.note) {
             const noteNode = el('span', 'anomalous-ai-step-ref-note');
-            noteNode.append(renderHiddenText(ref.note, sealed, { masked, lockIcon: () => icon('lock', 10) }));
+            noteNode.append(renderHiddenText(ref.note, sealed, { lockIcon: () => icon('lock', 10) }));
             chip.append(noteNode);
         }
         row.append(chip);
     }
-    return [row];
+    return row;
 }
 
-function sealedNoteBar(label, onToggle) {
-    const bar = el('div', 'anomalous-ai-sealed-bar');
-    bar.append(icon('lock', 12), el('span', 'anomalous-ai-sealed-bar-text', label));
-    if (onToggle) {
-        const btn = el('button', 'anomalous-ai-sealed-toggle', t('aiSealedViewAi'));
-        btn.type = 'button';
-        btn.setAttribute('aria-pressed', 'false');
-        btn.onclick = () => {
-            const masked = btn.getAttribute('aria-pressed') !== 'true';
-            btn.setAttribute('aria-pressed', String(masked));
-            btn.textContent = t(masked ? 'aiSealedViewMine' : 'aiSealedViewAi');
-            onToggle(masked);
-        };
-        bar.append(btn);
+const TOKEN = /(\[(?:P|M|img)\d+\])/;
+const RECEIVED_FOLD = 160; // longer than this, what the AI got shows its first lines until asked
+
+/** `text` as the AI got it: each hidden part as the token sent in its place. */
+const sentText = (text, sealed) => sealedParts(text, sealed)
+    .map(part => (part.type === 'sealed' ? part.token || '[P]' : part.value)).join('');
+
+/** Under a message with hidden words: what the AI got, the tokens marked, so the two read side by side. */
+function receivedLine(text) {
+    const line = el('div', 'anomalous-ai-received');
+    const body = el('span', 'anomalous-ai-received-text');
+    for (const part of text.split(TOKEN).filter(Boolean)) {
+        body.append(TOKEN.test(part) ? el('code', 'anomalous-ai-sealed-token', part) : document.createTextNode(part));
     }
-    return bar;
+    line.append(el('span', 'anomalous-ai-received-label', t('aiSealedReceived')), body);
+    if (text.length > RECEIVED_FOLD) {
+        line.classList.add('is-folded');
+        const toggle = el('button', 'anomalous-ai-fold-toggle', t('aiFoldMore'));
+        toggle.type = 'button';
+        toggle.onclick = () => {
+            const folded = line.classList.toggle('is-folded');
+            toggle.textContent = t(folded ? 'aiFoldMore' : 'aiFoldLess');
+        };
+        line.append(toggle);
+    }
+    return line;
 }
 
 const modelToken = (modelId, sealed) => Object.entries(sealed || {})
@@ -83,35 +94,29 @@ function routeStep(step, ctx) {
     const [a, b] = models.map(modelStem);
     const bubble = said(t(`aiRoute_${step.route}`, { a: a || '', b: b || '' }));
     if (!ctx.privateTask) return [bubble, deliveryState(step)];
-    const tokens = models.map(id => modelToken(id, ctx.sealed)).filter(Boolean);
-    if (tokens.length) {
-        const bar = sealedNoteBar(t('aiSealedRouteNote', { tokens: tokens.join(t('listSeparator')) }), (masked) => {
-            const [ma, mb] = models.map((id, at) => (masked ? (modelToken(id, ctx.sealed) || (at ? b : a)) : (at ? b : a)));
-            bubble.textContent = t(`aiRoute_${step.route}`, { a: ma || '', b: mb || '' });
-        });
-        return [bubble, bar, deliveryState(step)];
+    const [ta, tb] = models.map(id => modelToken(id, ctx.sealed));
+    if (ta || tb) return [bubble, receivedLine(t(`aiRoute_${step.route}`, { a: ta || a || '', b: tb || b || '' })), deliveryState(step)];
+    if (ctx.privacyModels !== false) {
+        const pending = el('div', 'anomalous-ai-sealed-bar');
+        pending.append(icon('lock', 12), el('span', '', t('aiSealedRoutePending')));
+        return [bubble, pending, deliveryState(step)];
     }
-    if (ctx.privacyModels !== false) return [bubble, sealedNoteBar(t('aiSealedRoutePending')), deliveryState(step)];
     return [bubble, deliveryState(step)];
 }
 
 function userMessageStep(step, ctx) {
     const sealed = ctx.sealed;
     const refs = (step.refs || []).filter(ref => ref.kind !== 'pictures');
-    const tokens = [...sealedParts(step.text, sealed), ...refs.flatMap(ref => sealedParts(ref.note, sealed))]
-        .filter(part => part.type === 'sealed');
+    const hides = text => sealedParts(text, sealed).some(part => part.type === 'sealed');
     const bubble = step.text ? el('div', 'anomalous-ai-user-text') : null;
-    let refsHolder = refs.length ? el('div', 'anomalous-ai-step-refs-wrap') : null;
-    const draw = (masked) => {
-        if (bubble) bubble.replaceChildren(renderHiddenText(step.text, sealed, { masked, lockIcon: () => icon('lock', 11) }));
-        if (refsHolder) refsHolder.replaceChildren(...namedRefs(step, sealed, masked));
-    };
-    draw(false);
-    const bar = tokens.length ? sealedNoteBar(t('aiSealedMessageNote', {
-        tokens: [...new Set(tokens.map(part => part.token || t('aiPrivacy')))].join(t('listSeparator')),
-    }), draw) : null;
-    return [...(bubble ? [bubble] : []), ...(refsHolder ? [refsHolder] : []),
-        ...namedPictures(step, ctx.owner), ...(bar ? [bar] : []), deliveryState(step)];
+    bubble?.append(renderHiddenText(step.text, sealed, { lockIcon: () => icon('lock', 11) }));
+    const hiddenNotes = refs.filter(ref => hides(ref.note));
+    const received = hides(step.text) || hiddenNotes.length ? receivedLine([
+        ...(step.text ? [sentText(step.text, sealed)] : []),
+        ...hiddenNotes.map(ref => t('aiSealedNoteOf', { name: refLabel(ref, resolveLocale()) }) + sentText(ref.note, sealed)),
+    ].join('\n')) : null;
+    return [...(bubble ? [bubble] : []), ...(refs.length ? [namedRefs(refs, sealed)] : []),
+        ...(received ? [received] : []), ...namedPictures(step, ctx.owner), deliveryState(step)];
 }
 
 /** A skill the AI fetched: its name and, for advice that goes by the model, the form it came in. */

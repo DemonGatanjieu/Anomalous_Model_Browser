@@ -559,11 +559,15 @@
     vertical-align: 1px;
 }
 .anomalous-ai-sealed-token {
+    margin: 0 1px;
     padding: 0 6px;
-    border-radius: 5px;
-    background: color-mix(in srgb, var(--amb-warn) 22%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-warn) 20%, transparent);
     color: var(--amb-warn-text, var(--amb-warn));
-    font: 600 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
 }
 .anomalous-ai-sealed-bar {
     display: inline-flex;
@@ -574,21 +578,31 @@
     color: var(--amb-warn-text, var(--amb-warn));
     font-size: 12px;
 }
-.anomalous-ai-sealed-toggle {
-    padding: 1px 8px;
-    border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--amb-warn-text, var(--amb-warn));
-    font: inherit;
-    font-size: 11.5px;
-    cursor: pointer;
+/* Under a message with hidden words: what the AI got instead (ui_ai_step_body.receivedLine). */
+.anomalous-ai-received {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 2px 8px;
+    padding: 2px 4px;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    line-height: 1.6;
 }
-.anomalous-ai-sealed-toggle:hover,
-.anomalous-ai-sealed-toggle:focus-visible {
-    background: color-mix(in srgb, var(--amb-warn) 16%, transparent);
-    outline: none;
+.anomalous-ai-received-label {
+    color: var(--amb-text-dim);
+    white-space: nowrap;
 }
+.anomalous-ai-received-label::before { content: '↳ '; }
+.anomalous-ai-received-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.anomalous-ai-received.is-folded .anomalous-ai-received-text {
+    display: -webkit-box;
+    overflow: clip;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
+.anomalous-ai-received > .anomalous-ai-fold-toggle { grid-column: 2; justify-self: start; }
 
 .anomalous-ai-message-hint {
     color: var(--amb-text-dim);

@@ -41,6 +41,11 @@ export async function postPrivacyRule(task, payload) {
     else delete task.private_models;
     if (snapshot.exposed_prompts?.length) task.exposed_prompts = snapshot.exposed_prompts;
     else delete task.exposed_prompts;
+    if (payload.action !== 'model_rule') {
+        // Letting words through or hiding more rewrites the user's messages on the server: read them again.
+        const fresh = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(task.id)}`).then(r => (r.ok ? r.json() : null)).catch(() => null);
+        if (Array.isArray(fresh?.task?.steps)) task.steps = fresh.task.steps;
+    }
     return snapshot;
 }
 
@@ -141,7 +146,7 @@ export function renderHiddenPrompt(item, task, { onApplied }) {
         const area = document.createElement('textarea');
         area.className = 'anomalous-ai-priv-adjust-area';
         area.readOnly = true;
-        area.rows = Math.min(5, Math.max(2, Math.ceil(item.text.length / 48)));
+        area.rows = Math.min(5, Math.max(1, Math.ceil(item.text.length / 48)));
         area.value = item.text;
         const take = () => {
             const start = area.selectionStart ?? 0;

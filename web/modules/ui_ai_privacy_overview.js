@@ -1,10 +1,11 @@
 /**
- * Privacy Overview modal (Privacy chip in the header & ⋯ -> "隐私一览"):
- * - Clean single outer scroll surface (3-line clamped prompts + progressive message list, thin auto-hide scrollbars)
- * - Left ("已隐藏"): [P*] prompts (Prompt Studio's chips: pick tags to let through), [img*] thumbnails, [M*] / task models
- *   (with per-task and per-model hide/expose switch), plus one-line "Note for AI" inputs
- * - Right ("没隐藏"): title, masked message previews (+ retroactive "藏词" adjuster), exposed snippets,
- *   exposed models, live notes mirror, canvas structure/parameters
+ * Privacy Overview window (the header's Privacy chip, ⋯ -> "隐私一览"), one column to read down:
+ * - a head saying what privacy mode does now, with its two switches (privacy mode, hide model names)
+ * - three counts: hidden prompts, hidden model names, pictures sent
+ * - "What the AI can't see": each hidden prompt as Prompt Studio's chips (pick words to let through),
+ *   pictures and models (hide / show each), each with the token the AI gets and a note for the AI
+ * - "What the AI can see": the title, real model names, words let through, the messages as the AI
+ *   got them (+ hide more words afterwards), the notes, the canvas
  */
 
 import { translate as t } from './locales.js';
@@ -30,138 +31,173 @@ function tokenBadge(token) {
     return el('span', 'anomalous-ai-priv-token', token);
 }
 
+/** What the AI gets in place of a hidden item. */
+function seesPill(token) {
+    const pill = el('span', 'anomalous-ai-priv-sees');
+    pill.append(icon('lock', 11), el('span', '', t('aiPrivacySees', { token })));
+    return pill;
+}
+
+function linkButton(text, onClick) {
+    const button = el('button', 'anomalous-ai-priv-link', text);
+    button.type = 'button';
+    button.onclick = onClick;
+    return button;
+}
+
+/** An on/off switch: a checkbox drawn as a switch (`role="switch"`; `<input switch>` is not in Chromium yet). */
+function switchRow(label, on, onChange) {
+    const row = el('label', 'anomalous-ai-priv-switch');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.setAttribute('role', 'switch');
+    input.checked = on;
+    input.onchange = () => onChange(input);
+    row.append(el('span', '', label), input);
+    return row;
+}
+
+function stat(label, value, sub) {
+    const box = el('div', 'anomalous-ai-priv-stat');
+    box.append(el('span', 'anomalous-ai-priv-stat-label', label), el('strong', 'anomalous-ai-priv-stat-value', value));
+    if (sub) box.append(el('span', 'anomalous-ai-priv-stat-sub', sub));
+    return box;
+}
+
+function section(iconName, title) {
+    const box = el('section', 'anomalous-ai-priv-section');
+    const head = el('h3', 'anomalous-ai-priv-section-head');
+    head.append(icon(iconName, 15), el('span', '', title));
+    box.append(head);
+    return box;
+}
+
+/** A row of "What the AI can see": what it is, then what the AI reads of it. */
+function visibleRow(iconName, label, ...content) {
+    const row = el('div', 'anomalous-ai-priv-vrow');
+    const body = el('div', 'anomalous-ai-priv-vrow-body');
+    body.append(el('div', 'anomalous-ai-priv-vrow-label', label), ...content);
+    row.append(icon(iconName, 16), body);
+    return row;
+}
+
 function noteStatusText(savedNotes, dirtyTokens, pendingOnServer) {
     if (dirtyTokens.size > 0) return t('aiPrivacyNoteSaving');
     if (!Object.keys(savedNotes).length) return '';
     return pendingOnServer ? t('aiPrivacyNotePending') : t('aiPrivacyNoteDelivered');
 }
 
-function attachNoteInput(card, token, currentNote, placeholder, draftNotes, onDraftChange, onCommit) {
-    const noteRow = el('div', 'anomalous-ai-priv-note-row');
-    const label = el('label', 'anomalous-ai-priv-note-label', t('aiPrivacyNoteLabel'));
+function attachNoteInput(row, token, currentNote, placeholder, ctx) {
+    const note = el('label', 'anomalous-ai-priv-note');
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'anomalous-ai-priv-note-input';
     input.maxLength = MAX_SEALED_NOTE;
-    input.value = draftNotes[token] ?? currentNote ?? '';
+    input.value = ctx.draftNotes[token] ?? currentNote ?? '';
     input.placeholder = placeholder;
-    label.append(input);
+    input.setAttribute('aria-label', t('aiPrivacyNoteLabel'));
 
     const state = el('span', 'anomalous-ai-priv-note-state');
     const syncState = (text = '') => { state.textContent = text; };
     input.oninput = () => {
-        draftNotes[token] = input.value;
-        onDraftChange(token, input.value, syncState);
+        ctx.draftNotes[token] = input.value;
+        ctx.onDraftChange(token, input.value, syncState);
     };
-    input.onblur = () => { void onCommit(token, syncState); };
+    input.onblur = () => { void ctx.onCommit(token, syncState); };
     input.onkeydown = (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             input.blur();
         }
     };
-    noteRow.append(label, state);
-    card.append(noteRow);
+    note.append(icon('pencil', 13), input, state);
+    row.append(note);
 }
 
-function renderPromptCard(item, task, ctx) {
-    const card = el('div', 'anomalous-ai-priv-item');
-    const head = el('div', 'anomalous-ai-priv-item-head');
-    const tags = item.chunks.items.filter(part => part.text).length;
-    head.append(tokenBadge(item.token),
-        el('span', 'anomalous-ai-priv-kind-tag', item.chunks.mode === 'tags' ? t('aiPrivacyPromptTags', { count: tags }) : t('aiPrivacyPromptText')));
-    card.append(head, renderHiddenPrompt(item, task, { onApplied: () => ctx.onAdjusted() }));
-    attachNoteInput(card, item.token, item.note, t('aiPrivacyNotePlaceholderP'),
-        ctx.draftNotes, ctx.onDraftChange, ctx.onCommit);
-    return card;
+/** A row of "What the AI can't see": its name, what it is, the token the AI gets instead. */
+function itemRow(title, meta, token) {
+    const row = el('div', 'anomalous-ai-priv-row');
+    const head = el('div', 'anomalous-ai-priv-row-head');
+    head.append(el('strong', 'anomalous-ai-priv-row-title', title));
+    if (meta) head.append(el('span', 'anomalous-ai-priv-row-meta', meta));
+    if (token) head.append(seesPill(token));
+    row.append(head);
+    return { row, head };
 }
 
-function renderPictureCard(item, ctx) {
-    const card = el('div', 'anomalous-ai-priv-item');
-    const head = el('div', 'anomalous-ai-priv-item-head');
-    head.append(tokenBadge(item.token));
+function renderPromptRow(item, n, task, ctx) {
+    const tags = item.chunks.mode === 'tags' ? item.chunks.items.filter(part => part.text).length : 0;
+    const { row } = itemRow(t(tags ? 'aiPrivacyPromptNth' : 'aiPrivacyTextNth', { n }),
+        tags ? t('aiPrivacyPromptTags', { count: tags }) : '', item.token);
+    row.append(renderHiddenPrompt(item, task, { onApplied: () => ctx.onAdjusted() }));
+    attachNoteInput(row, item.token, item.note, t('aiPrivacyNotePlaceholderP'), ctx);
+    return row;
+}
 
-    const picRow = el('div', 'anomalous-ai-priv-pic-row');
+function renderPictureRow(item, ctx) {
+    const { row, head } = itemRow(item.path, '', item.token);
     const thumb = document.createElement('img');
     thumb.className = 'anomalous-ai-priv-thumb';
     thumb.src = outputThumbnail({ filename: item.filename, subfolder: item.subfolder || '' });
-    thumb.alt = item.path;
+    thumb.alt = '';
     thumb.loading = 'lazy';
-    thumb.onerror = () => { thumb.style.display = 'none'; };
-    picRow.append(thumb, el('span', 'anomalous-ai-priv-pic-path', item.path));
-    card.append(head, picRow);
-
-    attachNoteInput(card, item.token, item.note, t('aiPrivacyNotePlaceholderImg'),
-        ctx.draftNotes, ctx.onDraftChange, ctx.onCommit);
-    return card;
+    thumb.onerror = () => thumb.remove();
+    head.prepend(thumb);
+    attachNoteInput(row, item.token, item.note, t('aiPrivacyNotePlaceholderImg'), ctx);
+    return row;
 }
 
-function renderModelCard(model, task, ctx) {
-    const card = el('div', `anomalous-ai-priv-item${model.hidden ? '' : ' is-exposed-row'}`);
-    const head = el('div', 'anomalous-ai-priv-item-head');
-    if (model.hidden && model.token) head.append(tokenBadge(model.token));
-    else if (!model.hidden) head.append(el('span', 'anomalous-ai-priv-exposed-pill', t('aiPrivacyModelPublicBadge')));
-    if (model.type) head.append(el('span', 'anomalous-ai-priv-kind-tag', model.type));
-    head.append(el('span', 'anomalous-ai-priv-model-name', model.file || model.id));
-
-    const flipBtn = el('button', `anomalous-ai-priv-mini-btn${model.hidden ? '' : ' is-expose'}`,
-        t(model.hidden ? 'aiPrivacyModelMakePublic' : 'aiPrivacyModelMakeHidden'));
-    flipBtn.type = 'button';
-    flipBtn.onclick = async () => {
-        flipBtn.disabled = true;
+function renderModelRow(model, task, ctx) {
+    const { row, head } = itemRow(model.file || model.id, model.type, model.hidden ? model.token : '');
+    if (!model.hidden) {
+        const open = el('span', 'anomalous-ai-priv-sees is-open');
+        open.append(icon('eye', 12), el('span', '', t('aiPrivacyModelPublicBadge')));
+        head.append(open);
+    }
+    const flip = linkButton(t(model.hidden ? 'aiPrivacyModelMakePublic' : 'aiPrivacyModelMakeHidden'), async () => {
+        flip.disabled = true;
         try {
             await postPrivacyRule(task, { action: 'model_rule', model_id: model.id, hidden: !model.hidden });
             ctx.onAdjusted();
         } catch (error) {
-            flipBtn.disabled = false;
+            flip.disabled = false;
             await anomalousAlert(error.message);
         }
-    };
-    head.append(flipBtn);
-    card.append(head);
-
-    if (model.hidden && model.token) {
-        attachNoteInput(card, model.token, model.note, t('aiPrivacyNotePlaceholderM'),
-            ctx.draftNotes, ctx.onDraftChange, ctx.onCommit);
-    }
-    return card;
+    });
+    head.append(flip);
+    if (model.hidden && model.token) attachNoteInput(row, model.token, model.note, t('aiPrivacyNotePlaceholderM'), ctx);
+    return row;
 }
 
+/** A message as the AI got it, whether it has read it, and the ways to hide more of it or find it. */
 function renderMessagePreview(msg, task, { closeOverview, onAdjusted }) {
     const wrap = el('div', 'anomalous-ai-priv-msg');
-    const top = el('div', 'anomalous-ai-priv-msg-head');
-    top.append(el('span', `anomalous-ai-priv-delivery${msg.delivered ? ' is-read' : ''}`,
-        t(msg.delivered ? 'aiPrivacyMsgRead' : 'aiPrivacyMsgWaiting')));
+    const body = el('div', 'anomalous-ai-priv-msg-text');
+    for (const seg of msg.segments || []) {
+        if (seg.type === 'token') body.append(tokenBadge(seg.token));
+        else body.append(document.createTextNode(seg.text));
+    }
+    wrap.append(body);
+    if (!msg.hasPlaintext) wrap.append(el('div', 'anomalous-ai-priv-msg-only-tokens', t('aiPrivacyMsgAllSealed')));
 
-    const btns = el('div', 'anomalous-ai-priv-msg-btns');
+    const foot = el('div', 'anomalous-ai-priv-msg-foot');
+    foot.append(el('span', `anomalous-ai-priv-delivery${msg.delivered ? ' is-read' : ''}`,
+        t(msg.delivered ? 'aiPrivacyMsgRead' : 'aiPrivacyMsgWaiting')));
     if (msg.hasPlaintext) {
-        const sealBtn = el('button', 'anomalous-ai-priv-mini-btn', t('aiPrivacySealMoreBtn'));
-        sealBtn.type = 'button';
         let sealer = null;
-        sealBtn.onclick = () => {
+        foot.append(linkButton(t('aiPrivacySealMoreBtn'), () => {
             if (sealer) { sealer.remove(); sealer = null; return; }
             sealer = renderMessageSealer(msg, task, {
                 onClose: () => { sealer?.remove(); sealer = null; },
                 onApplied: () => onAdjusted(),
             });
             wrap.append(sealer);
-        };
-        btns.append(sealBtn);
+        }));
     }
-    const jumpBtn = el('button', 'anomalous-ai-priv-mini-btn', t('aiPrivacyMsgJump'));
-    jumpBtn.type = 'button';
-    jumpBtn.title = t('aiPrivacyMsgJumpHint');
-    jumpBtn.onclick = () => { closeOverview(); showStepRow(msg.stepId); };
-    btns.append(jumpBtn);
-    top.append(btns);
-
-    const body = el('div', 'anomalous-ai-priv-msg-text');
-    for (const seg of msg.segments || []) {
-        if (seg.type === 'token') body.append(tokenBadge(seg.token));
-        else body.append(document.createTextNode(seg.text));
-    }
-    if (!msg.hasPlaintext) body.append(el('div', 'anomalous-ai-priv-msg-only-tokens', t('aiPrivacyMsgAllSealed')));
-    wrap.append(top, body);
+    const jump = linkButton(t('aiPrivacyMsgJump'), () => { closeOverview(); showStepRow(msg.stepId); });
+    jump.title = t('aiPrivacyMsgJumpHint');
+    foot.append(jump);
+    wrap.append(foot);
     return wrap;
 }
 
@@ -172,12 +208,12 @@ function renderVisibleNotes(box, notesMap) {
         .filter(([, text]) => Boolean(text))
         .sort(([a], [b]) => compareTokens(a, b));
     if (!entries.length) {
-        box.append(el('div', 'anomalous-ai-priv-empty-small', t('aiPrivacyVisibleNotesNone')));
+        box.append(el('div', '', t('aiPrivacyVisibleNotesNone')));
         return;
     }
     for (const [token, text] of entries) {
         const line = el('div', 'anomalous-ai-priv-vnote');
-        line.append(tokenBadge(token), el('span', 'anomalous-ai-priv-vnote-text', text));
+        line.append(tokenBadge(token), el('span', '', text));
         box.append(line);
     }
 }
@@ -239,7 +275,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
 
         const statusLine = el('span', 'anomalous-ai-priv-save-status',
             noteStatusText(savedNotes, dirtyTokens, overview.dirty));
-        const visibleNotesList = el('div', 'anomalous-ai-priv-vnotes-list');
+        const visibleNotesList = el('div', 'anomalous-ai-priv-vnotes');
         renderVisibleNotes(visibleNotesList, draftNotes);
         let doneBtn = null;
         const syncDoneLabel = () => {
@@ -271,156 +307,98 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         };
 
         const rowCtx = { draftNotes, onDraftChange, onCommit, onAdjusted };
-        const bar = el('div', 'anomalous-ai-priv-bar');
-        const badges = el('div', 'anomalous-ai-priv-badges');
-        badges.append(
-            el('span', `anomalous-ai-priv-pill ${overview.private ? 'is-on' : 'is-off'}`,
-                t(overview.private ? 'aiPrivacyStateOn' : 'aiPrivacyStateOff')),
-            el('span', `anomalous-ai-priv-pill ${overview.privacyModels ? 'is-muted' : 'is-warn'}`,
-                t(overview.privacyModels ? 'aiPrivacyModelsOn' : 'aiPrivacyModelsOff')),
-        );
-        const actions = el('div', 'anomalous-ai-priv-actions');
-        const sentBtn = el('button', 'anomalous-ai-tool', t('aiSent'));
-        sentBtn.type = 'button';
-        sentBtn.onclick = () => void openSent(task);
-        actions.append(sentBtn);
-        if (onTogglePrivacy) {
-            const toggleBtn = el('button', 'anomalous-ai-tool', t(overview.private ? 'aiPrivacyOverviewToggleOff' : 'aiPrivacyOverviewToggleOn'));
-            toggleBtn.type = 'button';
-            toggleBtn.onclick = () => { close(); void onTogglePrivacy(!overview.private); };
-            actions.append(toggleBtn);
-        }
-        bar.append(badges, actions);
 
-        const parts = [bar];
+        // Head: what privacy mode does now, and its switches.
+        const head = el('div', 'anomalous-ai-priv-head');
+        const mark = el('span', `anomalous-ai-priv-head-mark${overview.private ? ' is-on' : ''}`);
+        mark.append(icon('shield', 20));
+        const copy = el('div', 'anomalous-ai-priv-head-copy');
+        copy.append(el('strong', '', t(overview.private ? 'aiPrivacyHeadOn' : 'aiPrivacyHeadOff')),
+            el('span', '', t(overview.private ? 'aiPrivacyHeadOnSub' : 'aiPrivacyHeadOffSub')));
+        const switches = el('div', 'anomalous-ai-priv-switches');
+        if (onTogglePrivacy) {
+            switches.append(switchRow(t('aiPrivacy'), overview.private, (input) => { close(); void onTogglePrivacy(input.checked); }));
+        }
+        switches.append(switchRow(t('aiPrivacyHideModels'), overview.privacyModels, async (input) => {
+            input.disabled = true;
+            try {
+                await postPrivacyRule(task, { action: 'model_rule', privacy_models: input.checked });
+                onAdjusted();
+            } catch (error) {
+                input.disabled = false;
+                input.checked = !input.checked;
+                await anomalousAlert(error.message);
+            }
+        }));
+        head.append(mark, copy, switches);
+        const parts = [head];
+
         if (overview.readsDisk) {
             const reach = el('div', 'anomalous-ai-priv-reach');
             reach.append(icon('alert', 15), el('span', '', t('aiPrivacyReach', { app: overview.client })));
             parts.push(reach);
         }
-        const tip = el('div', 'anomalous-ai-priv-tip');
-        tip.append(icon('info', 14), el('span', '', t('aiPrivacyNotesBanner')), statusLine);
-        parts.push(tip);
 
-        const columns = el('div', 'anomalous-ai-priv-columns');
+        const pictures = overview.hidden.generatedPictureCount;
+        const stats = el('div', 'anomalous-ai-priv-stats');
+        stats.append(
+            stat(t('aiPrivacyStatPrompts'), t('aiPrivacyStatPromptsN', { n: overview.hidden.prompts.length })),
+            stat(t('aiPrivacyStatModels'), t('aiPrivacyStatModelsN', { n: overview.modelCatalog.filter(m => m.hidden).length })),
+            stat(t('aiPrivacyStatPictures'), t(overview.private ? 'aiPrivacyStatPicturesNone' : 'aiPrivacyStatPicturesAll'),
+                overview.private && pictures ? t('aiPrivacyStatPicturesKept', { count: pictures }) : ''),
+        );
+        parts.push(stats);
 
-        // Left column: hidden items + per-model controls
-        const hiddenCol = el('section', 'anomalous-ai-priv-col is-hidden');
-        const hiddenHead = el('div', 'anomalous-ai-priv-col-head');
-        hiddenHead.append(icon('lock', 15), el('h3', '', t('aiPrivacyHiddenHead')),
-            el('span', 'anomalous-ai-priv-count', t('aiPrivacyItemsCount', { n: overview.hidden.total })));
-        hiddenCol.append(hiddenHead);
-        if (overview.private) {
-            hiddenCol.append(el('div', 'anomalous-ai-priv-rule',
-                overview.hidden.generatedPictureCount > 0
-                    ? t('aiPrivacyPicRuleCount', { count: overview.hidden.generatedPictureCount })
-                    : t('aiPrivacyPicRule')));
+        // What the AI can't see: each hidden item with its token and a note for the AI.
+        const hiddenSec = section('lock', t('aiPrivacyHiddenHead'));
+        if (overview.hidden.total || overview.modelCatalog.length) {
+            const hint = el('p', 'anomalous-ai-priv-hint');
+            hint.append(el('span', '', t('aiPrivacyNotesBanner')), statusLine);
+            hiddenSec.append(hint);
         }
-        if (overview.hidden.prompts.length) {
-            const g = el('div', 'anomalous-ai-priv-group');
-            g.append(el('div', 'anomalous-ai-priv-group-title', t('aiPrivacyGroupPrompts')),
-                ...overview.hidden.prompts.map(item => renderPromptCard(item, task, rowCtx)));
-            hiddenCol.append(g);
-        }
-        if (overview.hidden.pictures.length) {
-            const g = el('div', 'anomalous-ai-priv-group');
-            g.append(el('div', 'anomalous-ai-priv-group-title', t('aiPrivacyGroupPictures')),
-                ...overview.hidden.pictures.map(item => renderPictureCard(item, rowCtx)));
-            hiddenCol.append(g);
-        }
-
-        // Models section (always offers task-wide switch + per-model switches cleanly)
-        const modelGroup = el('div', 'anomalous-ai-priv-group');
-        const modelHead = el('div', 'anomalous-ai-priv-group-head');
-        modelHead.append(el('span', 'anomalous-ai-priv-group-title', t('aiPrivacyGroupModels')));
-        const modelTaskSwitch = el('button', 'anomalous-ai-priv-mini-btn',
-            t(overview.privacyModels ? 'aiPrivacyTaskModelsTurnOff' : 'aiPrivacyTaskModelsTurnOn'));
-        modelTaskSwitch.type = 'button';
-        modelTaskSwitch.onclick = async () => {
-            modelTaskSwitch.disabled = true;
-            try {
-                await postPrivacyRule(task, { action: 'model_rule', privacy_models: !overview.privacyModels });
-                onAdjusted();
-            } catch (error) {
-                modelTaskSwitch.disabled = false;
-                await anomalousAlert(error.message);
-            }
-        };
-        modelHead.append(modelTaskSwitch);
-        modelGroup.append(modelHead);
-        for (const model of overview.modelCatalog) {
-            modelGroup.append(renderModelCard(model, task, rowCtx));
-        }
-        hiddenCol.append(modelGroup);
-
+        overview.hidden.prompts.forEach((item, at) => hiddenSec.append(renderPromptRow(item, at + 1, task, rowCtx)));
+        for (const item of overview.hidden.pictures) hiddenSec.append(renderPictureRow(item, rowCtx));
+        for (const model of overview.modelCatalog) hiddenSec.append(renderModelRow(model, task, rowCtx));
         if (!overview.hidden.total && !overview.modelCatalog.length) {
-            hiddenCol.append(el('div', 'anomalous-ai-priv-empty', t('aiPrivacyHiddenEmpty')));
+            hiddenSec.append(el('div', 'anomalous-ai-priv-empty', t('aiPrivacyHiddenEmpty')));
         }
+        parts.push(hiddenSec);
 
-        // Right column: visible items
-        const visibleCol = el('section', 'anomalous-ai-priv-col is-visible');
-        const visibleHead = el('div', 'anomalous-ai-priv-col-head');
-        visibleHead.append(icon('chat', 15), el('h3', '', t('aiPrivacyVisibleHead')));
-        visibleCol.append(visibleHead);
-
-        const titleCard = el('div', 'anomalous-ai-priv-vcard');
-        const titleTop = el('div', 'anomalous-ai-priv-vcard-head');
-        titleTop.append(el('span', 'anomalous-ai-priv-vcard-label', t('aiPrivacyVisibleTitle')),
-            el('span', 'anomalous-ai-priv-tag', t('aiPrivacyVisibleAlways')));
-        titleCard.append(titleTop, el('div', 'anomalous-ai-priv-vcard-val', overview.visible.title || t('aiPrivacyVisibleTitleEmpty')));
-        visibleCol.append(titleCard);
+        // What the AI can see.
+        const visibleSec = section('eye', t('aiPrivacyVisibleHead'));
+        visibleSec.append(visibleRow('page', t('aiPrivacyVisibleTitle'),
+            el('div', 'anomalous-ai-priv-vrow-value', overview.visible.title || t('aiPrivacyVisibleTitleEmpty'))));
 
         const publicModels = overview.modelCatalog.filter(m => !m.hidden);
         if (publicModels.length) {
-            const pubCard = el('div', 'anomalous-ai-priv-vcard is-warn');
-            pubCard.append(el('div', 'anomalous-ai-priv-vcard-label', t('aiPrivacyVisibleModelsReal')));
-            for (const m of publicModels) pubCard.append(el('div', 'anomalous-ai-priv-vcard-sub', m.file || m.id));
-            visibleCol.append(pubCard);
+            const row = visibleRow('models', t('aiPrivacyVisibleModelsReal'), ...publicModels.map(m => el('div', '', m.file || m.id)));
+            row.classList.add('is-warn');
+            visibleSec.append(row);
         }
         if (overview.exposedPrompts.length) {
-            const expCard = el('div', 'anomalous-ai-priv-vcard');
-            expCard.append(el('div', 'anomalous-ai-priv-vcard-label', t('aiPrivacyVisibleExposedPrompts')));
-            for (const item of overview.exposedPrompts.slice(-4).reverse()) {
-                expCard.append(el('div', 'anomalous-ai-priv-vcard-sub', item.text));
-            }
-            visibleCol.append(expCard);
+            visibleSec.append(visibleRow('check', t('aiPrivacyVisibleExposedPrompts'),
+                ...overview.exposedPrompts.slice(-4).reverse().map(item => el('div', '', item.text))));
         }
 
-        const msgSection = el('div', 'anomalous-ai-priv-vcard');
-        msgSection.append(el('div', 'anomalous-ai-priv-vcard-label', t('aiPrivacyVisibleMessages')));
-        if (overview.visible.messages.length) {
-            const msgList = el('div', 'anomalous-ai-priv-msgs');
-            const total = overview.visible.messages.length;
-            const shown = overview.visible.messages.slice(-INITIAL_MESSAGES);
-            for (const msg of shown) msgList.append(renderMessagePreview(msg, task, { closeOverview: () => close(), onAdjusted }));
-            if (total > INITIAL_MESSAGES) {
-                const showMore = el('button', 'anomalous-ai-priv-expand-btn', t('aiPrivacyShowAllMessages', { count: total }));
-                showMore.type = 'button';
-                showMore.onclick = () => {
-                    msgList.replaceChildren(...overview.visible.messages.map(m => renderMessagePreview(m, task, { closeOverview: () => close(), onAdjusted })));
-                };
-                msgList.append(showMore);
+        const messages = overview.visible.messages;
+        const preview = msg => renderMessagePreview(msg, task, { closeOverview: () => close(), onAdjusted });
+        let msgContent;
+        if (messages.length) {
+            msgContent = el('div', 'anomalous-ai-priv-msgs');
+            msgContent.append(...messages.slice(-INITIAL_MESSAGES).map(preview));
+            if (messages.length > INITIAL_MESSAGES) {
+                const more = linkButton(t('aiPrivacyShowAllMessages', { count: messages.length }), () => msgContent.replaceChildren(...messages.map(preview)));
+                msgContent.append(more);
             }
-            msgSection.append(msgList);
         } else {
-            msgSection.append(el('div', 'anomalous-ai-priv-empty-small', t('aiPrivacyVisibleMessagesNone')));
+            msgContent = el('div', '', t('aiPrivacyVisibleMessagesNone'));
         }
-        visibleCol.append(msgSection);
-
-        const vNotesCard = el('div', 'anomalous-ai-priv-vcard');
-        vNotesCard.append(el('div', 'anomalous-ai-priv-vcard-label', t('aiPrivacyVisibleNotes')), visibleNotesList);
-        visibleCol.append(vNotesCard);
-
-        const canvasCard = el('div', 'anomalous-ai-priv-vcard');
-        canvasCard.append(el('div', 'anomalous-ai-priv-vcard-label', t('aiPrivacyVisibleCanvas')),
-            el('div', 'anomalous-ai-priv-vcard-sub', t('aiPrivacyVisibleCanvasDesc')));
-        if (overview.visible.decisionsCount > 0) {
-            canvasCard.append(el('div', 'anomalous-ai-priv-vcard-foot', t('aiPrivacyVisibleDecisions', { n: overview.visible.decisionsCount })));
-        }
-        visibleCol.append(canvasCard);
-
-        columns.append(hiddenCol, visibleCol);
-        parts.push(columns);
+        visibleSec.append(visibleRow('chat', t('aiPrivacyVisibleMessages'), msgContent));
+        visibleSec.append(visibleRow('pencil', t('aiPrivacyVisibleNotes'), visibleNotesList));
+        const canvas = [el('div', '', t('aiPrivacyVisibleCanvasDesc'))];
+        if (overview.visible.decisionsCount > 0) canvas.push(el('div', '', t('aiPrivacyVisibleDecisions', { n: overview.visible.decisionsCount })));
+        visibleSec.append(visibleRow('nodes', t('aiPrivacyVisibleCanvas'), ...canvas));
+        parts.push(visibleSec);
 
         const foot = el('div', 'anomalous-ai-priv-foot');
         doneBtn = el('button', 'anomalous-ai-tool anomalous-ai-priv-done', t(dirtyTokens.size > 0 ? 'aiPrivacyOverviewSaveClose' : 'aiPrivacyOverviewSaveDone'));
@@ -429,7 +407,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
             if (dirtyTokens.size) void flushPatch([...dirtyTokens]).finally(() => close());
             else close();
         };
-        foot.append(doneBtn);
+        foot.append(linkButton(t('aiSent'), () => void openSent(task)), doneBtn);
         parts.push(foot);
         body.replaceChildren(...parts);
     };

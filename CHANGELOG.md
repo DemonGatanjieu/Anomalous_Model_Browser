@@ -2,6 +2,11 @@
 
 ## v1.64.0 — unreleased
 
+- 「隐私一览」换了样子：一栏从上往下读，顶上一句话说隐私模式现在在做什么，旁边两个开关（隐私模式、藏模型名）；下面三格数字：藏了几段提示词、几个模型名、发了几张图（隐私模式下是 0 张）。再往下分「AI 看不到的」和「AI 看得到的」两块：每段藏起来的提示词右边标着「AI 看到 [P1]」，下面写给 AI 的备注；你的留言按 AI 收到的样子列出。放词给 AI 看或补充藏词以后，留言马上按新的样子显示。
+- The Privacy overview has a new look: one column to read down, a line on what privacy mode does now with two switches beside it (privacy mode, hide model names), then three counts (hidden prompts, hidden model names, pictures sent: none in privacy mode). Below, "What the AI can't see" and "What the AI can see": each hidden prompt says "The AI sees [P1]" with its note for the AI under it, and your messages show as the AI got them, at once after you let words through or hide more.
+- 隐私任务的对话里，藏了字的留言下面多一行「AI 收到」，直接写出 AI 拿到的那句话（藏起来的地方是 [P1] 这样的代号，素材备注里藏的字也算），原来的「看 AI 视角」切换按钮去掉了。
+- In a private task's timeline, a message with hidden words has a line under it, "The AI got", with the sentence the AI received (tokens such as [P1] where words are hidden, notes on materials included); the "View as AI" toggle is gone.
+
 - 「当前节点」在全屏或很宽的窗口里不再拉成长条：快捷按钮（换模型、前方 / 后方插入 LoRA）保持按钮宽度排成一行，模型封面放在名字左边，存下的参数排成几列卡片。停靠在侧边的窄面板不变。
 - "Current node" no longer stretches in full screen or a very wide window: the quick buttons (change the model, a LoRA before / after) keep a button's width in one row, the model's cover sits left of its name, and saved parameter sets fill the width as columns of cards. The narrow docked panel is unchanged.
 - 图库看图的「提示词」页把正面提示词放在上面、负面在下面，不再跟着节点在工作流里的先后。

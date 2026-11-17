@@ -109,7 +109,7 @@ covered by the `styles.css` manifest.
   `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model;
   its first field is the gist, the picture in words the AI may read, handed on as written but for the
   words the user marked to hide, which go as tokens inside it; `web/modules/ai_hide_mark.js` is that
-  mark, its Hide button marking words in the focused chip note field or message input, and `sealedParts` / `renderHiddenText` rendering `[P*]` sealed segments in timeline messages (`ui_ai_step_body.js`, with a "View as AI" toggle alongside `[M*]` route token badges), ref notes, and prompt-box gists (`ai_sealed.seal_marked` seals marked words in both text and ref notes);
+  mark, its Hide button marking words in the focused chip note field or message input, and `sealedParts` / `renderHiddenText` rendering `[P*]` sealed segments in timeline messages (`ui_ai_step_body.js`, with a line under the bubble saying what the AI got: the same words with its tokens, `[M*]` too for a route), ref notes, and prompt-box gists (`ai_sealed.seal_marked` seals marked words in both text and ref notes);
   the privacy skill tells the AI how to work). `api/ai_sealed.py` also applies `get_model`'s field keys (`description`, `user_notes`) on any `model_id` dict anywhere in tool answers (including `"models"` message refs). `api/ai_sealed_models.py` keeps a private task's model names too
   (the Gates window's "Model names in a private task", on unless turned off): each model of the library is one
   token ("[M1]", sealed as its model_id) however an answer writes it (model_id, loader name, file name in a text,
@@ -127,9 +127,9 @@ covered by the `styles.css` manifest.
   `web/modules/ai_privacy_view.js` builds the pure classification & AI-perspective preview of hidden tokens, per-model
   catalog switches, a hidden prompt as Prompt Studio's tags and the parts a split sends, and unsealed messages/gists;
   `web/modules/ui_ai_privacy_adjust.js` draws a hidden prompt as Prompt Studio's chips (meanings on request through
-  `prompt_gloss.js`) to pick words to let through, and the message phrase sealer; `web/modules/ui_ai_privacy_overview.js` draws the two-column "Privacy
-  overview" modal (`隐私一览`, clean single outer scroll + 3-line clamped prompts) with thumbnails, model controls, and
-  inline per-token AI notes; `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview), the switch
+  `prompt_gloss.js`) to pick words to let through, and the message phrase sealer; `web/modules/ui_ai_privacy_overview.js` draws the "Privacy
+  overview" modal (`隐私一览`, one column: a head with the privacy and model-name switches, three counts, what the AI
+  can't see with the token it gets for each and a note for the AI, then what it can see); `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview), the switch
   in its ⋯, and what the model tokens stand for.
   `api/ai_darkroom.py` is the darkroom helper, an extension: a model on this computer (an OpenAI-style server on
   a loopback address, nothing else taken, no proxy, no redirect) that reads for a private task what the AI app

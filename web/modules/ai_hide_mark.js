@@ -69,21 +69,14 @@ export function sealedParts(text, sealed) {
 }
 
 /**
- * Renders `text` into a DocumentFragment with sealed segments visually marked (`masked=true` shows the
- * exact token string the AI receives). `lockIcon` optionally returns a lock SVG element for user view.
+ * Renders `text` into a DocumentFragment with sealed segments visually marked: each one's words behind
+ * the token the AI gets instead. `lockIcon` optionally returns a lock SVG element for the mark.
  */
-export function renderHiddenText(text, sealed, { masked = false, lockIcon = null } = {}) {
+export function renderHiddenText(text, sealed, { lockIcon = null } = {}) {
     const frag = document.createDocumentFragment();
     for (const part of sealedParts(text, sealed)) {
         if (part.type !== 'sealed') {
             frag.append(document.createTextNode(part.value));
-            continue;
-        }
-        if (masked) {
-            const code = document.createElement('code');
-            code.className = 'anomalous-ai-sealed-token';
-            code.textContent = part.token || '[P]';
-            frag.append(code);
             continue;
         }
         const wrap = document.createElement('span');
