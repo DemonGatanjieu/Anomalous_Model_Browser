@@ -139,7 +139,9 @@ covered by the `styles.css` manifest.
   overview" modal (`隐私一览`, one column or side by side: a head with the privacy and model-name switches, three counts, what the AI
   can't see with the token it gets for each and a note for the AI, then what it can see; a model row unfolds what the AI gets of it
   and opens it in the materials window, back here on close); side by side, `web/modules/ui_ai_privacy_mirror.js` mirrors each
-  prompt slot for slot (`ai_privacy_view.js` `promptMirror`), letting words through or hiding them again; `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview), the switch
+  prompt slot for slot (`ai_privacy_view.js` `promptMirror`), letting words through or hiding them again; `web/modules/ui_ai_privacy_messages.js`
+  draws a message there as the AI got it (Anomalous's own words for the AI one line with its tokens, the words a press away),
+  whether the AI read it, and its two buttons (hide more words, find it on the timeline); `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview), the switch
   in its ⋯, and what the model tokens stand for.
   `api/ai_darkroom.py` is the darkroom helper, an extension: a model on this computer (an OpenAI-style server on
   a loopback address, nothing else taken, no proxy, no redirect) that reads for a private task what the AI app

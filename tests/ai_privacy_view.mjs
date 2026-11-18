@@ -160,4 +160,17 @@ assert.deepEqual(withWords.modelCatalog[0].words, [{ token: '[P1]', text: 'lampg
 assert.equal(withWords.modelCatalog[0].hidden, true);
 assert.equal(withWords.hidden.total, 2);
 
+// The user's own words show in full; what Anomalous wrote for the AI (a route, the picked materials) is one line.
+const said = buildPrivacyOverview({
+    id: 't3',
+    private: true,
+    sealed: { '[M1]': 'checkpoints:0:a.safetensors' },
+    steps: [
+        { id: 's1', kind: 'user', tool: 'user_toolbox', text: 'The user picked these for you to work with: [M1].' },
+        { id: 's2', kind: 'user', tool: 'user_route', text: 'The user chose route one_pass.', note: '就用这个' },
+        { id: 's3', kind: 'user', tool: 'user_message', text: '暖一点' },
+    ],
+}).visible.messages;
+assert.deepEqual(said.map(msg => [msg.tool, msg.own]), [['user_toolbox', false], ['user_route', true], ['user_message', true]]);
+
 console.log('ai_privacy_view: ok');

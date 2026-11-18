@@ -2,6 +2,8 @@
 
 ## v1.64.0 — unreleased
 
+- 「隐私一览」字少了很多：蓝色文字按钮都换成灰色圆角小按钮；每条一块浅色圆角底，不再画线；“给 AI 的备注”收成一个小按钮，点了才出输入框；代号旁不再写“已换成代号”，鼠标停上去才说；AMB 替你写给 AI 的英文说明只显示一行（「你选的出图方法」「你在素材窗挑的东西」和里面的代号），点「AI 收到的原话」才展开；「补充藏词」「跳到时间线」变成两个小图标。
+- The Privacy overview says much less: quiet grey buttons instead of blue text links, each row a soft card, the note for the AI behind a small button, tokens without “Swapped for”, and Anomalous's own English messages to the AI one line each (“What the AI got” unfolds them); hiding more words and finding a message on the timeline are two small icons.
 - 隐私任务也能让 AI 看一小块图了：标图窗口里，方框旁点「给 AI 看」，只有那一块（周围留一圈、你框的地方用红色虚线标出）发给 AI，用来看这一处的光影和衔接；图里的工作流、提示词这些文字全部去掉，跑图还是用本机的原图，重绘的范围照你画的不变。框得超过整张图一半会先问一句。AI 自己没有办法裁图，只有你框的才会发出去。
 - 「隐私一览」里多了「跑一张替身样图给 AI 看」：用这个任务最后一张图的工作流（同样的模型、LoRA、参数、种子），只把提示词换成无害的静物跑一张，让 AI 看光影和画风；用了参考图的工作流不跑。放给 AI 看过的图都列在「你放给 AI 看的图」里。
 - In a private task the AI can now see a small part of a picture: "Show the AI" beside a box in the marker sends only that part (with a margin, your box in red dashes), drawn anew with no workflow or prompt text in it; the run still uses the original here and the repaint area stays as drawn. Boxes over half the picture ask first. The AI cannot cut pictures itself.

@@ -79,11 +79,12 @@ export function renderHiddenPrompt(item, task, { onApplied }) {
     };
 
     const tools = el('div', 'anomalous-ai-priv-prompt-tools');
-    tools.append(el('span', '', t(mode === 'tags' ? 'aiPrivacyChipsHint' : 'aiPrivacyTextHint')));
+    const hint = t(mode === 'tags' ? 'aiPrivacyChipsHint' : 'aiPrivacyTextHint'); // on hover, not one more line
     box.append(tools);
 
     if (mode === 'tags') {
         const chips = el('div', 'anomalous-ps-tags anomalous-ai-priv-chips');
+        chips.title = hint;
         const glosses = [];
         items.forEach((part, index) => {
             if (!part.text) return;
@@ -148,6 +149,7 @@ export function renderHiddenPrompt(item, task, { onApplied }) {
         const area = document.createElement('textarea');
         area.className = 'anomalous-ai-priv-adjust-area';
         area.readOnly = true;
+        area.title = hint;
         area.rows = Math.min(5, Math.max(1, Math.ceil(item.text.length / 48)));
         area.value = item.text;
         const take = () => {

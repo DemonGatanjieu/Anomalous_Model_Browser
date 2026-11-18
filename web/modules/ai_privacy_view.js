@@ -17,6 +17,7 @@ const MODEL_PREFIX_RE = /^([\w-]+):\d+:(.+)$/;
 const MODEL_EXT_RE = /\.(safetensors|ckpt|pt|pth|bin|gguf|sft|onnx)$/i;
 const ANY_TOKEN_RE = /^\[(?:P|img|M)\d+\]$/;
 const USER_MSG_TOOLS = new Set(['user_message', 'user_route', 'user_marks', 'user_pictures', 'user_toolbox']);
+const OWN_WORDS_TOOLS = new Set(['user_message', 'user_marks']); // the others are Anomalous's words unless a note
 
 /** Numeric order for `[P2]` before `[P10]`. */
 export function tokenOrder(token) {
@@ -240,6 +241,7 @@ function collectVisibleMessages(task, opts) {
                 stepId: step.id,
                 at: step.at || 0,
                 tool: step.tool,
+                own: OWN_WORDS_TOOLS.has(step.tool) || Boolean(String(step.note || '').trim()),
                 delivered: Boolean(step.delivered),
                 late,
                 raw,
@@ -255,6 +257,7 @@ function collectVisibleMessages(task, opts) {
                 stepId: step.id,
                 at: step.at || 0,
                 tool: 'panel',
+                own: true,
                 delivered: Boolean(step.answers?.prompts?.delivered || step.answers?.answer?.delivered),
                 late: [],
                 raw,

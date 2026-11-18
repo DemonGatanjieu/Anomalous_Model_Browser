@@ -7,7 +7,8 @@
  *   pictures and models (hide / show each, kept with the model for every task, api/ai_model_choice.py;
  *   a model's trigger words under it), each with the token the AI gets and a note for the AI
  * - "What the AI can see": the title, real model names, words let through, the messages as the AI
- *   got them (+ hide more words afterwards), the notes, the canvas
+ *   got them (ui_ai_privacy_messages.js), the notes, the canvas
+ * A note for the AI sits behind a small button until it has words.
  * A model row unfolds what the AI gets of it and what stays here, and opens it in the materials window
  * (its switch and description paragraphs, ui_ai_toolbox.js), coming back here when that closes. The window
  * reads in one column or side by side (the choice kept in this browser), the prompts then mirrored slot by
@@ -17,9 +18,9 @@
 import { translate as t } from './locales.js';
 import { MAX_SEALED_NOTE, buildPrivacyOverview, compareTokens } from './ai_privacy_view.js';
 import { aiWindow } from './ui_ai_connect.js';
-import { showStepRow } from './ui_ai_decisions.js';
 import { icon } from './ui_ai_icons.js';
-import { postPrivacyRule, renderHiddenPrompt, renderMessageSealer } from './ui_ai_privacy_adjust.js';
+import { postPrivacyRule, renderHiddenPrompt } from './ui_ai_privacy_adjust.js';
+import { renderMessagePreview, tokenBadge } from './ui_ai_privacy_messages.js';
 import { promptMirrors } from './ui_ai_privacy_mirror.js';
 import { openToolbox } from './ui_ai_toolbox.js';
 import { loadCatalog } from './ai_toolbox_data.js';
@@ -53,14 +54,11 @@ function el(tag, className, text) {
     return node;
 }
 
-function tokenBadge(token) {
-    return el('span', 'anomalous-ai-priv-token', token);
-}
-
-/** What the AI gets in place of a hidden item. */
+/** What the AI gets in place of a hidden item: the token, the words saying so on hover. */
 function seesPill(token) {
     const pill = el('span', 'anomalous-ai-priv-sees');
-    pill.append(icon('lock', 11), el('span', '', t('aiPrivacySees', { token })));
+    pill.title = t('aiPrivacySees', { token });
+    pill.append(icon('lock', 11), el('span', '', token));
     return pill;
 }
 
@@ -137,7 +135,18 @@ function attachNoteInput(row, token, currentNote, placeholder, ctx) {
         }
     };
     note.append(icon('pencil', 13), input, state);
-    row.append(note);
+    if (input.value) {
+        row.append(note);
+        return;
+    }
+    const add = el('button', 'anomalous-ai-priv-note-add');
+    add.type = 'button';
+    add.append(icon('pencil', 12), el('span', '', t('aiPrivacyNoteLabel')));
+    add.onclick = () => {
+        add.replaceWith(note);
+        input.focus();
+    };
+    row.append(add);
 }
 
 /** A row of "What the AI can't see": its name, what it is, the token the AI gets instead. */
@@ -241,45 +250,6 @@ function renderModelRow(model, task, ctx) {
     }
     if (model.hidden && model.token) attachNoteInput(row, model.token, model.note, t('aiPrivacyNotePlaceholderM'), ctx);
     return row;
-}
-
-/** A message as the AI got it, whether it has read it, and the ways to hide more of it or find it. */
-function renderMessagePreview(msg, task, { closeOverview, onAdjusted }) {
-    const wrap = el('div', 'anomalous-ai-priv-msg');
-    const body = el('div', 'anomalous-ai-priv-msg-text');
-    const late = new Set(msg.late || []);
-    for (const seg of msg.segments || []) {
-        if (seg.type === 'token') body.append(Object.assign(tokenBadge(seg.token), late.has(seg.token) ? { className: 'anomalous-ai-priv-token is-late' } : {}));
-        else body.append(document.createTextNode(seg.text));
-    }
-    wrap.append(body);
-    if (late.size) {
-        wrap.classList.add('is-late');
-        const line = el('div', 'anomalous-ai-priv-msg-late');
-        line.append(icon('alert', 12), el('span', '', t('aiPrivacyMsgLate', { tokens: [...late].join(t('listSeparator')) })));
-        wrap.append(line);
-    }
-    if (!msg.hasPlaintext) wrap.append(el('div', 'anomalous-ai-priv-msg-only-tokens', t('aiPrivacyMsgAllSealed')));
-
-    const foot = el('div', 'anomalous-ai-priv-msg-foot');
-    foot.append(el('span', `anomalous-ai-priv-delivery${msg.delivered ? ' is-read' : ''}`,
-        t(msg.delivered ? 'aiPrivacyMsgRead' : 'aiPrivacyMsgWaiting')));
-    if (msg.hasPlaintext) {
-        let sealer = null;
-        foot.append(linkButton(t('aiPrivacySealMoreBtn'), () => {
-            if (sealer) { sealer.remove(); sealer = null; return; }
-            sealer = renderMessageSealer(msg, task, {
-                onClose: () => { sealer?.remove(); sealer = null; },
-                onApplied: () => onAdjusted(),
-            });
-            wrap.append(sealer);
-        }));
-    }
-    const jump = linkButton(t('aiPrivacyMsgJump'), () => { closeOverview(); showStepRow(msg.stepId); });
-    jump.title = t('aiPrivacyMsgJumpHint');
-    foot.append(jump);
-    wrap.append(foot);
-    return wrap;
 }
 
 function renderVisibleNotes(box, notesMap) {
@@ -529,8 +499,10 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
                     said.textContent = error.message;
                 }
             };
+            const none = el('div', '', t('aiPrivacyVisibleReleasedNone'));
+            none.title = t('aiPrivacyVisibleReleasedHow');
             visibleSec.append(visibleRow('image', t('aiPrivacyVisibleReleased'),
-                released.length ? releasedThumbs(task.id, released, window.anomalousBrowserInstance) : el('div', '', t('aiPrivacyVisibleReleasedNone')), standin, said));
+                released.length ? releasedThumbs(task.id, released, window.anomalousBrowserInstance) : none, standin, said));
         }
         visibleSec.append(visibleRow('pencil', t('aiPrivacyVisibleNotes'), visibleNotesList));
         const canvas = [el('div', '', t('aiPrivacyVisibleCanvasDesc'))];
