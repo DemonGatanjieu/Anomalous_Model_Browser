@@ -136,9 +136,11 @@ covered by the `styles.css` manifest.
   catalog switches, a hidden prompt as Prompt Studio's tags and the parts a split sends, and unsealed messages/gists;
   `web/modules/ui_ai_privacy_adjust.js` draws a hidden prompt as Prompt Studio's chips (meanings on request through
   `prompt_gloss.js`) to pick words to let through, and the message phrase sealer; `web/modules/ui_ai_privacy_overview.js` draws the "Privacy
-  overview" modal (`隐私一览`, one column or side by side: a head with the privacy and model-name switches, three counts, what the AI
-  can't see with the token it gets for each and a note for the AI, then what it can see; a model row unfolds what the AI gets of it
-  and opens it in the materials window, back here on close); side by side, `web/modules/ui_ai_privacy_mirror.js` mirrors each
+  overview" modal (`隐私一览`, sorted by kind: a head with the privacy and model-name switches, a row of doors saying how each kind
+  stands, then one table each for prompts, models, pictures, messages and the rest; side by side, each table splits into what stays
+  here and what the AI reads); `web/modules/ui_ai_privacy_rows.js` draws its rows, each badged at the left (a lock with the token the AI
+  gets, or an eye): a hidden prompt, a hidden picture, a model (its name switch, what the AI gets of it unfolded, the materials window on
+  it, back here on close) and the note for the AI behind a small button; side by side, `web/modules/ui_ai_privacy_mirror.js` mirrors each
   prompt slot for slot (`ai_privacy_view.js` `promptMirror`), letting words through or hiding them again; `web/modules/ui_ai_privacy_messages.js`
   draws a message there as the AI got it (Anomalous's own words for the AI one line with its tokens, the words a press away),
   whether the AI read it, and its two buttons (hide more words, find it on the timeline); `web/modules/ui_ai_privacy.js` is the header's chip (opening Privacy Overview), the switch

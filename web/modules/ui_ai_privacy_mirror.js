@@ -12,6 +12,7 @@ import { translate as t } from './locales.js';
 import { partsShowingTags, promptMirror } from './ai_privacy_view.js';
 import { icon } from './ui_ai_icons.js';
 import { postPrivacyRule } from './ui_ai_privacy_adjust.js';
+import { eyeBadge, lockBadge, trow } from './ui_ai_privacy_rows.js';
 import { anomalousAlert } from './ui_dialog.js';
 
 function el(tag, className, text) {
@@ -42,19 +43,23 @@ async function letThrough(task, slots) {
 }
 
 /**
- * The side-by-side rows of `task`'s hidden `prompts`: { left, right } nodes, one row each per prompt.
- * `noteFor(token)` draws the note field of an active token (under the left row); `onApplied()` redraws.
+ * The side-by-side rows of `task`'s hidden `prompts`: { left, right } nodes, one row each per prompt, the left
+ * one badged with its token, the right one with an eye.
+ * `noteFor(token, named)` draws the note field of an active token under the left row (`named`: the row holds
+ * more than one token, so the field says which); `onApplied()` redraws.
  */
 export function promptMirrors(task, prompts, { noteFor, onApplied }) {
     const left = [];
     const right = [];
-    promptMirror(task, prompts).forEach((row, at) => {
+    promptMirror(task, prompts).forEach((row) => {
         const picked = new Set();
         const pairs = row.slots.map(slot => [slotButton(slot, 'left'), slotButton(slot, 'right')]);
-        const leftRow = el('div', 'anomalous-ai-priv-row anomalous-ai-priv-mirror is-left');
-        const rightRow = el('div', 'anomalous-ai-priv-row anomalous-ai-priv-mirror is-right');
-        leftRow.append(el('strong', 'anomalous-ai-priv-row-title', t('aiPrivacyPromptNth', { n: at + 1 })));
-        rightRow.append(el('strong', 'anomalous-ai-priv-row-title', t('aiPrivacyMirrorRight', { n: at + 1 })));
+        const leftBody = el('div', 'anomalous-ai-priv-trow-stack');
+        const rightBody = el('div', 'anomalous-ai-priv-trow-stack');
+        const leftRow = trow(lockBadge(row.token), leftBody);
+        const rightRow = trow(eyeBadge(), rightBody);
+        leftRow.classList.add('anomalous-ai-priv-mirror', 'is-left');
+        rightRow.classList.add('anomalous-ai-priv-mirror', 'is-right');
         const leftSlots = el('div', 'anomalous-ai-priv-slots');
         const rightSlots = el('div', 'anomalous-ai-priv-slots');
         leftSlots.append(...pairs.map(pair => pair[0]));
@@ -106,9 +111,10 @@ export function promptMirrors(task, prompts, { noteFor, onApplied }) {
                 await postPrivacyRule(task, { action: 'seal_message_phrase', phrase: slot.text });
             }
         });
-        leftRow.append(leftSlots, bar);
-        for (const token of [...new Set(row.slots.filter(slot => !slot.shown).map(slot => slot.token))]) leftRow.append(noteFor(token));
-        rightRow.append(rightSlots);
+        leftBody.append(leftSlots, bar);
+        const tokens = [...new Set(row.slots.filter(slot => !slot.shown).map(slot => slot.token))];
+        for (const token of tokens) leftBody.append(noteFor(token, tokens.length > 1));
+        rightBody.append(rightSlots);
         left.push(leftRow);
         right.push(rightRow);
     });

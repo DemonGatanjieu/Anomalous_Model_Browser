@@ -118,11 +118,14 @@ export function renderHiddenPrompt(item, task, { onApplied }) {
         box.append(chips);
         if (glosses.length > MANY_TAGS) {
             chips.classList.add('is-folded');
-            const more = el('button', 'anomalous-ai-link anomalous-ai-priv-chips-more', t('aiPrivacyShowAllTags', { count: glosses.length }));
+            const more = el('button', 'anomalous-ai-link anomalous-ai-priv-chips-more');
             more.type = 'button';
+            const words = el('span', '', t('aiPrivacyShowAllTags', { count: glosses.length }));
+            more.append(icon('chevronDown', 12), words);
             more.onclick = () => {
                 const folded = chips.classList.toggle('is-folded');
-                more.textContent = folded ? t('aiPrivacyShowAllTags', { count: glosses.length }) : t('aiPrivacyCollapseText');
+                more.classList.toggle('is-open', !folded);
+                words.textContent = folded ? t('aiPrivacyShowAllTags', { count: glosses.length }) : t('aiPrivacyCollapseText');
             };
             box.append(more);
         }

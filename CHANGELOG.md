@@ -2,6 +2,8 @@
 
 ## v1.64.0 — unreleased
 
+- 「隐私一览」改成按种类分桌，一眼知道往哪看：顶上一排门牌（提示词、模型、图、留言、其他），每格写几个，再用小圆点说明情况（黄：AI 只拿到代号；绿：AI 看得到；一半一半：都有），点一下跳到那一桌；下面每类一张卡片，每行最左边一个小标签，黄色的锁加代号，或绿色的眼睛。提示词不再编号；按钮前面都加了小图标。左右对照改成每一桌里面分左右，同一行对齐。
+- The Privacy overview is sorted by kind: a row of doors (prompts, models, pictures, messages, other) saying how many and, by a dot, whether the AI gets only tokens, reads them, or both, each a press away from its table; every row starts with a badge, a lock with the token or an eye. Prompts are no longer numbered, buttons carry icons, and side by side now splits each table.
 - AI 页面的图全部换了画风：从亮晶晶的立体图换成谷歌风的平涂图（柔和的蓝、青、黄，没有闪光），主页的六张卡片、三步引导、空白页、素材窗、隐私一览顶上的图都换了，跟按钮上的细线条图标更搭；深色主题下线条也看得清。别的窗口里画成蓝色文字的按钮（主页、扫描、当前节点、反馈、语音导入、AI 工作台、定下的事）也都换成灰色圆角小按钮；真正打开网页的链接不变。
 - The AI pages' pictures are redrawn in a flat Google-like style (soft blue, teal and yellow, no sparkle), matching the line icons; strokes stay visible on the dark theme. Buttons drawn as blue text elsewhere (home, scan, current node, feedback, voice import, the AI workbench, decisions) are grey pills now; real links to web pages stay links.
 - 「隐私一览」字少了很多：蓝色文字按钮都换成灰色圆角小按钮；每条一块浅色圆角底，不再画线；“给 AI 的备注”收成一个小按钮，点了才出输入框；代号旁不再写“已换成代号”，鼠标停上去才说；AMB 替你写给 AI 的英文说明只显示一行（「你选的出图方法」「你在素材窗挑的东西」和里面的代号），点「AI 收到的原话」才展开；「补充藏词」「跳到时间线」变成两个小图标。

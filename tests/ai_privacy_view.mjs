@@ -169,8 +169,9 @@ const said = buildPrivacyOverview({
         { id: 's1', kind: 'user', tool: 'user_toolbox', text: 'The user picked these for you to work with: [M1].' },
         { id: 's2', kind: 'user', tool: 'user_route', text: 'The user chose route one_pass.', note: '就用这个' },
         { id: 's3', kind: 'user', tool: 'user_message', text: '暖一点' },
+        { id: 's4', kind: 'user', tool: 'user_marks', text: 'Mark 1 (box): 手不对. The user let you see 1 part(s) of this picture.' },
     ],
 }).visible.messages;
-assert.deepEqual(said.map(msg => [msg.tool, msg.own]), [['user_toolbox', false], ['user_route', true], ['user_message', true]]);
+assert.deepEqual(said.map(msg => [msg.tool, msg.own]), [['user_toolbox', false], ['user_route', true], ['user_message', true], ['user_marks', false]]);
 
 console.log('ai_privacy_view: ok');

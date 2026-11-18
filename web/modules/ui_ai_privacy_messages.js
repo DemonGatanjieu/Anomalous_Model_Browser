@@ -43,8 +43,9 @@ export function renderMessagePreview(msg, task, { closeOverview, onAdjusted }) {
         line.append(el('span', '', t(`aiPrivacyMsgKind_${msg.tool}`)));
         const tokens = new Set((msg.segments || []).filter(seg => seg.type === 'token').map(seg => seg.token));
         for (const token of tokens) line.append(tokenBadge(token, late.has(token)));
-        const words = el('button', 'anomalous-ai-priv-link', t('aiPrivacyMsgWords'));
+        const words = el('button', 'anomalous-ai-priv-link');
         words.type = 'button';
+        words.append(icon('chat', 12), el('span', '', t('aiPrivacyMsgWords')));
         words.setAttribute('aria-expanded', 'false');
         words.onclick = () => {
             const open = !body.isConnected;

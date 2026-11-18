@@ -539,14 +539,38 @@
 .anomalous-ai-priv-layouts { display: inline-flex; margin-left: auto; margin-right: 8px; padding: 2px; border: 1px solid var(--amb-border); border-radius: 9px; }
 .anomalous-ai-priv-layout { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border: 0; border-radius: 7px; background: transparent; color: var(--amb-text-dim); font: inherit; font-size: 12px; cursor: pointer; }
 .anomalous-ai-priv-layout[aria-checked="true"] { background: var(--amb-bg-input); color: var(--amb-text-main); }
-.anomalous-ai-priv-columns { display: flex; flex-direction: column; gap: 18px; }
-/* Side by side: the same cards; a bar over each column says which side it is (one outer scroll only). */
-.anomalous-ai-priv-columns.is-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 20px; }
-.anomalous-ai-priv-columns.is-split > .anomalous-ai-priv-section { padding-top: 10px; border-top: 3px solid color-mix(in srgb, var(--amb-warn) 70%, transparent); }
-.anomalous-ai-priv-columns.is-split > .anomalous-ai-priv-section + .anomalous-ai-priv-section { border-top-color: color-mix(in srgb, var(--amb-ok) 70%, transparent); }
+/* Doors: one per kind, a dot saying how it stands (warm: tokens only, green: the AI reads it, both: half each). */
+.anomalous-ai-priv-doors { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+.anomalous-ai-priv-door { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 9px 11px; border: 0; border-radius: 12px; background: rgba(var(--amb-ink-rgb), 0.05); color: var(--amb-text-main); font: inherit; text-align: start; cursor: pointer; }
+.anomalous-ai-priv-door:hover, .anomalous-ai-priv-door:focus-visible { background: rgba(var(--amb-ink-rgb), 0.1); }
+.anomalous-ai-priv-door-name { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.anomalous-ai-priv-door-name > svg { color: var(--amb-text-soft); }
+.anomalous-ai-priv-door-lines { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; color: var(--amb-text-soft); font-size: 11.5px; }
+.anomalous-ai-priv-door-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amb-text-dim); }
+.anomalous-ai-priv-door.is-lock .anomalous-ai-priv-door-dot { background: var(--amb-warn); }
+.anomalous-ai-priv-door.is-eye .anomalous-ai-priv-door-dot { background: var(--amb-ok); }
+.anomalous-ai-priv-door.is-mixed .anomalous-ai-priv-door-dot { background: linear-gradient(90deg, var(--amb-warn) 50%, var(--amb-ok) 50%); }
+/* One table per kind: a card, its rows split by hairlines, a badge column at the left of each row. */
+.anomalous-ai-priv-table { display: flex; flex-direction: column; padding: 4px 14px 6px; border-radius: 12px; background: rgba(var(--amb-ink-rgb), 0.04); scroll-margin-top: 8px; }
+.anomalous-ai-priv-table-head { display: flex; align-items: center; gap: 7px; margin: 0; padding: 9px 0 6px; color: var(--amb-text-main); font-size: 14px; font-weight: 600; }
+.anomalous-ai-priv-table-head > svg { color: var(--amb-text-soft); }
+.anomalous-ai-priv-trow { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: start; gap: 10px; padding: 10px 0; border-top: 1px solid var(--amb-border); }
+.anomalous-ai-priv-trow-badge { display: flex; padding-top: 1px; }
+.anomalous-ai-priv-trow-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.55; overflow-wrap: anywhere; }
+.anomalous-ai-priv-trow-stack { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.anomalous-ai-priv-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.anomalous-ai-priv-badge.is-lock { background: color-mix(in srgb, var(--amb-warn) 16%, transparent); color: var(--amb-warn-text, var(--amb-warn)); }
+.anomalous-ai-priv-badge.is-eye { background: color-mix(in srgb, var(--amb-ok) 14%, transparent); color: var(--amb-ok-text, var(--amb-ok)); }
+.anomalous-ai-priv-labelled { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.anomalous-ai-priv-row-value { color: var(--amb-text-main); }
+/* Side by side inside a table: what stays here on the left, what the AI reads on the right, pairs on one line. */
+.anomalous-ai-priv-pairs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 20px; }
+.anomalous-ai-priv-side { padding: 4px 0 6px; border-top: 3px solid color-mix(in srgb, var(--amb-warn) 70%, transparent); color: var(--amb-text-soft); font-size: 11.5px; }
+.anomalous-ai-priv-side.is-ai { border-top-color: color-mix(in srgb, var(--amb-ok) 70%, transparent); }
 @media (max-width: 900px) {
     .anomalous-ai-connect-dialog.is-privacy-overview.is-split { width: min(760px, 94vw); }
-    .anomalous-ai-priv-columns.is-split { grid-template-columns: minmax(0, 1fr); }
+    .anomalous-ai-priv-pairs { grid-template-columns: minmax(0, 1fr); }
+    .anomalous-ai-priv-side.is-ai { display: none; }
     .anomalous-ai-priv-layouts { display: none; }
 }
 /* A prompt mirrored on both sides (ui_ai_privacy_mirror.js): the same slots, the same widths. */
@@ -569,7 +593,7 @@
 .anomalous-ai-priv-reach-list.is-keeps { background: color-mix(in srgb, var(--amb-warn) 9%, transparent); }
 .anomalous-ai-priv-reach-list > strong { font-size: 12px; }
 .anomalous-ai-priv-reach-list > span { color: var(--amb-text-soft); font-weight: 400; }
-.anomalous-ai-priv-overview { display: flex; flex-direction: column; gap: 18px; min-height: 0; }
+.anomalous-ai-priv-overview { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .anomalous-ai-priv-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; }
 .anomalous-ai-priv-head-art { flex: none; width: 176px; height: auto; filter: grayscale(0.85) opacity(0.6); }
 .anomalous-ai-priv-head-art.is-on { filter: none; }
@@ -596,27 +620,13 @@
 .anomalous-ai-priv-switch > input:disabled { opacity: 0.5; cursor: progress; }
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-priv-switch > input { transition: none; } }
 .anomalous-ai-priv-reach { display: flex; align-items: center; gap: 7px; padding: 6px 10px; cursor: help; border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent); border-radius: 10px; background: color-mix(in srgb, var(--amb-warn) 9%, transparent); color: var(--amb-text-main); font-size: 12px; line-height: 1.5; }
-.anomalous-ai-priv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.anomalous-ai-priv-stat { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.045); }
-.anomalous-ai-priv-stat-label { color: var(--amb-text-soft); font-size: 12px; }
-.anomalous-ai-priv-stat-value { color: var(--amb-text-main); font-size: 20px; font-weight: 600; line-height: 1.3; }
-.anomalous-ai-priv-stat-sub { color: var(--amb-text-dim); font-size: 11.5px; }
-.anomalous-ai-priv-section { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.anomalous-ai-priv-section-head { display: flex; align-items: center; gap: 7px; margin: 0; color: var(--amb-text-main); font-size: 14px; font-weight: 600; }
-.anomalous-ai-priv-section-head > svg { color: var(--amb-text-soft); }
-.anomalous-ai-priv-hint { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 6px; color: var(--amb-text-dim); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-priv-save-status { color: var(--amb-ok-text, var(--amb-ok)); font-size: 11.5px; white-space: nowrap; }
-/* Each row a quiet card of its own, no lines between. */
-.anomalous-ai-priv-row, .anomalous-ai-priv-vrow, .anomalous-ai-priv-empty { padding: 12px 14px; border-radius: 12px; background: rgba(var(--amb-ink-rgb), 0.04); }
-.anomalous-ai-priv-row { display: flex; flex-direction: column; gap: 8px; }
 .anomalous-ai-priv-row-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
+.anomalous-ai-priv-row-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 .anomalous-ai-priv-row-title { min-width: 0; color: var(--amb-text-main); font-size: 13.5px; font-weight: 600; overflow-wrap: anywhere; }
 .anomalous-ai-priv-row-meta { color: var(--amb-text-dim); font-size: 12px; }
-.anomalous-ai-priv-sees { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 2px 9px; border-radius: 999px; background: color-mix(in srgb, var(--amb-warn) 15%, transparent); color: var(--amb-warn-text, var(--amb-warn)); font-size: 12px; white-space: nowrap; }
 .anomalous-ai-priv-model-words { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--amb-text-dim); font-size: 12px; }
-.anomalous-ai-priv-model-words > .anomalous-ai-priv-sees { margin-left: 0; }
 .anomalous-ai-priv-model-word { color: var(--amb-text-soft); }
-.anomalous-ai-priv-sees.is-open { background: color-mix(in srgb, var(--amb-danger, #e0645c) 13%, transparent); color: var(--amb-danger, #e0645c); }
 .anomalous-ai-priv-link { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border: 0; border-radius: 999px; background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-main); font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer; }
 .anomalous-ai-priv-link:hover, .anomalous-ai-priv-link:focus-visible { background: rgba(var(--amb-ink-rgb), 0.14); }
 .anomalous-ai-priv-link:disabled { color: var(--amb-text-dim); cursor: progress; }
@@ -629,7 +639,7 @@
 .anomalous-ai-priv-note:focus-within { border-color: var(--amb-link); }
 .anomalous-ai-priv-note-input { flex: 1; min-width: 0; height: 32px; padding: 0; border: 0; outline: 0; background: transparent; color: var(--amb-text-main); font: inherit; font-size: 12.5px; }
 .anomalous-ai-priv-note-state { flex: none; color: var(--amb-ok-text, var(--amb-ok)); font-size: 11px; white-space: nowrap; }
-.anomalous-ai-priv-empty { color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
+.anomalous-ai-priv-empty { padding: 10px 0; border-top: 1px solid var(--amb-border); color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
 /* A hidden prompt as Prompt Studio's chips (ui_ai_privacy_adjust.renderHiddenPrompt): green ones go to the AI. */
 .anomalous-ai-priv-prompt { display: flex; flex-direction: column; gap: 7px; }
 .anomalous-ai-priv-prompt-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; color: var(--amb-text-dim); font-size: 11.5px; }
@@ -650,19 +660,13 @@
 .anomalous-ai-priv-adjust-hint { font-size: 11.5px; color: var(--amb-text-soft); }
 .anomalous-ai-priv-adjust-area { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--amb-border-strong); border-radius: 6px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 12px; resize: vertical; }
 .anomalous-ai-priv-adjust-actions { display: flex; justify-content: flex-end; gap: 6px; }
-/* What the AI can see: an icon, what it is, then what the AI reads of it. */
-.anomalous-ai-priv-vrow { display: flex; align-items: flex-start; gap: 12px; }
-.anomalous-ai-priv-vrow > svg { flex: none; margin-top: 2px; color: var(--amb-text-dim); }
-.anomalous-ai-priv-vrow-body { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.55; overflow-wrap: anywhere; }
-.anomalous-ai-priv-vrow-label { color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
-.anomalous-ai-priv-vrow-value { color: var(--amb-text-main); }
-.anomalous-ai-priv-vrow.is-warn > svg, .anomalous-ai-priv-vrow.is-warn .anomalous-ai-priv-vrow-label { color: var(--amb-danger, #e0645c); }
 /* A message the AI read before some of its words were hidden: those words and a line saying so. */
 .anomalous-ai-priv-token.is-late { outline: 1px dashed var(--amb-danger-text, var(--amb-warn)); }
 .anomalous-ai-priv-msg-late { display: flex; align-items: flex-start; gap: 5px; margin-top: 6px; color: var(--amb-danger-text, var(--amb-warn)); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-priv-msg-late > svg { flex: none; margin-top: 3px; }
 .anomalous-ai-priv-token { margin: 0 1px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--amb-warn) 20%, transparent); color: var(--amb-warn-text, var(--amb-warn)); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-.anomalous-ai-priv-msgs { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.anomalous-ai-priv-msgs { display: flex; flex-direction: column; }
+.anomalous-ai-priv-msgs > .anomalous-ai-priv-link { align-self: flex-start; margin: 4px 0 8px 72px; }
 .anomalous-ai-priv-msg { display: flex; flex-direction: column; gap: 3px; align-self: stretch; }
 .anomalous-ai-priv-msg-text { color: var(--amb-text-main); white-space: pre-wrap; }
 .anomalous-ai-priv-msg-only-tokens { color: var(--amb-ok-text, var(--amb-ok)); font-size: 11.5px; }
@@ -673,7 +677,8 @@
 .anomalous-ai-priv-delivery.is-read { color: var(--amb-ok-text, var(--amb-ok)); }
 .anomalous-ai-priv-vnotes { display: flex; flex-direction: column; gap: 4px; }
 .anomalous-ai-priv-vnote { display: flex; align-items: baseline; gap: 6px; color: var(--amb-text-main); }
-.anomalous-ai-priv-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 2px; }
+.anomalous-ai-priv-foot { display: flex; align-items: center; gap: 10px; padding-top: 2px; }
+.anomalous-ai-priv-foot > .anomalous-ai-priv-done { margin-left: auto; }
 .anomalous-ai-priv-done, .anomalous-ai-tool.is-primary { background: var(--amb-link); border-color: var(--amb-link); color: #fff; font-weight: 600; }
 .anomalous-ai-priv-done { padding: 6px 18px; }
 .anomalous-ai-tool.is-primary:disabled { opacity: 0.48; cursor: default; }

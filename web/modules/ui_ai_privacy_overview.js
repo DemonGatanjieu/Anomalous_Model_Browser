@@ -1,37 +1,36 @@
 /**
- * Privacy Overview window (the header's Privacy chip, ⋯ -> "隐私一览"), one column to read down:
+ * Privacy Overview window (the header's Privacy chip, ⋯ -> "隐私一览"), sorted by kind so a glance says where
+ * to look:
  * - a head saying which privacy settings are in use (the recommended ones: both switches on, one press
  *   away), with its two switches (pictures and prompts kept from the AI, unchosen models hidden)
- * - three counts: hidden prompts, hidden model names, pictures sent
- * - "What the AI can't see": each hidden prompt as Prompt Studio's chips (pick words to let through),
- *   pictures and models (hide / show each, kept with the model for every task, api/ai_model_choice.py;
- *   a model's trigger words under it), each with the token the AI gets and a note for the AI
- * - "What the AI can see": the title, real model names, words let through, the messages as the AI
- *   got them (ui_ai_privacy_messages.js), the notes, the canvas
- * A note for the AI sits behind a small button until it has words.
- * A model row unfolds what the AI gets of it and what stays here, and opens it in the materials window
- * (its switch and description paragraphs, ui_ai_toolbox.js), coming back here when that closes. The window
- * reads in one column or side by side (the choice kept in this browser), the prompts then mirrored slot by
- * slot on both sides (ui_ai_privacy_mirror.js); narrow windows stay one column.
+ * - a row of doors, one per kind (prompts, models, pictures, messages, the rest): how many, and a dot saying
+ *   whether the AI gets only tokens (warm), reads them (green) or both; a press scrolls to that kind's table
+ * - one table per kind, each row with a badge at its left (ui_ai_privacy_rows.js): a lock with the token the
+ *   AI gets, or an eye where it reads the thing as it is. Prompts (as Prompt Studio's chips, words let
+ *   through), models (their name switch, what the AI gets of them, the materials window on them), pictures
+ *   (kept here, released: a boxed part or a stand-in), messages as the AI got them (ui_ai_privacy_messages.js)
+ *   with the notes for the AI, and the rest (the title, the canvas)
+ * Side by side (the choice kept in this browser; narrow windows stay one column), each table splits into
+ * what stays here on the left and what the AI reads on the right, the prompts mirrored slot by slot
+ * (ui_ai_privacy_mirror.js).
  */
 
 import { translate as t } from './locales.js';
 import { MAX_SEALED_NOTE, buildPrivacyOverview, compareTokens } from './ai_privacy_view.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { icon } from './ui_ai_icons.js';
-import { postPrivacyRule, renderHiddenPrompt } from './ui_ai_privacy_adjust.js';
+import { postPrivacyRule } from './ui_ai_privacy_adjust.js';
 import { renderMessagePreview, tokenBadge } from './ui_ai_privacy_messages.js';
 import { promptMirrors } from './ui_ai_privacy_mirror.js';
+import { attachNoteInput, el, eyeBadge, linkButton, lockBadge, modelRow, modelSeesRow, pictureRow, promptRow, trow } from './ui_ai_privacy_rows.js';
 import { openToolbox } from './ui_ai_toolbox.js';
-import { loadCatalog } from './ai_toolbox_data.js';
-import { typeLabel } from './ui_model_types.js';
 import { releasedOf, releasedThumbs, requestStandin } from './ui_ai_released.js';
 import { openSent } from './ui_ai_sent.js';
 import { anomalousAlert } from './ui_dialog.js';
-import { outputThumbnail } from './ui_kept_toast.js';
 
 const INITIAL_MESSAGES = 4;
 const LAYOUT_KEY = 'anomalous_privacy_layout'; // 'split' (side by side) or one column
+const KINDS = { prompts: 'prompts', models: 'models', pictures: 'image', messages: 'chat', other: 'nodes' }; // kind -> its icon
 
 function readLayout() {
     try {
@@ -47,28 +46,6 @@ function keepLayout(layout) {
     } catch (_) { /* this browser keeps nothing: one column next time */ }
 }
 
-function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = String(text);
-    return node;
-}
-
-/** What the AI gets in place of a hidden item: the token, the words saying so on hover. */
-function seesPill(token) {
-    const pill = el('span', 'anomalous-ai-priv-sees');
-    pill.title = t('aiPrivacySees', { token });
-    pill.append(icon('lock', 11), el('span', '', token));
-    return pill;
-}
-
-function linkButton(text, onClick) {
-    const button = el('button', 'anomalous-ai-priv-link', text);
-    button.type = 'button';
-    button.onclick = onClick;
-    return button;
-}
-
 /** An on/off switch: a checkbox drawn as a switch (`role="switch"`; `<input switch>` is not in Chromium yet). */
 function switchRow(label, on, onChange) {
     const row = el('label', 'anomalous-ai-priv-switch');
@@ -81,175 +58,50 @@ function switchRow(label, on, onChange) {
     return row;
 }
 
-function stat(label, value, sub) {
-    const box = el('div', 'anomalous-ai-priv-stat');
-    box.append(el('span', 'anomalous-ai-priv-stat-label', label), el('strong', 'anomalous-ai-priv-stat-value', value));
-    if (sub) box.append(el('span', 'anomalous-ai-priv-stat-sub', sub));
+/** A row's words: what it is in bold, then what the AI reads of it. */
+function labelled(label, ...values) {
+    const box = el('div', 'anomalous-ai-priv-labelled');
+    box.append(el('strong', 'anomalous-ai-priv-row-title', label), ...values.map(value => (typeof value === 'string' ? el('div', 'anomalous-ai-priv-row-value', value) : value)));
     return box;
 }
 
-function section(iconName, title) {
-    const box = el('section', 'anomalous-ai-priv-section');
-    const head = el('h3', 'anomalous-ai-priv-section-head');
-    head.append(icon(iconName, 15), el('span', '', title));
+/**
+ * The table of `kind`: one column of `single`; side by side, `pairs` ([left, right], either may be null) with
+ * what stays here on the left and what the AI reads on the right, when both sides have something.
+ */
+function kindTable(kind, { single, pairs }, split) {
+    const box = el('section', `anomalous-ai-priv-table is-${kind}`);
+    const head = el('h3', 'anomalous-ai-priv-table-head');
+    head.append(icon(KINDS[kind], 15), el('span', '', t(`aiPrivacyKind_${kind}`)));
     box.append(head);
+    if (!(split && pairs?.some(([left]) => left) && pairs.some(([, right]) => right))) {
+        box.append(...single);
+        return box;
+    }
+    const grid = el('div', 'anomalous-ai-priv-pairs');
+    grid.append(el('div', 'anomalous-ai-priv-side is-here', t('aiPrivacyHiddenHead')), el('div', 'anomalous-ai-priv-side is-ai', t('aiPrivacyVisibleHead')));
+    for (const [left, right] of pairs) grid.append(left || el('div'), right || el('div'));
+    box.append(grid);
     return box;
 }
 
-/** A row of "What the AI can see": what it is, then what the AI reads of it. */
-function visibleRow(iconName, label, ...content) {
-    const row = el('div', 'anomalous-ai-priv-vrow');
-    const body = el('div', 'anomalous-ai-priv-vrow-body');
-    body.append(el('div', 'anomalous-ai-priv-vrow-label', label), ...content);
-    row.append(icon(iconName, 16), body);
-    return row;
+/** A door to `table`: the kind, a dot (`state`: lock, eye, mixed or none) and a line or two of how it stands. */
+function door(kind, state, lines, table) {
+    const button = el('button', `anomalous-ai-priv-door is-${state}`);
+    button.type = 'button';
+    const name = el('span', 'anomalous-ai-priv-door-name');
+    name.append(icon(KINDS[kind], 14), el('span', '', t(`aiPrivacyKind_${kind}`)));
+    const say = el('span', 'anomalous-ai-priv-door-lines');
+    say.append(el('i', 'anomalous-ai-priv-door-dot'), ...lines.filter(Boolean).map(line => el('span', '', line)));
+    button.append(name, say);
+    button.onclick = () => table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return button;
 }
 
 function noteStatusText(savedNotes, dirtyTokens, pendingOnServer) {
     if (dirtyTokens.size > 0) return t('aiPrivacyNoteSaving');
     if (!Object.keys(savedNotes).length) return '';
     return pendingOnServer ? t('aiPrivacyNotePending') : t('aiPrivacyNoteDelivered');
-}
-
-function attachNoteInput(row, token, currentNote, placeholder, ctx) {
-    const note = el('label', 'anomalous-ai-priv-note');
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'anomalous-ai-priv-note-input';
-    input.maxLength = MAX_SEALED_NOTE;
-    input.value = ctx.draftNotes[token] ?? currentNote ?? '';
-    input.placeholder = placeholder;
-    input.setAttribute('aria-label', t('aiPrivacyNoteLabel'));
-
-    const state = el('span', 'anomalous-ai-priv-note-state');
-    const syncState = (text = '') => { state.textContent = text; };
-    input.oninput = () => {
-        ctx.draftNotes[token] = input.value;
-        ctx.onDraftChange(token, input.value, syncState);
-    };
-    input.onblur = () => { void ctx.onCommit(token, syncState); };
-    input.onkeydown = (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            input.blur();
-        }
-    };
-    note.append(icon('pencil', 13), input, state);
-    if (input.value) {
-        row.append(note);
-        return;
-    }
-    const add = el('button', 'anomalous-ai-priv-note-add');
-    add.type = 'button';
-    add.append(icon('pencil', 12), el('span', '', t('aiPrivacyNoteLabel')));
-    add.onclick = () => {
-        add.replaceWith(note);
-        input.focus();
-    };
-    row.append(add);
-}
-
-/** A row of "What the AI can't see": its name, what it is, the token the AI gets instead. */
-function itemRow(title, meta, token) {
-    const row = el('div', 'anomalous-ai-priv-row');
-    const head = el('div', 'anomalous-ai-priv-row-head');
-    head.append(el('strong', 'anomalous-ai-priv-row-title', title));
-    if (meta) head.append(el('span', 'anomalous-ai-priv-row-meta', meta));
-    if (token) head.append(seesPill(token));
-    row.append(head);
-    return { row, head };
-}
-
-function renderPromptRow(item, n, task, ctx) {
-    const tags = item.chunks.mode === 'tags' ? item.chunks.items.filter(part => part.text).length : 0;
-    const { row } = itemRow(t(tags ? 'aiPrivacyPromptNth' : 'aiPrivacyTextNth', { n }),
-        tags ? t('aiPrivacyPromptTags', { count: tags }) : '', item.token);
-    row.append(renderHiddenPrompt(item, task, { onApplied: () => ctx.onAdjusted() }));
-    attachNoteInput(row, item.token, item.note, t('aiPrivacyNotePlaceholderP'), ctx);
-    return row;
-}
-
-function renderPictureRow(item, ctx) {
-    const { row, head } = itemRow(item.path, '', item.token);
-    const thumb = document.createElement('img');
-    thumb.className = 'anomalous-ai-priv-thumb';
-    thumb.src = outputThumbnail({ filename: item.filename, subfolder: item.subfolder || '' });
-    thumb.alt = '';
-    thumb.loading = 'lazy';
-    thumb.onerror = () => thumb.remove();
-    head.prepend(thumb);
-    attachNoteInput(row, item.token, item.note, t('aiPrivacyNotePlaceholderImg'), ctx);
-    return row;
-}
-
-/** What the AI gets of `model` and what stays here, read when unfolded (the catalog's base model, the ticked paragraphs). */
-function modelReach(model, task) {
-    const box = el('details', 'anomalous-ai-priv-reach-model');
-    box.append(el('summary', '', t('aiPrivacyReachSummary')));
-    box.addEventListener('toggle', async () => {
-        if (!box.open || box.dataset.read) return;
-        box.dataset.read = '1';
-        const [item, choice] = await Promise.all([
-            loadCatalog().then(items => items.find(entry => entry.kind === 'models' && entry.id === model.id)).catch(() => null),
-            fetch(`/anomalous/ai_model_choice?model_id=${encodeURIComponent(model.id)}`).then(r => (r.ok ? r.json() : {})).catch(() => ({})),
-        ]);
-        const whole = !model.hidden && !task.private; // as the materials window's "The AI gets" line says
-        const picked = choice.picked?.length || 0;
-        const base = item?.base || item?.metadata?.base_guess || '';
-        const gets = [
-            model.hidden ? t('aiPrivacyReachCode', { token: model.token || '[M…]' }) : t('aiPrivacyReachName'),
-            t('aiPrivacyReachType', { type: typeLabel({ type: model.type || '' }) }), base ? t('aiPrivacyReachBase', { base }) : '',
-            t('aiPrivacyReachSettings'),
-            whole ? t('aiPrivacyReachAboutAll') : picked ? t('aiPrivacyReachAboutN', { count: picked }) : t('aiPrivacyReachAboutNone'),
-            item?.words?.length ? t(model.hidden ? 'aiPrivacyReachWordsCode' : 'aiPrivacyReachWords') : '',
-            t('aiPrivacyReachAiNote'),
-        ];
-        const keeps = model.hidden
-            ? ['aiPrivacyKeepName', 'aiPrivacyKeepFolder', 'aiPrivacyKeepCover', 'aiPrivacyKeepCivitai', 'aiPrivacyKeepAboutRest', 'aiPrivacyKeepNotes']
-            : [...(task.private ? ['aiPrivacyKeepCover'] : []), ...(whole ? [] : ['aiPrivacyKeepAboutRest'])];
-        const column = (title, lines, kind) => {
-            const list = el('div', `anomalous-ai-priv-reach-list is-${kind}`);
-            list.append(el('strong', '', title), ...lines.filter(Boolean).map(line => el('span', '', line)));
-            return list;
-        };
-        const columns = el('div', 'anomalous-ai-priv-reach-cols');
-        columns.append(column(t('aiPrivacyReachGets'), gets, 'gets'), column(t('aiPrivacyReachKeeps'), keeps.length ? keeps.map(key => t(key)) : [t('aiPrivacyKeepNothing')], 'keeps'));
-        box.append(columns);
-    });
-    return box;
-}
-
-function renderModelRow(model, task, ctx) {
-    const { row, head } = itemRow(model.file || model.id, model.type, model.hidden ? model.token : '');
-    if (!model.hidden) {
-        const open = el('span', 'anomalous-ai-priv-sees is-open');
-        open.append(icon('eye', 12), el('span', '', t('aiPrivacyModelPublicBadge')));
-        head.append(open);
-    }
-    const flip = linkButton(t(model.hidden ? 'aiPrivacyModelMakePublic' : 'aiPrivacyModelMakeHidden'), async () => {
-        flip.disabled = true;
-        try {
-            await postPrivacyRule(task, { action: 'model_rule', model_id: model.id, hidden: !model.hidden });
-            ctx.onAdjusted();
-        } catch (error) {
-            flip.disabled = false;
-            await anomalousAlert(error.message);
-        }
-    });
-    flip.title = t('aiPrivacyModelFlipHint');
-    head.append(flip);
-    const open = linkButton(t('aiPrivacyModelOpen'), () => ctx.openModel(model));
-    open.title = t('aiPrivacyModelOpenHint');
-    head.append(open);
-    row.append(modelReach(model, task));
-    if (model.words?.length) {
-        const words = el('div', 'anomalous-ai-priv-model-words');
-        words.append(el('span', '', t('aiPrivacyModelWords')));
-        for (const word of model.words) words.append(el('span', 'anomalous-ai-priv-model-word', word.text), seesPill(word.token));
-        row.append(words);
-    }
-    if (model.hidden && model.token) attachNoteInput(row, model.token, model.note, t('aiPrivacyNotePlaceholderM'), ctx);
-    return row;
 }
 
 function renderVisibleNotes(box, notesMap) {
@@ -363,9 +215,9 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
             void openToolbox(task, () => onChanged?.(), { kind: 'models', focus: model.id, layout: 'full', onClose: () => openPrivacyOverview(task, { onTogglePrivacy, onChanged }) });
         };
         const rowCtx = { draftNotes, onDraftChange, onCommit, onAdjusted, openModel };
-        const noteFor = (token) => {
+        const noteFor = (token, named) => {
             const line = el('div', 'anomalous-ai-priv-mirror-note');
-            line.append(tokenBadge(token));
+            if (named) line.append(tokenBadge(token));
             attachNoteInput(line, token, savedNotes[token], t('aiPrivacyNotePlaceholderP'), rowCtx);
             return line;
         };
@@ -396,7 +248,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
                 }
                 close();
                 void onTogglePrivacy(true);
-            }));
+            }, 'shield'));
         }
         const switches = el('div', 'anomalous-ai-priv-switches');
         if (onTogglePrivacy) {
@@ -424,67 +276,24 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
             parts.push(reach);
         }
 
-        const pictures = overview.hidden.generatedPictureCount;
-        const stats = el('div', 'anomalous-ai-priv-stats');
-        stats.append(
-            stat(t('aiPrivacyStatPrompts'), t('aiPrivacyStatPromptsN', { n: overview.hidden.prompts.length })),
-            stat(t('aiPrivacyStatModels'), t('aiPrivacyStatModelsN', { n: overview.modelCatalog.filter(m => m.hidden).length })),
-            stat(t('aiPrivacyStatPictures'), !overview.private ? t('aiPrivacyStatPicturesAll')
-                : releasedOf(task).length ? t('aiPrivacyStatPicturesReleased', { count: releasedOf(task).length }) : t('aiPrivacyStatPicturesNone'),
-                overview.private && pictures ? t('aiPrivacyStatPicturesKept', { count: pictures }) : ''),
-        );
-        parts.push(stats);
+        // Prompts: each hidden one with its token; words let through; side by side, mirrored slot by slot.
+        const prompts = overview.hidden.prompts.map(item => promptRow(item, task, rowCtx));
+        const exposed = overview.exposedPrompts.slice(-4).reverse().map(item => trow(eyeBadge(), el('div', 'anomalous-ai-priv-row-value', item.text)));
+        const promptSingle = prompts.length || exposed.length ? [...prompts, ...exposed] : [el('div', 'anomalous-ai-priv-empty', t('aiPrivacyPromptsNone'))];
+        const promptPairs = mirrors ? [...mirrors.left.map((left, at) => [left, mirrors.right[at]]), ...exposed.map(row => [null, row])] : null;
 
-        // What the AI can't see: each hidden item with its token and a note for the AI.
-        const hiddenSec = section('lock', t('aiPrivacyHiddenHead'));
-        if (overview.hidden.total || overview.modelCatalog.length) {
-            const hint = el('p', 'anomalous-ai-priv-hint');
-            hint.append(statusLine);
-            hiddenSec.append(hint);
-        }
-        if (mirrors) hiddenSec.append(...mirrors.left);
-        else overview.hidden.prompts.forEach((item, at) => hiddenSec.append(renderPromptRow(item, at + 1, task, rowCtx)));
-        for (const item of overview.hidden.pictures) hiddenSec.append(renderPictureRow(item, rowCtx));
-        for (const model of overview.modelCatalog) hiddenSec.append(renderModelRow(model, task, rowCtx));
-        if (!overview.hidden.total && !overview.modelCatalog.length) {
-            hiddenSec.append(el('div', 'anomalous-ai-priv-empty', t('aiPrivacyHiddenEmpty')));
-        }
-        // What the AI can see.
-        const visibleSec = section('eye', t('aiPrivacyVisibleHead'));
-        visibleSec.append(visibleRow('page', t('aiPrivacyVisibleTitle'),
-            el('div', 'anomalous-ai-priv-vrow-value', overview.visible.title || t('aiPrivacyVisibleTitleEmpty'))));
-        if (mirrors?.right.length) visibleSec.append(visibleRow('prompts', t('aiPrivacyMirrorHead'), ...mirrors.right));
+        const models = overview.modelCatalog.map(model => modelRow(model, task, rowCtx));
 
-        const publicModels = overview.modelCatalog.filter(m => !m.hidden);
-        if (publicModels.length) {
-            const row = visibleRow('models', t('aiPrivacyVisibleModelsReal'), ...publicModels.map(m => el('div', '', m.file || m.id)));
-            row.classList.add('is-warn');
-            visibleSec.append(row);
-        }
-        if (overview.exposedPrompts.length) {
-            visibleSec.append(visibleRow('check', t('aiPrivacyVisibleExposedPrompts'),
-                ...overview.exposedPrompts.slice(-4).reverse().map(item => el('div', '', item.text))));
-        }
-
-        const messages = overview.visible.messages;
-        const preview = msg => renderMessagePreview(msg, task, { closeOverview: () => close(), onAdjusted });
-        let msgContent;
-        if (messages.length) {
-            msgContent = el('div', 'anomalous-ai-priv-msgs');
-            msgContent.append(...messages.slice(-INITIAL_MESSAGES).map(preview));
-            if (messages.length > INITIAL_MESSAGES) {
-                const more = linkButton(t('aiPrivacyShowAllMessages', { count: messages.length }), () => msgContent.replaceChildren(...messages.map(preview)));
-                msgContent.append(more);
-            }
-        } else {
-            msgContent = el('div', '', t('aiPrivacyVisibleMessagesNone'));
-        }
-        visibleSec.append(visibleRow('chat', t('aiPrivacyVisibleMessages'), msgContent));
-        if (overview.private) { // the pictures the user released, every one in sight; and a stand-in to release
-            const released = releasedOf(task);
-            const standin = el('button', 'anomalous-ai-tool', t('aiPrivacyStandin'));
+        // Pictures: hidden ones and the pictures made here stay; released parts and stand-ins go to the AI.
+        const pictures = overview.hidden.pictures.map(item => [pictureRow(item, rowCtx), null]);
+        const released = releasedOf(task);
+        const kept = overview.hidden.generatedPictureCount;
+        if (overview.private) {
+            if (kept) pictures.push([trow(lockBadge(), el('div', 'anomalous-ai-priv-row-value', t('aiPrivacyStatPicturesKept', { count: kept }))), null]);
+            const standin = el('button', 'anomalous-ai-tool');
             standin.type = 'button';
             standin.title = t('aiPrivacyStandinHint');
+            standin.append(icon('image', 13), el('span', '', t('aiPrivacyStandin')));
             const said = el('div', 'anomalous-ai-priv-standin-state');
             standin.onclick = async () => {
                 standin.disabled = true;
@@ -499,18 +308,70 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
                     said.textContent = error.message;
                 }
             };
-            const none = el('div', '', t('aiPrivacyVisibleReleasedNone'));
+            const none = el('div', 'anomalous-ai-priv-row-value', t('aiPrivacyVisibleReleasedNone'));
             none.title = t('aiPrivacyVisibleReleasedHow');
-            visibleSec.append(visibleRow('image', t('aiPrivacyVisibleReleased'),
-                released.length ? releasedThumbs(task.id, released, window.anomalousBrowserInstance) : none, standin, said));
+            pictures.push([null, trow(eyeBadge(), labelled(t('aiPrivacyVisibleReleased'),
+                released.length ? releasedThumbs(task.id, released, window.anomalousBrowserInstance) : none, standin, said))]);
+        } else {
+            pictures.push([null, trow(eyeBadge(), el('div', 'anomalous-ai-priv-row-value', t('aiPrivacyDoorPicturesAll')))]);
         }
-        visibleSec.append(visibleRow('pencil', t('aiPrivacyVisibleNotes'), visibleNotesList));
-        const canvas = [el('div', '', t('aiPrivacyVisibleCanvasDesc'))];
-        if (overview.visible.decisionsCount > 0) canvas.push(el('div', '', t('aiPrivacyVisibleDecisions', { n: overview.visible.decisionsCount })));
-        visibleSec.append(visibleRow('nodes', t('aiPrivacyVisibleCanvas'), ...canvas));
-        const columns = el('div', `anomalous-ai-priv-columns${split ? ' is-split' : ''}`);
-        columns.append(hiddenSec, visibleSec);
-        parts.push(columns);
+
+        // Messages as the AI got them, then the notes written for it.
+        const messages = overview.visible.messages;
+        const preview = msg => trow(eyeBadge(), renderMessagePreview(msg, task, { closeOverview: () => close(), onAdjusted }));
+        const messageRows = [];
+        if (messages.length) {
+            const list = el('div', 'anomalous-ai-priv-msgs');
+            list.append(...messages.slice(-INITIAL_MESSAGES).map(preview));
+            if (messages.length > INITIAL_MESSAGES) {
+                list.append(linkButton(t('aiPrivacyShowAllMessages', { count: messages.length }), () => list.replaceChildren(...messages.map(preview)), 'chevronDown'));
+            }
+            messageRows.push(list);
+        } else {
+            messageRows.push(el('div', 'anomalous-ai-priv-empty', t('aiPrivacyVisibleMessagesNone')));
+        }
+        messageRows.push(trow(eyeBadge(), labelled(t('aiPrivacyVisibleNotes'), visibleNotesList)));
+
+        const canvas = [t('aiPrivacyVisibleCanvasDesc')];
+        if (overview.visible.decisionsCount > 0) canvas.push(t('aiPrivacyVisibleDecisions', { n: overview.visible.decisionsCount }));
+        const other = [
+            trow(eyeBadge(), labelled(t('aiPrivacyVisibleTitle'), overview.visible.title || t('aiPrivacyVisibleTitleEmpty'))),
+            trow(eyeBadge(), labelled(t('aiPrivacyVisibleCanvas'), ...canvas)),
+        ];
+
+        const tables = {
+            prompts: kindTable('prompts', { single: promptSingle, pairs: promptPairs }, split),
+            models: models.length ? kindTable('models', { single: models, pairs: models.map((row, at) => [row, modelSeesRow(overview.modelCatalog[at])]) }, split) : null,
+            pictures: kindTable('pictures', { single: pictures.map(pair => pair[0] || pair[1]), pairs: pictures }, split),
+            messages: kindTable('messages', { single: messageRows }, split),
+            other: kindTable('other', { single: other }, split),
+        };
+
+        // Doors: how each kind stands, one press to its table.
+        const hiddenModels = overview.modelCatalog.filter(m => m.hidden).length;
+        const publicModels = overview.modelCatalog.length - hiddenModels;
+        const lettered = overview.exposedPrompts.length;
+        const doors = el('div', 'anomalous-ai-priv-doors');
+        doors.append(
+            door('prompts', overview.hidden.prompts.length ? (lettered ? 'mixed' : 'lock') : lettered ? 'eye' : 'none', [
+                overview.hidden.prompts.length ? t('aiPrivacyDoorPromptsHidden', { n: overview.hidden.prompts.length }) : '',
+                lettered ? t('aiPrivacyDoorPromptsShown', { n: lettered }) : '',
+                overview.hidden.prompts.length || lettered ? '' : t('aiPrivacyDoorNone'),
+            ], tables.prompts),
+        );
+        if (tables.models) {
+            doors.append(door('models', hiddenModels ? (publicModels ? 'mixed' : 'lock') : 'eye', [
+                hiddenModels ? t('aiPrivacyDoorModelsHidden', { n: hiddenModels }) : '',
+                publicModels ? t('aiPrivacyDoorModelsShown', { n: publicModels }) : '',
+            ], tables.models));
+        }
+        doors.append(
+            door('pictures', !overview.private ? 'eye' : released.length ? 'mixed' : 'lock',
+                [!overview.private ? t('aiPrivacyDoorPicturesAll') : released.length ? t('aiPrivacyDoorPicturesReleased', { count: released.length }) : t('aiPrivacyDoorPicturesNone')], tables.pictures),
+            door('messages', messages.length ? 'eye' : 'none', [messages.length ? t('aiPrivacyDoorMessages', { count: messages.length }) : t('aiPrivacyDoorNone')], tables.messages),
+            door('other', 'eye', [t('aiPrivacyDoorSeen')], tables.other),
+        );
+        parts.push(doors, ...Object.values(tables).filter(Boolean));
 
         const foot = el('div', 'anomalous-ai-priv-foot');
         doneBtn = el('button', 'anomalous-ai-tool anomalous-ai-priv-done', t(dirtyTokens.size > 0 ? 'aiPrivacyOverviewSaveClose' : 'aiPrivacyOverviewSaveDone'));
@@ -519,7 +380,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
             if (dirtyTokens.size) void flushPatch([...dirtyTokens]).finally(() => close());
             else close();
         };
-        foot.append(linkButton(t('aiSent'), () => void openSent(task)), doneBtn);
+        foot.append(linkButton(t('aiSent'), () => void openSent(task), 'tray'), statusLine, doneBtn);
         parts.push(foot);
         body.replaceChildren(...parts);
     };

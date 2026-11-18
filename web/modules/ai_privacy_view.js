@@ -17,7 +17,7 @@ const MODEL_PREFIX_RE = /^([\w-]+):\d+:(.+)$/;
 const MODEL_EXT_RE = /\.(safetensors|ckpt|pt|pth|bin|gguf|sft|onnx)$/i;
 const ANY_TOKEN_RE = /^\[(?:P|img|M)\d+\]$/;
 const USER_MSG_TOOLS = new Set(['user_message', 'user_route', 'user_marks', 'user_pictures', 'user_toolbox']);
-const OWN_WORDS_TOOLS = new Set(['user_message', 'user_marks']); // the others are Anomalous's words unless a note
+const OWN_WORDS_TOOLS = new Set(['user_message']); // the others are Anomalous's words unless a note
 
 /** Numeric order for `[P2]` before `[P10]`. */
 export function tokenOrder(token) {
