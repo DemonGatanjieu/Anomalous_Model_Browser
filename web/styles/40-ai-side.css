@@ -248,6 +248,10 @@
 /* An empty view with its picture (ui_ai_art.js emptyState). */
 .anomalous-ai-stage-empty.has-art { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 36px 12px; line-height: 1.6; }
 .anomalous-ai-empty-art { width: 96px; height: 96px; object-fit: contain; }
+/* An AI picture still on its way when shown fades in as it arrives (ui_ai_art.js fadeIn). */
+.anomalous-art-fade { transition: opacity 0.2s ease-out; }
+.anomalous-art-fade.is-arriving { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .anomalous-art-fade { transition: none; } }
 
 /* ---------- a panel's card in the timeline (ui_ai_side.js panelLine) ---------- */
 .anomalous-ai-panel-line {

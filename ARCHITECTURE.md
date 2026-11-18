@@ -673,7 +673,9 @@ covered by the `styles.css` manifest.
   code) with textContent only. A note may answer the user's message or marks (`report`'s
   `reply_to`): the two steps point at each other, and the timeline links them both ways.
   `ui_ai_art.js` holds the AI pages' pictures (`web/assets`, drawn with ChatGPT in one style) and `emptyState`, an empty
-  view made of a picture and one line. `ui_ai_connect.js` says how to connect an AI app: a sentence to send the AI so it sets itself up
+  view made of a picture and one line; `warmArt` asks for the first screens' pictures (the starter cards, a new task's steps)
+  at high priority when the window opens (`browser.js` `show`), once per page, so they arrive with the words, and `fadeIn`
+  lets a picture still on its way fade in. `ui_ai_connect.js` says how to connect an AI app: a sentence to send the AI so it sets itself up
   and starts on a waiting task, a line that turns green once an app has called (`connectionLine`), and folded
   under them the address, each common app's way, the tool list and the rules; in a window from the
   list's "Connect an AI", and as a card (`connectHint`) that opens the guide in place on the

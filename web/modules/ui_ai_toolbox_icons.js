@@ -6,6 +6,7 @@
  * on a colour of that type instead. Static SVG text only; nothing from a user or a file goes in.
  */
 
+import { fadeIn } from './ui_ai_art.js';
 import { icon } from './ui_ai_icons.js';
 import { typeLabel } from './ui_model_types.js';
 
@@ -49,11 +50,11 @@ const ART = {
 function art(src, className) {
     const img = document.createElement('img');
     img.className = className;
-    img.src = src;
     img.alt = '';
     img.decoding = 'async';
     img.setAttribute('aria-hidden', 'true');
-    return img;
+    img.src = src;
+    return fadeIn(img);
 }
 
 /** The picture of an empty selection: a toolbox with cards rising out of it. */

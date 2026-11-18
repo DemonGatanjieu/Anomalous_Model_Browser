@@ -17,6 +17,7 @@
 
 import { translate as t } from './locales.js';
 import { MAX_SEALED_NOTE, buildPrivacyOverview, compareTokens } from './ai_privacy_view.js';
+import { fadeIn } from './ui_ai_art.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { icon } from './ui_ai_icons.js';
 import { postPrivacyRule } from './ui_ai_privacy_adjust.js';
@@ -230,8 +231,9 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         const head = el('div', 'anomalous-ai-priv-head');
         // A picture says what the settings do (words → a code word → the AI): the words can be one line.
         const mark = el('img', `anomalous-ai-priv-head-art${overview.private ? ' is-on' : ''}`);
-        mark.src = new URL('../assets/ai_privacy_codes.webp', import.meta.url).href;
         mark.alt = '';
+        mark.src = new URL('../assets/ai_privacy_codes.webp', import.meta.url).href;
+        fadeIn(mark);
         const copy = el('div', 'anomalous-ai-priv-head-copy');
         copy.append(el('strong', '', t(`aiPrivacyHead${state}`)), el('span', '', t(`aiPrivacyHead${state}Sub`)));
         if (!recommended && onTogglePrivacy) {

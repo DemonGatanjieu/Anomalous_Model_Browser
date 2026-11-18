@@ -11,6 +11,7 @@
 
 import { translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
+import { fadeIn } from './ui_ai_art.js';
 import { openConnectGuide } from './ui_ai_connect.js';
 import { handCanvasToAi } from './ui_ai_canvas_hand.js';
 import { icon } from './ui_ai_icons.js';
@@ -48,10 +49,11 @@ function card(owner, starter, data) {
     const node = button('anomalous-ai-start-card', '', () => (starter.id === 'canvas' ? handCanvasToAi(() => owner) : openStarter(owner, starter, data)));
     node.dataset.starter = starter.id;
     const art = el('img', 'anomalous-ai-start-card-art');
-    art.src = new URL(`../assets/start_${starter.id}.webp`, import.meta.url).href;
     art.alt = '';
     art.decoding = 'async';
     art.onerror = () => art.replaceWith(icon(starter.icon, 28)); // the picture is missing: its icon
+    art.src = new URL(`../assets/start_${starter.id}.webp`, import.meta.url).href;
+    fadeIn(art);
     node.title = cardTags(starter, data).map(tag => t('aiStartTagLine', { tag: t(`aiStartTag_${tag}`), hint: t(`aiStartTagHint_${tag}`) })).join('\n');
     node.append(art, el('span', 'anomalous-ai-start-card-title', t(`aiStart_${starter.id}_title`)),
         el('span', 'anomalous-ai-start-card-body', t(`aiStart_${starter.id}_body`)));

@@ -2,6 +2,8 @@
 
 ## v1.64.0 — unreleased
 
+- 刷新后 AI 页面的图不再比字慢一步：AMB 窗口一打开就先去拿首页卡片和新任务三步的图，并排在 ComfyUI 刚启动时那一大串请求前面；万一还是晚到，图会淡入，不会突然蹦出来。
+- After a refresh the AI pages' pictures no longer come in after the words: the starter cards' and a new task's pictures are asked for first thing when the window opens, ahead of ComfyUI's own burst of requests; one still late fades in.
 - 「隐私一览」改成按种类分桌，一眼知道往哪看：顶上一排门牌（提示词、模型、图、留言、其他），每格写几个，再用小圆点说明情况（黄：AI 只拿到代号；绿：AI 看得到；一半一半：都有），点一下跳到那一桌；下面每类一张卡片，每行最左边一个小标签，黄色的锁加代号，或绿色的眼睛。提示词不再编号；按钮前面都加了小图标。左右对照改成每一桌里面分左右，同一行对齐。
 - The Privacy overview is sorted by kind: a row of doors (prompts, models, pictures, messages, other) saying how many and, by a dot, whether the AI gets only tokens, reads them, or both, each a press away from its table; every row starts with a badge, a lock with the token or an eye. Prompts are no longer numbered, buttons carry icons, and side by side now splits each table.
 - AI 页面的图全部换了画风：从亮晶晶的立体图换成谷歌风的平涂图（柔和的蓝、青、黄，没有闪光），主页的六张卡片、三步引导、空白页、素材窗、隐私一览顶上的图都换了，跟按钮上的细线条图标更搭；深色主题下线条也看得清。别的窗口里画成蓝色文字的按钮（主页、扫描、当前节点、反馈、语音导入、AI 工作台、定下的事）也都换成灰色圆角小按钮；真正打开网页的链接不变。

@@ -16,6 +16,7 @@
 import { marked } from './ai_hide_mark.js';
 import { composeFirstNote, startFactSentence } from './ai_start_from.js';
 import { translate as t } from './locales.js';
+import { fadeIn } from './ui_ai_art.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { startTask } from './ui_ai_handoff.js';
 import { pictureGrid } from './ui_ai_gallery_pick.js';
@@ -227,8 +228,9 @@ export function openStarter(owner, card, data) {
     const scroll = el('div', 'anomalous-ai-start-scroll');
     const head = el('div', 'anomalous-ai-start-sheet-head');
     const picture = el('img', 'anomalous-ai-start-sheet-art');
-    picture.src = new URL(`../assets/start_${card.id}.webp`, import.meta.url).href;
     picture.alt = '';
+    picture.src = new URL(`../assets/start_${card.id}.webp`, import.meta.url).href;
+    fadeIn(picture);
     head.append(picture, ...(fields.start ? [] : [readiness(card, data)]));
     scroll.append(head, ...fields.nodes, lines);
     body.append(scroll, error, actions);

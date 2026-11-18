@@ -33,6 +33,8 @@ import { voiceGroupKey } from './audio_engines.js';
 import { getActiveDomain } from './ui_domain_switcher.js';
 import { startPage } from './ui_shell_nav.js';
 import { followComfyLanguage } from './interface_settings.js';
+import { warmArt } from './ui_ai_art.js';
+import { STARTERS } from './ui_ai_starter_sheet.js';
 
 // What a selected node holds, for the page opening the browser shows (shell_open_rules.js).
 const NODE_KINDS = {
@@ -69,6 +71,7 @@ export class AnomalousBrowser {
      */
     show({ followSelection = false, node = null, page: wanted = null } = {}) {
         followComfyLanguage();
+        warmArt(STARTERS.map(starter => `start_${starter.id}`)); // the home page's cards and a new task's steps, before the page asks
         if (this._idleReleaseTimer) {
             clearTimeout(this._idleReleaseTimer);
             this._idleReleaseTimer = null;
