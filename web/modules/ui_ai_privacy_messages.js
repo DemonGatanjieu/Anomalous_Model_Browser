@@ -106,7 +106,7 @@ function hiddenWords(seg, task) {
         : seg.token.startsWith('[img') ? parsePictureRef(raw).filename : raw;
     const node = el('span', 'anomalous-ai-priv-said');
     node.title = `${said || seg.token}\n${t('aiPrivacySees', { token: seg.token })}`;
-    node.append(icon('lock', 10), el('span', '', said || seg.token));
+    node.append(icon('lock', 10), el('span', 'anomalous-ai-priv-said-words', said || seg.token));
     return node;
 }
 
