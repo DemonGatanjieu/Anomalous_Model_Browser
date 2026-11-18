@@ -254,12 +254,18 @@
 
 .anomalous-pick-link {
     margin-left: auto;
-    padding: 4px 6px;
+    padding: 3px 10px;
     border: none;
-    background: transparent;
-    color: var(--amb-link);
-    font-size: 13px;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-main);
+    font-size: 12.5px;
     cursor: pointer;
+}
+
+.anomalous-pick-link:hover:not(:disabled),
+.anomalous-pick-link:focus-visible {
+    background: rgba(var(--amb-ink-rgb), 0.14);
 }
 
 .anomalous-scan-actions .anomalous-pick-link {

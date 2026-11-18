@@ -1,6 +1,6 @@
 /**
- * The AI pages' pictures (web/assets, drawn with ChatGPT in one style: glossy icons on a transparent
- * ground), so a picture can stand where a paragraph stood: the waiting page's steps, the empty views of
+ * The AI pages' pictures (web/assets, drawn with ChatGPT in one style: flat filled shapes in soft blue,
+ * teal and yellow on a transparent ground, any stroke touching the ground blue so a dark theme shows it), so a picture can stand where a paragraph stood: the waiting page's steps, the empty views of
  * the side column (emptyState), the connect guide, the "Ask first" window. Static files only.
  */
 

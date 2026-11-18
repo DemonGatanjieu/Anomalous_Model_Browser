@@ -441,15 +441,19 @@
 }
 
 .anomalous-tts-link {
-    padding: 0;
+    padding: 3px 10px;
     border: none;
-    background: none;
-    color: var(--amb-link);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 12px;
-    text-decoration: underline;
-    text-underline-offset: 2px;
     cursor: pointer;
+}
+
+.anomalous-tts-link:hover,
+.anomalous-tts-link:focus-visible {
+    background: rgba(var(--amb-ink-rgb), 0.14);
 }
 
 /* ---------- Import window ----------

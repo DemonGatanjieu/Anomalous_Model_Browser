@@ -2,6 +2,8 @@
 
 ## v1.64.0 — unreleased
 
+- AI 页面的图全部换了画风：从亮晶晶的立体图换成谷歌风的平涂图（柔和的蓝、青、黄，没有闪光），主页的六张卡片、三步引导、空白页、素材窗、隐私一览顶上的图都换了，跟按钮上的细线条图标更搭；深色主题下线条也看得清。别的窗口里画成蓝色文字的按钮（主页、扫描、当前节点、反馈、语音导入、AI 工作台、定下的事）也都换成灰色圆角小按钮；真正打开网页的链接不变。
+- The AI pages' pictures are redrawn in a flat Google-like style (soft blue, teal and yellow, no sparkle), matching the line icons; strokes stay visible on the dark theme. Buttons drawn as blue text elsewhere (home, scan, current node, feedback, voice import, the AI workbench, decisions) are grey pills now; real links to web pages stay links.
 - 「隐私一览」字少了很多：蓝色文字按钮都换成灰色圆角小按钮；每条一块浅色圆角底，不再画线；“给 AI 的备注”收成一个小按钮，点了才出输入框；代号旁不再写“已换成代号”，鼠标停上去才说；AMB 替你写给 AI 的英文说明只显示一行（「你选的出图方法」「你在素材窗挑的东西」和里面的代号），点「AI 收到的原话」才展开；「补充藏词」「跳到时间线」变成两个小图标。
 - The Privacy overview says much less: quiet grey buttons instead of blue text links, each row a soft card, the note for the AI behind a small button, tokens without “Swapped for”, and Anomalous's own English messages to the AI one line each (“What the AI got” unfolds them); hiding more words and finding a message on the timeline are two small icons.
 - 隐私任务也能让 AI 看一小块图了：标图窗口里，方框旁点「给 AI 看」，只有那一块（周围留一圈、你框的地方用红色虚线标出）发给 AI，用来看这一处的光影和衔接；图里的工作流、提示词这些文字全部去掉，跑图还是用本机的原图，重绘的范围照你画的不变。框得超过整张图一半会先问一句。AI 自己没有办法裁图，只有你框的才会发出去。

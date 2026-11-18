@@ -363,16 +363,18 @@
 }
 
 .anomalous-home-link {
-    padding: 2px 0;
+    padding: 3px 10px;
     border: none;
-    background: none;
-    color: var(--amb-link);
-    font-size: inherit;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-main);
+    font-size: 12px;
     cursor: pointer;
 }
 
-.anomalous-home-link:hover {
-    text-decoration: underline;
+.anomalous-home-link:hover,
+.anomalous-home-link:focus-visible {
+    background: rgba(var(--amb-ink-rgb), 0.14);
 }
 
 /* The first-run setup above the task cards (ui_first_run.js): four steps, then Set up for me. */
@@ -718,13 +720,20 @@
 
 .anomalous-feedback-link {
     align-self: flex-start;
-    padding: 0 0 0 24px;
+    margin-left: 24px;
+    padding: 3px 10px;
     border: none;
-    background: none;
-    color: var(--amb-link);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
+}
+
+.anomalous-feedback-link:hover,
+.anomalous-feedback-link:focus-visible {
+    background: rgba(var(--amb-ink-rgb), 0.14);
 }
 
 .anomalous-feedback-preview {

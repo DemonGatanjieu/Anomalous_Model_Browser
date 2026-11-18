@@ -362,17 +362,18 @@ button.anomalous-node-param-source:hover { background: color-mix(in srgb, var(--
 
 .anomalous-node-param-link {
     flex-shrink: 0;
-    padding: 0;
+    padding: 3px 10px;
     border: none;
-    background: none;
-    color: var(--amb-link);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-main);
     font: inherit;
     cursor: pointer;
 }
 
-.anomalous-node-param-link:hover {
-    text-decoration: underline;
-    text-underline-offset: 2px;
+.anomalous-node-param-link:hover,
+.anomalous-node-param-link:focus-visible {
+    background: rgba(var(--amb-ink-rgb), 0.14);
 }
 
 /* The values: the name, then a picture of the change (two bars for numbers, old → new otherwise). */
