@@ -2,9 +2,11 @@
 
 ## v1.64.0 — unreleased
 
+- 「隐私一览」默认改成左右对照（选了单栏会记住；窗口太窄时还是单栏），而且每一桌都分左右：留言左边是你写的原样（藏起来的词带锁、用原来的字），右边是 AI 收到的代号；图左边是“原图都留在你电脑上”，右边是放给 AI 看的图；哪边没有东西就写一句“这一类没有藏的”。
 - 「隐私一览」左右对照时也能「看词义」了：每个词的意思写在词下面，左右两边照样一样宽。「看词义」鼠标停上去会说明这些词会发给网上的翻译服务（不是发给 AI）。
 - 主页的「让 AI 帮你做」不再晚一步才冒出来、把下面的「自己动手」往下挤：框和六张卡片跟主页一起出来，最近连接的那一行等读到了再补上。
 - 刷新后 AI 页面的图不再比字慢一步：AMB 窗口一打开就先去拿首页卡片和新任务三步的图，并排在 ComfyUI 刚启动时那一大串请求前面；万一还是晚到，图会淡入，不会突然蹦出来。
+- The Privacy overview opens side by side (one column when chosen, or in a narrow window), and every table splits: a message as written (hidden words locked, in their own words) against what the AI got, the pictures kept here against those released; a side with nothing says so.
 - Side by side, the Privacy overview's prompts can "Show meanings" too, each under its word, both sides still as wide; the button says on hover that the words go to an online translation service, not the AI.
 - The home page's "Let the AI do it" no longer pops in late and pushes the tools below down: the box and its cards come with the page, the last-app line fills in when read.
 - After a refresh the AI pages' pictures no longer come in after the words: the starter cards' and a new task's pictures are asked for first thing when the window opens, ahead of ComfyUI's own burst of requests; one still late fades in.

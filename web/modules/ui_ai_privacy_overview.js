@@ -10,9 +10,10 @@
  *   through), models (their name switch, what the AI gets of them, the materials window on them), pictures
  *   (kept here, released: a boxed part or a stand-in), messages as the AI got them (ui_ai_privacy_messages.js)
  *   with the notes for the AI, and the rest (the title, the canvas)
- * Side by side (the choice kept in this browser; narrow windows stay one column), each table splits into
- * what stays here on the left and what the AI reads on the right, the prompts mirrored slot by slot
- * (ui_ai_privacy_mirror.js).
+ * Side by side (the default; one column when chosen, kept in this browser, and in narrow windows), every table
+ * splits into what stays here on the left and what the AI reads on the right: the prompts mirrored slot by
+ * slot (ui_ai_privacy_mirror.js), a model's name against the token, a message as written against what the AI
+ * got, the pictures kept here against those released; a side with nothing says so.
  */
 
 import { translate as t } from './locales.js';
@@ -21,7 +22,7 @@ import { fadeIn } from './ui_ai_art.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { icon } from './ui_ai_icons.js';
 import { postPrivacyRule } from './ui_ai_privacy_adjust.js';
-import { renderMessagePreview, tokenBadge } from './ui_ai_privacy_messages.js';
+import { renderMessageOriginal, renderMessagePreview, tokenBadge } from './ui_ai_privacy_messages.js';
 import { promptMirrors } from './ui_ai_privacy_mirror.js';
 import { attachNoteInput, el, eyeBadge, linkButton, lockBadge, modelRow, modelSeesRow, pictureRow, promptRow, trow } from './ui_ai_privacy_rows.js';
 import { openToolbox } from './ui_ai_toolbox.js';
@@ -30,14 +31,15 @@ import { openSent } from './ui_ai_sent.js';
 import { anomalousAlert } from './ui_dialog.js';
 
 const INITIAL_MESSAGES = 4;
-const LAYOUT_KEY = 'anomalous_privacy_layout'; // 'split' (side by side) or one column
+const LAYOUT_KEY = 'anomalous_privacy_layout'; // 'single' (one column) or side by side
+const WIDE = '(min-width: 901px)'; // narrower windows read one column whatever the choice
 const KINDS = { prompts: 'prompts', models: 'models', pictures: 'image', messages: 'chat', other: 'nodes' }; // kind -> its icon
 
 function readLayout() {
     try {
-        return localStorage.getItem(LAYOUT_KEY) === 'split' ? 'split' : 'single';
+        return localStorage.getItem(LAYOUT_KEY) === 'single' ? 'single' : 'split';
     } catch (_) {
-        return 'single';
+        return 'split';
     }
 }
 
@@ -67,21 +69,25 @@ function labelled(label, ...values) {
 }
 
 /**
- * The table of `kind`: one column of `single`; side by side, `pairs` ([left, right], either may be null) with
- * what stays here on the left and what the AI reads on the right, when both sides have something.
+ * The table of `kind`: one column of `single`; side by side, `pairs` ([left, right], either may be null; without
+ * them every row is the AI's) with what stays here on the left and what the AI reads on the right, a side with
+ * nothing saying so.
  */
 function kindTable(kind, { single, pairs }, split) {
     const box = el('section', `anomalous-ai-priv-table is-${kind}`);
     const head = el('h3', 'anomalous-ai-priv-table-head');
     head.append(icon(KINDS[kind], 15), el('span', '', t(`aiPrivacyKind_${kind}`)));
     box.append(head);
-    if (!(split && pairs?.some(([left]) => left) && pairs.some(([, right]) => right))) {
+    const rows = split ? [...(pairs || single.map(row => [null, row]))] : [];
+    if (!rows.length) {
         box.append(...single);
         return box;
     }
+    if (!rows.some(([left]) => left)) rows[0] = [el('div', 'anomalous-ai-priv-side-none', t('aiPrivacyNothingHidden')), rows[0][1]];
+    if (!rows.some(([, right]) => right)) rows[0] = [rows[0][0], el('div', 'anomalous-ai-priv-side-none', t('aiPrivacyNothingSeen'))];
     const grid = el('div', 'anomalous-ai-priv-pairs');
     grid.append(el('div', 'anomalous-ai-priv-side is-here', t('aiPrivacyHiddenHead')), el('div', 'anomalous-ai-priv-side is-ai', t('aiPrivacyVisibleHead')));
-    for (const [left, right] of pairs) grid.append(left || el('div'), right || el('div'));
+    for (const [left, right] of rows) grid.append(left || el('div'), right || el('div'));
     box.append(grid);
     return box;
 }
@@ -139,6 +145,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
     const dirtyTokens = new Set();
     const stateSyncs = new Map();
     let anyChanged = false;
+    let allMessages = false; // the latest few until "Show all" is pressed
     let timer = null;
     let closed = false;
     let draftNotes = { ...(task.sealed_notes || {}) };
@@ -210,7 +217,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
             draw();
         };
 
-        const split = readLayout() === 'split';
+        const split = readLayout() === 'split' && window.matchMedia(WIDE).matches;
         const openModel = (model) => { // the materials window on it; closing it comes back here
             close();
             void openToolbox(task, () => onChanged?.(), { kind: 'models', focus: model.id, layout: 'full', onClose: () => openPrivacyOverview(task, { onTogglePrivacy, onChanged }) });
@@ -291,7 +298,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         const released = releasedOf(task);
         const kept = overview.hidden.generatedPictureCount;
         if (overview.private) {
-            if (kept) pictures.push([trow(lockBadge(), el('div', 'anomalous-ai-priv-row-value', t('aiPrivacyStatPicturesKept', { count: kept }))), null]);
+            const keptRow = trow(lockBadge(), el('div', 'anomalous-ai-priv-row-value', kept ? t('aiPrivacyStatPicturesKept', { count: kept }) : t('aiPrivacyPicturesKeptAll')));
             const standin = el('button', 'anomalous-ai-tool');
             standin.type = 'button';
             standin.title = t('aiPrivacyStandinHint');
@@ -312,27 +319,25 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
             };
             const none = el('div', 'anomalous-ai-priv-row-value', t('aiPrivacyVisibleReleasedNone'));
             none.title = t('aiPrivacyVisibleReleasedHow');
-            pictures.push([null, trow(eyeBadge(), labelled(t('aiPrivacyVisibleReleased'),
+            pictures.push([keptRow, trow(eyeBadge(), labelled(t('aiPrivacyVisibleReleased'),
                 released.length ? releasedThumbs(task.id, released, window.anomalousBrowserInstance) : none, standin, said))]);
         } else {
             pictures.push([null, trow(eyeBadge(), el('div', 'anomalous-ai-priv-row-value', t('aiPrivacyDoorPicturesAll')))]);
         }
 
-        // Messages as the AI got them, then the notes written for it.
+        // Messages as the AI got them (side by side, as written on the left), then the notes written for it.
         const messages = overview.visible.messages;
+        const listed = allMessages ? messages : messages.slice(-INITIAL_MESSAGES);
         const preview = msg => trow(eyeBadge(), renderMessagePreview(msg, task, { closeOverview: () => close(), onAdjusted }));
-        const messageRows = [];
-        if (messages.length) {
-            const list = el('div', 'anomalous-ai-priv-msgs');
-            list.append(...messages.slice(-INITIAL_MESSAGES).map(preview));
-            if (messages.length > INITIAL_MESSAGES) {
-                list.append(linkButton(t('aiPrivacyShowAllMessages', { count: messages.length }), () => list.replaceChildren(...messages.map(preview)), 'chevronDown'));
-            }
-            messageRows.push(list);
-        } else {
-            messageRows.push(el('div', 'anomalous-ai-priv-empty', t('aiPrivacyVisibleMessagesNone')));
-        }
-        messageRows.push(trow(eyeBadge(), labelled(t('aiPrivacyVisibleNotes'), visibleNotesList)));
+        const original = (msg) => {
+            const words = renderMessageOriginal(msg, task);
+            return words ? trow(lockBadge(), words) : null;
+        };
+        const more = messages.length > listed.length
+            ? linkButton(t('aiPrivacyShowAllMessages', { count: messages.length }), () => { allMessages = true; draw(); }, 'chevronDown') : null;
+        const notesRow = trow(eyeBadge(), labelled(t('aiPrivacyVisibleNotes'), visibleNotesList));
+        const messageSingle = [...(messages.length ? listed.map(preview) : [el('div', 'anomalous-ai-priv-empty', t('aiPrivacyVisibleMessagesNone'))]), ...(more ? [more] : []), notesRow];
+        const messagePairs = split ? [...listed.map(msg => [original(msg), preview(msg)]), ...(more ? [[null, more]] : []), [null, notesRow]] : null;
 
         const canvas = [t('aiPrivacyVisibleCanvasDesc')];
         if (overview.visible.decisionsCount > 0) canvas.push(t('aiPrivacyVisibleDecisions', { n: overview.visible.decisionsCount }));
@@ -344,8 +349,8 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         const tables = {
             prompts: kindTable('prompts', { single: promptSingle, pairs: promptPairs }, split),
             models: models.length ? kindTable('models', { single: models, pairs: models.map((row, at) => [row, modelSeesRow(overview.modelCatalog[at])]) }, split) : null,
-            pictures: kindTable('pictures', { single: pictures.map(pair => pair[0] || pair[1]), pairs: pictures }, split),
-            messages: kindTable('messages', { single: messageRows }, split),
+            pictures: kindTable('pictures', { single: pictures.flatMap(pair => pair.filter(Boolean)), pairs: pictures }, split),
+            messages: kindTable('messages', { single: messageSingle, pairs: messagePairs }, split),
             other: kindTable('other', { single: other }, split),
         };
 
@@ -400,7 +405,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
     });
     const dialog = body.closest('.anomalous-ai-connect-dialog');
     dialog?.classList.add('is-privacy-overview');
-    dialog?.classList.toggle('is-split', readLayout() === 'split');
+    dialog?.classList.toggle('is-split', readLayout() === 'split' && window.matchMedia(WIDE).matches);
     // One column or side by side, beside the close button; the choice stays in this browser.
     const layouts = el('div', 'anomalous-ai-priv-layouts');
     layouts.setAttribute('role', 'radiogroup');

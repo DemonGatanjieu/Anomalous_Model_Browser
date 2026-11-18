@@ -1,11 +1,14 @@
 /**
- * A message in the Privacy overview's "What the AI can see", as the AI got it (hidden words as their tokens).
- * The user's own words show in full; what Anomalous wrote for the AI (the route or materials the user chose)
- * is one line of what it is with its tokens, the words themselves a press away. Under each: whether the AI
- * has read it, and two small buttons, hide more of its words and find it on the timeline.
+ * A message in the Privacy overview, as the AI got it (hidden words as their tokens) and, side by side, as it
+ * was written (the hidden words themselves, each with a lock). The user's own words show in full; what
+ * Anomalous wrote for the AI (the route or materials the user chose, marks with no note) is one line of what
+ * it is with its tokens (or, on the left, the names they stand for), the words themselves a press away. Under
+ * the AI's side: whether the AI has read it, and two small buttons, hide more of its words and find it on the
+ * timeline.
  */
 
 import { translate as t } from './locales.js';
+import { formatModelRef, parsePictureRef } from './ai_privacy_view.js';
 import { showStepRow } from './ui_ai_decisions.js';
 import { icon } from './ui_ai_icons.js';
 import { renderMessageSealer } from './ui_ai_privacy_adjust.js';
@@ -32,30 +35,41 @@ function iconButton(name, label, onClick) {
     return button;
 }
 
+/** Unfolds `body` under `line`, or folds it again (`label`: what it is, a locale key). */
+function wordsToggle(line, body, label) {
+    const words = el('button', 'anomalous-ai-priv-link');
+    words.type = 'button';
+    words.append(icon('chat', 12), el('span', '', t(label)));
+    words.setAttribute('aria-expanded', 'false');
+    words.onclick = () => {
+        const open = !body.isConnected;
+        if (open) line.after(body);
+        else body.remove();
+        words.setAttribute('aria-expanded', String(open));
+    };
+    return words;
+}
+
+/** The one line of a message Anomalous wrote: what it is, then each token once as `draw(segment)` shows it. */
+function kindLine(msg, body, draw, label) {
+    const line = el('div', 'anomalous-ai-priv-msg-kind');
+    line.append(el('span', '', t(`aiPrivacyMsgKind_${msg.tool}`)));
+    const seen = new Set();
+    for (const seg of msg.segments || []) {
+        if (seg.type !== 'token' || seen.has(seg.token)) continue;
+        seen.add(seg.token);
+        line.append(draw(seg));
+    }
+    line.append(wordsToggle(line, body, label));
+    return line;
+}
+
 export function renderMessagePreview(msg, task, { closeOverview, onAdjusted }) {
     const wrap = el('div', 'anomalous-ai-priv-msg');
     const late = new Set(msg.late || []);
     const body = el('div', 'anomalous-ai-priv-msg-text');
     for (const seg of msg.segments || []) body.append(seg.type === 'token' ? tokenBadge(seg.token, late.has(seg.token)) : document.createTextNode(seg.text));
-    if (msg.own) wrap.append(body);
-    else {
-        const line = el('div', 'anomalous-ai-priv-msg-kind');
-        line.append(el('span', '', t(`aiPrivacyMsgKind_${msg.tool}`)));
-        const tokens = new Set((msg.segments || []).filter(seg => seg.type === 'token').map(seg => seg.token));
-        for (const token of tokens) line.append(tokenBadge(token, late.has(token)));
-        const words = el('button', 'anomalous-ai-priv-link');
-        words.type = 'button';
-        words.append(icon('chat', 12), el('span', '', t('aiPrivacyMsgWords')));
-        words.setAttribute('aria-expanded', 'false');
-        words.onclick = () => {
-            const open = !body.isConnected;
-            if (open) line.after(body);
-            else body.remove();
-            words.setAttribute('aria-expanded', String(open));
-        };
-        line.append(words);
-        wrap.append(line);
-    }
+    wrap.append(msg.own ? body : kindLine(msg, body, seg => tokenBadge(seg.token, late.has(seg.token)), 'aiPrivacyMsgWords'));
     if (late.size) {
         wrap.classList.add('is-late');
         const line = el('div', 'anomalous-ai-priv-msg-late');
@@ -81,5 +95,26 @@ export function renderMessagePreview(msg, task, { closeOverview, onAdjusted }) {
     }
     foot.append(iconButton('arrowRight', t('aiPrivacyMsgJump'), () => { closeOverview(); showStepRow(msg.stepId); }));
     wrap.append(foot);
+    return wrap;
+}
+
+/** The words `seg` (a token segment) hid: as written in the message, else what its token stands for; a model or picture by its file name. */
+function hiddenWords(seg, task) {
+    const raw = seg.said && seg.said !== seg.token ? seg.said : String(task?.sealed?.[seg.token] ?? '');
+    const said = seg.token.startsWith('[M') ? formatModelRef(raw).name
+        : seg.token.startsWith('[img') ? parsePictureRef(raw).filename : raw;
+    const node = el('span', 'anomalous-ai-priv-said');
+    node.title = t('aiPrivacySees', { token: seg.token });
+    node.append(icon('lock', 10), el('span', '', said || seg.token));
+    return node;
+}
+
+/** Side by side, the message as written, hidden words locked; null when nothing in it is hidden. */
+export function renderMessageOriginal(msg, task) {
+    if (!(msg.segments || []).some(seg => seg.type === 'token')) return null;
+    const wrap = el('div', 'anomalous-ai-priv-msg');
+    const body = el('div', 'anomalous-ai-priv-msg-text');
+    for (const seg of msg.segments) body.append(seg.type === 'token' ? hiddenWords(seg, task) : document.createTextNode(seg.text));
+    wrap.append(msg.own ? body : kindLine(msg, body, seg => hiddenWords(seg, task), 'aiPrivacyMsgFull'));
     return wrap;
 }

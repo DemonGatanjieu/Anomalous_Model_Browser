@@ -215,7 +215,7 @@ export function maskTextForView(text, sealed = {}, sealedParts = null, { hideMod
         if (at > cursor) segments.push({ type: 'text', text: source.slice(cursor, at) });
         const hit = match[0];
         const token = ANY_TOKEN_RE.test(hit) ? hit : map.get(hit);
-        segments.push(token ? { type: 'token', token } : { type: 'text', text: hit });
+        segments.push(token ? { type: 'token', token, said: hit } : { type: 'text', text: hit }); // said: as written
         cursor = at + hit.length;
     }
     if (cursor < source.length) segments.push({ type: 'text', text: source.slice(cursor) });

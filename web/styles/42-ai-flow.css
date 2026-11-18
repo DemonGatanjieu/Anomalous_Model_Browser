@@ -567,6 +567,7 @@
 .anomalous-ai-priv-pairs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 20px; }
 .anomalous-ai-priv-side { padding: 4px 0 6px; border-top: 3px solid color-mix(in srgb, var(--amb-warn) 70%, transparent); color: var(--amb-text-soft); font-size: 11.5px; }
 .anomalous-ai-priv-side.is-ai { border-top-color: color-mix(in srgb, var(--amb-ok) 70%, transparent); }
+.anomalous-ai-priv-side-none { padding: 10px 0; border-top: 1px solid var(--amb-border); color: var(--amb-text-dim); font-size: 12px; }
 @media (max-width: 900px) {
     .anomalous-ai-connect-dialog.is-privacy-overview.is-split { width: min(760px, 94vw); }
     .anomalous-ai-priv-pairs { grid-template-columns: minmax(0, 1fr); }
@@ -670,8 +671,10 @@
 .anomalous-ai-priv-msg-late { display: flex; align-items: flex-start; gap: 5px; margin-top: 6px; color: var(--amb-danger-text, var(--amb-warn)); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-priv-msg-late > svg { flex: none; margin-top: 3px; }
 .anomalous-ai-priv-token { margin: 0 1px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--amb-warn) 20%, transparent); color: var(--amb-warn-text, var(--amb-warn)); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-.anomalous-ai-priv-msgs { display: flex; flex-direction: column; }
-.anomalous-ai-priv-msgs > .anomalous-ai-priv-link { align-self: flex-start; margin: 4px 0 8px 72px; }
+.anomalous-ai-priv-table > .anomalous-ai-priv-link, .anomalous-ai-priv-pairs > .anomalous-ai-priv-link { align-self: flex-start; justify-self: start; margin: 4px 0 8px 72px; }
+/* Side by side, a message as written: each hidden piece in its own words, locked. */
+.anomalous-ai-priv-said { display: inline-flex; align-items: center; gap: 3px; margin: 0 1px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent); border-radius: 999px; color: var(--amb-text-main); white-space: nowrap; }
+.anomalous-ai-priv-said > svg { color: var(--amb-warn-text, var(--amb-warn)); }
 .anomalous-ai-priv-msg { display: flex; flex-direction: column; gap: 3px; align-self: stretch; }
 .anomalous-ai-priv-msg-text { color: var(--amb-text-main); white-space: pre-wrap; }
 .anomalous-ai-priv-msg-only-tokens { color: var(--amb-ok-text, var(--amb-ok)); font-size: 11.5px; }
