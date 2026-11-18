@@ -134,6 +134,7 @@ export function renderHiddenPrompt(item, task, { onApplied }) {
             const show = () => glosses.forEach(([span, tag]) => { span.textContent = glossOf(tag, lang) || ''; });
             const ask = el('button', 'anomalous-ai-link', t('aiTagsMeaning'));
             ask.type = 'button';
+            ask.title = t('aiTagsMeaningHint');
             ask.onclick = async () => {
                 ask.disabled = true;
                 ask.textContent = t('aiTagsMeaningLoading');

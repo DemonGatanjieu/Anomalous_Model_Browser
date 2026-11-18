@@ -6,10 +6,13 @@
  * splits the picked hidden words out of their tokens (partsShowingTags, POST privacy_rules split_prompt);
  * "Hide them again" seals picked words that went through (seal_message_phrase: the AI has read them, it
  * gets a token from now on). Words never move: a prompt keeps its order whichever side a word is on.
+ * "Show meanings" (prompt_gloss.js, as in one column) writes each word's meaning under it on both sides, so
+ * the slots stay as wide as each other; on the AI's side a hidden word's meaning is masked like the word.
  */
 
 import { translate as t } from './locales.js';
 import { partsShowingTags, promptMirror } from './ai_privacy_view.js';
+import { fetchGlosses, glossOf, pageGlossLang } from './prompt_gloss.js';
 import { icon } from './ui_ai_icons.js';
 import { postPrivacyRule } from './ui_ai_privacy_adjust.js';
 import { eyeBadge, lockBadge, trow } from './ui_ai_privacy_rows.js';
@@ -27,8 +30,37 @@ function slotButton(slot, side) {
     node.type = 'button';
     const masked = side === 'right' && !slot.shown; // the AI's side: a locked gap as wide as the word
     node.title = t(slot.shown ? (side === 'left' ? 'aiPrivacySlotLetHint' : 'aiPrivacySlotShownHint') : (side === 'left' ? 'aiPrivacySlotHiddenHint' : 'aiPrivacySlotMaskedHint'), { token: slot.token || '' });
-    node.append(icon(slot.shown ? 'eye' : 'lock', 11), el('span', masked ? 'anomalous-ai-priv-slot-text is-masked' : 'anomalous-ai-priv-slot-text', slot.text));
+    const main = el('span', 'anomalous-ai-priv-slot-main');
+    main.append(icon(slot.shown ? 'eye' : 'lock', 11), el('span', masked ? 'anomalous-ai-priv-slot-text is-masked' : 'anomalous-ai-priv-slot-text', slot.text));
+    node.append(main, el('span', masked ? 'anomalous-ai-priv-slot-gloss is-masked' : 'anomalous-ai-priv-slot-gloss'));
     return node;
+}
+
+/** The row's "Show meanings" button (null when the page needs none or all are known); meanings known show at once. */
+function meaningsButton(row, pairs) {
+    const lang = pageGlossLang();
+    if (!lang) return null;
+    const show = () => pairs.forEach((pair, index) => {
+        const meaning = glossOf(row.slots[index].text, lang) || '';
+        for (const node of pair) node.lastChild.textContent = meaning;
+    });
+    show();
+    if (!row.slots.some(slot => glossOf(slot.text, lang) === undefined)) return null;
+    const ask = el('button', 'anomalous-ai-link anomalous-ai-priv-gloss-ask', t('aiTagsMeaning'));
+    ask.type = 'button';
+    ask.title = t('aiTagsMeaningHint');
+    ask.onclick = async () => {
+        ask.disabled = true;
+        ask.textContent = t('aiTagsMeaningLoading');
+        const ok = await fetchGlosses(row.slots.map(slot => slot.text), lang);
+        show();
+        if (ok) ask.remove();
+        else {
+            ask.disabled = false;
+            ask.textContent = t('aiTagsMeaningFailed');
+        }
+    };
+    return ask;
 }
 
 /** Lets the picked hidden slots through: one split per token holding some of them. */
@@ -111,7 +143,8 @@ export function promptMirrors(task, prompts, { noteFor, onApplied }) {
                 await postPrivacyRule(task, { action: 'seal_message_phrase', phrase: slot.text });
             }
         });
-        leftBody.append(leftSlots, bar);
+        const ask = meaningsButton(row, pairs);
+        leftBody.append(leftSlots, ...(ask ? [ask] : []), bar);
         const tokens = [...new Set(row.slots.filter(slot => !slot.shown).map(slot => slot.token))];
         for (const token of tokens) leftBody.append(noteFor(token, tokens.length > 1));
         rightBody.append(rightSlots);
