@@ -12,11 +12,10 @@ import { openTabs } from './preset_runs.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { icon } from './ui_ai_icons.js';
-import { modelField } from './ui_ai_model_field.js';
+import { modelThumb, openModelPicker } from './ui_ai_model_pick.js';
 import {
     SEARCH_FROM,
     START_FROM_KEY,
-    buildStrip,
     filterWorkflows,
     loadImageInfo,
     pickWay,
@@ -100,56 +99,80 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
 
     const state = { first: initialState.first || '', second: initialState.second || '', route: initialState.route || '' };
     const waysBox = el('div', 'anomalous-ai-start-ways');
-    const strip = el('div', 'anomalous-ai-start-strip');
     const findModel = id => (models || []).find(item => item.model_id === id) || null;
+    scope.onDispose(() => waysAbort?.abort());
 
-    const firstField = modelField({
-        ariaLabel: t('aiStartFirstModel'),
-        onChange: (id) => {
-            state.first = id;
-            if (!secondModelChoices(models || [], state.first).some(item => item.model_id === state.second)) state.second = '';
-            syncFields();
+    // The models picked, each a chip with its number (the first draws first), a swap between two, and a button to the picker.
+    const picked = el('div', 'anomalous-ai-start-models');
+    const pickButton = button('anomalous-ai-start-pick', '', () => openModelPicker({
+        title: t('aiPickBaseTitle'),
+        models: models || [],
+        picked: [state.first, state.second].filter(Boolean),
+        max: 2,
+        min: 1,
+        numbered: true,
+        fits: (ids, model) => !ids.length || secondModelChoices(models || [], ids[0]).some(item => item.model_id === model.model_id),
+        unfit: t('aiPickSameFamily'),
+        role: index => t(index ? 'aiPickRoleSecond' : 'aiPickRoleFirst'),
+        note: t('aiStartNewOnly'),
+        hint: t('aiPickBaseHint'),
+        from: pickButton,
+        onDone: (ids) => {
+            state.first = ids[0];
+            state.second = ids[1] || '';
+            drawPicked();
             fetchWays();
         },
+    }));
+    const swap = button('anomalous-ai-start-swap', '', () => {
+        [state.first, state.second] = [state.second, state.first];
+        drawPicked();
+        fetchWays();
     });
-    const secondField = modelField({
-        noneLabel: t('aiStartSecondNone'),
-        ariaLabel: t('aiStartSecondModel'),
-        onChange: (id) => {
-            state.second = id;
-            fetchWays();
-        },
-    });
-    const firstWrap = el('div', 'anomalous-ai-start-model-row');
-    firstWrap.append(el('span', 'anomalous-ai-start-sublabel', t('aiStartFirstModel')), firstField.element);
-    const secondWrap = el('div', 'anomalous-ai-start-model-row');
-    secondWrap.append(el('span', 'anomalous-ai-start-sublabel', t('aiStartSecondModel')), secondField.element);
-    scope.onDispose(() => {
-        waysAbort?.abort();
-        firstField.dispose();
-        secondField.dispose();
-    });
+    swap.title = t('aiStartSwap');
+    swap.setAttribute('aria-label', t('aiStartSwap'));
+    swap.append(icon('swap', 14));
+    const one = el('span', 'anomalous-ai-start-model');
+    const two = el('span', 'anomalous-ai-start-model');
+    picked.append(one, swap, two, pickButton); // filled in place: a moved button would lose the focus
 
-    function syncFields() {
-        const list = models || [];
-        firstField.setModels(list, state.first);
-        secondField.setModels(secondModelChoices(list, state.first), state.second);
+    function fillChip(chip, model, number) {
+        chip.hidden = !model;
+        if (!model) return;
+        chip.replaceChildren(modelThumb(model, 'anomalous-ai-start-model-thumb'), el('span', 'anomalous-ai-start-model-num', String(number)), el('span', 'anomalous-ai-start-model-name', model.name));
+        chip.title = model.name;
+    }
+
+    function drawPicked() {
+        const first = findModel(state.first);
+        const second = first && state.second ? findModel(state.second) : null;
+        fillChip(one, first, 1);
+        fillChip(two, second, 2);
+        swap.hidden = !second;
+        pickButton.replaceChildren(icon('models', 14), el('span', '', t(first ? 'aiStartChangeModels' : 'aiStartPickModels')));
+    }
+
+    /** A combo's flow in small covers: the first model, a magnifier where the picture gets bigger, the second. */
+    function flowOf(way, first, second) {
+        const flow = el('div', 'anomalous-ai-start-way-flow');
+        flow.append(modelThumb(first, 'anomalous-ai-start-way-thumb'));
+        if (way.models === 2 && second) {
+            flow.append(icon('arrowRight', 12), ...(way.enlarge ? [icon('expand', 12), icon('arrowRight', 12)] : []), modelThumb(second, 'anomalous-ai-start-way-thumb'));
+        }
+        return flow;
     }
 
     function drawWays() {
         if (loadingWays) {
             waysBox.replaceChildren(el('div', 'anomalous-ai-start-from-note', t('aiStartLoadingRoutes')));
-            strip.hidden = true;
             return;
         }
         if (waysError) {
             waysBox.replaceChildren(el('div', 'anomalous-ai-start-from-warn', waysError));
-            strip.hidden = true;
             return;
         }
         if (!ways.length) {
             waysBox.replaceChildren(el('div', 'anomalous-ai-start-from-warn', t('aiStartNoBuildableWays')));
-            strip.hidden = true;
             return;
         }
         const first = findModel(state.first);
@@ -161,15 +184,14 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
                 drawWays();
             });
             node.setAttribute('aria-pressed', String(on));
-            node.append(
+            const words = el('div', 'anomalous-ai-start-way-words');
+            words.append(
                 el('div', 'anomalous-ai-start-way-title', t(`aiRoute_${way.id}`, { a: first?.name || '', b: second?.name || '' })),
                 el('div', 'anomalous-ai-start-way-detail', t(`aiRouteDetail_${way.id}`)),
             );
+            node.append(...(first ? [flowOf(way, first, second)] : []), words);
             return node;
         }));
-        const line = buildStrip(state.route, first?.name || '', second?.name || '', t);
-        strip.textContent = line;
-        strip.hidden = !line || ways.length < 2; // with one way its card above says the same
     }
 
     function renderInto(body) {
@@ -185,11 +207,11 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
             body.replaceChildren(el('div', 'anomalous-ai-start-from-warn', t('aiStartNewOnly')));
             return;
         }
-        syncFields();
+        drawPicked();
         drawWays();
-        if (body.firstElementChild !== firstWrap) {
-            body.replaceChildren(firstWrap, secondWrap, el('span', 'anomalous-ai-start-sublabel', t('aiStartWaysLabel')), waysBox, strip,
-                el('div', 'anomalous-ai-start-from-note', t('aiStartNewOnly')));
+        if (!body.contains(picked)) {
+            body.replaceChildren(el('span', 'anomalous-ai-start-sublabel', t('aiStartModelsLabel')), picked,
+                el('span', 'anomalous-ai-start-sublabel', t('aiStartWaysLabel')), waysBox);
         }
     }
 

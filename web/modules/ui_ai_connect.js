@@ -167,6 +167,7 @@ export function aiWindow(title, body, onClose = null) {
     };
     const onKey = (event) => {
         if (event.key !== 'Escape') return;
+        if ([...document.querySelectorAll('.anomalous-ai-connect-overlay')].at(-1) !== overlay) return; // a window opened over this one goes first
         if ([...dialog.querySelectorAll('[data-anomalous-escape]')].some(node => node.getClientRects().length)) return;
         event.stopPropagation();
         close();

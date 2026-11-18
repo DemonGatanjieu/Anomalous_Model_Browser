@@ -81,7 +81,7 @@
     cursor: pointer;
 }
 .anomalous-ai-start-choice[hidden] { display: none; }
-.anomalous-ai-start-choice > svg { flex: none; }
+.anomalous-ai-start-choice > .anomalous-tb-icon { flex: none; }
 .anomalous-ai-start-choice:hover:not(:disabled) { border-color: var(--amb-link); }
 .anomalous-ai-start-choice.is-on { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-link); }
 .anomalous-ai-start-choice:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -279,104 +279,121 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 /* "Start from" section in the `say` and `private` starter sheets (ui_ai_start_from.js) */
 .anomalous-ai-start-from { gap: 8px; }
 .anomalous-ai-start-from-body { display: flex; flex-direction: column; gap: 8px; }
-.anomalous-ai-start-model-row { display: flex; flex-direction: column; gap: 4px; }
 .anomalous-ai-start-sublabel { color: var(--amb-text-muted); font-size: 12px; }
-/* Single-model inline expandable picker field (ui_ai_model_field.js) */
-.anomalous-ai-model-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.anomalous-ai-model-field-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    min-width: 0;
-    padding: 5px 10px 5px 6px;
-    border: 1px solid var(--amb-border);
-    border-radius: 8px;
-    background: var(--amb-bg-input);
-    color: var(--amb-text-main);
-    font: inherit;
-    font-size: 13px;
-    text-align: left;
-    cursor: pointer;
-}
-.anomalous-ai-model-field-btn:hover,
-.anomalous-ai-model-field.is-open .anomalous-ai-model-field-btn { border-color: var(--amb-link); }
-.anomalous-ai-model-field-btn.is-none .anomalous-ai-model-field-name { color: var(--amb-text-soft); }
-.anomalous-ai-model-field-thumb {
-    flex: none;
+/* The models picked: chips with a cover and a number (the first draws first), a swap between two, the button to the window. */
+.anomalous-ai-start-models { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.anomalous-ai-start-model {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    overflow: hidden;
-    border-radius: 6px;
-    background: rgba(var(--amb-ink-rgb), 0.06);
-    color: var(--amb-text-muted);
-}
-.anomalous-ai-model-field-thumb img,
-.anomalous-ai-model-field-thumb svg { width: 100%; height: 100%; object-fit: cover; display: block; }
-.anomalous-ai-model-field-thumb.is-none svg { width: 15px; height: 15px; }
-.anomalous-ai-model-field-name,
-.anomalous-ai-model-field-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-model-field-star { flex: none; display: inline-flex; color: #f2b544; }
-.anomalous-ai-model-field-family,
-.anomalous-ai-model-field-row-family {
-    flex: none;
-    padding: 1px 7px;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+    padding: 3px 10px 3px 3px;
+    border: 1px solid var(--amb-border);
     border-radius: 999px;
-    background: rgba(var(--amb-ink-rgb), 0.06);
-    color: var(--amb-text-muted);
-    font-size: 11px;
+    color: var(--amb-text-main);
+    font-size: 12.5px;
 }
-.anomalous-ai-model-field-arrow { flex: none; display: inline-flex; color: var(--amb-text-muted); transition: transform 0.14s ease; }
-.anomalous-ai-model-field.is-open .anomalous-ai-model-field-arrow { transform: rotate(180deg); }
-.anomalous-ai-model-field-panel {
+.anomalous-ai-start-model[hidden],
+.anomalous-ai-start-swap[hidden] { display: none; }
+.anomalous-ai-start-model-num { flex: none; color: var(--amb-link); font-weight: 700; }
+.anomalous-ai-start-model-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-start-model-thumb,
+.anomalous-ai-start-way-thumb {
+    display: inline-flex;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+}
+.anomalous-ai-start-model-thumb > img,
+.anomalous-ai-start-way-thumb > img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-ai-start-swap,
+.anomalous-ai-start-pick {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.anomalous-ai-start-swap { padding: 5px; }
+.anomalous-ai-start-swap:hover,
+.anomalous-ai-start-pick:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+/* The model window (ui_ai_model_pick.js): search, family chips, cards with a cover, the picks numbered. */
+.anomalous-ai-connect-dialog.is-model-pick { width: min(860px, 94vw); }
+.anomalous-ai-pick { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.anomalous-ai-pick-search { display: flex; align-items: center; gap: 6px; color: var(--amb-text-muted); }
+.anomalous-ai-pick-search > .anomalous-ai-start-input { flex: 1; min-width: 0; }
+.anomalous-ai-pick-note { color: var(--amb-text-muted); font-size: 12px; line-height: 1.5; }
+.anomalous-ai-pick-chips { margin: 0; }
+.anomalous-ai-pick-chips[hidden],
+.anomalous-ai-pick-more[hidden] { display: none; }
+.anomalous-ai-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; max-height: 52vh; overflow-y: auto; padding: 2px; }
+.anomalous-ai-pick-card {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 8px;
+    gap: 3px;
+    min-width: 0;
+    padding: 6px;
     border: 1px solid var(--amb-border);
     border-radius: 10px;
     background: rgba(var(--amb-ink-rgb), 0.03);
-}
-.anomalous-ai-model-field-panel[hidden],
-.anomalous-ai-model-field-bases[hidden] { display: none; }
-.anomalous-ai-model-field-search { display: flex; align-items: center; gap: 6px; color: var(--amb-text-muted); }
-.anomalous-ai-model-field-search .anomalous-ai-start-input { flex: 1; min-width: 0; }
-.anomalous-ai-model-field-bases { margin: 0; max-height: 68px; overflow-y: auto; }
-.anomalous-ai-model-field-list { display: flex; flex-direction: column; gap: 2px; max-height: 230px; overflow-y: auto; }
-.anomalous-ai-model-field-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    min-width: 0;
-    padding: 5px 8px;
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
     color: var(--amb-text-main);
     font: inherit;
-    font-size: 12.5px;
     text-align: left;
     cursor: pointer;
 }
-.anomalous-ai-model-field-row:hover,
-.anomalous-ai-model-field-row.is-active { background: rgba(var(--amb-ink-rgb), 0.06); }
-.anomalous-ai-model-field-row.is-on {
-    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
-    font-weight: 600;
+.anomalous-ai-pick-card:hover { border-color: color-mix(in srgb, var(--amb-link) 50%, transparent); }
+.anomalous-ai-pick-card.is-on { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 12%, transparent); box-shadow: 0 0 0 1px var(--amb-link); }
+.anomalous-ai-pick-card.is-unfit { opacity: 0.45; }
+.anomalous-ai-pick-cover {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 7px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
 }
-.anomalous-ai-model-field-empty { padding: 10px 8px; color: var(--amb-text-muted); font-size: 12px; text-align: center; }
+.anomalous-ai-pick-cover > img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-ai-pick-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--amb-link);
+    color: var(--amb-on-link);
+    font-size: 12px;
+    font-weight: 700;
+}
+.anomalous-ai-pick-star { position: absolute; top: 6px; right: 6px; display: inline-flex; color: #f2b544; }
+.anomalous-ai-pick-name { overflow: hidden; font-size: 12.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-pick-sub { min-height: 1.4em; color: var(--amb-text-muted); font-size: 11.5px; }
+.anomalous-ai-pick-more { color: var(--amb-text-muted); font-size: 12px; text-align: center; }
+.anomalous-ai-pick-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.anomalous-ai-pick-hint { color: var(--amb-text-muted); font-size: 12.5px; }
+.anomalous-ai-pick-hint.is-warn { color: var(--amb-warn-text); }
 .anomalous-ai-start-from-note { color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.55; }
 .anomalous-ai-start-from-warn { color: var(--amb-warn-text); font-size: 12px; line-height: 1.55; }
 .anomalous-ai-start-ways { display: flex; flex-direction: column; gap: 6px; }
+/* A combo: its flow in small covers (first → second, a magnifier where the picture gets bigger), then its words. */
 .anomalous-ai-start-way {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    align-items: center;
+    gap: 12px;
     padding: 8px 10px;
     border: 1px solid var(--amb-border);
     border-radius: 10px;
@@ -391,23 +408,16 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
     border-color: var(--amb-link);
     background: color-mix(in srgb, var(--amb-link) 14%, transparent);
 }
+.anomalous-ai-start-way-flow { display: flex; flex: none; align-items: center; gap: 3px; color: var(--amb-text-muted); }
+.anomalous-ai-start-way-words { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .anomalous-ai-start-way-title { font-size: 12.5px; font-weight: 600; }
 .anomalous-ai-start-way-detail { color: var(--amb-text-muted); font-size: 12px; line-height: 1.5; }
-.anomalous-ai-start-strip {
-    padding: 6px 10px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--amb-ok) 12%, transparent);
-    color: var(--amb-ok-text);
-    font-size: 12px;
-    line-height: 1.5;
-}
-.anomalous-ai-start-strip[hidden],
 .anomalous-ai-start-input[hidden] { display: none; }
 
-/* The private card's optional LoRAs (ui_ai_private_sheet.js): chips with ×, then the field that adds one. */
+/* The private card's optional LoRAs (ui_ai_private_sheet.js): chips with ×, then the button to the model window. */
 .anomalous-ai-start-loras[hidden],
-.anomalous-ai-start-lora-chips[hidden],
-.anomalous-ai-start-loras .anomalous-ai-model-field[hidden] { display: none; }
+.anomalous-ai-start-lora-chips[hidden] { display: none; }
+.anomalous-ai-start-loras > .anomalous-ai-start-pick { align-self: flex-start; }
 .anomalous-ai-start-lora-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .anomalous-ai-start-lora-chip {
     display: inline-flex;

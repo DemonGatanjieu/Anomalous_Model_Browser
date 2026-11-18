@@ -157,6 +157,7 @@ class StartFromRouteTests(unittest.TestCase):
         self.assertEqual([w["id"] for w in same], ["one_pass"])
         self.assertNotIn("card", [w["id"] for w in two_anima])
         self.assertEqual([w["id"] for w in two_anima], ["tile_second", "midway_enlarge", "one_pass"])
+        self.assertEqual([w["enlarge"] for w in two_anima], [True, True, False], "a Tile redraw is upscaled first")
         self.assertEqual([w["id"] for w in two_sdxl], ["midway", "one_pass"])
         self.assertEqual([w["id"] for w in cross], ["one_pass"])
         self.assertEqual([w["id"] for w in no_tile], ["midway_enlarge", "one_pass"])

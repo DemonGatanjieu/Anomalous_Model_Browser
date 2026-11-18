@@ -1,7 +1,7 @@
 /**
  * Parts of the home page's private starter sheet (ui_ai_starter_sheet.js). The LoRAs to use besides the
- * main model: picked one at a time (ui_ai_model_field.js) from the materials catalog (ai_toolbox_data.js),
- * each a chip with ×; the first message names them by file name, which the task's privacy hands the AI as
+ * main model: picked in the model window (ui_ai_model_pick.js), several at once, from the materials catalog
+ * (ai_toolbox_data.js), each a chip with ×; the first message names them by file name, which the task's privacy hands the AI as
  * tokens (api/ai_sealed_models.py), so a LoRA the user lets the AI see by name is not offered. And what
  * happens to the prompt: the privacy picture (ui_ai_art.js) and one line in place of lines of text.
  */
@@ -10,7 +10,7 @@ import { loadCatalog } from './ai_toolbox_data.js';
 import { translate as t } from './locales.js';
 import { art } from './ui_ai_art.js';
 import { icon } from './ui_ai_icons.js';
-import { modelField } from './ui_ai_model_field.js';
+import { openModelPicker } from './ui_ai_model_pick.js';
 
 const MAX_LORAS = 6;
 
@@ -21,29 +21,34 @@ function el(tag, className, text) {
     return node;
 }
 
-/** The catalog's LoRAs as the model field lists them; none the user lets the AI see by name. */
+/** The catalog's LoRAs as the model window lists them; none the user lets the AI see by name. */
 function loraChoices(items) {
     return (items || [])
         .filter(item => item.kind === 'models' && item.type === 'loras' && item.ai_name !== 'shown')
-        .map(item => ({ model_id: item.id, name: item.name, file: item.file, family: item.base || '', favourite: false, cover: item.cover }));
+        .map(item => ({ model_id: item.id, name: item.name, file: item.file, family: item.base || '', favourite: false, cover: item.cover, type: 'loras' }));
 }
 
-/** {node, read() -> [file names], stop}: the optional LoRAs; stays away while the library has none. */
+/** {node, read() -> [file names]}: the optional LoRAs; stays away while the library has none. */
 export function loraPicker() {
-    const chosen = [];
+    let chosen = [];
     let all = [];
     const node = el('div', 'anomalous-ai-start-field anomalous-ai-start-loras');
     node.hidden = true;
     const label = el('span', 'anomalous-ai-start-label', t('aiStartLoras'));
     label.prepend(icon('lock', 13));
     const chips = el('div', 'anomalous-ai-start-lora-chips');
-    const field = modelField({
-        noneLabel: t('aiStartLorasAdd'),
-        noneInList: false,
-        ariaLabel: t('aiStartLoras'),
-        onChange: (id) => {
-            const item = all.find(model => model.model_id === id);
-            if (item && !chosen.includes(item) && chosen.length < MAX_LORAS) chosen.push(item);
+    const add = el('button', 'anomalous-ai-start-pick');
+    add.type = 'button';
+    add.append(icon('models', 14), el('span', '', t('aiStartLorasAdd')));
+    add.onclick = () => openModelPicker({
+        title: t('aiPickLorasTitle'),
+        models: all,
+        picked: chosen.map(item => item.model_id),
+        max: MAX_LORAS,
+        hint: t('aiPickLorasHint', { max: MAX_LORAS }),
+        from: add,
+        onDone: (ids) => {
+            chosen = ids.map(id => all.find(item => item.model_id === id));
             draw();
         },
     });
@@ -63,8 +68,6 @@ export function loraPicker() {
             return chip;
         }));
         chips.hidden = !chosen.length;
-        field.element.hidden = chosen.length >= MAX_LORAS;
-        field.setModels(all.filter(model => !chosen.includes(model)), '');
     }
 
     loadCatalog().then((items) => {
@@ -72,8 +75,8 @@ export function loraPicker() {
         node.hidden = !all.length;
         draw();
     }).catch(() => { /* the sheet works without it */ });
-    node.append(label, chips, field.element);
-    return { node, read: () => chosen.map(item => item.file), stop: () => field.dispose() };
+    node.append(label, chips, add);
+    return { node, read: () => chosen.map(item => item.file) };
 }
 
 /** What happens to the prompt: the picture (words → a locked code word → the AI) and one line. */

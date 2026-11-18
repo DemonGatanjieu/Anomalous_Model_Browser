@@ -113,7 +113,8 @@ def ways_for(first, second, info):
         other_fam = model_advice.family(model_advice.base_of(other_path)) if other_path else ""
         has_second = other_fam == fam and (other_kind == "checkpoints") == (kind == "checkpoints")
     limit = 2 if has_second else 1
-    return [{"id": key, "models": route["models"], "enlarge": bool(route.get("enlarge"))}
+    # enlarge: the picture gets bigger on the way (enlarged at the switch, or upscaled for a Tile redraw)
+    return [{"id": key, "models": route["models"], "enlarge": bool(route.get("enlarge")) or "upscale" in route.get("way", ())}
             for key, route in ROUTES.items()
             if route["models"] <= limit and _can_build(route, base, info, kind)]
 

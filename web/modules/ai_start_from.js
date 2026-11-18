@@ -126,14 +126,6 @@ export function routeModels(routeKey, firstId, secondId) {
     return [firstId, secondId];
 }
 
-/** Short summary strip for what `new` will build before the AI starts. */
-export function buildStrip(routeKey, firstName, secondName, translate) {
-    if (!routeKey || !firstName) return '';
-    const head = translate('aiStartStripDraw', { model: firstName });
-    if (routeKey === 'one_pass' || !secondName) return head;
-    return translate('aiStartStripPair', { first: head, way: translate(`aiRouteShort_${routeKey}`), second: secondName });
-}
-
 /** The fact sentence at the front of the first message to the AI for `choice`, or `''`. */
 export function startFactSentence(choice, translate, mark = text => text) {
     if (!choice) return '';

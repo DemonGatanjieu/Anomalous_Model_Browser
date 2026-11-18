@@ -163,7 +163,7 @@ function fieldsOf(card, data, owner, close) {
                 { title: t('aiStartStepFrom'), nodes: [from.node], check: () => { const picked = from.read(); return picked.errorKey || picked.errorText ? picked : null; } },
                 { title: t('aiStartStepMore'), nodes: [el('p', 'anomalous-ai-start-step-hint', t('aiStartStepMoreHint')), loras.node, gistField, examples(gist, EXAMPLES.private), chosen], shown: drawChosen },
             ],
-            stop: () => { from.stop(); loras.stop(); },
+            stop: () => from.stop(),
             task: () => {
                 const picked = from.read();
                 if (picked.errorKey || picked.errorText) return picked;

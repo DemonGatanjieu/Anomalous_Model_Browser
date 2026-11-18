@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-    buildStrip,
     composeFirstNote,
     filterModels,
     filterWorkflows,
@@ -17,9 +16,6 @@ import {
 } from '../web/modules/ai_start_from.js';
 
 const dict = {
-    aiStartStripDraw: ({ model }) => `出图 · ${model}`,
-    aiStartStripPair: ({ first, way, second }) => `${first}  →  ${way} · ${second}`,
-    aiRouteShort_tile_second: () => 'Tile 放大',
     aiStartNoteOpen: () => '先从我开着的画布开始。',
     aiStartNoteOpenOne: () => '先从我开着的画布开始，它读了 1 张图，原样留着不动。',
     aiStartNoteOpenImages: ({ count }) => `先从我开着的画布开始，它读了 ${count} 张图，原样留着不动。`,
@@ -94,11 +90,9 @@ test('pickWay presses a way that draws with as many models as were chosen', () =
     assert.equal(pickWay([], 'one_pass', false), '');
 });
 
-test('routeModels, buildStrip and first-message sentences match public and private mode', () => {
+test('routeModels and first-message sentences match public and private mode', () => {
     assert.deepEqual(routeModels('one_pass', 'm1', 'm2'), ['m1']);
     assert.deepEqual(routeModels('tile_second', 'm1', 'm2'), ['m1', 'm2']);
-    assert.equal(buildStrip('tile_second', 'Harem', 'Realskin', t), '出图 · Harem  →  Tile 放大 · Realskin');
-    assert.equal(buildStrip('one_pass', 'Harem', 'Realskin', t), '出图 · Harem');
 
     const mark = s => `\u27e6${s}\u27e7`;
     assert.equal(startFactSentence({ mode: 'ai' }, t, mark), '');
