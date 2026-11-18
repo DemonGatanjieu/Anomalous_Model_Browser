@@ -682,7 +682,8 @@ covered by the `styles.css` manifest.
   empty page and over a task waiting for an AI until one has ever come; without a waiting task
   `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the
   user's checklist by stage) and the address follows. `ui_ai_starters.js` is the home page's "Let the AI do it"
-  (the app that came last, a warning when its list is a short one, six starter cards); `ui_ai_starter_sheet.js`
+  (the app that came last, a warning when its list is a short one, six starter cards; the box and its cards are drawn at once,
+  what needs `GET /anomalous/ai_starters` fills in when read); `ui_ai_starter_sheet.js`
   holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get; closing calls `onClose` via `ui_ai_connect.js` `aiWindow`, whose Esc handler defers to visible `[data-anomalous-escape]` pickers inside the dialog, to clean up reads), which starts a
   prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` `startTask`;
   a card's tags name only what Anomalous makes sure of. The private card's sheet puts the prompt the AI gets as a token

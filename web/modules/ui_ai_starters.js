@@ -6,7 +6,9 @@
  * (its tags) is said on hover, not in chips. "Explain my
  * canvas" opens the canvas hand-off as the canvas menu does (ui_ai_canvas_hand.js). Under the cards, once
  * presets were run from here with no AI, the line that runs that list again (ui_ai_preset_sheet.js againLine).
- * GET /anomalous/ai_starters; without it (an older server) the section stays away.
+ * The section and its cards are drawn at once from what the page knows, so nothing below them moves; what
+ * needs GET /anomalous/ai_starters (the app line, each card's tags, the presets line) fills in when read.
+ * Without it (an older server) the section goes away.
  */
 
 import { translate as t } from './locales.js';
@@ -45,8 +47,12 @@ function appLine(owner, app) {
     return lines;
 }
 
-function card(owner, starter, data) {
-    const node = button('anomalous-ai-start-card', '', () => (starter.id === 'canvas' ? handCanvasToAi(() => owner) : openStarter(owner, starter, data)));
+/** A starter card; `reading` is the server's data on its way (a press waits for it). */
+function card(owner, starter, reading) {
+    const node = button('anomalous-ai-start-card', '', () => {
+        if (starter.id === 'canvas') handCanvasToAi(() => owner);
+        else void reading.then(data => data && openStarter(owner, starter, data));
+    });
     node.dataset.starter = starter.id;
     const art = el('img', 'anomalous-ai-start-card-art');
     art.alt = '';
@@ -54,25 +60,33 @@ function card(owner, starter, data) {
     art.onerror = () => art.replaceWith(icon(starter.icon, 28)); // the picture is missing: its icon
     art.src = new URL(`../assets/start_${starter.id}.webp`, import.meta.url).href;
     fadeIn(art);
-    node.title = cardTags(starter, data).map(tag => t('aiStartTagLine', { tag: t(`aiStartTag_${tag}`), hint: t(`aiStartTagHint_${tag}`) })).join('\n');
+    void reading.then((data) => {
+        if (data) node.title = cardTags(starter, data).map(tag => t('aiStartTagLine', { tag: t(`aiStartTag_${tag}`), hint: t(`aiStartTagHint_${tag}`) })).join('\n');
+    });
     node.append(art, el('span', 'anomalous-ai-start-card-title', t(`aiStart_${starter.id}_title`)),
         el('span', 'anomalous-ai-start-card-body', t(`aiStart_${starter.id}_body`)));
     return node;
 }
 
-/** Draws the section into `slot` (the home page's place for it) once its data is read. */
+/** Draws the section into `slot` (the home page's place for it) at once; the server's part fills in when read. */
 export function renderAiStarters(owner, slot) {
-    fetch('/anomalous/ai_starters').then(response => (response.ok ? response.json() : null)).then((data) => {
-        if (!data || !slot.isConnected) return;
-        const section = el('section', 'anomalous-ai-start');
-        const head = el('div', 'anomalous-ai-start-head');
-        const title = el('span', 'anomalous-ai-start-title');
-        title.append(icon('sparkle', 18), el('span', '', t('aiStartTitle')));
-        head.append(title, ...appLine(owner, data.app));
-        const grid = el('div', 'anomalous-ai-start-cards');
-        grid.append(...STARTERS.map(starter => card(owner, starter, data)));
+    const reading = fetch('/anomalous/ai_starters').then(response => (response.ok ? response.json() : null)).catch(() => null);
+    const section = el('section', 'anomalous-ai-start');
+    const head = el('div', 'anomalous-ai-start-head');
+    const title = el('span', 'anomalous-ai-start-title');
+    title.append(icon('sparkle', 18), el('span', '', t('aiStartTitle')));
+    head.append(title);
+    const grid = el('div', 'anomalous-ai-start-cards');
+    grid.append(...STARTERS.map(starter => card(owner, starter, reading)));
+    section.append(head, grid);
+    slot.replaceChildren(section);
+    void reading.then((data) => {
+        if (!data) {
+            section.remove(); // an older server: the home page works without it
+            return;
+        }
+        head.append(...appLine(owner, data.app));
         const again = againLine(owner, data);
-        section.append(head, grid, ...(again ? [again] : []));
-        slot.replaceChildren(section);
-    }).catch(() => { /* the home page works without it */ });
+        if (again) section.append(again);
+    });
 }
