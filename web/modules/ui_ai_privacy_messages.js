@@ -98,13 +98,14 @@ export function renderMessagePreview(msg, task, { closeOverview, onAdjusted }) {
     return wrap;
 }
 
-/** The words `seg` (a token segment) hid: as written in the message, else what its token stands for; a model or picture by its file name. */
+/** The words `seg` (a token segment) hid: as written in the message, else what its token stands for; a model or picture by its file name.
+ * One line, cut short when long (a whole prompt); the tooltip holds all of it. */
 function hiddenWords(seg, task) {
     const raw = seg.said && seg.said !== seg.token ? seg.said : String(task?.sealed?.[seg.token] ?? '');
     const said = seg.token.startsWith('[M') ? formatModelRef(raw).name
         : seg.token.startsWith('[img') ? parsePictureRef(raw).filename : raw;
     const node = el('span', 'anomalous-ai-priv-said');
-    node.title = t('aiPrivacySees', { token: seg.token });
+    node.title = `${said || seg.token}\n${t('aiPrivacySees', { token: seg.token })}`;
     node.append(icon('lock', 10), el('span', '', said || seg.token));
     return node;
 }

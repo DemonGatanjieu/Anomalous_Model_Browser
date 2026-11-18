@@ -673,8 +673,8 @@
 .anomalous-ai-priv-token { margin: 0 1px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--amb-warn) 20%, transparent); color: var(--amb-warn-text, var(--amb-warn)); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
 .anomalous-ai-priv-table > .anomalous-ai-priv-link, .anomalous-ai-priv-pairs > .anomalous-ai-priv-link { align-self: flex-start; justify-self: start; margin: 4px 0 8px 72px; }
 /* Side by side, a message as written: each hidden piece in its own words, locked. */
-.anomalous-ai-priv-said { display: inline-flex; align-items: center; gap: 3px; margin: 0 1px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent); border-radius: 999px; color: var(--amb-text-main); white-space: nowrap; }
-.anomalous-ai-priv-said > svg { color: var(--amb-warn-text, var(--amb-warn)); }
+.anomalous-ai-priv-said { display: inline-flex; align-items: center; gap: 3px; min-width: 0; max-width: 100%; margin: 0 1px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent); border-radius: 999px; color: var(--amb-warn-text, var(--amb-warn)); vertical-align: bottom; }
+.anomalous-ai-priv-said > span { min-width: 0; overflow: hidden; color: var(--amb-text-main); text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-priv-msg { display: flex; flex-direction: column; gap: 3px; align-self: stretch; }
 .anomalous-ai-priv-msg-text { color: var(--amb-text-main); white-space: pre-wrap; }
 .anomalous-ai-priv-msg-only-tokens { color: var(--amb-ok-text, var(--amb-ok)); font-size: 11.5px; }
