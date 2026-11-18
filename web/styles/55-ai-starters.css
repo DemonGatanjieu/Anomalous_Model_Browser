@@ -39,6 +39,55 @@
 .anomalous-ai-start-card-title { color: var(--amb-text-main); font-size: 0.95em; font-weight: 600; }
 .anomalous-ai-start-card-body { color: var(--amb-text-muted); font-size: 0.8em; line-height: 1.5; }
 .anomalous-ai-start-sheet { display: flex; flex-direction: column; gap: 10px; min-width: min(440px, 100%); min-height: 0; }
+/* The private card's sheet in steps (ui_ai_start_steps.js): numbered dots joined by a line, then one step at a time. */
+.anomalous-ai-start-steps { display: flex; align-items: center; margin: 0 0 2px; padding: 0; list-style: none; }
+.anomalous-ai-start-steps-dot {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--amb-border);
+    border-radius: 50%;
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+.anomalous-ai-start-steps-dot + .anomalous-ai-start-steps-dot { margin-left: 40px; }
+.anomalous-ai-start-steps-dot + .anomalous-ai-start-steps-dot::before { content: ""; position: absolute; top: 50%; right: calc(100% + 5px); width: 30px; height: 1px; background: var(--amb-border); }
+.anomalous-ai-start-steps-dot.is-on { border-color: var(--amb-link); background: var(--amb-link); color: var(--amb-on-link); }
+.anomalous-ai-start-steps-dot.is-done { border-color: transparent; background: color-mix(in srgb, var(--amb-ok) 22%, transparent); color: var(--amb-ok-text); }
+.anomalous-ai-start-step { display: flex; flex-direction: column; gap: 10px; }
+.anomalous-ai-start-step[hidden] { display: none; }
+.anomalous-ai-start-step-title { margin: 0; color: var(--amb-text-main); font-size: 15px; font-weight: 600; }
+.anomalous-ai-start-step-hint { margin: -4px 0 0; color: var(--amb-text-muted); font-size: 12.5px; }
+/* "Where to start from" as cards in the steps: an icon, the name and one line. */
+.anomalous-ai-start-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.anomalous-ai-start-choice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-start-choice[hidden] { display: none; }
+.anomalous-ai-start-choice > svg { flex: none; }
+.anomalous-ai-start-choice:hover:not(:disabled) { border-color: var(--amb-link); }
+.anomalous-ai-start-choice.is-on { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-link); }
+.anomalous-ai-start-choice:disabled { opacity: 0.45; cursor: not-allowed; }
+.anomalous-ai-start-choice-words { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.anomalous-ai-start-choice-title { color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
+.anomalous-ai-start-choice-hint { color: var(--amb-text-muted); font-size: 11.5px; }
 /* The fields scroll inside the window (its own height capped) so the buttons under them stay in sight. */
 .anomalous-ai-start-scroll { display: flex; flex-direction: column; gap: 10px; min-height: 0; margin: 0 -6px; padding: 2px 6px; overflow-y: auto; }
 .anomalous-ai-start-field { display: flex; flex-direction: column; gap: 4px; }
@@ -74,6 +123,8 @@
 .anomalous-ai-start-ready-line { display: inline-flex; align-items: center; gap: 5px; color: var(--amb-warn-text); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-start-ready-line.is-ok { color: var(--amb-ok-text); }
 .anomalous-ai-start-ready-line svg { flex: none; }
+/* At the end of the steps, what they chose, one under another. */
+.anomalous-ai-start-ready.is-summary { flex-direction: column; padding-top: 10px; border-top: 1px solid var(--amb-border); }
 /* Ready-made words under a field. */
 .anomalous-ai-start-examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
 .anomalous-ai-start-example {
@@ -92,6 +143,7 @@
 .anomalous-ai-start-lines > summary { color: var(--amb-text-soft); font-size: 12.5px; cursor: pointer; }
 .anomalous-ai-start-lines[open] > summary { margin-bottom: 6px; }
 .anomalous-ai-start-lines > .anomalous-ai-start-line + .anomalous-ai-start-line { margin-top: 4px; }
+.anomalous-ai-start-step > .anomalous-ai-start-lines { padding: 0; background: none; } /* at the end of the steps, a quiet question */
 .anomalous-ai-start-line { color: var(--amb-text-main); font-size: 12.5px; line-height: 1.6; }
 .anomalous-ai-start-line-label { margin-right: 6px; color: var(--amb-text-muted); }
 .anomalous-ai-start-line.is-out { color: var(--amb-warn-text); }

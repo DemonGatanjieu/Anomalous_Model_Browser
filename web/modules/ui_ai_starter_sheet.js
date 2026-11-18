@@ -7,10 +7,12 @@
  * shows the sentence for the AI. A starter is a prepared task and a sentence, never a workflow template. Each
  * card's tags name only what Anomalous makes sure of (`TAGS`), never what rests on the AI obeying. The
  * private card takes the prompt itself in a field the AI gets as a token (ai_hide_mark.js marked). "Run my
- * preset" has its own fields (ui_ai_preset_sheet.js) and, with nothing to change, runs with no AI. The
- * private card puts that prompt first, then where to start, optional LoRAs and, second and said so, the line
- * that goes to the AI as it is; a picture (ui_ai_private_sheet.js) says what happens to the prompt. A sheet
+ * preset" has its own fields (ui_ai_preset_sheet.js) and, with nothing to change, runs with no AI. A sheet
  * opens on its card's picture; what happens on Start, what stays and what to mind fold under one question.
+ * The private card's sheet goes in three steps (ui_ai_start_steps.js): the prompt, with a picture of what
+ * happens to it (ui_ai_private_sheet.js); where to start, as cards; then optional LoRAs and the line that goes
+ * to the AI as it is, what the steps chose, and Start. What is in place shows there, and on top only when
+ * something is missing.
  */
 
 import { marked } from './ai_hide_mark.js';
@@ -24,6 +26,7 @@ import { icon } from './ui_ai_icons.js';
 import { presetFields } from './ui_ai_preset_sheet.js';
 import { loraPicker, sealFlow } from './ui_ai_private_sheet.js';
 import { applyTaskRoute, startFromSection } from './ui_ai_start_from.js';
+import { startSteps } from './ui_ai_start_steps.js';
 
 const NEW_TAB = { canvas: 'new' };
 const MAX_SEALED = 1500; // the prompt the private card hands on, inside a message to the AI
@@ -76,17 +79,21 @@ function textInput(placeholder) {
     return input;
 }
 
-/** What is in place before Start, for a card that hands a task to an AI: an AI app that came (GET /anomalous/ai_starters `app`, `came`), a base model to draw from. */
-function readiness(card, data) {
-    const box = el('div', 'anomalous-ai-start-ready');
-    const line = (ok, text) => {
+/** What is in place before Start, for a card that hands a task to an AI, as [{ok, text}]: an AI app that came (GET /anomalous/ai_starters `app`, `came`), a base model to draw from. */
+function readyLines(card, data) {
+    const came = Boolean(data.app || data.came);
+    const lines = [{ ok: came, text: came ? t(data.app ? 'aiStartReadyApp' : 'aiStartReadyCame', { client: data.app?.client }) : t('aiStartReadyNoApp') }];
+    if (DRAWS.includes(card.id)) lines.push({ ok: data.models > 0, text: data.models > 0 ? t('aiStartReadyModels', { count: data.models }) : t('aiStartReadyNoModels') });
+    return lines;
+}
+
+/** `lines` ([{ok, text}]) a line each in `box`: a check when it is so, a warning when not. */
+function readyBox(lines, box = el('div', 'anomalous-ai-start-ready')) {
+    box.replaceChildren(...lines.map(({ ok, text }) => {
         const node = el('div', `anomalous-ai-start-ready-line${ok ? ' is-ok' : ''}`);
         node.append(icon(ok ? 'check' : 'alert', 13), el('span', '', text));
-        box.append(node);
-    };
-    const came = Boolean(data.app || data.came);
-    line(came, came ? t(data.app ? 'aiStartReadyApp' : 'aiStartReadyCame', { client: data.app?.client }) : t('aiStartReadyNoApp'));
-    if (DRAWS.includes(card.id)) line(data.models > 0, data.models > 0 ? t('aiStartReadyModels', { count: data.models }) : t('aiStartReadyNoModels'));
+        return node;
+    }));
     return box;
 }
 
@@ -105,7 +112,7 @@ function examples(input, keys) {
 
 const postRoute = picked => taskId => applyTaskRoute(taskId, picked);
 
-/** The card's fields and how they become the task: {nodes, task() -> {title, about, note, beforeNote} | error}. */
+/** The card's fields (`nodes`, or `steps` for startSteps) and how they become the task: task() -> {title, about, note, beforeNote} | error. */
 function fieldsOf(card, data, owner, close) {
     if (card.id === 'try') return { nodes: [], task: () => ({ title: t('aiStartTryTask') }) };
     if (card.id === 'preset') { // nothing saved to run yet
@@ -132,7 +139,7 @@ function fieldsOf(card, data, owner, close) {
         };
     }
     if (card.id === 'private') {
-        const from = startFromSection({ data });
+        const from = startFromSection({ data, cards: true });
         const loras = loraPicker();
         const gist = textInput(t('aiStartGistHint'));
         const prompt = el('textarea', 'anomalous-ai-start-input');
@@ -144,8 +151,18 @@ function fieldsOf(card, data, owner, close) {
         promptField.querySelector('.anomalous-ai-start-label')?.prepend(icon('lock', 13));
         const gistField = field(t('aiStartGist'), gist);
         gistField.classList.add('is-plain'); // goes to the AI as it is: second, and quieter
+        const chosen = el('div', 'anomalous-ai-start-ready is-summary');
+        const drawChosen = () => readyBox([
+            { ok: Boolean(prompt.value.trim()), text: t(prompt.value.trim() ? 'aiStartSumPrompt' : 'aiStartSumNoPrompt') },
+            { ok: true, text: t('aiStartSumFrom', { from: from.describe() }) },
+            readyLines(card, data)[0],
+        ], chosen);
         return {
-            nodes: [promptField, from.node, loras.node, gistField, examples(gist, EXAMPLES.private), sealFlow()],
+            steps: [
+                { title: t('aiStartStepWrite'), nodes: [promptField, sealFlow()] },
+                { title: t('aiStartStepFrom'), nodes: [from.node], check: () => { const picked = from.read(); return picked.errorKey || picked.errorText ? picked : null; } },
+                { title: t('aiStartStepMore'), nodes: [el('p', 'anomalous-ai-start-step-hint', t('aiStartStepMoreHint')), loras.node, gistField, examples(gist, EXAMPLES.private), chosen], shown: drawChosen },
+            ],
             stop: () => { from.stop(); loras.stop(); },
             task: () => {
                 const picked = from.read();
@@ -191,6 +208,9 @@ export function openStarter(owner, card, data) {
     const body = el('div', 'anomalous-ai-start-sheet');
     let close = () => {};
     const error = el('div', 'anomalous-ai-start-error');
+    const say = (missing) => { // a locale key, {errorKey} or {errorText}; '' clears it
+        error.textContent = !missing ? '' : typeof missing === 'string' ? t(missing) : missing.errorKey ? t(missing.errorKey) : missing.errorText;
+    };
     const go = button('anomalous-ai-start-go', t('aiStartGo'), async () => {
         if (fields.start) {
             go.disabled = true; // a second press while it starts would run it twice
@@ -199,12 +219,8 @@ export function openStarter(owner, card, data) {
             return;
         }
         const task = fields.task();
-        if (typeof task === 'string') {
-            error.textContent = t(task);
-            return;
-        }
-        if (task?.errorKey || task?.errorText) {
-            error.textContent = task.errorKey ? t(task.errorKey) : task.errorText;
+        if (typeof task === 'string' || task?.errorKey || task?.errorText) {
+            say(task);
             return;
         }
         close();
@@ -222,17 +238,26 @@ export function openStarter(owner, card, data) {
         lines.append(line);
     }
     const actions = el('div', 'anomalous-ai-start-actions');
-    actions.append(button('anomalous-ai-link', t('dialogCancel'), () => close()));
-    if (fields.task || fields.start) actions.append(go);
     // The fields scroll; what is missing and the buttons stay in sight at the foot of the window.
     const scroll = el('div', 'anomalous-ai-start-scroll');
-    const head = el('div', 'anomalous-ai-start-sheet-head');
-    const picture = el('img', 'anomalous-ai-start-sheet-art');
-    picture.alt = '';
-    picture.src = new URL(`../assets/start_${card.id}.webp`, import.meta.url).href;
-    fadeIn(picture);
-    head.append(picture, ...(fields.start ? [] : [readiness(card, data)]));
-    scroll.append(head, ...fields.nodes, lines);
+    if (fields.steps) {
+        const missing = readyLines(card, data).filter(line => !line.ok);
+        if (missing.length) scroll.append(readyBox(missing));
+        fields.steps.at(-1).nodes.push(lines);
+        const stepped = startSteps(fields.steps, { go, cancel: () => close(), say });
+        scroll.append(...stepped.nodes);
+        actions.append(...stepped.actions);
+    } else {
+        const head = el('div', 'anomalous-ai-start-sheet-head');
+        const picture = el('img', 'anomalous-ai-start-sheet-art');
+        picture.alt = '';
+        picture.src = new URL(`../assets/start_${card.id}.webp`, import.meta.url).href;
+        fadeIn(picture);
+        head.append(picture, ...(fields.start ? [] : [readyBox(readyLines(card, data))]));
+        scroll.append(head, ...fields.nodes, lines);
+        actions.append(button('anomalous-ai-link', t('dialogCancel'), () => close()));
+        if (fields.task || fields.start) actions.append(go);
+    }
     body.append(scroll, error, actions);
     body.addEventListener('input', () => { error.textContent = ''; });
     body.addEventListener('change', () => { error.textContent = ''; });

@@ -2,11 +2,13 @@
 
 ## v1.64.0 — unreleased
 
+- 「隐私出图」改成三步走，一次只看一件事：先写提示词，再选从哪开始（四个选项变成带图标、带一句说明的卡片），最后可以加 LoRA 和给 AI 的一句话，列出前面选了什么再按「开始」。“AI 连过”“底模有几个”平时不占地方，缺了才提醒。
 - 藏起来的模型名换了写法也会换成代号了：两个词以上的名字，大小写、空格、下划线、横线不一样也认得出（文件叫 meadow_light，留言里写 Meadow Light 也会变成 [M1]）。以前只认一模一样的写法，换个写法就原样发给了 AI。发送前的提醒也跟着少问这些情况。
 - 「隐私一览」默认改成左右对照（选了单栏会记住；窗口太窄时还是单栏），而且每一桌都分左右：留言左边是你写的原样（藏起来的词带锁、用原来的字，整段提示词这种长的收成一行，鼠标停上去看全文），右边是 AI 收到的代号；图左边是“原图都留在你电脑上”，右边是放给 AI 看的图；哪边没有东西就写一句“这一类没有藏的”。
 - 「隐私一览」左右对照时也能「看词义」了：每个词的意思写在词下面，左右两边照样一样宽。「看词义」鼠标停上去会说明这些词会发给网上的翻译服务（不是发给 AI）。
 - 主页的「让 AI 帮你做」不再晚一步才冒出来、把下面的「自己动手」往下挤：框和六张卡片跟主页一起出来，最近连接的那一行等读到了再补上。
 - 刷新后 AI 页面的图不再比字慢一步：AMB 窗口一打开就先去拿首页卡片和新任务三步的图，并排在 ComfyUI 刚启动时那一大串请求前面；万一还是晚到，图会淡入，不会突然蹦出来。
+- "Draw privately" goes in three steps, one thing at a time: the prompt, where to start (the four choices now cards with an icon and a line), then LoRAs and a line for the AI, with what was chosen listed before Start. Whether an AI has connected and how many base models there are show only when something is missing.
 - A hidden model's name of two words or more becomes its token however it is written (any case, spaces, underscores or hyphens: "Meadow Light" for meadow_light); before, only the exact spelling was swapped and another one reached the AI. The warning before sending no longer asks about these.
 - The Privacy overview opens side by side (one column when chosen, or in a narrow window), and every table splits: a message as written (hidden words locked, in their own words; a long one such as a whole prompt on one line, all of it in its tooltip) against what the AI got, the pictures kept here against those released; a side with nothing says so.
 - Side by side, the Privacy overview's prompts can "Show meanings" too, each under its word, both sides still as wide; the button says on hover that the words go to an online translation service, not the AI.

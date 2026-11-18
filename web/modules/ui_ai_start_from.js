@@ -1,7 +1,8 @@
 /**
  * The "从哪开始 / Start from" first row in the `say` and `private` starter sheets
- * (plugged into web/modules/ui_ai_starter_sheet.js) and the standalone "Build a new one
- * (text to image)" dialog for the message box (`openBuildRouteWindow`). Pure rules live in ./ai_start_from.js.
+ * (plugged into web/modules/ui_ai_starter_sheet.js; pills, or for the private card's steps cards with an icon
+ * and a line each) and the standalone "Build a new one (text to image)" dialog for the message box
+ * (`openBuildRouteWindow`). Pure rules live in ./ai_start_from.js.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -10,6 +11,7 @@ import { createViewScope } from './ui_lifecycle.js';
 import { openTabs } from './preset_runs.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { icon } from './ui_ai_icons.js';
 import { modelField } from './ui_ai_model_field.js';
 import {
     SEARCH_FROM,
@@ -279,6 +281,7 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
         renderInto,
         drawWays,
         fetchInitial,
+        firstName: () => findModel(state.first)?.name || '',
         read() {
             if (loadingInit || loadingWays) return { errorKey: 'aiStartWaitRoutes' };
             if (loadError && !models?.length) return { errorText: loadError };
@@ -347,7 +350,10 @@ export function openBuildRouteWindow({ task, built }) {
 }
 
 /** Builds `{ node, read, save, stop }` for the sheet's "从哪开始 / Start from" section. */
-export function startFromSection({ data }) {
+const CHOICE_ICONS = { new: 'plus', open: 'nodes', card: 'workflows', ai: 'sparkle' };
+
+/** The row in a starter sheet; `cards`: each choice a card with an icon and a line, the sheet asking the question. */
+export function startFromSection({ data, cards = false }) {
     const scope = createViewScope();
     const remembered = readRemembered();
     const workflows = data.workflows || [];
@@ -359,14 +365,17 @@ export function startFromSection({ data }) {
     const state = resolveStartFrom(remembered, { hasNew, models: null, ways: null, canOpen, workflows });
 
     const root = el('div', 'anomalous-ai-start-field anomalous-ai-start-from');
-    root.append(el('span', 'anomalous-ai-start-label', t('aiStartFromLabel')));
-    const pillsRow = el('div', 'anomalous-ai-start-pills');
-    const pills = {
-        new: button('anomalous-ai-start-pill', t('aiStartFrom_new'), () => pickMode('new')),
-        open: button('anomalous-ai-start-pill', t('aiStartFrom_open'), () => pickMode('open')),
-        card: button('anomalous-ai-start-pill', t('aiStartFrom_card'), () => pickMode('card')),
-        ai: button('anomalous-ai-start-pill', t('aiStartFrom_ai'), () => pickMode('ai')),
+    if (!cards) root.append(el('span', 'anomalous-ai-start-label', t('aiStartFromLabel')));
+    const pillsRow = el('div', cards ? 'anomalous-ai-start-choices' : 'anomalous-ai-start-pills');
+    const choice = (mode) => {
+        if (!cards) return button('anomalous-ai-start-pill', t(`aiStartFrom_${mode}`), () => pickMode(mode));
+        const node = button('anomalous-ai-start-choice', '', () => pickMode(mode));
+        const words = el('span', 'anomalous-ai-start-choice-words');
+        words.append(el('span', 'anomalous-ai-start-choice-title', t(`aiStartFrom_${mode}`)), el('span', 'anomalous-ai-start-choice-hint', t(`aiStartFromHint_${mode}`)));
+        node.append(icon(CHOICE_ICONS[mode], 18), words);
+        return node;
     };
+    const pills = { new: choice('new'), open: choice('open'), card: choice('card'), ai: choice('ai') };
     pills.new.hidden = !hasNew;
     pills.open.disabled = !canOpen;
     if (!canOpen) pills.open.title = t('aiStartOpenNoOutput');
@@ -443,6 +452,12 @@ export function startFromSection({ data }) {
         node: root,
         stop: () => scope.dispose(),
         save: () => writeRemembered({ ...state, ...routePart.state }),
+        /** What was chosen, in words: "Build a new one · <base model>", "A saved workflow · <its name>". */
+        describe: () => {
+            const chosen = state.mode === 'new' ? routePart.firstName()
+                : state.mode === 'card' ? workflows.find(item => item.file === state.card)?.name : '';
+            return [t(`aiStartFrom_${state.mode}`), chosen].filter(Boolean).join(' · ');
+        },
         read: () => {
             if (state.mode === 'new') return routePart.read();
             if (state.mode === 'open') {
