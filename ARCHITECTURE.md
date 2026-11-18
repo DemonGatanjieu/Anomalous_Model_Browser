@@ -691,8 +691,9 @@ covered by the `styles.css` manifest.
   AI leaves as written, for `ui_ai_model_lock.js` guardNames to ask about; `tests/ai_name_guard.mjs`);
   `web/modules/ui_ai_private_sheet.js` adds its optional LoRAs (from the materials catalog, named in the first
   message by file name so the task's privacy turns them into tokens, picked in the model window) and the four-box drawing of what happens to the prompt.
-  That sheet goes in three steps (`web/modules/ui_ai_start_steps.js`: numbered dots, one step's question and fields
-  at a time, Back / Next with a step's own check, Start on the last): the prompt, where to start, then what else.
+  That sheet, and those of "Draw what I describe", "Change a picture" and "Run my preset", go in steps
+  (`web/modules/ui_ai_start_steps.js`: numbered dots, one step's question and fields at a time, Back / Next with a
+  step's own check, Start on the last).
   For "say" and "private", `web/modules/ui_ai_start_from.js` draws
   the leading "Start from" row and also exports `openBuildRouteWindow` + shared `newRoutePart` so both the starter sheets and the message box's "+" / `/build` command share the exact same "Build a new one (text to image)" fields (the models picked as numbered chips with a swap, picked in `web/modules/ui_ai_model_pick.js`: a window of model cards with covers via `ui_ai_toolbox_cards.js` `coverUrl` / `standInCover`, search, base-family chips when `>= 2` families, favourites, numbered picks up to a limit and a rule for what may join them, also the private card's LoRAs; the combos each with a flow of small covers) and `localStorage` key (four pills sharing `.anomalous-ai-start-pills`/`.anomalous-ai-start-pill` in `web/styles/55-ai-starters.css` with `ui_ai_preset_sheet.js`: new text-to-image route via `GET /anomalous/ai_routes` & `POST /anomalous/ai_tasks/{id}/route`, open canvas checking `preset_runs.js` `openTabs` & active `LoadImage` nodes, saved workflow card marked in private mode, or AI picks) backed by `web/modules/ai_start_from.js` (`filterModels`, `modelFamilies`, selection, validation, and first-message rules; `tests/ai_start_from.mjs`). `ui_ai_preset_sheet.js` is the fields of "Run my preset": a
   saved workflow or an open canvas, the presets as chips a press lines up to run, each so many times, and what to

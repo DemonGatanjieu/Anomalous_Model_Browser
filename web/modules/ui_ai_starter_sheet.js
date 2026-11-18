@@ -7,12 +7,14 @@
  * shows the sentence for the AI. A starter is a prepared task and a sentence, never a workflow template. Each
  * card's tags name only what Anomalous makes sure of (`TAGS`), never what rests on the AI obeying. The
  * private card takes the prompt itself in a field the AI gets as a token (ai_hide_mark.js marked). "Run my
- * preset" has its own fields (ui_ai_preset_sheet.js) and, with nothing to change, runs with no AI. A sheet
- * opens on its card's picture; what happens on Start, what stays and what to mind fold under one question.
- * The private card's sheet goes in three steps (ui_ai_start_steps.js): the prompt, with a picture of what
- * happens to it (ui_ai_private_sheet.js); where to start, as cards; then optional LoRAs and the line that goes
- * to the AI as it is, what the steps chose, and Start. What is in place shows there, and on top only when
- * something is missing.
+ * preset" has its own fields (ui_ai_preset_sheet.js) and, with nothing to change, runs with no AI. What
+ * happens on Start, what stays and what to mind fold under one question. The sheets with fields go in steps
+ * (ui_ai_start_steps.js), one question at a time: "Draw what I describe" the picture in words, then where to
+ * start (as cards); "Change a picture" which picture, then how; "Run my preset" which workflow, which presets,
+ * then what to change; the private card the prompt (with a picture of what happens to it,
+ * ui_ai_private_sheet.js), where to start, then optional LoRAs and the line that goes to the AI as it is. The
+ * last step lists what was chosen and whether an AI has come; on top that shows only when something is
+ * missing. "Try it once" has nothing to fill in and opens on its card's picture.
  */
 
 import { marked } from './ai_hide_mark.js';
@@ -111,81 +113,95 @@ function examples(input, keys) {
 }
 
 const postRoute = picked => taskId => applyTaskRoute(taskId, picked);
+const fromProblem = from => () => { const picked = from.read(); return picked.errorKey || picked.errorText ? picked : null; };
 
-/** The card's fields (`nodes`, or `steps` for startSteps) and how they become the task: task() -> {title, about, note, beforeNote} | error. */
-function fieldsOf(card, data, owner, close) {
-    if (card.id === 'try') return { nodes: [], task: () => ({ title: t('aiStartTryTask') }) };
-    if (card.id === 'preset') { // nothing saved to run yet
-        return { nodes: [el('p', 'anomalous-ai-start-empty', t('aiStartNoWorkflows')),
-            button('anomalous-ai-link', t('aiStartToWorkflows'), () => { close(); owner.goTo?.('recipes'); })], task: null };
-    }
-    if (card.id === 'picture') {
-        let chosen = null;
-        const grid = pictureGrid({
-            picked: id => chosen?.id === id,
-            pick: (item) => { chosen = chosen?.id === item.id ? null : item; },
-        });
-        const how = textInput(t('aiStartHowHint'));
-        const pictures = el('div', 'anomalous-ai-start-pictures');
-        pictures.append(grid.search, grid.grid);
-        return {
-            nodes: [field(t('aiStartPicture'), pictures), field(t('aiStartHow'), how), examples(how, EXAMPLES.picture)],
-            stop: () => grid.stop(),
-            task: () => {
-                if (!chosen) return 'aiStartNeedPicture';
-                if (!how.value.trim()) return 'aiStartNeedText';
-                return { title: how.value.trim(), about: [{ type: 'image', image: chosen.id, label: chosen.title }] };
-            },
-        };
-    }
-    if (card.id === 'private') {
-        const from = startFromSection({ data, cards: true });
-        const loras = loraPicker();
-        const gist = textInput(t('aiStartGistHint'));
-        const prompt = el('textarea', 'anomalous-ai-start-input');
-        prompt.placeholder = t('aiStartSealedHint');
-        prompt.maxLength = MAX_SEALED;
-        prompt.rows = 4;
-        const promptField = field(t('aiStartSealed'), prompt);
-        promptField.classList.add('is-sealed');
-        promptField.querySelector('.anomalous-ai-start-label')?.prepend(icon('lock', 13));
-        const gistField = field(t('aiStartGist'), gist);
-        gistField.classList.add('is-plain'); // goes to the AI as it is: second, and quieter
-        const chosen = el('div', 'anomalous-ai-start-ready is-summary');
-        const drawChosen = () => readyBox([
-            { ok: Boolean(prompt.value.trim()), text: t(prompt.value.trim() ? 'aiStartSumPrompt' : 'aiStartSumNoPrompt') },
-            { ok: true, text: t('aiStartSumFrom', { from: from.describe() }) },
-            readyLines(card, data)[0],
-        ], chosen);
-        return {
-            steps: [
-                { title: t('aiStartStepWrite'), nodes: [promptField, sealFlow()] },
-                { title: t('aiStartStepFrom'), nodes: [from.node], check: () => { const picked = from.read(); return picked.errorKey || picked.errorText ? picked : null; } },
-                { title: t('aiStartStepMore'), nodes: [el('p', 'anomalous-ai-start-step-hint', t('aiStartStepMoreHint')), loras.node, gistField, examples(gist, EXAMPLES.private), chosen], shown: drawChosen },
-            ],
-            stop: () => from.stop(),
-            task: () => {
-                const picked = from.read();
-                if (picked.errorKey || picked.errorText) return picked;
-                const sealed = prompt.value.trim();
-                if (!gist.value.trim() && !sealed) return 'aiStartNeedGist';
-                from.save();
-                const fact = startFactSentence({ ...picked, secret: true }, t, marked);
-                const files = loras.read(); // by file name: the task's privacy makes each a token
-                const cardNote = [sealed ? t('aiPresetSayPrompt', { prompt: marked(sealed) }) : '',
-                    files.length ? t('aiStartUseLoras', { loras: files.join(t('listSeparator')) }) : ''].filter(Boolean).join(' ');
-                return {
-                    title: gist.value.trim() || t('aiStartPrivateTask'),
-                    note: composeFirstNote(fact, cardNote),
-                    beforeNote: picked.mode === 'new' ? postRoute(picked) : null,
-                };
-            },
-        };
-    }
-    const from = startFromSection({ data });
-    const words = textInput(t('aiStartSayHint'));
+/** The last step's lines of what was chosen (`lines()`: [{ok, text}]) and whether an AI has come; drawn as the step opens. */
+function summary(card, data, lines) {
+    const node = el('div', 'anomalous-ai-start-ready is-summary');
+    return { node, draw: () => readyBox([...lines(), readyLines(card, data)[0]], node) };
+}
+
+/** "Change a picture": which picture, then how. */
+function pictureFields(card, data) {
+    let chosen = null;
+    const grid = pictureGrid({
+        picked: id => chosen?.id === id,
+        pick: (item) => { chosen = chosen?.id === item.id ? null : item; },
+    });
+    const how = textInput(t('aiStartHowHint'));
+    how.setAttribute('aria-label', t('aiStartStepHow'));
+    const pictures = el('div', 'anomalous-ai-start-pictures');
+    pictures.append(grid.search, grid.grid);
+    const sum = summary(card, data, () => [{ ok: true, text: t('aiStartSumPicture', { name: chosen?.title || '' }) }]);
     return {
-        nodes: [from.node, field(t('aiStartSay'), words), examples(words, EXAMPLES.say)],
+        steps: [
+            { title: t('aiStartStepPicture'), nodes: [pictures], check: () => (chosen ? null : 'aiStartNeedPicture') },
+            { title: t('aiStartStepHow'), nodes: [how, examples(how, EXAMPLES.picture), sum.node], shown: sum.draw },
+        ],
+        stop: () => grid.stop(),
+        task: () => {
+            if (!chosen) return 'aiStartNeedPicture';
+            if (!how.value.trim()) return 'aiStartNeedText';
+            return { title: how.value.trim(), about: [{ type: 'image', image: chosen.id, label: chosen.title }] };
+        },
+    };
+}
+
+/** "Draw privately": the prompt the AI gets as a token, where to start, then LoRAs and a line for the AI. */
+function privateFields(card, data) {
+    const from = startFromSection({ data, cards: true });
+    const loras = loraPicker();
+    const gist = textInput(t('aiStartGistHint'));
+    const prompt = el('textarea', 'anomalous-ai-start-input');
+    prompt.placeholder = t('aiStartSealedHint');
+    prompt.maxLength = MAX_SEALED;
+    prompt.rows = 4;
+    const promptField = field(t('aiStartSealed'), prompt);
+    promptField.classList.add('is-sealed');
+    promptField.querySelector('.anomalous-ai-start-label')?.prepend(icon('lock', 13));
+    const gistField = field(t('aiStartGist'), gist);
+    gistField.classList.add('is-plain'); // goes to the AI as it is: second, and quieter
+    const sum = summary(card, data, () => [
+        { ok: Boolean(prompt.value.trim()), text: t(prompt.value.trim() ? 'aiStartSumPrompt' : 'aiStartSumNoPrompt') },
+        { ok: true, text: t('aiStartSumFrom', { from: from.describe() }) },
+    ]);
+    return {
+        steps: [
+            { title: t('aiStartStepWrite'), nodes: [promptField, sealFlow()] },
+            { title: t('aiStartStepFrom'), nodes: [from.node], check: fromProblem(from) },
+            { title: t('aiStartStepMore'), nodes: [el('p', 'anomalous-ai-start-step-hint', t('aiStartStepMoreHint')), loras.node, gistField, examples(gist, EXAMPLES.private), sum.node], shown: sum.draw },
+        ],
+        stop: () => from.stop(),
+        task: () => {
+            const picked = from.read();
+            if (picked.errorKey || picked.errorText) return picked;
+            const sealed = prompt.value.trim();
+            if (!gist.value.trim() && !sealed) return 'aiStartNeedGist';
+            from.save();
+            const fact = startFactSentence({ ...picked, secret: true }, t, marked);
+            const files = loras.read(); // by file name: the task's privacy makes each a token
+            const cardNote = [sealed ? t('aiPresetSayPrompt', { prompt: marked(sealed) }) : '',
+                files.length ? t('aiStartUseLoras', { loras: files.join(t('listSeparator')) }) : ''].filter(Boolean).join(' ');
+            return {
+                title: gist.value.trim() || t('aiStartPrivateTask'),
+                note: composeFirstNote(fact, cardNote),
+                beforeNote: picked.mode === 'new' ? postRoute(picked) : null,
+            };
+        },
+    };
+}
+
+/** "Draw what I describe": the picture in words, then where to start. */
+function sayFields(card, data) {
+    const from = startFromSection({ data, cards: true });
+    const words = textInput(t('aiStartSayHint'));
+    words.setAttribute('aria-label', t('aiStartStepWrite'));
+    const sum = summary(card, data, () => []); // where to start is chosen on the same step, in sight
+    return {
+        steps: [
+            { title: t('aiStartStepWrite'), nodes: [words, examples(words, EXAMPLES.say)], check: () => (words.value.trim() ? null : 'aiStartNeedText') },
+            { title: t('aiStartStepFrom'), nodes: [from.node, sum.node], shown: sum.draw },
+        ],
         stop: () => from.stop(),
         task: () => {
             const picked = from.read();
@@ -201,6 +217,18 @@ function fieldsOf(card, data, owner, close) {
             };
         },
     };
+}
+
+/** The card's fields (`nodes`, or `steps` for startSteps) and how they become the task: task() -> {title, about, note, beforeNote} | error. */
+function fieldsOf(card, data, owner, close) {
+    if (card.id === 'try') return { nodes: [], task: () => ({ title: t('aiStartTryTask') }) };
+    if (card.id === 'preset') { // nothing saved to run yet
+        return { nodes: [el('p', 'anomalous-ai-start-empty', t('aiStartNoWorkflows')),
+            button('anomalous-ai-link', t('aiStartToWorkflows'), () => { close(); owner.goTo?.('recipes'); })], task: null };
+    }
+    if (card.id === 'picture') return pictureFields(card, data);
+    if (card.id === 'private') return privateFields(card, data);
+    return sayFields(card, data);
 }
 
 /** Opens `card`'s sheet; `data` is GET /anomalous/ai_starters. */
@@ -241,7 +269,7 @@ export function openStarter(owner, card, data) {
     // The fields scroll; what is missing and the buttons stay in sight at the foot of the window.
     const scroll = el('div', 'anomalous-ai-start-scroll');
     if (fields.steps) {
-        const missing = readyLines(card, data).filter(line => !line.ok);
+        const missing = fields.start ? [] : readyLines(card, data).filter(line => !line.ok);
         if (missing.length) scroll.append(readyBox(missing));
         fields.steps.at(-1).nodes.push(lines);
         const stepped = startSteps(fields.steps, { go, cancel: () => close(), say });
@@ -261,10 +289,11 @@ export function openStarter(owner, card, data) {
     body.append(scroll, error, actions);
     body.addEventListener('input', () => { error.textContent = ''; });
     body.addEventListener('change', () => { error.textContent = ''; });
-    body.addEventListener('click', (event) => {
-        if (event.target.closest('button') && event.target.closest('button') !== go) error.textContent = '';
+    body.addEventListener('click', (event) => { // Next and Start say what is missing themselves
+        if (event.target.closest('button:not(.anomalous-ai-start-go)')) error.textContent = '';
     });
     close = aiWindow(t(`aiStart_${card.id}_title`), body, () => fields.stop?.());
-    body.querySelector('textarea, input:not([hidden]), select')?.focus();
+    const page = body.querySelector('.anomalous-ai-start-step:not([hidden])');
+    (page ? page.querySelector('textarea, input:not([hidden]), button:not(:disabled):not([hidden])') : body.querySelector('textarea, input:not([hidden]), select'))?.focus();
 }
 

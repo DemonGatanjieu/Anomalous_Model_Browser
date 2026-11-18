@@ -1,7 +1,7 @@
 /**
- * The fields of the "Run my preset" sheet (ui_ai_starter_sheet.js opens it): which workflow (a saved one,
- * or an open canvas with the saved workflow whose presets go onto it), the presets as chips that a press
- * lines up to run, each so many times, and what to change this time. With nothing to change Anomalous
+ * The steps of the "Run my preset" sheet (ui_ai_starter_sheet.js opens it, ui_ai_start_steps.js steps it):
+ * which workflow (a saved one, or an open canvas with the saved workflow whose presets go onto it), the
+ * presets as chips that a press lines up to run, each so many times, then what to change this time. With nothing to change Anomalous
  * runs the list itself (preset_runs.js), no AI app needed, and keeps a saved workflow's list in this
  * browser: the home page's line runs it again with one press (againLine). With a change the list goes to
  * an AI as a task and a message; in privacy mode the names in it (the workflow's and each preset's, a
@@ -98,7 +98,7 @@ export function againLine(owner, data) {
 }
 
 /**
- * {nodes, start()} of the sheet. `go` is its Start button, worded here by who will do the run; `close()`
+ * {steps, start()} of the sheet. `go` is its Start button, worded here by who will do the run; `close()`
  * shuts the sheet; start() returns what is missing, in words, or '' once it took over.
  */
 export function presetFields({ data, owner, close, go }) {
@@ -131,6 +131,7 @@ export function presetFields({ data, owner, close, go }) {
     const change = el('input', 'anomalous-ai-start-input');
     change.type = 'text';
     change.placeholder = t('aiStartChangeHint');
+    change.setAttribute('aria-label', t('aiPresetStepChange'));
     change.maxLength = 300;
     const hidden = el('textarea', 'anomalous-ai-start-input');
     hidden.placeholder = t('aiPresetHiddenHint');
@@ -273,7 +274,13 @@ export function presetFields({ data, owner, close, go }) {
         return '';
     }
 
-    const nodes = [field(t('aiPresetSource'), sources), tabField, cardField, field(t('aiPresetPick'), chips, row, sum),
-        field(t('aiStartChange'), change), checks, hiddenField, who];
-    return { nodes, start };
+    const hint = key => el('p', 'anomalous-ai-start-step-hint', t(key));
+    const steps = [
+        { title: t('aiPresetStepWorkflow'), nodes: [sources, tabField, cardField], check: () => (tabOf() && !tabOf().runs ? { errorText: t('aiPresetTabNoOutput') } : null) },
+        { title: t('aiPresetStepPick'), nodes: [hint('aiPresetStepPickHint'), chips, row, sum],
+            check: () => (!state.picks.length ? { errorText: t('aiPresetNeedPick') }
+                : total(state.picks) > MAX_TOTAL ? { errorText: t('aiPresetTooMany', { count: total(state.picks), max: MAX_TOTAL }) } : null) },
+        { title: t('aiPresetStepChange'), nodes: [hint('aiStartStepMoreHint'), change, checks, hiddenField, who] },
+    ];
+    return { steps, start };
 }

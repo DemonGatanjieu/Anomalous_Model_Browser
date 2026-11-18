@@ -2,6 +2,7 @@
 
 ## v1.64.0 — unreleased
 
+- 主页「让 AI 帮你做」里要填东西的卡片都改成一步一步来：「照我说的出图」先写想要的画面，再选从哪开始（和「隐私出图」一样的四张卡片）；「改一张图」先挑图，再写怎么改；「跑我存的预设」先选工作流，再点预设，最后问这次要不要改。每一步没填好就按「下一步」，会在这一步说缺什么。「先试一次」没有要填的，还是一页。
 - 选模型不再是小小的下拉框：「新搭一张（文生图）」点「选模型」弹出一个模型窗口，带封面的大卡片，能搜、能按家族筛、收藏的排前面；点卡片选一个或两个，标上 1（先画）、2（接着画），回到面板还能「调换先后」。下面「怎么搭配」只列这两个模型能搭的做法，每个前面一条用封面画的小流程（1 → 2，中间放大的多一个放大图标）。「隐私出图」的 LoRA 也在同一种窗口里一次选好几个。「照我说的出图」和留言框里的「新搭一张」一起换了。
 - 「隐私出图」改成三步走，一次只看一件事：先写提示词，再选从哪开始（四个选项变成带图标、带一句说明的卡片），最后可以加 LoRA 和给 AI 的一句话，列出前面选了什么再按「开始」。“AI 连过”“底模有几个”平时不占地方，缺了才提醒。
 - 藏起来的模型名换了写法也会换成代号了：两个词以上的名字，大小写、空格、下划线、横线不一样也认得出（文件叫 meadow_light，留言里写 Meadow Light 也会变成 [M1]）。以前只认一模一样的写法，换个写法就原样发给了 AI。发送前的提醒也跟着少问这些情况。
@@ -9,6 +10,7 @@
 - 「隐私一览」左右对照时也能「看词义」了：每个词的意思写在词下面，左右两边照样一样宽。「看词义」鼠标停上去会说明这些词会发给网上的翻译服务（不是发给 AI）。
 - 主页的「让 AI 帮你做」不再晚一步才冒出来、把下面的「自己动手」往下挤：框和六张卡片跟主页一起出来，最近连接的那一行等读到了再补上。
 - 刷新后 AI 页面的图不再比字慢一步：AMB 窗口一打开就先去拿首页卡片和新任务三步的图，并排在 ComfyUI 刚启动时那一大串请求前面；万一还是晚到，图会淡入，不会突然蹦出来。
+- The home page's AI cards with something to fill in go one step at a time: "Draw what I describe" the picture in words, then where to start (the four cards of "Draw privately"); "Change a picture" which picture, then how; "Run my preset" which workflow, which presets, then anything to change. Next on a step with something missing says so there. "Try it once" has nothing to fill in and stays one page.
 - Models are picked in a window instead of a small dropdown: "Pick models" under "Build a new one (text to image)" opens cards with covers, a search, family chips and the starred first; press one or two, numbered 1 (draws first) and 2 (then this one), and swap them back in the sheet. "How they work together" lists only what those two can do, each with a small flow in covers (1 → 2, a magnifier where the picture gets bigger). "Draw privately" picks its LoRAs, several at once, in the same window. "Draw what I say" and the message box's "Build a new one" changed with it.
 - "Draw privately" goes in three steps, one thing at a time: the prompt, where to start (the four choices now cards with an icon and a line), then LoRAs and a line for the AI, with what was chosen listed before Start. Whether an AI has connected and how many base models there are show only when something is missing.
 - A hidden model's name of two words or more becomes its token however it is written (any case, spaces, underscores or hyphens: "Meadow Light" for meadow_light); before, only the exact spelling was swapped and another one reached the AI. The warning before sending no longer asks about these.
