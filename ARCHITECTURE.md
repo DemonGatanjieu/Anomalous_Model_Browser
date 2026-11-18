@@ -114,7 +114,7 @@ covered by the `styles.css` manifest.
   the privacy skill tells the AI how to work). `api/ai_sealed.py` also seals `get_model`'s `user_notes` and leaves out a model's `description` on any `model_id` dict anywhere in tool answers (including `"models"` message refs; a text copy of the answer is masked as data too). `api/ai_sealed_models.py` keeps a private task's model names too
   (the Gates window's "Model names in a private task", on unless turned off): each model of the library is one
   token ("[M1]", sealed as its model_id) however an answer writes it (model_id, loader name, file name in a text,
-  card name; leaving `"ways"` ref `details` intact while still masking `user_note`), its own entry loses what tells it apart and keeps type, base model, the author's settings and the
+  card name, a card name or file stem of two words or more in any case and with any spaces, underscores or hyphens; leaving `"ways"` ref `details` intact while still masking `user_note`), its own entry loses what tells it apart and keeps type, base model, the author's settings and the
   user's note for the AI (`ai_note`, set in the model editor, `note_for_ai` in the tools); `expand` writes a
   model token back as the model_id, as the loader's name among a node's values, as the card's name inside the AI's words.
   `api/ai_model_choice.py` is what the user chose for one model, chosen once in its `<model>.anomalous.json` (moves with

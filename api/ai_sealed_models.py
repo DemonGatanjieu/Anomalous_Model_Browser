@@ -3,7 +3,9 @@ a file name, its folder, the name on its card and its pages can say as much as a
 model of the library is one token ("[M1]", sealed in the task as its model_id, ai_sealed.py) however
 a tool's answer writes it: its model_id, the name a loader lists it by, its file name inside a text;
 its card's name where a name stands (NAME_KEYS), and inside a text when it is more than one plain
-word (a model called "Anima" is not taken out of every sentence about Anima). A model's own entry
+word (a model called "Anima" is not taken out of every sentence about Anima); a card name or file stem of
+two words or more also however it is written there ("Meadow Light" for meadow_light: any case, any spaces,
+underscores or hyphens between its words). A model's own entry
 (anything with a model_id) loses what tells it apart (ENTRY_DROPS: its description and the user's own
 notes too) and its trigger words become tokens (WORD_KEYS); its type, base model, author's settings,
 the paragraphs of its description the user picked and the user's note for the AI stay, to pick by.
@@ -27,6 +29,7 @@ NAME_KEYS = {"name", "names", "more_names", "model", "models", "main_model", "lo
 PLAIN_KEYS = {"type", "kind", "base", "base_model", "baseModel", "family", "source"}  # never a model's name
 WIDGET_KEYS = {"values", "settings", "inputs", "widgets", "widgets_values"}  # a node's values: models by their loader's names
 MAX_NAME = 260
+SEPARATORS = re.compile(r"[\s_\-]+")
 
 
 def _library():
@@ -37,6 +40,16 @@ def _library():
 def _distinct(name):
     """Whether card name `name` is looked for inside a text: not one plain word, which a sentence may use as itself."""
     return len(name) >= 4 and not (name.isascii() and name.isalpha())
+
+
+def _words(name):
+    """The words of `name` in lower case, whatever separates them."""
+    return [word for word in SEPARATORS.split(name.lower()) if word]
+
+
+def _spelled(key):
+    """A pattern for the words of `key` (joined by single spaces) written any way: any case, any separators."""
+    return r"[\s_\-]+".join(re.escape(word) for word in key.split(" "))
 
 
 def _cut(words):
@@ -58,8 +71,10 @@ def _gather(value, out):
 
 def _forms(blob, only_ids=None, skip_ids=()):
     """What the strings of an answer (`blob`) may call the library's models: {form: model_id} for anywhere
-    in a text, {name: model_id} for where a name stands. Only the models `blob` can be naming."""
-    anywhere, names = {}, {}
+    in a text, {name: model_id} for where a name stands, {words: model_id} for a name of two words or more
+    written any way (its words in lower case, joined by single spaces). Only the models `blob` can be naming."""
+    anywhere, names, spelled = {}, {}, {}
+    lower = blob.lower()
     skip = set(skip_ids or ())
     only = set(only_ids) if only_ids is not None else None
     seen = set()
@@ -69,8 +84,12 @@ def _forms(blob, only_ids=None, skip_ids=()):
         if mid in skip or (only is not None and mid not in only):
             continue
         shown, stem = str(model["name"] or ""), os.path.splitext(model["file"])[0]
-        if not any(form and form in blob for form in (shown, stem, model["file"], mid)):
+        loose = [" ".join(words) for words in (_words(shown), _words(stem)) if len(words) > 1 and words[0] in lower]
+        loose = [key for key in loose if re.search(r"(?<!\w)" + _spelled(key) + r"(?!\w)", blob, re.IGNORECASE)]
+        if not loose and not any(form and form in blob for form in (shown, stem, model["file"], mid)):
             continue
+        for key in loose:
+            spelled.setdefault(key, mid)
         place = mid.split(":", 2)[2]
         for form in (mid, place, place.replace("/", "\\"), model["file"]):
             anywhere.setdefault(form, mid)
@@ -90,7 +109,7 @@ def _forms(blob, only_ids=None, skip_ids=()):
                 anywhere.setdefault(form, mid)
         if stem and _distinct(stem) and stem in blob:
             anywhere.setdefault(stem, mid)
-    return anywhere, names
+    return anywhere, names, spelled
 
 
 def _skip_files(skip_ids):
@@ -120,7 +139,7 @@ def hide(value, seals, only_ids=None, skip_ids=()):
     strings = []
     _gather(value, strings)
     blob = "\n".join(strings)
-    anywhere, names = _forms(blob, only_ids=only_ids, skip_ids=skip_ids)
+    anywhere, names, spelled = _forms(blob, only_ids=only_ids, skip_ids=skip_ids)
     skip = set(skip_ids or ())
     only = set(only_ids) if only_ids is not None else None
     hide_loose = only is None
@@ -128,6 +147,9 @@ def hide(value, seals, only_ids=None, skip_ids=()):
     found = sorted((form for form in anywhere if form in blob), key=len, reverse=True)
     # A form counts where it stands by itself: "anima.safetensors" is not taken out of "my_anima.safetensors".
     known = re.compile(r"(?<![\w.-])(?:" + "|".join(re.escape(form) for form in found) + r")(?!\w)") if found else None
+    # A name of two words or more however it is written: "Meadow Light" for meadow_light.
+    loosely = re.compile(r"(?<![\w.-])(?:" + "|".join(_spelled(key) for key in sorted(spelled, key=len, reverse=True)) + r")(?!\w)",
+                         re.IGNORECASE) if spelled else None
 
     def model_is_hidden(mid):
         if mid in skip:
@@ -148,6 +170,8 @@ def hide(value, seals, only_ids=None, skip_ids=()):
         if words.lower() in allowed_loose:
             return words
         swapped = known.sub(lambda match: seals.seal(anywhere[match.group(0)], "M"), words) if known else words
+        if loosely:
+            swapped = loosely.sub(lambda match: seals.seal(spelled[" ".join(_words(match.group(0)))], "M"), swapped)
         if hide_loose and swapped == words and words.lower().endswith(MODEL_FILE) and len(words) <= MAX_NAME and "\n" not in words and ": " not in words:
             return loose_token(words)  # a model file the library does not have, spaces in its name and all
         return LOOSE.sub(lambda match: loose_token(match.group(0)), swapped) if hide_loose else swapped

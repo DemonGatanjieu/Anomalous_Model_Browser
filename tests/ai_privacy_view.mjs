@@ -66,6 +66,11 @@ const masked = maskTextForView(
 assert.equal(masked.preview, '正面提示词原样用这个：『[P1]』，底模用 animaTurbo，风格用 [M2]，参考 [img1]');
 assert.equal(masked.hasPlaintext, true);
 
+// A hidden model's name of two words written another way is its token too, as the way to the AI swaps it.
+const loose = maskTextForView('用 Meadow Light 和 meadow-LIGHT，meadow lights 不是', { '[M1]': 'loras:0:amb164/meadow_light.safetensors' }, null, { hideModels: true });
+assert.equal(loose.preview, '用 [M1] 和 [M1]，meadow lights 不是');
+assert.deepEqual(loose.segments.filter(seg => seg.type === 'token').map(seg => seg.said), ['Meadow Light', 'meadow-LIGHT']);
+
 const onlyToken = maskTextForView('「[P1]」', { '[P1]': 'secret words' });
 assert.equal(onlyToken.preview, '「[P1]」');
 assert.equal(onlyToken.hasPlaintext, false);

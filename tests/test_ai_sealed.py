@@ -126,6 +126,14 @@ class SealedTests(unittest.TestCase):
         kept = json.dumps(ai_sealed.mask(model_result(), self.task, INFO, "search_models"))
         self.assertIn("canarylora v2.safetensors", kept, "names the user lets through stay")
 
+    def test_a_name_of_more_words_is_its_token_however_it_is_written(self):
+        said = {"content": [{"type": "text", "text": "Use canarycard pose, then CANARYLORA_V2 and Canarylora-v2; canarylora v20 is another."}],
+                "structuredContent": {"model": "canarycard  POSE", "text": "Anima as anima"}, "isError": False}
+        result = ai_sealed.mask(said, self.task, INFO, "get_task", True)
+        self.assertEqual(result["content"][0]["text"], "Use [M1], then [M1] and [M1]; canarylora v20 is another.",
+                         "any case, any spaces, underscores or hyphens; a longer word is another name")
+        self.assertEqual(result["structuredContent"], {"model": "[M1]", "text": "Anima as anima"}, "a one-word name stays a word")
+
     def test_a_models_token_goes_back_as_the_place_takes_it(self):
         ai_sealed.mask(model_result(), self.task, INFO, "search_models", True)
         loader = os.path.join("canaryfolder", "canarylora v2.safetensors")

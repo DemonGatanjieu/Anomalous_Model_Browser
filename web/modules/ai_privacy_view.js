@@ -196,6 +196,22 @@ function collectReplacements(sealed, sealedParts, hideModels, publicSet, private
     return [...pairs.entries()].sort((a, b) => b[0].length - a[0].length);
 }
 
+const wordsIn = name => String(name || '').toLowerCase().split(/[\s_-]+/).filter(Boolean);
+
+/** {words: token} of the hidden models' file stems of two words or more, which the way to the AI swaps however
+ * they are written ("Meadow Light" for meadow_light; api/ai_sealed_models.py). */
+function spelledModels(sealed, hideModels, publicSet, privateSet) {
+    const spelled = new Map();
+    for (const [token, rawValue] of Object.entries(sealed || {})) {
+        const val = String(rawValue || '');
+        if (!token.startsWith('[M') || !val) continue;
+        if (!(privateSet?.has(val) ? true : publicSet?.has(val) ? false : hideModels !== false)) continue;
+        const words = wordsIn(formatModelRef(val).name.replace(MODEL_EXT_RE, ''));
+        if (words.length > 1 && !spelled.has(words.join(' '))) spelled.set(words.join(' '), token);
+    }
+    return spelled;
+}
+
 /**
  * Show `text` as the AI sees it (replacing sealed segments, hidden picture refs, and hidden model
  * names with `[P*]`, `[img*]`, `[M*]`). Returns `{ preview, segments, hasPlaintext }`.
@@ -219,6 +235,23 @@ export function maskTextForView(text, sealed = {}, sealedParts = null, { hideMod
         cursor = at + hit.length;
     }
     if (cursor < source.length) segments.push({ type: 'text', text: source.slice(cursor) });
+    const spelled = spelledModels(sealed, hideModels, new Set(publicModels), new Set(privateModels));
+    if (spelled.size) { // a name of two words or more written another way, in what is still plain text
+        const alts = [...spelled.keys()].sort((a, b) => b.length - a.length).map(key => key.split(' ').map(escapeRegExp).join('[\\s_-]+'));
+        const loosely = new RegExp(`(?<![\\w.-])(?:${alts.join('|')})(?!\\w)`, 'gi');
+        segments.splice(0, segments.length, ...segments.flatMap((seg) => {
+            if (seg.type !== 'text') return [seg];
+            const out = [];
+            let from = 0;
+            for (const match of seg.text.matchAll(loosely)) {
+                if (match.index > from) out.push({ type: 'text', text: seg.text.slice(from, match.index) });
+                out.push({ type: 'token', token: spelled.get(wordsIn(match[0]).join(' ')), said: match[0] });
+                from = match.index + match[0].length;
+            }
+            if (from < seg.text.length) out.push({ type: 'text', text: seg.text.slice(from) });
+            return out;
+        }));
+    }
     const preview = segments.map(seg => (seg.type === 'token' ? seg.token : seg.text)).join('');
     const plainOnly = segments.filter(seg => seg.type === 'text').map(seg => seg.text).join('');
     const hasPlaintext = plainOnly.replace(/[\s，。、；：,.!?:;"'()（）[\]【】『』「」…—-]+/g, '').length > 0;
