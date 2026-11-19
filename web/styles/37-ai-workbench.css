@@ -378,12 +378,7 @@
 .anomalous-ai-tool.is-icon { width: 30px; padding: 0; justify-content: center; }
 /* In a task's head the tools are soft pills without frames, Pause and ⋯ round icons. */
 .anomalous-ai-task-tools .anomalous-ai-tool { border-color: transparent; border-radius: 999px; }
-/* The privacy settings in use (ui_ai_privacy.js): the recommended ones read as on, changed ones as a warning, off as quiet. */
-.anomalous-ai-privacy-wrap { display: inline-flex; align-items: center; gap: 2px; }
-.anomalous-ai-privacy.is-on { border-color: color-mix(in srgb, var(--amb-link) 55%, transparent); background: color-mix(in srgb, var(--amb-link) 16%, transparent); color: var(--amb-link); }
-.anomalous-ai-privacy.is-custom { border-color: color-mix(in srgb, var(--amb-warn) 55%, transparent); background: color-mix(in srgb, var(--amb-warn) 10%, transparent); color: var(--amb-warn); }
-.anomalous-ai-privacy-reach { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--amb-text-dim); cursor: pointer; }
-.anomalous-ai-privacy-reach:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-warn); }
+/* The privacy button (ui_ai_privacy.js) is 61-ai-privacy-button.css. */
 /* Pause (ui_ai_halt.js): stops the AI, takes nothing back. */
 .anomalous-ai-pause:hover { border-color: var(--amb-warn); background: color-mix(in srgb, var(--amb-warn) 10%, transparent); color: var(--amb-text-main); }
 /* The way to the AI's copy of the canvas, among the task's facts (ui_ai_task_canvas.js): a link, not a button. */

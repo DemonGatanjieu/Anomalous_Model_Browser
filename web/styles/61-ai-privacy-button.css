@@ -1,0 +1,62 @@
+/* The privacy button in a task's head (ui_ai_privacy.js): framed like a button, not a pill like the task's state;
+   the settings in use on the left (the recommended ones read as on, changed ones as a warning, off as quiet), "What
+   the AI got ›" on the right, its words gone while the side column is open or the window is narrow. The first
+   private task's bubble hangs under it (ui_ai_tour.js firstHint). */
+.anomalous-ai-privacy-wrap { display: inline-flex; align-items: center; gap: 2px; }
+.anomalous-ai-privacy-anchor { position: relative; display: inline-flex; }
+.anomalous-ai-privacy {
+    --privacy-tone: var(--amb-text-soft);
+    --privacy-tint: rgba(var(--amb-ink-rgb), 0.06);
+    display: inline-flex;
+    align-items: stretch;
+    height: 30px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--privacy-tone) 45%, transparent);
+    border-radius: 9px;
+    background: none;
+    color: var(--privacy-tone);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+.anomalous-ai-privacy.is-on { --privacy-tone: var(--amb-link); --privacy-tint: color-mix(in srgb, var(--amb-link) 16%, transparent); }
+.anomalous-ai-privacy.is-custom { --privacy-tone: var(--amb-warn); --privacy-tint: color-mix(in srgb, var(--amb-warn) 12%, transparent); }
+.anomalous-ai-privacy-state,
+.anomalous-ai-privacy-go { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.anomalous-ai-privacy-state { padding: 0 9px 0 10px; background: var(--privacy-tint); }
+.anomalous-ai-privacy-go { gap: 2px; padding: 0 7px 0 9px; color: var(--amb-text-soft); }
+.anomalous-ai-privacy:hover,
+.anomalous-ai-privacy:focus-visible { border-color: var(--privacy-tone); outline: 0; }
+.anomalous-ai-privacy:hover .anomalous-ai-privacy-go,
+.anomalous-ai-privacy:focus-visible .anomalous-ai-privacy-go { background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
+.anomalous-ai-task-head.is-tight .anomalous-ai-privacy-go-words,
+.anomalous-ai.is-narrow .anomalous-ai-privacy-go-words { display: none; }
+.anomalous-ai-task-head.is-tight .anomalous-ai-privacy-go,
+.anomalous-ai.is-narrow .anomalous-ai-privacy-go { padding: 0 5px; }
+.anomalous-ai-privacy-reach { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--amb-text-dim); cursor: pointer; }
+.anomalous-ai-privacy-reach:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-warn); }
+.anomalous-ai-first-hint.is-bubble {
+    position: absolute;
+    top: calc(100% + 9px);
+    right: 0;
+    width: max-content;
+    max-width: min(320px, 80vw);
+    margin: 0;
+    padding: 8px 12px;
+    background: var(--amb-link);
+    color: var(--amb-on-link);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+.anomalous-ai-first-hint.is-bubble::before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    right: 40px;
+    width: 10px;
+    height: 10px;
+    background: inherit;
+    transform: rotate(45deg);
+}
+.anomalous-ai-first-hint.is-bubble .anomalous-ai-first-hint-done { margin-left: auto; color: inherit; font-weight: 600; text-decoration: underline; }

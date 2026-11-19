@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 任务标题栏的隐私按钮看得出能点了：以前它圆圆的像个状态标签，现在是一个带框的按钮，左边照旧写「隐私：推荐」（或自定、关），右边写「AI 拿到了什么」加一个小箭头，鼠标停上去会亮。第一次打开隐私任务时，按钮下面冒一个小气泡说点这里能看什么，点「知道了」或点按钮以后就不再出现。侧栏打开或窗口太窄时，右边只留小箭头。
+- The privacy button in a task's head looks like something to press: it was a round pill like a status tag; now it is a framed button with the settings in use on the left ("Privacy: recommended", changed or off) and "What the AI got" with a small arrow on the right, lighting up under the pointer. The first private task shows a bubble under it saying what it opens, gone once you press "Got it" or the button. With the side column open or a narrow window, only the arrow stays on the right.
+
 - 「照我说的出图」「隐私出图」的「从哪开始」不那么挤了：「新搭一张」选好的两个模型是两张带封面的卡片，左上角写「① 先画」「② 接着画」，点卡片就能换，中间一个调换先后的按钮，只选了一个时旁边有「加第二个模型」。「怎么搭配」排成一格格卡片，标题短了（「Tile 放大重画」「画到一半换模型」「只用 ①，一次出图」），不再重复长长的模型名。隐私出图选的 LoRA 也是带封面的卡片，右上角 × 去掉，虚线卡片「加 LoRA」。「我存的工作流」选中的那个也是一张卡片，点它换。
 - "Start from" in "Draw what I describe" and "Draw privately" is less crowded: in "Build a new one" the two models are cards with their covers, "① draws first" and "② goes on" on them; a click changes them, a button between swaps them, and "Add a second model" sits beside a lone one. The combos are a grid of cards with short titles ("Tile, redrawn larger", "Switch models halfway", "Only ①, in one pass") instead of repeating long model names. The private card's LoRAs are cards with covers and an ×, with a dashed "Add a LoRA"; the chosen saved workflow is a card too, clicked to change it.
 
