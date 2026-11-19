@@ -470,7 +470,7 @@ the message as a `toolbox` decision.
 The default mode is in `anomalous/ai_canvas.json` (GET/POST `/anomalous/ai_gates` `canvas_tab`),
 a task's own in its `canvas` record (POST `/anomalous/ai_tasks/{id}` `{canvas}`).
 
-The "say" and "private" starter sheets and the message box's "+" / `/build` window read `GET /anomalous/ai_routes` (`mcp_routes.main_models` including `cover` and
+The "say" and "private" starter sheets and the message box's "+" / `/build` window read `GET /anomalous/ai_routes` (`mcp_routes.main_models` including `cover`, `type`, `file`, `folder`, `base`, `metadata`, and
 `ways_for`: only the models use picture draws with, `mcp_canvas_edit.draws_picture`, and without the saved workflow `card`) when opened with
 "Build a new one" available; on Start, `POST /anomalous/ai_tasks/{id}/route` (loopback-only via
 `local_guard`) runs `mcp_routes.apply` in a worker thread to pick `[first, second?]` without

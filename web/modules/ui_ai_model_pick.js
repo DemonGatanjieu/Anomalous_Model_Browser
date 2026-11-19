@@ -1,36 +1,46 @@
 /**
- * The window models are picked in: the base models of "Build a new one (text to image)" (ui_ai_start_from.js)
- * and the private card's LoRAs (ui_ai_private_sheet.js). Cards with a cover, the name and the family, a
- * search, the families as chips when there are two or more, and the favourites (first in the list, a star
- * on the cover). A press picks a card or lets it go; a picked card carries its number when the order matters
- * (the first draws first) and the words for its part; a card that cannot go with those picked says why when
- * pressed. "Done" hands the picks back; closing the window any other way leaves them as they were. Only the
- * first cards of a long list are drawn, the search finds the rest.
+ * The reusable model picker window shared by starter sheets (base models and private LoRAs), the
+ * message box's route builder, and future model-picking features. Reuses the Models page's visual card
+ * face (ui_grid.js `modelCardFace`: cover, base/inferred badge, version pill, display name, filename),
+ * type chips (ui_model_types.js), fine-grained Base Model chips (model_bases.js), and same-model
+ * version grouping (model_versions.js via ai_model_pick.js), keeping all versions expanded and side
+ * by side so any version is one click away.
  */
 
-import { filterModels, modelFamilies } from './ai_start_from.js';
+import { adaptPickerModel, expandModelGroups, filterPickerModels, modelTypes } from './ai_model_pick.js';
 import { translate as t } from './locales.js';
+import { baseFamily, countBases } from './model_bases.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { icon } from './ui_ai_icons.js';
 import { coverUrl } from './ui_ai_toolbox_cards.js';
 import { standInCover } from './ui_ai_toolbox_icons.js';
+import { modelCardFace, stopMediaInContainer } from './ui_grid.js';
+import { typeLabel } from './ui_model_types.js';
+import { versionLabel } from './ui_model_versions.js';
 
-const SHOWN = 120;
+const PAGE_STEP = 120;
+const CARD_OWNER = { cardThumbnailMode: 'card', energySaving: true };
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
-    if (text !== undefined) node.textContent = String(text);
+    if (text !== undefined && text !== null) node.textContent = String(text);
     return node;
 }
 
-/** A base model family as the routes name it ("anima", "SDXL") in the words shown: its first letter a capital. */
-const familyName = family => family.charAt(0).toUpperCase() + family.slice(1);
+/** Concise `Type · Base · Version` label for picked chips and summaries. */
+export function modelMetaSummary(model) {
+    if (!model) return '';
+    const base = baseFamily(model) || model.metadata?.baseModel || model.base || model.family || '';
+    const type = model.type ? typeLabel({ type: model.type }) : '';
+    const version = String(model.metadata?.version_name || '').trim();
+    return [type, base, version].filter(Boolean).join(' · ');
+}
 
 /** `model`'s cover in a box of `className`; its type's picture while it has none or it does not load. */
 export function modelThumb(model, className) {
     const box = el('span', className);
-    const url = coverUrl({ kind: 'models', cover: model.cover });
+    const url = coverUrl({ kind: 'models', cover: model.cover || model.preview_url });
     const fallback = () => box.replaceChildren(standInCover('models', model.type || ''));
     if (!url) {
         fallback();
@@ -46,24 +56,48 @@ export function modelThumb(model, className) {
     return box;
 }
 
+function buildFilterButton(className, label, pressed, count, onClick) {
+    const node = el('button', className);
+    node.type = 'button';
+    node.setAttribute('aria-pressed', String(pressed));
+    node.append(...(Array.isArray(label) ? label : [el('span', '', label)]));
+    if (count !== undefined) node.append(el('span', 'anomalous-model-type-count', String(count)));
+    node.onclick = onClick;
+    return node;
+}
+
 /**
- * Opens the window. `models`: [{model_id, name, family, cover, favourite, type?}]; `picked`: model ids, in
- * order; at most `max`, at least `min` on "Done". `fits(pickedIds, model)`: whether `model` can join those
- * picked, else `unfit` says why; `role(index)`: the words under the picked card at `index`; `note`: a line
- * under the search; `hint`: the line at the foot; `from`: what gets the focus back; `onDone(ids)`.
+ * Opens the reusable model picker dialog. `models`: list of model objects (`{model_id|id, name, ...}`);
+ * `picked`: selected model ids in order; `max`, `min`, `numbered`, `fits(ids, model)`, `unfit`,
+ * `role(index)`, `note`, `hint`, `from` (focus restore element), `onDone(ids)`.
  */
 export function openModelPicker({ title, models, picked = [], max = 1, min = 0, numbered = false, fits = () => true, unfit = '', role = () => '', note = '', hint = '', from = null, onDone }) {
-    const chosen = picked.filter(id => models.some(model => model.model_id === id));
+    const adapted = (models || []).map(adaptPickerModel);
+    const byId = new Map(adapted.map(model => [model.model_id, model]));
+    const chosen = picked.filter(id => byId.has(id));
+    const initialPriority = [...chosen];
     let query = '';
-    let family = null;
-    let favourites = false;
+    let selectedType = null;
+    let selectedBase = null;
+    let favouritesOnly = false;
+    let limit = PAGE_STEP;
+
     const body = el('div', 'anomalous-ai-pick');
     const search = el('input', 'anomalous-ai-start-input');
     search.type = 'search';
     search.placeholder = t('aiStartModelSearch');
     const searchRow = el('label', 'anomalous-ai-pick-search');
     searchRow.append(icon('search', 14), search);
-    const chips = el('div', 'anomalous-model-bases anomalous-ai-pick-chips');
+
+    const pickedBar = el('div', 'anomalous-ai-pick-picked');
+    const typeBar = el('div', 'anomalous-model-types anomalous-ai-pick-types');
+    typeBar.setAttribute('role', 'toolbar');
+    typeBar.setAttribute('aria-label', t('modelTypesLabel'));
+
+    const baseBar = el('div', 'anomalous-model-bases anomalous-ai-pick-bases');
+    baseBar.setAttribute('role', 'toolbar');
+    baseBar.setAttribute('aria-label', t('modelBasesLabel'));
+
     const grid = el('div', 'anomalous-ai-pick-grid');
     const more = el('div', 'anomalous-ai-pick-more');
     const say = el('span', 'anomalous-ai-pick-hint');
@@ -71,36 +105,144 @@ export function openModelPicker({ title, models, picked = [], max = 1, min = 0, 
     done.type = 'button';
     const foot = el('div', 'anomalous-ai-pick-foot');
     foot.append(say, done);
-    body.append(searchRow, ...(note ? [el('div', 'anomalous-ai-pick-note', note)] : []), chips, grid, more, foot);
+
+    body.append(searchRow, ...(note ? [el('div', 'anomalous-ai-pick-note', note)] : []), pickedBar, typeBar, baseBar, grid, more, foot);
 
     const tell = (words = hint, warn = false) => {
         say.textContent = words;
         say.classList.toggle('is-warn', warn);
     };
 
-    function chip(label, on, onClick, count) {
-        const node = el('button', 'anomalous-model-base-chip');
-        node.type = 'button';
-        node.setAttribute('aria-pressed', String(on));
-        node.append(...(Array.isArray(label) ? label : [el('span', '', label)]));
-        if (count !== undefined) node.append(el('span', 'anomalous-model-type-count', String(count)));
-        node.onclick = () => { onClick(); drawChips(); drawGrid(); };
-        return node;
+    function drawPickedBar() {
+        pickedBar.hidden = !chosen.length;
+        if (!chosen.length) {
+            pickedBar.replaceChildren();
+            return;
+        }
+        const chips = chosen.map((id, at) => {
+            const model = byId.get(id);
+            if (!model) return null;
+            const chip = el('span', 'anomalous-ai-pick-chip');
+            const badgeText = numbered ? String(at + 1) : '✓';
+            const sub = [role(at), modelMetaSummary(model)].filter(Boolean).join(' · ');
+            const words = el('span', 'anomalous-ai-pick-chip-words');
+            words.append(el('span', 'anomalous-ai-pick-chip-name', model.name));
+            if (sub) words.append(el('span', 'anomalous-ai-pick-chip-meta', sub));
+            const drop = el('button', 'anomalous-ai-start-lora-drop');
+            drop.type = 'button';
+            drop.setAttribute('aria-label', t('aiPickPickedDrop', { name: model.name }));
+            drop.append(icon('close', 12));
+            drop.onclick = () => {
+                const pos = chosen.indexOf(id);
+                if (pos >= 0) chosen.splice(pos, 1);
+                tell();
+                syncCardStates();
+                drawPickedBar();
+            };
+            chip.append(modelThumb(model, 'anomalous-ai-pick-chip-thumb'), el('span', 'anomalous-ai-pick-chip-num', badgeText), words, drop);
+            chip.title = sub ? `${model.name} (${sub})` : model.name;
+            return chip;
+        }).filter(Boolean);
+        pickedBar.replaceChildren(el('span', 'anomalous-ai-pick-picked-head', t('aiPickPickedHead', { count: chosen.length, max })), ...chips);
     }
 
-    function drawChips() {
-        const families = modelFamilies(models);
-        const starred = models.filter(model => model.favourite).length;
-        const row = [];
-        if (families.length > 1) {
-            row.push(chip(t('modelBasesAll'), family === null && !favourites, () => { family = null; favourites = false; }, models.length));
-            for (const [name, count] of families) {
-                row.push(chip(name ? familyName(name) : t('modelBasesUnknown'), family === name, () => { family = name; favourites = false; }, count));
+    function drawTypeBar() {
+        const types = modelTypes(adapted);
+        typeBar.hidden = types.length < 2;
+        if (typeBar.hidden) {
+            typeBar.replaceChildren();
+            return;
+        }
+        const total = adapted.length;
+        typeBar.replaceChildren(
+            buildFilterButton(`anomalous-model-type-chip${selectedType === null ? ' is-active' : ''}`, t('modelBasesAll'), selectedType === null, total, () => {
+                selectedType = null;
+                limit = PAGE_STEP;
+                drawFilters();
+                drawGrid();
+            }),
+            ...types.map(([type, count]) => buildFilterButton(
+                `anomalous-model-type-chip${selectedType === type ? ' is-active' : ''}`,
+                typeLabel({ type }),
+                selectedType === type,
+                count,
+                () => {
+                    selectedType = selectedType === type ? null : type;
+                    limit = PAGE_STEP;
+                    drawFilters();
+                    drawGrid();
+                },
+            )),
+        );
+    }
+
+    function drawBaseBar() {
+        const scoped = filterPickerModels(adapted, { query, type: selectedType });
+        const bases = countBases(scoped);
+        if (selectedBase !== null && !bases.some(([family]) => family === selectedBase)) selectedBase = null;
+        const starred = scoped.filter(model => model.favourite).length;
+        const buttons = [];
+        if (bases.length > 1) {
+            buttons.push(buildFilterButton('anomalous-model-base-chip', t('modelBasesAll'), selectedBase === null && !favouritesOnly, scoped.length, () => {
+                selectedBase = null;
+                favouritesOnly = false;
+                limit = PAGE_STEP;
+                drawBaseBar();
+                drawGrid();
+            }));
+            for (const [family, count] of bases) {
+                buttons.push(buildFilterButton('anomalous-model-base-chip', family || t('modelBasesUnknown'), selectedBase === family, count, () => {
+                    selectedBase = selectedBase === family ? null : family;
+                    favouritesOnly = false;
+                    limit = PAGE_STEP;
+                    drawBaseBar();
+                    drawGrid();
+                }));
             }
         }
-        if (starred) row.push(chip([icon('starOn', 12), el('span', '', t('aiPickFavourites'))], favourites, () => { favourites = !favourites; family = null; }, starred));
-        chips.replaceChildren(...row);
-        chips.hidden = !row.length;
+        if (starred) {
+            buttons.push(buildFilterButton(
+                'anomalous-model-base-chip',
+                [icon('starOn', 12), el('span', '', t('aiPickFavourites'))],
+                favouritesOnly,
+                starred,
+                () => {
+                    favouritesOnly = !favouritesOnly;
+                    limit = PAGE_STEP;
+                    drawBaseBar();
+                    drawGrid();
+                },
+            ));
+        }
+        baseBar.hidden = !buttons.length;
+        baseBar.replaceChildren(...buttons);
+    }
+
+    function drawFilters() {
+        drawTypeBar();
+        drawBaseBar();
+    }
+
+    function syncCardStates() {
+        for (const card of grid.children) {
+            const model = byId.get(card.dataset.modelId);
+            if (!model) continue;
+            const at = chosen.indexOf(model.model_id);
+            const on = at >= 0;
+            const compatible = on || fits(chosen, model);
+            card.classList.toggle('is-on', on);
+            card.classList.toggle('is-unfit', !compatible);
+            card.setAttribute('aria-pressed', String(on));
+            card.setAttribute('aria-disabled', String(!compatible));
+            const badge = card.querySelector('.anomalous-ai-pick-badge');
+            if (badge) {
+                badge.hidden = !on;
+                if (on) {
+                    const roleText = role(at);
+                    badge.textContent = numbered ? (roleText ? `${at + 1} · ${roleText}` : String(at + 1)) : '✓';
+                }
+            }
+        }
     }
 
     function toggle(model) {
@@ -110,51 +252,101 @@ export function openModelPicker({ title, models, picked = [], max = 1, min = 0, 
         else if (chosen.length >= max) return tell(t('aiPickMax', { max }), true);
         else chosen.push(model.model_id);
         tell();
-        drawGrid();
+        syncCardStates();
+        drawPickedBar();
     }
 
-    function card(model) {
-        const at = chosen.indexOf(model.model_id);
-        const node = el('button', `anomalous-ai-pick-card${at >= 0 ? ' is-on' : ''}${at < 0 && !fits(chosen, model) ? ' is-unfit' : ''}`);
-        node.type = 'button';
-        node.setAttribute('aria-pressed', String(at >= 0));
-        const cover = modelThumb(model, 'anomalous-ai-pick-cover');
+    function buildCard(entry, index) {
+        const { model, groupSize, versionIndex } = entry;
+        const siblingPin = groupSize > 1
+            ? el('span', 'anomalous-ai-pick-sibling', t('aiPickGroupTag', { n: versionIndex + 1, total: groupSize }))
+            : null;
+        const card = modelCardFace(CARD_OWNER, model, index, siblingPin);
+        // Ensure sibling cards always display a distinguishing version/file pill even without Civitai version_name.
+        if (groupSize > 1 && !model.metadata?.version_name) {
+            const versionEl = card.querySelector('.anomalous-card-version');
+            if (versionEl) versionEl.textContent = versionLabel(model);
+        }
+        card.classList.add('anomalous-picker-card', 'anomalous-ai-pick-card');
+        if (groupSize > 1) {
+            card.classList.add('is-version-open', 'is-group-member');
+            if (entry.isGroupStart) card.classList.add('is-group-start');
+            if (entry.isGroupEnd) card.classList.add('is-group-end');
+            card.title = `${model.name} — ${t('aiPickGroupTitle', { total: groupSize })}`;
+        } else {
+            card.title = `${model.name}${model.filename ? ` (${model.filename})` : ''}`;
+        }
+        card.dataset.modelId = model.model_id;
+        card.tabIndex = 0;
+        card.setAttribute('role', 'button');
+
+        const topRight = el('div', 'anomalous-ai-pick-top');
+        const badge = el('span', 'anomalous-ai-pick-badge');
+        badge.hidden = true;
+        topRight.append(badge);
         if (model.favourite) {
             const star = el('span', 'anomalous-ai-pick-star');
             star.append(icon('starOn', 12));
-            cover.append(star);
+            topRight.append(star);
         }
-        if (at >= 0) cover.append(el('span', 'anomalous-ai-pick-badge', numbered ? String(at + 1) : '✓'));
-        const sub = [model.family ? familyName(model.family) : '', at >= 0 ? role(at) : ''].filter(Boolean).join(' · ');
-        node.append(cover, el('span', 'anomalous-ai-pick-name', model.name), el('span', 'anomalous-ai-pick-sub', sub));
-        node.title = model.name;
-        node.onclick = () => toggle(model);
-        return node;
+        if (model.type) topRight.append(el('span', 'anomalous-ai-pick-type', typeLabel({ type: model.type })));
+        card.append(topRight);
+
+        card.onclick = () => toggle(model);
+        card.onkeydown = (event) => {
+            if (event.key !== ' ' && event.key !== 'Enter') return;
+            event.preventDefault();
+            toggle(model);
+        };
+        return card;
     }
 
     function drawGrid() {
-        const found = filterModels(models, { query, family }).filter(model => !favourites || model.favourite);
-        // What is picked first, in its order, while it matches.
-        const list = [...chosen.map(id => found.find(model => model.model_id === id)).filter(Boolean),
-            ...found.filter(model => !chosen.includes(model.model_id))];
-        grid.replaceChildren(...list.slice(0, SHOWN).map(card));
-        more.textContent = !list.length ? t('aiMentionNone') : list.length > SHOWN ? t('aiPickMore', { count: list.length - SHOWN }) : '';
-        more.hidden = !more.textContent;
+        stopMediaInContainer(grid);
+        const found = filterPickerModels(adapted, { query, type: selectedType, baseFamily: selectedBase, favouritesOnly });
+        const expanded = expandModelGroups(found, initialPriority);
+        const visible = expanded.slice(0, limit);
+        grid.replaceChildren(...visible.map((entry, idx) => buildCard(entry, idx)));
+        syncCardStates();
+        if (!expanded.length) {
+            more.replaceChildren(el('span', '', t('aiMentionNone')));
+            more.hidden = false;
+        } else if (expanded.length > limit) {
+            const left = expanded.length - limit;
+            const step = Math.min(PAGE_STEP, left);
+            const showMore = el('button', 'anomalous-ai-pick-more-btn', t('aiPickShowMore', { count: step, left }));
+            showMore.type = 'button';
+            showMore.onclick = () => {
+                limit += PAGE_STEP;
+                drawGrid();
+            };
+            more.replaceChildren(showMore, el('span', '', t('aiPickMore', { count: left })));
+            more.hidden = false;
+        } else {
+            more.replaceChildren();
+            more.hidden = true;
+        }
     }
 
     search.addEventListener('input', () => {
         query = search.value;
+        limit = PAGE_STEP;
+        drawBaseBar();
         drawGrid();
     });
-    const close = aiWindow(title, body, () => from?.focus());
+    const close = aiWindow(title, body, () => {
+        stopMediaInContainer(grid);
+        from?.focus();
+    });
     done.onclick = () => {
         if (chosen.length < min) return tell(t('aiPickNone'), true);
         onDone([...chosen]);
-        close(); // after the sheet has drawn the picks, so the focus goes back to its button
+        close();
     };
     body.closest('.anomalous-ai-connect-dialog')?.classList.add('is-model-pick');
     tell();
-    drawChips();
+    drawPickedBar();
+    drawFilters();
     drawGrid();
     search.focus();
 }

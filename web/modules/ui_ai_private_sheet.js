@@ -10,7 +10,7 @@ import { loadCatalog } from './ai_toolbox_data.js';
 import { translate as t } from './locales.js';
 import { art } from './ui_ai_art.js';
 import { icon } from './ui_ai_icons.js';
-import { openModelPicker } from './ui_ai_model_pick.js';
+import { modelMetaSummary, openModelPicker } from './ui_ai_model_pick.js';
 
 const MAX_LORAS = 6;
 
@@ -21,11 +21,26 @@ function el(tag, className, text) {
     return node;
 }
 
-/** The catalog's LoRAs as the model window lists them; none the user lets the AI see by name. */
-function loraChoices(items) {
+/** The catalog's LoRAs as the reusable model picker lists them; none the user lets the AI see by name. */
+function loraChoices(items, favIds = new Set()) {
     return (items || [])
         .filter(item => item.kind === 'models' && item.type === 'loras' && item.ai_name !== 'shown')
-        .map(item => ({ model_id: item.id, name: item.name, file: item.file, family: item.base || '', favourite: false, cover: item.cover, type: 'loras' }));
+        .map(item => ({
+            model_id: item.id,
+            id: item.id,
+            name: item.name,
+            file: item.file,
+            filename: item.file,
+            folder: item.folder || '',
+            base: item.base || '',
+            family: item.base || '',
+            metadata: item.metadata || {},
+            words: item.words || [],
+            favourite: favIds.has(item.id),
+            cover: item.cover,
+            preview_url: item.cover || '',
+            type: 'loras',
+        }));
 }
 
 /** {node, read() -> [file names]}: the optional LoRAs; stays away while the library has none. */
@@ -48,7 +63,7 @@ export function loraPicker() {
         hint: t('aiPickLorasHint', { max: MAX_LORAS }),
         from: add,
         onDone: (ids) => {
-            chosen = ids.map(id => all.find(item => item.model_id === id));
+            chosen = ids.map(id => all.find(item => item.model_id === id)).filter(Boolean);
             draw();
         },
     });
@@ -64,14 +79,21 @@ export function loraPicker() {
                 chosen.splice(chosen.indexOf(item), 1);
                 draw();
             };
-            chip.append(el('span', 'anomalous-ai-start-lora-name', item.name), drop);
+            const meta = modelMetaSummary(item);
+            chip.append(el('span', 'anomalous-ai-start-lora-name', item.name),
+                ...(meta ? [el('span', 'anomalous-ai-start-lora-meta', meta)] : []), drop);
+            if (meta) chip.title = `${item.name} (${meta})`;
             return chip;
         }));
         chips.hidden = !chosen.length;
     }
 
-    loadCatalog().then((items) => {
-        all = loraChoices(items);
+    const favRequest = fetch('/anomalous/ai_toolbox/favorites')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => new Set(data?.favorites?.models || []))
+        .catch(() => new Set());
+    Promise.all([loadCatalog(), favRequest]).then(([items, favIds]) => {
+        all = loraChoices(items, favIds);
         node.hidden = !all.length;
         draw();
     }).catch(() => { /* the sheet works without it */ });

@@ -245,12 +245,8 @@
 
 @media (prefers-reduced-motion: reduce) { .anomalous-ai-flow-stage.is-running .anomalous-ai-flow-mark { animation: none; } }
 
-/* After "Hand to AI". */
-.anomalous-ai-handoff { display: flex; flex-direction: column; gap: 12px; max-width: 560px; }
-.anomalous-ai-handoff-text { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
-.anomalous-ai-handoff-actions { display: flex; flex-wrap: wrap; gap: 14px; }
-
 /* The canvas handed to an AI (ui_ai_canvas_hand.js): ready wishes as chips, the line, where it goes. */
+.anomalous-ai-handoff-text { margin: 0; color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.6; }
 .anomalous-ai-canvas-hand { display: flex; flex-direction: column; gap: 10px; width: min(520px, 86vw); }
 .anomalous-ai-canvas-wishes { display: flex; flex-wrap: wrap; gap: 6px; }
 .anomalous-ai-canvas-wish {

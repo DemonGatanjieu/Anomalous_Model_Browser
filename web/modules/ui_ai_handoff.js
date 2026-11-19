@@ -2,11 +2,8 @@
  * Handing something in Anomalous to an AI: "✦ Hand to AI" on a model's page, on an output
  * image's inspector, on a combo card and on a saved workflow's page. The user says what they want (prefilled), Anomalous
  * starts a task with it (POST /anomalous/ai_tasks, `about` naming the model, image or combo, so
- * the AI gets their ids from begin_task) and shows the sentence to paste into the AI app:
- * Anomalous cannot wake an AI by itself. While no AI app has ever come, that sentence connects
- * the app first (ui_ai_connect.js sentenceForAi) and a line says when it has. Otherwise copying the
- * sentence closes the window and opens the new task on the AI workbench, where it waits until an AI
- * takes it (a toast says to paste the sentence into the AI app).
+ * the AI gets their ids from begin_task) and opens that task directly on the AI workbench, where the
+ * waiting view keeps the first message, handed items and the sentence to copy for the AI.
  * Pictures (the inspector's ✦, a gallery card's menu) can instead go to the task open now: the AI
  * gets the pictures themselves and what made them (POST /anomalous/ai_tasks/{id}/pictures). The canvas
  * (ui_ai_canvas_hand.js) starts its tasks here too.
@@ -15,22 +12,7 @@
 import { translate as t } from './locales.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
-import { aiWindow, connectionLine, copyLine, openConnectGuide, sentenceForAi } from './ui_ai_connect.js';
 import { taskTitle } from './ai_task_title.js';
-
-function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
-}
-
-function button(className, label, onClick) {
-    const node = el('button', className, label);
-    node.type = 'button';
-    node.onclick = onClick;
-    return node;
-}
 
 /** `leave()`: closes the window it was handed from (the image inspector) before going to the AI page. */
 async function handToAi(owner, wish, about, leave = null) {
@@ -40,9 +22,10 @@ async function handToAi(owner, wish, about, leave = null) {
 }
 
 /**
- * Starts a task called `title` about `about` and shows the sentence to paste into the AI app (canvas hand-off,
- * the home page's AI cards). `switches` set on the new task first: {canvas: 'new' | 'current', privacy: true};
- * optional `beforeNote(taskId)` runs before leaving `note` as the user's first message.
+ * Starts a task called `title` about `about` and opens the new task directly on the AI workbench
+ * (canvas hand-off, model/gallery hand-off, home page starter cards). `switches` set on the new task
+ * first: {canvas: 'new' | 'current', privacy: true}; optional `beforeNote(taskId)` runs before leaving
+ * `note` as the user's first message.
  */
 export async function startTask(owner, title, about, leave = null, switches = {}, note = '', beforeNote = null) {
     let made = null;
@@ -70,36 +53,13 @@ export async function startTask(owner, title, about, leave = null, switches = {}
         await anomalousAlert(error.message);
         return;
     }
-    const name = String(title).trim();
-    const known = await fetch('/anomalous/ai_tasks?limit=50').then(response => response.json())
-        .then(data => (data.tasks || []).some(task => task.client), () => true); // an AI app has come before
-    const body = el('div', 'anomalous-ai-handoff');
-    // To the AI page, on the new task. The workbench is loaded late: imported at the top it would close a
-    // loop of imports that leaves some modules without their bindings on load (tests/load_order.mjs).
-    const watch = async () => {
-        close();
-        leave?.();
-        owner?.show?.();
-        if (!owner?.goTo) return;
-        const { openAiTask } = await import('./ui_ai_workbench.js');
-        openAiTask(owner, made.id, made.id);
-    };
-    // Copied (an AI app has come before): nothing is left to do here; the AI page shows the sentence again.
-    const copied = async () => {
-        if (!body.isConnected) return; // closed meanwhile
-        await watch();
-        showWorkbenchToast(t('aiHandCopiedGo'));
-    };
-    body.append(el('p', 'anomalous-ai-handoff-text', t(known ? 'aiHandMade' : 'aiHandMadeFirst')),
-        copyLine(known ? t('aiHandSentence', { task: name }) : sentenceForAi(name), { code: false, label: t('aiConnectCopySentence'), onCopied: known ? copied : null }),
-        ...(known ? [] : [connectionLine()]));
-    const actions = el('div', 'anomalous-ai-handoff-actions');
-    const close = aiWindow(t('aiHand'), body);
-    actions.append(button('anomalous-ai-link', t('aiHandWatch'), watch), button('anomalous-ai-link', t(known ? 'aiHandNotConnected' : 'aiHandOtherWays'), () => {
-        close();
-        openConnectGuide();
-    }));
-    body.append(actions);
+    leave?.();
+    owner?.show?.();
+    if (!owner?.goTo) return;
+    // The workbench is loaded on demand: importing at top level closes a cycle (tests/load_order.mjs).
+    const { openAiTask } = await import('./ui_ai_workbench.js');
+    openAiTask(owner, made.id, made.id);
+    showWorkbenchToast(t('aiHandReadyGo'));
 }
 
 /** A model on its page; `where` is {type, path_idx, subfolder} as the browser lists it. */

@@ -75,7 +75,8 @@ def cards_of(model_id):
 
 def main_models():
     """The main models a new picture can start from (those use picture draws with), favourites first,
-    for the starter sheet: [{model_id, name, family, favourite, cover}]."""
+    for the starter sheet and the reusable model picker: [{model_id, name, family, base, type, file,
+    folder, metadata, favourite, cover}]."""
     from . import ai_toolbox_catalog, mcp_canvas_edit
 
     liked = ai_toolbox.favorites().get("models") or []
@@ -83,11 +84,14 @@ def main_models():
     out = []
     for item in ai_toolbox_catalog.everything()["models"]:
         model_id = item["id"]
-        base = item.get("base") or (item.get("metadata") or {}).get("base_guess") or ""
+        meta = item.get("metadata") or {}
+        base = item.get("base") or meta.get("base_guess") or ""
         if not mcp_canvas_edit.draws_picture(item.get("type"), base):
             continue
         name = item.get("name") or item.get("file") or model_id
         out.append({"model_id": model_id, "name": name, "family": model_advice.family(base),
+                    "base": base, "type": item.get("type") or "", "file": item.get("file") or "",
+                    "folder": item.get("folder") or "", "metadata": meta,
                     "favourite": model_id in order, "cover": item.get("cover") or ""})
     out.sort(key=lambda item: (0 if item["favourite"] else 1, order.get(item["model_id"], 0),
                                item["name"].lower(), item["model_id"].lower()))

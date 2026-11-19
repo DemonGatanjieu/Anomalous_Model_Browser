@@ -116,9 +116,14 @@ class StartFromRouteTests(unittest.TestCase):
 
         catalog = [
             {"id": LORA, "name": "my_lora", "type": "loras", "base": "SDXL 1.0"},
-            {"id": "checkpoints:0:zeta.safetensors", "name": "zeta", "type": "checkpoints", "metadata": {"base_guess": "SD 1.5"}},
-            {"id": A, "name": "alpha", "type": "checkpoints", "base": "SDXL 1.0", "cover": "/anomalous/preview/a.png"},
-            {"id": B, "name": "bravo", "type": "checkpoints", "base": "Illustrious", "cover": "/anomalous/preview/b.png"},
+            {"id": "checkpoints:0:zeta.safetensors", "name": "zeta", "file": "zeta.safetensors", "type": "checkpoints",
+             "metadata": {"base_guess": "SD 1.5", "version_name": "v1"}},
+            {"id": A, "name": "alpha", "file": "alpha.safetensors", "type": "checkpoints", "base": "SDXL 1.0",
+             "metadata": {"model_id": 10, "version_id": 101, "version_name": "v2.0", "baseModel": "SDXL 1.0"},
+             "cover": "/anomalous/preview/a.png"},
+            {"id": B, "name": "bravo", "file": "bravo.safetensors", "type": "checkpoints", "base": "Illustrious",
+             "metadata": {"model_id": 20, "version_id": 201, "version_name": "IL v1", "baseModel": "Illustrious"},
+             "cover": "/anomalous/preview/b.png"},
             {"id": "diffusion_models:0:flux.safetensors", "name": "flux_d", "type": "diffusion_models", "base": "Flux.1 D"},
         ]
         with mock.patch.object(mcp_routes.ai_toolbox, "favorites", return_value={"models": [B, A]}), \
@@ -129,6 +134,10 @@ class StartFromRouteTests(unittest.TestCase):
         self.assertEqual([item["favourite"] for item in got], [True, True, False])
         self.assertEqual([item["cover"] for item in got], ["/anomalous/preview/b.png", "/anomalous/preview/a.png", ""])
         self.assertEqual(got[2]["family"], "SD 1.x")
+        self.assertEqual(got[0]["base"], "Illustrious")
+        self.assertEqual(got[0]["type"], "checkpoints")
+        self.assertEqual(got[0]["file"], "bravo.safetensors")
+        self.assertEqual(got[0]["metadata"]["version_name"], "IL v1")
 
     def test_ways_for_excludes_card_respects_family_loader_and_picture_fit(self):
         ckpt_a = "checkpoints:0:sdxl_a.safetensors"

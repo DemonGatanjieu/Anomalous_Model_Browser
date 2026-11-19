@@ -487,3 +487,21 @@ now redundant and can go as the rules they override are touched.
 `tests/prompt_tags.mjs` covers splitting, joining, weights and tag edits keeping
 separators. The UI fixture simulates DOM and ComfyUI APIs and does not replace
 checking the real host, layout, focus, drag gestures and theme rendering.
+
+## Reusable AI Model Picker (`ui_ai_model_pick.js` + `ai_model_pick.js`)
+
+New interactive features that ask the user to pick one or more library models
+(main checkpoints, diffusion models, LoRAs, etc.) reuse `openModelPicker` in
+`web/modules/ui_ai_model_pick.js` and pure normalization/grouping helpers in
+`web/modules/ai_model_pick.js` rather than inventing ad-hoc dropdowns or minimal
+cards:
+
+- Normalizes heterogeneous inputs (route lists, catalog items, library models) into
+  the `modelCardFace` shape (`preview_url`, `filename`, `type`, `metadata.custom_name`,
+  `metadata.baseModel`, `metadata.base_guess`, `metadata.version_name`, `metadata.info_source`).
+- Renders the same card anatomy as the Models page (`ui_grid.js` `modelCardFace`),
+  type filter bar (`ui_model_types.js`), fine-grained Base Model filter bar (`model_bases.js`),
+  and favourites filter.
+- Keeps all versions of the same Civitai model page (`model_versions.js` `groupByPage`)
+  expanded side by side in contiguous groups so versions stay easy to inspect and
+  compare in one view without layout jumping when toggling selections.

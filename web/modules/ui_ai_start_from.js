@@ -12,7 +12,7 @@ import { openTabs } from './preset_runs.js';
 import { aiWindow } from './ui_ai_connect.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { icon } from './ui_ai_icons.js';
-import { modelThumb, openModelPicker } from './ui_ai_model_pick.js';
+import { modelMetaSummary, modelThumb, openModelPicker } from './ui_ai_model_pick.js';
 import {
     SEARCH_FROM,
     START_FROM_KEY,
@@ -139,8 +139,12 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
     function fillChip(chip, model, number) {
         chip.hidden = !model;
         if (!model) return;
-        chip.replaceChildren(modelThumb(model, 'anomalous-ai-start-model-thumb'), el('span', 'anomalous-ai-start-model-num', String(number)), el('span', 'anomalous-ai-start-model-name', model.name));
-        chip.title = model.name;
+        const meta = modelMetaSummary(model);
+        const words = el('span', 'anomalous-ai-start-model-words');
+        words.append(el('span', 'anomalous-ai-start-model-name', model.name));
+        if (meta) words.append(el('span', 'anomalous-ai-start-model-meta', meta));
+        chip.replaceChildren(modelThumb(model, 'anomalous-ai-start-model-thumb'), el('span', 'anomalous-ai-start-model-num', String(number)), words);
+        chip.title = meta ? `${model.name} (${meta})` : model.name;
     }
 
     function drawPicked() {

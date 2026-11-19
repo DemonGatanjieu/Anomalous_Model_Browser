@@ -37,7 +37,7 @@ import { nowStrip } from './ui_ai_now.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageBadge, stageNews } from './ui_ai_side.js';
-import { waitingView, welcomePage } from './ui_ai_ready.js';
+import { aboutStrip, waitingView, welcomePage } from './ui_ai_ready.js';
 import { gateCard } from './ui_ai_gate.js';
 import { iconButton } from './ui_ai_icons.js';
 import { listToggle, renderTaskList } from './ui_ai_task_list.js';
@@ -266,10 +266,15 @@ function renderTask() {
     const preparing = Boolean(task.waiting) && items.every(item => item.type === 'step' && item.step.kind === 'user');
     if (preparing) {
         const connected = state.tasks.some(item => item.client);
-        rows.splice(0, rows.length, { key: JSON.stringify(['waiting', task.title, task.steps, connected]), make: () => waitingView(task, {
+        rows.splice(0, rows.length, { key: JSON.stringify(['waiting', task.title, task.steps, task.about, connected]), make: () => waitingView(task, {
             connected, ready: items.map((item, at) => stepRow(item.step, at + 1)),
         }) });
-    } else if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
+    } else {
+        if (task.about?.length) {
+            rows.unshift({ key: JSON.stringify(['about', task.about]), make: () => aboutStrip(task.about, task.private === true) });
+        }
+        if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
+    }
     syncRows(view.timeline, rows);
     updateMessageBox(view.message, Boolean(task.ended), preparing ? 'waiting' : status);
     view.now.update(task, { refresh: () => void refresh(), showStep: id => showStep(view.timeline, id), stuck: () => openStuck(state.task, state.entries, () => void refresh()),
@@ -556,6 +561,7 @@ export function watchAiTasks(owner) {
 export function openAiTask(owner, id, newest = null) {
     state.selected = id;
     state.pinned = id !== newest;
+    state.narrowView = 'task';
     owner.goTo('ai');
 }
 
