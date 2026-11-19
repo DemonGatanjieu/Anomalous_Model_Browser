@@ -1,7 +1,8 @@
 /**
  * The home page: first what to hand the AI (ui_ai_starters.js, drawn into a slot once read), the
  * first-run setup above it while nothing is scanned (ui_first_run.js); under it "Do it yourself", one
- * small card per task (its icon and name; what it does on hover), each opening its page; then the first steps (set up, scan, the tour, what's new).
+ * small card per task (its icon and name; what it does on hover), each opening its page (the saves card
+ * starts the canvas's saves, ui_snapshot_bar.js); then the first steps (set up, scan, the tour, what's new).
  * Rendered again on each visit, so text follows the language.
  */
 
@@ -16,6 +17,7 @@ import { copyDiagnostics, openRepoPage } from './feedback.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { renderFirstRun, showFirstRun } from './ui_first_run.js';
 import { renderAiStarters } from './ui_ai_starters.js';
+import { savesFromHome } from './ui_snapshot_bar.js';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`).
 const CARDS = Object.freeze([
@@ -26,6 +28,7 @@ const CARDS = Object.freeze([
     { name: 'Recipes', icon: PAGE_ICONS.recipes, open: owner => owner.goTo('recipes') },
     { name: 'Combos', icon: PAGE_ICONS.combos, open: owner => owner.goTo('combos') },
     { name: 'Prompts', icon: PAGE_ICONS.prompts, open: owner => owner.goTo('prompts') },
+    { name: 'Saves', icon: PAGE_ICONS.saves, open: owner => void savesFromHome(owner) },
 ]);
 
 function el(tag, className, text) {

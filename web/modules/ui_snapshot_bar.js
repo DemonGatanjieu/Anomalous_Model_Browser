@@ -6,7 +6,8 @@
  * open tab's saves and goes with the tab. It holds what is used while working on the canvas: the newest
  * saves' numbers go back to those states and Run runs them all (snapshot_run.js); folded it is a handle on
  * the canvas's bottom edge. Their pictures and the rest are in the Workflows page's Saves view
- * (ui_saves_list.js), which comes here to change the canvas.
+ * (ui_saves_list.js), which comes here to change the canvas. The home page's "Try a few versions" card
+ * starts them too (savesFromHome).
  */
 
 import { app } from '../../../scripts/app.js';
@@ -153,6 +154,26 @@ export async function addMark() {
         console.warn('[AMB] Saves:', error);
         showWorkbenchToast(t('snapshotSaveFailed', { why: String(error?.message || error).slice(0, 200) }));
     }
+}
+
+/**
+ * The home page's "Try a few versions" card: the canvas's saves on the Saves page when it has some, else its
+ * first save, with AMB's window put away so the bar shows and its line says what comes next. An empty
+ * canvas is told to open a workflow first.
+ */
+export async function savesFromHome(owner) {
+    if (group?.saves?.length) {
+        owner.showSaves(group.key);
+        return;
+    }
+    if (!canvasGraph()?._nodes?.length) {
+        showWorkbenchToast(t('savesEmptyCanvas'), { label: t('savesPickWorkflow'), run: () => owner.goTo('recipes') });
+        return;
+    }
+    owner.close();
+    if (folded) fold(false);
+    await addMark();
+    if (group?.saves?.length === 1) status(t('savesFirstHint'));
 }
 
 /** The open tab with `item`'s group of saves on it, or null. */
