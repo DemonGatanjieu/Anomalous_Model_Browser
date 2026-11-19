@@ -39,13 +39,18 @@ function button(className, label, onClick, title) {
 export const mcpAddress = (set = 'all') => `${location.origin}/anomalous/mcp${set === 'all' ? '' : `?tools=${set}`}`;
 
 /** A line to copy: the text and a Copy button that says when it is done. */
-export function copyLine(text, { code = true, label = t('aiCopyAddress') } = {}) {
+export function copyLine(text, { code = true, label = t('aiCopyAddress'), onCopied = null } = {}) {
     const line = el('div', `anomalous-ai-copy${code ? ' is-code' : ''}`);
     const body = el(code ? 'code' : 'span', 'anomalous-ai-copy-text', text);
     const copy = iconButton('anomalous-ai-copy-button', 'copy', label, async () => {
-        await copyText(text);
+        const copied = await copyText(text);
         copy.classList.add('is-done');
         copy.lastChild.textContent = t('aiCopied');
+        // `onCopied`: what comes next once it is on the clipboard, after "Copied" was seen a moment.
+        if (copied && onCopied) {
+            setTimeout(onCopied, 600);
+            return;
+        }
         setTimeout(() => {
             copy.classList.remove('is-done');
             copy.lastChild.textContent = label;
