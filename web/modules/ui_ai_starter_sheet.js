@@ -15,7 +15,7 @@ import { aiWindow } from './ui_ai_connect.js';
 import { pictureGrid, thumbUrl } from './ui_ai_gallery_pick.js';
 import { startTask } from './ui_ai_handoff.js';
 import { icon } from './ui_ai_icons.js';
-import { presetFields } from './ui_ai_preset_sheet.js';
+import { presetFields, savesStrip } from './ui_ai_preset_sheet.js';
 import { loraPicker, sealFlow } from './ui_ai_private_sheet.js';
 import { applyTaskRoute, startFromSection } from './ui_ai_start_from.js';
 import { startSteps } from './ui_ai_start_steps.js';
@@ -379,7 +379,7 @@ export function openStarter(owner, card, data) {
         ? presetFields({ data, owner, close: () => close(), go })
         : {
             nodes: [el('p', 'anomalous-ai-start-empty', t('aiStartNoWorkflows')),
-                button('anomalous-ai-link', t('aiStartToWorkflows'), () => { close(); owner.goTo?.('recipes'); })],
+                button('anomalous-ai-link', t('aiStartToWorkflows'), () => { close(); owner.goTo?.('recipes'); }), savesStrip(owner, () => close())],
             start: null,
         };
     const lines = cardLinesBlock(card);

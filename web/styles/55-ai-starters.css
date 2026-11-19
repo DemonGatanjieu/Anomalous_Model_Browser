@@ -100,8 +100,7 @@
     border-color: color-mix(in srgb, var(--amb-warn) 48%, var(--amb-border));
     background: color-mix(in srgb, var(--amb-warn) 6%, rgba(var(--amb-ink-rgb), 0.04));
 }
-.anomalous-ai-start-input,
-.anomalous-ai-start-select {
+.anomalous-ai-start-input {
     box-sizing: border-box;
     width: 100%;
     padding: 7px 10px;
@@ -112,8 +111,6 @@
     font: inherit;
     font-size: 13px;
 }
-/* The browser draws a select's list on the select's own background: see-through, its light words land on white. */
-.anomalous-ai-start-select { background: var(--amb-bg-input); }
 /* What is in place before Start: a line each, green when it is, amber when something is missing. */
 .anomalous-ai-start-ready { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 /* The sheet opens on its card's picture, the readiness line beside it. */
@@ -189,10 +186,7 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
     color: var(--amb-text-main);
     font-weight: 600;
 }
-.anomalous-ai-start-pill:disabled,
-.anomalous-ai-preset-chip:disabled { opacity: 0.45; cursor: not-allowed; }
-.anomalous-ai-preset-note { color: var(--amb-ok-text); font-size: 12px; line-height: 1.5; }
-.anomalous-ai-preset-note.is-warn { color: var(--amb-warn-text); }
+.anomalous-ai-start-pill:disabled { opacity: 0.45; cursor: not-allowed; }
 .anomalous-ai-preset-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 128px; overflow-y: auto; }
 .anomalous-ai-preset-run {
     display: flex;
@@ -566,8 +560,28 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 
 /* "Run my preset" dialog & reusable visual workflow card selector (ui_ai_preset_sheet.js, ui_workflow_pick.js). */
 .anomalous-ai-connect-dialog.is-preset-sheet { width: min(980px, 92vw); max-height: 90vh; }
-.anomalous-ai-preset-sources { gap: 10px; }
-.anomalous-ai-preset-sources .anomalous-ai-start-choice { padding: 12px 14px; }
+/* The strip over the cards to the Saves page: dashed in the accent, an arrow at the end, so it reads as "go there". */
+.anomalous-ai-preset-to-saves {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px dashed color-mix(in srgb, var(--amb-link) 60%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--amb-link) 9%, transparent);
+    color: var(--amb-link);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.anomalous-ai-preset-to-saves:hover { border-style: solid; background: color-mix(in srgb, var(--amb-link) 15%, transparent); }
+.anomalous-ai-preset-to-saves:focus-visible { outline: 2px solid var(--amb-link); outline-offset: 2px; }
+.anomalous-ai-preset-to-saves-icon { display: inline-flex; flex: none; }
+.anomalous-ai-preset-to-saves-words { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
+.anomalous-ai-preset-to-saves-title { color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
+.anomalous-ai-preset-to-saves-hint { color: var(--amb-current-text); font-size: 12px; }
+.anomalous-ai-preset-to-saves > svg:last-child { flex: none; }
 .anomalous-wf-pick { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .anomalous-wf-pick-grid {
     flex: initial;
@@ -602,6 +616,3 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 }
 .anomalous-wf-pick-card.is-on .anomalous-wf-pick-check { display: inline-flex; }
 .anomalous-wf-pick-plain { flex: none; margin-left: auto; color: var(--amb-text-dim); font-size: 11px; }
-@media (max-width: 640px) {
-    .anomalous-ai-preset-sources { grid-template-columns: 1fr; }
-}

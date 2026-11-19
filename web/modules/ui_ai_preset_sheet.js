@@ -1,8 +1,9 @@
 /**
  * The steps of the "Run my preset" sheet (ui_ai_starter_sheet.js opens it, ui_ai_start_steps.js steps it):
- * which workflow (a saved one, or an open canvas with the saved workflow whose presets go onto it), the
- * presets as chips that a press lines up to run, each so many times, then what to change this time. With nothing to change Anomalous
- * runs the list itself (preset_runs.js), no AI app needed, and keeps a saved workflow's list in this
+ * which saved workflow (a card grid; running what is on the canvas, a few versions together, is the Saves
+ * page's job, and a strip over the grid goes there), the presets as chips that a press lines up to run, each
+ * so many times, then what to change this time. With nothing to change Anomalous
+ * runs the list itself (preset_runs.js), no AI app needed, and keeps the list in this
  * browser: the home page's line runs it again with one press (againLine). With a change the list goes to
  * an AI as a task and a message; in privacy mode the names in it (the workflow's and each preset's, a
  * token each) and a prompt of the user's go marked to hide (ai_hide_mark.js), so the AI gets tokens.
@@ -11,11 +12,13 @@
 import { marked } from './ai_hide_mark.js';
 import { translate as t } from './locales.js';
 import { MAX_EACH, MAX_TOTAL, OWN, still, toggled, total, withTimes } from './preset_run_list.js';
-import { fitsTab, openTabs, presetSets, runPresets } from './preset_runs.js';
+import { runPresets } from './preset_runs.js';
 import { startTask } from './ui_ai_handoff.js';
 import { icon } from './ui_ai_icons.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { PAGE_ICONS } from './ui_shell_rail.js';
+import { savesFromHome } from './ui_snapshot_bar.js';
 import { workflowCardGrid } from './ui_workflow_pick.js';
 
 const KEY = 'anomalous_ai_preset_last';
@@ -51,12 +54,6 @@ function check(label, on = false) {
     return { box, input };
 }
 
-function option(value, label) {
-    const node = el('option', '', label);
-    node.value = value;
-    return node;
-}
-
 function kept(workflows) {
     try {
         return still(JSON.parse(localStorage.getItem(KEY) || 'null'), workflows);
@@ -69,12 +66,12 @@ function keep(run) {
     try { localStorage.setItem(KEY, JSON.stringify(run)); } catch (_) { /* a browser that keeps nothing: no "the same again" */ }
 }
 
-/** `picks` with the name each shows by; `own`: what the settings a canvas stands with are called. */
-function named(workflow, picks, own = t('aiStartOwnSettings')) {
-    return picks.map(pick => ({ ...pick, name: pick.file === OWN ? own : workflow.presets.find(preset => preset.file === pick.file)?.name || pick.file }));
+/** `picks` with the name each shows by. */
+function named(workflow, picks) {
+    return picks.map(pick => ({ ...pick, name: pick.file === OWN ? t('aiStartOwnSettings') : workflow.presets.find(preset => preset.file === pick.file)?.name || pick.file }));
 }
 
-/** Runs `run` ({card, tab, picks, close}) with no AI and says what was queued, or what stopped it. */
+/** Runs `run` ({card, picks, close}) with no AI and says what was queued, or what stopped it. */
 async function runNow(owner, run) {
     try {
         const result = await runPresets({ ...run, toGallery: () => { owner.show?.(); owner.goTo?.('gallery'); } });
@@ -98,43 +95,35 @@ export function againLine(owner, data) {
     return node;
 }
 
+/** The strip over the cards (and in the sheet with no saved workflow): what is on the canvas runs in versions on the Saves page, not here. */
+export function savesStrip(owner, close) {
+    const node = button('anomalous-ai-preset-to-saves', '', () => {
+        close();
+        void savesFromHome(owner);
+    });
+    const art = el('span', 'anomalous-ai-preset-to-saves-icon');
+    art.innerHTML = PAGE_ICONS.saves; // static markup only
+    const words = el('span', 'anomalous-ai-preset-to-saves-words');
+    words.append(el('span', 'anomalous-ai-preset-to-saves-title', t('aiPresetToSaves')),
+        el('span', 'anomalous-ai-preset-to-saves-hint', t('aiPresetToSavesHint')));
+    node.append(art, words, icon('arrowRight', 18));
+    return node;
+}
+
 /**
  * {steps, start()} of the sheet. `go` is its Start button, worded here by who will do the run; `close()`
  * shuts the sheet; start() returns what is missing, in words, or '' once it took over.
  */
 export function presetFields({ data, owner, close, go }) {
-    const tabs = openTabs();
     const last = kept(data.workflows);
-    const state = { tab: '', workflow: last?.workflow || data.workflows[0], picks: last?.picks || [{ file: OWN, times: 1 }], fits: null };
-    const tabOf = () => tabs.find(tab => tab.path === state.tab) || null;
-    const usable = file => file === OWN || !state.tab || Boolean(state.fits?.has(file));
-
-    const choiceBox = (iconName, titleKey, hintText, onClick) => {
-        const node = button('anomalous-ai-start-choice', '', onClick);
-        const words = el('span', 'anomalous-ai-start-choice-words');
-        words.append(el('span', 'anomalous-ai-start-choice-title', t(titleKey)),
-            el('span', 'anomalous-ai-start-choice-hint', hintText));
-        node.append(icon(iconName, 18), words);
-        return node;
-    };
-    const fromCard = choiceBox('workflows', 'aiPresetFromCard', t('aiPresetFromCardHint'), () => setSource(''));
-    const tabHint = tabs.length === 1 ? tabs[0].name : tabs.length > 1 ? t('aiPresetFromTabHint') : t('aiPresetFromTabNone');
-    const fromTab = choiceBox('nodes', 'aiPresetFromTab', tabHint, () => { if (tabs.length) setSource(tabs[0].path); });
-    fromTab.disabled = !tabs.length;
-    if (!tabs.length) fromTab.title = t('aiPresetFromTabNone');
-    const sources = el('div', 'anomalous-ai-start-choices anomalous-ai-preset-sources');
-    sources.append(fromCard, fromTab);
-    const tabPick = el('select', 'anomalous-ai-start-select');
-    tabPick.append(...tabs.map(tab => option(tab.path, tab.name)));
-    tabPick.onchange = () => setSource(tabPick.value);
-    const tabNote = el('div', 'anomalous-ai-preset-note');
-    const tabField = field(t('aiPresetTab'), tabPick, tabNote);
+    const state = { workflow: last?.workflow || data.workflows[0], picks: last?.picks || [{ file: OWN, times: 1 }] };
     const wfPicker = workflowCardGrid({
         workflows: data.workflows,
         selected: state.workflow?.file || '',
         showPresets: true,
         onPick: (workflow) => {
-            setWorkflow(workflow);
+            state.workflow = workflow;
+            state.picks = [{ file: OWN, times: 1 }];
             draw();
         },
         onConfirm: () => {
@@ -142,9 +131,6 @@ export function presetFields({ data, owner, close, go }) {
             if (next && !next.hidden) next.click();
         },
     });
-    const cardLabel = el('span', 'anomalous-ai-start-label');
-    const cardField = el('div', 'anomalous-ai-start-field');
-    cardField.append(cardLabel, wfPicker.node);
     const chips = el('div', 'anomalous-ai-preset-chips');
     const row = el('div', 'anomalous-ai-preset-run');
     const sum = el('div', 'anomalous-ai-preset-sum');
@@ -180,27 +166,14 @@ export function presetFields({ data, owner, close, go }) {
     }
 
     function draw() {
-        const tab = tabOf();
-        fromCard.classList.toggle('is-on', !tab);
-        fromCard.setAttribute('aria-pressed', String(!tab));
-        fromTab.classList.toggle('is-on', Boolean(tab));
-        fromTab.setAttribute('aria-pressed', String(Boolean(tab)));
-        tabField.hidden = !tab;
-        cardLabel.hidden = !tab;
-        cardLabel.textContent = t('aiPresetFrom');
-        wfPicker.setSelected(state.workflow?.file);
-        const own = t(tab ? 'aiPresetAsIs' : 'aiStartOwnSettings');
-        chips.replaceChildren(...[{ file: OWN, name: own }, ...state.workflow.presets].map((preset) => {
+        chips.replaceChildren(...[{ file: OWN, name: t('aiStartOwnSettings') }, ...state.workflow.presets].map((preset) => {
             const at = state.picks.findIndex(pick => pick.file === preset.file);
-            const chip = button(`anomalous-ai-preset-chip${at >= 0 ? ' is-on' : ''}`, at >= 0 ? `${at + 1} ${preset.name}` : preset.name, () => {
+            return button(`anomalous-ai-preset-chip${at >= 0 ? ' is-on' : ''}`, at >= 0 ? `${at + 1} ${preset.name}` : preset.name, () => {
                 state.picks = toggled(state.picks, preset.file);
                 draw();
             });
-            chip.disabled = !usable(preset.file);
-            if (chip.disabled) chip.title = t(state.fits ? 'aiPresetNoFit' : 'aiPresetChecking');
-            return chip;
         }));
-        row.replaceChildren(...named(state.workflow, state.picks, own).map((pick, at) => {
+        row.replaceChildren(...named(state.workflow, state.picks).map((pick, at) => {
             const item = el('span', 'anomalous-ai-preset-pick');
             const times = el('input', 'anomalous-ai-preset-times');
             times.type = 'number';
@@ -220,78 +193,40 @@ export function presetFields({ data, owner, close, go }) {
         tell();
     }
 
-    let asked = 0;
-    /** In canvas mode: which presets of the saved workflow can be put on the tab; the others cannot be pressed. */
-    async function checkFits() {
-        const mine = ++asked;
-        state.fits = null;
-        draw();
-        if (!state.tab || !state.workflow.presets.length) return;
-        const sets = await presetSets(state.workflow.file).catch(() => ({}));
-        if (mine !== asked || !chips.isConnected) return;
-        state.fits = new Set(state.workflow.presets.filter(preset => fitsTab(sets[preset.file], state.tab)).map(preset => preset.file));
-        state.picks = state.picks.filter(pick => usable(pick.file));
-        draw();
-    }
-
-    function setWorkflow(workflow) {
-        state.workflow = workflow;
-        wfPicker.setSelected(workflow?.file, { scroll: Boolean(state.tab) });
-        state.picks = [{ file: OWN, times: 1 }];
-        void checkFits();
-    }
-
-    /** `path`: an open tab, or '' for a saved workflow. A tab holding a saved workflow's nodes is taken for it. */
-    function setSource(path) {
-        state.tab = path;
-        const tab = tabOf();
-        if (!tab) return setWorkflow(state.workflow);
-        tabPick.value = path;
-        const same = tab.shape ? data.workflows.find(item => item.shape === tab.shape) : null;
-        tabNote.textContent = !tab.runs ? t('aiPresetTabNoOutput') : same ? t('aiPresetTabIs', { name: same.name }) : t('aiPresetTabUnknown');
-        tabNote.classList.toggle('is-warn', !tab.runs);
-        setWorkflow(same || state.workflow);
-    }
-
     change.oninput = tell;
     hidden.oninput = tell;
     privacy.input.onchange = tell;
     draw();
 
     async function start() {
-        const tab = tabOf();
         if (!state.picks.length) return t('aiPresetNeedPick');
         if (total(state.picks) > MAX_TOTAL) return t('aiPresetTooMany', { count: total(state.picks), max: MAX_TOTAL });
-        if (tab && !tab.runs) return t('aiPresetTabNoOutput');
-        const picks = named(state.workflow, state.picks, t(tab ? 'aiPresetAsIs' : 'aiStartOwnSettings'));
-        const presets = picks.some(pick => pick.file !== OWN);
+        const picks = named(state.workflow, state.picks);
         if (!byAi()) {
             close();
-            if (!tab) keep({ workflow: state.workflow.file, picks: state.picks, close: closing.input.checked });
-            await runNow(owner, { card: tab && !presets ? null : state.workflow, tab: state.tab, picks, close: closing.input.checked });
+            keep({ workflow: state.workflow.file, picks: state.picks, close: closing.input.checked });
+            await runNow(owner, { card: state.workflow, picks, close: closing.input.checked });
             return '';
         }
         const secret = privacy.input.checked;
         const hide = secret ? marked : text => text;
         const list = picks.map((pick) => {
-            const what = pick.file !== OWN ? `${hide(state.workflow.name)} / ${hide(pick.name)}` : tab ? t('aiPresetSayCanvas') : hide(state.workflow.name);
+            const what = pick.file !== OWN ? `${hide(state.workflow.name)} / ${hide(pick.name)}` : hide(state.workflow.name);
             return `${what} × ${pick.times}`;
         }).join('; ');
         const note = [t('aiPresetSay', { list }), change.value.trim() ? t('aiPresetSayChange', { change: change.value.trim() }) : '',
             secret && hidden.value.trim() ? t('aiPresetSayPrompt', { prompt: marked(hidden.value.trim()) }) : ''].filter(Boolean).join(' ');
         if (note.length > MAX_NOTE) return t('aiPresetTooLong');
-        const onCanvas = tab && picks.some(pick => pick.file === OWN);
-        const about = [...(!secret && (presets || !tab) ? [{ type: 'workflow', name: state.workflow.name, label: state.workflow.name }] : []),
-            ...(onCanvas ? [{ type: 'canvas', tab: tab.path, label: tab.name }] : [])];
-        const title = secret ? t('aiPresetTaskPrivate') : t('aiPresetTask', { name: (tab && !presets ? tab.name : state.workflow.name).slice(0, 40) });
+        const about = secret ? [] : [{ type: 'workflow', name: state.workflow.name, label: state.workflow.name }];
+        const title = secret ? t('aiPresetTaskPrivate') : t('aiPresetTask', { name: state.workflow.name.slice(0, 40) });
         close();
-        await startTask(owner, title, about, null, { ...(onCanvas ? {} : { canvas: 'new' }), ...(secret ? { privacy: true } : {}) }, note);
+        await startTask(owner, title, about, null, { canvas: 'new', ...(secret ? { privacy: true } : {}) }, note);
         return '';
     }
 
     const hint = key => el('p', 'anomalous-ai-start-step-hint', t(key));
     const steps = [
-        { title: t('aiPresetStepWorkflow'), nodes: [sources, tabField, cardField], check: () => (tabOf() && !tabOf().runs ? { errorText: t('aiPresetTabNoOutput') } : null) },
+        { title: t('aiPresetStepWorkflow'), nodes: [savesStrip(owner, close), wfPicker.node] },
         { title: t('aiPresetStepPick'), nodes: [hint('aiPresetStepPickHint'), chips, row, sum],
             check: () => (!state.picks.length ? { errorText: t('aiPresetNeedPick') }
                 : total(state.picks) > MAX_TOTAL ? { errorText: t('aiPresetTooMany', { count: total(state.picks), max: MAX_TOTAL }) } : null) },
