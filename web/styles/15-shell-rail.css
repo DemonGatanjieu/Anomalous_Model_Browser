@@ -48,15 +48,15 @@
     position: relative;
 }
 
-/* The current page's highlight: one piece that slides between the entries (ui_shell_rail.js). */
+/* The current page's highlight: a pill behind its icon that slides between the entries (ui_shell_rail.js). */
 .anomalous-rail-marker {
     position: absolute;
     top: 0;
-    left: 4px;
-    width: 52px;
-    border-radius: 9px;
-    background: rgba(var(--amb-ink-rgb), 0.1);
-    box-shadow: inset 2px 0 0 var(--amb-link);
+    left: 50%;
+    width: 46px;
+    margin-left: -23px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-link) 24%, transparent);
     opacity: 0;
     pointer-events: none;
     transition: translate 0.2s var(--amb-ease-out), height 0.2s var(--amb-ease-out), opacity 0.15s ease;
@@ -110,15 +110,32 @@
     padding: 7px 0 5px;
 }
 
-.anomalous-rail-foot button,
-#anomalous-rail.is-compact .anomalous-rail-tools button {
+.anomalous-rail-foot button {
     width: 40px;
     height: 36px;
     padding: 0;
 }
 
+/* An entry's icon sits in a pill-sized box: the hover tint and the current page's pill take its shape. */
+.anomalous-rail-item > svg,
+.anomalous-rail-tools button > svg {
+    position: relative;
+    box-sizing: content-box;
+    padding: 4px 13px;
+    border-radius: 999px;
+    transition: background 0.15s ease;
+}
+
+.anomalous-rail-item:hover > svg,
+.anomalous-rail-tools button:hover > svg {
+    background: rgba(var(--amb-ink-rgb), 0.08);
+}
+
 .anomalous-rail-item:hover,
-.anomalous-rail-tools button:hover,
+.anomalous-rail-tools button:hover {
+    color: var(--amb-text-main);
+}
+
 .anomalous-rail-foot button:hover {
     background: rgba(var(--amb-ink-rgb), 0.06);
     color: var(--amb-text-main);
@@ -126,6 +143,14 @@
 
 .anomalous-rail-item.active {
     color: var(--amb-text-main);
+}
+
+.anomalous-rail-item.active > svg {
+    background: none; /* the pill behind it shows */
+}
+
+.anomalous-rail-item.active .anomalous-rail-label {
+    font-weight: 600;
 }
 
 .anomalous-rail-tools button.is-active,
@@ -143,12 +168,33 @@
     text-overflow: ellipsis;
 }
 
+/* A short window: first less space around each entry, then (still too short) no labels. */
+#anomalous-rail.is-tight {
+    gap: 0;
+    padding: 6px 0;
+}
+
+#anomalous-rail.is-tight .anomalous-rail-item,
+#anomalous-rail.is-tight .anomalous-rail-tools button {
+    gap: 1px;
+    padding: 2px 0 1px;
+}
+
+#anomalous-rail.is-tight .anomalous-rail-item > svg,
+#anomalous-rail.is-tight .anomalous-rail-tools button > svg {
+    padding-block: 2px;
+}
+
+#anomalous-rail.is-tight .anomalous-rail-sep {
+    margin: 3px 0;
+}
+
 #anomalous-rail.is-compact .anomalous-rail-label {
     display: none;
 }
 
 #anomalous-rail.is-compact .anomalous-rail-item {
-    padding: 8px 0;
+    padding: 2px 0;
 }
 
 /* Older id rules style these as bottom-bar buttons (with !important); the rail's look wins. */
@@ -158,9 +204,9 @@
     border-radius: 9px !important;
 }
 
-#anomalous-rail.is-compact #anomalous-scan-btn {
-    width: 40px !important;
-    height: 36px !important;
+/* Their hover tinted the whole button; in the rail only the icon's pill is tinted. */
+#anomalous-rail .anomalous-rail-tools button:hover {
+    background: transparent !important;
 }
 
 #anomalous-rail #anomalous-materials-btn.active {

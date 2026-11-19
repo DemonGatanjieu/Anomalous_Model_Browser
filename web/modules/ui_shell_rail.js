@@ -7,23 +7,23 @@
  */
 
 import { translate as t } from './locales.js';
-import { TOOL_ICONS } from './tool_registry.js';
 
-const icon = paths => `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+// One line style for the rail (Google's rounded outline): 20 px, 1.8 strokes, round ends.
+const icon = paths => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
 export const PAGE_ICONS = {
-    home: icon('<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'),
-    activity: icon('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
-    ai: icon('<path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.4l-.8-1.9-1.9-.8 1.9-.8z"/><path d="M5 16l.6 1.4L7 18l-1.4.6L5 20l-.6-1.4L3 18l1.4-.6z"/>'),
-    models: icon('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'),
-    gallery: icon('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'),
-    recipes: icon('<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v6"/><path d="M9 6h6"/><path d="M7.8 7.8l8.4 8.4"/>'),
-    combos: TOOL_ICONS.MATERIALS,
-    prompts: icon('<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>'),
-    voices: icon('<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>'),
+    home: icon('<path d="M4 10.2 12 4l8 6.2V19a1.5 1.5 0 0 1-1.5 1.5H15v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5H5.5A1.5 1.5 0 0 1 4 19z"/>'),
+    activity: icon('<path d="M3.8 12a8.2 8.2 0 1 0 2.4-5.8"/><path d="M3.8 4.5v3.8h3.8"/><path d="M12 8v4.3l2.8 1.7"/>'),
+    ai: icon('<path d="M10.5 3.5c.8 4.6 2.6 6.4 7.2 7.2-4.6.8-6.4 2.6-7.2 7.2-.8-4.6-2.6-6.4-7.2-7.2 4.6-.8 6.4-2.6 7.2-7.2z"/><path d="M18.5 14.8c.3 1.7.9 2.3 2.6 2.6-1.7.3-2.3.9-2.6 2.6-.3-1.7-.9-2.3-2.6-2.6 1.7-.3 2.3-.9 2.6-2.6z"/>'),
+    models: icon('<path d="M12 3.2 19.6 7.6v8.8L12 20.8l-7.6-4.4V7.6z"/><path d="M4.6 7.7 12 12l7.4-4.3M12 12v8.6"/>'),
+    gallery: icon('<rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="9.8" r="1.7"/><path d="m4 17 4.6-4.2a1 1 0 0 1 1.3 0l3 2.6 2.2-1.9a1 1 0 0 1 1.3 0L20 17"/>'),
+    recipes: icon('<rect x="8.75" y="3.5" width="6.5" height="5" rx="1.5"/><rect x="3.5" y="15.5" width="6.5" height="5" rx="1.5"/><rect x="14" y="15.5" width="6.5" height="5" rx="1.5"/><path d="M12 8.5V12M6.75 15.5v-2A1.5 1.5 0 0 1 8.25 12h7.5a1.5 1.5 0 0 1 1.5 1.5v2"/>'),
+    combos: icon('<path d="M12 3.8 20 8l-8 4.2L4 8z"/><path d="m4 12 8 4.2 8-4.2"/><path d="m4 16 8 4.2 8-4.2"/>'),
+    prompts: icon('<path d="M10 12.5H5.5A1.5 1.5 0 0 1 4 11V8.5A1.5 1.5 0 0 1 5.5 7h3A1.5 1.5 0 0 1 10 8.5V14a4 4 0 0 1-4 4"/><path d="M20 12.5h-4.5A1.5 1.5 0 0 1 14 11V8.5A1.5 1.5 0 0 1 15.5 7h3A1.5 1.5 0 0 1 20 8.5V14a4 4 0 0 1-4 4"/>'),
+    voices: icon('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>'),
     // Not rail entries (Voice-over and Audio are views of Voices); Home's voice-over card uses this one.
-    script: icon('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/>'),
-    'audio-gallery': icon('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
+    script: icon('<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/><path d="M8.5 9h7M8.5 12.5h4.5"/>'),
+    'audio-gallery': icon('<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
 };
 
 /** Pages on the rail, top to bottom: no more than the nine number keys. `audio`: the page belongs to the audio domain. */
@@ -93,18 +93,23 @@ export function createShellRail(owner) {
         syncCompact();
     };
 
+    // The highlight is a pill behind the current entry's icon (the icon's own box, as its hover).
     const moveMarker = () => {
         const current = [...items.values()].find(button => button.classList.contains('active'));
         marker.classList.toggle('is-shown', !!current);
-        if (!current) return;
-        marker.style.translate = `0 ${current.offsetTop}px`;
-        marker.style.height = `${current.offsetHeight}px`;
+        const mark = current?.querySelector('svg')?.getBoundingClientRect();
+        if (!mark?.height) return;
+        marker.style.translate = `0 ${current.offsetTop + mark.top - current.getBoundingClientRect().top}px`;
+        marker.style.height = `${mark.height}px`;
     };
 
-    // A short window drops the labels under the icons; the tooltips still name the entries.
+    // A short window first tightens the spacing, and only when that is not enough drops the labels under
+    // the icons; the tooltips still name the entries.
+    const over = () => root.clientHeight > 0 && root.scrollHeight > root.clientHeight + 1;
     const syncCompact = () => {
-        root.classList.remove('is-compact');
-        root.classList.toggle('is-compact', root.clientHeight > 0 && root.scrollHeight > root.clientHeight + 1);
+        root.classList.remove('is-tight', 'is-compact');
+        if (over()) root.classList.add('is-tight');
+        if (over()) root.classList.add('is-compact');
         moveMarker();
     };
     if (typeof ResizeObserver === 'function') new ResizeObserver(syncCompact).observe(root);

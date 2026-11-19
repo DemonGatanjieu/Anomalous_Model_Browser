@@ -4,7 +4,9 @@
  * task stands (working, asking the user, failed) with their counts, and the tasks by day, each
  * with an icon for where it stands and a ⋯ (ui_ai_task_menu.js) that shows on the task the pointer
  * is on. All tasks show by family, those going on from a task under it (ai_task_view.taskFamilies);
- * a filter's show alone. The filter is this column's own; the rest comes in `view`.
+ * a filter's show alone. A task is a block of its own: a small picture (the last it made, or its state's
+ * icon), its name and the time, and one line of where it stands (what asks the user first); the AI app,
+ * the steps and the time in full are its tooltip. The filter is this column's own; the rest comes in `view`.
  * Drawn again (every few seconds while the page shows), only the rows that changed are made anew.
  * The column folds away from a button at the top left of the window (listToggle); folded, it stays
  * laid out out of sight, and the pointer on that button, or moving left onto the page's left edge,
@@ -13,7 +15,7 @@
 
 import { translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
-import { taskCounts, taskFamilies, taskState } from './ai_task_view.js';
+import { picturePreview, taskCounts, taskFamilies, taskState } from './ai_task_view.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { openConnectGuide } from './ui_ai_connect.js';
 import { openGates } from './ui_ai_gate.js';
@@ -40,6 +42,35 @@ export function stateIcon(status, size = 13) {
     return mark;
 }
 
+/** The small picture at a task's left: the last picture it made, else its state's icon on the state's colour. */
+function taskThumb(summary, status) {
+    const box = el('span', 'anomalous-ai-task-thumb');
+    if (!summary.cover) {
+        box.append(stateIcon(status, 16));
+        return box;
+    }
+    const picture = el('img');
+    picture.alt = '';
+    picture.loading = 'lazy';
+    picture.decoding = 'async';
+    picture.src = picturePreview(summary.cover);
+    picture.onerror = () => box.replaceChildren(stateIcon(status, 16));
+    box.append(picture);
+    return box;
+}
+
+/** Where a task stands in a few words: its state (left out when the questions say it), the questions waiting
+ * for the user, or, once it stopped, the first thing it did. */
+function standing(summary, status, place) {
+    const counts = taskCounts(summary);
+    const asks = counts.find(item => item.key === 'aiCountAsks');
+    const done = counts.find(item => item.key !== 'aiCountAsks' && item.key !== 'aiCountErrors');
+    const words = status === 'asks' && asks ? [] : [t(`aiState_${status}`)];
+    if (asks) words.push(t(asks.key, asks.values));
+    else if (done && ['done', 'halted', 'paused'].includes(status)) words.push(t(done.key, done.values));
+    return [place.follows ? t('aiTaskFollows') : '', ...words].filter(Boolean).join(' · ');
+}
+
 /** `place`: where it stands in the list: `size` of its family, `follows` when no family shows that, `day` when not the heading's. */
 function taskRow(summary, view, place) {
     const status = taskState(summary);
@@ -48,17 +79,17 @@ function taskRow(summary, view, place) {
     row.onclick = () => view.onPick(summary);
     row.onpointerenter = () => view.onHover?.(summary);
     row.onpointerleave = () => view.onLeave?.();
+    const when = [place.day, timeLabel(summary.updated)].filter(Boolean).join(' ');
+    row.title = [taskTitle(summary), summary.client, when, t('aiStepCount', { count: summary.steps })].filter(Boolean).join(' · ');
     const top = el('div', 'anomalous-ai-task-row-top');
-    const name = el('span', 'anomalous-ai-task-row-title', taskTitle(summary));
-    name.title = name.textContent; // a follow-up stands one step in: its name is cut off sooner
-    top.append(stateIcon(status), name);
+    top.append(el('span', 'anomalous-ai-task-row-title', taskTitle(summary)));
     if (place.size > 1) top.append(el('span', 'anomalous-ai-task-family', t('aiTaskFamily', { count: place.size })));
     if (status === 'live') top.append(el('span', 'anomalous-ai-live-dot'));
-    const when = [place.day, timeLabel(summary.updated)].filter(Boolean).join(' ');
-    const meta = [place.follows ? t('aiTaskFollows') : '', summary.client, when, t('aiStepCount', { count: summary.steps })].filter(Boolean);
-    row.append(top, el('div', 'anomalous-ai-task-row-meta', meta.join(' · ')));
-    const counts = taskCounts(summary);
-    if (counts.length) row.append(el('div', 'anomalous-ai-task-row-counts', counts.map(item => t(item.key, item.values)).join(' · ')));
+    top.append(el('span', 'anomalous-ai-task-row-time', when));
+    const words = el('div', 'anomalous-ai-task-row-main');
+    const line = el('div', `anomalous-ai-task-row-standing is-${summary.asks > 0 ? 'asks' : status}`, standing(summary, status, place));
+    words.append(top, line);
+    row.append(taskThumb(summary, status), words);
     return row;
 }
 
