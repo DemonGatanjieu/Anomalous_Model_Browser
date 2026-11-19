@@ -5,7 +5,7 @@
  * (api/ai_sealed.py). The first field is the other kind: the gist, the picture in words the AI may
  * read, so it can write light, lens and style around the tokens; either kind alone can be handed in,
  * and a few words of the gist can be hidden by themselves (ai_hide_mark.js).
- * Saved prompts are taken into the fields from a list by their head (ui_ai_prompt_fetch.js: a free field, else a new one).
+ * Saved prompts are taken into the fields from a window by their head (ui_ai_prompt_fetch.js: a free field, else a new one).
  * Above the fields, what suits the canvas's model (the prompt_pose skill's words,
  * the step's prompt_advice). Answered, it shows what the user wrote beside the token the AI has.
  * ui_ai_panel.js draws it and hands it its helpers (sending, the question's head, the answer's note).
@@ -128,7 +128,7 @@ export function promptBox(block, ctx, { sendAnswer, askHead, skipButton, answerN
     });
     const secretHead = el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxSecret'));
     secretHead.append(taking.button);
-    box.append(gistHead, gist, secretHead, taking.panel, fields, more);
+    box.append(gistHead, gist, secretHead, fields, more);
     const negative = block.negative ? field('negative', t('aiPromptBoxNegative'), 2) : null;
     if (negative) box.append(negative);
 

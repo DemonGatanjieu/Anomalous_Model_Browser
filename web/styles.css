@@ -53,8 +53,9 @@
 @import url("./styles/52-model-guide.css?v=20261108-guide");
 @import url("./styles/53-ai-plan.css?v=20261109-plan");
 @import url("./styles/54-job-sheet.css?v=20261109-sheet");
-@import url("./styles/55-ai-starters.css?v=20261117-privacy");
+@import url("./styles/55-ai-starters.css?v=20261120-promptpick");
 @import url("./styles/56-layers.css?v=20261116-layers");
 @import url("./styles/57-long-lists.css?v=20261116-tips");
 @import url("./styles/58-tooltips.css?v=20261116-tips");
 @import url("./styles/59-focus.css?v=20261116-tips");
+@import url("./styles/60-ai-prompt-take.css?v=20261120-promptpick");

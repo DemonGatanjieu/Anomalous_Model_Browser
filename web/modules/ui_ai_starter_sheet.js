@@ -175,7 +175,7 @@ function privateFields(data) {
     gistField.classList.add('is-plain');
 
     const promptSec = el('section', 'anomalous-ai-composer-section');
-    promptSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepWrite')), promptField, taking.panel, sealFlow());
+    promptSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepWrite')), promptField, sealFlow());
     const fromSec = el('section', 'anomalous-ai-composer-section');
     fromSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepFrom')), from.node);
     const moreSec = el('section', 'anomalous-ai-composer-section');

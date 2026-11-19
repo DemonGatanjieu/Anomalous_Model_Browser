@@ -93,7 +93,7 @@
 .anomalous-ai-start-field { display: flex; flex-direction: column; gap: 4px; }
 .anomalous-ai-start-label { display: inline-flex; align-items: center; gap: 5px; color: var(--amb-text-soft); font-size: 12.5px; font-weight: 600; }
 .anomalous-ai-start-field.is-sealed .anomalous-ai-start-label { color: var(--amb-warn-text, var(--amb-warn)); font-size: 13.5px; }
-/* "Take a saved prompt" (ui_ai_prompt_fetch.js) at the end of a sealed prompt's head, its list under the field. */
+/* "Take a saved prompt" (ui_ai_prompt_fetch.js) at the end of a sealed prompt's head; its window is 60-ai-prompt-take.css. */
 .anomalous-ai-prompt-fetch {
     display: inline-flex;
     align-items: center;
@@ -109,31 +109,7 @@
     font-weight: 600;
     cursor: pointer;
 }
-.anomalous-ai-prompt-fetch:hover,
-.anomalous-ai-prompt-fetch.is-on { background: color-mix(in srgb, var(--amb-link) 45%, transparent); }
-.anomalous-ai-prompt-fetch-panel { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--amb-border); border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.03); }
-.anomalous-ai-prompt-fetch-panel[hidden] { display: none; }
-.anomalous-ai-prompt-fetch-list { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow-y: auto; }
-.anomalous-ai-prompt-fetch-row {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 7px 10px;
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--amb-text-main);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-.anomalous-ai-prompt-fetch-row:hover,
-.anomalous-ai-prompt-fetch-row:focus-visible { background: var(--amb-current-bg); outline: 0; }
-.anomalous-ai-prompt-fetch-head { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.anomalous-ai-prompt-fetch-name { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-prompt-fetch-from { flex: none; color: var(--amb-text-dim); font-size: 11px; }
-.anomalous-ai-prompt-fetch-text { overflow: hidden; color: var(--amb-text-soft); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-prompt-fetch-none { padding: 10px; color: var(--amb-text-dim); font-size: 12.5px; }
+.anomalous-ai-prompt-fetch:hover { background: color-mix(in srgb, var(--amb-link) 45%, transparent); }
 /* The private card's line that goes to the AI as it is: second to the prompt, so quieter. */
 .anomalous-ai-start-field.is-plain .anomalous-ai-start-label { color: var(--amb-text-muted); font-weight: 500; }
 .anomalous-ai-start-field.is-sealed .anomalous-ai-start-input {
@@ -435,6 +411,7 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 .anomalous-ai-connect-dialog.is-model-pick { width: min(1140px, 94vw); max-height: 90vh; }
 .anomalous-ai-pick { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .anomalous-ai-pick-search { display: flex; align-items: center; gap: 6px; color: var(--amb-text-muted); }
+.anomalous-ai-pick-search[hidden] { display: none; }
 .anomalous-ai-pick-search > .anomalous-ai-start-input { flex: 1; min-width: 0; }
 .anomalous-ai-pick-note { color: var(--amb-text-muted); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-pick-picked { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--amb-border); border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.03); }
