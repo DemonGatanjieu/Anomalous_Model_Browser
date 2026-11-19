@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 主页「自己动手」中进入「存档」页的卡片标题由「画布存档：试几版一起跑」改为更直白的「多个版本对比跑图」，不再与「保存常用工作流」混淆。
+- Renaming the Home "Do it yourself" Saves card from "Canvas saves: compare versions" to "Compare multiple versions" so its purpose is clear at a glance.
+
 - AI 工作台右栏的「素材」改成一眼看全：打开就按类列出这个任务给了 AI 的所有东西。图片也算（开任务时带的、从图库发的、留言里附的都在），出图方法、模型、搭配、工作流、提示词、节点各一块，没有的类不显示；每个旁边一个 ×，点一下就收回。留言里还没发出去的，上面黄框提醒。「优先用 / 只能用」放在最上面。底下两个大按钮：「加素材」打开挑素材的大窗口，「加图片」从图库挑几张直接发给这个任务。以前要先点「已给」、再一类一类点过去才看得全，图片根本看不到。挑素材只剩大窗口一种，不再挤在右栏里。
 - The AI workbench's side "Materials" now shows everything at once: what the task gives its AI, by kind. Pictures count too (named when the task started, sent from the gallery, attached to a message), then ways, models, combos, workflows, prompts and nodes, each in a part of its own; kinds with nothing are left out, and an × takes a thing back. Things on the message not sent yet are pointed out over them, "Prefer these / Only these" sits on top, and at the foot "Add materials" opens the picker's window while "Add pictures" hands a few gallery pictures to the task at once. Before, seeing it all took "Given" and a press on every kind, and pictures did not show at all. The picker itself is only the large window now, no longer squeezed into the side column.
 
