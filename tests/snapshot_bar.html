@@ -129,6 +129,7 @@ try {
     const pageControls = all('.anomalous-saves-part button, .anomalous-saves-part input');
     const pageStayed = () => pageControls.every(node => node.isConnected);
     check(all('.anomalous-saves-guide-actions button').length === 2, 'the top guide card shows save-another and back-to-canvas actions');
+    check(all('.anomalous-saves-step').length === 3 && all('.anomalous-saves-step.is-done').length === 2 && all('.anomalous-saves-step.is-current').length === 1 && all('.anomalous-saves-step-arrow').length === 2, 'the guide card shows 3 progress steps with arrows');
     check(all('.anomalous-saves-save').length === 2 && one('.anomalous-saves-picture'), 'the page shows the saves and their pictures');
 
     const pageBox = one('.anomalous-saves-tools .anomalous-snapshot-count');

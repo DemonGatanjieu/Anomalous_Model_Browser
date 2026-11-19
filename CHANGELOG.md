@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 优化「存档」页顶部当前画布引导卡：将原先一行文字升级为带 `→` 箭头的 3 步流程条（1 存第 1 版底稿 → 2 回画布改参数/换模型/增删连节点，再存新版 → 3 点下方「运行」并排看图），按当前画布存档数自动标出已完成打勾与当前待操作步骤，并在窄窗口下自动切换为竖向布局与向下箭头。
+- Upgrading the top current-canvas guide card in Canvas Saves from a single line of prose into a 3-step `→` progress strip ("Save version 1" → "Edit settings, swap models, or add/remove/rewire nodes & save another" → "Run all & compare side by side") with automatic completed/current highlighting and vertical container-query stacking on narrow views.
+
 - 修复从画布底部存档条点击「看图」（尤其存档还没有出图时）打开「存档」页会先闪白、再先折叠后弹开的问题：进入页面时同步预画顶部当前画布引导与当前画布展开卡片，并把组列表与已展开组的数据合并为一次并行加载，同时同步收起下层侧栏并对齐 `is-saves` 视图切换时机。
 - Fixing a blank-then-collapsed-to-expanded screen flash when clicking "Pictures" on the canvas snapshot bar (notably on saves without images yet): the Saves view now primes the active canvas guide and expanded group synchronously on first paint, prefetches open groups in parallel before replacing the list, applies `.is-saves` before mounting, and hides the workspace sidebar synchronously.
 

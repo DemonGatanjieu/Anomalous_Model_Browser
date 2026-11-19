@@ -99,10 +99,10 @@
 .anomalous-saves-guide {
     display: flex;
     flex: none;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px 14px;
+    flex-direction: column;
+    gap: 10px;
+    container-type: inline-size;
+    container-name: amb-saves-guide;
     padding: 12px 14px;
     background: color-mix(in srgb, var(--amb-accent) 8%, var(--amb-bg-card));
     border: 1px solid color-mix(in srgb, var(--amb-accent) 32%, var(--amb-border));
@@ -113,10 +113,83 @@
     border-style: dashed;
     border-color: var(--amb-border);
 }
-.anomalous-saves-guide-copy { display: flex; flex: 1 1 260px; flex-direction: column; gap: 3px; min-width: 0; }
-.anomalous-saves-guide-title { color: var(--amb-text-main); font-size: 13.5px; font-weight: 600; }
-.anomalous-saves-guide-desc { color: var(--amb-text-muted); font-size: 12.5px; line-height: 1.45; }
+.anomalous-saves-guide-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.anomalous-saves-guide-title { min-width: 0; color: var(--amb-text-main); font-size: 13.5px; font-weight: 600; text-wrap: balance; }
 .anomalous-saves-guide-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; gap: 8px; }
+.anomalous-saves-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 24px;
+    row-gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.anomalous-saves-step { position: relative; display: flex; align-items: stretch; min-width: 0; }
+.anomalous-saves-step-card {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 9px 11px;
+    background: color-mix(in srgb, var(--amb-bg-sunken) 78%, transparent);
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+}
+.anomalous-saves-step-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.anomalous-saves-step-no {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    color: var(--amb-text-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+.anomalous-saves-step-title { color: var(--amb-text-main); font-size: 12.5px; font-weight: 600; }
+.anomalous-saves-step-desc { color: var(--amb-text-muted); font-size: 12px; line-height: 1.45; text-wrap: pretty; }
+.anomalous-saves-step-arrow {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 12px);
+    color: var(--amb-text-muted);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+.anomalous-saves-step.is-done .anomalous-saves-step-card {
+    border-color: color-mix(in srgb, var(--amb-ok, #34d399) 34%, var(--amb-border));
+    opacity: 0.88;
+}
+.anomalous-saves-step.is-done .anomalous-saves-step-no {
+    color: var(--amb-ok, #34d399);
+    background: color-mix(in srgb, var(--amb-ok, #34d399) 14%, transparent);
+    border-color: color-mix(in srgb, var(--amb-ok, #34d399) 55%, transparent);
+}
+.anomalous-saves-step.is-done .anomalous-saves-step-arrow { color: var(--amb-ok, #34d399); }
+.anomalous-saves-step.is-current .anomalous-saves-step-card {
+    background: color-mix(in srgb, var(--amb-accent) 12%, var(--amb-bg-card));
+    border-color: color-mix(in srgb, var(--amb-accent) 55%, var(--amb-border));
+}
+.anomalous-saves-step.is-current .anomalous-saves-step-no {
+    color: #1a1205;
+    background: var(--amb-accent);
+    border-color: transparent;
+}
+.anomalous-saves-step.is-current .anomalous-saves-step-arrow { color: var(--amb-accent); }
+.anomalous-saves-step.is-ahead .anomalous-saves-step-card { border-style: dashed; opacity: 0.78; }
+@container amb-saves-guide (max-width: 660px) {
+    .anomalous-saves-steps { grid-template-columns: 1fr; gap: 4px; }
+    .anomalous-saves-step { flex-direction: column; gap: 4px; }
+    .anomalous-saves-step-arrow { position: static; align-self: center; transform: rotate(90deg); }
+}
 .anomalous-saves-part { flex: none; overflow: hidden; color: var(--amb-text-main); background: var(--amb-bg-card); border: 1px solid var(--amb-border); border-radius: 10px; }
 .anomalous-saves-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 8px 12px; }
 

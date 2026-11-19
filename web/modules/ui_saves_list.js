@@ -214,30 +214,75 @@ function bindSaveButton(owner, actions, label) {
     };
 }
 
+function guideSteps(status) {
+    const count = status.count || 0;
+    return [
+        count > 0
+            ? { state: 'done', title: t('savesGuideStep1DoneTitle'), desc: t('savesGuideStep1DoneDesc') }
+            : { state: status.hasCanvas ? 'current' : 'ahead', title: t('savesGuideStep1TodoTitle'), desc: t('savesGuideStep1TodoDesc') },
+        count >= 2
+            ? { state: 'done', title: t('savesGuideStep2DoneTitle'), desc: t('savesGuideStep2DoneDesc') }
+            : { state: count === 1 ? 'current' : 'ahead', title: t('savesGuideStep2EditTitle'), desc: t('savesGuideStep2EditDesc') },
+        count >= 2
+            ? { state: 'current', title: t('savesGuideStep3ReadyTitle'), desc: t('savesGuideStep3ReadyDesc') }
+            : { state: 'ahead', title: t('savesGuideStep3RunTitle'), desc: t('savesGuideStep3RunDesc') },
+    ];
+}
+
+function stepList(steps) {
+    const list = document.createElement('ol');
+    list.className = 'anomalous-saves-steps';
+    steps.forEach((step, index) => {
+        const item = document.createElement('li');
+        item.className = `anomalous-saves-step is-${step.state}`;
+        if (step.state === 'current') item.setAttribute('aria-current', 'step');
+        const card = document.createElement('div');
+        card.className = 'anomalous-saves-step-card';
+        const head = document.createElement('div');
+        head.className = 'anomalous-saves-step-head';
+        const badge = document.createElement('span');
+        badge.className = 'anomalous-saves-step-no';
+        badge.setAttribute('aria-hidden', 'true');
+        badge.textContent = step.state === 'done' ? '✓' : String(index + 1);
+        head.append(badge);
+        appendText(head, 'span', step.title, 'anomalous-saves-step-title');
+        card.append(head);
+        appendText(card, 'div', step.desc, 'anomalous-saves-step-desc');
+        item.append(card);
+        if (index < steps.length - 1) {
+            const arrow = document.createElement('span');
+            arrow.className = 'anomalous-saves-step-arrow';
+            arrow.setAttribute('aria-hidden', 'true');
+            arrow.textContent = '→';
+            item.append(arrow);
+        }
+        list.append(item);
+    });
+    return list;
+}
+
 function drawGuide(owner, status) {
     const guide = owner.savesGuide;
     if (!guide) return;
     const name = status.title || t('savesGuideUnnamed');
-    const copy = document.createElement('div');
-    copy.className = 'anomalous-saves-guide-copy';
+    const head = document.createElement('div');
+    head.className = 'anomalous-saves-guide-head';
     const actions = document.createElement('div');
     actions.className = 'anomalous-saves-guide-actions';
     guide.classList.toggle('is-empty', !status.hasCanvas && !status.count);
     if (!status.hasCanvas && !status.count) {
-        appendText(copy, 'div', t('savesGuideEmptyCanvas'), 'anomalous-saves-guide-title');
-        appendText(copy, 'div', t('savesGuideEmptyDesc'), 'anomalous-saves-guide-desc');
+        appendText(head, 'div', t('savesGuideEmptyCanvas'), 'anomalous-saves-guide-title');
         button(actions, t('savesPickWorkflow'), 'anomalous-wf-save').onclick = () => owner.goTo?.('recipes');
     } else if (!status.count) {
-        appendText(copy, 'div', t('savesGuideNoSaves', { name }), 'anomalous-saves-guide-title');
-        appendText(copy, 'div', t('savesGuideNoSavesDesc'), 'anomalous-saves-guide-desc');
+        appendText(head, 'div', t('savesGuideNoSaves', { name }), 'anomalous-saves-guide-title');
         bindSaveButton(owner, actions, t('savesGuideSaveFirst'));
     } else {
-        appendText(copy, 'div', t('savesGuideHasSaves', { name, count: status.count }), 'anomalous-saves-guide-title');
-        appendText(copy, 'div', t('savesGuideHasSavesDesc'), 'anomalous-saves-guide-desc');
+        appendText(head, 'div', t('savesGuideHasSaves', { name, count: status.count }), 'anomalous-saves-guide-title');
         bindSaveButton(owner, actions, t('savesGuideSaveNext'));
         button(actions, t('savesGuideToCanvas'), 'anomalous-wf-filter').onclick = () => revealCanvasBar(owner);
     }
-    guide.replaceChildren(copy, actions);
+    head.append(actions);
+    guide.replaceChildren(head, stepList(guideSteps(status)));
 }
 
 async function refreshGuide(owner) {
@@ -323,7 +368,12 @@ export async function refreshSaves(owner) {
             missing.forEach((key, index) => openGroups.set(key, loaded[index]));
         }
         refused.clear();
-        drawGuide(owner, status);
+        const activeSummary = status.key ? groups.find(item => item.key === status.key) : null;
+        const activeGroup = status.key ? openGroups.get(status.key) : null;
+        const liveStatus = status.key
+            ? { ...status, hasCanvas: status.hasCanvas || Boolean(activeSummary), count: activeGroup?.saves?.length ?? activeSummary?.count ?? 0 }
+            : status;
+        drawGuide(owner, liveStatus);
         owner.savesParts = new Map(groups.map(item => [item.key, { item, box: document.createElement('section') }]));
         const parts = [...owner.savesParts.values()];
         for (const part of parts) {
