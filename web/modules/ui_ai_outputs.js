@@ -114,13 +114,14 @@ function keepButton(ctx, kind, name, picture) {
 }
 
 /** A step's pictures, headed by its number and time, plus its actual input/params recipe card. */
-function runGroup(run, index, task, ctx) {
+/** `all`: the task's pictures, which the image workbench's arrows go through. */
+function runGroup(run, index, task, ctx, all) {
     const group = el('div', 'anomalous-ai-out-group');
     group.append(button('anomalous-ai-out-run', t('aiOutRun', { number: ctx.numberOf(run.step.id), time: timeLabel(run.step.at) }),
         () => showStepRow(run.step.id), t('aiOutRunShow')));
     const recipe = renderRunRecipe(run.step, task, { openDefault: index === 0 });
     if (recipe) group.append(recipe);
-    group.append(imageResults(run.pictures, ctx.owner, { compact: true }));
+    group.append(imageResults(run.pictures, ctx.owner, { compact: true, set: all }));
     return group;
 }
 
@@ -131,7 +132,8 @@ function picturesPart(outputs, task, ctx) {
     if (count > 1) box.firstChild.append(el('span', 'anomalous-ai-out-hint', t('aiTickHint')));
     const groups = el('div', 'anomalous-ai-out-groups');
     box.append(groups);
-    const draw = (runs, startIndex = 0) => groups.append(...runs.map((run, i) => runGroup(run, startIndex + i, task, ctx)));
+    const all = outputs.runs.flatMap(run => run.pictures);
+    const draw = (runs, startIndex = 0) => groups.append(...runs.map((run, i) => runGroup(run, startIndex + i, task, ctx, all)));
     draw(outputs.runs.slice(0, RUNS_SHOWN), 0);
     const earlier = outputs.runs.slice(RUNS_SHOWN);
     if (earlier.length) {

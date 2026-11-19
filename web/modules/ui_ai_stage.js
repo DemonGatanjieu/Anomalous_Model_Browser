@@ -12,7 +12,7 @@ import { translate as t } from './locales.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { arrowEnds, diagramBoxes, markBox } from './ai_stage_layout.js';
 import { isVideo, outputPicture, outputUrl, pictureShown } from './ai_task_view.js';
-import { decoratePicture, gonePicture, showPicture } from './ui_ai_images.js';
+import { decoratePicture, gonePicture, openPictures, showPicture } from './ui_ai_images.js';
 import { openParamCompare } from './ui_param_compare.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -161,7 +161,7 @@ export function picks(block, ctx) {
     for (const item of list(block.items)) {
         const card = el('div', `anomalous-ai-pick${chosen.has(item.id) ? ' is-picked' : ''}${item.recommended ? ' is-recommended' : ''}`);
         card.dataset.id = item.id;
-        const frame = button('anomalous-ai-pick-picture', '', () => ctx.openPicture(outputUrl(item), isVideo(item)), t('aiOpenPicture'));
+        const frame = button('anomalous-ai-pick-picture', '', () => openPictures(ctx.owner, list(block.items), item), t('aiOpenPictures'));
         const picture = media(item, block.zoom);
         picture.draggable = true;
         picture.addEventListener('dragstart', (event) => {

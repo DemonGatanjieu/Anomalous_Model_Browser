@@ -1,7 +1,8 @@
 /**
  * The pictures an AI task made, in the timeline, the results strip and the stage's panels, with
- * the gallery's own tools: on each picture, shown when the pointer is over it, the image
- * inspector, the comparison with the canvas and the Keep menu; and a tick in its corner. Two
+ * the gallery's own tools. A press opens the gallery's image workbench on it with the pictures shown
+ * with it (openPictures: the arrows go through them, each with its parameters); on each picture, shown
+ * when the pointer is over it, the comparison with the canvas and the Keep menu; and a tick in its corner. Two
  * ticked pictures (from any step or task) are compared with ui_param_compare.js from the bar at
  * the foot of the page (compareBar); a third tick replaces the oldest. On the AI page a fourth tool
  * marks the picture for the AI (setMarker: the workbench opens ui_ai_marker.js for its task).
@@ -11,6 +12,7 @@ import { isVideo, outputPicture, outputUrl, pictureKey, picturePreview, pictureS
 import { openParamCompare } from './ui_param_compare.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openKeepMenu } from './ui_keep_menu.js';
+import { galleryWorkbenchItems } from './ui_recipe_gallery.js';
 import { icon } from './ui_ai_icons.js';
 
 const ticked = new Map(); // picture key → output picture, oldest first
@@ -59,6 +61,19 @@ function toggleTick(image) {
 }
 
 /**
+ * `image` in the gallery's image workbench, the arrows going through the output pictures of `images` (those
+ * shown with it) with their parameters; a video, or a picture outside the output folder, in the plain viewer.
+ */
+export function openPictures(owner, images, image) {
+    const source = outputPicture(image);
+    if (!source) return owner?.showGalleryViewer?.(outputUrl(image), isVideo(image));
+    const same = picture => picture.filename === source.filename && picture.subfolder === source.subfolder;
+    const shown = uniquePictures(images).map(outputPicture).filter(Boolean);
+    const items = galleryWorkbenchItems(shown.some(same) ? shown : [source, ...shown]);
+    void showImageWorkbench(owner, source, outputUrl(image), { items, currentIndex: items.findIndex(same) });
+}
+
+/**
  * The tick and the tools over a picture: `holder` is the element around its picture (made
  * position: relative by the class). Videos and files outside the output folder get neither.
  */
@@ -74,10 +89,9 @@ export function decoratePicture(holder, image, owner) {
     tick.dataset.key = key;
     tick.setAttribute('aria-pressed', String(ticked.has(key)));
     const tools = el('div', 'anomalous-ai-pic-tools');
-    const inspect = button('anomalous-ai-pic-tool', 'ⓘ', () => { void showImageWorkbench(owner, source, outputUrl(image)); }, t('aiImageDetails'));
     const keep = button('anomalous-ai-pic-tool', '☆', event => { void openKeepMenu(owner, event.currentTarget, source); }, t('aiKeepImage'));
-    inspect.disabled = keep.disabled = !owner;
-    tools.append(inspect, button('anomalous-ai-pic-tool', '⇄', () => openParamCompare({ image: source }, { canvas: true }), t('compareWithCanvas')), keep);
+    keep.disabled = !owner;
+    tools.append(button('anomalous-ai-pic-tool', '⇄', () => openParamCompare({ image: source }, { canvas: true }), t('compareWithCanvas')), keep);
     if (marker) tools.append(button('anomalous-ai-pic-tool is-mark', '✎', () => marker(source), t('aiMarkTitle')));
     holder.append(tick, tools);
     return holder;
@@ -131,15 +145,16 @@ export function gonePicture(image) {
     return box;
 }
 
-export function imageCard(image, owner, { compact = false } = {}) {
+/** `set`: the pictures shown with it, which the workbench's arrows go through (else it alone). */
+export function imageCard(image, owner, { compact = false, set = null } = {}) {
     const card = el('figure', `anomalous-ai-image-card${compact ? ' is-compact' : ''}${image.gone ? ' is-gone' : ''}`);
     if (image.gone) {
         card.append(gonePicture(image));
         if (!compact) card.append(el('figcaption', 'anomalous-ai-image-caption', image.filename));
         return card;
     }
-    const open = button('anomalous-ai-image-preview', '', () => owner?.showGalleryViewer?.(outputUrl(image), isVideo(image)),
-        `${t('aiOpenPicture')} · ${image.filename}`);
+    const open = button('anomalous-ai-image-preview', '', () => openPictures(owner, set || [image], image),
+        `${t(outputPicture(image) ? 'aiOpenPictures' : 'aiOpenPicture')} · ${image.filename}`);
     const media = el(isVideo(image) ? 'video' : 'img', '');
     if (isVideo(image)) {
         media.src = outputUrl(image);
@@ -167,15 +182,15 @@ export function imageCard(image, owner, { compact = false } = {}) {
     return card;
 }
 
-/** Bounded initial DOM; more results are drawn only when requested. */
-export function imageResults(images, owner, { compact = false } = {}) {
+/** Bounded initial DOM; more results are drawn only when requested. `set`: what the arrows go through (else these). */
+export function imageResults(images, owner, { compact = false, set = null } = {}) {
     const items = uniquePictures(images);
     const box = el('div', `anomalous-ai-image-results${compact ? ' is-compact' : ''}`);
     const grid = el('div', 'anomalous-ai-image-grid');
     const more = button('anomalous-ai-action', t('aiMoreResults'), draw);
     let shown = 0;
     function draw() {
-        grid.append(...items.slice(shown, shown + 12).map(image => imageCard(image, owner, { compact })));
+        grid.append(...items.slice(shown, shown + 12).map(image => imageCard(image, owner, { compact, set: set || items })));
         shown += 12;
         more.hidden = shown >= items.length;
     }

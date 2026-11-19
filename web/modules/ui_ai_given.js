@@ -142,7 +142,7 @@ function part(name, title, count, ...children) {
 function picturesPart(pictures, task, ctx) {
     if (!pictures.length) return null;
     const grid = el('div', 'anomalous-ai-given-pictures');
-    grid.append(...pictures.map(image => imageCard(image, ctx.owner, { compact: true })));
+    grid.append(...pictures.map(image => imageCard(image, ctx.owner, { compact: true, set: pictures })));
     const box = part('image', t('aiGivenPictures'), pictures.length, grid);
     box.firstChild.append(el('span', 'anomalous-ai-given-hint', t('aiGivenPicturesKept')));
     return box;

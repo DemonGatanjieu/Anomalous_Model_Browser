@@ -15,7 +15,7 @@ import { translate as t } from './locales.js';
 import { outputUrl, isVideo } from './ai_task_view.js';
 import { addMarks, diagram, picks, slider } from './ui_ai_stage.js';
 import { runMapBox } from './ui_ai_run_map.js';
-import { decoratePicture, gonePicture, showPicture } from './ui_ai_images.js';
+import { decoratePicture, gonePicture, openPictures, showPicture } from './ui_ai_images.js';
 import { deliveryState } from './ui_ai_delivery.js';
 import { icon } from './ui_ai_icons.js';
 import { promptBox } from './ui_ai_prompt_box.js';
@@ -150,14 +150,15 @@ export function ownWords(className, open, unfolded = false) {
     return node;
 }
 
-function picture(item, ctx, className) {
+/** `set`: the block's pictures, which the image workbench's arrows go through. */
+function picture(item, ctx, className, set) {
     const box = el('figure', className);
     if (item.gone) {
         box.append(gonePicture(item));
         if (item.caption) box.append(el('figcaption', '', item.caption));
         return box;
     }
-    const open = button('anomalous-ai-panel-picture', '', () => ctx.openPicture(outputUrl(item), isVideo(item)), t('aiOpenPicture'));
+    const open = button('anomalous-ai-panel-picture', '', () => openPictures(ctx.owner, set, item), t('aiOpenPictures'));
     const media = el(isVideo(item) ? 'video' : 'img');
     if (media.tagName === 'IMG') {
         media.loading = 'lazy';
@@ -183,7 +184,8 @@ function picture(item, ctx, className) {
 function images(block, ctx) {
     const layout = ['row', 'grid', 'compare'].includes(block.layout) ? block.layout : 'row';
     const box = el('div', `anomalous-ai-panel-images is-${layout}`);
-    box.append(...list(block.items).map(item => picture(item, ctx, 'anomalous-ai-panel-figure')));
+    const items = list(block.items);
+    box.append(...items.map(item => picture(item, ctx, 'anomalous-ai-panel-figure', items)));
     return box;
 }
 

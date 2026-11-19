@@ -748,7 +748,9 @@ covered by the `styles.css` manifest.
   canvas node finds it). `ui_ai_stage.js` draws them, `ai_stage_layout.js` holds where they go
   without DOM (a diagram's layers by its longest chain of arrows, boxes, arrow ends, marks).
 - `ui_ai_images.js` connects task outputs and panel pictures to the existing image inspector,
-  keep menu and `ui_param_compare.js`: tools over each output picture (shown on hover), and a
+  keep menu and `ui_param_compare.js`: a press opens the gallery's image workbench with the pictures
+  shown with it (`openPictures`: a step's, the task's in Outputs, a panel block's, the handed ones), the
+  arrows going through them; tools over each output picture (shown on hover), and a
   tick; two ticked pictures, from any step or task, are compared from the bar at the foot of
   the AI page (a third tick replaces the oldest). Videos and temporary files get neither.
   Thumbnails load initially, metadata only after an explicit action. `ui_canvas_changes.js`

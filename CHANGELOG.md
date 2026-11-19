@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- AI 工作台里点一张图，直接打开图库那个看图器：大图、提示词和模型等参数都在，← → 能在同一组图里切换。时间线里是这一步出的图，「成果」里是这个任务的全部图，面板里是 AI 放的那一组，「素材」里是交给 AI 的图。以前点图只放大这一张，要看参数得点角上的 ⓘ，而且也只有这一张。
+- A press on a picture on the AI workbench opens the gallery's image workbench: the picture large with its prompt, models and the rest, ← → through the pictures shown with it (a step's in the timeline, all of the task's in Outputs, the panel's group, the handed ones in Materials). Before, a press showed that one picture large, and its parameters took the ⓘ in its corner, for it alone.
+
 - 主页「自己动手」中进入「存档」页的卡片标题由「画布存档：试几版一起跑」改为更直白的「多个版本对比跑图」，不再与「保存常用工作流」混淆。
 - Renaming the Home "Do it yourself" Saves card from "Canvas saves: compare versions" to "Compare multiple versions" so its purpose is clear at a glance.
 
