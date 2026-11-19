@@ -227,9 +227,7 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
     font-size: 12.5px;
     text-align: center;
 }
-.anomalous-ai-preset-checks { display: flex; flex-wrap: wrap; gap: 4px 18px; }
-.anomalous-ai-preset-check { display: inline-flex; align-items: center; gap: 6px; color: var(--amb-text-soft); font-size: 12.5px; cursor: pointer; }
-.anomalous-ai-preset-check input:disabled + span { opacity: 0.5; }
+.anomalous-ai-preset-check { display: inline-flex; align-items: center; align-self: flex-start; gap: 6px; color: var(--amb-text-soft); font-size: 12.5px; cursor: pointer; }
 /* Who runs it: green while Anomalous does and nothing leaves, plain once it goes to an AI. */
 .anomalous-ai-preset-who {
     padding: 8px 12px;
@@ -239,7 +237,6 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
     font-size: 12.5px;
     line-height: 1.55;
 }
-.anomalous-ai-preset-who.is-ai { background: color-mix(in srgb, var(--amb-link) 12%, transparent); color: var(--amb-text-main); }
 /* The home page's line under the cards: the list run last, again with one press. */
 .anomalous-ai-preset-again { align-self: flex-start; }
 .anomalous-ai-preset-again:disabled { opacity: 0.5; cursor: default; }

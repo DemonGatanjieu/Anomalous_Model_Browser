@@ -1,19 +1,15 @@
 /**
  * The steps of the "Run my preset" sheet (ui_ai_starter_sheet.js opens it, ui_ai_start_steps.js steps it):
  * which saved workflow (a card grid; running what is on the canvas, a few versions together, is the Saves
- * page's job, and a strip over the grid goes there), the presets as chips that a press lines up to run, each
- * so many times, then what to change this time. With nothing to change Anomalous
- * runs the list itself (preset_runs.js), no AI app needed, and keeps the list in this
- * browser: the home page's line runs it again with one press (againLine). With a change the list goes to
- * an AI as a task and a message; in privacy mode the names in it (the workflow's and each preset's, a
- * token each) and a prompt of the user's go marked to hide (ai_hide_mark.js), so the AI gets tokens.
+ * page's job, and a strip over the grid goes there), then the presets as chips that a press lines up to run,
+ * each so many times. Anomalous runs the list itself (preset_runs.js), no AI app needed, and keeps the list in
+ * this browser: the home page's line runs it again with one press (againLine). Letting an AI plan the run is
+ * the home page's "Say what you want" card (ui_ai_starter_sheet.js `plan`).
  */
 
-import { marked } from './ai_hide_mark.js';
 import { translate as t } from './locales.js';
 import { MAX_EACH, MAX_TOTAL, OWN, still, toggled, total, withTimes } from './preset_run_list.js';
 import { runPresets } from './preset_runs.js';
-import { startTask } from './ui_ai_handoff.js';
 import { icon } from './ui_ai_icons.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
@@ -22,8 +18,6 @@ import { savesFromHome } from './ui_snapshot_bar.js';
 import { workflowCardGrid } from './ui_workflow_pick.js';
 
 const KEY = 'anomalous_ai_preset_last';
-const MAX_NOTE = 2000; // a message to the AI (api/ai_panels.py MAX_MESSAGE)
-const MAX_HIDDEN = 1200;
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -37,12 +31,6 @@ function button(className, label, onClick) {
     node.type = 'button';
     node.onclick = onClick;
     return node;
-}
-
-function field(label, ...controls) {
-    const box = el('div', 'anomalous-ai-start-field');
-    box.append(el('span', 'anomalous-ai-start-label', label), ...controls);
-    return box;
 }
 
 function check(label, on = false) {
@@ -111,7 +99,7 @@ export function savesStrip(owner, close) {
 }
 
 /**
- * {steps, start()} of the sheet. `go` is its Start button, worded here by who will do the run; `close()`
+ * {steps, start()} of the sheet. `go` is its Start button, worded here with the count; `close()`
  * shuts the sheet; start() returns what is missing, in words, or '' once it took over.
  */
 export function presetFields({ data, owner, close, go }) {
@@ -134,35 +122,15 @@ export function presetFields({ data, owner, close, go }) {
     const chips = el('div', 'anomalous-ai-preset-chips');
     const row = el('div', 'anomalous-ai-preset-run');
     const sum = el('div', 'anomalous-ai-preset-sum');
-    const change = el('input', 'anomalous-ai-start-input');
-    change.type = 'text';
-    change.placeholder = t('aiStartChangeHint');
-    change.setAttribute('aria-label', t('aiPresetStepChange'));
-    change.maxLength = 300;
-    const hidden = el('textarea', 'anomalous-ai-start-input');
-    hidden.placeholder = t('aiPresetHiddenHint');
-    hidden.maxLength = MAX_HIDDEN;
-    hidden.rows = 3;
-    const hiddenField = field(t('aiPresetHidden'), hidden);
-    const privacy = check(t('aiPresetPrivate'));
     const closing = check(t('aiPresetClose'), last?.close !== false);
-    const checks = el('div', 'anomalous-ai-preset-checks');
-    checks.append(privacy.box, closing.box);
-    const who = el('div', 'anomalous-ai-preset-who');
+    const who = el('div', 'anomalous-ai-preset-who', t('aiPresetWhoSelf'));
 
-    const byAi = () => Boolean(change.value.trim() || (privacy.input.checked && hidden.value.trim()));
-
-    /** Who runs it, in a line and on the button; the sum of the list. */
+    /** The sum of the list, on its line and the button. */
     function tell() {
         const count = total(state.picks);
-        const ai = byAi();
         sum.textContent = t(count > MAX_TOTAL ? 'aiPresetTooMany' : 'aiPresetSum', { count, max: MAX_TOTAL });
         sum.classList.toggle('is-over', count > MAX_TOTAL);
-        who.textContent = t(!ai ? 'aiPresetWhoSelf' : privacy.input.checked ? 'aiPresetWhoPrivate' : 'aiPresetWhoAi');
-        who.classList.toggle('is-ai', ai);
-        go.textContent = ai ? t('aiPresetGoAi') : t('aiPresetGo', { count });
-        hiddenField.hidden = !privacy.input.checked;
-        closing.input.disabled = ai;
+        go.textContent = t('aiPresetGo', { count });
     }
 
     function draw() {
@@ -193,44 +161,21 @@ export function presetFields({ data, owner, close, go }) {
         tell();
     }
 
-    change.oninput = tell;
-    hidden.oninput = tell;
-    privacy.input.onchange = tell;
     draw();
 
     async function start() {
         if (!state.picks.length) return t('aiPresetNeedPick');
         if (total(state.picks) > MAX_TOTAL) return t('aiPresetTooMany', { count: total(state.picks), max: MAX_TOTAL });
-        const picks = named(state.workflow, state.picks);
-        if (!byAi()) {
-            close();
-            keep({ workflow: state.workflow.file, picks: state.picks, close: closing.input.checked });
-            await runNow(owner, { card: state.workflow, picks, close: closing.input.checked });
-            return '';
-        }
-        const secret = privacy.input.checked;
-        const hide = secret ? marked : text => text;
-        const list = picks.map((pick) => {
-            const what = pick.file !== OWN ? `${hide(state.workflow.name)} / ${hide(pick.name)}` : hide(state.workflow.name);
-            return `${what} × ${pick.times}`;
-        }).join('; ');
-        const note = [t('aiPresetSay', { list }), change.value.trim() ? t('aiPresetSayChange', { change: change.value.trim() }) : '',
-            secret && hidden.value.trim() ? t('aiPresetSayPrompt', { prompt: marked(hidden.value.trim()) }) : ''].filter(Boolean).join(' ');
-        if (note.length > MAX_NOTE) return t('aiPresetTooLong');
-        const about = secret ? [] : [{ type: 'workflow', name: state.workflow.name, label: state.workflow.name }];
-        const title = secret ? t('aiPresetTaskPrivate') : t('aiPresetTask', { name: state.workflow.name.slice(0, 40) });
         close();
-        await startTask(owner, title, about, null, { canvas: 'new', ...(secret ? { privacy: true } : {}) }, note);
+        keep({ workflow: state.workflow.file, picks: state.picks, close: closing.input.checked });
+        await runNow(owner, { card: state.workflow, picks: named(state.workflow, state.picks), close: closing.input.checked });
         return '';
     }
 
     const hint = key => el('p', 'anomalous-ai-start-step-hint', t(key));
     const steps = [
         { title: t('aiPresetStepWorkflow'), nodes: [savesStrip(owner, close), wfPicker.node] },
-        { title: t('aiPresetStepPick'), nodes: [hint('aiPresetStepPickHint'), chips, row, sum],
-            check: () => (!state.picks.length ? { errorText: t('aiPresetNeedPick') }
-                : total(state.picks) > MAX_TOTAL ? { errorText: t('aiPresetTooMany', { count: total(state.picks), max: MAX_TOTAL }) } : null) },
-        { title: t('aiPresetStepChange'), nodes: [hint('aiStartStepMoreHint'), change, checks, hiddenField, who] },
+        { title: t('aiPresetStepPick'), nodes: [hint('aiPresetStepPickHint'), chips, row, sum, closing.box, who] },
     ];
     return { steps, start, stop: () => wfPicker.stop() };
 }
