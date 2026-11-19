@@ -113,9 +113,11 @@ function lastVisit(tasks) {
     return box;
 }
 
-function listHead(count) {
+/** The column's title, the count and "New task" at its right. */
+function listHead(box, count) {
     const head = el('div', 'anomalous-ai-tasks-head');
-    head.append(el('span', 'anomalous-ai-tasks-title', t('aiTasks')), el('span', 'anomalous-ai-tasks-count', t('aiTaskCount', { count })));
+    head.append(el('span', 'anomalous-ai-tasks-title', t('aiTasks')), el('span', 'anomalous-ai-tasks-count', t('aiTaskCount', { count })),
+        iconButton('anomalous-ai-new-task', 'plus', t('aiNewTask'), () => box.aiView.onNew(), { title: t('aiNewTaskHint') }));
     return head;
 }
 
@@ -124,7 +126,7 @@ function listActions(box, tasks) {
     const ways = el('div', 'anomalous-ai-tasks-ways');
     ways.append(iconButton('anomalous-ai-way', 'plug', t('aiConnect'), openConnectGuide, { title: t('aiConnectHint') }),
         iconButton('anomalous-ai-way', 'shield', t('aiGates'), openGates, { title: t('aiGatesHint') }));
-    actions.append(iconButton('anomalous-ai-new-task', 'plus', t('aiNewTask'), () => box.aiView.onNew(), { title: t('aiNewTaskHint') }), ways, lastVisit(tasks));
+    actions.append(ways, lastVisit(tasks));
     return actions;
 }
 
@@ -155,7 +157,7 @@ export function renderTaskList(box, view) {
     const counts = Object.entries(FILTERS).map(([key, test]) => [key, states.filter(test).length]).filter(([key, count]) => key === 'all' || count);
     const latest = view.tasks.find(task => task.client);
     syncRows(box, [
-        { key: `head ${view.tasks.length}`, make: () => listHead(view.tasks.length) },
+        { key: `head ${view.tasks.length}`, make: () => listHead(box, view.tasks.length) },
         { key: JSON.stringify(['actions', latest?.client, latest?.updated]), make: () => listActions(box, view.tasks) },
         ...(counts.length > 1 ? [{ key: JSON.stringify(['filters', filter, counts]), make: () => filterChips(box, counts) }] : []),
         { key: 'list', make: () => el('div', 'anomalous-ai-tasks-list') },

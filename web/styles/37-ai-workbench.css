@@ -115,12 +115,18 @@
     min-width: 0;
 }
 
-/* Quick filters over the list: working, asking you, failed. */
+/* Quick filters over the list: working, asking you, failed; one segmented switch, the current one a pill. */
 .anomalous-ai-task-filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
-    padding: 2px 14px 8px;
+    gap: 2px;
+    width: fit-content;
+    max-width: calc(100% - 28px);
+    box-sizing: border-box;
+    margin: 2px 14px 8px;
+    padding: 2px;
+    border-radius: 15px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
 }
 
 .anomalous-ai-task-filter {
@@ -128,8 +134,8 @@
     align-items: center;
     gap: 5px;
     height: 24px;
-    padding: 0 9px;
-    border: 1px solid var(--amb-border);
+    padding: 0 10px;
+    border: none;
     border-radius: 999px;
     background: none;
     color: var(--amb-text-soft);
@@ -139,7 +145,7 @@
 }
 
 .anomalous-ai-task-filter:hover { color: var(--amb-text-main); background: rgba(var(--amb-ink-rgb), 0.05); }
-.anomalous-ai-task-filter.is-on { border-color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 16%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-task-filter.is-on { background: var(--amb-current-bg); color: var(--amb-current-text); font-weight: 600; }
 .anomalous-ai-task-filter.is-asks .anomalous-ai-task-filter-count { color: var(--amb-warn-text); }
 .anomalous-ai-task-filter.is-error .anomalous-ai-task-filter-count { color: var(--amb-danger-text); }
 .anomalous-ai-task-filter-count { color: var(--amb-text-dim); font-variant-numeric: tabular-nums; }
@@ -370,16 +376,21 @@
 
 .anomalous-ai-tool:hover { border-color: var(--amb-border-strong); background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
 .anomalous-ai-tool.is-icon { width: 30px; padding: 0; justify-content: center; }
+/* In a task's head the tools are soft pills without frames, Pause and ⋯ round icons. */
+.anomalous-ai-task-tools .anomalous-ai-tool { border-color: transparent; border-radius: 999px; }
 /* The privacy settings in use (ui_ai_privacy.js): the recommended ones read as on, changed ones as a warning, off as quiet. */
 .anomalous-ai-privacy-wrap { display: inline-flex; align-items: center; gap: 2px; }
-.anomalous-ai-privacy.is-on { border-color: color-mix(in srgb, var(--amb-link) 55%, transparent); background: color-mix(in srgb, var(--amb-link) 12%, transparent); color: var(--amb-link); }
+.anomalous-ai-privacy.is-on { border-color: color-mix(in srgb, var(--amb-link) 55%, transparent); background: color-mix(in srgb, var(--amb-link) 16%, transparent); color: var(--amb-link); }
 .anomalous-ai-privacy.is-custom { border-color: color-mix(in srgb, var(--amb-warn) 55%, transparent); background: color-mix(in srgb, var(--amb-warn) 10%, transparent); color: var(--amb-warn); }
 .anomalous-ai-privacy-reach { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--amb-text-dim); cursor: pointer; }
 .anomalous-ai-privacy-reach:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-warn); }
 /* Pause (ui_ai_halt.js): stops the AI, takes nothing back. */
 .anomalous-ai-pause:hover { border-color: var(--amb-warn); background: color-mix(in srgb, var(--amb-warn) 10%, transparent); color: var(--amb-text-main); }
-/* The way to the AI's copy of the canvas, among the task's facts (ui_ai_task_canvas.js). */
+/* The way to the AI's copy of the canvas, among the task's facts (ui_ai_task_canvas.js): a link, not a button. */
 .anomalous-ai-canvas-tab { display: inline-flex; flex: none; align-items: center; gap: 4px; white-space: nowrap; }
+.anomalous-ai-link.anomalous-ai-canvas-tab { padding: 0; border: 0; background: none; color: var(--amb-link); }
+.anomalous-ai-link.anomalous-ai-canvas-tab:hover,
+.anomalous-ai-link.anomalous-ai-canvas-tab:focus-visible { text-decoration: underline; }
 
 .anomalous-ai-task-meta {
     flex: 0 1 auto;

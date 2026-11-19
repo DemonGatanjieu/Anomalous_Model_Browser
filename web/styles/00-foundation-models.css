@@ -33,6 +33,10 @@
     --amb-border-strong: rgba(255, 255, 255, 0.16); /* controls and dividers that must show at rest */
     --amb-border-hover: rgba(255, 255, 255, 0.16);
     --amb-link: #a5b4fc; /* the one accent for links, selection and focus; tints via color-mix */
+    /* The current choice everywhere (the rail, switches, filters), as Google's rail: a pill in the accent,
+       its icon and words in the accent too. Worked out where each theme sets --amb-link. */
+    --amb-current-bg: color-mix(in srgb, var(--amb-link) 34%, transparent);
+    --amb-current-text: color-mix(in srgb, var(--amb-link) 65%, var(--amb-text-main));
     --amb-on-link: #15171c;
     --amb-btn-primary-bg: #e5e7eb;
     --amb-btn-primary-hover: #ffffff;

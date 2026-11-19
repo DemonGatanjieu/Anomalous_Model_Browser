@@ -75,5 +75,6 @@ async function pauseTask(task, changed) {
 /** The head's "Pause" for `task`, as a list: none when there is nothing to stop. */
 export function pauseTool(task, changed) {
     if (!canHalt(task)) return [];
-    return [iconButton('anomalous-ai-tool anomalous-ai-pause', 'pause', t('aiPause'), () => void pauseTask(task, changed), { title: t('aiPauseHint') })];
+    return [iconButton('anomalous-ai-tool is-icon anomalous-ai-pause', 'pause', t('aiPause'), () => void pauseTask(task, changed),
+        { iconOnly: true, title: `${t('aiPause')} · ${t('aiPauseHint')}` })];
 }

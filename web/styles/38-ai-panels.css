@@ -566,8 +566,8 @@
 .anomalous-ai-prompt-fields { display: flex; flex-direction: column; gap: 6px; }
 .anomalous-ai-prompt-part { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; color: var(--amb-text-soft); font-size: 12.5px; font-weight: 600; }
 /* Marks the selected words as hidden from the AI (ai_hide_mark.js): beside the gist, and in a private task's message box. */
-.anomalous-ai-hide-mark { flex: none; padding: 1px 9px; border: 1px solid color-mix(in srgb, var(--amb-warn) 50%, transparent); border-radius: 999px; background: none; color: var(--amb-warn); font: inherit; font-size: 12px; font-weight: 400; cursor: pointer; }
-.anomalous-ai-hide-mark:hover { background: color-mix(in srgb, var(--amb-warn) 12%, transparent); }
+.anomalous-ai-hide-mark { display: inline-flex; flex: none; align-items: center; gap: 4px; padding: 2px 10px; border: none; border-radius: 999px; background: color-mix(in srgb, var(--amb-warn) 12%, transparent); color: var(--amb-warn); font: inherit; font-size: 12px; font-weight: 400; cursor: pointer; }
+.anomalous-ai-hide-mark:hover { background: color-mix(in srgb, var(--amb-warn) 22%, transparent); }
 .anomalous-ai-hide-mark[hidden] { display: none; }
 .anomalous-ai-prompt-part + .anomalous-ai-prompt-fields { margin-top: 6px; }
 .anomalous-ai-prompt-field { width: 100%; box-sizing: border-box; resize: vertical; padding: 7px 9px; border: 1px solid var(--amb-border-strong); border-radius: 7px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 13px; line-height: 1.5; }

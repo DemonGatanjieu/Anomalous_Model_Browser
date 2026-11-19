@@ -454,7 +454,10 @@ surfaces (`--amb-bg-page`, `-panel`, `-card`, `-card-hover`, `-input`), text
 (`--amb-text-main`, `-soft`, `-muted`, `-dim`), borders (`--amb-border`, `-strong`,
 `-hover`), the primary button (`--amb-btn-primary-*`) and one accent, `--amb-link`, for
 links, selection and focus; its tints are `color-mix(in srgb, var(--amb-link) N%,
-transparent)`. CSS injected from JS and inline styles use the same tokens. Literal
+transparent)`. The current choice (the rail's page, a switch's or filter's pick) is one look everywhere:
+`--amb-current-bg` behind it and `--amb-current-text` for its icon and words, both worked out from
+`--amb-link`. Buttons come in three kinds: the area's one main button (`--amb-btn-primary-*`), soft
+pills without frames (`rgba(var(--amb-ink-rgb), a)`), and round icon buttons named by their tooltips. CSS injected from JS and inline styles use the same tokens. Literal
 colours stay only where the colour is the meaning: status (red, green, amber), prompt
 roles, voice emotions, canvas node colours and translucent shadows or overlays.
 

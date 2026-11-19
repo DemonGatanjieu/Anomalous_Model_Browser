@@ -388,6 +388,8 @@
 }
 
 .anomalous-ai-new-task:hover { filter: brightness(1.08); transform: translateY(-1px); }
+/* Beside the column's title: the column's one main button, smaller. */
+.anomalous-ai-tasks-head .anomalous-ai-new-task { gap: 5px; height: 28px; padding: 0 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
 
 .anomalous-ai-tasks-ways { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 
@@ -397,16 +399,16 @@
     justify-content: center;
     gap: 6px;
     height: 30px;
-    border: 1px solid var(--amb-border);
-    border-radius: 9px;
-    background: none;
+    border: none;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
     color: var(--amb-text-soft);
     font: inherit;
     font-size: 12.5px;
     cursor: pointer;
 }
 
-.anomalous-ai-way:hover { border-color: var(--amb-border-strong); background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
+.anomalous-ai-way:hover { background: rgba(var(--amb-ink-rgb), 0.11); color: var(--amb-text-main); }
 
 .anomalous-ai-visit { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--amb-text-dim); font-size: 11.5px; }
 .anomalous-ai-visit-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--amb-text-dim); opacity: 0.6; }

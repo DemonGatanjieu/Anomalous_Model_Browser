@@ -6,9 +6,8 @@
     flex: none;
     gap: 2px;
     padding: 3px;
-    border: 1px solid var(--amb-border);
-    border-radius: 10px;
-    background: rgba(var(--amb-ink-rgb), 0.04);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
 }
 
 .anomalous-ai-side-btn {
@@ -19,7 +18,7 @@
     height: 26px;
     padding: 0 9px;
     border: none;
-    border-radius: 7px;
+    border-radius: 999px;
     background: none;
     color: var(--amb-text-soft);
     font: inherit;
@@ -27,7 +26,9 @@
     cursor: pointer;
 }
 .anomalous-ai-side-btn:hover { background: rgba(var(--amb-ink-rgb), 0.07); color: var(--amb-text-main); }
-.anomalous-ai-side-btn.is-on { background: color-mix(in srgb, var(--amb-link) 20%, transparent); color: var(--amb-text-main); font-weight: 600; }
+.anomalous-ai-side-btn.is-on { background: var(--amb-current-bg); color: var(--amb-current-text); font-weight: 600; }
+/* In the switch only the open view says its name; the others are icons named by their tooltips (the tabs of a narrow window keep every word). */
+.anomalous-ai-side-switch .anomalous-ai-side-btn:not(.is-on) .anomalous-ai-side-btn-label { display: none; }
 .anomalous-ai-side-btn.is-asking::after, .anomalous-ai-side-btn.is-unread::after {
     content: '';
     position: absolute;
@@ -89,12 +90,12 @@
 #anomalous-container[data-page="ai"] #anomalous-list-toggle { display: none !important; }
 #anomalous-header .anomalous-ai-list-toggle { width: 28px; padding: 0 !important; }
 #anomalous-header .anomalous-ai-list-toggle svg { width: 16px !important; height: 16px !important; }
-#anomalous-header .anomalous-ai-side-switch { padding: 2px; border-radius: 9px; }
+#anomalous-header .anomalous-ai-side-switch { padding: 2px; border-radius: 999px; }
 #anomalous-header .anomalous-ai-side-btn {
     height: 26px !important;
     padding: 0 9px !important;
     border: none !important;
-    border-radius: 7px !important;
+    border-radius: 999px !important;
     background: none !important;
     color: var(--amb-text-soft) !important;
     font-size: 12.5px !important;
@@ -104,8 +105,8 @@
 }
 #anomalous-header .anomalous-ai-side-btn:hover { background: rgba(var(--amb-ink-rgb), 0.08) !important; color: var(--amb-text-main) !important; }
 #anomalous-header .anomalous-ai-side-btn.is-on {
-    background: color-mix(in srgb, var(--amb-link) 22%, transparent) !important;
-    color: var(--amb-text-main) !important;
+    background: var(--amb-current-bg) !important;
+    color: var(--amb-current-text) !important;
 }
 #anomalous-header .anomalous-ai-side-btn svg { width: 15px !important; height: 15px !important; }
 

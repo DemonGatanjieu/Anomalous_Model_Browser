@@ -43,7 +43,7 @@ export function callRow(onStuck) {
             const text = t(name, { task: title });
             const line = el('button', `anomalous-ai-call-line${at ? '' : ' is-main'}${name === NEW_CHAT ? ' is-new' : ''}`);
             line.type = 'button';
-            if (!at) line.append(icon('copy', 14));
+            line.append(icon('copy', 14));
             line.append(el('span', 'anomalous-ai-call-text', text));
             if (name === NEW_CHAT) line.title = t('aiCallNewChatTip');
             line.addEventListener('click', async () => {

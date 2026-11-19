@@ -7,6 +7,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { icon } from './ui_ai_icons.js';
 
 const OPEN = '\u27e6';
 const CLOSE = '\u27e7';
@@ -16,7 +17,7 @@ export function hideButton(target, say) {
     const node = document.createElement('button');
     node.type = 'button';
     node.className = 'anomalous-ai-hide-mark';
-    node.textContent = t('aiHideMark');
+    node.append(icon('lock', 13), Object.assign(document.createElement('span'), { textContent: t('aiHideMark') }));
     node.title = t('aiHideMarkHint');
     node.addEventListener('mousedown', event => event.preventDefault()); // the field keeps its selection
     node.onclick = () => {
