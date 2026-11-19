@@ -142,8 +142,10 @@ async def api_get_gallery_images(request):
 
 
 async def api_output_thumbnail(request):
-    """GET /anomalous/output_thumbnail?filename&subfolder - the gallery grid's 512 px WebP of an
-    output image/video (cached like model cards); the original stays at ComfyUI's /view."""
+    """GET /anomalous/output_thumbnail?filename&subfolder[&v] - the gallery grid's 512 px WebP of an
+    output image/video (cached like model cards); the original stays at ComfyUI's /view. `v` (the
+    picture's mtime, from the listing) makes the link one the browser keeps for good: a picture
+    replaced under its name has another mtime, so another link."""
     output_dir = folder_paths.get_output_directory()
     try:
         filename = require_filename(request.query.get('filename'))
@@ -162,7 +164,9 @@ async def api_output_thumbnail(request):
         served = await asyncio.to_thread(_build_video_poster, file_path)
         if not served:  # no first frame (a broken file, no decoder): never the video itself as a picture
             return picture_placeholder(file_path)
-    # Revalidate (cheap 304s): an output file can be replaced under the same name.
+    if request.query.get('v'):
+        return web.FileResponse(served, headers={'Cache-Control': 'private, max-age=31536000, immutable'})
+    # No version: revalidate (cheap 304s), as an output file can be replaced under the same name.
     return web.FileResponse(served, headers={'Cache-Control': 'no-cache'})
 
 

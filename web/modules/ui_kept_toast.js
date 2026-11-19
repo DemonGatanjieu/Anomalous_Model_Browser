@@ -16,7 +16,8 @@ function el(tag, className, text) {
 }
 
 /** The thumbnail URL of an output image ({ filename, subfolder }). */
-export const outputThumbnail = image => `/anomalous/output_thumbnail?${new URLSearchParams({ filename: image.filename, subfolder: image.subfolder || '' })}`;
+// With the picture's `mtime` (the gallery's listing has it) the link carries it, and the browser keeps the thumbnail for good.
+export const outputThumbnail = image => `/anomalous/output_thumbnail?${new URLSearchParams({ filename: image.filename, subfolder: image.subfolder || '', ...(image.mtime ? { v: String(Math.round(image.mtime)) } : {}) })}`;
 
 /**
  * Shows the toast for the combo `kept` ({ filename, name }) kept from `image`. `onRenamed(name)`

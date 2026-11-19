@@ -9,6 +9,7 @@
 
 import { translate as t } from './locales.js';
 import { icon } from './ui_ai_icons.js';
+import { outputThumbnail as thumbUrl } from './ui_kept_toast.js';
 
 const PAGE = 40;
 const SEARCH_MS = 250;
@@ -21,8 +22,8 @@ function el(tag, className, text) {
     return node;
 }
 
-/** An output picture's 512 px thumbnail ({filename, subfolder}). */
-export const thumbUrl = image => `/anomalous/output_thumbnail?${new URLSearchParams({ filename: image.filename, subfolder: image.subfolder || '' })}`;
+/** An output picture's 512 px thumbnail ({filename, subfolder, mtime?}). */
+export { thumbUrl };
 
 /** An output picture as "@" names it. */
 export function pictureItem(image, gallery = false) {

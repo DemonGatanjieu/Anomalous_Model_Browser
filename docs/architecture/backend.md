@@ -111,7 +111,9 @@ The former mixed utility routes are separated: `media_routes.py` owns card
 thumbnails and model/output media lookups (a picture past Pillow's pixel limit is shrunk once
 by a child process, `huge_picture.py`; a card is never a large original, a picture with none
 or a video with no readable first frame gets an SVG placeholder with its size), `gallery_routes.py` owns the bounded
-output snapshot (with each file's size, and the pixel size of big ones), the viewers'
+output snapshot (with each file's size and mtime, and the pixel size of big ones), the output thumbnails (a link
+with `v`, the picture's mtime, is sent to be kept by the browser for good, so a reloaded gallery asks nothing;
+one without is revalidated), the viewers'
 `output_preview` (the picture, or a cached 4096 px copy of a very large one) and deletion (searched through `image_search.py`, which reads
 PNG text chunks only and caches per-image records by mtime), `translation_routes.py`
 owns provider fallback, `folder_types.py` owns configured visibility and scan scope, and `audio_catalog.py`

@@ -19,6 +19,7 @@ import { isComparePicked, pressCompare } from './ui_param_compare.js';
 import { openGalleryCardMenu } from './gallery_card_menu.js';
 import { isGalleryVideo } from './gallery_filter.js';
 import { formatSize } from './file_size.js';
+import { outputThumbnail } from './ui_kept_toast.js';
 
 const DETAILS_ICON = `<svg class="anomalous-gallery-details-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><line x1="2" y1="5" x2="8" y2="5"></line><line x1="12" y1="5" x2="14" y2="5"></line><circle cx="10" cy="5" r="2"></circle><line x1="2" y1="11" x2="4" y2="11"></line><line x1="8" y1="11" x2="14" y2="11"></line><circle cx="6" cy="11" r="2"></circle></svg>`;
 const PLAY_ICON = '<svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
@@ -190,7 +191,7 @@ export function createGalleryCard(owner, imgData, { showViewer, pictures = galle
     card.classList.toggle('is-video', isVideo);
 
     const img = document.createElement('img');
-    img.src = `/anomalous/output_thumbnail?${query}`; // drags and the viewer use the original
+    img.src = outputThumbnail({ ...image, mtime: imgData.mtime }); // drags and the viewer use the original
     img.loading = 'lazy';
     img.title = isVideo ? t('galleryViewVideo') : t('materialViewOriginal');
     // The card is dragged, not the <img>: Chrome adds a dragged <img> as a file, and ComfyUI

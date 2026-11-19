@@ -137,6 +137,17 @@ class CardImageTests(unittest.TestCase):
             with Image.open(ask('good.mp4')._path) as poster:
                 self.assertEqual(poster.format, 'WEBP')
 
+    def test_a_thumbnail_link_with_the_pictures_mtime_is_kept_by_the_browser(self):
+        from aiohttp.test_utils import make_mocked_request
+        from api import gallery_routes
+        output = os.path.join(self.root, 'output')
+        os.makedirs(output)
+        Image.new('RGB', (900, 600)).save(os.path.join(output, 'a.png'))
+        ask = lambda query: asyncio.run(gallery_routes.api_output_thumbnail(make_mocked_request('GET', f'/anomalous/output_thumbnail?{query}')))
+        with mock.patch.object(gallery_routes.folder_paths, 'get_output_directory', return_value=output):
+            self.assertEqual(ask('filename=a.png&v=1792669120').headers['Cache-Control'], 'private, max-age=31536000, immutable')
+            self.assertEqual(ask('filename=a.png').headers['Cache-Control'], 'no-cache', 'without its mtime the link is asked again')
+
     def test_warm_up_makes_the_images_in_the_background(self):
         cover = os.path.join(self.root, 'a.png')
         Image.new('RGB', (900, 900)).save(cover)
