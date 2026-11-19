@@ -38,7 +38,7 @@ const LIST_KEYS = {
 const TITLE_KEYS = {
     home: 'shellHome', activity: 'activityTitle', ai: 'shellAi', models: 'shellTitleModels', gallery: 'gallery', prompts: 'shellPrompts', recipes: 'recipeTitle',
     combos: 'shellCombos', voices: 'shellVoices', script: 'shellVoices', 'audio-gallery': 'shellVoices',
-    doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle', settings: 'sidebarSettings',
+    doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle', saves: 'snapshotTitle', settings: 'sidebarSettings',
 };
 // Below this width the list covers the page instead of sitting beside it, and starts closed.
 const NARROW_PX = 760;
@@ -174,22 +174,24 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         void owner.refreshGalleryImages();
     };
 
-    /** The recipe workspace over the current page; closing it comes back here. */
-    const openRecipes = () => {
+    /** The recipe (or saves) workspace over the current page; closing it comes back here. */
+    const openRecipes = ({ saves = false } = {}) => {
         owner.recipeSelectedTags = new Set();
-        if (typeof owner.recipeModelReturn !== 'function') {
-            owner.workspaceReturnState = Object.fromEntries([
-                ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
-                ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel], ['home', owner.homePanel],
-                ['activity', owner.activityPanel], ['ai', owner.aiPanel], ['scan', owner.scanPanel], ['settings', owner.settingsPanel],
-                ['audioStudio', owner.audioStudioPanel], ['script', owner.scriptPanel], ['audioGallery', owner.audioGalleryPanel],
-            ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display || 'none']));
-        } else if (!owner.workspaceReturnState) {
-            owner.workspaceReturnState = { grid: 'grid' };
+        if (owner.nbPanel?.style.display !== 'flex') {
+            if (typeof owner.recipeModelReturn !== 'function') {
+                owner.workspaceReturnState = Object.fromEntries([
+                    ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
+                    ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel], ['home', owner.homePanel],
+                    ['activity', owner.activityPanel], ['ai', owner.aiPanel], ['scan', owner.scanPanel], ['settings', owner.settingsPanel],
+                    ['audioStudio', owner.audioStudioPanel], ['script', owner.scriptPanel], ['audioGallery', owner.audioGalleryPanel],
+                ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display || 'none']));
+            } else if (!owner.workspaceReturnState) {
+                owner.workspaceReturnState = { grid: 'grid' };
+            }
         }
         owner.hideAllPanels();
         owner.nbPanel.style.display = 'flex';
-        owner.showRecipes();
+        owner.showRecipes({ saves });
     };
 
     owner.goTo = (page, { fromRail = false } = {}) => {
@@ -202,12 +204,12 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             return;
         }
         if (fromRail && page === 'voices') page = lastVoiceView;
-        if (page === 'recipes' || page === 'combos') {
+        if (page === 'recipes' || page === 'combos' || page === 'saves') {
             // Workspaces belong to the image side: from an audio page they open over the models.
             if (AUDIO_PAGES.has(current)) owner.goTo('models');
             rail.setActive(page);
             setTitle(page);
-            if (page === 'recipes') openRecipes();
+            if (page === 'recipes' || page === 'saves') openRecipes({ saves: page === 'saves' });
             else void owner.showNotebooks();
             return;
         }

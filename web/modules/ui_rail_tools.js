@@ -9,11 +9,13 @@
 
 import { translate as t } from './locales.js';
 import { TOOL_ICONS } from './tool_registry.js';
+import { PAGE_ICONS } from './ui_shell_rail.js';
 import { setScanButtonState } from './scan_runner.js';
 
 const TOOLS = Object.freeze([
     { id: 'anomalous-assistant-btn', page: 'assistant', nameKey: 'sidebarAssistant', railKey: 'railAssistant', icon: TOOL_ICONS.ASSISTANT, open: owner => owner.openCurrentNode() },
     { id: 'anomalous-doctor-btn', page: 'doctor', nameKey: 'sidebarDoctor', railKey: 'railDoctor', icon: TOOL_ICONS.DOCTOR, open: owner => owner.openDoctorPage() },
+    { id: 'anomalous-saves-btn', page: 'saves', nameKey: 'savesPageTitle', railKey: 'savesListToggle', icon: PAGE_ICONS.saves, open: owner => owner.showSaves() },
     { id: 'anomalous-scan-btn', page: 'scan', nameKey: 'sidebarScan', railKey: 'railScan', open: owner => owner.openScanPage() },
 ]);
 

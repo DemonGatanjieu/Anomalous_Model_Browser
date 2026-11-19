@@ -79,7 +79,7 @@ icon rail (`ui_shell_rail.js`), page navigation and the list column's open state
 (`ui_shell_frame.js`) are their own modules. Every page change goes through
 `owner.goTo(page)`. `ui_settings_hub.js` owns the display preferences behind
 `owner.displayPrefs`, which the settings page (`ui_settings_page.js`) changes,
-while `ui_rail_tools.js` owns the rail's tool buttons.
+while `ui_rail_tools.js` owns the rail's tool buttons (current node, doctor, saves and scan).
 The Prompt Studio shortcut (its command and setting ids still say "materials") is a
 native ComfyUI command/keybinding; a deferred window-key fallback invokes the same
 command path only when the host did not open the studio, so handled shortcuts are not executed twice.

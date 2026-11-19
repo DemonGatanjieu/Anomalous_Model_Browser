@@ -32,7 +32,15 @@ window.fetch = async (url, options) => {
 };
 app.rootGraph = { extra: { anomalous_saves: 'k' }, serialize: () => ({}) };
 app.graph = app.rootGraph;
-app.extensionManager = { workflow: { activeWorkflow: { path: 'a.json', changeTracker: { undoQueue: [], redoQueue: [], updateState: async () => {} } } } };
+app.canvas = { setDirty() {} };
+class Tracker {
+    static graphEqual(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+    constructor() { this.undoQueue = []; this.redoQueue = []; this.activeState = {}; this.nodeOutputs = {}; }
+    store() {}
+    restore() {}
+    async updateState() {}
+}
+app.extensionManager = { workflow: { activeWorkflow: { path: 'a.json', changeTracker: new Tracker() } } };
 
 const results = document.querySelector('#results');
 let failures = 0;
@@ -55,7 +63,7 @@ try {
 
     const controls = all('#anomalous-snapshot-bar button, #anomalous-snapshot-bar input');
     const stayed = () => controls.every(node => node.isConnected);
-    api.dispatchEvent(new CustomEvent('graphChanged'));
+    api.dispatchEvent(new CustomEvent('graphChanged', { detail: { nodes: [{ id: 1 }] } }));
     check(!one('.is-current'), 'a change darkens the lit number');
     check(stayed(), 'a change keeps every control on the page: ComfyUI tells of it between a press and its click');
 
@@ -120,6 +128,7 @@ try {
     await answered();
     const pageControls = all('.anomalous-saves-part button, .anomalous-saves-part input');
     const pageStayed = () => pageControls.every(node => node.isConnected);
+    check(all('.anomalous-saves-guide-actions button').length === 2, 'the top guide card shows save-another and back-to-canvas actions');
     check(all('.anomalous-saves-save').length === 2 && one('.anomalous-saves-picture'), 'the page shows the saves and their pictures');
 
     const pageBox = one('.anomalous-saves-tools .anomalous-snapshot-count');

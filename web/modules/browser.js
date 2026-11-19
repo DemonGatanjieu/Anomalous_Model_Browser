@@ -13,7 +13,7 @@ import { showNotebooks, openCombo, openComboByFilename, refreshNotebooks, saveCu
 import { renderNotebookEditor } from './ui_notebook_editor.js';
 import { sendNotebookToCanvas } from './notebook_canvas.js';
 import { showRecipes, refreshRecipes } from './ui_recipe_catalog.js';
-import { showSaves } from './ui_saves_list.js';
+import { refreshSaves, showSaves } from './ui_saves_list.js';
 import { renderRecipeList, handleSaveRecipe, openRecipeByFilename } from './ui_recipes.js';
 import { leavePromptPage, openPromptStudio } from './ui_prompt_composer.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
@@ -104,6 +104,7 @@ export class AnomalousBrowser {
         if (this.currentShellPage() === 'gallery') void this.refreshGalleryImages();
         if (this.currentShellPage() === 'prompts') this.goTo('prompts'); // its studio stopped when the browser closed
         if (this.currentShellPage() === 'scan') void renderScanPage(this, this.scanPanel);
+        if (this.savesListOn && this.nbPanel?.style.display === 'flex') void refreshSaves(this);
     }
 
     /**

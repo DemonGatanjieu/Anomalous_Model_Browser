@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 优化主页「自己动手 → 画布存档：试几版一起跑」与「存档页」的引导与入口：卡片直接点明「画布存档」，点击不再直接关掉窗口或只飘角落提示，而是直接切进左侧边栏高亮的「存档」页（左侧工具区新增独立「存档」入口）；页首固定当前画布状态卡，未存过时说明情况并给「+ 给当前画布存第 1 版」按钮，已有存档时可直接「+ 再存一版」或「回画布改一改」，画布为空时直接给出「去工作流页挑一个」。
+- Clarifying Home's Canvas Saves card ("Canvas saves: compare versions") and adding a dedicated Saves entry in the left rail: clicking it keeps AMB open, highlights Saves in the rail, and lands on the Saves page with a live current-canvas guide card offering `+ Save version 1`, `+ Save another` + `Back to canvas`, or `Pick one on Workflows` when the canvas is empty.
+
 - 修复从主页「让 AI 帮你做」点击卡片跳进 AI 工作台时，如果此前开过别的模板会停在旧模板上没切过去的问题；「跑我存的预设」和「隐私出图 / 照我说的出图 → 我存的工作流」去掉窄下拉框，改为复用工作流页同款的封面卡片网格（带搜索、缩略封面、模型备齐状态、参数和预设数量），「跑我存的预设」顶上的来源切换同步改成两个清晰的大方框卡片。
 - Fixing home starter card jumps reusing a stale composer template on the AI workbench, and replacing workflow `<select>` dropdowns in "Run my preset" and "Start from -> A saved workflow" with a reusable visual Workflow Card selector (with two large source choice boxes in "Run my preset").
 

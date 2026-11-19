@@ -355,8 +355,8 @@ covered by the `styles.css` manifest.
   extra or by its file (AD-023), and finds a run's pictures in ComfyUI's history; `web/modules/snapshot_store.js` is the page's
   side of its routes, every change going through it so what shows a group hears of it. `web/modules/ui_snapshot_bar.js` is the bar
   under the canvas, following the open tab, with what is used while working there (a node's and the
-  empty canvas's menu entry in `canvas_menu.js`, the home page's "Try a few versions" card through `savesFromHome`; going back is one of ComfyUI's undo steps on the same tab and puts the save's pictures on their output nodes through the tab's `changeTracker`, a new tab is
-  `loadGraphData` as ComfyUI opens a file). `web/modules/ui_saves_pictures.js` is a save's pictures there: a line of what fits, the rest folded into gallery cards. `web/modules/ui_saves_list.js` is the Workflows page's Saves view, a part for each
+  empty canvas's menu entry in `canvas_menu.js`, the home page's "Canvas saves" card and the rail's Saves button both open the Saves page through `savesFromHome` / `showSaves`; going back is one of ComfyUI's undo steps on the same tab and puts the save's pictures on their output nodes through the tab's `changeTracker`, a new tab is
+  `loadGraphData` as ComfyUI opens a file). `web/modules/ui_saves_pictures.js` is a save's pictures there: a line of what fits, the rest folded into gallery cards. `web/modules/ui_saves_list.js` is the Saves view (opened via the rail's Saves entry, Home's Saves card, the bar, or the Workflows toolbar toggle), with a current-canvas status/save banner on top and a part for each
   canvas, open or not, with each save's pictures, its runs and the one thing a save becomes, a workflow card.
   `web/modules/snapshot_run.js` runs saves for both, on detached copies (`detached_graph.js`,
   `api.queuePrompt`), so no canvas changes and a closed one's saves run too; `web/modules/snapshot_plan.js` holds the rules (which widgets are seeds,
@@ -1157,7 +1157,7 @@ covered by the `styles.css` manifest.
   the browser's language, the environment folded at the end when attached (versions and
   hardware only, never a path or ComfyUI's command line), or copies the environment, and
   `openRepoPage()` opens the project page for a Star (on a press only; nothing is fetched);
-  `ui_rail_tools.js` owns the rail's tool buttons (scan, doctor, current node; the rail marks the one whose page is open);
+  `ui_rail_tools.js` owns the rail's tool buttons (current node, doctor, saves, scan; the rail marks the one whose page is open);
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open); `ui_key_guard.js` keeps Ctrl+Enter typed
@@ -1245,7 +1245,7 @@ covered by the `styles.css` manifest.
 - `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn`, the Help modal and Home's "What's new"; the current guide's ID and steps live in `update_guide_data.js`) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. The browser tour goes in the order the pages are used (rail, Gallery and what its ☆ keeps, Workflows, Combos, Prompts, then the tools), with its text in `locales.js`. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `tool_registry.js` holds the tool icons shared by the rail and Home.
-- The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. The rail's Prompts entry is Prompt Studio's page (`ui_prompt_composer.js`); its "Beside the canvas" moves the studio into a drawer by the canvas with the browser folded away, and "Back to the window" returns it. There is no toolbox: the other tools open from their pages (share and import on Workflows, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
+- The rail's tool slots (`ui_rail_tools.js`, fixed) hold current node, doctor, saves and scan; settings sits at the rail's bottom. The rail's Prompts entry is Prompt Studio's page (`ui_prompt_composer.js`); its "Beside the canvas" moves the studio into a drawer by the canvas with the browser folded away, and "Back to the window" returns it. There is no toolbox: the other tools open from their pages (share and import on Workflows, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
 - `ui_share.js` is share and import (the Workflows page's ⇅): the canvas workflow as a share
   code in Chinese characters or letters, and one place to paste a code or workflow JSON or drop
   a workflow file, an image, a recipe package or a backup .zip. `ui_recipe_package.js` exports

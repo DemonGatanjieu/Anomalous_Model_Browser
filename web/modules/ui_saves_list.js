@@ -19,7 +19,7 @@ import { openPopupMenu } from './ui_popup_menu.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { appendText, button } from './ui_recipe_detail_dom.js';
 import { closeSaveGallery, fillLines, image, openSaveGallery, pictureLine, thumbUrl } from './ui_saves_pictures.js';
-import { backTo, openSave, runsBox, saveWords, seedSwitch, shownKey, tabOfGroup } from './ui_snapshot_bar.js';
+import { addMark, backTo, canvasSaveStatus, openSave, revealCanvasBar, runsBox, saveWords, seedSwitch, shownKey, tabOfGroup } from './ui_snapshot_bar.js';
 
 const refused = new Map(); // a group's key -> why its part's last try did not go
 
@@ -201,7 +201,53 @@ function holdStill(owner, event) {
     for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, release, { capture: true, signal: ended.signal });
 }
 
-function setView(owner, on) {
+function bindSaveButton(owner, actions, label) {
+    const saveBtn = button(actions, label, 'anomalous-wf-save');
+    saveBtn.onclick = async () => {
+        saveBtn.disabled = true;
+        try {
+            const added = await addMark();
+            if (added?.key) owner.savesOpen.add(added.key);
+        } finally {
+            if (saveBtn.isConnected) saveBtn.disabled = false;
+        }
+    };
+}
+
+function drawGuide(owner, status) {
+    const guide = owner.savesGuide;
+    if (!guide) return;
+    const name = status.title || t('savesGuideUnnamed');
+    const copy = document.createElement('div');
+    copy.className = 'anomalous-saves-guide-copy';
+    const actions = document.createElement('div');
+    actions.className = 'anomalous-saves-guide-actions';
+    guide.classList.toggle('is-empty', !status.hasCanvas && !status.count);
+    if (!status.hasCanvas && !status.count) {
+        appendText(copy, 'div', t('savesGuideEmptyCanvas'), 'anomalous-saves-guide-title');
+        appendText(copy, 'div', t('savesGuideEmptyDesc'), 'anomalous-saves-guide-desc');
+        button(actions, t('savesPickWorkflow'), 'anomalous-wf-save').onclick = () => owner.goTo?.('recipes');
+    } else if (!status.count) {
+        appendText(copy, 'div', t('savesGuideNoSaves', { name }), 'anomalous-saves-guide-title');
+        appendText(copy, 'div', t('savesGuideNoSavesDesc'), 'anomalous-saves-guide-desc');
+        bindSaveButton(owner, actions, t('savesGuideSaveFirst'));
+    } else {
+        appendText(copy, 'div', t('savesGuideHasSaves', { name, count: status.count }), 'anomalous-saves-guide-title');
+        appendText(copy, 'div', t('savesGuideHasSavesDesc'), 'anomalous-saves-guide-desc');
+        bindSaveButton(owner, actions, t('savesGuideSaveNext'));
+        button(actions, t('savesGuideToCanvas'), 'anomalous-wf-filter').onclick = () => revealCanvasBar(owner);
+    }
+    guide.replaceChildren(copy, actions);
+}
+
+async function refreshGuide(owner) {
+    const token = owner.savesGuideSeq = (owner.savesGuideSeq || 0) + 1;
+    const status = await canvasSaveStatus();
+    if (token !== owner.savesGuideSeq || !owner.savesListOn) return;
+    drawGuide(owner, status);
+}
+
+export function setSavesView(owner, on) {
     if (!owner.savesList) {
         owner.savesList = document.createElement('div');
         owner.savesList.className = 'anomalous-wf-list anomalous-saves-list';
@@ -209,6 +255,11 @@ function setView(owner, on) {
         owner.recipeView.append(owner.savesList);
         new ResizeObserver(() => fillLines(owner.savesList)).observe(owner.savesList);
     }
+    if (!owner.savesGuide) {
+        owner.savesGuide = document.createElement('section');
+        owner.savesGuide.className = 'anomalous-saves-guide';
+    }
+    if (on) closeSaveGallery(owner);
     owner.savesListOn = on;
     owner.savesToggle.textContent = t(on ? 'savesListBack' : 'savesListToggle');
     owner.recipeView.classList.toggle('is-saves', on);
@@ -220,31 +271,38 @@ export async function refreshSaves(owner) {
     const wanted = owner.savesWanted;
     owner.savesWanted = '';
     if (wanted) {
-        closeSaveGallery(owner);
-        setView(owner, true);
+        setSavesView(owner, true);
         owner.savesOpen.add(wanted);
     }
     if (!owner.savesListOn) return;
     const list = owner.savesList;
     const reading = owner.savesReading = {};
     try {
-        const groups = await listGroups();
+        const [groups, status] = await Promise.all([listGroups(), canvasSaveStatus()]);
         if (reading !== owner.savesReading) return;
         refused.clear();
+        drawGuide(owner, status);
         owner.savesParts = new Map(groups.map(item => [item.key, { item, box: document.createElement('section') }]));
         const parts = [...owner.savesParts.values()];
         for (const part of parts) {
             part.box.className = 'anomalous-saves-part';
             drawPart(owner, part, null);
         }
-        list.replaceChildren(...parts.map(part => part.box));
-        if (!groups.length) appendText(list, 'p', t('savesListEmpty'), 'anomalous-recipe-empty');
+        const items = [owner.savesGuide, ...parts.map(part => part.box)];
+        if (!groups.length) {
+            const empty = document.createElement('p');
+            empty.className = 'anomalous-recipe-empty';
+            empty.textContent = t('savesListEmpty');
+            items.push(empty);
+        }
+        list.replaceChildren(...items);
         sayCount(owner);
         await Promise.all(parts.filter(part => owner.savesOpen.has(part.item.key)).map(part => openPart(owner, part)));
-        owner.savesParts.get(wanted)?.box.scrollIntoView({ block: 'start' });
+        owner.savesParts.get(wanted)?.box.scrollIntoView({ block: 'nearest' });
     } catch (error) {
         console.error('Could not list the saves:', error);
-        list.replaceChildren();
+        drawGuide(owner, await canvasSaveStatus().catch(() => ({ hasCanvas: false, title: '', key: '', count: 0 })));
+        list.replaceChildren(owner.savesGuide);
         appendText(list, 'p', t('savesListFailed'), 'anomalous-recipe-empty');
     }
 }
@@ -254,18 +312,22 @@ function groupChanged(owner, key, group) {
     if (!owner.savesListOn) return;
     if (owner.savesHeld) return void owner.savesHeld.set(key, group);
     const part = owner.savesParts.get(key);
-    if (!part || !group) return void refreshSaves(owner);
+    if (!part || !group) {
+        if (!part && group) owner.savesOpen.add(key);
+        return void refreshSaves(owner);
+    }
     part.item.count = group.saves.length;
     sayCount(owner);
     part.item.cover = group.saves.flatMap(save => save.pictures).at(-1) || null;
     if (owner.savesOpen.has(key)) drawPart(owner, part, group);
     else drawPart(owner, part, null);
+    void refreshGuide(owner);
 }
 
-/** The Workflows page with `key`'s part open: the bar's way here. */
-export function showSaves(key) {
-    this.savesWanted = key;
-    this.show({ page: 'recipes' });
+/** The Saves view opened for `key` (or the current canvas's saves): highlights Saves in the rail. */
+export function showSaves(key = '') {
+    this.savesWanted = key || shownKey() || '';
+    this.show({ page: 'saves' });
 }
 
 /** The bar's button between the workflow cards and the saves. */
@@ -278,7 +340,8 @@ export function savesToggle(owner) {
     owner.savesToggle.className = 'anomalous-wf-filter anomalous-wf-saves-toggle';
     owner.savesToggle.textContent = t('savesListToggle');
     owner.savesToggle.onclick = () => {
-        setView(owner, !owner.savesListOn);
+        setSavesView(owner, !owner.savesListOn);
+        owner.markWorkspace?.(owner.savesListOn ? 'saves' : 'recipes');
         // Back on the cards: one kept here may be new to them.
         void (owner.savesListOn ? refreshSaves(owner) : owner.refreshRecipes());
     };

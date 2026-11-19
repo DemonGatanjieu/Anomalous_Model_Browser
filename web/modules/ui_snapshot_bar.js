@@ -89,7 +89,7 @@ function button(className, label, run, title = '') {
  * ComfyUI's draft of the tab, what a reload brings back, is written on the event sent here.
  */
 function tagCanvas(key) {
-    canvasGraph().extra[EXTRA_KEY] = key;
+    (canvasGraph().extra ||= {})[EXTRA_KEY] = key;
     const tracker = activeTab()?.changeTracker;
     for (const state of [tracker?.activeState, tracker?.initialState, ...tracker?.undoQueue || [], ...tracker?.redoQueue || []]) {
         if (state) state.extra = { ...state.extra, [EXTRA_KEY]: key };
@@ -150,30 +150,42 @@ export async function addMark() {
         standAt(stands.saves[stands.saves.length - 1].id);
         draw();
         showWorkbenchToast(t('snapshotMarked', { number: stands.saves.length }));
+        return stands;
     } catch (error) {
         console.warn('[AMB] Saves:', error);
         showWorkbenchToast(t('snapshotSaveFailed', { why: String(error?.message || error).slice(0, 200) }));
+        return null;
     }
 }
 
 /**
- * The home page's "Try a few versions" card: the canvas's saves on the Saves page when it has some, else its
- * first save, with AMB's window put away so the bar shows and its line says what comes next. An empty
- * canvas is told to open a workflow first.
+ * The home page's "Canvas saves" card: always opens the Saves page directly in the sidebar so the
+ * user sees existing saves or a direct prompt and button to save version 1 for the active canvas.
  */
 export async function savesFromHome(owner) {
-    if (group?.saves?.length) {
-        owner.showSaves(group.key);
-        return;
-    }
-    if (!canvasGraph()?._nodes?.length) {
-        showWorkbenchToast(t('savesEmptyCanvas'), { label: t('savesPickWorkflow'), run: () => owner.goTo('recipes') });
-        return;
-    }
-    owner.close();
+    await following;
+    owner.showSaves(shownKey() || '');
+}
+
+/** Current canvas save summary for the Saves page banner. */
+export async function canvasSaveStatus() {
+    await following;
+    const graph = canvasGraph();
+    const tab = activeTab();
+    const key = shownKey();
+    const count = group?.saves?.length || 0;
+    return {
+        hasCanvas: Boolean(graph?._nodes?.length || count),
+        title: String(tab?.filename || '').trim(),
+        key,
+        count,
+    };
+}
+
+/** Closes the browser back onto the canvas with the bottom snapshot bar unfolded when saves exist. */
+export function revealCanvasBar(owner) {
     if (folded) fold(false);
-    await addMark();
-    if (group?.saves?.length === 1) status(t('savesFirstHint'));
+    owner.close?.();
 }
 
 /** The open tab with `item`'s group of saves on it, or null. */

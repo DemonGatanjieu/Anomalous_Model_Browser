@@ -8,7 +8,7 @@ import { openPopupMenu } from './ui_popup_menu.js';
 import { moveWorkflowMaterials, workflowMaterialCount } from './recipe_save.js';
 import { openShareDialog } from './ui_share.js';
 import { fetchParameterSetSignatures, showParameterSetCount } from './ui_param_set_keys.js';
-import { refreshSaves, savesToggle } from './ui_saves_list.js';
+import { refreshSaves, savesToggle, setSavesView } from './ui_saves_list.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -228,7 +228,7 @@ export function renderRecipeList(recipes, services) {
 }
 
 
-export async function showRecipes() {
+export async function showRecipes({ saves = false } = {}) {
     if (this.notebookContainer) this.notebookContainer.style.display = 'none';
     if (this.nbPanel) this.nbPanel.style.display = 'flex';
 
@@ -238,12 +238,13 @@ export async function showRecipes() {
         this.nbPanel.appendChild(this.recipeContainer);
     }
     this.recipeContainer.style.display = 'flex';
-    if (typeof this.recipeModelReturn === 'function') {
+    if (!saves && typeof this.recipeModelReturn === 'function') {
         const returnToRecipe = this.recipeModelReturn;
         this.recipeModelReturn = null;
         returnToRecipe();
         return;
     }
+    this.recipeModelReturn = null;
     this.recipeDetailFinish?.('closed');
     if (this.notebookBody) this.notebookBody.style.display = 'none';
 
@@ -265,7 +266,8 @@ export async function showRecipes() {
         }
     }
     if (this.recipesInitialized) {
-        await this.refreshRecipes();
+        setSavesView(this, Boolean(saves));
+        await (saves ? refreshSaves(this) : this.refreshRecipes());
         return;
     }
     this.recipesInitialized = true;
@@ -282,7 +284,8 @@ export async function showRecipes() {
     this.recipeListContainer.className = `anomalous-wf-list ${this.recipeViewMode === 'list' ? 'is-list' : 'is-grid'}`;
     this.recipeView.appendChild(this.recipeListContainer);
     this.recipeContainer.appendChild(this.recipeView);
-    await this.refreshRecipes();
+    setSavesView(this, Boolean(saves));
+    await (saves ? refreshSaves(this) : this.refreshRecipes());
 }
 
 export async function resolveCatalogRecipeReadiness(owner, recipes) {
@@ -359,5 +362,5 @@ export async function refreshRecipes() {
     }
     this.renderRecipeList(this.recipeRecords);
     void resolveCatalogRecipeReadiness(this, this.recipeRecords);
-    void refreshSaves(this);
+    if (this.savesListOn) void refreshSaves(this);
 }

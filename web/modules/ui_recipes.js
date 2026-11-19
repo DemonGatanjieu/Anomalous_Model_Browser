@@ -24,8 +24,8 @@ import {
 } from './recipe_identity.js';
 
 const t = (key, params) => translate(key, params);
-export async function showRecipes() {
-    return showRecipeCatalog.call(this);
+export async function showRecipes(options = {}) {
+    return showRecipeCatalog.call(this, options);
 }
 
 export async function refreshRecipes() {
