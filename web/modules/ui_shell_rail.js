@@ -43,7 +43,8 @@ const div = className => Object.assign(document.createElement('div'), { classNam
 
 /**
  * Builds the rail; its logo is `.anomalous-rail-brand`.
- * Returns `{ root, items: Map(page → button), setActive(page | null), refreshLanguage() }`.
+ * Returns `{ root, items: Map(page → button), setActive(page | null), refreshLanguage() }`;
+ * `setActive` takes a rail page or a tool's page (scan, doctor, assistant), which lights its tool button.
  */
 export function createShellRail(owner) {
     const root = document.createElement('nav');
@@ -119,11 +120,14 @@ export function createShellRail(owner) {
         root,
         items,
         setActive(page) {
-            for (const [key, button] of items) {
-                button.classList.toggle('active', key === page);
-                if (key === page) button.setAttribute('aria-current', 'page');
+            const mark = (button, on) => {
+                button.classList.toggle('active', on);
+                if (on) button.setAttribute('aria-current', 'page');
                 else button.removeAttribute('aria-current');
-            }
+            };
+            for (const [key, button] of items) mark(button, key === page);
+            owner.railTools.dataset.current = page ?? '';
+            for (const button of owner.railTools.querySelectorAll('button[data-page]')) mark(button, button.dataset.page === page);
             moveMarker();
         },
         refreshLanguage,

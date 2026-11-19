@@ -245,7 +245,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         if (owner.nbPanel?.style.display === 'flex') owner.closeWorkspace();
         useDomain('visual');
         current = page;
-        rail.setActive(null);
+        rail.setActive(page); // its tool button shows as the current entry
         setTitle(page);
         applyList(page);
         if (page === 'assistant') container.classList.add('anomalous-sidebar-closed');
@@ -265,7 +265,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
     const closeWorkspace = owner.closeWorkspace;
     owner.closeWorkspace = function (...args) {
         const result = closeWorkspace.apply(this, args);
-        rail.setActive(REMEMBERED.has(current) ? railOf(current) : null);
+        rail.setActive(railOf(current)); // a tool's page lights its tool again
         setTitle(current);
         if (current === 'prompts') owner.goTo('prompts'); // its studio stopped when the workspace opened
         return result;

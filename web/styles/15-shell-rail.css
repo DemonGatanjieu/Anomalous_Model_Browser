@@ -17,6 +17,9 @@
     box-sizing: border-box;
     border-right: 1px solid var(--amb-border);
     background: var(--amb-lt-panel, rgba(16, 16, 19, 0.92));
+    /* The current entry, as Google's rail: a pill in the accent behind its icon, the icon and word in it too. */
+    --amb-rail-pill: color-mix(in srgb, var(--amb-link) 34%, transparent);
+    --amb-rail-on: color-mix(in srgb, var(--amb-link) 65%, var(--amb-text-main));
 }
 
 .anomalous-rail-brand {
@@ -56,7 +59,7 @@
     width: 46px;
     margin-left: -23px;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--amb-link) 24%, transparent);
+    background: var(--amb-rail-pill);
     opacity: 0;
     pointer-events: none;
     transition: translate 0.2s var(--amb-ease-out), height 0.2s var(--amb-ease-out), opacity 0.15s ease;
@@ -142,7 +145,7 @@
 }
 
 .anomalous-rail-item.active {
-    color: var(--amb-text-main);
+    color: var(--amb-rail-on);
 }
 
 .anomalous-rail-item.active > svg {
@@ -153,10 +156,23 @@
     font-weight: 600;
 }
 
-.anomalous-rail-tools button.is-active,
-.anomalous-rail-foot button.is-active {
-    background: rgba(var(--amb-ink-rgb), 0.1);
-    color: var(--amb-text-main);
+/* A tool whose page is open wears the same pill (older id rules set the tools' colours with !important). */
+#anomalous-rail .anomalous-rail-tools button.active {
+    color: var(--amb-rail-on) !important;
+}
+
+.anomalous-rail-tools button.active > svg {
+    background: var(--amb-rail-pill);
+}
+
+.anomalous-rail-tools button.active .anomalous-rail-label {
+    font-weight: 600;
+}
+
+/* Settings open: its button in the pill's colours. */
+#anomalous-rail .anomalous-rail-foot button.is-active {
+    background: var(--amb-rail-pill) !important;
+    color: var(--amb-rail-on) !important;
 }
 
 .anomalous-rail-label {
@@ -204,14 +220,10 @@
     border-radius: 9px !important;
 }
 
-/* Their hover tinted the whole button; in the rail only the icon's pill is tinted. */
+/* Their hover tinted and framed the whole button; in the rail only the icon's pill is tinted. */
 #anomalous-rail .anomalous-rail-tools button:hover {
+    border: none !important;
     background: transparent !important;
-}
-
-#anomalous-rail #anomalous-materials-btn.active {
-    background: rgba(var(--amb-ink-rgb), 0.1) !important;
-    color: var(--amb-text-main) !important;
 }
 
 /* List column: beside the page, or gone when closed. It also steps aside while a workspace

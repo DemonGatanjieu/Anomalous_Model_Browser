@@ -1111,7 +1111,8 @@ covered by the `styles.css` manifest.
   `headerTools` is a page's own slot in the header, shown on that page: the AI page's side switch)
   and puts the model folder column in the list column (`ui_folder_list.js`: the folders of the
   type the chips show, counts with subfolders, 📂 to open one in Explorer). `ui_shell_rail.js` owns the left icon rail: one
-  entry per page, the tool slots and the settings slot. `ui_shell_nav.js` owns page
+  entry per page, the tool slots and the settings slot; the current page, or the tool whose page is open,
+  wears an accent pill. `ui_shell_nav.js` owns page
   navigation (`goTo`): the domain each page needs, which pages have a list and whether
   it is open (remembered per page; closed and overlaying below 760 px), the header's
   page title, and the page reopened next time. `ui_home.js` owns the home page (task
@@ -1157,7 +1158,7 @@ covered by the `styles.css` manifest.
   the browser's language, the environment folded at the end when attached (versions and
   hardware only, never a path or ComfyUI's command line), or copies the environment, and
   `openRepoPage()` opens the project page for a Star (on a press only; nothing is fetched);
-  `ui_rail_tools.js` owns the rail's tool buttons (scan, doctor, current node);
+  `ui_rail_tools.js` owns the rail's tool buttons (scan, doctor, current node; the rail marks the one whose page is open);
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open); `ui_key_guard.js` keeps Ctrl+Enter typed

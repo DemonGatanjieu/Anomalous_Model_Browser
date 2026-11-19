@@ -308,8 +308,14 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     border: 1px solid rgba(16, 185, 129, 0.35) !important;
 }
 
+/* The radar turns inside the icon: the rail's pill behind it stays still. */
+#anomalous-scan-btn.anomalous-radar-spinning .anomalous-radar-sweep {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    animation: anomalous-radar-spin 1.4s linear infinite;
+}
+
 #anomalous-scan-btn.anomalous-radar-spinning svg {
-    animation: anomalous-radar-spin 1.4s linear infinite !important;
     filter: none !important;
 }
 
@@ -349,13 +355,6 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     color: #a855f7 !important;
     background: rgba(36, 12, 45, 0.85) !important;
     border: 1px solid #a855f7 !important;
-    box-shadow: none !important;
-}
-
-.theme-abyssal-scarlet #anomalous-materials-btn:hover {
-    color: #d97706 !important;
-    background: rgba(45, 20, 10, 0.85) !important;
-    border: 1px solid #d97706 !important;
     box-shadow: none !important;
 }
 

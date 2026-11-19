@@ -156,7 +156,6 @@
 }
 
 #anomalous-scan-btn,
-#anomalous-materials-btn,
 #anomalous-doctor-btn,
 #anomalous-assistant-btn,
 #anomalous-global-settings-btn {
@@ -165,7 +164,6 @@
 }
 
 #anomalous-scan-btn:hover,
-#anomalous-materials-btn:hover,
 #anomalous-doctor-btn:hover,
 #anomalous-assistant-btn:hover,
 #anomalous-global-settings-btn:hover {
@@ -178,16 +176,6 @@
     color: #ff4d6d !important;
     filter: none !important;
     background: rgba(220, 20, 60, 0.12) !important;
-}
-
-.theme-abyssal-scarlet #anomalous-materials-btn {
-    color: var(--amb-c-amber, #d97706) !important;
-}
-
-.theme-abyssal-scarlet #anomalous-materials-btn:hover {
-    color: var(--amb-warn) !important;
-    filter: none !important;
-    background: rgba(217, 119, 6, 0.12) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-doctor-btn {

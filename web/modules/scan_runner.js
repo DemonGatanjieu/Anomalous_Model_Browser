@@ -17,7 +17,7 @@ import { updateDoctorBanner } from './ui_doctor_banner.js';
 import { onlineOrAsk } from './scan_connection.js';
 
 const POLL_MS = 2000;
-const SCAN_RADAR_ICON_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5" stroke-opacity="0.45"/><path d="M12 12 18 6"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg>`;
+const SCAN_RADAR_ICON_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><g class="anomalous-radar-sweep"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5" stroke-opacity="0.45"/><path d="M12 12 18 6"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></g></svg>`;
 
 let running = false;
 
