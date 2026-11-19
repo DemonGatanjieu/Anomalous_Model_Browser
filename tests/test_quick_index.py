@@ -38,6 +38,12 @@ class CompactModelsTest(unittest.TestCase):
         self.assertEqual([item["type"] for item in found], ["unet", "loras"])
         self.assertEqual(found[1]["words"], ["one word"])
 
+    def test_scan_state_only_when_asked(self):
+        scanned = model(metadata={"info_source": "civitai", "unmatched_reason": "", "scan_choice": "", "not_drawing": False})
+        self.assertNotIn("scan", quick_index.compact_models([scanned])[0])
+        self.assertEqual(quick_index.compact_models([scanned], scan_state=True)[0]["scan"],
+                         {"info_source": "civitai", "unmatched_reason": "", "scan_choice": "", "not_drawing": False})
+
 
 if __name__ == "__main__":
     unittest.main()

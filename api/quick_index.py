@@ -11,6 +11,9 @@ from aiohttp import web
 from .model_catalog import _collect_all_scan_models
 
 MAX_WORDS = 6
+# What a card's top-left badge reads (web/modules/model_source.js): scanned or not, found on Civitai or not, the
+# user's scan choice. Only lists that draw cards ask for it (the materials catalog, ai_toolbox_catalog.py).
+SCAN_FIELDS = ("info_source", "unmatched_reason", "scan_choice", "not_drawing")
 
 
 def _words(meta):
@@ -20,8 +23,9 @@ def _words(meta):
     return [str(word) for word in words if str(word).strip()][:MAX_WORDS]
 
 
-def compact_models(models):
-    """`models` (the shape GET /anomalous/all_scan_models gives) in a few words each."""
+def compact_models(models, scan_state=False):
+    """`models` (the shape GET /anomalous/all_scan_models gives) in a few words each; with `scan_state`, also
+    what its card badge needs (`scan`, SCAN_FIELDS)."""
     seen, found = set(), []
     for model in models:
         if model.get("type") == "custom_nodes":
@@ -31,7 +35,7 @@ def compact_models(models):
             continue
         seen.add(key)
         meta = model.get("metadata") or {}
-        found.append({
+        entry = {
             "type": model.get("type"),
             "path_idx": model.get("path_idx", 0),
             "subfolder": model.get("subfolder") or "",
@@ -46,7 +50,10 @@ def compact_models(models):
             "words": _words(meta),
             "preview_url": model.get("preview_url") or "",
             "ai_name": meta.get("ai_name") or "",  # the user's choice for AIs (ai_model_choice.py)
-        })
+        }
+        if scan_state:
+            entry["scan"] = {field: meta.get(field) for field in SCAN_FIELDS}
+        found.append(entry)
     return found
 
 

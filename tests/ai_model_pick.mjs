@@ -30,6 +30,12 @@ test('adaptPickerModel preserves type, exact base, inferred local badge and vers
     assert.equal(localOnly.metadata.baseModel, 'Anima');
     assert.equal(localOnly.metadata.info_source, 'local');
     assert.equal(localOnly.filename, 'bar.safetensors');
+
+    // The catalog says whether it was scanned: its cards read as on the Models page, not "not scanned" for all.
+    const fromCatalog = meta => adaptPickerModel({ model_id: 'loras:0:x.safetensors', type: 'loras', metadata: meta }).metadata.info_source;
+    assert.equal(fromCatalog({ baseModel: 'Illustrious', info_source: 'civitai' }), 'civitai');
+    assert.equal(fromCatalog({ base_guess: 'Anima', info_source: '' }), '');
+    assert.equal(fromCatalog({ base_guess: 'Anima', info_source: 'local' }), 'local');
 });
 
 test('modelTypes and filterPickerModels distinguish types, exact base families, versions and favourites', () => {

@@ -43,7 +43,8 @@ export function adaptPickerModel(item) {
             baseModel,
             base_guess: guessBase || baseModel,
             version_name: String(rawMeta.version_name || '').trim(),
-            info_source: rawMeta.info_source || (inferred ? 'local' : ''),
+            // The catalog says whether it was scanned (the card badge as on the Models page); other records guess.
+            info_source: 'info_source' in rawMeta ? String(rawMeta.info_source || '') : (inferred ? 'local' : ''),
         },
     };
 }
