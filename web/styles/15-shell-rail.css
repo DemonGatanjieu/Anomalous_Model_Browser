@@ -358,9 +358,10 @@
     font-weight: 600;
 }
 
+/* Nine cards: three to a row at the page's width, fewer when narrow. */
 .anomalous-home-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
     gap: 8px;
 }
 

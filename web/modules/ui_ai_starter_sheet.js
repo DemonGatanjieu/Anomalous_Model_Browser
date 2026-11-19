@@ -1,9 +1,11 @@
 /**
  * The home page's AI starter cards (ui_ai_starters.js draws them) and the spacious in-workbench
  * starter composer opened directly inside the AI workbench (`renderStarterComposer`: `private`,
- * `picture`, `say`, `canvas`, `try`). "Run my preset" (`preset`) stays in its own dialog
- * (`openStarter` -> ui_ai_preset_sheet.js + ui_ai_start_steps.js) since without changes it runs on
- * its own with no AI. `STARTERS` keeps each card's shape and locale keys (`tests/test_ai_starters.py`).
+ * `picture`, `say`, `plan`, `canvas`, `try`; `plan`: the AI picks saved workflows' presets and how many
+ * of each, the run goes on a new tab). "Run my preset" is a "Do it yourself" card of the home page
+ * (ui_home.js) in its own dialog (`openPresetSheet` -> ui_ai_preset_sheet.js + ui_ai_start_steps.js),
+ * since without changes it runs on its own with no AI. `STARTERS` keeps each card's shape and locale keys
+ * (`tests/test_ai_starters.py`).
  */
 
 import { marked } from './ai_hide_mark.js';
@@ -12,6 +14,7 @@ import { translate as t } from './locales.js';
 import { fadeIn } from './ui_ai_art.js';
 import { CANVAS_WISHES, frontTab } from './ui_ai_canvas_hand.js';
 import { aiWindow } from './ui_ai_connect.js';
+import { anomalousAlert } from './ui_dialog.js';
 import { pictureGrid, thumbUrl } from './ui_ai_gallery_pick.js';
 import { startTask } from './ui_ai_handoff.js';
 import { icon } from './ui_ai_icons.js';
@@ -24,22 +27,24 @@ import { createViewScope } from './ui_lifecycle.js';
 const NEW_TAB = { canvas: 'new' };
 const MAX_SEALED = 1500;
 const DRAWS = ['try', 'say', 'private'];
-export const COMPOSER_STARTERS = ['private', 'picture', 'say', 'canvas', 'try'];
+export const COMPOSER_STARTERS = ['private', 'picture', 'say', 'plan', 'canvas', 'try'];
 const EXAMPLES = {
     say: ['aiStartSayEx1', 'aiStartSayEx2', 'aiStartSayEx3'],
     private: ['aiStartGistEx1', 'aiStartGistEx2', 'aiStartGistEx3'],
     picture: ['aiStartHowEx1', 'aiStartHowEx2', 'aiStartHowEx3'],
+    plan: ['aiStartPlanEx1', 'aiStartPlanEx2', 'aiStartPlanEx3'],
 };
 
 // lines: [kind] shown under "What happens on Start?" (`aiStartSheet_<kind>`).
 export const STARTERS = [
     { id: 'try', icon: 'sparkle', tags: ['newTab', 'small'], lines: [['start'], ['kept'], ['mind']] },
-    { id: 'preset', icon: 'workflows', tags: ['newTab', 'saved'], lines: [['kept']] },
+    { id: 'plan', icon: 'workflows', tags: ['newTab', 'saved'], lines: [['start'], ['kept'], ['mind']] },
     { id: 'say', icon: 'pencil', tags: ['newTab', 'download'], lines: [['start'], ['kept'], ['mind']] },
     { id: 'picture', icon: 'image', tags: ['original', 'newTab'], lines: [['start'], ['kept'], ['mind']] },
     { id: 'private', icon: 'lock', tags: ['sealed', 'newTab'], lines: [['out']] },
     { id: 'canvas', icon: 'nodes', tags: ['undo'] },
 ];
+const PRESET = { id: 'preset', icon: 'workflows', lines: [['kept']] }; // "Run my preset": a "Do it yourself" card, its own sheet
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -79,6 +84,8 @@ function readyLines(card, data) {
     const came = Boolean(data.app || data.came);
     const lines = [{ ok: came, text: came ? t(data.app ? 'aiStartReadyApp' : 'aiStartReadyCame', { client: data.app?.client }) : t('aiStartReadyNoApp') }];
     if (DRAWS.includes(card.id)) lines.push({ ok: data.models > 0, text: data.models > 0 ? t('aiStartReadyModels', { count: data.models }) : t('aiStartReadyNoModels') });
+    const saved = data.workflows?.length || 0;
+    if (card.id === 'plan') lines.push({ ok: saved > 0, text: saved ? t('aiStartReadyWorkflows', { count: saved }) : t('aiStartReadyNoWorkflows') });
     return lines;
 }
 
@@ -221,6 +228,21 @@ function sayFields(data) {
     };
 }
 
+/** "Say what you want": the user's words are the task; the first message says what to plan from. */
+function planFields() {
+    const words = el('textarea', 'anomalous-ai-start-input');
+    words.rows = 3;
+    words.maxLength = 300;
+    words.placeholder = t('aiStartPlanHint');
+    words.setAttribute('aria-label', t('aiStartStepPlan'));
+    const sec = el('section', 'anomalous-ai-composer-section');
+    sec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepPlan')), words, examples(words, EXAMPLES.plan));
+    return {
+        nodes: [sec],
+        task: () => (words.value.trim() ? { title: words.value.trim(), note: t('aiStartPlanNote') } : 'aiStartNeedText'),
+    };
+}
+
 function canvasFields() {
     const tab = frontTab();
     const line = el('textarea', 'anomalous-ai-start-input');
@@ -258,6 +280,7 @@ function composerFields(card, data) {
     if (card.id === 'picture') return pictureFields();
     if (card.id === 'private') return privateFields(data);
     if (card.id === 'canvas') return canvasFields();
+    if (card.id === 'plan') return planFields();
     return sayFields(data);
 }
 
@@ -364,8 +387,9 @@ export function renderStarterComposer(host, { owner, cardId, data, onBack, onSwi
     return () => scope.dispose();
 }
 
-/** Opens the standalone modal sheet (currently used for "Run my preset"). */
-export function openStarter(owner, card, data) {
+/** The "Run my preset" sheet with the saved workflows `data` lists (GET /anomalous/ai_starters). */
+function openStarter(owner, data) {
+    const card = PRESET;
     const body = el('div', 'anomalous-ai-start-sheet');
     let close = () => {};
     const error = el('div', 'anomalous-ai-start-error');
@@ -392,11 +416,7 @@ export function openStarter(owner, card, data) {
         actions.append(...stepped.actions);
     } else {
         const head = el('div', 'anomalous-ai-start-sheet-head');
-        const picture = el('img', 'anomalous-ai-start-sheet-art');
-        picture.alt = '';
-        picture.src = new URL(`../assets/start_${card.id}.webp`, import.meta.url).href;
-        fadeIn(picture);
-        head.append(picture);
+        head.append(icon(card.icon, 28));
         scroll.append(head, ...fields.nodes, ...(lines ? [lines] : []));
         actions.append(button('anomalous-ai-link', t('dialogCancel'), () => close()));
     }
@@ -404,4 +424,15 @@ export function openStarter(owner, card, data) {
     close = aiWindow(t(`aiStart_${card.id}_title`), body, () => fields.stop?.());
     body.closest('.anomalous-ai-connect-dialog')?.classList.toggle('is-preset-sheet', Boolean(fields.steps));
     body.querySelector('textarea, input:not([hidden]), select, button')?.focus();
+}
+
+/** The home page's "Run my preset" card: reads the saved workflows, then opens the sheet. */
+export async function openPresetSheet(owner) {
+    try {
+        const response = await fetch('/anomalous/ai_starters');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        openStarter(owner, await response.json());
+    } catch (error) {
+        await anomalousAlert(error.message);
+    }
 }

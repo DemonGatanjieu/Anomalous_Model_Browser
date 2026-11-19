@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 主页两组卡片各回各家：「跑我存的预设」大多数时候不用 AI，挪到「自己动手」（第 9 张，卡片排成 3 行 3 张），「↻ 和上次一样再跑」那一行也跟着挪到「自己动手」下面。「让 AI 帮你做」里换成新卡「说想要什么，AI 安排着跑」：用一句话说想要什么（比如哪几个预设各跑几张、跑完挑最好的），AI 从你存的工作流和预设里挑、定张数，在新标签页里排队跑，跑完看图告诉你结果。
+- Home's two groups of cards each hold their own: "Run my preset" mostly runs with no AI, so it moves to "Do it yourself" (a ninth card; the cards go three to a row), and so does the "The same again" line. "Let the AI do it" gets a new card in its place, "Say what you want, the AI plans the run": say in a sentence what you are after (which presets, how many pictures each, pick the best), and the AI picks from your saved workflows and presets, decides the counts, queues them on a new tab and tells you how the pictures came out.
+
 - 优化「存档」页顶部当前画布引导卡：将原先一行文字升级为带 `→` 箭头的 3 步流程条（1 存第 1 版底稿 → 2 回画布改参数/换模型/增删连节点，再存新版 → 3 点下方「运行」并排看图），按当前画布存档数自动标出已完成打勾与当前待操作步骤，并在窄窗口下自动切换为竖向布局与向下箭头。
 - Upgrading the top current-canvas guide card in Canvas Saves from a single line of prose into a 3-step `→` progress strip ("Save version 1" → "Edit settings, swap models, or add/remove/rewire nodes & save another" → "Run all & compare side by side") with automatic completed/current highlighting and vertical container-query stacking on narrow views.
 

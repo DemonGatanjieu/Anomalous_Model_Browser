@@ -682,7 +682,7 @@ covered by the `styles.css` manifest.
   `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the
   user's checklist by stage) and the address follows. `ui_ai_starters.js` is the home page's "Let the AI do it"
   (the app that came last, a warning when its list is a short one, six starter cards; the box and its cards are drawn at once,
-  what needs `GET /anomalous/ai_starters` fills in when read): clicking "Run my preset" opens `ui_ai_starter_sheet.js`'s `openStarter` modal (when without changes it runs locally via `ui_ai_preset_sheet.js`), while the five AI-task starters (`private`, `picture`, `say`, `canvas`, `try`) jump directly into the AI workbench (`openAiStarter` in `ui_ai_workbench.js`) rendering `renderStarterComposer` inside the spacious right column with a live mode-switcher bar (so zero intermediate home popups are shown; empty tasks and welcomePage also link into it). `ui_ai_starter_sheet.js`
+  what needs `GET /anomalous/ai_starters` fills in when read): the six AI-task starters (`private`, `picture`, `say`, `plan`, `canvas`, `try`) jump directly into the AI workbench (`openAiStarter` in `ui_ai_workbench.js`) rendering `renderStarterComposer` inside the spacious right column with a live mode-switcher bar (so zero intermediate home popups are shown; empty tasks and welcomePage also link into it). `ui_ai_starter_sheet.js`
   holds `STARTERS`, `cardTags`, and the mode composers (fields, readiness lines, what Start ensures; live gallery preview beside "How should it change?" in `picture`, and `privateFields` in one uncluttered scroll with `sealFlow` / LoRAs), creating a
   prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` `startTask`;
   a card's tags name only what Anomalous makes sure of. The private card puts the prompt the AI gets as a token
@@ -690,7 +690,8 @@ covered by the `styles.css` manifest.
   AI leaves as written, for `ui_ai_model_lock.js` guardNames to ask about; `tests/ai_name_guard.mjs`);
   `web/modules/ui_ai_private_sheet.js` adds its optional LoRAs (from the materials catalog with user favourites, named in the first
   message by file name so the task's privacy turns them into tokens, picked in the reusable model picker) and the four-box drawing of what happens to the prompt.
-  "Run my preset" still steps via
+  "Run my preset", a "Do it yourself" card of the home page (`openPresetSheet` reads the saved workflows first;
+  without changes it runs locally via `ui_ai_preset_sheet.js`, whose "same again" line comes under those cards), steps via
   `web/modules/ui_ai_start_steps.js` (numbered dots, one step's question and fields at a time, Back / Next with a
   step's own check, Start on the last).
   For "say" and "private", `web/modules/ui_ai_start_from.js` draws

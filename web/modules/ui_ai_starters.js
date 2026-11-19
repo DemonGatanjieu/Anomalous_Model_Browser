@@ -3,9 +3,9 @@
  * warning when the tool list it holds is a short one (api/mcp_tool_sets.py) that cannot take a task
  * handed over here; then the six starter cards (ui_ai_starter_sheet.js): a picture (web/assets/start_*.webp,
  * drawn with ChatGPT in the style of the others), a name and one short line; what each one makes sure of
- * (its tags) is said on hover, not in chips. Clicking "Run my preset" opens its self-run batch sheet
- * (preset can run locally with no AI); clicking any of the AI cards opens its spacious starter
- * workspace directly on the AI workbench (`openAiStarter`).
+ * (its tags) is said on hover, not in chips. A card opens its spacious starter workspace directly on the
+ * AI workbench (`openAiStarter`). The line that runs the last "Run my preset" list again (no AI) goes
+ * under the home page's "Do it yourself" cards, where that card is.
  */
 
 import { translate as t } from './locales.js';
@@ -14,7 +14,7 @@ import { fadeIn } from './ui_ai_art.js';
 import { openConnectGuide } from './ui_ai_connect.js';
 import { icon } from './ui_ai_icons.js';
 import { againLine } from './ui_ai_preset_sheet.js';
-import { STARTERS, cardTags, openStarter } from './ui_ai_starter_sheet.js';
+import { STARTERS, cardTags } from './ui_ai_starter_sheet.js';
 import { openAiStarter } from './ui_ai_workbench.js';
 import { tourWhenShown } from './ui_ai_tour.js';
 
@@ -46,10 +46,7 @@ function appLine(owner, app) {
 
 /** A starter card; `reading` is the server's data on its way (a press waits for it). */
 function card(owner, starter, reading) {
-    const node = button('anomalous-ai-start-card', '', () => {
-        if (starter.id === 'preset') void reading.then(data => data && openStarter(owner, starter, data));
-        else openAiStarter(owner, starter.id, reading);
-    });
+    const node = button('anomalous-ai-start-card', '', () => openAiStarter(owner, starter.id, reading));
     node.dataset.starter = starter.id;
     const art = el('img', 'anomalous-ai-start-card-art');
     art.alt = '';
@@ -65,8 +62,11 @@ function card(owner, starter, reading) {
     return node;
 }
 
-/** Draws the section into `slot` (the home page's place for it) at once; the server's part fills in when read. */
-export function renderAiStarters(owner, slot) {
+/**
+ * Draws the section into `slot` (the home page's place for it) at once; the server's part fills in when read,
+ * the "same again" line after `cards` (the "Do it yourself" ones).
+ */
+export function renderAiStarters(owner, slot, cards) {
     const reading = fetch('/anomalous/ai_starters').then(response => (response.ok ? response.json() : null)).catch(() => null);
     const section = el('section', 'anomalous-ai-start');
     const head = el('div', 'anomalous-ai-start-head');
@@ -84,6 +84,6 @@ export function renderAiStarters(owner, slot) {
         }
         head.append(...appLine(owner, data.app));
         const again = againLine(owner, data);
-        if (again) section.append(again);
+        if (again) cards.after(again);
     });
 }

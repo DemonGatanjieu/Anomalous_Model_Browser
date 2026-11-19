@@ -73,14 +73,14 @@ class StarterTests(unittest.TestCase):
         sheet = (PLUGIN / "web" / "modules" / "ui_ai_starter_sheet.js").read_text(encoding="utf-8")
         words = (PLUGIN / "web" / "modules" / "locales.js").read_text(encoding="utf-8")
         cards = re.findall(r"\{ id: '(\w+)', icon: '\w+', tags: \[([^\]]*)\](?:, lines: \[(.*?)\])? \}", sheet)
-        self.assertEqual([card[0] for card in cards], ["try", "preset", "say", "picture", "private", "canvas"])
+        self.assertEqual([card[0] for card in cards], ["try", "plan", "say", "picture", "private", "canvas"])
         keys = set()
         for card, tags, lines in cards:
             keys |= {f"aiStart_{card}_title", f"aiStart_{card}_body"}
             keys |= {f"aiStart_{card}_{kind}" for kind in re.findall(r"\['(\w+)'\]", lines)}
             keys |= {f"aiStartTag_{tag}" for tag in re.findall(r"'(\w+)'", tags)} | {f"aiStartTagHint_{tag}" for tag in re.findall(r"'(\w+)'", tags)}
             keys |= {f"aiStartSheet_{kind}" for kind in re.findall(r"\['(\w+)'\]", lines)}
-        keys |= set(re.findall(r"t\('(aiStart\w+)'", sheet))
+        keys |= set(re.findall(r"t\('(aiStart\w+)'", sheet)) | {"aiStart_preset_title", "aiStart_preset_kept"}  # "Run my preset", a home card
         for key in sorted(keys):
             self.assertEqual(words.count(f"        {key}: "), 2, key)
 
