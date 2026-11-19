@@ -63,8 +63,100 @@
 
 .anomalous-ai-side-pane { display: flex; flex: 1; flex-direction: column; min-height: 0; }
 .anomalous-ai-side-pane[hidden] { display: none; }
-.anomalous-ai-side-pane.is-toolbox { gap: 12px; }
-.anomalous-ai-side-pane.is-toolbox > .anomalous-tb { min-height: 0; }
+/* What the task gives its AI (ui_ai_given.js): the message's unsent things, how strictly, then a part per kind
+   (pictures as small tiles, the rest as lines with a × to take back), the two ways to add at the foot. */
+.anomalous-ai-given { gap: 16px; }
+.anomalous-ai-stage-head .anomalous-ai-given-total:not(:empty) {
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--amb-current-bg);
+    color: var(--amb-current-text);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 18px;
+}
+.anomalous-ai-given-pending {
+    padding: 8px 10px;
+    border: 1px dashed color-mix(in srgb, var(--amb-warn) 55%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--amb-warn) 10%, transparent);
+    color: var(--amb-warn-text, var(--amb-warn));
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+.anomalous-ai-given > .anomalous-tb-modes { display: flex; padding: 2px; border: 0; border-radius: 999px; background: rgba(var(--amb-ink-rgb), 0.05); }
+.anomalous-ai-given > .anomalous-tb-modes .anomalous-tb-mode { flex: 1; justify-content: center; height: 30px; border-radius: 999px; font-size: 12.5px; }
+.anomalous-ai-given-note { color: var(--amb-text-dim); font-size: 12px; }
+.anomalous-ai-given-part { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.anomalous-ai-given-head { display: flex; align-items: center; gap: 7px; margin-bottom: 2px; color: var(--amb-text-soft); font-size: 12px; font-weight: 600; }
+.anomalous-ai-given-head .anomalous-tb-icon { display: inline-flex; color: var(--amb-link); }
+.anomalous-ai-given-count { padding: 0 7px; border-radius: 999px; background: rgba(var(--amb-ink-rgb), 0.08); font-size: 11px; line-height: 18px; }
+.anomalous-ai-given-hint { margin-left: auto; color: var(--amb-text-dim); font-size: 11.5px; font-weight: 400; }
+.anomalous-ai-given-pictures { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; }
+.anomalous-ai-given-pictures .anomalous-ai-image-card { width: auto; min-width: 0; }
+.anomalous-ai-given-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 6px; border-radius: 10px; }
+.anomalous-ai-given-row:hover { background: rgba(var(--amb-ink-rgb), 0.05); }
+.anomalous-ai-given-lead {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-soft);
+}
+.anomalous-ai-given-lead img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-ai-given-lead .anomalous-tb-type-art { width: 100%; height: 100%; }
+.anomalous-ai-given-lead .anomalous-tb-type-art > svg { width: 70%; }
+.anomalous-ai-given-lead .anomalous-tb-type-art-name { display: none; }
+.anomalous-ai-given-words { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.anomalous-ai-given-name,
+.anomalous-ai-given-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-given-name { color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
+.anomalous-ai-given-sub { color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-ai-given-back {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-dim);
+    cursor: pointer;
+}
+.anomalous-ai-given-back:hover:not(:disabled) { background: color-mix(in srgb, var(--amb-danger) 16%, transparent); color: var(--amb-text-main); }
+.anomalous-ai-given-back:disabled { opacity: 0.4; cursor: default; }
+.anomalous-ai-given-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 4px; }
+.anomalous-ai-given-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 36px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.07);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.anomalous-ai-given-add:hover { background: rgba(var(--amb-ink-rgb), 0.12); }
+.anomalous-ai-given-add.is-primary { background: var(--amb-btn-primary-bg, var(--amb-link)); color: var(--amb-btn-primary-text, #fff); }
+.anomalous-ai-given-add.is-primary:hover { filter: brightness(1.08); }
+/* "Add pictures": the gallery grid in a window, the count and Send at the foot. */
+.anomalous-ai-connect-dialog.is-given-pick { width: min(760px, 92vw); }
+.anomalous-ai-given-pick { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.anomalous-ai-given-pick .anomalous-ai-pics-grid { max-height: min(56vh, 520px); overflow-y: auto; }
+.anomalous-ai-given-pick-note { margin-right: auto; color: var(--amb-text-dim); font-size: 12px; }
 
 .anomalous-ai-side-map-pick {
     min-width: 0;
@@ -176,4 +268,3 @@ body.anomalous-ai-resizing, body.anomalous-ai-resizing * { cursor: col-resize !i
     scrollbar-gutter: stable;
     overscroll-behavior: contain;
 }
-.anomalous-tb.is-side .anomalous-tb-card-body { padding-right: 62px; }

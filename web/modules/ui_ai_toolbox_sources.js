@@ -2,8 +2,7 @@
  * Where the materials picker's things come from (ui_ai_toolbox.js): the page's node types and the
  * custom node packs among them as things to pick whole (what "@" names too, ui_ai_mention.js),
  * the second column that narrows a kind by a node's source, a prompt's origin, a model's type or
- * a way's job (a column in the large window; in the side panel one "Source: All ▾" button opening
- * a list to search, ui_ai_facet_menu.js), the base model chips of the models listed (as the Models
+ * a way's job, the base model chips of the models listed (as the Models
  * page has them, model_bases.js), the bar over the cards that picks the pack shown, and the bottom row's
  * two buttons for how strictly the AI keeps to the task's picks.
  */
@@ -13,7 +12,6 @@ import { nodeItems, nodeSources } from './ai_toolbox_data.js';
 import { el, kindIcon, tbButton } from './ui_ai_toolbox_cards.js';
 import { icon } from './ui_ai_icons.js';
 import { sourceBadge } from './ui_ai_toolbox_icons.js';
-import { closeFacetMenu, toggleFacetMenu } from './ui_ai_facet_menu.js';
 import { typeLabel } from './ui_model_types.js';
 import { countBases } from './model_bases.js';
 
@@ -61,10 +59,9 @@ export function facets(items, kind) {
 /**
  * The second column into `side` (hidden with fewer than two choices): `beforeFacet` are the items it
  * narrows, `activeFacet` the choice on, `hasPack(key)` whether that pack is picked whole, `onPick(key)`
- * (null: everything). `isSide`: the side panel's one button, its list opening over `main`.
+ * (null: everything).
  */
-export function renderFacets({ side, main, isSide, kind, activeFacet, beforeFacet, hasPack, onPick }) {
-    closeFacetMenu();
+export function renderFacets({ side, kind, activeFacet, beforeFacet, hasPack, onPick }) {
     const list = facets(beforeFacet, kind);
     side.hidden = list.length < 2;
     if (side.hidden) return;
@@ -74,26 +71,12 @@ export function renderFacets({ side, main, isSide, kind, activeFacet, beforeFace
         // The whole name in a tooltip only when the row cuts it short.
         node.onpointerenter = () => { node.title = node.children[1].scrollWidth > node.children[1].clientWidth ? label : ''; };
         node.append(el('span', 'anomalous-tb-facet-count', String(count)));
-        if (activeFacet === facet && isSide) node.append(icon('check', 14));
         if (facet && hasPack(facet)) node.classList.add('has-pack');
         return node;
     };
-    const title = t(kind === 'nodes' ? 'aiTbSources' : 'aiTbNarrow');
-    const rows = () => [row(null, t('aiTbEverything'), beforeFacet.length),
-        ...list.map(facet => row(facet.key, facet.label, facet.count, facet.source ? sourceBadge(facet.source, 22) : null))];
-    if (!isSide) {
-        side.replaceChildren(el('div', 'anomalous-tb-facets-title', title), ...rows());
-        return;
-    }
-    // The side panel: one button saying what is shown, opening the list to pick from (and search).
-    const current = list.find(facet => facet.key === activeFacet);
-    const open = tbButton(`anomalous-tb-facet-open${current && hasPack(current.key) ? ' has-pack' : ''}`, [
-        current?.source ? sourceBadge(current.source, 20) : icon('list', 15),
-        el('span', 'anomalous-tb-facet-open-label', `${title}${t('wordColon')}${current?.label || t('aiTbEverything')}`),
-        el('span', 'anomalous-tb-facet-count', String(current?.count ?? beforeFacet.length)), icon('chevronDown', 14)],
-    () => toggleFacetMenu({ host: main, top: side.offsetTop + side.offsetHeight, title, rows: rows(), button: open }), t('aiTbPickSource'));
-    open.setAttribute('aria-haspopup', 'listbox');
-    side.replaceChildren(open);
+    side.replaceChildren(el('div', 'anomalous-tb-facets-title', t(kind === 'nodes' ? 'aiTbSources' : 'aiTbNarrow')),
+        row(null, t('aiTbEverything'), beforeFacet.length),
+        ...list.map(facet => row(facet.key, facet.label, facet.count, facet.source ? sourceBadge(facet.source, 22) : null)));
 }
 
 /** The base model chips of `models` into `baseBar` (hidden with fewer than two): `active` is the one on (null: all), `onPick(family)`. */
@@ -165,8 +148,8 @@ export function renderModes({ active, disabled, onPick }) {
 }
 
 /** Updates the center column's subheader: folds the title/count into the base bar in full models view to avoid empty space. */
-export function renderSubhead({ gridHead, baseBar, isSide, kind, facetLabel, countText }) {
-    const compactBases = !baseBar.hidden && !isSide;
+export function renderSubhead({ gridHead, baseBar, kind, facetLabel, countText }) {
+    const compactBases = !baseBar.hidden;
     gridHead.hidden = compactBases;
     if (compactBases) {
         baseBar.append(el('span', 'anomalous-tb-bases-count', facetLabel ? `${facetLabel} · ${countText}` : countText));

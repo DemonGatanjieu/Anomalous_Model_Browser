@@ -1,6 +1,6 @@
 /**
  * The message box's "+" button menu (plugged into web/modules/ui_ai_message.js): opens the
- * single materials picker in the workbench's side column on models, ways, or other materials
+ * materials picker's window on models, ways, or other materials
  * (combos, saved workflows, prompts, nodes), or opens the shared "Build a new one (text to
  * image)" dialog for this task, with a quiet hint about "@" at the bottom.
  */

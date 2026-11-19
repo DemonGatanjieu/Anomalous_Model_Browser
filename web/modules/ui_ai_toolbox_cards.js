@@ -3,11 +3,9 @@
  * combo, workflow, prompt, node type or whole custom node pack: a node shows itself in miniature
  * (its sockets in ComfyUI's colours, outputs on the right, how many settings) under its source's
  * badge; combos, workflows and models show their cover; a prompt shows its text, a way what it is
- * for. A press puts it on the message being written or takes it off, the star keeps it among the
- * favourites; in the large window a press shows it in the detail column and its circle (or the bar over
- * its cover, or the detail's main button) puts it on the message; what the task already has says "Given" and, where the picker lists those, can be
- * taken back. In the side panel a card is one line instead (rowCard: its badge or a small cover,
- * its name and where it is from), so a short panel still lists many. The detail pane shows the
+ * for. The star keeps it among the favourites; a press shows it in the detail column and its circle (or
+ * the bar over its cover, or the detail's main button) puts it on the message being written or takes it
+ * off; what the task already has says "Given" and, where the picker lists those, can be taken back. The detail pane shows the
  * card in focus in full, and for a combo or workflow can put just the prompt inside it on the
  * message. A model says its version apart from its name; one with several is one card, whose
  * version opens the list to show another (ctx.showVersion); a version its name already ends with is not said
@@ -280,35 +278,8 @@ export function syncNoteInputs(root, item, text) {
     }
 }
 
-/** A card as one line, for the side panel: badge or small cover, name, where it is from. */
-export function rowCard(item, ctx) {
-    const node = el('div', `anomalous-tb-card is-row is-${item.kind}${ctx.picked(item) ? ' is-picked' : ''}${ctx.given(item) ? ' is-given' : ''}`);
-    node.tabIndex = 0;
-    node.setAttribute('role', 'button');
-    node.setAttribute('aria-pressed', String(ctx.picked(item)));
-    node.dataset.key = `${item.kind}|${item.id}`;
-    const lead = el('span', 'anomalous-tb-row-lead');
-    if (item.kind === 'nodes' || item.kind === 'packs') lead.append(sourceBadge(item.source, 26));
-    else if (item.kind === 'prompts') lead.append(icon('prompts', 17));
-    else if (item.kind === 'ways') lead.append(icon('blocks', 17));
-    else lead.append(picture(item, 'anomalous-tb-row-cover'));
-    const text = el('div', 'anomalous-tb-row-text');
-    const name = item.short || item.title || item.positive || item.id;
-    const from = item.kind === 'nodes' ? [item.category?.split('/').pop(), item.paid ? t('aiTbPaid') : ''].filter(Boolean).join(' · ')
-        : item.kind === 'packs' ? t('aiTbPackCount', { count: item.count })
-        : item.kind === 'ways' ? item.about
-        : item.kind === 'prompts' && item.title ? item.positive : item.sub;
-    text.append(el('div', 'anomalous-tb-row-title', name));
-    const version = item.kind === 'models' ? versionMark(item, ctx) : null;
-    if (version) text.append(version);
-    else if (from) text.append(el('div', 'anomalous-tb-row-sub', from));
-    text.title = [name, from].filter(Boolean).join('\n');
-    node.append(lead, text, givenBadge(ctx, item), takeBackButton(ctx, item));
-    return controls(node, item, ctx);
-}
-
-/** The circle, the star and ⓘ of a card, and what a press and a key do: in the large window a press shows the
- * card's detail and the circle puts it on the message; in the side panel a press does that. */
+/** The circle and the star of a card, and what a press and a key do: a press shows the card's detail, the
+ * circle puts it on the message. */
 function controls(node, item, ctx) {
     node.classList.toggle('is-in-pack', Boolean(ctx.inPack?.(item))); // its whole pack is picked
     const check = el('button', 'anomalous-tb-check');
@@ -328,16 +299,8 @@ function controls(node, item, ctx) {
         event.stopPropagation();
         void ctx.star(item);
     };
-    const info = el('button', 'anomalous-tb-info');
-    info.type = 'button';
-    info.title = t('aiTbDetail');
-    info.append(icon('info', 15));
-    info.onclick = (event) => {
-        event.stopPropagation();
-        ctx.focus(item);
-    };
-    node.append(info, star, check);
-    const press = () => (ctx.select && !ctx.side?.() ? ctx.select(item) : ctx.toggle(item));
+    node.append(star, check);
+    const press = () => ctx.select(item);
     node.onclick = press;
     node.onkeydown = (event) => {
         if (event.target === node && (event.key === 'Enter' || event.key === ' ')) {
@@ -430,7 +393,7 @@ export function detail(item, ctx) {
     const take = el('button', `anomalous-tb-take${ctx.picked(item) ? ' is-on' : ''}`);
     take.type = 'button';
     take.append(icon(ctx.picked(item) ? 'check' : 'plus', 15), el('span', '', t(ctx.picked(item) ? 'aiTbPicked' : 'aiTbPick')));
-    take.onclick = () => ctx.toggle(item, true, true);
+    take.onclick = () => ctx.toggle(item, true);
     const star = el('button', `anomalous-tb-like${ctx.favorite(item) ? ' is-on' : ''}`);
     star.type = 'button';
     star.append(icon(ctx.favorite(item) ? 'starOn' : 'star', 15), el('span', '', t(ctx.favorite(item) ? 'aiToolboxUnfavorite' : 'aiToolboxFavorite')));

@@ -46,7 +46,7 @@ import { shared } from './ui_ai_shared.js';
 import { drawOutputsLine, newOutputs } from './ui_ai_outputs.js';
 import { compareBar, setMarker } from './ui_ai_images.js';
 import { openMarker } from './ui_ai_marker.js';
-import { toolboxCount } from './ui_ai_toolbox.js';
+import { givenCount } from './ui_ai_given.js';
 import { drawStepRow, scrollToStep } from './ui_ai_step_body.js';
 import { chainRow, looksRow, undoChanges } from './ui_ai_chain.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewTabs } from './ui_ai_side_views.js';
@@ -226,7 +226,7 @@ function renderTask() {
     const asking = panelSteps(task).reduce((sum, step) => sum + openQuestions(step), 0);
     const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
     const unseen = newOutputs(state.stage, task, shown && state.stage.view === 'outputs');
-    const badges = { stage: stageBadge(task, state.stage, shown && state.stage.view === 'stage'), asking, toolbox: toolboxCount(task), outputs: unseen };
+    const badges = { stage: stageBadge(task, state.stage, shown && state.stage.view === 'stage'), asking, toolbox: givenCount(task), outputs: unseen };
     const usesTabs = state.page.classList.contains('uses-tabs');
     const tabsKey = JSON.stringify([resolveLocale(), shown, usesTabs, state.stage.tab, state.stage.view, badges, Boolean(state.stage.lit)]);
     state.tabs = () => viewTabs(state.stage, shown, badges, view => pickView(state.stage, view, false, task, renderTask, () => void refresh()), showTimeline);
@@ -392,14 +392,13 @@ async function select(id) {
 setMarker(image => state.task && openMarker(image, state.task.id, () => void refresh(), { secret: Boolean(state.task.private) }));
 
 /**
- * The materials picker docks in the side column while this page is shown; a run's step opens its shape there.
- * Connected when the page is first drawn, not when this file loads: ui_ai_toolbox.js is in an import cycle with
- * this file and ComfyUI loads every file of the plugin as an extension, so either may run first.
+ * The side column's materials view and the picker get the task's message box from here; a run's step opens its
+ * shape there. Connected when the page is first drawn, not when this file loads: ui_ai_toolbox.js is in an import
+ * cycle with this file and ComfyUI loads every file of the plugin as an extension, so either may run first.
  */
 function connectSideOnce() {
     shared.openMap ||= connectSide({
-        side: state.stage, task: () => state.task, redraw: () => renderTask(), message: () => state.view?.message, owner: () => state.owner, tabbed: () => state.page.classList.contains('uses-tabs'),
-        box: () => (visible() && state.page?.querySelector('.anomalous-ai-stage')) || null,
+        side: state.stage, task: () => state.task, redraw: () => renderTask(), message: () => state.view?.message, owner: () => state.owner,
     });
 }
 

@@ -1,8 +1,7 @@
 /**
  * "给 AI 的素材": the one picker for what the user hands the AI in a task (api/ai_toolbox.py),
- * opened by the message box's "+" (ui_ai_plus.js), the side column's switch or "/素材". A view of
- * the workbench's side column that leaves the timeline and the message box usable (the kinds as
- * tabs, a line per item, a card's detail over them), or, expanded, a large window: a search over
+ * opened by the message box's "+" (ui_ai_plus.js) or the materials view's "Add materials"
+ * (ui_ai_given.js, the side column's list of what the task gives its AI). A large window: a search over
  * everything, the kinds on the left (models, ways, combos, workflows, prompts, node types), the
  * filters all / given / favourites / recent, a second column to narrow by source, type or job
  * (ui_ai_toolbox_sources.js), the base model chips and a model's versions on one card as the
@@ -17,15 +16,15 @@
 import { resolveLocale, translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { aiWindow } from './ui_ai_connect.js';
-import { KINDS, PICK_KINDS, keptCatalog, loadPickerSources, prefetchToolbox, searchItems } from './ai_toolbox_data.js';
+import { KINDS, PICK_KINDS, keptCatalog, loadPickerSources, searchItems } from './ai_toolbox_data.js';
 import {
-    countRecent, emptyPicks, filterPickerItems, keepLayout, keyOf, pickOffered,
+    countRecent, emptyPicks, filterPickerItems, keyOf, pickOffered,
     readPickerState, readRecent, rememberBase, rememberFacet, rememberKind,
-    resolveOpenKind, savedLayout, standingInWithFavorites, taskEffectivePicks, totalPicks,
+    resolveOpenKind, standingInWithFavorites, taskEffectivePicks, totalPicks,
 } from './ai_toolbox_state.js';
-import { card, detail, el, refreshCard, renderPickedBar, rowCard, syncNoteInputs, tbButton as button } from './ui_ai_toolbox_cards.js';
+import { card, detail, el, refreshCard, renderPickedBar, syncNoteInputs, tbButton as button } from './ui_ai_toolbox_cards.js';
 import { facetOf, facets, packItems, pageNodes, renderBases, renderFacets, renderFilterTabs, renderKindRail, renderModes, renderPackBar, renderSubhead } from './ui_ai_toolbox_sources.js';
-import { icon, iconButton } from './ui_ai_icons.js';
+import { icon } from './ui_ai_icons.js';
 import { emptyPicture } from './ui_ai_toolbox_icons.js';
 import { baseFamily, countBases } from './model_bases.js';
 import { groupByPage, pageId, versionId } from './model_versions.js';
@@ -38,7 +37,6 @@ import { remindUnpicked } from './ui_ai_model_lock.js';
 const CHUNK = 60;
 const SEARCH_DELAY_MS = 120;
 let openNow = null; // {task, body, close, switchKind, updateTask}
-let sideHost = null; // (body, expand) => close, or null when the AI page is not shown
 
 async function postJson(url, body) {
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -52,14 +50,13 @@ const total = box => totalPicks(box, PICK_KINDS);
 
 /**
  * Opens or switches the single picker for `task`; `changed()` runs after a task pick update.
- * `options`: `{ kind: 'models' | 'ways' | 'other' | null, layout, messageBox, onShow, focus, onClose }`.
+ * `options`: `{ kind: 'models' | 'ways' | 'other' | null, messageBox, focus, onClose, owner, messageBoxOf }`.
  */
 export async function openToolbox(task, changed = () => {}, options = {}) {
     if (openNow?.body.isConnected) {
         const same = openNow.task === task.id;
         if (same && options.kind) {
-            openNow.switchKind(resolveOpenKind(options.kind), task, options.layout, options.messageBox);
-            options.onShow?.();
+            openNow.switchKind(resolveOpenKind(options.kind), task, options.messageBox);
             return;
         }
         openNow.close();
@@ -133,7 +130,6 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     body.append(top, main, tray);
 
     let closeFrame = () => {};
-    let moving = false; // place() closes the frame to move the body, which is no closing of the picker
     let observer = null;
     let timer = null;
     scope.onDispose(() => {
@@ -141,38 +137,14 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         clearTimeout(timer);
     });
 
-    /** Shows the picker in the side column or as a large window, moving the same `body` (nothing is redrawn but
-     * the pane and the bottom row). `keep`: the user chose this layout, so it is the one remembered. */
-    function place(layout, keep = false) {
-        const scrolled = scroller.scrollTop;
-        forTask.remove();
-        searchBox.remove();
-        rail.remove();
-        body.remove();
-        moving = true;
-        closeFrame();
-        moving = false;
-        if (keep) keepLayout(layout);
-        const docked = layout === 'side' ? sideHost?.(body, () => place('full', true)) : null; // no column to dock in: the window
-        const changedLayout = body.classList.contains('is-side') !== Boolean(docked);
-        body.classList.toggle('is-side', Boolean(docked));
-        if (docked) {
-            top.replaceChildren(forTask, searchBox, filters);
-            main.replaceChildren(rail, side, gridWrap, pane);
-            closeFrame = docked;
-        } else {
-            top.replaceChildren(rail, filters);
-            main.replaceChildren(side, gridWrap, pane);
-            closeFrame = aiWindow(t('aiToolboxTitle'), body, () => { if (!moving) options.onClose?.(); }); // opened from elsewhere: back there
-            const dialog = body.closest('.anomalous-ai-connect-dialog');
-            dialog?.classList.add('is-toolbox');
-            const shut = dialog?.querySelector('.anomalous-ai-connect-close');
-            shut?.before(forTask, searchBox, iconButton('anomalous-tb-dock-btn', 'panel', t('aiTbDock'), () => place('side', true), { iconOnly: true }));
-        }
-        if (changedLayout && grid.childElementCount) drawGrid();
-        else scroller.scrollTop = scrolled;
-        drawPane();
-        drawTray();
+    /** The large window, with the task and the search in its title bar. */
+    function place() {
+        top.replaceChildren(rail, filters);
+        main.replaceChildren(side, gridWrap, pane);
+        closeFrame = aiWindow(t('aiToolboxTitle'), body, () => options.onClose?.()); // opened from elsewhere: back there
+        const dialog = body.closest('.anomalous-ai-connect-dialog');
+        dialog?.classList.add('is-toolbox');
+        dialog?.querySelector('.anomalous-ai-connect-close')?.before(forTask, searchBox);
     }
 
     const close = () => {
@@ -188,11 +160,11 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         get showTakeBack() { return state.filter === 'given'; },
         privateTask: () => Boolean(currentTask?.private), task: () => currentTask,
         noteOf: item => msg()?.noteOf?.(item.kind, item.id) || '',
-        setNote: (item, text) => { if (!picked(item)) toggleItem(item, false); msg()?.setNote?.(item.kind, item.id, text); syncNoteInputs(body, item, text); drawPickedRow(); },
+        setNote: (item, text) => { if (!picked(item)) toggleItem(item); msg()?.setNote?.(item.kind, item.id, text); syncNoteInputs(body, item, text); drawPickedRow(); },
         focus: (item) => { state.focus = item; drawPane(); },
         select: (item) => { state.focus = item; for (const [key, node] of cards) node.classList.toggle('is-focus', key === keyOf(item.kind, item.id)); drawPane(); },
-        isFocus: item => state.focus?.kind === item.kind && state.focus?.id === item.id, ticked: item => state.ticked.set(item.id, item), side: () => body.classList.contains('is-side'),
-        toggle: (item, focusNote = true, focusPaneNote = false) => toggleItem(item, focusNote, focusPaneNote),
+        isFocus: item => state.focus?.kind === item.kind && state.focus?.id === item.id, ticked: item => state.ticked.set(item.id, item),
+        toggle: (item, focusPaneNote = false) => toggleItem(item, focusPaneNote),
         star: item => setFavorite(item),
         promptPicked: id => Boolean(msg()?.has('prompts', id)),
         pickPrompt: id => togglePrompt(id),
@@ -212,7 +184,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     function openModelPage(item) {
         const [, type, pathIdx, rel] = /^([\w-]+):(\d+):(.+)$/.exec(String(item.id)) || [];
         if (!rel) return;
-        const again = { ...options, kind: state.kind, focus: item.id, layout: body.classList.contains('is-side') ? 'side' : 'full' };
+        const again = { ...options, kind: state.kind, focus: item.id };
         close();
         void openListedModel(options.owner, { type, path_idx: Number(pathIdx), rel, filename: item.file },
             () => { options.owner.goTo('ai'); void openToolbox(currentTask, changed, { ...again, messageBox: options.messageBoxOf?.() || messageBox }); });
@@ -225,18 +197,18 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         }
     }
 
-    function toggleItem(item, allowFocusNote = true, focusPaneNote = false) {
+    function toggleItem(item, focusPaneNote = false) {
         const handle = msg();
         if (!handle) return;
         state.notice = '';
         if (handle.has(item.kind, item.id)) {
             handle.remove(item.kind, item.id);
         } else {
-            if (!body.classList.contains('is-side')) ctx.select(item);
-            if (!handle.add(item, { focusNote: allowFocusNote && body.classList.contains('is-side') })) {
+            ctx.select(item);
+            if (!handle.add(item)) {
                 state.notice = t('aiTbMessageFull', { max: handle.count() + handle.room() });
                 drawTray();
-            } else if (focusPaneNote && !body.classList.contains('is-side')) {
+            } else if (focusPaneNote) {
                 drawPane(true);
             }
         }
@@ -244,14 +216,14 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
 
     function togglePrompt(id) {
         const item = byKey.get(keyOf('prompts', id));
-        if (item) toggleItem(item, false);
+        if (item) toggleItem(item);
     }
 
     function showVersion(item, version) {
         state.versions.set(pageId(item), versionId(version));
         version.versions = item.versions;
         const old = cards.get(keyOf('models', item.id));
-        const drawn = (body.classList.contains('is-side') ? rowCard : card)(version, ctx);
+        const drawn = card(version, ctx);
         old?.replaceWith(drawn);
         cards.delete(keyOf('models', item.id));
         cards.set(keyOf('models', version.id), drawn);
@@ -366,7 +338,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     let facetOn = null; // the second column's choice the grid shows now (shown)
     function drawPackBar() {
         const pack = state.kind === 'nodes' && facetOn ? byKey.get(keyOf('packs', facetOn)) : null;
-        renderPackBar({ packBar, pack, on: Boolean(pack && msg()?.has('packs', pack.id)), onToggle: () => pack && toggleItem(pack, false) });
+        renderPackBar({ packBar, pack, on: Boolean(pack && msg()?.has('packs', pack.id)), onToggle: () => pack && toggleItem(pack) });
     }
 
     function drawGrid() {
@@ -375,7 +347,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         const { items, matchedFiles, beforeFacet, beforeBase, facet, base } = shown();
         facetOn = facet;
         renderFacets({
-            side, main, isSide: body.classList.contains('is-side'), kind: state.kind, activeFacet: facet, beforeFacet,
+            side, kind: state.kind, activeFacet: facet, beforeFacet,
             hasPack: key => Boolean(msg()?.has('packs', key)),
             onPick: (key) => { state.facet = key; rememberFacet(state.kind, key); drawGrid(); },
         });
@@ -383,7 +355,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         const facetLabel = facet ? (facets(beforeFacet, state.kind).find(each => each.key === facet)?.label || facet) : '';
         const countText = state.kind === 'models' && matchedFiles > items.length
             ? t('aiTbCountFolded', { cards: items.length, files: matchedFiles }) : t('aiTbCount', { count: items.length });
-        renderSubhead({ gridHead, baseBar, isSide: body.classList.contains('is-side'), kind: state.kind, facetLabel, countText });
+        renderSubhead({ gridHead, baseBar, kind: state.kind, facetLabel, countText });
         drawPackBar();
         const loadError = state.kind === 'ways' ? state.waysError : state.kind !== 'nodes' ? state.error : '';
         if (!kindLoaded(state.kind)) {
@@ -402,7 +374,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
             const next = items.slice(drawn, drawn + CHUNK);
             drawn += next.length;
             grid.append(...next.map((item) => {
-                const node = (body.classList.contains('is-side') ? rowCard : card)(item, ctx);
+                const node = card(item, ctx);
                 cards.set(keyOf(item.kind, item.id), node);
                 return node;
             }));
@@ -415,13 +387,10 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     }
 
     function drawPane(focusNote = false) {
-        const isSide = body.classList.contains('is-side');
-        pane.hidden = isSide && !state.focus;
         if (state.focus) {
             const activeNote = pane.contains(document.activeElement) && document.activeElement.matches?.('.anomalous-tb-note-input');
             if (activeNote && document.activeElement.dataset.refKey === keyOf(state.focus.kind, state.focus.id)) return;
-            const back = button('anomalous-tb-pane-back', [icon('chevronLeft', 16), t('aiTbBack')], () => { state.focus = null; drawPane(); });
-            pane.replaceChildren(...(isSide ? [back] : []), detail(state.focus, ctx));
+            pane.replaceChildren(detail(state.focus, ctx));
             if (focusNote) pane.querySelector('.anomalous-tb-note-input')?.focus();
             return;
         }
@@ -432,7 +401,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         pane.replaceChildren(box);
     }
 
-    const drawPickedRow = () => renderPickedBar(pickedRow, body.classList.contains('is-side') ? [] : (msg()?.items?.() || []), ctx);
+    const drawPickedRow = () => renderPickedBar(pickedRow, msg()?.items?.() || [], ctx);
 
     function drawTray() {
         const nodes = [];
@@ -453,7 +422,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         else if (standingIn()) status.append(button('anomalous-tb-status-btn is-soft', t('aiTbFavStandIn', { count }), showGiven));
         status.append(el('span', 'anomalous-tb-msg-count', t('aiTbOnMessage', { count: msg()?.count() || 0 })));
         row.append(status, renderModes({ active: taskEffective()?.mode || 'prefer', disabled: state.saving || !count, onPick: mode => void setMode(mode) }));
-        if (!body.classList.contains('is-side')) row.append(button('anomalous-tb-done', t('aiTbDone'), async () => { if (await remindUnpicked(state.ticked, picked, item => toggleItem(item, false))) close(); }));
+        row.append(button('anomalous-tb-done', t('aiTbDone'), async () => { if (await remindUnpicked(state.ticked, picked, item => toggleItem(item))) close(); }));
         nodes.push(row);
         tray.replaceChildren(...nodes);
     }
@@ -466,7 +435,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         drawTray();
     }
 
-    function switchTo(kind, nextTask = currentTask, nextLayout = null, nextBox = messageBox) {
+    function switchTo(kind, nextTask = currentTask, nextBox = messageBox) {
         currentTask = nextTask;
         attachMessageBox(nextBox);
         rememberKind(kind);
@@ -476,8 +445,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         state.base = kind === 'models' ? mem.base : null;
         state.focus = null;
         state.notice = '';
-        if (nextLayout && (body.classList.contains('is-side') ? 'side' : 'full') !== nextLayout) place(nextLayout);
-        else drawAll();
+        drawAll();
         search.focus();
     }
 
@@ -537,7 +505,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
         }
     });
 
-    place(options.layout || savedLayout());
+    place();
     openNow = { task: task.id, body, close, switchKind: switchTo, updateTask };
     drawAll();
     search.focus();
@@ -564,27 +532,7 @@ export async function openToolbox(task, changed = () => {}, options = {}) {
     });
 }
 
-/** Where the side panel goes on the AI page: `host(body, expand)` puts it there and returns its close, or null. */
-export function setToolboxHost(host) {
-    sideHost = host;
-}
-
-/** Whether the picker is open for task `taskId` (shown or behind another view of the side column). */
-export const toolboxOpenFor = taskId => Boolean(openNow?.body.isConnected && openNow.task === taskId);
-
 /** The task as the page has it now, for the picker open on it: its picks changed when a message handed things over. */
 export function syncToolboxTask(task) {
-    if (toolboxOpenFor(task.id)) openNow.updateTask(task);
-}
-
-/** Puts the picker away (the workbench moved to another task). */
-export function closeToolbox() {
-    openNow?.close();
-    openNow = null;
-}
-
-/** How many materials task `task` has; reads the catalogue ahead for the picker. */
-export function toolboxCount(task) {
-    prefetchToolbox();
-    return total(task.toolbox);
+    if (openNow?.body.isConnected && openNow.task === task.id) openNow.updateTask(task);
 }

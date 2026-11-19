@@ -2,11 +2,12 @@
  * The AI workbench's side column shows one view at a time, picked by the switch at the top right
  * of the window (its title bar, on the AI page only), as an app's side panel is: the stage (the AI's panels, ui_ai_side.js), the
  * shape of a run at full size (ui_ai_run_map.js; the newest run, or one picked from the list or
- * from its step in the timeline), the task's decisions (ui_ai_decisions.js), the materials
- * picker (ui_ai_toolbox.js) docked there, what the task made (ui_ai_outputs.js), or the ready-made
- * ways the AI may use (ui_ai_blocks.js).
+ * from its step in the timeline), the task's decisions (ui_ai_decisions.js), what the task gives its
+ * AI (ui_ai_given.js; its "Add materials" and the message box's "+" open the picker's window,
+ * ui_ai_toolbox.js), what the task made (ui_ai_outputs.js), or the ready-made ways the AI may use
+ * (ui_ai_blocks.js).
  * Picking the view that is shown closes the column. Each view keeps its own pane, so going back
- * finds it as it was: a scrolled stage, materials picked but not handed over yet. The column is a
+ * finds it as it was: a scrolled stage. The column is a
  * card of its own beside the timeline; its left edge drags it wider or narrower (kept on this
  * browser, the timeline keeps room; the whole gap beside the card catches the pointer, and the
  * arrow keys move it when focused), a double click there puts the usual width back.
@@ -17,9 +18,10 @@
 import { resolveLocale, translate as t } from './locales.js';
 import { emptyState } from './ui_ai_art.js';
 import { timeLabel } from './activity_log.js';
-import { icon, iconButton } from './ui_ai_icons.js';
+import { icon } from './ui_ai_icons.js';
 import { runMapBox } from './ui_ai_run_map.js';
-import { closeToolbox, openToolbox, setToolboxHost, syncToolboxTask, toolboxOpenFor } from './ui_ai_toolbox.js';
+import { openToolbox, syncToolboxTask } from './ui_ai_toolbox.js';
+import { renderGivenView } from './ui_ai_given.js';
 import { panelSteps, renderStage, sideHead } from './ui_ai_side.js';
 import { renderDecisionsView } from './ui_ai_decisions.js';
 import { renderOutputsView } from './ui_ai_outputs.js';
@@ -101,30 +103,25 @@ export function viewTabs(side, shown, badges, onPick, onTimeline) {
     return bar;
 }
 
-let connectedPage = null; // connectSide's `page`: where the picker gets the task's message box from
+let connectedPage = null; // connectSide's `page`: where the materials view and the picker get the task's message box from
+
+/** The picker's window for `task`, on `kind` (else the one shown last); a model's own page opens from it, its Back comes back. */
+function openPicker(task, changed, kind = null) {
+    void openToolbox(task, changed, { kind, messageBox: connectedPage.message(), owner: connectedPage.owner(), messageBoxOf: () => connectedPage.message() });
+}
 
 /**
  * The switch was pressed on `view`: shows it, or closes the column when it is what is shown.
- * The materials view opens the picker first when it is not open (it comes in through its host),
- * or switches its kind when opened from "+" (`openKind`).
+ * From the message box's "+" (`openKind`) the picker's window opens on that kind instead.
  */
 export function pickView(side, view, shown, task, redraw, changed, openKind = null) {
-    if (!openKind && shown && side.view === view && side.tab === 'stage') {
+    if (openKind) {
+        openPicker(task, changed, openKind);
+        return;
+    }
+    if (shown && side.view === view && side.tab === 'stage') {
         side.hidden = true;
         side.tab = 'timeline';
-    } else if (view === 'toolbox' && (!toolboxOpenFor(task.id) || openKind)) {
-        void openToolbox(task, changed, {
-            kind: openKind,
-            layout: openKind ? 'full' : null, // from "+": open the full window by default so cards and notes are easy to see
-            messageBox: connectedPage.message(),
-            owner: connectedPage.owner(), // a model's own page opens from the picker; its Back comes back
-            messageBoxOf: () => connectedPage.message(),
-            onShow: () => {
-                Object.assign(side, { view: 'toolbox', hidden: false, tab: 'stage' });
-                redraw();
-            },
-        });
-        return;
     } else {
         Object.assign(side, { view, hidden: false, tab: 'stage', asked: view === 'stage' });
     }
@@ -132,9 +129,8 @@ export function pickView(side, view, shown, task, redraw, changed, openKind = nu
 }
 
 /** Whether the column is on screen: not closed, and its view has something (the stage: panels, or
- * the user asked for it, and sees it is empty; the picker: open). */
+ * the user asked for it, and sees it is empty). */
 export function sideShown(side, task) {
-    if (side.view === 'toolbox' && !toolboxOpenFor(task.id)) side.view = 'stage';
     return !side.hidden && (side.view !== 'stage' || panelSteps(task).length > 0 || Boolean(side.asked));
 }
 
@@ -236,11 +232,11 @@ export function renderMapView(pane, task, side, ctx) {
 /**
  * The column into `box` for `task`: the view picked, the tabs of a window with no room for it
  * (`ctx.tabs()`), the stage drawn while there are panels, the run's shape while it is the view.
- * `ctx`: the stage's (ui_ai_side.js renderStage) with `close()`. A picker left from another task is put away.
+ * `ctx`: the stage's (ui_ai_side.js renderStage) with `close()`, `owner` and `changed()`. The picker's window
+ * open on it gets the task as the page has it now.
  */
 export function drawSide(box, task, side, ctx, arrived = null) {
     const panes = sidePanes(box);
-    if (panes.toolbox.dataset.task && panes.toolbox.dataset.task !== task.id) closeToolbox();
     syncToolboxTask(task);
     const opened = panes.blocks.hidden && side.view === 'blocks'; // the ways are read again when the view comes up
     for (const [view, pane] of Object.entries(panes)) pane.hidden = view !== side.view;
@@ -262,6 +258,10 @@ export function drawSide(box, task, side, ctx, arrived = null) {
     if (side.view === 'map') renderMapView(panes.map, task, side, ctx);
     if (side.view === 'decisions') renderDecisionsView(panes.decisions, task, ctx);
     if (side.view === 'outputs') renderOutputsView(panes.outputs, task, ctx);
+    if (side.view === 'toolbox') {
+        renderGivenView(panes.toolbox, task, { close: ctx.close, owner: ctx.owner, changed: ctx.changed,
+            message: () => connectedPage?.message(), openPicker: () => openPicker(task, ctx.changed) });
+    }
     // The ways and skills: read again when the view comes up, drawn the first time and when what they show of the task changed.
     const shows = JSON.stringify([task.id, task.private === true, Boolean(task.ended), task.toolbox?.ways || []]);
     const draw = !panes.blocks.childElementCount || panes.blocks.dataset.shows !== shows;
@@ -272,34 +272,12 @@ export function drawSide(box, task, side, ctx, arrived = null) {
 }
 
 /**
- * Once: the materials picker docks in the column while the AI page is shown (else it is a window).
- * `page`: {side, task(), box() (the column, or null when the page is not shown), redraw(),
- * message() (the task's message box, whose `refs` the picker puts things on), tabbed() (no room
- * for the column beside the timeline: it is a tab over it)}. Returns how a run's step shows its
- * shape there at full size.
+ * Once: `page` is {side, task(), redraw(), message() (the task's message box, whose `refs` the picker puts
+ * things on and the materials view says), owner()}. Returns how a run's step shows its shape in the
+ * column at full size.
  */
 export function connectSide(page) {
     connectedPage = page;
-    setToolboxHost((body, expand) => {
-        const box = page.box();
-        const task = page.task();
-        if (!box || !task) return null;
-        const pane = sidePanes(box).toolbox;
-        const top = el('div', 'anomalous-tb-dock-head');
-        top.append(icon('sparkle', 16), el('div', 'anomalous-tb-dock-title', t('aiToolboxTitle')),
-            iconButton('anomalous-tb-dock-btn', 'expand', t('aiTbExpand'), expand, { iconOnly: true }),
-            iconButton('anomalous-tb-dock-btn', 'close', t('close'), closeToolbox, { iconOnly: true }));
-        pane.replaceChildren(top, body);
-        pane.dataset.task = task.id;
-        Object.assign(page.side, { view: 'toolbox', hidden: false, tab: 'stage' });
-        queueMicrotask(page.redraw); // the picker is open by then
-        return () => {
-            pane.replaceChildren();
-            delete pane.dataset.task;
-            if (page.side.view === 'toolbox') page.side.view = 'stage';
-            queueMicrotask(page.redraw);
-        };
-    });
     return (stepId) => {
         const newest = mappedRuns(page.task()).at(-1)?.id;
         Object.assign(page.side, { view: 'map', mapStep: stepId === newest ? null : stepId, hidden: false, tab: 'stage' });

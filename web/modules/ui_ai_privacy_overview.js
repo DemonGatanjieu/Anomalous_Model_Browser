@@ -220,7 +220,7 @@ export function openPrivacyOverview(task, { onTogglePrivacy, onChanged } = {}) {
         const split = readLayout() === 'split' && window.matchMedia(WIDE).matches;
         const openModel = (model) => { // the materials window on it; closing it comes back here
             close();
-            void openToolbox(task, () => onChanged?.(), { kind: 'models', focus: model.id, layout: 'full', onClose: () => openPrivacyOverview(task, { onTogglePrivacy, onChanged }) });
+            void openToolbox(task, () => onChanged?.(), { kind: 'models', focus: model.id, onClose: () => openPrivacyOverview(task, { onTogglePrivacy, onChanged }) });
         };
         const rowCtx = { draftNotes, onDraftChange, onCommit, onAdjusted, openModel };
         const noteFor = (token, named) => {

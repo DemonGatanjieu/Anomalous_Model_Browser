@@ -12,7 +12,6 @@ export const DEFAULT_OTHER_KIND = 'combos';
 export const RECENT_MAX = 30;
 export const STATE_KEY = 'anomalous.aiToolboxState';
 export const RECENT_KEY = 'anomalous.aiToolboxRecent';
-export const LAYOUT_KEY = 'anomalous.aiToolboxLayout';
 
 export const keyOf = (kind, id) => `${kind}\0${id}`;
 export const emptyPicks = kinds => Object.fromEntries(kinds.map(kind => [kind, []]));
@@ -27,23 +26,6 @@ const defaultStorage = () => {
         return null;
     }
 };
-
-export function savedLayout(storage = defaultStorage(), fallback = 'side') {
-    try {
-        const kept = storage?.getItem(LAYOUT_KEY);
-        return kept === 'full' || kept === 'side' ? kept : fallback;
-    } catch (_) {
-        return fallback;
-    }
-}
-
-export function keepLayout(layout, storage = defaultStorage()) {
-    try {
-        storage?.setItem(LAYOUT_KEY, layout);
-    } catch (_) {
-        /* only not remembered */
-    }
-}
 
 function readJson(storage, key, fallback) {
     if (!storage) return fallback;

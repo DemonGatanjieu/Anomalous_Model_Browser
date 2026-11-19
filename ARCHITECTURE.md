@@ -415,9 +415,8 @@ covered by the `styles.css` manifest.
   as data (`web/modules/mcp_run.js` refusal), each problem becomes a line naming the node, what
   is wrong and the tool that fixes it. `tests/test_run_refusal.py`, `tests/mcp_run.mjs`.
   `api/ai_toolbox.py` keeps what the user hands the AI to work with in a task ("给 AI 的素材",
-  `web/modules/ui_ai_toolbox.js`: the one picker, opened as the full large window by default from
-  the message box's "+" (`ui_ai_plus.js` via `ui_ai_side_views.js`), or docked in the side column
-  (`setToolboxHost`) from the switch or `/素材`: full mode places the task badge and search in
+  `web/modules/ui_ai_toolbox.js`: the one picker, a large window opened from the message box's "+"
+  (`ui_ai_plus.js` via `ui_ai_side_views.js`) or the materials view's "Add materials"; it places the task badge and search in
   the modal header and the kinds (models, ways, combos, workflows, prompts, node types) in the top
   toolbar beside the filters all / given / favourites / recent, with a compact 3-column body
   (facets, card grid with base model chips and folded model versions, and detail pane with live
@@ -438,13 +437,16 @@ covered by the `styles.css` manifest.
   the rest in one answer from `api/ai_toolbox_catalog.py` (combos, workflows with covers and prompts,
   prompts saved or inside combos and workflows as `combo:<name>` / `workflow:<name>`, models with
   covers), read ahead when a task header is drawn and kept a minute.
-  `web/modules/ui_ai_facet_menu.js` is the side panel's list of sources (or types) under its
-  "Source: All ▾" button: a search over the names, ↑ ↓ and Enter, the row under the pointer lit
-  and the one shown ticked.
+  `web/modules/ui_ai_given.js` is the side column's materials view (the switch's "Materials", `/素材`): what the
+  task gives its AI by kind, first the pictures handed over (its `about`, `user_pictures` steps, pictures on sent
+  messages), then each pick with its × (the picks posted without it; favourites standing in become the task's own),
+  the mode as two buttons, the unsent message's things said over them; "Add materials" opens the picker, "Add
+  pictures" a gallery grid (`ui_ai_gallery_pick.pictureGrid`) handed straight to the task
+  (`POST /anomalous/ai_tasks/{id}/pictures`). Its count is the switch's badge (`givenCount`).
   `web/modules/ui_ai_toolbox_cards.js` draws the cards (in the large window a bar over the cover on the pointer
   or focus, Put on the message and a model's own page, and a picked card's note to the AI on the card,
   `cardExtras`; the detail pane follows a card the pointer rests on, PEEK_DELAY, and keeps a pressed one
-  until it is unpinned), the side panel's rows, the detail pane (a model's
+  until it is unpinned), the detail pane (a model's
   "Open its page" shows it in the browser through `ui_scan_lists.openListedModel`; its Back reopens the picker on it)
   (including the live message remark box with Hide support) and the full modal's picked-chips bar
   (`renderPickedBar`); `web/modules/ui_ai_toolbox_sources.js` renders the kind tabs (`renderKindRail`),
@@ -652,9 +654,9 @@ covered by the `styles.css` manifest.
   `anomalous_ai_stage_auto`; in a narrow window it lights the stage's tab instead). A timeline panel
   link reopens it; selecting a different task resets it. The stage is one view of the side
   column: `ui_ai_side_views.js` is the switch in the window title bar, AI page only (stage, a run's
-  node map at full size with a list of the runs, the decisions, the materials picker, the
+  node map at full size with a list of the runs, the decisions, what the task gives its AI, the
   results; the shown one again closes the column), one pane per view kept between switches
-  (each under `ui_ai_side.sideHead`), and the picker's dock there.
+  (each under `ui_ai_side.sideHead`).
   The task's header stays on top while the timeline scrolls. In a window too narrow
   for three columns the timeline and the side column are two tabs (a panel that asks brings the stage
   forward). The side column is a card whose left-edge grip sets its width (`--ai-side-w`, kept;

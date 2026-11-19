@@ -8,7 +8,6 @@ import {
     RECENT_MAX,
     countRecent,
     filterPickerItems,
-    keepLayout,
     keyOf,
     pickOffered,
     readPickerState,
@@ -19,7 +18,6 @@ import {
     rememberKind,
     resolveOpenKind,
     resolveRecentItems,
-    savedLayout,
     standingInWithFavorites,
     taskEffectivePicks,
     totalPicks,
@@ -98,15 +96,7 @@ test('recent items stay capped, newest-first, skipped for privacy, and drop miss
     assert.equal(countRecent(readRecent(storage), byKey, kind => kind === 'nodes' || kind === 'packs'), 2);
 });
 
-test('layout persistence, effective picks, and filterPickerItems helpers', () => {
-    const storage = memoryStorage();
-    assert.equal(savedLayout(storage), 'side');
-    assert.equal(savedLayout(storage, 'full'), 'full');
-    keepLayout('full', storage);
-    assert.equal(savedLayout(storage), 'full');
-    keepLayout('side', storage);
-    assert.equal(savedLayout(storage, 'full'), 'side');
-
+test('effective picks and filterPickerItems helpers', () => {
     const kinds = ['models', 'ways'];
     assert.equal(standingInWithFavorites({}, { models: ['m1'], ways: [] }, kinds), true);
     assert.equal(taskEffectivePicks({}, { models: ['m1'], ways: [] }, kinds).mode, 'prefer');

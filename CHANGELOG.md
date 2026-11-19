@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- AI 工作台右栏的「素材」改成一眼看全：打开就按类列出这个任务给了 AI 的所有东西。图片也算（开任务时带的、从图库发的、留言里附的都在），出图方法、模型、搭配、工作流、提示词、节点各一块，没有的类不显示；每个旁边一个 ×，点一下就收回。留言里还没发出去的，上面黄框提醒。「优先用 / 只能用」放在最上面。底下两个大按钮：「加素材」打开挑素材的大窗口，「加图片」从图库挑几张直接发给这个任务。以前要先点「已给」、再一类一类点过去才看得全，图片根本看不到。挑素材只剩大窗口一种，不再挤在右栏里。
+- The AI workbench's side "Materials" now shows everything at once: what the task gives its AI, by kind. Pictures count too (named when the task started, sent from the gallery, attached to a message), then ways, models, combos, workflows, prompts and nodes, each in a part of its own; kinds with nothing are left out, and an × takes a thing back. Things on the message not sent yet are pointed out over them, "Prefer these / Only these" sits on top, and at the foot "Add materials" opens the picker's window while "Add pictures" hands a few gallery pictures to the task at once. Before, seeing it all took "Given" and a press on every kind, and pictures did not show at all. The picker itself is only the large window now, no longer squeezed into the side column.
+
 - 主页两组卡片各回各家：「跑我存的预设」大多数时候不用 AI，挪到「自己动手」（第 9 张，卡片排成 3 行 3 张），「↻ 和上次一样再跑」那一行也跟着挪到「自己动手」下面。「让 AI 帮你做」里换成新卡「说想要什么，AI 安排着跑」：用一句话说想要什么（比如哪几个预设各跑几张、跑完挑最好的），AI 从你存的工作流和预设里挑、定张数，在新标签页里排队跑，跑完看图告诉你结果。
 - Home's two groups of cards each hold their own: "Run my preset" mostly runs with no AI, so it moves to "Do it yourself" (a ninth card; the cards go three to a row), and so does the "The same again" line. "Let the AI do it" gets a new card in its place, "Say what you want, the AI plans the run": say in a sentence what you are after (which presets, how many pictures each, pick the best), and the AI picks from your saved workflows and presets, decides the counts, queues them on a new tab and tells you how the pictures came out.
 
