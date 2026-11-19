@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 修复从画布底部存档条点击「看图」（尤其存档还没有出图时）打开「存档」页会先闪白、再先折叠后弹开的问题：进入页面时同步预画顶部当前画布引导与当前画布展开卡片，并把组列表与已展开组的数据合并为一次并行加载，同时同步收起下层侧栏并对齐 `is-saves` 视图切换时机。
+- Fixing a blank-then-collapsed-to-expanded screen flash when clicking "Pictures" on the canvas snapshot bar (notably on saves without images yet): the Saves view now primes the active canvas guide and expanded group synchronously on first paint, prefetches open groups in parallel before replacing the list, applies `.is-saves` before mounting, and hides the workspace sidebar synchronously.
+
 - 优化主页「自己动手 → 画布存档：试几版一起跑」与「存档页」的引导与入口：卡片直接点明「画布存档」，点击不再直接关掉窗口或只飘角落提示，而是直接切进左侧边栏高亮的「存档」页（左侧工具区新增独立「存档」入口）；页首固定当前画布状态卡，未存过时说明情况并给「+ 给当前画布存第 1 版」按钮，已有存档时可直接「+ 再存一版」或「回画布改一改」，画布为空时直接给出「去工作流页挑一个」。
 - Clarifying Home's Canvas Saves card ("Canvas saves: compare versions") and adding a dedicated Saves entry in the left rail: clicking it keeps AMB open, highlights Saves in the rail, and lands on the Saves page with a live current-canvas guide card offering `+ Save version 1`, `+ Save another` + `Back to canvas`, or `Pick one on Workflows` when the canvas is empty.
 

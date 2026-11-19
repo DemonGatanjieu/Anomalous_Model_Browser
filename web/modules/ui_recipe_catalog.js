@@ -283,8 +283,8 @@ export async function showRecipes({ saves = false } = {}) {
     this.recipeListContainer = document.createElement('div');
     this.recipeListContainer.className = `anomalous-wf-list ${this.recipeViewMode === 'list' ? 'is-list' : 'is-grid'}`;
     this.recipeView.appendChild(this.recipeListContainer);
-    this.recipeContainer.appendChild(this.recipeView);
     setSavesView(this, Boolean(saves));
+    this.recipeContainer.appendChild(this.recipeView);
     await (saves ? refreshSaves(this) : this.refreshRecipes());
 }
 

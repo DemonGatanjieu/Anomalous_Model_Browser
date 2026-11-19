@@ -19,7 +19,7 @@ import { openPopupMenu } from './ui_popup_menu.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { appendText, button } from './ui_recipe_detail_dom.js';
 import { closeSaveGallery, fillLines, image, openSaveGallery, pictureLine, thumbUrl } from './ui_saves_pictures.js';
-import { addMark, backTo, canvasSaveStatus, openSave, revealCanvasBar, runsBox, saveWords, seedSwitch, shownKey, tabOfGroup } from './ui_snapshot_bar.js';
+import { addMark, backTo, canvasSaveStatus, openSave, peekCanvasSave, revealCanvasBar, runsBox, saveWords, seedSwitch, shownKey, tabOfGroup } from './ui_snapshot_bar.js';
 
 const refused = new Map(); // a group's key -> why its part's last try did not go
 
@@ -247,6 +247,32 @@ async function refreshGuide(owner) {
     drawGuide(owner, status);
 }
 
+function primeSaves(owner) {
+    const peek = peekCanvasSave();
+    drawGuide(owner, peek.status);
+    const items = [owner.savesGuide];
+    const targetKey = owner.savesWanted || peek.status.key;
+    if (peek.group?.saves?.length && (!targetKey || peek.group.key === targetKey)) {
+        const saves = peek.group.saves;
+        const item = {
+            key: peek.group.key,
+            title: peek.group.title || peek.status.title || '',
+            path: peek.group.path || '',
+            count: saves.length,
+            updated: Math.max(...saves.map(save => save.at || 0), Math.floor(Date.now() / 1000)),
+            cover: saves.flatMap(save => save.pictures || []).at(-1) || null,
+        };
+        const part = { item, box: document.createElement('section') };
+        part.box.className = 'anomalous-saves-part';
+        owner.savesOpen.add(item.key);
+        drawPart(owner, part, peek.group);
+        owner.savesParts.set(item.key, part);
+        items.push(part.box);
+    }
+    owner.savesList.replaceChildren(...items);
+    fillLines(owner.savesList);
+}
+
 export function setSavesView(owner, on) {
     if (!owner.savesList) {
         owner.savesList = document.createElement('div');
@@ -264,6 +290,10 @@ export function setSavesView(owner, on) {
     owner.savesToggle.textContent = t(on ? 'savesListBack' : 'savesListToggle');
     owner.recipeView.classList.toggle('is-saves', on);
     if (on && shownKey()) owner.savesOpen.add(shownKey());
+    if (on && owner.savesWanted) owner.savesOpen.add(owner.savesWanted);
+    if (on && (!owner.savesList.childElementCount || (owner.savesWanted && !owner.savesParts.get(owner.savesWanted)?.line))) {
+        primeSaves(owner);
+    }
 }
 
 /** The view as the saves stand now, when it is on. */
@@ -271,22 +301,35 @@ export async function refreshSaves(owner) {
     const wanted = owner.savesWanted;
     owner.savesWanted = '';
     if (wanted) {
-        setSavesView(owner, true);
         owner.savesOpen.add(wanted);
+        setSavesView(owner, true);
     }
     if (!owner.savesListOn) return;
     const list = owner.savesList;
     const reading = owner.savesReading = {};
     try {
-        const [groups, status] = await Promise.all([listGroups(), canvasSaveStatus()]);
+        const preKeys = [...owner.savesOpen];
+        const [groups, status, ...prefetched] = await Promise.all([
+            listGroups(),
+            canvasSaveStatus(),
+            ...preKeys.map(key => findGroup(key, '').catch(() => null)),
+        ]);
         if (reading !== owner.savesReading) return;
+        const openGroups = new Map(preKeys.map((key, index) => [key, prefetched[index]]));
+        const missing = groups.map(item => item.key).filter(key => owner.savesOpen.has(key) && !openGroups.has(key));
+        if (missing.length) {
+            const loaded = await Promise.all(missing.map(key => findGroup(key, '').catch(() => null)));
+            if (reading !== owner.savesReading) return;
+            missing.forEach((key, index) => openGroups.set(key, loaded[index]));
+        }
         refused.clear();
         drawGuide(owner, status);
         owner.savesParts = new Map(groups.map(item => [item.key, { item, box: document.createElement('section') }]));
         const parts = [...owner.savesParts.values()];
         for (const part of parts) {
             part.box.className = 'anomalous-saves-part';
-            drawPart(owner, part, null);
+            const loaded = owner.savesOpen.has(part.item.key) ? openGroups.get(part.item.key) : null;
+            drawPart(owner, part, loaded || null);
         }
         const items = [owner.savesGuide, ...parts.map(part => part.box)];
         if (!groups.length) {
@@ -296,9 +339,14 @@ export async function refreshSaves(owner) {
             items.push(empty);
         }
         list.replaceChildren(...items);
+        fillLines(list);
         sayCount(owner);
-        await Promise.all(parts.filter(part => owner.savesOpen.has(part.item.key)).map(part => openPart(owner, part)));
-        owner.savesParts.get(wanted)?.box.scrollIntoView({ block: 'nearest' });
+        const wantedBox = owner.savesParts.get(wanted)?.box;
+        if (wantedBox) {
+            const boxRect = wantedBox.getBoundingClientRect();
+            const listRect = list.getBoundingClientRect();
+            if (boxRect.top < listRect.top || boxRect.bottom > listRect.bottom) wantedBox.scrollIntoView({ block: 'nearest' });
+        }
     } catch (error) {
         console.error('Could not list the saves:', error);
         drawGuide(owner, await canvasSaveStatus().catch(() => ({ hasCanvas: false, title: '', key: '', count: 0 })));

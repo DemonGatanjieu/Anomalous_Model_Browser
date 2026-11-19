@@ -190,6 +190,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             }
         }
         owner.hideAllPanels();
+        container.classList.add('anomalous-workspace-open');
         owner.nbPanel.style.display = 'flex';
         owner.showRecipes({ saves });
     };

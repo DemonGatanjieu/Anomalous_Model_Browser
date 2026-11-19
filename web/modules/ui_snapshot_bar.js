@@ -167,19 +167,27 @@ export async function savesFromHome(owner) {
     owner.showSaves(shownKey() || '');
 }
 
-/** Current canvas save summary for the Saves page banner. */
-export async function canvasSaveStatus() {
-    await following;
+/** Synchronous summary of the active canvas's saves already in memory (for flash-free first paint). */
+export function peekCanvasSave() {
     const graph = canvasGraph();
     const tab = activeTab();
     const key = shownKey();
     const count = group?.saves?.length || 0;
     return {
-        hasCanvas: Boolean(graph?._nodes?.length || count),
-        title: String(tab?.filename || '').trim(),
-        key,
-        count,
+        status: {
+            hasCanvas: Boolean(graph?._nodes?.length || count),
+            title: String(tab?.filename || '').trim(),
+            key,
+            count,
+        },
+        group: group ? { ...group, saves: [...(group.saves || [])] } : null,
     };
+}
+
+/** Current canvas save summary for the Saves page banner. */
+export async function canvasSaveStatus() {
+    await following;
+    return peekCanvasSave().status;
 }
 
 /** Closes the browser back onto the canvas with the bottom snapshot bar unfolded when saves exist. */
