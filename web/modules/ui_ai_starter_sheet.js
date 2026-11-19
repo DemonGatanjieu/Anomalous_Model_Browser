@@ -20,6 +20,7 @@ import { startTask } from './ui_ai_handoff.js';
 import { icon } from './ui_ai_icons.js';
 import { presetFields, savesStrip } from './ui_ai_preset_sheet.js';
 import { loraPicker, sealFlow } from './ui_ai_private_sheet.js';
+import { promptFetch } from './ui_ai_prompt_fetch.js';
 import { applyTaskRoute, startFromSection } from './ui_ai_start_from.js';
 import { startSteps } from './ui_ai_start_steps.js';
 import { createViewScope } from './ui_lifecycle.js';
@@ -168,11 +169,13 @@ function privateFields(data) {
     const promptField = field(t('aiStartSealed'), prompt);
     promptField.classList.add('is-sealed');
     promptField.querySelector('.anomalous-ai-start-label')?.prepend(icon('lock', 13));
+    const taking = promptFetch({ target: () => prompt }); // a saved prompt into the sealed field
+    promptField.querySelector('.anomalous-ai-start-label')?.append(taking.button);
     const gistField = field(t('aiStartGist'), gist);
     gistField.classList.add('is-plain');
 
     const promptSec = el('section', 'anomalous-ai-composer-section');
-    promptSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepWrite')), promptField, sealFlow());
+    promptSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepWrite')), promptField, taking.panel, sealFlow());
     const fromSec = el('section', 'anomalous-ai-composer-section');
     fromSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepFrom')), from.node);
     const moreSec = el('section', 'anomalous-ai-composer-section');

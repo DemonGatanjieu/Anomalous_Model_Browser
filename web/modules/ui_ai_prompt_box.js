@@ -5,6 +5,7 @@
  * (api/ai_sealed.py). The first field is the other kind: the gist, the picture in words the AI may
  * read, so it can write light, lens and style around the tokens; either kind alone can be handed in,
  * and a few words of the gist can be hidden by themselves (ai_hide_mark.js).
+ * Saved prompts are taken into the fields from a list by their head (ui_ai_prompt_fetch.js: a free field, else a new one).
  * Above the fields, what suits the canvas's model (the prompt_pose skill's words,
  * the step's prompt_advice). Answered, it shows what the user wrote beside the token the AI has.
  * ui_ai_panel.js draws it and hands it its helpers (sending, the question's head, the answer's note).
@@ -15,6 +16,7 @@ import { galleryPicker, thumbUrl } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
 import { hideButton, renderHiddenText } from './ai_hide_mark.js';
 import { icon } from './ui_ai_icons.js';
+import { promptFetch } from './ui_ai_prompt_fetch.js';
 
 const MAX_PROMPTS = 8;
 const MAX_PICTURES = 4;
@@ -119,8 +121,14 @@ export function promptBox(block, ctx, { sendAnswer, askHead, skipButton, answerN
     gist.maxLength = 1000;
     const gistHead = el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxGist'));
     gistHead.append(hideButton(gist, (text) => { note.textContent = text; }));
-    box.append(gistHead, gist,
-        el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxSecret')), fields, more);
+    // A saved prompt goes into the first empty field, else a new one while there is room, else the last.
+    const taking = promptFetch({
+        target: () => prompts.find(area => !area.value.trim()) || (prompts.length < MAX_PROMPTS ? (addPrompt(), prompts.at(-1)) : prompts.at(-1)),
+        negative: () => negative,
+    });
+    const secretHead = el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxSecret'));
+    secretHead.append(taking.button);
+    box.append(gistHead, gist, secretHead, taking.panel, fields, more);
     const negative = block.negative ? field('negative', t('aiPromptBoxNegative'), 2) : null;
     if (negative) box.append(negative);
 

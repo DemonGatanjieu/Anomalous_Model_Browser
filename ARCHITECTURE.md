@@ -107,7 +107,10 @@ covered by the `styles.css` manifest.
   picture names as tokens ("[P1]", "[img1]", kept in task["sealed"]): `mask` on the way out (a
   node's STRING inputs by ComfyUI's node list, prompt fields, picture names, the name of the canvas the task works on (`workflow`, `canvas_tab`: a tab named after the user's workflow), any sealed text),
   `expand` on a call's arguments, `seal_answer` for the user's prompt box (a "prompts" panel block,
-  `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model;
+  `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model, and
+  `web/modules/ui_ai_prompt_fetch.js`'s "Take a saved prompt": a searchable list of the saved prompts and those
+  inside combos and workflows, from the picker's catalogue, filling a field on the page only, as at the private
+  card's sealed prompt;
   its first field is the gist, the picture in words the AI may read, handed on as written but for the
   words the user marked to hide, which go as tokens inside it; `web/modules/ai_hide_mark.js` is that
   mark, its Hide button marking words in the focused chip note field or message input, and `sealedParts` / `renderHiddenText` rendering `[P*]` sealed segments in timeline messages (`ui_ai_step_body.js`, with a line under the bubble saying what the AI got: the same words with its tokens, `[M*]` too for a route), ref notes, and prompt-box gists (`ai_sealed.seal_marked` seals marked words in both text and ref notes);

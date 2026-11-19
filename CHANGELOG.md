@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 隐私模式下用存好的提示词更方便：「隐私出图」带锁的提示词框，和隐私任务里 AI 请你写提示词的框，旁边都多了「取我存的提示词」。点开是一个小列表，能搜，列出你存的提示词和搭配、工作流里带的，点一条就填进框里（框里有字就接在后面；有反向提示词框而且是空的，就一起填上；AI 请你写提示词时一条填一格）。只是在你电脑上填字，发给 AI 时照旧换成代号。
+- Saved prompts in privacy mode: the sealed prompt of "Draw privately", and the prompt box an AI asks with in a private task, have "Take a saved prompt": a searchable list of your saved prompts and those inside combos and workflows; a click fills the field (after what is there; the negative too while its field is empty, one prompt per field in the AI's box). It only fills the field on your computer; the AI still gets a token for it.
+
 - AI 问你“用哪个模型 / 哪个工作流”时，选项可以是卡片了：模型带封面、类型和底模，工作流就是工作流页那样的卡片，下面一行是 AI 写的理由，推荐的那张标「推荐」，点一下就发给 AI。都不合适的话，卡片下面「都不合适？自己挑…」打开挑模型或挑工作流的大窗口，挑什么都行，AI 收到的就是你挑的那个。给 AI 的说明只在“提问”工具里加了一句。隐私任务里 AI 拿到的还是代号。
 - When the AI asks which model or which workflow to use, its options can be cards: a model with its cover, type and base, a workflow as the Workflows page shows it, the AI's reason under each and its suggestion marked; a click sends it. If none fits, "None of these? Pick one yourself…" under the cards opens the models' or workflows' picker, and the AI gets what you picked. The AI's instructions gained one sentence, in the question tool. In a private task the AI still gets code names.
 
