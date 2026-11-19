@@ -718,7 +718,12 @@ covered by the `styles.css` manifest.
   `ask_user` (`api/mcp_task_tools.py`) is the AI's question in the workbench: a one-block panel
   (choices with an optional `recommended` option and an `other` line, or an input) whose answer
   it waits for in the same call; the server instructions and `begin_task` tell the AI to ask
-  this way rather than in its own chat.
+  this way rather than in its own chat. An option may name a model (`model_id`) or a saved
+  workflow (`workflow`) instead of words (`ai_panel_parts.card_option`; one kind per question, the
+  block's `pick_kind`): the page shows its card (`web/modules/ui_ai_option_cards.js`: a model's cover,
+  type and base, a workflow's Workflows-page face; small covers on the question bar's buttons) and
+  "pick one yourself" opens the models' or workflows' picker window, whose pick is the answer
+  (`picked`, `ai_panel_parts.picked_card`; the AI reads it with a note that none of its options was taken).
   Panels the AI draws (`show_panel`, `update_panel`): `api/ai_panels.py` checks every block
   against a fixed set (heading, text, images from the output folder, models by id with their
   covers, table, list, params, choices, input; plain strings of bounded

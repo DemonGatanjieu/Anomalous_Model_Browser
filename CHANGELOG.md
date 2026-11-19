@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- AI 问你“用哪个模型 / 哪个工作流”时，选项可以是卡片了：模型带封面、类型和底模，工作流就是工作流页那样的卡片，下面一行是 AI 写的理由，推荐的那张标「推荐」，点一下就发给 AI。都不合适的话，卡片下面「都不合适？自己挑…」打开挑模型或挑工作流的大窗口，挑什么都行，AI 收到的就是你挑的那个。给 AI 的说明只在“提问”工具里加了一句。隐私任务里 AI 拿到的还是代号。
+- When the AI asks which model or which workflow to use, its options can be cards: a model with its cover, type and base, a workflow as the Workflows page shows it, the AI's reason under each and its suggestion marked; a click sends it. If none fits, "None of these? Pick one yourself…" under the cards opens the models' or workflows' picker, and the AI gets what you picked. The AI's instructions gained one sentence, in the question tool. In a private task the AI still gets code names.
+
 - 挑存好的工作流有了自己的大窗口，和挑模型的窗口一样，以后要挑工作流的地方都用它：工作流页同款卡片，能搜索，能按「完整工作流」「功能模块」和你的标签筛选，点一张选中，按「好了」或双击带回。AI 起手页「从哪开始 → 我存的工作流」不再铺一大片卡片，只显示选中的那一个（小图、名字、步数采样器），旁边「换一个工作流」打开这个窗口。「跑我存的预设」第一步的卡片也多了这排筛选，还能只看「有预设的」。
 - Picking a saved workflow has a window of its own, like the models' one, for every place that asks for a workflow: the Workflows page's cards, a search, and chips for complete workflows, modules and your tags; click one to pick it, Done or a double click takes it. "Start from → A saved workflow" on the AI starter page no longer spreads the whole grid: it shows the chosen one (cover, name, steps and sampler) with "Another workflow" to that window. "Run my preset" gets the same chips on its first step, plus "With presets".
 

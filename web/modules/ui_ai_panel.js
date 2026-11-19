@@ -18,6 +18,7 @@ import { runMapBox } from './ui_ai_run_map.js';
 import { decoratePicture, gonePicture, openPictures, showPicture } from './ui_ai_images.js';
 import { deliveryState } from './ui_ai_delivery.js';
 import { icon } from './ui_ai_icons.js';
+import { optionCard, pickAnother } from './ui_ai_option_cards.js';
 import { promptBox } from './ui_ai_prompt_box.js';
 import { planCard } from './ui_ai_plan.js';
 
@@ -311,7 +312,7 @@ function choices(block, ctx) {
     const note = el('div', 'anomalous-ai-panel-error');
     box.append(askHead(block.question, open && skipButton(ctx, block, note), ctx));
     if (open) box.append(el('div', 'anomalous-ai-panel-hint', t(block.multiple ? 'aiPanelHintSome' : 'aiPanelHintOne')));
-    const options = el('div', `anomalous-ai-panel-options${block.multiple ? ' is-multiple' : ''}`);
+    const options = el('div', `anomalous-ai-panel-options${block.multiple ? ' is-multiple' : ''}${block.pick_kind ? ' is-cards' : ''}`);
     const picked = new Set(answer?.choice || []);
     const submit = async (ids) => {
         options.querySelectorAll('button').forEach(node => { node.disabled = true; });
@@ -329,6 +330,16 @@ function choices(block, ctx) {
         }
         ctx.changed();
     };
+    // A model or workflow taken in the picker instead of the cards (ui_ai_option_cards.js).
+    const submitPicked = async (value) => {
+        try {
+            await sendAnswer(ctx.taskId, { step: ctx.stepId, block: block.id, picked: value });
+        } catch (error) {
+            note.textContent = error.message;
+            return;
+        }
+        ctx.changed();
+    };
     for (const option of list(block.options)) {
         const node = button(`anomalous-ai-panel-option${picked.has(option.id) ? ' is-picked' : ''}`, '', () => {
             node.classList.toggle('is-picked', block.multiple ? undefined : true); // which one goes shows at once
@@ -341,10 +352,15 @@ function choices(block, ctx) {
             node.classList.add('is-recommended');
             words.append(el('span', 'anomalous-ai-panel-option-badge', t('aiPanelRecommended')));
         }
-        words.append(el('span', 'anomalous-ai-panel-option-label', optionLabel(option)));
-        if (option.detail) words.append(el('span', 'anomalous-ai-panel-option-detail', optionDetail(option)));
-        if (option.sample) node.append(optionSample(option));
-        node.append(words, icon(block.multiple ? 'check' : 'arrowRight', 15, 'anomalous-ai-panel-option-go'));
+        if (option.model || option.workflow) {
+            node.classList.add('is-card');
+            node.append(words, optionCard(option, optionLabel(option), option.detail && optionDetail(option)));
+        } else {
+            words.append(el('span', 'anomalous-ai-panel-option-label', optionLabel(option)));
+            if (option.detail) words.append(el('span', 'anomalous-ai-panel-option-detail', optionDetail(option)));
+            if (option.sample) node.append(optionSample(option));
+            node.append(words, icon(block.multiple ? 'check' : 'arrowRight', 15, 'anomalous-ai-panel-option-go'));
+        }
         node.disabled = !open;
         options.append(node);
     }
@@ -354,7 +370,9 @@ function choices(block, ctx) {
     });
     confirm.disabled = true;
     if (block.multiple && open) box.append(confirm);
+    if (block.pick_kind && open) box.append(pickAnother(block, value => void submitPicked(value)));
     if (answer?.text) box.append(el('div', 'anomalous-ai-panel-typed', answer.text));
+    else if (answer?.picked) box.append(el('div', 'anomalous-ai-panel-typed', t('aiPanelPickedOther', { name: answer.labels?.[0] || '' })));
     else if (block.other && open) box.append(ownWords('anomalous-ai-panel-own', () => otherLine(ctx, block, options), hasDraft(ctx.taskId, ctx.stepId, block.id)));
     box.append(note);
     if (answer) box.append(answerNote(answer));

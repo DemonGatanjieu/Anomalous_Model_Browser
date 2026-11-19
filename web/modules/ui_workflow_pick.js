@@ -34,7 +34,7 @@ function button(className, children, onClick) {
 }
 
 /** The saved workflows as the Workflows page reads them: Map(file → recipe), kept a minute. */
-async function readRecipes(signal) {
+export async function readRecipes(signal) {
     if (kept && Date.now() - kept.at < KEEP_MS) return kept.recipes;
     const payload = await fetch('/anomalous/recipes', { cache: 'no-store', signal }).then(res => (res.ok ? res.json() : null));
     const recipes = new Map((payload?.recipes || []).filter(item => item?.filename).map(item => [item.filename, item]));

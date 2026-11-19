@@ -1,7 +1,9 @@
 """The parts of the blocks the AI sends to a panel (ai_panels.py), each checked to one plain shape:
 text and lists of bounded size, fractions of a picture, marks (circles or boxes with a label),
 the part of the pictures shown enlarged (zoom), pictures only from ComfyUI's output folder,
-diagram boxes and arrows, and model cards only from the user's folders."""
+diagram boxes and arrows, model cards only from the user's folders, and a question's options that
+are a model or a saved workflow (card_option), or what the user picked in Anomalous's own picker
+instead (picked_card)."""
 
 import os
 
@@ -131,3 +133,36 @@ def _model(item, where):
     return {"model_id": str(model_id), "folder": folder_type, "path_idx": path_idx,
             "rel": os.path.relpath(file_path, base_dir).replace(os.sep, "/"), "name": os.path.basename(file_path),
             "cover": cover, "note": _text(item.get("note") if isinstance(item, dict) else "", 160, f"{where}.note")}
+
+
+def _saved_workflow(name, where):
+    """A saved workflow by its name (or file name): {name, file}."""
+    from .recipe_store import _list_recipes, get_recipes_dir
+
+    wanted = str(name or "").strip()
+    for recipe in _list_recipes(get_recipes_dir()):
+        title = recipe["data"].get("name") or recipe["filename"]
+        if wanted and wanted in (title, recipe["filename"]):
+            return {"name": title, "file": recipe["filename"]}
+    raise PanelError(f"{where}: no saved workflow named {wanted!r} (list_workflows gives their names)")
+
+
+def card_option(option, where):
+    """An option that is a model (`model_id`) or a saved workflow (`workflow`): (what its card shows, the name
+    it goes by without a label of its own); ({}, "") for an option in words."""
+    if option.get("model_id"):
+        model = _model({"model_id": option["model_id"]}, where)
+        return {"model": {key: model[key] for key in ("model_id", "folder", "name", "cover")}}, os.path.splitext(model["name"])[0]
+    if option.get("workflow"):
+        flow = _saved_workflow(option["workflow"], where)
+        return {"workflow": flow}, flow["name"]
+    return {}, ""
+
+
+def picked_card(kind, value):
+    """What the user picked in Anomalous's picker, for a question of `kind` (models, workflows): (for the AI, name)."""
+    if kind == "models":
+        model = _model({"model_id": value}, "picked")
+        return {"model_id": model["model_id"]}, os.path.splitext(model["name"])[0]
+    flow = _saved_workflow(value, "picked")
+    return {"workflow": flow["name"]}, flow["name"]

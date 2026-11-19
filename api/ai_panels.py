@@ -6,7 +6,8 @@ heading, text, images (from ComfyUI's output folder, with marks: circles or boxe
 at places given as fractions of the picture), slider (two pictures over each other, a line to
 drag between them), picks (pictures with a reason and "take this one"), models (the user's, by
 model_id), diagram (boxes and arrows, laid out by the page; a box can name a canvas node),
-table, list, params, choices (buttons; one or several picks) and input (a line of text),
+table, list, params, choices (buttons; one or several picks; options that are models or saved
+workflows show as their cards, and the user may pick another in Anomalous's picker) and input (a line of text),
 prompts (the user's prompt box: texts and reference pictures the AI gets as tokens, ai_sealed.py);
 and area (the user's repaint area beside the AI's, ai_repaint.py). Nothing the AI sends is run or rendered as markup, and no drawing of its own
 (SVG) is taken: every block is checked here to be one of these shapes, with plain strings and
@@ -27,7 +28,7 @@ import uuid
 
 from . import ai_marks, ai_tasks
 from .ai_panel_parts import (  # noqa: F401 - PanelError and the limits are read as ai_panels.*
-    MAX_ITEMS, MAX_NODES, PanelError, _diagram, _image, _list, _model, _text, _zoom,
+    MAX_ITEMS, MAX_NODES, PanelError, _diagram, _image, _list, _model, _text, _zoom, card_option, picked_card,
 )
 from .mcp_tools import tool_text
 
@@ -145,7 +146,8 @@ def clean_block(block, at, taken):
         for i, option in enumerate(raw):
             if not isinstance(option, dict):
                 option = {"label": option}
-            label = _text(option.get("label"), 80, f"{where}.options[{i}].label", True)
+            card, named = card_option(option, f"{where}.options[{i}]")
+            label = _text(option.get("label") or named or None, 80, f"{where}.options[{i}].label", True)
             option_id = _text(option.get("id") or f"o{i + 1}", 40, f"{where}.options[{i}].id")
             if option_id in ids:
                 raise PanelError(f"{where}.options: id {option_id!r} twice")
@@ -155,10 +157,13 @@ def clean_block(block, at, taken):
                             **({key: option[key] for key in ("label_key", "detail_key") if _page_word(option.get(key))}),
                             **({"values": {str(key): _text(value, 120, f"{where}.options[{i}].values") for key, value in option["values"].items()}}
                                if isinstance(option.get("values"), dict) and _page_word(option.get("label_key")) else {}),
-                            **({"sample": option["sample"]} if re.fullmatch(r"[a-z_]{1,40}", str(option.get("sample"))) else {})})
-        # other: a line for an answer none of the options is
+                            **({"sample": option["sample"]} if re.fullmatch(r"[a-z_]{1,40}", str(option.get("sample"))) else {}), **card})
+        kinds = {"models" if "model" in option else "workflows" for option in options if "model" in option or "workflow" in option}
+        if len(kinds) > 1:
+            raise PanelError(f"{where}.options: models or saved workflows, not both")
+        # other: a line for an answer none of the options is; pick_kind: the picker the user may pick another in
         out.update(question=_text(block.get("question"), 200, f"{where}.question"), options=options,
-                   multiple=block.get("multiple") is True, other=block.get("other") is True)
+                   multiple=block.get("multiple") is True, other=block.get("other") is True, **({"pick_kind": kinds.pop()} if kinds else {}))
     elif kind == "input":
         out.update(question=_text(block.get("question"), 200, f"{where}.question", True),
                    placeholder=_text(block.get("placeholder"), 80, f"{where}.placeholder"))
@@ -294,10 +299,10 @@ def update(panel_id, title=None, blocks=None, closed=None):
     return panel
 
 
-def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=False, extra=None, again=False):
+def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=False, extra=None, again=False, picked=None):
     """The user's answer to one block of a panel (from the page), or `skip` it, with `extra` for the AI
-    (ai_repaint.prepare); `again`: in place of the answer given (another base taken instead, ai_bases.change).
-    Returns the step's answers."""
+    (ai_repaint.prepare); `again`: in place of the answer given (another base taken instead, ai_bases.change);
+    `picked`: a model id or workflow taken in Anomalous's picker for a question of cards. Returns the step's answers."""
     with _answered:
         task = ai_tasks._load().get(task_id)
         step = next((item for item in (task or {}).get("steps") or [] if item.get("id") == step_id), None)
@@ -313,6 +318,9 @@ def answer(task_id, step_id, block_id, choice=None, text=None, now=None, skip=Fa
         entry = {"at": time.time() if now is None else now, "delivered": False, **(extra or {})}
         if skip:
             entry["skipped"] = True
+        elif block["type"] == "choices" and block.get("pick_kind") and picked and not choice:
+            card, named = picked_card(block["pick_kind"], picked)
+            entry.update(choice=["picked"], labels=[named], picked=card)
         elif block["type"] == "choices" and block.get("other") and not choice and isinstance(text, str) and text.strip():
             entry.update(choice=["other"], labels=["other"], text=_text(text, 2000, "text", True))
         elif block["type"] == "prompts":
@@ -467,7 +475,7 @@ def _collect(client, panel_id, task_id=None):
                 given.update(delivered=True, delivered_at=time.time())
                 changed.add(task["id"])
                 item = {"panel": panel["id"], "question": block["id"], "asked": block.get("question", "")}
-                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout", "prompts", "negative", "pictures", "gist", "plan") if key in given})
+                item.update({key: given[key] for key in ("choice", "labels", "text", "skipped", "inpaint_image", "note", "recommended_on_timeout", "prompts", "negative", "pictures", "gist", "plan", "picked") if key in given})
                 out.append(item)
         if panel_id is None or task is panel_task:
             from . import ai_sealed_adjust, ai_sealed_notes

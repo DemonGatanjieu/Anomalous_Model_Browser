@@ -227,6 +227,9 @@ def _answer_of(ctx, panel_id, wait_seconds):
         out["text"] = given["text"]
         if given.get("choice") == ["other"]:
             out["note"] = "None of your options: the user wrote their own answer."
+    elif given.get("picked"):
+        out.update(choice=given["choice"], labels=given["labels"], picked=given["picked"],
+                   note="None of your options: the user picked this one in Anomalous's own picker.")
     else:
         out.update(choice=given.get("choice"), labels=given.get("labels"))
     if given.get("recommended_on_timeout"):
@@ -430,13 +433,16 @@ TASK_TOOLS = dict([
     _task_tool("ask_user", "Ask the user",
                "Asks the user in the AI workbench and waits: a question with 2-8 options ({label, detail, "
                "recommended}; mark your suggestion recommended=true), and a line for their own answer unless "
-               "other=false; no options: a free answer. routes=true: Anomalous's own question on the two models picked. "
+               "other=false; no options: a free answer. An option may name a model (model_id) or saved workflow "
+               "(workflow): it shows as its card, label optional; the user may pick another in Anomalous's picker "
+               "(comes back as picked). routes=true: Anomalous's own question on the two models picked. "
                "Use it for every choice that is the user's, not your chat's "
                f"question form. Waits at least {ASK_WAIT_MIN} s, up to wait_seconds; unanswered and keep_waiting: wait on "
                "with get_answers. End every round of work with it.",
                _question_with_images(ask_user), {"question": {"type": "string"},
                           "options": {"type": "array", "maxItems": 8, "items": {"type": "object", "properties": {
-                              "label": {"type": "string"}, "detail": {"type": "string"}, "recommended": {"type": "boolean"}}}},
+                              "label": {"type": "string"}, "detail": {"type": "string"}, "recommended": {"type": "boolean"},
+                              "model_id": {"type": "string"}, "workflow": {"type": "string"}}}},
                           "multiple": {"type": "boolean", "default": False}, "other": {"type": "boolean", "default": True},
                           "wait_seconds": {"type": "number", "minimum": 0, "maximum": ai_panels.MAX_WAIT, "default": ai_panels.MAX_WAIT},
                           "routes": {"type": "boolean"}, "task": _TASK_PROP}),

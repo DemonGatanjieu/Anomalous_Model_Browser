@@ -358,6 +358,48 @@
 
 .anomalous-ai-panel-input.is-other { margin-top: 10px; }
 
+/* Options that are models or saved workflows (ui_ai_option_cards.js): a grid of cards, the badge over each card,
+   the AI's line under it; "pick one yourself" opens the picker. */
+.anomalous-ai-panel-options.is-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.anomalous-ai-panel-option.is-card { flex-direction: column; align-items: stretch; gap: 6px; min-width: 0; padding: 6px; }
+.anomalous-ai-panel-option.is-card > .anomalous-ai-panel-option-text:empty { display: none; }
+.anomalous-ai-option-card { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.anomalous-ai-option-face.is-model { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.anomalous-ai-option-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 4 / 3;
+    margin-bottom: 4px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+}
+.anomalous-ai-option-cover > img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-ai-option-cover .anomalous-tb-type-art { width: 100%; height: 100%; }
+.anomalous-ai-option-name,
+.anomalous-ai-option-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-option-name { padding: 0 4px; color: var(--amb-text-main); font-size: 13px; font-weight: 600; }
+.anomalous-ai-option-meta { padding: 0 4px; color: var(--amb-text-dim); font-size: 11.5px; }
+.anomalous-ai-option-face.is-workflow .anomalous-wf-card { pointer-events: none; }
+.anomalous-ai-option-detail { padding: 0 4px 2px; color: var(--amb-text-soft); font-size: 12px; line-height: 1.45; }
+.anomalous-ai-option-other {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 7px 14px;
+    border: 1.5px dashed color-mix(in srgb, var(--amb-link) 60%, transparent);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-link);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.anomalous-ai-option-other:hover:not(:disabled) { border-style: solid; background: color-mix(in srgb, var(--amb-link) 10%, transparent); }
+
 .anomalous-ai-panel-option-detail {
     color: var(--amb-text-soft);
     font-size: 11.5px;

@@ -4,7 +4,8 @@
  * shows until they write again), a step waiting at a gate (Allow, No, see the
  * step), a run going (where it stands, a thin bar, stop), the AI busy with a tool; and the newest
  * question nobody answered yet (one the user half answered stays in front), to answer there: a pick of one as buttons that
- * send at a press (and a line of one's own, folded, when the AI allows it), a line of text, or the
+ * send at a press (models or saved workflows with a small cover and a way to pick another, ui_ai_option_cards.js;
+ * and a line of one's own, folded, when the AI allows it), a line of text, or the
  * way to the stage for the rest (several picks, pictures to pick); "let the AI decide" sits in its
  * head. When none of that is there, the lines to paste into the
  * AI's chat once it has stopped (ui_ai_call.js), in the same place. Drawn again as
@@ -21,6 +22,7 @@ import { panelSteps, QUESTIONS } from './ui_ai_side.js';
 import { draftField, hasDraft, optionDetail, optionLabel, ownWords, sendAnswer } from './ui_ai_panel.js';
 import { decideGate } from './ui_ai_gate.js';
 import { callRow } from './ui_ai_call.js';
+import { optionThumb, pickAnother } from './ui_ai_option_cards.js';
 
 const RUNNING = ['submitting', 'queued', 'running'];
 const MAX_OPTIONS = 6;
@@ -147,9 +149,11 @@ function askCard(task, { step, block }, more, ctx) {
             if (option.recommended) words.append(el('span', 'anomalous-ai-now-option-tag', t('aiPanelRecommended')));
             words.append(el('span', 'anomalous-ai-now-option-label', optionLabel(option)));
             if (optionDetail(option)) words.append(el('span', 'anomalous-ai-now-option-detail', optionDetail(option))); // as the stage's card shows it
+            if (option.model || option.workflow) chip.append(optionThumb(option));
             chip.append(words, icon('arrowRight', 13, 'anomalous-ai-now-option-go'));
             answers.append(chip);
         }
+        if (block.pick_kind) answers.append(pickAnother(block, value => void send({ picked: value }, [...card.querySelectorAll('button, input')])));
         if (block.other) answers.append(ownWords('anomalous-ai-panel-own', () => ownLine(t('aiNowOther')), hasDraft(task.id, step.id, block.id)));
         hint = t('aiPanelHintOne');
     } else if (block.type === 'input') {

@@ -14,7 +14,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import ai_answer_wait, ai_gates, ai_panels, ai_tasks, mcp_task_tools  # noqa: E402
+from api import ai_answer_wait, ai_gates, ai_panel_parts, ai_panels, ai_tasks, mcp_task_tools, recipe_store  # noqa: E402
 
 TMP = tempfile.mkdtemp(prefix="amb_ai_panels_")
 OUTPUT = tempfile.mkdtemp(prefix="amb_ai_panels_out_")
@@ -416,6 +416,40 @@ class AskUserTests(unittest.TestCase):
         got = mcp_task_tools.ask_user(self.ctx, "要不要加光效？", ["要", "不要"], wait_seconds=5)
         self.assertEqual((got["answered"], got["skipped"]), (True, True))
         self.assertIn("left this to you", got["note"])
+
+    def test_options_that_are_models_or_workflows_show_as_cards_and_another_can_be_picked(self):
+        def model(item, where):
+            if not str(item["model_id"]).startswith("checkpoints:"):
+                raise ai_panels.PanelError(f"{where}: no such model")
+            return {"model_id": item["model_id"], "folder": "checkpoints", "path_idx": 0, "rel": "x", "name": item["model_id"].split(":")[-1],
+                    "cover": "/c.png", "note": ""}
+        recipes = [{"filename": "recipe_1.json", "data": {"name": "古风夜景"}}, {"filename": "recipe_2.json", "data": {}}]
+        with mock.patch.object(ai_panel_parts, "_model", side_effect=model), mock.patch.object(recipe_store, "_list_recipes", return_value=recipes):
+            self.answer_later(picked="checkpoints:0:c.safetensors")
+            got = mcp_task_tools.ask_user(self.ctx, "用哪个底模？", [{"model_id": "checkpoints:0:a.safetensors", "detail": "细节最好", "recommended": True},
+                                                                  {"model_id": "checkpoints:0:b.safetensors", "label": "B 号"}], wait_seconds=5)
+            block = ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"][0]["panel"]["blocks"][0]
+            self.assertEqual(block["pick_kind"], "models")
+            self.assertEqual([(option["label"], option["model"]["cover"]) for option in block["options"]], [("a", "/c.png"), ("B 号", "/c.png")],
+                             "a model's name is its label unless the AI wrote one")
+            self.assertEqual((got["picked"], got["labels"]), ({"model_id": "checkpoints:0:c.safetensors"}, ["c"]))
+            self.assertIn("own picker", got["note"])
+            isolate()
+            self.answer_later(choice=["o1"])
+            got = mcp_task_tools.ask_user(self.ctx, "用哪个工作流？", [{"workflow": "古风夜景"}, {"workflow": "recipe_2.json"}], wait_seconds=5)
+            block = ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"][0]["panel"]["blocks"][0]
+            self.assertEqual([option["workflow"] for option in block["options"]],
+                             [{"name": "古风夜景", "file": "recipe_1.json"}, {"name": "recipe_2.json", "file": "recipe_2.json"}])
+            self.assertEqual(got["labels"], ["古风夜景"])
+            for options, said in (([{"model_id": "checkpoints:0:a"}, {"workflow": "古风夜景"}], "not both"),
+                                  ([{"workflow": "没有这个"}, {"workflow": "古风夜景"}], "list_workflows"),
+                                  ([{"model_id": "loras:0:a"}, {"model_id": "checkpoints:0:b"}], "no such model")):
+                with self.subTest(said=said), self.assertRaises(mcp_task_tools.ToolError) as caught:
+                    mcp_task_tools.ask_user(self.ctx, "选哪个？", options, wait_seconds=0)
+                self.assertIn(said, str(caught.exception))
+            step = ai_tasks.get_task(ai_tasks.list_tasks()[0]["id"])["steps"][0]
+            with self.assertRaises(ai_panels.PanelError):
+                ai_panels.answer(ai_tasks.list_tasks()[0]["id"], step["id"], "answer", picked="recipe_9.json", again=True)
 
     def test_their_own_answer_when_no_option_fits(self):
         self.answer_later(text="冰与火，但要室内")

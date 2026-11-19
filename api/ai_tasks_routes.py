@@ -155,7 +155,8 @@ async def api_answer(request):
     except (ai_repaint.RepaintError, ValueError, OSError) as error:
         return web.json_response({"error": str(error)}, status=400)
     try:
-        answers = ai_panels.answer(task_id, step_id, str(body.get("block")), body.get("choice"), body.get("text"), skip=skip, extra=extra)
+        answers = ai_panels.answer(task_id, step_id, str(body.get("block")), body.get("choice"), body.get("text"), skip=skip, extra=extra,
+                                   picked=body.get("picked"))
     except ai_panels.PanelError as error:
         ai_repaint.discard(extra)
         ai_bases.discard(extra)
