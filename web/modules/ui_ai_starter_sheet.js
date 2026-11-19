@@ -401,6 +401,7 @@ export function openStarter(owner, card, data) {
         actions.append(button('anomalous-ai-link', t('dialogCancel'), () => close()));
     }
     body.append(scroll, error, actions);
-    close = aiWindow(t(`aiStart_${card.id}_title`), body);
+    close = aiWindow(t(`aiStart_${card.id}_title`), body, () => fields.stop?.());
+    body.closest('.anomalous-ai-connect-dialog')?.classList.toggle('is-preset-sheet', Boolean(fields.steps));
     body.querySelector('textarea, input:not([hidden]), select, button')?.focus();
 }

@@ -452,7 +452,8 @@ async function refresh() {
     }
     if (state.composer) {
         renderList(state.page.querySelector('.anomalous-ai-tasks'));
-        if (!state.page.querySelector('.anomalous-ai-task > .anomalous-ai-composer')) {
+        const live = state.page.querySelector('.anomalous-ai-task > .anomalous-ai-composer');
+        if (!live || live.dataset.composerKey !== String(state.composer.key)) {
             renderTask();
             layout();
         }
@@ -526,6 +527,10 @@ export function renderAiWorkbench(owner, panel) {
     owner.headerLeadTools?.replaceChildren(listToggle(state.page, toggleTasks));
     owner.railNews?.('ai', false);
     hidePanelToast();
+    if (state.composer && state.page.querySelector('.anomalous-ai-task')) {
+        renderTask();
+        layout();
+    }
     void refresh().then(() => aiTourOnce(state.page)); // a newcomer's tour, once (ui_ai_tour.js)
     pollVisible();
 }

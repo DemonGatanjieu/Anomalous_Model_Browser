@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 修复从主页「让 AI 帮你做」点击卡片跳进 AI 工作台时，如果此前开过别的模板会停在旧模板上没切过去的问题；「跑我存的预设」和「隐私出图 / 照我说的出图 → 我存的工作流」去掉窄下拉框，改为复用工作流页同款的封面卡片网格（带搜索、缩略封面、模型备齐状态、参数和预设数量），「跑我存的预设」顶上的来源切换同步改成两个清晰的大方框卡片。
+- Fixing home starter card jumps reusing a stale composer template on the AI workbench, and replacing workflow `<select>` dropdowns in "Run my preset" and "Start from -> A saved workflow" with a reusable visual Workflow Card selector (with two large source choice boxes in "Run my preset").
+
 - 修复 AI 工作台每 5 秒后台刷新时导致页面突然跳回顶部/底部并卡顿一下的问题：现在在工作台内填写或挑选图片（如「改一张图」「隐私出图」等）时，后台刷新不再拆掉重画整个编辑区，滚动和未发送的文字都会完整保留；浏览任务时间线时，顶栏、流程条、列表、状态条在内容没变化时不再重复拆装重排，也不会在用户正在滚动或停留看上面步骤时强行改写滚动条位置（后台轮询会自动避开正在滚动的瞬间，待停稳后再安静同步）。
 - Fixing a jump-and-stutter issue on the AI workbench caused by the 5-second background poll: active in-workbench starter composers ("Change a picture", "Draw privately", etc.) are now preserved intact across polls instead of being torn down and refocused; normal task timelines, headers, flow strips, side tabs, task list rows, and status/message bars skip no-op DOM replacements and avoid resetting scroll position while browsing, with background polling waiting until active scrolling settles (`scrollend`).
 - 主页「让 AI 帮你做」里的「隐私出图」「改一张图」「照我说的出图」「先试一次」「看懂我的画布」彻底取消分页小窗：点了直接打开 AI 工作台的宽敞起手页面，在一页里直接挑图/看预览、写要求、选模型与路线、随时切换起手模板；「改一张图」挑完图后缩略图直接停在「怎么改？」旁边，不用翻页盲写；点「开始」就在原地切进等 AI 接手的对话区（新建空白任务或欢迎页也能一键切回这些模板）。不需要 AI 的「跑我存的预设」保留独立批量弹窗，需要 AI 改图时同样直接切进工作台。

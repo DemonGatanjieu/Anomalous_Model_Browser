@@ -563,3 +563,45 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 @media (max-width: 640px) {
     .anomalous-ai-composer-pic-preview { width: 100%; height: 140px; }
 }
+
+/* "Run my preset" dialog & reusable visual workflow card selector (ui_ai_preset_sheet.js, ui_workflow_pick.js). */
+.anomalous-ai-connect-dialog.is-preset-sheet { width: min(980px, 92vw); max-height: 90vh; }
+.anomalous-ai-preset-sources { gap: 10px; }
+.anomalous-ai-preset-sources .anomalous-ai-start-choice { padding: 12px 14px; }
+.anomalous-wf-pick { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.anomalous-wf-pick-grid {
+    flex: initial;
+    max-height: clamp(240px, 44vh, 420px);
+    padding: 4px;
+    grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+    gap: 12px;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--amb-ink-rgb), 0.22) transparent;
+}
+.anomalous-wf-pick-grid::-webkit-scrollbar { width: 7px; }
+.anomalous-wf-pick-grid::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(var(--amb-ink-rgb), 0.22); }
+.anomalous-wf-pick-card { --wf-cover-height: 128px; cursor: pointer; }
+.anomalous-wf-pick-card:active { cursor: pointer; }
+.anomalous-wf-pick-card:focus-visible { outline: 2px solid var(--amb-link); outline-offset: 2px; }
+.anomalous-wf-pick-card.is-on { border-color: var(--amb-link); box-shadow: 0 0 0 2px var(--amb-link), 0 8px 20px rgba(0, 0, 0, 0.35); }
+.anomalous-wf-pick-check {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--amb-link);
+    color: var(--amb-on-link);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.anomalous-wf-pick-card.is-on .anomalous-wf-pick-check { display: inline-flex; }
+.anomalous-wf-pick-plain { flex: none; margin-left: auto; color: var(--amb-text-dim); font-size: 11px; }
+@media (max-width: 640px) {
+    .anomalous-ai-preset-sources { grid-template-columns: 1fr; }
+}

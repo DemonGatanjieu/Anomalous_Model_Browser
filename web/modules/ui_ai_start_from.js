@@ -13,10 +13,9 @@ import { aiWindow } from './ui_ai_connect.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { icon } from './ui_ai_icons.js';
 import { modelMetaSummary, modelThumb, openModelPicker } from './ui_ai_model_pick.js';
+import { workflowCardGrid } from './ui_workflow_pick.js';
 import {
-    SEARCH_FROM,
     START_FROM_KEY,
-    filterWorkflows,
     loadImageInfo,
     pickWay,
     resolveStartFrom,
@@ -36,13 +35,6 @@ function button(className, label, onClick) {
     const node = el('button', className, label);
     node.type = 'button';
     node.onclick = onClick;
-    return node;
-}
-
-function option(value, label) {
-    const node = document.createElement('option');
-    node.value = value;
-    node.textContent = label;
     return node;
 }
 
@@ -410,11 +402,12 @@ export function startFromSection({ data, cards = false }) {
     root.append(pillsRow);
     if (!canOpen) root.append(el('div', 'anomalous-ai-start-from-note', t('aiStartOpenDisabled')));
 
-    const cardSearch = el('input', 'anomalous-ai-start-input');
-    cardSearch.type = 'search';
-    cardSearch.placeholder = t('aiPresetSearch');
-    cardSearch.hidden = workflows.length < SEARCH_FROM;
-    const cardPick = el('select', 'anomalous-ai-start-select');
+    const wfPicker = workflows.length ? workflowCardGrid({
+        workflows,
+        selected: state.card,
+        onPick: (wf) => { state.card = wf.file; },
+    }) : null;
+    if (wfPicker) scope.onDispose(() => wfPicker.stop());
     const body = el('div', 'anomalous-ai-start-from-body');
     root.append(body);
 
@@ -449,28 +442,20 @@ export function startFromSection({ data, cards = false }) {
         }
     }
 
-    function drawCardSelect() {
-        const shown = filterWorkflows(workflows, cardSearch.value, state.card);
-        cardPick.replaceChildren(...shown.map(item => option(item.file, item.name)));
-        cardPick.value = state.card;
-    }
-
     function draw() {
         drawPills();
         if (state.mode === 'new') {
             routePart.renderInto(body);
         } else if (state.mode === 'open') {
             body.replaceChildren(el('div', 'anomalous-ai-start-from-note', openFactLine(loadInfo)));
-        } else if (state.mode === 'card') {
-            drawCardSelect();
-            body.replaceChildren(cardSearch, cardPick);
+        } else if (state.mode === 'card' && wfPicker) {
+            wfPicker.setSelected(state.card);
+            body.replaceChildren(wfPicker.node);
         } else {
             body.replaceChildren(el('div', 'anomalous-ai-start-from-note', t('aiStartAiHint')));
         }
     }
 
-    cardSearch.oninput = drawCardSelect;
-    cardPick.onchange = () => { state.card = cardPick.value; };
     draw();
     if (hasNew) routePart.fetchInitial();
 

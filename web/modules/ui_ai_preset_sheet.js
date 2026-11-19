@@ -13,11 +13,12 @@ import { translate as t } from './locales.js';
 import { MAX_EACH, MAX_TOTAL, OWN, still, toggled, total, withTimes } from './preset_run_list.js';
 import { fitsTab, openTabs, presetSets, runPresets } from './preset_runs.js';
 import { startTask } from './ui_ai_handoff.js';
+import { icon } from './ui_ai_icons.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { workflowCardGrid } from './ui_workflow_pick.js';
 
 const KEY = 'anomalous_ai_preset_last';
-const SEARCH_FROM = 8; // saved workflows from which their list gets a line to search it
 const MAX_NOTE = 2000; // a message to the AI (api/ai_panels.py MAX_MESSAGE)
 const MAX_HIDDEN = 1200;
 
@@ -108,23 +109,42 @@ export function presetFields({ data, owner, close, go }) {
     const tabOf = () => tabs.find(tab => tab.path === state.tab) || null;
     const usable = file => file === OWN || !state.tab || Boolean(state.fits?.has(file));
 
-    const fromCard = button('anomalous-ai-start-pill', t('aiPresetFromCard'), () => setSource(''));
-    const fromTab = button('anomalous-ai-start-pill', t('aiPresetFromTab'), () => setSource(tabs[0].path));
-    const sources = el('div', 'anomalous-ai-start-pills');
-    sources.append(fromCard, ...(tabs.length ? [fromTab] : []));
+    const choiceBox = (iconName, titleKey, hintText, onClick) => {
+        const node = button('anomalous-ai-start-choice', '', onClick);
+        const words = el('span', 'anomalous-ai-start-choice-words');
+        words.append(el('span', 'anomalous-ai-start-choice-title', t(titleKey)),
+            el('span', 'anomalous-ai-start-choice-hint', hintText));
+        node.append(icon(iconName, 18), words);
+        return node;
+    };
+    const fromCard = choiceBox('workflows', 'aiPresetFromCard', t('aiPresetFromCardHint'), () => setSource(''));
+    const tabHint = tabs.length === 1 ? tabs[0].name : tabs.length > 1 ? t('aiPresetFromTabHint') : t('aiPresetFromTabNone');
+    const fromTab = choiceBox('nodes', 'aiPresetFromTab', tabHint, () => { if (tabs.length) setSource(tabs[0].path); });
+    fromTab.disabled = !tabs.length;
+    if (!tabs.length) fromTab.title = t('aiPresetFromTabNone');
+    const sources = el('div', 'anomalous-ai-start-choices anomalous-ai-preset-sources');
+    sources.append(fromCard, fromTab);
     const tabPick = el('select', 'anomalous-ai-start-select');
     tabPick.append(...tabs.map(tab => option(tab.path, tab.name)));
     tabPick.onchange = () => setSource(tabPick.value);
     const tabNote = el('div', 'anomalous-ai-preset-note');
     const tabField = field(t('aiPresetTab'), tabPick, tabNote);
-    const search = el('input', 'anomalous-ai-start-input');
-    search.type = 'search';
-    search.placeholder = t('aiPresetSearch');
-    search.hidden = data.workflows.length < SEARCH_FROM;
-    const cardPick = el('select', 'anomalous-ai-start-select');
+    const wfPicker = workflowCardGrid({
+        workflows: data.workflows,
+        selected: state.workflow?.file || '',
+        showPresets: true,
+        onPick: (workflow) => {
+            setWorkflow(workflow);
+            draw();
+        },
+        onConfirm: () => {
+            const next = go.previousElementSibling;
+            if (next && !next.hidden) next.click();
+        },
+    });
     const cardLabel = el('span', 'anomalous-ai-start-label');
     const cardField = el('div', 'anomalous-ai-start-field');
-    cardField.append(cardLabel, search, cardPick);
+    cardField.append(cardLabel, wfPicker.node);
     const chips = el('div', 'anomalous-ai-preset-chips');
     const row = el('div', 'anomalous-ai-preset-run');
     const sum = el('div', 'anomalous-ai-preset-sum');
@@ -159,20 +179,16 @@ export function presetFields({ data, owner, close, go }) {
         closing.input.disabled = ai;
     }
 
-    function drawCards() {
-        const words = search.value.trim().toLowerCase();
-        const shown = data.workflows.filter(item => item === state.workflow || !words || item.name.toLowerCase().includes(words));
-        cardPick.replaceChildren(...shown.map(item => option(item.file, item.name)));
-        cardPick.value = state.workflow.file;
-    }
-
     function draw() {
         const tab = tabOf();
         fromCard.classList.toggle('is-on', !tab);
+        fromCard.setAttribute('aria-pressed', String(!tab));
         fromTab.classList.toggle('is-on', Boolean(tab));
+        fromTab.setAttribute('aria-pressed', String(Boolean(tab)));
         tabField.hidden = !tab;
-        cardLabel.textContent = t(tab ? 'aiPresetFrom' : 'aiStartWorkflow');
-        drawCards();
+        cardLabel.hidden = !tab;
+        cardLabel.textContent = t('aiPresetFrom');
+        wfPicker.setSelected(state.workflow?.file);
         const own = t(tab ? 'aiPresetAsIs' : 'aiStartOwnSettings');
         chips.replaceChildren(...[{ file: OWN, name: own }, ...state.workflow.presets].map((preset) => {
             const at = state.picks.findIndex(pick => pick.file === preset.file);
@@ -220,6 +236,7 @@ export function presetFields({ data, owner, close, go }) {
 
     function setWorkflow(workflow) {
         state.workflow = workflow;
+        wfPicker.setSelected(workflow?.file, { scroll: Boolean(state.tab) });
         state.picks = [{ file: OWN, times: 1 }];
         void checkFits();
     }
@@ -236,8 +253,6 @@ export function presetFields({ data, owner, close, go }) {
         setWorkflow(same || state.workflow);
     }
 
-    cardPick.onchange = () => setWorkflow(data.workflows.find(item => item.file === cardPick.value));
-    search.oninput = drawCards;
     change.oninput = tell;
     hidden.oninput = tell;
     privacy.input.onchange = tell;
@@ -282,5 +297,5 @@ export function presetFields({ data, owner, close, go }) {
                 : total(state.picks) > MAX_TOTAL ? { errorText: t('aiPresetTooMany', { count: total(state.picks), max: MAX_TOTAL }) } : null) },
         { title: t('aiPresetStepChange'), nodes: [hint('aiStartStepMoreHint'), change, checks, hiddenField, who] },
     ];
-    return { steps, start };
+    return { steps, start, stop: () => wfPicker.stop() };
 }

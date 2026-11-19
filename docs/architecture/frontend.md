@@ -505,3 +505,15 @@ cards:
 - Keeps all versions of the same Civitai model page (`model_versions.js` `groupByPage`)
   expanded side by side in contiguous groups so versions stay easy to inspect and
   compare in one view without layout jumping when toggling selections.
+
+## Reusable Workflow Card Selector (`ui_workflow_pick.js`)
+
+Places asking the user to choose a saved workflow (`ui_ai_preset_sheet.js` and
+`ui_ai_start_from.js`) share `workflowCardGrid` in `web/modules/ui_workflow_pick.js`
+rather than plain `<select>` dropdowns:
+
+- Reuses `createRecipeCardFace` (`ui_recipe_cards.js`) and `recipeMatchesFilter`
+  (`ui_recipe_catalog.js`) along with `28-workflows.css` so saved workflows keep
+  their cover thumbnails/videos, readiness indicators, parameter summaries and
+  model labels, hydrated from `/anomalous/recipes`.
+- Preserves scroll position and selection ring across search filtering and hydration.

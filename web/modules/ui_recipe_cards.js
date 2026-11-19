@@ -158,12 +158,19 @@ function modelLine(params) {
     return line;
 }
 
-export function createRecipeCard(owner, recipe, services) {
+/**
+ * Builds the reusable visual card face of a saved Workflow Recipe (cover thumbnail/video,
+ * readiness mark, scope pill, title, meta line and model row) shared by the Workflows page and
+ * workflow pickers (`ui_workflow_pick.js`).
+ */
+export function createRecipeCardFace(recipe, { coverExtra = null, infoExtra = null, dragHint = false } = {}) {
     const data = recipe?.data || {};
     const isPartial = data.workflow_scope === 'partial';
     const card = document.createElement('article');
     card.className = 'anomalous-wf-card';
-    card.title = `${data.name || t('recipeUntitled')} — ${t('recipeCardDragHint')}`;
+    card.title = dragHint
+        ? `${data.name || t('recipeUntitled')} — ${t('recipeCardDragHint')}`
+        : (data.name || t('recipeUntitled'));
 
     const cover = document.createElement('div');
     cover.className = 'anomalous-wf-cover';
@@ -175,7 +182,8 @@ export function createRecipeCard(owner, recipe, services) {
     appendRecipeCover(cover, thumbnail, data.name || t('recipeThumbnail'), recipe?.filename || data.name);
     cover.append(readinessMark(data));
     if (isPartial) appendText(cover, 'span', t('recipeScopePill_partial'), 'anomalous-wf-kind');
-    card.append(cover, cardActions(owner, recipe, services, isPartial));
+    if (coverExtra) cover.append(coverExtra);
+    card.append(cover);
 
     const info = document.createElement('div');
     info.className = 'anomalous-wf-info';
@@ -183,8 +191,17 @@ export function createRecipeCard(owner, recipe, services) {
     title.title = data.name || t('recipeUntitled');
     const meta = appendText(info, 'div', recipeMetaLine(data.params), 'anomalous-wf-meta');
     meta.title = meta.textContent;
-    info.append(modelLine(data.params));
+    const extras = modelLine(data.params);
+    if (infoExtra) extras.append(infoExtra);
+    info.append(extras);
     card.append(info);
+    return { card, cover, info, extras, isPartial };
+}
+
+export function createRecipeCard(owner, recipe, services) {
+    const data = recipe?.data || {};
+    const { card, cover, isPartial } = createRecipeCardFace(recipe, { dragHint: true });
+    cover.after(cardActions(owner, recipe, services, isPartial));
 
     card.onclick = () => runRecipeCardAction(card, async () => {
         const bundle = await services.fetchRecipeBundle(recipe.filename);
