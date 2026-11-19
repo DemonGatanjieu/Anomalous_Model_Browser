@@ -10,7 +10,8 @@ import { loadCatalog } from './ai_toolbox_data.js';
 import { translate as t } from './locales.js';
 import { art } from './ui_ai_art.js';
 import { icon } from './ui_ai_icons.js';
-import { modelMetaSummary, openModelPicker } from './ui_ai_model_pick.js';
+import { modelMetaSummary, modelThumb, openModelPicker } from './ui_ai_model_pick.js';
+import { addCard, pickedCard } from './ui_picked_card.js';
 
 const MAX_LORAS = 6;
 
@@ -51,41 +52,34 @@ export function loraPicker() {
     node.hidden = true;
     const label = el('span', 'anomalous-ai-start-label', t('aiStartLoras'));
     label.prepend(icon('lock', 13));
-    const chips = el('div', 'anomalous-ai-start-lora-chips');
-    const add = el('button', 'anomalous-ai-start-pick');
-    add.type = 'button';
-    add.append(icon('models', 14), el('span', '', t('aiStartLorasAdd')));
-    add.onclick = () => openModelPicker({
+    const cards = el('div', 'anomalous-ai-start-lora-cards');
+    const add = addCard(t('aiStartLorasAdd'), () => openModelPicker({
         title: t('aiPickLorasTitle'),
         models: all,
         picked: chosen.map(item => item.model_id),
         max: MAX_LORAS,
         hint: t('aiPickLorasHint', { max: MAX_LORAS }),
-        from: add,
+        from: add.node,
         onDone: (ids) => {
             chosen = ids.map(id => all.find(item => item.model_id === id)).filter(Boolean);
             draw();
         },
-    });
+    }));
 
+    /** The LoRAs picked as cards with their covers and an × each, then the dashed card that adds one. */
     function draw() {
-        chips.replaceChildren(...chosen.map((item) => {
-            const chip = el('span', 'anomalous-ai-start-lora-chip');
-            const drop = el('button', 'anomalous-ai-start-lora-drop');
-            drop.type = 'button';
-            drop.setAttribute('aria-label', t('aiStartLorasDrop', { name: item.name }));
-            drop.append(icon('close', 12));
-            drop.onclick = () => {
-                chosen.splice(chosen.indexOf(item), 1);
-                draw();
-            };
-            const meta = modelMetaSummary(item);
-            chip.append(el('span', 'anomalous-ai-start-lora-name', item.name),
-                ...(meta ? [el('span', 'anomalous-ai-start-lora-meta', meta)] : []), drop);
-            if (meta) chip.title = `${item.name} (${meta})`;
-            return chip;
-        }));
-        chips.hidden = !chosen.length;
+        cards.replaceChildren(...chosen.map((item) => {
+            const card = pickedCard({
+                onDrop: () => {
+                    chosen.splice(chosen.indexOf(item), 1);
+                    draw();
+                },
+                dropLabel: t('aiStartLorasDrop', { name: item.name }),
+            });
+            card.fill({ cover: modelThumb(item, 'anomalous-picked-img'), name: item.name, meta: modelMetaSummary(item) });
+            return card.node;
+        }), add.node);
+        add.node.hidden = chosen.length >= MAX_LORAS;
     }
 
     const favRequest = fetch('/anomalous/ai_toolbox/favorites')
@@ -97,7 +91,7 @@ export function loraPicker() {
         node.hidden = !all.length;
         draw();
     }).catch(() => { /* the sheet works without it */ });
-    node.append(label, chips, add);
+    node.append(label, cards);
     return { node, read: () => chosen.map(item => item.file) };
 }
 

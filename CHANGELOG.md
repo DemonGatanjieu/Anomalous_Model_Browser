@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 「照我说的出图」「隐私出图」的「从哪开始」不那么挤了：「新搭一张」选好的两个模型是两张带封面的卡片，左上角写「① 先画」「② 接着画」，点卡片就能换，中间一个调换先后的按钮，只选了一个时旁边有「加第二个模型」。「怎么搭配」排成一格格卡片，标题短了（「Tile 放大重画」「画到一半换模型」「只用 ①，一次出图」），不再重复长长的模型名。隐私出图选的 LoRA 也是带封面的卡片，右上角 × 去掉，虚线卡片「加 LoRA」。「我存的工作流」选中的那个也是一张卡片，点它换。
+- "Start from" in "Draw what I describe" and "Draw privately" is less crowded: in "Build a new one" the two models are cards with their covers, "① draws first" and "② goes on" on them; a click changes them, a button between swaps them, and "Add a second model" sits beside a lone one. The combos are a grid of cards with short titles ("Tile, redrawn larger", "Switch models halfway", "Only ①, in one pass") instead of repeating long model names. The private card's LoRAs are cards with covers and an ×, with a dashed "Add a LoRA"; the chosen saved workflow is a card too, clicked to change it.
+
 - 隐私模式下用存好的提示词更方便：「隐私出图」带锁的提示词框，和隐私任务里 AI 请你写提示词的框，旁边都多了「取我存的提示词」。点开是一个小列表，能搜，列出你存的提示词和搭配、工作流里带的，点一条就填进框里（框里有字就接在后面；有反向提示词框而且是空的，就一起填上；AI 请你写提示词时一条填一格）。只是在你电脑上填字，发给 AI 时照旧换成代号。
 - Saved prompts in privacy mode: the sealed prompt of "Draw privately", and the prompt box an AI asks with in a private task, have "Take a saved prompt": a searchable list of your saved prompts and those inside combos and workflows; a click fills the field (after what is there; the negative too while its field is empty, one prompt per field in the AI's box). It only fills the field on your computer; the AI still gets a token for it.
 

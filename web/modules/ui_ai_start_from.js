@@ -14,6 +14,7 @@ import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { icon } from './ui_ai_icons.js';
 import { modelMetaSummary, modelThumb, openModelPicker } from './ui_ai_model_pick.js';
 import { workflowChoice } from './ui_workflow_pick.js';
+import { addCard, pickedCard } from './ui_picked_card.js';
 import {
     START_FROM_KEY,
     loadImageInfo,
@@ -94,9 +95,10 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
     const findModel = id => (models || []).find(item => item.model_id === id) || null;
     scope.onDispose(() => waysAbort?.abort());
 
-    // The models picked, each a chip with its number (the first draws first), a swap between two, and a button to the picker.
+    // The models picked as cards with their covers (① draws first, ② goes on), a swap between two; a press on a card
+    // opens the picker to change them, the dashed card picks the first or adds a second.
     const picked = el('div', 'anomalous-ai-start-models');
-    const pickButton = button('anomalous-ai-start-pick', '', () => openModelPicker({
+    const openPicker = from => openModelPicker({
         title: t('aiPickBaseTitle'),
         models: models || [],
         picked: [state.first, state.second].filter(Boolean),
@@ -108,14 +110,14 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
         role: index => t(index ? 'aiPickRoleSecond' : 'aiPickRoleFirst'),
         note: t('aiStartNewOnly'),
         hint: t('aiPickBaseHint'),
-        from: pickButton,
+        from,
         onDone: (ids) => {
             state.first = ids[0];
             state.second = ids[1] || '';
             drawPicked();
             fetchWays();
         },
-    }));
+    });
     const swap = button('anomalous-ai-start-swap', '', () => {
         [state.first, state.second] = [state.second, state.first];
         drawPicked();
@@ -124,28 +126,24 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
     swap.title = t('aiStartSwap');
     swap.setAttribute('aria-label', t('aiStartSwap'));
     swap.append(icon('swap', 14));
-    const one = el('span', 'anomalous-ai-start-model');
-    const two = el('span', 'anomalous-ai-start-model');
-    picked.append(one, swap, two, pickButton); // filled in place: a moved button would lose the focus
+    const one = pickedCard({ onOpen: () => openPicker(one.node) });
+    const two = pickedCard({ onOpen: () => openPicker(two.node) });
+    const add = addCard('', () => openPicker(add.node));
+    picked.append(one.node, swap, two.node, add.node); // filled in place: a moved button would lose the focus
 
-    function fillChip(chip, model, number) {
-        chip.hidden = !model;
-        if (!model) return;
-        const meta = modelMetaSummary(model);
-        const words = el('span', 'anomalous-ai-start-model-words');
-        words.append(el('span', 'anomalous-ai-start-model-name', model.name));
-        if (meta) words.append(el('span', 'anomalous-ai-start-model-meta', meta));
-        chip.replaceChildren(modelThumb(model, 'anomalous-ai-start-model-thumb'), el('span', 'anomalous-ai-start-model-num', String(number)), words);
-        chip.title = meta ? `${model.name} (${meta})` : model.name;
+    function fillCard(card, model, badge) {
+        card.node.hidden = !model;
+        if (model) card.fill({ cover: modelThumb(model, 'anomalous-picked-img'), name: model.name, meta: modelMetaSummary(model), badge });
     }
 
     function drawPicked() {
         const first = findModel(state.first);
         const second = first && state.second ? findModel(state.second) : null;
-        fillChip(one, first, 1);
-        fillChip(two, second, 2);
+        fillCard(one, first, `① ${t('aiPickRoleFirst')}`);
+        fillCard(two, second, `② ${t('aiPickRoleSecond')}`);
         swap.hidden = !second;
-        pickButton.replaceChildren(icon('models', 14), el('span', '', t(first ? 'aiStartChangeModels' : 'aiStartPickModels')));
+        add.node.hidden = Boolean(second) || Boolean(first && !secondModelChoices(models || [], first.model_id).length);
+        add.say(t(first ? 'aiStartAddSecond' : 'aiStartPickModels'));
     }
 
     /** A combo's flow in small covers: the first model, a magnifier where the picture gets bigger, the second. */
@@ -181,10 +179,8 @@ function newRoutePart({ scope, remembered, alwaysRemember = false, initialState 
             });
             node.setAttribute('aria-pressed', String(on));
             const words = el('div', 'anomalous-ai-start-way-words');
-            words.append(
-                el('div', 'anomalous-ai-start-way-title', t(`aiRoute_${way.id}`, { a: first?.name || '', b: second?.name || '' })),
-                el('div', 'anomalous-ai-start-way-detail', t(`aiRouteDetail_${way.id}`)),
-            );
+            words.append(el('div', 'anomalous-ai-start-way-title', t(`aiRouteShort_${way.id}`)), el('div', 'anomalous-ai-start-way-detail', t(`aiRouteDetail_${way.id}`)));
+            node.title = t(`aiRoute_${way.id}`, { a: first?.name || '', b: second?.name || '' }); // with the models' names
             node.append(...(first ? [flowOf(way, first, second)] : []), words);
             return node;
         }));

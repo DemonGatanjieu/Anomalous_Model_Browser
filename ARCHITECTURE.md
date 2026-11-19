@@ -693,6 +693,8 @@ covered by the `styles.css` manifest.
   a card's tags name only what Anomalous makes sure of. The private card puts the prompt the AI gets as a token
   first (`web/modules/ai_name_guard.js` finds, before any message goes, a hidden model named in words the way to the
   AI leaves as written, for `ui_ai_model_lock.js` guardNames to ask about; `tests/ai_name_guard.mjs`);
+  Picked models, LoRAs and the chosen saved workflow show as cards outside their picker windows
+  (`web/modules/ui_picked_card.js`: cover, name, one line; a press opens the picker, an × drops a LoRA, a dashed card adds one).
   `web/modules/ui_ai_private_sheet.js` adds its optional LoRAs (from the materials catalog with user favourites, named in the first
   message by file name so the task's privacy turns them into tokens, picked in the reusable model picker) and the four-box drawing of what happens to the prompt.
   "Run my preset", a "Do it yourself" card of the home page (`openPresetSheet` reads the saved workflows first;

@@ -311,29 +311,101 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 .anomalous-ai-start-from { gap: 8px; }
 .anomalous-ai-start-from-body { display: flex; flex-direction: column; gap: 8px; }
 .anomalous-ai-start-sublabel { color: var(--amb-text-muted); font-size: 12px; }
-/* The models picked: chips with a cover and a number (the first draws first), a swap between two, the button to the window. */
-.anomalous-ai-start-models { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.anomalous-ai-start-model {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-    max-width: 100%;
-    padding: 3px 10px 3px 3px;
-    border: 1px solid var(--amb-border);
-    border-radius: 999px;
-    color: var(--amb-text-main);
-    font-size: 12.5px;
-}
-.anomalous-ai-start-model[hidden],
+/* Picked things as cards (ui_picked_card.js): the models of "Build a new one" (① draws first, ② goes on) with a swap
+   between two, the private card's LoRAs (an × each), the chosen saved workflow; a press opens the picker ("Change"
+   shows on the pointer), the dashed card picks or adds one. */
+.anomalous-ai-start-models,
+.anomalous-ai-start-lora-cards { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .anomalous-ai-start-swap[hidden] { display: none; }
-.anomalous-ai-start-model-words { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.anomalous-ai-start-model-num { flex: none; color: var(--amb-link); font-weight: 700; }
-.anomalous-ai-start-model-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-start-model-meta,
-.anomalous-ai-start-lora-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--amb-text-muted); font-size: 11px; }
-.anomalous-ai-start-lora-meta { flex-shrink: 1; }
-.anomalous-ai-start-model-thumb,
+.anomalous-picked-card {
+    position: relative;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: 148px;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    color: var(--amb-text-main);
+    font: inherit;
+    text-align: left;
+}
+.anomalous-picked-card[hidden] { display: none; }
+.anomalous-picked-card.is-open { cursor: pointer; }
+.anomalous-picked-card.is-open:hover,
+.anomalous-picked-card.is-open:focus-visible { border-color: var(--amb-link); outline: 0; }
+.anomalous-picked-cover { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; background: rgba(var(--amb-ink-rgb), 0.06); }
+.anomalous-picked-img { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--amb-text-muted); }
+.anomalous-picked-img > img,
+.anomalous-picked-img > video { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-picked-img > .anomalous-tb-type-art { width: 100%; height: 100%; }
+.anomalous-picked-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--amb-link);
+    color: var(--amb-on-link);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+}
+.anomalous-picked-change {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 11px;
+    line-height: 18px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.anomalous-picked-card.is-open:hover .anomalous-picked-change,
+.anomalous-picked-card.is-open:focus-visible .anomalous-picked-change { opacity: 1; }
+@media (pointer: coarse) { .anomalous-picked-change { opacity: 1; } }
+.anomalous-picked-words { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 6px 8px 8px; }
+.anomalous-picked-name,
+.anomalous-picked-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-picked-name { font-size: 12.5px; font-weight: 600; }
+.anomalous-picked-meta { color: var(--amb-text-muted); font-size: 11px; }
+.anomalous-picked-drop {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    cursor: pointer;
+}
+.anomalous-picked-drop:hover { background: color-mix(in srgb, var(--amb-danger) 80%, #000); }
+.anomalous-picked-card.is-add {
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 156px;
+    border: 1.5px dashed var(--amb-border-strong);
+    background: transparent;
+    color: var(--amb-text-soft);
+    cursor: pointer;
+}
+.anomalous-picked-card.is-add:hover,
+.anomalous-picked-card.is-add:focus-visible { border-color: var(--amb-link); color: var(--amb-link); outline: 0; }
+.anomalous-picked-add-label { font-size: 12.5px; }
+.anomalous-ai-start-lora-cards .anomalous-picked-card { width: 124px; }
+.anomalous-ai-start-lora-cards .anomalous-picked-card.is-add { min-height: 138px; }
 .anomalous-ai-start-way-thumb {
     display: inline-flex;
     flex: none;
@@ -343,10 +415,8 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
     border-radius: 50%;
     background: rgba(var(--amb-ink-rgb), 0.06);
 }
-.anomalous-ai-start-model-thumb > img,
 .anomalous-ai-start-way-thumb > img { width: 100%; height: 100%; object-fit: cover; }
-.anomalous-ai-start-swap,
-.anomalous-ai-start-pick {
+.anomalous-ai-start-swap {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -360,8 +430,7 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
     cursor: pointer;
 }
 .anomalous-ai-start-swap { padding: 5px; }
-.anomalous-ai-start-swap:hover,
-.anomalous-ai-start-pick:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+.anomalous-ai-start-swap:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
 /* Reusable model picker window (ui_ai_model_pick.js): large dialog reusing Models page card faces, types, Base Models and grouped versions. */
 .anomalous-ai-connect-dialog.is-model-pick { width: min(1140px, 94vw); max-height: 90vh; }
 .anomalous-ai-pick { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
@@ -461,13 +530,15 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 .anomalous-ai-pick-hint.is-warn { color: var(--amb-warn-text); }
 .anomalous-ai-start-from-note { color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.55; }
 .anomalous-ai-start-from-warn { color: var(--amb-warn-text); font-size: 12px; line-height: 1.55; }
-.anomalous-ai-start-ways { display: flex; flex-direction: column; gap: 6px; }
-/* A combo: its flow in small covers (first → second, a magnifier where the picture gets bigger), then its words. */
+/* The combos as a grid of cards: the flow in small covers (first → second, a magnifier where the picture gets
+   bigger) over a short title (the models' names on the pointer) and a line of what it does. */
+.anomalous-ai-start-ways { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
 .anomalous-ai-start-way {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 12px;
     border: 1px solid var(--amb-border);
     border-radius: 10px;
     background: transparent;
@@ -487,23 +558,8 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 .anomalous-ai-start-way-detail { color: var(--amb-text-muted); font-size: 12px; line-height: 1.5; }
 .anomalous-ai-start-input[hidden] { display: none; }
 
-/* The private card's optional LoRAs (ui_ai_private_sheet.js): chips with ×, then the button to the model window. */
-.anomalous-ai-start-loras[hidden],
-.anomalous-ai-start-lora-chips[hidden] { display: none; }
-.anomalous-ai-start-loras > .anomalous-ai-start-pick { align-self: flex-start; }
-.anomalous-ai-start-lora-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.anomalous-ai-start-lora-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    max-width: 100%;
-    padding: 2px 4px 2px 10px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--amb-warn) 12%, transparent);
-    color: var(--amb-text-main);
-    font-size: 12.5px;
-}
-.anomalous-ai-start-lora-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The private card's optional LoRAs (ui_ai_private_sheet.js) as cards; the drop button of the model window's picked chips. */
+.anomalous-ai-start-loras[hidden] { display: none; }
 .anomalous-ai-start-lora-drop {
     display: inline-grid;
     place-items: center;
@@ -604,9 +660,6 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 .anomalous-wf-pick-window .anomalous-wf-pick-grid { max-height: min(60vh, 640px); }
 .anomalous-wf-pick-chips { margin: 0; }
 .anomalous-wf-pick-chips[hidden] { display: none; }
-.anomalous-wf-choice-line { max-width: min(420px, 100%); }
-.anomalous-wf-choice-thumb > img,
-.anomalous-wf-choice-thumb > video { width: 100%; height: 100%; object-fit: cover; }
 /* The strip over the cards to the Saves page: dashed in the accent, an arrow at the end, so it reads as "go there". */
 .anomalous-ai-preset-to-saves {
     display: flex;

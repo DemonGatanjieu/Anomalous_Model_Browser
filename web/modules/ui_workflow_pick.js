@@ -4,8 +4,8 @@
  * with its readiness dot and settings, its search (`recipeMatchesFilter`), and chips for what the page's filter
  * menu offers (complete or a module, the user's tags) and, where presets count, the ones that have some; it is
  * embedded in "Run my preset". The same grid as a window (openWorkflowPicker: "Done", or a double click, takes
- * the one picked). The chosen one as a line, its cover, name and settings, with a button to that window
- * (workflowChoice: "Start from → A saved workflow"). Covers and settings come from GET /anomalous/recipes, kept a minute.
+ * the one picked). The chosen one as a card, its cover, name and settings, whose press opens that window
+ * (workflowChoice: "Start from → A saved workflow", ui_picked_card.js). Covers and settings come from GET /anomalous/recipes, kept a minute.
  */
 
 import { translate as t } from './locales.js';
@@ -14,6 +14,7 @@ import { icon } from './ui_ai_icons.js';
 import { createRecipeCardFace, recipeCoverUrl, recipeMetaLine } from './ui_recipe_cards.js';
 import { recipeMatchesFilter } from './ui_recipe_catalog.js';
 import { appendRecipeCover } from './ui_recipe_media.js';
+import { pickedCard } from './ui_picked_card.js';
 
 const KEEP_MS = 60 * 1000;
 let kept = null; // {at, recipes: Map(file → recipe)}
@@ -222,37 +223,33 @@ export function openWorkflowPicker({ title, workflows, picked = '', showPresets 
 }
 
 /**
- * The chosen saved workflow as a line (cover, name, its settings and presets) and a button to the window.
+ * The chosen saved workflow as a card (cover, name, its settings and presets) whose press opens the window.
  * Builds `{ node, set(file) }`; `onChange(workflow)` when another is taken.
  */
 export function workflowChoice({ workflows, picked = '', showPresets = false, onChange }) {
     let current = workflows.find(wf => wf.file === picked) || workflows[0];
     let recipes = null;
     const row = el('div', 'anomalous-ai-start-models anomalous-wf-choice');
-    const line = el('span', 'anomalous-ai-start-model anomalous-wf-choice-line');
-    const change = button('anomalous-ai-start-pick', [], () => openWorkflowPicker({
-        title: t('aiWfPickTitle'), workflows, picked: current?.file, showPresets, from: change,
-        onDone: (wf) => {
-            current = wf;
-            draw();
-            onChange?.(wf);
-        },
-    }));
-    row.append(line, change);
+    const card = pickedCard({
+        onOpen: () => openWorkflowPicker({
+            title: t('aiWfPickTitle'), workflows, picked: current?.file, showPresets, from: card.node,
+            onDone: (wf) => {
+                current = wf;
+                draw();
+                onChange?.(wf);
+            },
+        }),
+    });
+    row.append(card.node);
 
     function draw() {
         const recipe = recipes?.get(current?.file);
-        const thumb = el('span', 'anomalous-ai-start-model-thumb anomalous-wf-choice-thumb');
-        if (recipe) appendRecipeCover(thumb, recipeCoverUrl(recipe), current.name, current.file);
-        else thumb.append(icon('workflows', 16));
+        const cover = el('span', 'anomalous-picked-img');
+        if (recipe) appendRecipeCover(cover, recipeCoverUrl(recipe), current.name, current.file);
+        else cover.append(icon('workflows', 20));
         const meta = [recipe ? recipeMetaLine(recipe.data?.params) : '', showPresets && current?.presets?.length ? t('aiPresetCardCount', { count: current.presets.length }) : '']
             .filter(Boolean).join(' · ');
-        const words = el('span', 'anomalous-ai-start-model-words');
-        words.append(el('span', 'anomalous-ai-start-model-name', current?.name || ''));
-        if (meta) words.append(el('span', 'anomalous-ai-start-model-meta', meta));
-        line.replaceChildren(thumb, words);
-        line.title = [current?.name, meta].filter(Boolean).join(' · ');
-        change.replaceChildren(icon('workflows', 14), el('span', '', t('aiWfChange')));
+        card.fill({ cover, name: current?.name || '', meta });
     }
     draw();
     readRecipes().then((map) => {
