@@ -65,10 +65,9 @@ function chip(label, count, on, onClick) {
 /**
  * Builds `{ node, setSelected(file), stop(), focus() }`. `workflows`: `[{ name, file, presets }]`; `selected`:
  * the `file` picked at first; `showPresets`: each card says how many presets it has, and a chip lists those with
- * some; `search: false` leaves out its search (a window searching itself, ui_ai_prompt_fetch.js); `onPick(workflow)`
- * on a press, `onConfirm(workflow)` on a double click or Enter.
+ * some; `onPick(workflow)` on a press, `onConfirm(workflow)` on a double click or Enter.
  */
-export function workflowCardGrid({ workflows = [], selected = '', showPresets = false, search: withSearch = true, onPick, onConfirm } = {}) {
+export function workflowCardGrid({ workflows = [], selected = '', showPresets = false, onPick, onConfirm } = {}) {
     const abort = new AbortController();
     let current = selected || workflows[0]?.file || '';
     const filter = { query: '', kind: null, tag: null, withPresets: false };
@@ -82,7 +81,7 @@ export function workflowCardGrid({ workflows = [], selected = '', showPresets = 
     search.setAttribute('aria-label', t('aiPresetSearch'));
     const count = el('span', 'anomalous-wf-count');
     searchRow.append(icon('search', 14), search, count);
-    searchRow.hidden = !withSearch || workflows.length <= 1;
+    searchRow.hidden = workflows.length <= 1;
     const chips = el('div', 'anomalous-model-bases anomalous-wf-pick-chips');
     chips.setAttribute('role', 'toolbar');
     chips.setAttribute('aria-label', t('workflowsFilter'));

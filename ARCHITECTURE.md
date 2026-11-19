@@ -108,9 +108,9 @@ covered by the `styles.css` manifest.
   node's STRING inputs by ComfyUI's node list, prompt fields, picture names, the name of the canvas the task works on (`workflow`, `canvas_tab`: a tab named after the user's workflow), any sealed text),
   `expand` on a call's arguments, `seal_answer` for the user's prompt box (a "prompts" panel block,
   `web/modules/ui_ai_prompt_box.js`, with the prompt_pose skill's words for the canvas's model, and
-  `web/modules/ui_ai_prompt_fetch.js`'s "Take a saved prompt": a window with a tab for each place prompts are
-  kept (saved prompts and combos as cards, workflows as the reusable workflow grid of `ui_workflow_pick.js`), one
-  search, the one picked in full; from the picker's catalogue, filling a field on the page only, as at the private
+  `web/modules/ui_ai_prompt_fetch.js`'s "Take a saved prompt": a window picked on the left (a tab for each place
+  prompts are kept, one search, small alike cards, the only part that scrolls) and seen on the right (big cover,
+  the prompt and negative as chips, the button); from the picker's catalogue, filling a field on the page only, as at the private
   card's sealed prompt (styles `styles/60-ai-prompt-take.css`);
   its first field is the gist, the picture in words the AI may read, handed on as written but for the
   words the user marked to hide, which go as tokens inside it; `web/modules/ai_hide_mark.js` is that

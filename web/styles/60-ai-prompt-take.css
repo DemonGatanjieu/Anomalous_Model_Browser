@@ -1,32 +1,37 @@
-/* "Take a saved prompt"'s window (ui_ai_prompt_fetch.js): tabs by where the prompts are kept and one search, the
-   saved prompts and combos as cards (the workflows are the reusable workflow grid, 55-ai-starters.css), the one
-   picked in full under them, "Use this" at the foot. */
-.anomalous-ai-connect-dialog.is-prompt-take { width: min(980px, 94vw); max-height: 90vh; }
-.anomalous-ai-prompt-take { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
-.anomalous-ai-prompt-take-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.anomalous-ai-prompt-take-head[hidden],
-.anomalous-ai-prompt-take-preview[hidden] { display: none; }
+/* "Take a saved prompt"'s window (ui_ai_prompt_fetch.js), of a fixed height that does not scroll itself: tabs and
+   one search on top, then the cards on the left (the only part that scrolls) and the one picked on the right, its
+   big cover, name, a line of what it is, its prompt and negative as chips, and the button at its foot. */
+.anomalous-ai-connect-dialog.is-prompt-take { width: min(1060px, 94vw); height: min(680px, 88vh); max-height: none; overflow: hidden; }
+.anomalous-ai-prompt-take { display: flex; flex: 1; flex-direction: column; gap: 12px; min-height: 0; }
+.anomalous-ai-prompt-take-bar { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.anomalous-ai-prompt-take-bar[hidden] { display: none; }
 .anomalous-ai-prompt-take-tabs { flex: none; margin: 0; }
 .anomalous-ai-prompt-take-search { flex: 1 1 240px; min-width: 0; }
-.anomalous-ai-prompt-take-grid { display: flex; flex-direction: column; min-height: 0; }
-.anomalous-ai-prompt-cards {
+.anomalous-ai-prompt-take-main {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    flex: 1;
+    grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
+    gap: 16px;
+    min-height: 0;
+}
+.anomalous-ai-prompt-take-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     align-content: start;
     gap: 10px;
-    max-height: clamp(240px, 44vh, 420px);
-    padding: 4px;
+    min-height: 0;
+    padding: 2px 10px 2px 2px;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
+    scrollbar-color: rgba(var(--amb-ink-rgb), 0.22) transparent;
 }
 .anomalous-ai-prompt-card {
     display: flex;
     flex-direction: column;
-    gap: 4px;
     min-width: 0;
-    padding: 0 0 10px;
+    padding: 0;
     overflow: hidden;
     border: 1px solid var(--amb-border);
     border-radius: 12px;
@@ -35,41 +40,64 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+    transition: border-color 0.15s;
 }
 .anomalous-ai-prompt-card:hover,
-.anomalous-ai-prompt-card:focus-visible { border-color: var(--amb-link); outline: 0; }
+.anomalous-ai-prompt-card:focus-visible { border-color: var(--amb-border-strong); outline: 0; }
 .anomalous-ai-prompt-card.is-on { border-color: var(--amb-link); box-shadow: inset 0 0 0 1px var(--amb-link); }
-.anomalous-ai-prompt-card-cover { display: flex; align-items: center; justify-content: center; aspect-ratio: 16 / 9; overflow: hidden; background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-muted); }
-.anomalous-ai-prompt-card-cover > img { width: 100%; height: 100%; object-fit: cover; }
-.anomalous-ai-prompt-card-tags { padding: 10px 10px 0; overflow: hidden; color: var(--amb-link); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-prompt-card-name { padding: 0 10px; overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-prompt-card-cover + .anomalous-ai-prompt-card-name { padding-top: 4px; }
-.anomalous-ai-prompt-card > .anomalous-ai-prompt-card-name:first-child { padding-top: 10px; }
+.anomalous-ai-prompt-card-cover,
+.anomalous-ai-prompt-take-cover { display: flex; flex: none; align-items: center; justify-content: center; overflow: hidden; background: rgba(var(--amb-ink-rgb), 0.06); }
+.anomalous-ai-prompt-card-cover { aspect-ratio: 16 / 10; }
+.anomalous-ai-prompt-card-cover > img,
+.anomalous-ai-prompt-take-cover > img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-ai-prompt-card-cover > .anomalous-tb-stand-in,
+.anomalous-ai-prompt-take-cover > .anomalous-tb-stand-in { width: 46%; height: auto; }
+/* A saved prompt has no cover: its tags and first words fill that place. */
+.anomalous-ai-prompt-card-face { display: flex; flex-direction: column; gap: 4px; aspect-ratio: 16 / 10; padding: 10px 10px 0; overflow: hidden; background: color-mix(in srgb, var(--amb-link) 7%, transparent); }
+.anomalous-ai-prompt-card-tags { flex: none; overflow: hidden; color: var(--amb-link); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-prompt-card-text {
     display: -webkit-box;
-    padding: 0 10px;
     overflow: hidden;
     color: var(--amb-text-soft);
-    font-size: 12px;
+    font-size: 11.5px;
     line-height: 1.45;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
     overflow-wrap: anywhere;
 }
-.anomalous-ai-prompt-card-text.is-one { -webkit-line-clamp: 1; line-clamp: 1; }
-.anomalous-ai-prompt-take-preview {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px 12px;
-    border: 1px solid var(--amb-border);
-    border-radius: 10px;
-    background: rgba(var(--amb-ink-rgb), 0.03);
+.anomalous-ai-prompt-card-name { padding: 7px 10px 9px; overflow: hidden; font-size: 12.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+/* The one picked: fixed in place; its chips scroll only when "+n" opened more than there is room for. */
+.anomalous-ai-prompt-take-detail { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding-left: 16px; border-left: 1px solid var(--amb-border); }
+.anomalous-ai-prompt-take-cover { aspect-ratio: 16 / 9; max-height: 34%; border-radius: 10px; }
+.anomalous-ai-prompt-take-titles { display: flex; flex: none; flex-direction: column; gap: 2px; min-width: 0; }
+.anomalous-ai-prompt-take-name { overflow: hidden; color: var(--amb-text-main); font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-prompt-take-meta { overflow: hidden; color: var(--amb-text-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-prompt-take-texts { display: flex; flex: 1; flex-direction: column; gap: 6px; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.anomalous-ai-prompt-take-label { margin-top: 4px; color: var(--amb-text-muted); font-size: 11.5px; }
+.anomalous-ai-prompt-take-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.anomalous-ai-prompt-take-chip {
+    max-width: 100%;
+    padding: 2px 9px;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
 }
-.anomalous-ai-prompt-take-name { color: var(--amb-text-soft); font-size: 12px; font-weight: 600; }
-.anomalous-ai-prompt-take-text,
-.anomalous-ai-prompt-take-negative { max-height: 6.2em; margin: 0; overflow-y: auto; font-size: 12.5px; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
-.anomalous-ai-prompt-take-text { color: var(--amb-text-main); }
-.anomalous-ai-prompt-take-negative { max-height: 3.1em; color: var(--amb-text-muted); }
+.anomalous-ai-prompt-take-chip.is-long { border-radius: 8px; }
+.anomalous-ai-prompt-take-chips.is-negative .anomalous-ai-prompt-take-chip { background: rgba(var(--amb-ink-rgb), 0.07); color: var(--amb-text-soft); }
+.anomalous-ai-prompt-take-chip.is-more { border: 1px dashed var(--amb-border-strong); background: none; color: var(--amb-text-soft); cursor: pointer; }
+.anomalous-ai-prompt-take-chips.is-negative .anomalous-ai-prompt-take-chip.is-more { background: none; }
+.anomalous-ai-prompt-take-chip.is-more:hover { border-color: var(--amb-link); color: var(--amb-link); }
+.anomalous-ai-prompt-take-foot { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--amb-border); }
 .anomalous-ai-prompt-fetch-none { padding: 10px; color: var(--amb-text-dim); font-size: 12.5px; }
+/* A narrow window: the one picked under the cards, each half the height. */
+@media (max-width: 720px) {
+    .anomalous-ai-prompt-take-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+    .anomalous-ai-prompt-take-detail { padding: 12px 0 0; border-top: 1px solid var(--amb-border); border-left: 0; }
+    .anomalous-ai-prompt-take-cover { display: none; }
+}

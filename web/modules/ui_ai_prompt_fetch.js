@@ -1,12 +1,14 @@
 /**
  * "Take a saved prompt" beside a prompt the user writes for a private task (the private card's sealed prompt,
- * ui_ai_starter_sheet.js; the prompt box an AI asks with, ui_ai_prompt_box.js). Its press opens a window that lists
- * them by where they are kept: "Prompts" (the saved ones, cards with their tags and first lines), "Combos" (cards
- * with their covers) and "Workflows" (the reusable workflow card grid, ui_workflow_pick.js), each tab with how many
- * hold a prompt, one search for all three. The card picked shows its whole prompt and negative under the grid;
- * "Use this", or a double click, puts the prompt in the field (after what is there) and the negative in the negative
- * field while that is empty. The materials picker's catalogue (ai_toolbox_data.js) gives them. Nothing leaves the
- * page: the AI gets the field as a token, as it would typed text.
+ * ui_ai_starter_sheet.js; the prompt box an AI asks with, ui_ai_prompt_box.js). Its press opens a window of a fixed
+ * height, picked on the left and seen on the right: tabs by where prompts are kept ("Prompts", "Combos",
+ * "Workflows", each with how many hold one; empty ones left out, the last one opened again) and one search over the
+ * cards, small and alike (a cover and a name; a saved prompt, having none, its tags and first words), the only part
+ * that scrolls; on the right the one picked, its big cover, name and a line of what it is (the workflow's settings
+ * from GET /anomalous/recipes), the prompt and the negative as chips of their comma parts (as many as about fit, "+n"
+ * shows the rest; a long part is a rounded box, not a pill), and "Put it in the prompt" (a double click or Enter on a card too): the prompt goes in the field after
+ * what is there, the negative into the negative field while that is empty. The materials picker's catalogue
+ * (ai_toolbox_data.js) gives them. Nothing leaves the page: the AI gets the field as a token, as it would typed text.
  */
 
 import { translate as t } from './locales.js';
@@ -15,10 +17,13 @@ import { aiWindow } from './ui_ai_connect.js';
 import { icon } from './ui_ai_icons.js';
 import { coverUrl } from './ui_ai_toolbox_cards.js';
 import { standInCover } from './ui_ai_toolbox_icons.js';
-import { workflowCardGrid } from './ui_workflow_pick.js';
+import { recipeMetaLine } from './ui_recipe_cards.js';
+import { readRecipes } from './ui_workflow_pick.js';
 
 const SOURCES = ['saved', 'combo', 'workflow'];
-const SHOWN = 120;
+const SHOWN = 200;
+const ROOM = { positive: 260, negative: 110 }; // letters of chips shown before "+n" (at least one chip)
+const LONG = 36; // a part longer than this wraps: a box, not a pill
 let lastSource = ''; // the tab picked last, opened on again while the page stays
 
 function el(tag, className, text) {
@@ -38,6 +43,10 @@ function put(field, text) {
     field.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+/** A prompt's comma parts, as its chips. */
+const partsOf = text => String(text || '').split(/[,，\n]+/).map(part => part.trim()).filter(Boolean);
+const nameOf = entry => entry.title || entry.name || entry.id || '';
+
 /** Each tab's entries from the catalogue: the saved prompts, the combos and workflows that hold one. */
 function entriesOf(catalog) {
     return {
@@ -47,11 +56,11 @@ function entriesOf(catalog) {
     };
 }
 
-/** A combo's cover, or the stand-in while it has none or it does not load. */
-function cover(item) {
-    const box = el('span', 'anomalous-ai-prompt-card-cover');
-    const url = coverUrl(item);
-    const fallback = () => box.replaceChildren(standInCover('combos'));
+/** A combo's or workflow's cover in a box of `className`, its kind's picture while it has none or it does not load. */
+function coverBox(entry, className) {
+    const box = el('span', className);
+    const url = coverUrl(entry);
+    const fallback = () => box.replaceChildren(standInCover(entry.kind));
     if (!url) {
         fallback();
         return box;
@@ -66,15 +75,16 @@ function cover(item) {
     return box;
 }
 
-/** The window: `use(entry)` with the one taken. */
+/** The window: `use(entry)` with the one taken; `from` gets the focus back. */
 function openPromptWindow(use, from) {
     let entries = null;
     let source = '';
     let chosen = null;
-    let workflowGrid = null;
+    let recipes = null;
+    const expanded = { positive: false, negative: false };
 
     const body = el('div', 'anomalous-ai-prompt-take');
-    const head = el('div', 'anomalous-ai-prompt-take-head');
+    const bar = el('div', 'anomalous-ai-prompt-take-bar');
     const tabs = el('div', 'anomalous-model-bases anomalous-ai-prompt-take-tabs');
     tabs.setAttribute('role', 'toolbar');
     const searchRow = el('div', 'anomalous-ai-pick-search anomalous-ai-prompt-take-search');
@@ -83,58 +93,104 @@ function openPromptWindow(use, from) {
     search.placeholder = t('aiPromptFetchSearch');
     search.setAttribute('aria-label', t('aiPromptFetchSearch'));
     searchRow.append(icon('search', 14), search);
-    head.append(tabs, searchRow);
-    const grid = el('div', 'anomalous-ai-prompt-take-grid');
-    const preview = el('div', 'anomalous-ai-prompt-take-preview');
-    preview.setAttribute('aria-live', 'polite');
+    bar.append(tabs, searchRow);
+    const main = el('div', 'anomalous-ai-prompt-take-main');
+    const list = el('div', 'anomalous-ai-prompt-take-list');
+    list.setAttribute('role', 'listbox');
+    const detail = el('div', 'anomalous-ai-prompt-take-detail');
+    detail.setAttribute('aria-live', 'polite');
+    main.append(list, detail);
+    body.append(bar, main);
+
     const take = () => {
         if (!chosen) return;
         use(chosen);
         close();
     };
+    const foot = el('div', 'anomalous-ai-prompt-take-foot');
     const useButton = el('button', 'anomalous-ai-start-go', t('aiPromptFetchUse'));
     useButton.type = 'button';
     useButton.onclick = take;
-    const foot = el('div', 'anomalous-ai-pick-foot');
     foot.append(el('span', 'anomalous-ai-pick-hint', t('aiPromptFetchHint')), useButton);
-    body.append(head, grid, preview, foot);
 
-    const close = aiWindow(t('aiPromptFetchTitle'), body, () => {
-        workflowGrid?.stop();
-        from?.focus();
-    });
+    const close = aiWindow(t('aiPromptFetchTitle'), body, () => from?.focus());
     body.closest('.anomalous-ai-connect-dialog')?.classList.add('is-prompt-take');
 
     const found = () => searchItems(entries[source], search.value).slice(0, SHOWN);
 
-    function drawPreview() {
-        preview.hidden = !chosen;
-        if (!chosen) return;
-        const words = el('p', 'anomalous-ai-prompt-take-text', chosen.positive || '');
-        preview.replaceChildren(el('div', 'anomalous-ai-prompt-take-name', chosen.title || chosen.name || ''), words);
-        if (chosen.negative) preview.append(el('p', 'anomalous-ai-prompt-take-negative', t('aiPromptFetchNegative', { text: chosen.negative })));
+    /** What the one picked is: where it is kept, then its tags, its model, or its workflow's settings. */
+    function metaOf(entry) {
+        const recipe = source === 'workflow' ? recipes?.get(entry.filename) : null;
+        const more = source === 'saved' ? (entry.tags || []).map(tag => `#${tag}`)
+            : source === 'combo' ? [entry.model, entry.base]
+                : [recipe ? recipeMetaLine(recipe.data?.params) : ''];
+        return [t(`aiPromptFetchTab_${source}`), ...more].filter(Boolean).join(' · ');
+    }
+
+    /** The prompt or the negative (`kind`) as chips under its label; the first few, "+n" for the rest. */
+    function chipPart(kind, text) {
+        const parts = partsOf(text);
+        if (!parts.length) return [];
+        const box = el('div', `anomalous-ai-prompt-take-chips is-${kind}`);
+        let used = 0;
+        const over = parts.findIndex(part => (used += part.length) > ROOM[kind]); // the first chip past the room
+        const fit = over < 0 ? parts.length : Math.max(1, over);
+        const shown = expanded[kind] ? parts : parts.slice(0, fit);
+        box.append(...shown.map(part => el('span', `anomalous-ai-prompt-take-chip${part.length > LONG ? ' is-long' : ''}`, part)));
+        if (parts.length > fit) {
+            const more = el('button', 'anomalous-ai-prompt-take-chip is-more',
+                expanded[kind] ? t('aiPromptFetchLess') : t('aiPromptFetchMore', { count: parts.length - fit }));
+            more.type = 'button';
+            more.setAttribute('aria-expanded', String(expanded[kind]));
+            if (!expanded[kind]) more.title = t('aiPromptFetchShowAll');
+            more.onclick = () => {
+                expanded[kind] = !expanded[kind];
+                drawDetail();
+            };
+            box.append(more);
+        }
+        return [el('div', 'anomalous-ai-prompt-take-label', t(kind === 'positive' ? 'aiPromptFetchPositiveHead' : 'aiPromptFetchNegativeHead')), box];
+    }
+
+    function drawDetail() {
+        if (!chosen) {
+            detail.replaceChildren();
+            return;
+        }
+        const titles = el('div', 'anomalous-ai-prompt-take-titles');
+        titles.append(el('div', 'anomalous-ai-prompt-take-name', nameOf(chosen)), el('div', 'anomalous-ai-prompt-take-meta', metaOf(chosen)));
+        const texts = el('div', 'anomalous-ai-prompt-take-texts');
+        texts.append(...chipPart('positive', chosen.positive), ...chipPart('negative', chosen.negative));
+        detail.replaceChildren(...(source === 'saved' ? [] : [coverBox(chosen, 'anomalous-ai-prompt-take-cover')]), titles, texts, foot);
     }
 
     function choose(entry) {
+        if (entry !== chosen) Object.assign(expanded, { positive: false, negative: false });
         chosen = entry;
-        for (const card of grid.querySelectorAll('.anomalous-ai-prompt-card')) {
+        for (const card of list.querySelectorAll('.anomalous-ai-prompt-card')) {
             const on = card.dataset.id === entry?.id;
             card.classList.toggle('is-on', on);
             card.setAttribute('aria-selected', String(on));
         }
-        drawPreview();
+        drawDetail();
     }
 
-    /** A saved prompt (its tags, name, first lines) or a combo (its cover, name, first line) as a card. */
+    /** A card, all alike: a cover and a name; a saved prompt (no cover) its tags and first words in that place. */
     function card(entry) {
-        const node = el('button', 'anomalous-ai-prompt-card');
+        const node = el('button', `anomalous-ai-prompt-card${source === 'saved' ? ' is-text' : ''}`);
         node.type = 'button';
         node.dataset.id = entry.id;
         node.setAttribute('role', 'option');
-        if (source === 'combo') node.append(cover(entry));
-        else if (entry.tags?.length) node.append(el('span', 'anomalous-ai-prompt-card-tags', entry.tags.slice(0, 3).map(tag => `#${tag}`).join(' ')));
-        node.append(el('span', 'anomalous-ai-prompt-card-name', entry.title || entry.name || entry.id),
-            el('span', `anomalous-ai-prompt-card-text${source === 'combo' ? ' is-one' : ''}`, entry.positive || entry.negative || ''));
+        if (source === 'saved') {
+            const face = el('span', 'anomalous-ai-prompt-card-face');
+            if (entry.tags?.length) face.append(el('span', 'anomalous-ai-prompt-card-tags', entry.tags.slice(0, 3).map(tag => `#${tag}`).join(' ')));
+            face.append(el('span', 'anomalous-ai-prompt-card-text', entry.positive || entry.negative || ''));
+            node.append(face);
+        } else {
+            node.append(coverBox(entry, 'anomalous-ai-prompt-card-cover'));
+        }
+        node.append(el('span', 'anomalous-ai-prompt-card-name', nameOf(entry)));
+        node.title = nameOf(entry);
         node.onclick = () => choose(entry);
         node.ondblclick = () => {
             choose(entry);
@@ -149,33 +205,12 @@ function openPromptWindow(use, from) {
         return node;
     }
 
-    function drawGrid() {
-        workflowGrid?.stop();
-        workflowGrid = null;
+    function drawList() {
         const shown = found();
-        if (!shown.includes(chosen)) chosen = shown[0] || null;
-        if (!shown.length) {
-            grid.replaceChildren(el('div', 'anomalous-ai-prompt-fetch-none', t('recipeNoMatches')));
-        } else if (source === 'workflow') {
-            const byFile = new Map(shown.map(item => [item.filename, item]));
-            workflowGrid = workflowCardGrid({
-                workflows: shown.map(item => ({ name: item.name, file: item.filename })),
-                selected: chosen?.filename,
-                search: false,
-                onPick: wf => choose(byFile.get(wf.file)),
-                onConfirm: (wf) => {
-                    choose(byFile.get(wf.file));
-                    take();
-                },
-            });
-            grid.replaceChildren(workflowGrid.node);
-        } else {
-            const list = el('div', 'anomalous-ai-prompt-cards');
-            list.setAttribute('role', 'listbox');
-            list.append(...shown.map(card));
-            grid.replaceChildren(list);
-        }
-        choose(chosen);
+        const next = shown.includes(chosen) ? chosen : shown[0] || null;
+        list.scrollTop = 0;
+        list.replaceChildren(...(shown.length ? shown.map(card) : [el('div', 'anomalous-ai-prompt-fetch-none', t('recipeNoMatches'))]));
+        choose(next);
     }
 
     function drawTabs() {
@@ -189,7 +224,7 @@ function openPromptWindow(use, from) {
                 source = lastSource = key;
                 chosen = null;
                 drawTabs();
-                drawGrid();
+                drawList();
             };
             return tab;
         }));
@@ -199,24 +234,26 @@ function openPromptWindow(use, from) {
         entries = entriesOf(catalog || []);
         const kept = SOURCES.filter(key => entries[key].length);
         if (!kept.length) {
-            head.hidden = true;
-            preview.hidden = true;
-            grid.replaceChildren(el('div', 'anomalous-ai-prompt-fetch-none', t('aiPromptFetchNone')));
+            bar.hidden = true;
+            main.replaceChildren(el('div', 'anomalous-ai-prompt-fetch-none', t('aiPromptFetchNone')));
             return;
         }
         source = kept.includes(lastSource) ? lastSource : kept[0];
         drawTabs();
-        drawGrid();
+        drawList();
         search.focus();
     }
 
     search.addEventListener('keydown', (event) => { if (event.key !== 'Escape') event.stopPropagation(); });
-    search.oninput = () => { if (entries) drawGrid(); };
-    preview.hidden = true;
+    search.oninput = () => { if (entries) drawList(); };
+    readRecipes().then((map) => {
+        recipes = map;
+        if (source === 'workflow') drawDetail();
+    }).catch(() => {});
     if (keptCatalog()) start(keptCatalog());
     else {
-        grid.replaceChildren(el('div', 'anomalous-ai-prompt-fetch-none', t('aiPromptFetchLoading')));
-        loadCatalog().then(start, () => grid.replaceChildren(el('div', 'anomalous-ai-prompt-fetch-none', t('materialLoadError'))));
+        list.replaceChildren(el('div', 'anomalous-ai-prompt-fetch-none', t('aiPromptFetchLoading')));
+        loadCatalog().then(start, () => list.replaceChildren(el('div', 'anomalous-ai-prompt-fetch-none', t('materialLoadError'))));
     }
 }
 
