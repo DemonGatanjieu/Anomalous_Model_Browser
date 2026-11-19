@@ -114,7 +114,6 @@
 }
 /* The browser draws a select's list on the select's own background: see-through, its light words land on white. */
 .anomalous-ai-start-select { background: var(--amb-bg-input); }
-.anomalous-ai-start-pictures .anomalous-ai-pics-grid { max-height: 220px; }
 /* What is in place before Start: a line each, green when it is, amber when something is missing. */
 .anomalous-ai-start-ready { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 /* The sheet opens on its card's picture, the readiness line beside it. */
@@ -490,3 +489,77 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
 /* What happens to the private card's prompt: the privacy picture and one line. */
 .anomalous-ai-seal-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 12px; border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.04); color: var(--amb-text-soft); font-size: 12.5px; }
 .anomalous-ai-seal-flow-art { flex: none; width: 168px; height: auto; }
+
+/* In-workbench starter workspace (ui_ai_starter_sheet.js renderStarterComposer inside .anomalous-ai-task). */
+.anomalous-ai-composer { display: flex; flex: 1 0 auto; flex-direction: column; gap: 16px; min-width: 0; }
+.anomalous-ai-composer-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--amb-border); }
+.anomalous-ai-composer-tabs { display: flex; flex: 1; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.anomalous-ai-composer-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.anomalous-ai-composer-tab:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+.anomalous-ai-composer-tab.is-on { border-color: transparent; background: var(--amb-current-bg); color: var(--amb-current-text); font-weight: 650; }
+.anomalous-ai-composer-close { margin-left: auto; }
+.anomalous-ai-composer-head { display: flex; align-items: center; gap: 14px; }
+.anomalous-ai-composer-title-words { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.anomalous-ai-composer-title { margin: 0; color: var(--amb-text-main); font-size: 18px; font-weight: 700; }
+.anomalous-ai-composer-sub { margin: 0; color: var(--amb-text-muted); font-size: 13px; line-height: 1.5; }
+.anomalous-ai-composer-ready { margin-top: 4px; }
+.anomalous-ai-composer-scroll { display: flex; flex-direction: column; gap: 16px; }
+.anomalous-ai-composer-fields { display: flex; flex-direction: column; gap: 14px; }
+.anomalous-ai-composer-section { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--amb-border); border-radius: 14px; background: rgba(var(--amb-ink-rgb), 0.025); }
+.anomalous-ai-composer-h { margin: 0; color: var(--amb-text-main); font-size: 14px; font-weight: 650; }
+.anomalous-ai-composer-canvas-note { color: var(--amb-link); font-size: 12.5px; font-weight: 600; }
+.anomalous-ai-composer-pic-top { display: flex; flex-wrap: wrap; gap: 14px; align-items: stretch; padding: 14px 16px; border: 1px solid var(--amb-border); border-radius: 14px; background: rgba(var(--amb-ink-rgb), 0.025); }
+.anomalous-ai-composer-pic-preview {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 132px;
+    min-height: 132px;
+    gap: 6px;
+    padding: 8px;
+    overflow: hidden;
+    border: 1px dashed var(--amb-border-strong);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.45;
+}
+.anomalous-ai-composer-pic-preview:not(.is-empty) { padding: 0; border-style: solid; border-color: var(--amb-link); }
+.anomalous-ai-composer-pic-preview > img { width: 100%; height: 132px; object-fit: cover; display: block; }
+.anomalous-ai-composer-pic-meta { width: 100%; padding: 4px 6px; background: rgba(16, 18, 24, 0.78); color: var(--amb-text-main); font-size: 11px; text-align: left; }
+.anomalous-ai-composer-pic-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-composer-pic-edit { flex: 1; min-width: 220px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.anomalous-ai-composer-pictures .anomalous-ai-pics-grid { max-height: clamp(260px, 44vh, 460px); grid-template-columns: repeat(auto-fill, minmax(126px, 1fr)); scrollbar-gutter: stable; overscroll-behavior: contain; }
+.anomalous-ai-composer-dock {
+    position: sticky;
+    bottom: -28px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: auto 0 -28px;
+    padding: 14px 0 28px;
+    background: linear-gradient(to bottom, transparent, var(--amb-bg-page) 16px);
+}
+@media (max-width: 640px) {
+    .anomalous-ai-composer-pic-preview { width: 100%; height: 140px; }
+}

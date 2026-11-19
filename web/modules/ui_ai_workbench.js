@@ -28,7 +28,7 @@
 import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { resolveLocale, translate as t } from './locales.js';
-import { fetchActivity, timeLabel } from './activity_log.js';
+import { timeLabel } from './activity_log.js';
 import { canUndo } from './canvas_undo.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
@@ -38,6 +38,7 @@ import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
 import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageBadge, stageNews } from './ui_ai_side.js';
 import { aboutStrip, waitingView, welcomePage } from './ui_ai_ready.js';
+import { renderStarterComposer } from './ui_ai_starter_sheet.js';
 import { gateCard } from './ui_ai_gate.js';
 import { iconButton } from './ui_ai_icons.js';
 import { listToggle, renderTaskList } from './ui_ai_task_list.js';
@@ -57,9 +58,9 @@ import { drawTaskHead } from './ui_ai_task_head.js';
 import { openStuck } from './ui_ai_stuck.js';
 import { menuActions, openTaskMenu } from './ui_ai_task_menu.js';
 import { syncRows } from './sync_rows.js';
-import { keptTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
+import { keptEntries, keptTask, missingEntries, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
 import {
-    activityIds, duration, groupSteps, stepDetail, taskResults, taskState, toolKey,
+    duration, groupSteps, stepDetail, taskResults, taskState, toolKey,
 } from './ai_task_view.js';
 import { aiTourOnce } from './ui_ai_tour.js';
 
@@ -87,6 +88,14 @@ const state = {
     request: 0,       // newer navigation/refresh invalidates older responses
     observer: null,
     bar: null,        // the ticked pictures' compare bar (ui_ai_images.js), made once
+    composer: null,   // active in-workbench starter draft { id, data }
+    composerDispose: null,
+};
+
+const closeComposer = () => {
+    state.composerDispose?.();
+    state.composerDispose = null;
+    state.composer = null;
 };
 
 function el(tag, className, text) {
@@ -195,6 +204,20 @@ async function undoAll(task) {
 function renderTask() {
     const box = state.page?.querySelector('.anomalous-ai-task');
     if (!box) return;
+    state.composerDispose?.();
+    state.composerDispose = null;
+    if (state.composer) {
+        state.page.classList.remove('has-stage');
+        state.owner?.headerTools?.replaceChildren();
+        state.composerDispose = renderStarterComposer(box, {
+            owner: state.owner, cardId: state.composer.id, data: state.composer.data,
+            onBack: () => { state.narrowView = 'list'; layout(); },
+            onSwitch: id => { state.composer = { ...state.composer, id }; renderTask(); },
+            onCancel: () => { closeComposer(); void refresh(); },
+            onDone: closeComposer,
+        });
+        return;
+    }
     const task = state.task;
     if (!task) {
         box.replaceChildren(el('div', 'anomalous-ai-empty-task', state.tasks.length ? t('aiPickTask') : ''));
@@ -267,7 +290,7 @@ function renderTask() {
     if (preparing) {
         const connected = state.tasks.some(item => item.client);
         rows.splice(0, rows.length, { key: JSON.stringify(['waiting', task.title, task.steps, task.about, connected]), make: () => waitingView(task, {
-            connected, ready: items.map((item, at) => stepRow(item.step, at + 1)),
+            connected, ready: items.map((item, at) => stepRow(item.step, at + 1)), onPickStarter: id => openAiStarter(state.owner, id),
         }) });
     } else {
         if (task.about?.length) {
@@ -334,10 +357,11 @@ function showOnStage(panelId) {
 async function newTask() {
     try {
         const response = await fetch('/anomalous/ai_tasks', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: '' }), // a task of its own: going on from another is the ⋯'s 接着哪个任务
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: '' }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);
+        closeComposer();
         state.selected = data.task.id;
         state.pinned = false;
         state.narrowView = 'task';
@@ -370,25 +394,6 @@ function undoable(step) {
         .map(result => [state.entries.get(result.activity) || null, state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity))]);
 }
 
-const unknownEntries = new Set(); // activity ids the log no longer has: not asked for again
-
-/** The activity entries of `task`'s canvas steps already in hand. */
-function keptEntries(task) {
-    const wanted = new Set(activityIds(task));
-    return new Map([...state.entries].filter(([id]) => wanted.has(id)));
-}
-
-/** Those and the missing ones from the activity log; null when none was missing. */
-async function missingEntries(task) {
-    const kept = keptEntries(task);
-    const missing = activityIds(task).filter(id => !kept.has(id) && !unknownEntries.has(id));
-    if (!missing.length) return null;
-    const entries = await fetchActivity({ limit: 500 });
-    for (const entry of entries) if (missing.includes(entry.id)) kept.set(entry.id, entry);
-    for (const id of missing) if (!kept.has(id)) unknownEntries.add(id);
-    return kept;
-}
-
 function showTask(task, entries) {
     state.task = task;
     shared.entries = state.entries = entries;
@@ -401,12 +406,13 @@ async function showRead(id, request, otherwise) {
     const current = () => state.selected === id && request === state.request;
     const task = await readTask(id).catch(() => otherwise);
     if (!current()) return;
-    showTask(task, task ? keptEntries(task) : new Map());
-    const entries = task ? await missingEntries(task).catch(() => null) : null;
+    showTask(task, task ? keptEntries(task, state.entries) : new Map());
+    const entries = task ? await missingEntries(task, state.entries).catch(() => null) : null;
     if (entries && current()) showTask(task, entries);
 }
 
 async function select(id) {
+    closeComposer();
     const request = ++state.request;
     state.selected = id;
     state.narrowView = 'task';
@@ -414,7 +420,7 @@ async function select(id) {
     layout();
     // A task read before shows at once; what changed since follows.
     const known = keptTask(id);
-    if (known) showTask(known, keptEntries(known));
+    if (known) showTask(known, keptEntries(known, state.entries));
     await showRead(id, request, known);
 }
 
@@ -443,8 +449,9 @@ function layout() {
     const folded = state.tasksCollapsed && !narrow;
     page.classList.toggle('is-narrow', narrow);
     page.classList.toggle('is-short', page.clientHeight > 0 && page.clientHeight < SHORT_PX);
-    page.classList.toggle('shows-task', narrow && state.narrowView === 'task' && Boolean(state.selected));
-    page.classList.toggle('peeks', narrow && state.narrowView !== 'task' && Boolean(state.selected)); // the list over the task
+    const hasRight = Boolean(state.selected || state.composer);
+    page.classList.toggle('shows-task', narrow && state.narrowView === 'task' && hasRight);
+    page.classList.toggle('peeks', narrow && state.narrowView !== 'task' && hasRight); // the list over the task
     page.classList.toggle('tasks-collapsed', folded);
     // Three columns when there is room; else the timeline and the stage take turns behind tabs.
     const room = width - (narrow || folded ? 0 : 260);
@@ -454,7 +461,7 @@ function layout() {
     page.classList.toggle('uses-tabs', noRoom);
     page.classList.toggle('is-tabbed', tabbed);
     page.classList.toggle('shows-stage', tabbed && state.stage.tab === 'stage');
-    if (changed && state.task) renderTask(); // the title bar's switch and the tabs change places
+    if (changed && state.task && !state.composer) renderTask();
 }
 
 async function refresh() {
@@ -463,8 +470,8 @@ async function refresh() {
     const tasks = await fetchTasks().catch(() => null);
     if (!tasks || !state.page || request !== state.request) return;
     state.tasks = tasks;
-    if (!tasks.length) {
-        state.page.replaceChildren(welcomePage(newTask), state.bar);
+    if (!tasks.length && !state.composer) {
+        state.page.replaceChildren(welcomePage(newTask, id => openAiStarter(state.owner, id)), state.bar);
         state.owner?.headerTools?.replaceChildren();
         state.page.classList.add('is-empty');
         return;
@@ -474,6 +481,12 @@ async function refresh() {
         const scrim = button('anomalous-ai-scrim', '', () => { state.narrowView = 'task'; layout(); });
         scrim.title = t('aiBackToTask');
         state.page.replaceChildren(el('aside', 'anomalous-ai-tasks'), el('section', 'anomalous-ai-task'), el('section', 'anomalous-ai-stage'), scrim, state.bar);
+    }
+    if (state.composer) {
+        renderList(state.page.querySelector('.anomalous-ai-tasks'));
+        renderTask();
+        layout();
+        return;
     }
     // The newest task while the AI works on it, unless the user picked another one.
     const follow = !state.pinned && !tasks[0].ended && tasks[0].id !== state.selected
@@ -559,8 +572,17 @@ export function watchAiTasks(owner) {
 
 /** Opens task `id` on the AI page (from the activity log, the home page). */
 export function openAiTask(owner, id, newest = null) {
+    closeComposer();
     state.selected = id;
     state.pinned = id !== newest;
+    state.narrowView = 'task';
+    owner.goTo('ai');
+}
+
+/** Opens the spacious in-workbench starter workspace for `starterId` directly on the AI page. */
+export function openAiStarter(owner, starterId, data = null) {
+    closeComposer();
+    state.composer = { id: starterId, data: data || fetch('/anomalous/ai_starters').then(r => (r.ok ? r.json() : null)).catch(() => null) };
     state.narrowView = 'task';
     owner.goTo('ai');
 }

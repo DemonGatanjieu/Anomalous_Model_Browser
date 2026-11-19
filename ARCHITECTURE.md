@@ -665,9 +665,9 @@ covered by the `styles.css` manifest.
   `ui_ai_task_list.js` draws it (New task, Connect an AI
   and the gates, which AI came last, quick filters by state, the tasks by day with a state
   icon each, those going on from a task under it by `ai_task_view.taskFamilies`), making anew only the rows that changed, all of them after a switch of language (`web/modules/sync_rows.js`, the timeline's
-  way too). `web/modules/ai_task_cache.js` keeps the tasks as last read: a task picked shows at
+  way too). `web/modules/ai_task_cache.js` keeps the tasks as last read and caches/fetches activity entries (`keptEntries`, `missingEntries`): a task picked shows at
   once from there (read ahead while the pointer rests on its row) and again, what changed, when the
-  server answers; the activity entries a task lacks follow. The stage's pictures, like the
+  server answers. The stage's pictures, like the
   timeline's, load the 512 px thumbnail first and the file itself only when shown larger. `ui_ai_icons.js` is the AI pages' one set of line icons and the icon button.
   `ai_text_format.js` lays out what the AI writes (its notes and replies: headings, lists, bold,
   code) with textContent only. A note may answer the user's message or marks (`report`'s
@@ -683,16 +683,16 @@ covered by the `styles.css` manifest.
   `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the
   user's checklist by stage) and the address follows. `ui_ai_starters.js` is the home page's "Let the AI do it"
   (the app that came last, a warning when its list is a short one, six starter cards; the box and its cards are drawn at once,
-  what needs `GET /anomalous/ai_starters` fills in when read); `ui_ai_starter_sheet.js`
-  holds the cards and the sheet each opens (fields, what happens, what stays, what the AI does not get; closing calls `onClose` via `ui_ai_connect.js` `aiWindow`, whose Esc handler defers to visible `[data-anomalous-escape]` pickers inside the dialog, to clean up reads), which starts a
+  what needs `GET /anomalous/ai_starters` fills in when read): clicking "Run my preset" opens `ui_ai_starter_sheet.js`'s `openStarter` modal (when without changes it runs locally via `ui_ai_preset_sheet.js`), while the five AI-task starters (`private`, `picture`, `say`, `canvas`, `try`) jump directly into the AI workbench (`openAiStarter` in `ui_ai_workbench.js`) rendering `renderStarterComposer` inside the spacious right column with a live mode-switcher bar (so zero intermediate home popups are shown; empty tasks and welcomePage also link into it). `ui_ai_starter_sheet.js`
+  holds `STARTERS`, `cardTags`, and the mode composers (fields, readiness lines, what Start ensures; live gallery preview beside "How should it change?" in `picture`, and `privateFields` in one uncluttered scroll with `sealFlow` / LoRAs), creating a
   prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` `startTask`;
-  a card's tags name only what Anomalous makes sure of. The private card's sheet puts the prompt the AI gets as a token
+  a card's tags name only what Anomalous makes sure of. The private card puts the prompt the AI gets as a token
   first (`web/modules/ai_name_guard.js` finds, before any message goes, a hidden model named in words the way to the
   AI leaves as written, for `ui_ai_model_lock.js` guardNames to ask about; `tests/ai_name_guard.mjs`);
-  `web/modules/ui_ai_private_sheet.js` adds its optional LoRAs (from the materials catalog, named in the first
-  message by file name so the task's privacy turns them into tokens, picked in the model window) and the four-box drawing of what happens to the prompt.
-  That sheet, and those of "Draw what I describe", "Change a picture" and "Run my preset", go in steps
-  (`web/modules/ui_ai_start_steps.js`: numbered dots, one step's question and fields at a time, Back / Next with a
+  `web/modules/ui_ai_private_sheet.js` adds its optional LoRAs (from the materials catalog with user favourites, named in the first
+  message by file name so the task's privacy turns them into tokens, picked in the reusable model picker) and the four-box drawing of what happens to the prompt.
+  "Run my preset" still steps via
+  `web/modules/ui_ai_start_steps.js` (numbered dots, one step's question and fields at a time, Back / Next with a
   step's own check, Start on the last).
   For "say" and "private", `web/modules/ui_ai_start_from.js` draws
   the leading "Start from" row and also exports `openBuildRouteWindow` + shared `newRoutePart` so both the starter sheets and the message box's "+" / `/build` command share the exact same "Build a new one (text to image)" fields (the models picked as numbered chips showing type, Base Model and version via `modelMetaSummary`, with a swap, picked in `web/modules/ui_ai_model_pick.js` backed by pure `web/modules/ai_model_pick.js` / `tests/ai_model_pick.mjs`: **AMB's reusable general model-picker dialog module** for starter sheets, route builder, private LoRAs and future model-selection features; reuses `ui_grid.js` `modelCardFace`, `ui_model_types.js` type chips, `model_bases.js` fine-grained Base Model chips + favourites, `model_versions.js` `groupByPage` keeping all sibling versions expanded side by side, plus a top selected strip and incremental "Show more" paging) and `localStorage` key (four pills sharing `.anomalous-ai-start-pills`/`.anomalous-ai-start-pill` in `web/styles/55-ai-starters.css` with `ui_ai_preset_sheet.js`: new text-to-image route via `GET /anomalous/ai_routes` & `POST /anomalous/ai_tasks/{id}/route`, open canvas checking `preset_runs.js` `openTabs` & active `LoadImage` nodes, saved workflow card marked in private mode, or AI picks) backed by `web/modules/ai_start_from.js` (`filterModels`, `modelFamilies`, selection, validation, and first-message rules; `tests/ai_start_from.mjs`). `ui_ai_preset_sheet.js` is the fields of "Run my preset": a

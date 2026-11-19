@@ -2,14 +2,18 @@
  * The AI workbench's tasks as last read from the server (ui_ai_workbench.js), so picking one is
  * quick: a task read before shows at once from here while the page reads it again, and the pointer
  * resting on a task in the list reads that task ahead. One read per task at a time; the latest few
- * tasks are kept.
+ * tasks are kept, along with missing activity-log entry lookups for task steps.
  */
+
+import { fetchActivity } from './activity_log.js';
+import { activityIds } from './ai_task_view.js';
 
 const KEEP = 8;
 const AHEAD_MS = 90; // the pointer passing over the list reads nothing
 
 const kept = new Map(); // task id -> its record as last read, the latest last
 const reading = new Map(); // task id -> the read on its way
+const unknownEntries = new Set(); // activity ids the log no longer has: not asked for again
 let aheadTimer = null;
 
 function keep(id, task) {
@@ -52,4 +56,21 @@ export function stopReadAhead() {
 /** A task removed: not shown again from here. */
 export function forgetTask(id) {
     kept.delete(id);
+}
+
+/** The activity entries of `task`'s canvas steps already held in `knownEntries`. */
+export function keptEntries(task, knownEntries) {
+    const wanted = new Set(activityIds(task));
+    return new Map([...(knownEntries || [])].filter(([id]) => wanted.has(id)));
+}
+
+/** Those and the missing ones from the activity log; null when none was missing. */
+export async function missingEntries(task, knownEntries) {
+    const map = keptEntries(task, knownEntries);
+    const missing = activityIds(task).filter(id => !map.has(id) && !unknownEntries.has(id));
+    if (!missing.length) return null;
+    const entries = await fetchActivity({ limit: 500 });
+    for (const entry of entries) if (missing.includes(entry.id)) map.set(entry.id, entry);
+    for (const id of missing) if (!map.has(id)) unknownEntries.add(id);
+    return map;
 }

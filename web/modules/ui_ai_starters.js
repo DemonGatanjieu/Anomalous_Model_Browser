@@ -3,22 +3,19 @@
  * warning when the tool list it holds is a short one (api/mcp_tool_sets.py) that cannot take a task
  * handed over here; then the six starter cards (ui_ai_starter_sheet.js): a picture (web/assets/start_*.webp,
  * drawn with ChatGPT in the style of the others), a name and one short line; what each one makes sure of
- * (its tags) is said on hover, not in chips. "Explain my
- * canvas" opens the canvas hand-off as the canvas menu does (ui_ai_canvas_hand.js). Under the cards, once
- * presets were run from here with no AI, the line that runs that list again (ui_ai_preset_sheet.js againLine).
- * The section and its cards are drawn at once from what the page knows, so nothing below them moves; what
- * needs GET /anomalous/ai_starters (the app line, each card's tags, the presets line) fills in when read.
- * Without it (an older server) the section goes away.
+ * (its tags) is said on hover, not in chips. Clicking "Run my preset" opens its self-run batch sheet
+ * (preset can run locally with no AI); clicking any of the AI cards opens its spacious starter
+ * workspace directly on the AI workbench (`openAiStarter`).
  */
 
 import { translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
 import { fadeIn } from './ui_ai_art.js';
 import { openConnectGuide } from './ui_ai_connect.js';
-import { handCanvasToAi } from './ui_ai_canvas_hand.js';
 import { icon } from './ui_ai_icons.js';
 import { againLine } from './ui_ai_preset_sheet.js';
 import { STARTERS, cardTags, openStarter } from './ui_ai_starter_sheet.js';
+import { openAiStarter } from './ui_ai_workbench.js';
 import { tourWhenShown } from './ui_ai_tour.js';
 
 function el(tag, className, text) {
@@ -50,8 +47,8 @@ function appLine(owner, app) {
 /** A starter card; `reading` is the server's data on its way (a press waits for it). */
 function card(owner, starter, reading) {
     const node = button('anomalous-ai-start-card', '', () => {
-        if (starter.id === 'canvas') handCanvasToAi(() => owner);
-        else void reading.then(data => data && openStarter(owner, starter, data));
+        if (starter.id === 'preset') void reading.then(data => data && openStarter(owner, starter, data));
+        else openAiStarter(owner, starter.id, reading);
     });
     node.dataset.starter = starter.id;
     const art = el('img', 'anomalous-ai-start-card-art');

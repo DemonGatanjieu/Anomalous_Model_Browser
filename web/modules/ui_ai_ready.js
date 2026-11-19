@@ -16,6 +16,25 @@ import { icon, iconButton } from './ui_ai_icons.js';
 import { notifyLine } from './ui_ai_notify.js';
 
 const ABOUT_ICONS = { model: 'models', image: 'image', workflow: 'workflows', combo: 'combos', canvas: 'nodes' };
+const QUICK_STARTERS = [
+    ['private', 'lock'],
+    ['picture', 'image'],
+    ['say', 'pencil'],
+    ['canvas', 'nodes'],
+];
+
+function quickStarterBar(onPickStarter) {
+    if (!onPickStarter) return null;
+    const row = el('div', 'anomalous-ai-ready-quick');
+    row.append(el('span', 'anomalous-ai-ready-quick-label', t('aiComposerQuickLabel')));
+    const pills = el('div', 'anomalous-ai-ready-quick-pills');
+    for (const [id, iconName] of QUICK_STARTERS) {
+        const pill = iconButton('anomalous-ai-ready-quick-pill', iconName, t(`aiStart_${id}_title`), () => onPickStarter(id), { size: 13 });
+        pills.append(pill);
+    }
+    row.append(pills);
+    return row;
+}
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -87,6 +106,8 @@ export function waitingView(task, ctx) {
         el('div', 'anomalous-ai-waiting-title', t('aiWaitingSay')), steps, copyButton(sentence), line);
     const notify = notifyLine();
     if (notify) view.append(notify);
+    const quick = !task.title && !ctx.ready.length && !about ? quickStarterBar(ctx.onPickStarter) : null;
+    if (quick) view.append(quick);
     const preparedCount = ctx.ready.length + (about ? 1 : 0);
     if (preparedCount) {
         const done = el('section', 'anomalous-ai-ready-done');
@@ -97,13 +118,15 @@ export function waitingView(task, ctx) {
     return view;
 }
 
-/** The page with no task yet: what it is for; `onNew` starts one. */
-export function welcomePage(onNew) {
+/** The page with no task yet: what it is for; `onNew` starts one, `onPickStarter` opens a template mode. */
+export function welcomePage(onNew, onPickStarter = null) {
     const box = el('div', 'anomalous-ai-welcome');
     const picture = el('img', 'anomalous-ai-welcome-art');
     picture.src = new URL('../assets/ai_tasks_empty.webp', import.meta.url).href;
     picture.alt = '';
+    const quick = quickStarterBar(onPickStarter);
     box.append(picture, el('h2', 'anomalous-ai-welcome-title', t('aiWelcomeTitle')), el('p', 'anomalous-ai-welcome-body', t('aiWelcomeBody')),
-        iconButton('anomalous-ai-new-task', 'plus', t('aiNewTask'), onNew, { title: t('aiNewTaskHint') }), connectHint());
+        iconButton('anomalous-ai-new-task', 'plus', t('aiNewTask'), onNew, { title: t('aiNewTaskHint') }),
+        ...(quick ? [quick] : []), connectHint());
     return box;
 }

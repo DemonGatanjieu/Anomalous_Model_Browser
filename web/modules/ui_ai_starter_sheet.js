@@ -1,44 +1,37 @@
 /**
- * The home page's AI starter cards (ui_ai_starters.js draws them) and the sheet each one opens: what is in
- * place before Start (an AI app that has come, a base model for the cards that draw from one), a field or
- * two with ready-made words to press, then what happens on Start, what stays as it is or what the AI does
- * not get, and what to mind. Start
- * makes a task with its switches set (ui_ai_handoff.js startTask: a new tab, privacy for the private card) and
- * shows the sentence for the AI. A starter is a prepared task and a sentence, never a workflow template. Each
- * card's tags name only what Anomalous makes sure of (`TAGS`), never what rests on the AI obeying. The
- * private card takes the prompt itself in a field the AI gets as a token (ai_hide_mark.js marked). "Run my
- * preset" has its own fields (ui_ai_preset_sheet.js) and, with nothing to change, runs with no AI. What
- * happens on Start, what stays and what to mind fold under one question. The sheets with fields go in steps
- * (ui_ai_start_steps.js), one question at a time: "Draw what I describe" the picture in words, then where to
- * start (as cards); "Change a picture" which picture, then how; "Run my preset" which workflow, which presets,
- * then what to change; the private card the prompt (with a picture of what happens to it,
- * ui_ai_private_sheet.js), where to start, then optional LoRAs and the line that goes to the AI as it is. The
- * last step lists what was chosen and whether an AI has come; on top that shows only when something is
- * missing. "Try it once" has nothing to fill in and opens on its card's picture.
+ * The home page's AI starter cards (ui_ai_starters.js draws them) and the spacious in-workbench
+ * starter composer opened directly inside the AI workbench (`renderStarterComposer`: `private`,
+ * `picture`, `say`, `canvas`, `try`). "Run my preset" (`preset`) stays in its own dialog
+ * (`openStarter` -> ui_ai_preset_sheet.js + ui_ai_start_steps.js) since without changes it runs on
+ * its own with no AI. `STARTERS` keeps each card's shape and locale keys (`tests/test_ai_starters.py`).
  */
 
 import { marked } from './ai_hide_mark.js';
 import { composeFirstNote, startFactSentence } from './ai_start_from.js';
 import { translate as t } from './locales.js';
 import { fadeIn } from './ui_ai_art.js';
+import { CANVAS_WISHES, frontTab } from './ui_ai_canvas_hand.js';
 import { aiWindow } from './ui_ai_connect.js';
+import { pictureGrid, thumbUrl } from './ui_ai_gallery_pick.js';
 import { startTask } from './ui_ai_handoff.js';
-import { pictureGrid } from './ui_ai_gallery_pick.js';
 import { icon } from './ui_ai_icons.js';
 import { presetFields } from './ui_ai_preset_sheet.js';
 import { loraPicker, sealFlow } from './ui_ai_private_sheet.js';
 import { applyTaskRoute, startFromSection } from './ui_ai_start_from.js';
 import { startSteps } from './ui_ai_start_steps.js';
+import { createViewScope } from './ui_lifecycle.js';
 
 const NEW_TAB = { canvas: 'new' };
-const MAX_SEALED = 1500; // the prompt the private card hands on, inside a message to the AI
-const DRAWS = ['try', 'say', 'private']; // start from a base model of the user's
+const MAX_SEALED = 1500;
+const DRAWS = ['try', 'say', 'private'];
+export const COMPOSER_STARTERS = ['private', 'picture', 'say', 'canvas', 'try'];
 const EXAMPLES = {
     say: ['aiStartSayEx1', 'aiStartSayEx2', 'aiStartSayEx3'],
     private: ['aiStartGistEx1', 'aiStartGistEx2', 'aiStartGistEx3'],
     picture: ['aiStartHowEx1', 'aiStartHowEx2', 'aiStartHowEx3'],
 };
-// lines: [kind, key] shown in the sheet; kinds are the sheet's labels (aiStartSheet_<kind>).
+
+// lines: [kind] shown under "What happens on Start?" (`aiStartSheet_<kind>`).
 export const STARTERS = [
     { id: 'try', icon: 'sparkle', tags: ['newTab', 'small'], lines: [['start'], ['kept'], ['mind']] },
     { id: 'preset', icon: 'workflows', tags: ['newTab', 'saved'], lines: [['kept']] },
@@ -81,15 +74,14 @@ function textInput(placeholder) {
     return input;
 }
 
-/** What is in place before Start, for a card that hands a task to an AI, as [{ok, text}]: an AI app that came (GET /anomalous/ai_starters `app`, `came`), a base model to draw from. */
 function readyLines(card, data) {
+    if (!data) return [];
     const came = Boolean(data.app || data.came);
     const lines = [{ ok: came, text: came ? t(data.app ? 'aiStartReadyApp' : 'aiStartReadyCame', { client: data.app?.client }) : t('aiStartReadyNoApp') }];
     if (DRAWS.includes(card.id)) lines.push({ ok: data.models > 0, text: data.models > 0 ? t('aiStartReadyModels', { count: data.models }) : t('aiStartReadyNoModels') });
     return lines;
 }
 
-/** `lines` ([{ok, text}]) a line each in `box`: a check when it is so, a warning when not. */
 function readyBox(lines, box = el('div', 'anomalous-ai-start-ready')) {
     box.replaceChildren(...lines.map(({ ok, text }) => {
         const node = el('div', `anomalous-ai-start-ready-line${ok ? ' is-ok' : ''}`);
@@ -99,13 +91,12 @@ function readyBox(lines, box = el('div', 'anomalous-ai-start-ready')) {
     return box;
 }
 
-/** Ready-made words under `input`; a press writes them in, to send or to change. */
 function examples(input, keys) {
     const row = el('div', 'anomalous-ai-start-examples');
     for (const key of keys) {
         row.append(button('anomalous-ai-start-example', t(key), () => {
             input.value = t(key);
-            input.dispatchEvent(new Event('input', { bubbles: true })); // the line that said it was missing goes
+            input.dispatchEvent(new Event('input', { bubbles: true }));
             input.focus();
         }));
     }
@@ -113,31 +104,43 @@ function examples(input, keys) {
 }
 
 const postRoute = picked => taskId => applyTaskRoute(taskId, picked);
-const fromProblem = from => () => { const picked = from.read(); return picked.errorKey || picked.errorText ? picked : null; };
 
-/** The last step's lines of what was chosen (`lines()`: [{ok, text}]) and whether an AI has come; drawn as the step opens. */
-function summary(card, data, lines) {
-    const node = el('div', 'anomalous-ai-start-ready is-summary');
-    return { node, draw: () => readyBox([...lines(), readyLines(card, data)[0]], node) };
-}
-
-/** "Change a picture": which picture, then how. */
-function pictureFields(card, data) {
+function pictureFields() {
     let chosen = null;
-    const grid = pictureGrid({
-        picked: id => chosen?.id === id,
-        pick: (item) => { chosen = chosen?.id === item.id ? null : item; },
-    });
+    const preview = el('div', 'anomalous-ai-composer-pic-preview');
     const how = textInput(t('aiStartHowHint'));
     how.setAttribute('aria-label', t('aiStartStepHow'));
-    const pictures = el('div', 'anomalous-ai-start-pictures');
-    pictures.append(grid.search, grid.grid);
-    const sum = summary(card, data, () => [{ ok: true, text: t('aiStartSumPicture', { name: chosen?.title || '' }) }]);
+    const drawPreview = () => {
+        if (!chosen) {
+            preview.classList.add('is-empty');
+            preview.replaceChildren(icon('image', 22), el('span', '', t('aiComposerPickPicEmpty')));
+            return;
+        }
+        preview.classList.remove('is-empty');
+        const img = el('img');
+        img.src = thumbUrl(chosen.image);
+        img.alt = chosen.title || '';
+        const meta = el('div', 'anomalous-ai-composer-pic-meta');
+        meta.append(el('span', 'anomalous-ai-composer-pic-name', chosen.title || chosen.id));
+        preview.replaceChildren(img, meta);
+    };
+    const grid = pictureGrid({
+        picked: id => chosen?.id === id,
+        pick: (item) => {
+            chosen = chosen?.id === item.id ? null : item;
+            drawPreview();
+            if (chosen && !how.value.trim()) how.focus();
+        },
+    });
+    drawPreview();
+    const editBox = el('div', 'anomalous-ai-composer-pic-edit');
+    editBox.append(field(t('aiStartStepHow'), how), examples(how, EXAMPLES.picture));
+    const top = el('div', 'anomalous-ai-composer-pic-top');
+    top.append(preview, editBox);
+    const gallery = el('div', 'anomalous-ai-composer-section anomalous-ai-composer-pictures');
+    gallery.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepPicture')), grid.search, grid.grid);
     return {
-        steps: [
-            { title: t('aiStartStepPicture'), nodes: [pictures], check: () => (chosen ? null : 'aiStartNeedPicture') },
-            { title: t('aiStartStepHow'), nodes: [how, examples(how, EXAMPLES.picture), sum.node], shown: sum.draw },
-        ],
+        nodes: [top, gallery],
         stop: () => grid.stop(),
         task: () => {
             if (!chosen) return 'aiStartNeedPicture';
@@ -147,8 +150,7 @@ function pictureFields(card, data) {
     };
 }
 
-/** "Draw privately": the prompt the AI gets as a token, where to start, then LoRAs and a line for the AI. */
-function privateFields(card, data) {
+function privateFields(data) {
     const from = startFromSection({ data, cards: true });
     const loras = loraPicker();
     const gist = textInput(t('aiStartGistHint'));
@@ -160,17 +162,18 @@ function privateFields(card, data) {
     promptField.classList.add('is-sealed');
     promptField.querySelector('.anomalous-ai-start-label')?.prepend(icon('lock', 13));
     const gistField = field(t('aiStartGist'), gist);
-    gistField.classList.add('is-plain'); // goes to the AI as it is: second, and quieter
-    const sum = summary(card, data, () => [
-        { ok: Boolean(prompt.value.trim()), text: t(prompt.value.trim() ? 'aiStartSumPrompt' : 'aiStartSumNoPrompt') },
-        { ok: true, text: t('aiStartSumFrom', { from: from.describe() }) },
-    ]);
+    gistField.classList.add('is-plain');
+
+    const promptSec = el('section', 'anomalous-ai-composer-section');
+    promptSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepWrite')), promptField, sealFlow());
+    const fromSec = el('section', 'anomalous-ai-composer-section');
+    fromSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepFrom')), from.node);
+    const moreSec = el('section', 'anomalous-ai-composer-section');
+    moreSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepMore')),
+        el('p', 'anomalous-ai-start-step-hint', t('aiStartStepMoreHint')), loras.node, gistField, examples(gist, EXAMPLES.private));
+
     return {
-        steps: [
-            { title: t('aiStartStepWrite'), nodes: [promptField, sealFlow()] },
-            { title: t('aiStartStepFrom'), nodes: [from.node], check: fromProblem(from) },
-            { title: t('aiStartStepMore'), nodes: [el('p', 'anomalous-ai-start-step-hint', t('aiStartStepMoreHint')), loras.node, gistField, examples(gist, EXAMPLES.private), sum.node], shown: sum.draw },
-        ],
+        nodes: [promptSec, fromSec, moreSec],
         stop: () => from.stop(),
         task: () => {
             const picked = from.read();
@@ -179,7 +182,7 @@ function privateFields(card, data) {
             if (!gist.value.trim() && !sealed) return 'aiStartNeedGist';
             from.save();
             const fact = startFactSentence({ ...picked, secret: true }, t, marked);
-            const files = loras.read(); // by file name: the task's privacy makes each a token
+            const files = loras.read();
             const cardNote = [sealed ? t('aiPresetSayPrompt', { prompt: marked(sealed) }) : '',
                 files.length ? t('aiStartUseLoras', { loras: files.join(t('listSeparator')) }) : ''].filter(Boolean).join(' ');
             return {
@@ -191,17 +194,16 @@ function privateFields(card, data) {
     };
 }
 
-/** "Draw what I describe": the picture in words, then where to start. */
-function sayFields(card, data) {
+function sayFields(data) {
     const from = startFromSection({ data, cards: true });
     const words = textInput(t('aiStartSayHint'));
     words.setAttribute('aria-label', t('aiStartStepWrite'));
-    const sum = summary(card, data, () => []); // where to start is chosen on the same step, in sight
+    const writeSec = el('section', 'anomalous-ai-composer-section');
+    writeSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepWrite')), words, examples(words, EXAMPLES.say));
+    const fromSec = el('section', 'anomalous-ai-composer-section');
+    fromSec.append(el('h3', 'anomalous-ai-composer-h', t('aiStartStepFrom')), from.node);
     return {
-        steps: [
-            { title: t('aiStartStepWrite'), nodes: [words, examples(words, EXAMPLES.say)], check: () => (words.value.trim() ? null : 'aiStartNeedText') },
-            { title: t('aiStartStepFrom'), nodes: [from.node, sum.node], shown: sum.draw },
-        ],
+        nodes: [writeSec, fromSec],
         stop: () => from.stop(),
         task: () => {
             const picked = from.read();
@@ -219,45 +221,48 @@ function sayFields(card, data) {
     };
 }
 
-/** The card's fields (`nodes`, or `steps` for startSteps) and how they become the task: task() -> {title, about, note, beforeNote} | error. */
-function fieldsOf(card, data, owner, close) {
-    if (card.id === 'try') return { nodes: [], task: () => ({ title: t('aiStartTryTask') }) };
-    if (card.id === 'preset') { // nothing saved to run yet
-        return { nodes: [el('p', 'anomalous-ai-start-empty', t('aiStartNoWorkflows')),
-            button('anomalous-ai-link', t('aiStartToWorkflows'), () => { close(); owner.goTo?.('recipes'); })], task: null };
+function canvasFields() {
+    const tab = frontTab();
+    const line = el('textarea', 'anomalous-ai-start-input');
+    line.rows = 3;
+    line.maxLength = 1000;
+    const wishes = el('div', 'anomalous-ai-canvas-wishes');
+    for (const key of CANVAS_WISHES) {
+        const text = t(`aiCanvasWish_${key}`);
+        wishes.append(button('anomalous-ai-canvas-wish', text, () => { line.value = text; line.focus(); }));
     }
-    if (card.id === 'picture') return pictureFields(card, data);
-    if (card.id === 'private') return privateFields(card, data);
-    return sayFields(card, data);
+    line.value = wishes.firstChild?.textContent || '';
+    const sec = el('section', 'anomalous-ai-composer-section');
+    sec.append(
+        el('div', 'anomalous-ai-composer-canvas-note', tab.name ? t('aiComposerCanvasAt', { name: tab.name }) : t('aiComposerCanvasNone')),
+        el('h3', 'anomalous-ai-composer-h', t('aiComposerCanvasWishLabel')),
+        wishes,
+        line,
+    );
+    return {
+        nodes: [sec],
+        task: () => {
+            const text = String(line.value || '').trim();
+            if (!text) return 'aiStartNeedText';
+            return {
+                title: `${text}${t('aiCanvasOfCanvas', { name: tab.name })}`,
+                about: tab.path ? [{ type: 'canvas', tab: tab.path, label: tab.name }] : [],
+                switches: {},
+            };
+        },
+    };
 }
 
-/** Opens `card`'s sheet; `data` is GET /anomalous/ai_starters. */
-export function openStarter(owner, card, data) {
-    const body = el('div', 'anomalous-ai-start-sheet');
-    let close = () => {};
-    const error = el('div', 'anomalous-ai-start-error');
-    const say = (missing) => { // a locale key, {errorKey} or {errorText}; '' clears it
-        error.textContent = !missing ? '' : typeof missing === 'string' ? t(missing) : missing.errorKey ? t(missing.errorKey) : missing.errorText;
-    };
-    const go = button('anomalous-ai-start-go', t('aiStartGo'), async () => {
-        if (fields.start) {
-            go.disabled = true; // a second press while it starts would run it twice
-            error.textContent = await fields.start();
-            go.disabled = false;
-            return;
-        }
-        const task = fields.task();
-        if (typeof task === 'string' || task?.errorKey || task?.errorText) {
-            say(task);
-            return;
-        }
-        close();
-        await startTask(owner, task.title, task.about || [], null,
-            card.id === 'private' ? { ...NEW_TAB, privacy: true } : NEW_TAB,
-            task.note || '', task.beforeNote || null);
-    });
-    const fields = card.id === 'preset' && data.workflows.length ? presetFields({ data, owner, close: () => close(), go })
-        : fieldsOf(card, data, owner, () => close());
+function composerFields(card, data) {
+    if (card.id === 'try') return { nodes: [el('p', 'anomalous-ai-start-empty', t('aiStart_try_body'))], task: () => ({ title: t('aiStartTryTask') }) };
+    if (card.id === 'picture') return pictureFields();
+    if (card.id === 'private') return privateFields(data);
+    if (card.id === 'canvas') return canvasFields();
+    return sayFields(data);
+}
+
+function cardLinesBlock(card) {
+    if (!card.lines?.length) return null;
     const lines = el('details', 'anomalous-ai-start-lines');
     lines.append(el('summary', '', t('aiStartSheetMore')));
     for (const [kind] of card.lines) {
@@ -265,15 +270,125 @@ export function openStarter(owner, card, data) {
         line.append(el('span', 'anomalous-ai-start-line-label', t(`aiStartSheet_${kind}`)), el('span', '', t(`aiStart_${card.id}_${kind}`)));
         lines.append(line);
     }
+    return lines;
+}
+
+/**
+ * Draws the in-workbench starter workspace inside `host` ('.anomalous-ai-task'). Returns a dispose
+ * function cancelling any open media / async work.
+ */
+export function renderStarterComposer(host, { owner, cardId, data, onBack, onSwitch, onDone, onCancel }) {
+    const scope = createViewScope();
+    const card = STARTERS.find(item => item.id === cardId) || STARTERS.find(item => item.id === 'private');
+    let stopFields = null;
+    scope.onDispose(() => stopFields?.());
+
+    const bar = el('div', 'anomalous-ai-composer-bar');
+    const back = button('anomalous-ai-back', `‹ ${t('aiAllTasks')}`, () => onBack?.());
+    const tabs = el('div', 'anomalous-ai-composer-tabs');
+    tabs.setAttribute('role', 'toolbar');
+    tabs.setAttribute('aria-label', t('aiStartTitle'));
+    for (const id of COMPOSER_STARTERS) {
+        const item = STARTERS.find(s => s.id === id);
+        if (!item) continue;
+        const tab = el('button', `anomalous-ai-composer-tab${id === card.id ? ' is-on' : ''}`);
+        tab.type = 'button';
+        tab.setAttribute('aria-pressed', String(id === card.id));
+        tab.append(icon(item.icon, 14), el('span', '', t(`aiStart_${id}_title`)));
+        tab.onclick = () => { if (id !== card.id) onSwitch?.(id); };
+        tabs.append(tab);
+    }
+    const closeBtn = button('anomalous-ai-link anomalous-ai-composer-close', t('dialogCancel'), () => onCancel?.());
+    bar.append(back, tabs, closeBtn);
+
+    const head = el('div', 'anomalous-ai-composer-head');
+    const art = el('img', 'anomalous-ai-start-sheet-art');
+    art.alt = '';
+    art.src = new URL(`../assets/start_${card.id}.webp`, import.meta.url).href;
+    art.onerror = () => art.replaceWith(icon(card.icon, 28));
+    fadeIn(art);
+    const titleWords = el('div', 'anomalous-ai-composer-title-words');
+    const readyHolder = el('div', 'anomalous-ai-composer-ready');
+    titleWords.append(el('h2', 'anomalous-ai-composer-title', t(`aiStart_${card.id}_title`)),
+        el('p', 'anomalous-ai-composer-sub', t(`aiStart_${card.id}_body`)), readyHolder);
+    head.append(art, titleWords);
+
+    const scroll = el('div', 'anomalous-ai-composer-scroll');
+    const fieldsHost = el('div', 'anomalous-ai-composer-fields');
+    const lines = cardLinesBlock(card);
+    scroll.append(head, fieldsHost, ...(lines ? [lines] : []));
+
+    const error = el('div', 'anomalous-ai-start-error');
+    const say = (missing) => {
+        error.textContent = !missing ? '' : typeof missing === 'string' ? t(missing) : missing.errorKey ? t(missing.errorKey) : missing.errorText;
+    };
+    let currentFields = null;
+    const go = button('anomalous-ai-start-go', t('aiStartGo'), async () => {
+        if (!currentFields || go.disabled) return;
+        const task = currentFields.task();
+        if (typeof task === 'string' || task?.errorKey || task?.errorText) return say(task);
+        go.disabled = true;
+        try {
+            const switches = task.switches || (card.id === 'private' ? { ...NEW_TAB, privacy: true } : NEW_TAB);
+            // `openAiTask` inside `startTask` closes the composer once created; on error, typed fields stay intact.
+            await startTask(owner, task.title, task.about || [], onDone, switches, task.note || '', task.beforeNote || null);
+        } finally {
+            go.disabled = false;
+        }
+    });
+    const dock = el('div', 'anomalous-ai-composer-dock');
     const actions = el('div', 'anomalous-ai-start-actions');
-    // The fields scroll; what is missing and the buttons stay in sight at the foot of the window.
+    actions.append(button('anomalous-ai-link', t('dialogCancel'), () => onCancel?.()), go);
+    dock.append(error, actions);
+
+    const composer = el('div', 'anomalous-ai-composer');
+    composer.append(bar, scroll, dock);
+    composer.addEventListener('input', () => { error.textContent = ''; });
+    composer.addEventListener('change', () => { error.textContent = ''; });
+    composer.addEventListener('click', (event) => {
+        if (event.target.closest('button:not(.anomalous-ai-start-go)')) error.textContent = '';
+    });
+    host.replaceChildren(composer);
+
+    void Promise.resolve(data).then((resolved) => {
+        if (scope.signal.aborted) return;
+        const safeData = resolved || { workflows: [], models: 0 };
+        const readiness = readyLines(card, safeData);
+        if (readiness.length) readyHolder.replaceChildren(readyBox(readiness));
+        currentFields = composerFields(card, safeData);
+        stopFields = currentFields.stop || null;
+        fieldsHost.replaceChildren(...currentFields.nodes);
+        fieldsHost.querySelector('textarea, input:not([hidden]), button:not(:disabled):not([hidden])')?.focus();
+    });
+
+    return () => scope.dispose();
+}
+
+/** Opens the standalone modal sheet (currently used for "Run my preset"). */
+export function openStarter(owner, card, data) {
+    const body = el('div', 'anomalous-ai-start-sheet');
+    let close = () => {};
+    const error = el('div', 'anomalous-ai-start-error');
+    const go = button('anomalous-ai-start-go', t('aiStartGo'), async () => {
+        if (!fields.start) return;
+        go.disabled = true;
+        error.textContent = await fields.start();
+        go.disabled = false;
+    });
+    const fields = data.workflows.length
+        ? presetFields({ data, owner, close: () => close(), go })
+        : {
+            nodes: [el('p', 'anomalous-ai-start-empty', t('aiStartNoWorkflows')),
+                button('anomalous-ai-link', t('aiStartToWorkflows'), () => { close(); owner.goTo?.('recipes'); })],
+            start: null,
+        };
+    const lines = cardLinesBlock(card);
+    const actions = el('div', 'anomalous-ai-start-actions');
     const scroll = el('div', 'anomalous-ai-start-scroll');
     if (fields.steps) {
-        const missing = fields.start ? [] : readyLines(card, data).filter(line => !line.ok);
-        if (missing.length) scroll.append(readyBox(missing));
-        fields.steps.at(-1).nodes.push(lines);
-        const stepped = startSteps(fields.steps, { go, cancel: () => close(), say });
-        scroll.append(...stepped.nodes);
+        if (lines) fields.steps.at(-1).nodes.push(lines);
+        const stepped = startSteps(fields.steps, { go, cancel: () => close(), say: msg => { error.textContent = msg ? t(msg) : ''; } });
+        scroll.replaceChildren(...stepped.nodes);
         actions.append(...stepped.actions);
     } else {
         const head = el('div', 'anomalous-ai-start-sheet-head');
@@ -281,19 +396,11 @@ export function openStarter(owner, card, data) {
         picture.alt = '';
         picture.src = new URL(`../assets/start_${card.id}.webp`, import.meta.url).href;
         fadeIn(picture);
-        head.append(picture, ...(fields.start ? [] : [readyBox(readyLines(card, data))]));
-        scroll.append(head, ...fields.nodes, lines);
+        head.append(picture);
+        scroll.append(head, ...fields.nodes, ...(lines ? [lines] : []));
         actions.append(button('anomalous-ai-link', t('dialogCancel'), () => close()));
-        if (fields.task || fields.start) actions.append(go);
     }
     body.append(scroll, error, actions);
-    body.addEventListener('input', () => { error.textContent = ''; });
-    body.addEventListener('change', () => { error.textContent = ''; });
-    body.addEventListener('click', (event) => { // Next and Start say what is missing themselves
-        if (event.target.closest('button:not(.anomalous-ai-start-go)')) error.textContent = '';
-    });
-    close = aiWindow(t(`aiStart_${card.id}_title`), body, () => fields.stop?.());
-    const page = body.querySelector('.anomalous-ai-start-step:not([hidden])');
-    (page ? page.querySelector('textarea, input:not([hidden]), button:not(:disabled):not([hidden])') : body.querySelector('textarea, input:not([hidden]), select'))?.focus();
+    close = aiWindow(t(`aiStart_${card.id}_title`), body);
+    body.querySelector('textarea, input:not([hidden]), select, button')?.focus();
 }
-

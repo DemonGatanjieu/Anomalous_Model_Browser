@@ -17,7 +17,7 @@ import { anomalousAlert } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { taskTitle } from './ai_task_title.js';
 
-const CANVAS_WISHES = ['run', 'fix', 'explain', 'more'];
+export const CANVAS_WISHES = ['run', 'fix', 'explain', 'more'];
 const NODE_WISHES = ['explain', 'tune'];
 const ERROR_GAP_MS = 10000; // one offer for a run of failures
 
@@ -36,7 +36,7 @@ function button(className, label, run) {
 }
 
 /** The tab open now: {path, name}. */
-function frontTab() {
+export function frontTab() {
     const tab = app.extensionManager?.workflow?.activeWorkflow;
     return { path: String(tab?.path || ''), name: String(tab?.filename || tab?.path || '').replace(/\.json$/i, '') };
 }
