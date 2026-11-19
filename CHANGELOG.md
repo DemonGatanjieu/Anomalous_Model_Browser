@@ -2,6 +2,8 @@
 
 ## v1.64.0 — unreleased
 
+- 修复 AI 工作台每 5 秒后台刷新时导致页面突然跳回顶部/底部并卡顿一下的问题：现在在工作台内填写或挑选图片（如「改一张图」「隐私出图」等）时，后台刷新不再拆掉重画整个编辑区，滚动和未发送的文字都会完整保留；浏览任务时间线时，顶栏、流程条、列表、状态条在内容没变化时不再重复拆装重排，也不会在用户正在滚动或停留看上面步骤时强行改写滚动条位置（后台轮询会自动避开正在滚动的瞬间，待停稳后再安静同步）。
+- Fixing a jump-and-stutter issue on the AI workbench caused by the 5-second background poll: active in-workbench starter composers ("Change a picture", "Draw privately", etc.) are now preserved intact across polls instead of being torn down and refocused; normal task timelines, headers, flow strips, side tabs, task list rows, and status/message bars skip no-op DOM replacements and avoid resetting scroll position while browsing, with background polling waiting until active scrolling settles (`scrollend`).
 - 主页「让 AI 帮你做」里的「隐私出图」「改一张图」「照我说的出图」「先试一次」「看懂我的画布」彻底取消分页小窗：点了直接打开 AI 工作台的宽敞起手页面，在一页里直接挑图/看预览、写要求、选模型与路线、随时切换起手模板；「改一张图」挑完图后缩略图直接停在「怎么改？」旁边，不用翻页盲写；点「开始」就在原地切进等 AI 接手的对话区（新建空白任务或欢迎页也能一键切回这些模板）。不需要 AI 的「跑我存的预设」保留独立批量弹窗，需要 AI 改图时同样直接切进工作台。
 - 隐私出图等「交给 AI」流程不再在中途多弹一个转接小窗：建好后直接打开 AI 工作台里的新建任务页面；不自动改写剪贴板，发给 AI 的原句、首次接入指引、已设好的路线与密文提示词、以及随任务附带的模型/图片等都留在工作台对话区里，随时手动点按钮复制或继续补充留言。
 - 隐私出图「选模型 / 选 LoRA」升级并沉淀为全插件可复用的通用模型选择大窗，直接复用主「模型」页的视觉和筛选方式：顶部可按「模型类型」（Checkpoint / Diffusion / UNet 等）和细分的真实 Base Model（Illustrious / Pony / NoobAI / SDXL / Anima / Flux 等）以及收藏筛选；卡片上看得见 Base Model 角标、模型类型、版本号小标签、展示名和物理文件名；同一模型的多个版本会自动铺开并紧挨排在一起，不用点小箭头就能直接对比着选；LoRA 选择也同步带回主页面的收藏星标，选完回到步骤页也会标出类型、Base Model 和版本号。

@@ -8,7 +8,7 @@
  * copy of the canvas to look at, and the tasks it goes on from (ui_ai_task_links.js).
  */
 
-import { translate as t } from './locales.js';
+import { resolveLocale, translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
 import { taskStatus } from './ai_task_status.js';
 import { taskTitle } from './ai_task_title.js';
@@ -53,6 +53,14 @@ function headItems(task, ctx) {
  * tabs, drawn first), actions (ui_ai_task_menu.js menuActions), canUndoAll, undoAll(), open(id) }.
  */
 export function drawTaskHead(header, task, ctx) {
+    const run = taskStatus(task);
+    const key = JSON.stringify([resolveLocale(), new Date().toDateString(), ctx.tabsKey || '', ctx.status, ctx.summary,
+        ctx.canUndoAll, task.id, task.title, task.title_from, task.ended, task.stale_tools, task.client, task.started,
+        (task.steps || []).length, task.canvas_mode, task.canvas, task.links, task.private, task.privacy_models,
+        task.reads_disk, task.pause, run.run?.id, run.state, RUNNING.includes(run.state) ? run.run?.progress?.percent : null,
+        Object.keys(task.sealed || {}).length]);
+    if (header.dataset.headKey === key) return;
+    header.dataset.headKey = key;
     const titleLine = el('div', 'anomalous-ai-task-title-line');
     const name = el('div', 'anomalous-ai-task-name');
     const back = el('button', 'anomalous-ai-back', `‹ ${t('aiAllTasks')}`);
@@ -62,7 +70,6 @@ export function drawTaskHead(header, task, ctx) {
     title.title = title.textContent;
     name.append(back, title, stateChip(ctx.status));
     const tools = el('div', 'anomalous-ai-task-tools');
-    const run = taskStatus(task);
     if (run.run && RUNNING.includes(run.state)) tools.append(executionStatus(task, ctx.refresh));
     tools.append(privacyButton(task, ctx.refresh), ...pauseTool(task, ctx.refresh), taskMenu(task, { ...ctx.actions, extra: headItems(task, ctx) }));
     titleLine.append(name, tools);

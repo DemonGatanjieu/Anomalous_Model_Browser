@@ -1,6 +1,6 @@
 /**
- * What a step of the AI workbench's timeline says under its title, by what it is (ui_ai_workbench.js
- * draws the row around it): the user's own steps (marks on a picture, materials, a change made in
+ * What a step of the AI workbench's timeline says under its title, by what it is, and the timeline
+ * row itself (`drawStepRow`): the user's own steps (marks on a picture, materials, a change made in
  * Anomalous, pictures handed over, a stop, the canvas mode, privacy mode, their word on a run, a message
  * with the pictures it carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js),
  * what happened outside Anomalous (pictures changed, the AI's own word: api/ai_outside.py), a
@@ -11,12 +11,12 @@
 import { resolveLocale, translate as t } from './locales.js';
 import { wayTitle } from './ai_toolbox_data.js';
 import { modelStem } from './ai_start_from.js';
-import { icon } from './ui_ai_icons.js';
-import { skillsBefore } from './ai_task_view.js';
-import { entrySummary } from './activity_log.js';
+import { icon, iconButton } from './ui_ai_icons.js';
+import { duration, skillsBefore, stepDetail, toolKey } from './ai_task_view.js';
+import { entrySummary, timeLabel } from './activity_log.js';
 import { changeNodeId } from './activity_diff.js';
 import { noteNode } from './ai_text_format.js';
-import { locateNode } from './ui_ai_results.js';
+import { locateNode, resultLinks } from './ui_ai_results.js';
 import { marksStep } from './ui_ai_marker.js';
 import { standinStep } from './ui_ai_released.js';
 import { toolboxStep } from './ui_ai_toolbox_step.js';
@@ -25,6 +25,8 @@ import { deliveryState } from './ui_ai_delivery.js';
 import { decisionCard } from './ui_ai_decisions.js';
 import { imageResults } from './ui_ai_images.js';
 import { renderHiddenText, sealedParts } from './ai_hide_mark.js';
+import { gateCard } from './ui_ai_gate.js';
+import { panelLine } from './ui_ai_side.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -220,4 +222,55 @@ export function stepBody(step, ctx) {
         if (step.kind === 'user') return userMessageStep(step, ctx);
         return step.text ? [note(step.text)] : [];
     }
+}
+
+/** One step row of the timeline; `number` is its place in the task (the dot shows it). */
+export function drawStepRow(step, number, ctx) {
+    const running = step.state === 'running';
+    const row = el('div', `anomalous-ai-step is-${step.kind}${step.ok ? '' : ' is-failed'}${running ? ' is-running' : ''}${step.state === 'asking' ? ' is-asking' : ''}`);
+    row.dataset.stepIds = step.id;
+    row.append(el('span', 'anomalous-ai-step-dot', number));
+    const body = el('div', 'anomalous-ai-step-body');
+    const line = el('div', 'anomalous-ai-step-line');
+    line.append(el('span', 'anomalous-ai-kind', t(`aiKind_${step.kind}`)), el('span', 'anomalous-ai-step-title', t(step.pause ? 'aiTool_user_pause' : toolKey(step.tool))));
+    const detail = ['panel', 'outside'].includes(step.kind) || step.tool === 'user_activity' ? '' : stepDetail(step); // their body says it
+    if (detail) {
+        const text = el('span', 'anomalous-ai-step-detail', detail);
+        text.title = detail;
+        line.append(text);
+    }
+    const { task } = ctx;
+    body.append(line, ...stepBody(step, { taskId: task?.id, owner: ctx.owner, entries: ctx.entries, numberOf: ctx.numberOf,
+        steps: task?.steps, sealed: task?.sealed, privateTask: task?.private === true, privacyModels: task?.privacy_models !== false }));
+    const other = step.reply_to || step.replied;
+    if (other) {
+        body.append(iconButton(`anomalous-ai-reply-link${step.replied ? ' is-replied' : ''}`, step.replied ? 'chat' : 'undo',
+            t(step.replied ? 'aiReplied' : 'aiReplyTo', { number: ctx.numberOf(other) ?? '' }), () => ctx.showStep(other)));
+    }
+    if (step.kind === 'panel' && task) body.append(panelLine(step, () => ctx.showOnStage(step.panel.id)));
+    const gate = task && gateCard(step, task.id, ctx.refresh);
+    if (gate) body.append(gate);
+    if (step.error && !gate) body.append(el('div', 'anomalous-ai-step-error', step.error));
+    if (step.state === 'cancelled') body.append(el('div', 'anomalous-ai-step-cancelled', t(step.stop === 'user' ? 'aiRunCancelledByYou' : 'aiRunCancelledByAi')));
+    if (running && step.kind !== 'run') body.append(el('div', 'anomalous-ai-step-running', t('aiStepRunning')));
+    const links = resultLinks(step, ctx.redraw);
+    if (links) body.append(links);
+    const when = el('div', 'anomalous-ai-step-when');
+    when.append(el('span', '', timeLabel(step.at)));
+    const took = duration(step.ms);
+    if (took) when.append(el('span', '', t(took.key, took.values)));
+    row.append(body, when);
+    return row;
+}
+
+/** Brings a step's row into view (from the flow), marked for a moment; a folded chain opens to it. */
+export function scrollToStep(timeline, stepId) {
+    const has = item => item.dataset.stepIds.split(' ').includes(stepId);
+    const chain = [...timeline.children].find(has);
+    chain?.reveal?.();
+    const row = [...timeline.querySelectorAll('[data-step-ids]')].findLast(has);
+    if (!row) return;
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row.classList.add('is-flash');
+    setTimeout(() => row.classList.remove('is-flash'), 1600);
 }

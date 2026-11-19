@@ -12,7 +12,7 @@
  * typed in it (ui_ai_panel.js draftField).
  */
 
-import { translate as t } from './locales.js';
+import { resolveLocale, translate as t } from './locales.js';
 import { haltOf, taskStatus } from './ai_task_status.js';
 import { toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
@@ -161,6 +161,21 @@ function askCard(task, { step, block }, more, ctx) {
     return card;
 }
 
+function statusLineKey(task) {
+    const halt = haltOf(task);
+    if (halt) return JSON.stringify([resolveLocale(), 'halt', halt]);
+    const gate = (task.steps || []).findLast(step => step.state === 'asking' && step.gate);
+    if (gate) return JSON.stringify([resolveLocale(), 'gate', gate.id, gate.tool]);
+    const status = taskStatus(task);
+    if (status.run && RUNNING.includes(status.state)) {
+        const { words, share } = progressWords({ state: 'submitting', ...status.run.progress });
+        return JSON.stringify([resolveLocale(), 'run', status.run.id, words, share, status.run.prompt_ids?.length || 0,
+            Boolean(status.run.stop || status.run.progress?.stopping)]);
+    }
+    if (status.state === 'tool') return JSON.stringify([resolveLocale(), 'tool', status.active.id, status.active.tool]);
+    return `${resolveLocale()}|none`;
+}
+
 /**
  * The strip, made once per task view; `update(task, ctx)` with ctx {refresh(), openStage(),
  * showStep(id), stuck()}, kept for the next update: a run's progress coming in alone updates it with
@@ -175,11 +190,15 @@ export function nowStrip() {
     strip.append(ask, line, call);
     strip.update = (task, ctx = kept) => {
         kept = ctx;
-        line.replaceChildren(...[statusLine(task, ctx)].filter(Boolean));
+        const lineKey = statusLineKey(task);
+        if (line.dataset.key !== lineKey) {
+            line.dataset.key = lineKey;
+            line.replaceChildren(...[statusLine(task, ctx)].filter(Boolean));
+        }
         const asks = task.ended || haltOf(task) ? [] : openAsks(task);
         const held = asks.findIndex(({ step, block }) => hasDraft(task.id, step.id, block.id));
         if (held > 0) asks.unshift(...asks.splice(held, 1)); // a question half answered stays in front as others come
-        const key = asks.length ? JSON.stringify([asks[0].step.id, asks[0].block.id, asks.length]) : '';
+        const key = asks.length ? JSON.stringify([resolveLocale(), asks[0].step.id, asks[0].block.id, asks.length]) : '';
         if (key !== ask.dataset.key) {
             ask.dataset.key = key;
             ask.replaceChildren(...(asks.length ? [askCard(task, asks[0], asks.length - 1, ctx)] : []));

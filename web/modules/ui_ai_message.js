@@ -13,7 +13,7 @@
  * text survives the task's redraws. Exposes `box.refs` as the picker's handle to the message.
  */
 
-import { translate as t } from './locales.js';
+import { resolveLocale, translate as t } from './locales.js';
 import { firstHint } from './ui_ai_tour.js';
 import { MAX_REFS, mentions } from './ui_ai_mention.js';
 import { recordRecent } from './ai_toolbox_state.js';
@@ -162,11 +162,15 @@ export function messageBox(onSend, source) {
  * for a failure); quieter while the AI is not working on it. While a task waits for an AI
  * (`status` "waiting"), what is sent waits with it, and the input says it can be used for that. */
 export function updateMessageBox(box, ended, status) {
-    box.classList.toggle('is-quiet', !['live', 'asks', 'waiting'].includes(status));
-    box.classList.toggle('is-waiting', status === 'waiting' && !ended); // the first of the waiting page's steps is here
-    box.note.textContent = t(ended ? 'aiMessageEnded' : status === 'waiting' ? 'aiMessageWaiting' : 'aiMessageHint');
-    box.note.classList.remove('is-error');
-    box.field.title = box.note.textContent;
-    box.field.placeholder = t(status === 'waiting' ? 'aiMessagePlaceholderWaiting' : 'aiMessagePlaceholder');
+    const statusKey = `${resolveLocale()}|${Boolean(ended)}|${status}`;
+    if (box.dataset.statusKey !== statusKey) {
+        box.dataset.statusKey = statusKey;
+        box.classList.toggle('is-quiet', !['live', 'asks', 'waiting'].includes(status));
+        box.classList.toggle('is-waiting', status === 'waiting' && !ended); // the first of the waiting page's steps is here
+        box.note.textContent = t(ended ? 'aiMessageEnded' : status === 'waiting' ? 'aiMessageWaiting' : 'aiMessageHint');
+        box.note.classList.remove('is-error');
+        box.field.title = box.note.textContent;
+        box.field.placeholder = t(status === 'waiting' ? 'aiMessagePlaceholderWaiting' : 'aiMessagePlaceholder');
+    }
     box.syncPrivacy?.();
 }

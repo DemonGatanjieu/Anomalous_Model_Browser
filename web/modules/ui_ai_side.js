@@ -17,7 +17,7 @@
  * outputsSeen, panelKey, panelUnread }` (`outputsSeen`: ui_ai_outputs.js newOutputs).
  */
 
-import { translate as t } from './locales.js';
+import { resolveLocale, translate as t } from './locales.js';
 import { panelGist } from './ai_task_view.js';
 import { renderPanel } from './ui_ai_panel.js';
 import { icon, iconButton } from './ui_ai_icons.js';
@@ -211,18 +211,22 @@ export function renderStage(box, task, stage, ctx, arrived = null) {
             markInView(box.closest('.anomalous-ai'));
         }, { root: body, threshold: 0.3 }) : null;
     }
-    const parts = [el('span', 'anomalous-ai-stage-title', t('aiStage')), el('span', 'anomalous-ai-stage-count', t('aiStagePanels', { count: steps.length }))];
-    if (asks) parts.push(el('span', 'anomalous-ai-state is-asks', t('aiCountAsks', { count: asks })));
-    parts.push(el('span', 'anomalous-ai-gap'));
-    if (stage.unseen) {
-        parts.push(button('anomalous-ai-stage-new', t('aiStageNew'), () => {
-            scrollToLatest(body, stage);
-        }));
+    const headKey = JSON.stringify([resolveLocale(), steps.length, asks, Boolean(stage.unseen), autoOpen()]);
+    if (head.dataset.headKey !== headKey) {
+        head.dataset.headKey = headKey;
+        const parts = [el('span', 'anomalous-ai-stage-title', t('aiStage')), el('span', 'anomalous-ai-stage-count', t('aiStagePanels', { count: steps.length }))];
+        if (asks) parts.push(el('span', 'anomalous-ai-state is-asks', t('aiCountAsks', { count: asks })));
+        parts.push(el('span', 'anomalous-ai-gap'));
+        if (stage.unseen) {
+            parts.push(button('anomalous-ai-stage-new', t('aiStageNew'), () => {
+                scrollToLatest(body, stage);
+            }));
+        }
+        const close = button('anomalous-ai-stage-close', '×', ctx.close, t('aiStageHide'));
+        close.setAttribute('aria-label', t('aiStageHide'));
+        parts.push(autoSwitch(), close);
+        head.replaceChildren(...parts);
     }
-    const close = button('anomalous-ai-stage-close', '×', ctx.close, t('aiStageHide'));
-    close.setAttribute('aria-label', t('aiStageHide'));
-    parts.push(autoSwitch(), close);
-    head.replaceChildren(...parts);
 
     // The panels, oldest first; only the ones that changed are drawn again.
     const pickedOn = task.base_hold?.picked_on; // a picked base that may still change (ui_ai_stage.js picks)

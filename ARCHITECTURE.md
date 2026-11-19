@@ -572,7 +572,7 @@ covered by the `styles.css` manifest.
   results strip and timeline with links (picture viewer, model page, combo, canvas locate and
   undo, scan page, ▶ for audio), updated live; also the home page's "What the AI did lately"
   and the rail's dot (`owner.railNews`). A task's parts stay in the page between redraws: a
-  step is drawn again only when it changed or the language did (`syncRows`), so a scrolled diagram or strip and
+  step is drawn again only when it changed or the language did (`syncRows`, returning whether rows changed; `watchScrollIdle` keeps background 5 s polls and WS refreshes out of active scrolling until `scrollend`), unchanging task heads (`ui_ai_task_head.js`), flow chips (`ui_ai_flow.js`), titlebar switches/tabs/empty stage (`ui_ai_side_views.js`), stage heads (`ui_ai_side.js`), now/status bars (`ui_ai_now.js`), message hints (`ui_ai_message.js`), task list rows (`ui_ai_task_list.js`), welcome state, and live starter composers (`state.composer.key`) are preserved in place without resetting scrollTop unless fresh or extending at the foot, so a scrolled diagram or strip and
   half-typed text survive the AI's steps coming in. `ui_ai_message.js` is the message box, made
   once per task and docked at the foot of its column (in view while the timeline scrolls; a task
   opens at its newest step, and `ui_ai_newest.js` is the button back to it over the box): a growing input, `+` (`ui_ai_plus.js`), the gallery button beside it (no separate materials button), exposes `box.refs` (`ui_ai_mention.js` with `MAX_REFS = 12` and `swap` keeping per-ref note), records sent picker items via `recordRecent`, and
@@ -593,7 +593,7 @@ covered by the `styles.css` manifest.
   fill in); `ui_ai_gallery_pick.js` is the gallery grid pictures are attached from.
   `api/ai_message_refs.py` checks what the message names (`models`, `combos`, `workflows`, `prompts`, `nodes`, `packs`, `ways`, `pictures`, optional `note` up to 200 chars -> `user_note`, and `attached: True` -> handed over into task picks with `handed: True`) and gives each to the AI
   with the message (in full — `lookup("ways", ...)` gives name, title, about and `reference_blocks.call` —, pictures attached; get_toolbox shares its `lookup`),
-  `tests/test_ai_message_refs.py`. `ui_ai_step_body.js` is what a timeline step says under its
+  `tests/test_ai_message_refs.py`. `ui_ai_step_body.js` draws each timeline row (`drawStepRow`, `scrollToStep`) and what a step says under its
   title (the user's own steps with attached non-picture ref chips and user notes beside their names, pictures, whether the AI has them, a decision's card, the AI's note, a
   skill fetched and, under a run, the skills fetched before it (`ai_task_view.skillsBefore`), what
   happened outside Anomalous). `api/ai_outside.py` is that last: when the AI calls (never in the
@@ -664,8 +664,8 @@ covered by the `styles.css` manifest.
   the button (or moving left onto the page's left edge) slides it over the page at once.
   `ui_ai_task_list.js` draws it (New task, Connect an AI
   and the gates, which AI came last, quick filters by state, the tasks by day with a state
-  icon each, those going on from a task under it by `ai_task_view.taskFamilies`), making anew only the rows that changed, all of them after a switch of language (`web/modules/sync_rows.js`, the timeline's
-  way too). `web/modules/ai_task_cache.js` keeps the tasks as last read and caches/fetches activity entries (`keptEntries`, `missingEntries`): a task picked shows at
+  icon each, those going on from a task under it by `ai_task_view.taskFamilies`), making anew only the rows that changed, all of them after a switch of language (`web/modules/sync_rows.js` `syncRows` + `watchScrollIdle`, the timeline's
+  way too). `web/modules/ai_task_cache.js` fetches/posts tasks (`fetchTasks`, `postTask`, `readTask`) and caches/fetches activity entries (`keptEntries`, `missingEntries`): a task picked shows at
   once from there (read ahead while the pointer rests on its row) and again, what changed, when the
   server answers. The stage's pictures, like the
   timeline's, load the 512 px thumbnail first and the file itself only when shown larger. `ui_ai_icons.js` is the AI pages' one set of line icons and the icon button.

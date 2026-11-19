@@ -23,6 +23,24 @@ function keep(id, task) {
     while (kept.size > KEEP) kept.delete(kept.keys().next().value);
 }
 
+/** Task list from the server (`limit` newest summaries). */
+export async function fetchTasks(limit = 100) {
+    const response = await fetch(`/anomalous/ai_tasks?limit=${limit}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return data.tasks || [];
+}
+
+/** Sends a JSON POST to task `id` (or `id/action`) and returns the parsed payload. */
+export async function postTask(id, body, action = '') {
+    const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(id)}${action ? `/${action}` : ''}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);
+    return data;
+}
+
 /** Task `id` from the server (null when there is none); kept for keptTask. */
 export function readTask(id) {
     if (reading.has(id)) return reading.get(id);

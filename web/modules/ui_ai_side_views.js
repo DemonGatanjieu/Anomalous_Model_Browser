@@ -14,7 +14,7 @@
  * `side` is the workbench's stage state (ui_ai_side.js): `view`, `mapStep`, `hidden`, `tab`.
  */
 
-import { translate as t } from './locales.js';
+import { resolveLocale, translate as t } from './locales.js';
 import { emptyState } from './ui_ai_art.js';
 import { timeLabel } from './activity_log.js';
 import { icon, iconButton } from './ui_ai_icons.js';
@@ -244,9 +244,17 @@ export function drawSide(box, task, side, ctx, arrived = null) {
     syncToolboxTask(task);
     const opened = panes.blocks.hidden && side.view === 'blocks'; // the ways are read again when the view comes up
     for (const [view, pane] of Object.entries(panes)) pane.hidden = view !== side.view;
-    box.querySelector(':scope > .anomalous-ai-tabs').replaceWith(ctx.tabs());
-    if (panelSteps(task).length) renderStage(panes.stage, task, side, ctx, arrived);
-    else {
+    const tabsEl = box.querySelector(':scope > .anomalous-ai-tabs');
+    if (tabsEl && (!ctx.tabsKey || tabsEl.dataset.tabsKey !== ctx.tabsKey)) {
+        const nextTabs = ctx.tabs();
+        nextTabs.dataset.tabsKey = ctx.tabsKey || '';
+        tabsEl.replaceWith(nextTabs);
+    }
+    if (panelSteps(task).length) {
+        delete panes.stage.dataset.emptyKey;
+        renderStage(panes.stage, task, side, ctx, arrived);
+    } else if (panes.stage.dataset.emptyKey !== resolveLocale()) {
+        panes.stage.dataset.emptyKey = resolveLocale();
         const body = el('div', 'anomalous-ai-stage-body');
         body.append(emptyState('board', t('aiStageNone')));
         panes.stage.replaceChildren(sideHead(t('aiStage'), ctx.close), body);

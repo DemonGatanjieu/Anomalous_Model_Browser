@@ -28,7 +28,6 @@
 import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { resolveLocale, translate as t } from './locales.js';
-import { timeLabel } from './activity_log.js';
 import { canUndo } from './canvas_undo.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { messageBox, updateMessageBox } from './ui_ai_message.js';
@@ -36,32 +35,28 @@ import { atFoot, newestButton } from './ui_ai_newest.js';
 import { nowStrip } from './ui_ai_now.js';
 import { taskCommands } from './ui_ai_commands.js';
 import { hidePanelToast, panelToast } from './ui_ai_panel.js';
-import { bringStage, focusPanel, openQuestions, panelLine, panelSteps, stageBadge, stageNews } from './ui_ai_side.js';
+import { bringStage, focusPanel, openQuestions, panelSteps, stageBadge, stageNews } from './ui_ai_side.js';
 import { aboutStrip, waitingView, welcomePage } from './ui_ai_ready.js';
 import { renderStarterComposer } from './ui_ai_starter_sheet.js';
-import { gateCard } from './ui_ai_gate.js';
-import { iconButton } from './ui_ai_icons.js';
 import { listToggle, renderTaskList } from './ui_ai_task_list.js';
-import { flowMap } from './ui_ai_flow.js';
+import { drawFlowMap } from './ui_ai_flow.js';
 import { drawRecentAiTasks } from './ui_ai_recent.js';
-import { locateNode, openModel, resultLinks, updateRunProgress } from './ui_ai_results.js';
+import { locateNode, openModel, updateRunProgress } from './ui_ai_results.js';
 import { shared } from './ui_ai_shared.js';
 import { drawOutputsLine, newOutputs } from './ui_ai_outputs.js';
 import { compareBar, setMarker } from './ui_ai_images.js';
 import { openMarker } from './ui_ai_marker.js';
 import { toolboxCount } from './ui_ai_toolbox.js';
-import { stepBody } from './ui_ai_step_body.js';
+import { drawStepRow, scrollToStep } from './ui_ai_step_body.js';
 import { chainRow, looksRow, undoChanges } from './ui_ai_chain.js';
 import { TIMELINE_MIN, connectSide, drawSide, pickView, sideShown, sideSwitch, sideWidth, viewTabs } from './ui_ai_side_views.js';
 import { executionStatus } from './ui_ai_status.js';
 import { drawTaskHead } from './ui_ai_task_head.js';
 import { openStuck } from './ui_ai_stuck.js';
 import { menuActions, openTaskMenu } from './ui_ai_task_menu.js';
-import { syncRows } from './sync_rows.js';
-import { keptEntries, keptTask, missingEntries, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
-import {
-    duration, groupSteps, stepDetail, taskResults, taskState, toolKey,
-} from './ai_task_view.js';
+import { syncRows, watchScrollIdle } from './sync_rows.js';
+import { fetchTasks, keptEntries, keptTask, missingEntries, postTask, readAhead, readTask, stopReadAhead } from './ai_task_cache.js';
+import { groupSteps, taskResults, taskState } from './ai_task_view.js';
 import { aiTourOnce } from './ui_ai_tour.js';
 
 const NARROW_PX = 720;
@@ -69,6 +64,8 @@ const SHORT_PX = 880; // a window this low (not maximised) keeps less room aroun
 const TIGHT_PX = 640; // a task's column this narrow (the side column open) shows its head's chips as icons
 const COLLAPSED_KEY = 'anomalous_ai_tasks_collapsed';
 const RECENT_COUNT = 3;
+const SCROLL_IDLE_MS = 260;
+let composerSeq = 0;
 
 const state = {
     owner: null,
@@ -88,8 +85,10 @@ const state = {
     request: 0,       // newer navigation/refresh invalidates older responses
     observer: null,
     bar: null,        // the ticked pictures' compare bar (ui_ai_images.js), made once
-    composer: null,   // active in-workbench starter draft { id, data }
+    composer: null,   // active in-workbench starter draft { key, id, data }
     composerDispose: null,
+    scrollWatch: null,
+    deferredPoll: false,
 };
 
 const closeComposer = () => {
@@ -113,25 +112,14 @@ function button(className, label, onClick, title) {
     return node;
 }
 
-const say = item => (item ? t(item.key, item.values) : '');
 const visible = () => Boolean(state.panel?.isConnected && state.panel.style.display !== 'none');
 
-async function getJson(url) {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+function clearHeaderTools() {
+    const tools = state.owner?.headerTools;
+    if (!tools) return;
+    delete tools.dataset.toolsKey;
+    if (tools.childElementCount) tools.replaceChildren();
 }
-
-async function postTask(id, body, action = '') {
-    const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(id)}${action ? `/${action}` : ''}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);
-    return data;
-}
-
-const fetchTasks = (limit = 100) => getJson(`/anomalous/ai_tasks?limit=${limit}`).then(data => data.tasks || []);
 
 // ---------------------------------------------------------------- the list
 
@@ -158,44 +146,10 @@ const taskActions = task => menuActions(task, { tasks: state.tasks, post: postTa
 
 // ---------------------------------------------------------------- one task
 
-/** One step of the timeline; `number` is its place in the task (the dot shows it). */
-function stepRow(step, number) {
-    const running = step.state === 'running';
-    const row = el('div', `anomalous-ai-step is-${step.kind}${step.ok ? '' : ' is-failed'}${running ? ' is-running' : ''}${step.state === 'asking' ? ' is-asking' : ''}`);
-    row.dataset.stepIds = step.id;
-    row.append(el('span', 'anomalous-ai-step-dot', number));
-    const body = el('div', 'anomalous-ai-step-body');
-    const line = el('div', 'anomalous-ai-step-line');
-    line.append(el('span', 'anomalous-ai-kind', t(`aiKind_${step.kind}`)), el('span', 'anomalous-ai-step-title', t(step.pause ? 'aiTool_user_pause' : toolKey(step.tool))));
-    const detail = ['panel', 'outside'].includes(step.kind) || step.tool === 'user_activity' ? '' : stepDetail(step); // their body says it
-    if (detail) {
-        const text = el('span', 'anomalous-ai-step-detail', detail);
-        text.title = detail;
-        line.append(text);
-    }
-    body.append(line, ...stepBody(step, { taskId: state.task?.id, owner: state.owner, entries: state.entries, numberOf: id => state.numbers.get(id), steps: state.task?.steps, sealed: state.task?.sealed, privateTask: state.task?.private === true, privacyModels: state.task?.privacy_models !== false }));
-    const other = step.reply_to || step.replied;
-    if (other) {
-        body.append(iconButton(`anomalous-ai-reply-link${step.replied ? ' is-replied' : ''}`, step.replied ? 'chat' : 'undo',
-            t(step.replied ? 'aiReplied' : 'aiReplyTo', { number: state.numbers.get(other) ?? '' }), () => showStep(state.view.timeline, other)));
-    }
-    if (step.kind === 'panel' && state.task) {
-        body.append(panelLine(step, () => showOnStage(step.panel.id)));
-    }
-    const gate = state.task && gateCard(step, state.task.id, () => void refresh());
-    if (gate) body.append(gate);
-    if (step.error && !gate) body.append(el('div', 'anomalous-ai-step-error', step.error));
-    if (step.state === 'cancelled') body.append(el('div', 'anomalous-ai-step-cancelled', t(step.stop === 'user' ? 'aiRunCancelledByYou' : 'aiRunCancelledByAi')));
-    if (running && step.kind !== 'run') body.append(el('div', 'anomalous-ai-step-running', t('aiStepRunning')));
-    const links = resultLinks(step, renderTask);
-    if (links) body.append(links);
-    const when = el('div', 'anomalous-ai-step-when');
-    when.append(el('span', '', timeLabel(step.at)));
-    const took = duration(step.ms);
-    if (took) when.append(el('span', '', say(took)));
-    row.append(body, when);
-    return row;
-}
+const stepRow = (step, number) => drawStepRow(step, number, {
+    task: state.task, owner: state.owner, entries: state.entries, numberOf: id => state.numbers.get(id),
+    showStep: id => scrollToStep(state.view.timeline, id), showOnStage, refresh: () => void refresh(), redraw: renderTask,
+});
 
 async function undoAll(task) {
     if (await undoChanges(task.steps, state.entries, t('aiUndoAll'), 'aiUndoAllConfirm')) renderTask();
@@ -204,24 +158,29 @@ async function undoAll(task) {
 function renderTask() {
     const box = state.page?.querySelector('.anomalous-ai-task');
     if (!box) return;
-    state.composerDispose?.();
-    state.composerDispose = null;
     if (state.composer) {
         state.page.classList.remove('has-stage');
-        state.owner?.headerTools?.replaceChildren();
+        clearHeaderTools();
+        const live = box.querySelector(':scope > .anomalous-ai-composer');
+        if (live && live.dataset.composerKey === String(state.composer.key)) return;
+        state.composerDispose?.();
         state.composerDispose = renderStarterComposer(box, {
             owner: state.owner, cardId: state.composer.id, data: state.composer.data,
             onBack: () => { state.narrowView = 'list'; layout(); },
-            onSwitch: id => { state.composer = { ...state.composer, id }; renderTask(); },
+            onSwitch: id => { state.composer = { ...state.composer, key: ++composerSeq, id }; renderTask(); },
             onCancel: () => { closeComposer(); void refresh(); },
             onDone: closeComposer,
         });
+        const mounted = box.querySelector(':scope > .anomalous-ai-composer');
+        if (mounted) mounted.dataset.composerKey = String(state.composer.key);
         return;
     }
+    state.composerDispose?.();
+    state.composerDispose = null;
     const task = state.task;
     if (!task) {
         box.replaceChildren(el('div', 'anomalous-ai-empty-task', state.tasks.length ? t('aiPickTask') : ''));
-        state.owner?.headerTools?.replaceChildren();
+        clearHeaderTools();
         return;
     }
     const keepBottom = atFoot(box);
@@ -233,6 +192,7 @@ function renderTask() {
     let view = state.view;
     const fresh = !view || view.taskId !== task.id || !box.contains(view.timeline);
     if (fresh) {
+        state.view?.tightObserver?.disconnect();
         view = state.view = {
             taskId: task.id, header: el('div', 'anomalous-ai-task-head'), flow: el('div', 'anomalous-ai-flow-holder'),
             made: el('div', 'anomalous-ai-made-holder'), summary: el('div', 'anomalous-ai-summary'),
@@ -250,9 +210,14 @@ function renderTask() {
         view.dock.append(view.newest, view.now, view.message); // at the foot of the column, in view while the timeline scrolls
         view.summary.append(view.flow, view.made);
         box.replaceChildren(view.header, view.summary, view.timeline, view.dock);
-        new ResizeObserver(() => {
-            for (const part of [view.header, view.dock]) part.classList.toggle('is-tight', box.clientWidth < TIGHT_PX);
-        }).observe(view.header);
+        let wasTight = null;
+        view.tightObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(() => {
+            const tight = box.clientWidth < TIGHT_PX;
+            if (tight === wasTight) return;
+            wasTight = tight;
+            for (const part of [view.header, view.dock]) part.classList.toggle('is-tight', tight);
+        }) : null;
+        view.tightObserver?.observe(view.header);
     }
     // A new panel opens the stage; in a narrow window only one that asks something takes its tab, and not from under the user's typing.
     const news = stageNews(task, state.stage);
@@ -262,17 +227,22 @@ function renderTask() {
     const shown = sideShown(state.stage, task) && !(state.page.classList.contains('is-tabbed') && state.stage.tab !== 'stage');
     const unseen = newOutputs(state.stage, task, shown && state.stage.view === 'outputs');
     const badges = { stage: stageBadge(task, state.stage, shown && state.stage.view === 'stage'), asking, toolbox: toolboxCount(task), outputs: unseen };
+    const usesTabs = state.page.classList.contains('uses-tabs');
+    const tabsKey = JSON.stringify([resolveLocale(), shown, usesTabs, state.stage.tab, state.stage.view, badges, Boolean(state.stage.lit)]);
     state.tabs = () => viewTabs(state.stage, shown, badges, view => pickView(state.stage, view, false, task, renderTask, () => void refresh()), showTimeline);
-    state.owner?.headerTools?.replaceChildren(...(state.page.classList.contains('uses-tabs') ? [] : [sideSwitch(state.stage, shown, badges,
-        view => pickView(state.stage, view, shown, task, renderTask, () => void refresh()))]));
-    drawTaskHead(view.header, task, { summary, status, entries: state.entries, refresh: () => void refresh(), tabs: state.tabs,
+    const tools = state.owner?.headerTools;
+    const toolsKey = usesTabs ? 'hidden' : tabsKey;
+    if (tools && tools.dataset.toolsKey !== toolsKey) {
+        tools.dataset.toolsKey = toolsKey;
+        tools.replaceChildren(...(usesTabs ? [] : [sideSwitch(state.stage, shown, badges,
+            view => pickView(state.stage, view, shown, task, renderTask, () => void refresh()))]));
+    }
+    const canUndoAll = taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity)));
+    drawTaskHead(view.header, task, { summary, status, entries: state.entries, refresh: () => void refresh(), tabs: state.tabs, tabsKey,
         back: () => { state.narrowView = 'list'; layout(); }, showCanvas: () => state.owner?.close?.(), actions: taskActions(task),
-        canUndoAll: taskResults(task).canvas.some(result => state.entries.has(result.activity) && canUndo(app, state.entries.get(result.activity))),
-        undoAll: () => undoAll(task), open: (id) => { state.pinned = true; void select(id); } });
+        canUndoAll, undoAll: () => undoAll(task), open: (id) => { state.pinned = true; void select(id); } });
 
-    const flow = flowMap(task, stepId => showStep(view.timeline, stepId));
-    view.flow.replaceChildren(...(flow ? [flow] : []));
-
+    drawFlowMap(view.flow, task, stepId => scrollToStep(view.timeline, stepId));
     drawOutputsLine(view.made, task, () => pickView(state.stage, 'outputs', false, state.task, renderTask, () => void refresh()));
 
     // Numbered in the order they happened, so the timeline reads 1, 2, 3 from the top.
@@ -298,35 +268,28 @@ function renderTask() {
         }
         if (!items.length) rows.push({ key: 'empty', make: () => el('div', 'anomalous-ai-empty-task', t('aiNoSteps')) });
     }
-    syncRows(view.timeline, rows);
+    const timelineChanged = syncRows(view.timeline, rows);
     updateMessageBox(view.message, Boolean(task.ended), preparing ? 'waiting' : status);
-    view.now.update(task, { refresh: () => void refresh(), showStep: id => showStep(view.timeline, id), stuck: () => openStuck(state.task, state.entries, () => void refresh()),
+    view.now.update(task, { refresh: () => void refresh(), showStep: id => scrollToStep(view.timeline, id), stuck: () => openStuck(state.task, state.entries, () => void refresh()),
         openStage: () => pickView(state.stage, 'stage', false, task, renderTask, () => void refresh()) });
     view.timeline.classList.toggle('is-waiting', preparing);
-    // Opened, at its newest step (a page being prepared, at its top); read at the foot, kept there.
-    if (!view.newest.jumping) box.scrollTop = fresh && preparing ? 0 : fresh || keepBottom ? box.scrollHeight : keepTop;
+    // Opened, at its newest step (a page being prepared, at its top); leave unchanged timelines untouched during scroll.
+    if (!view.newest.jumping) {
+        if (fresh || (timelineChanged && keepBottom)) box.scrollTop = fresh && preparing ? 0 : box.scrollHeight;
+        else if (timelineChanged && !keepBottom && Math.abs(box.scrollTop - keepTop) > 1) box.scrollTop = keepTop;
+    }
     view.newest.arrived((task.steps || []).slice(view.seen).filter(step => step.kind !== 'user').length);
     view.seen = (task.steps || []).length;
-    drawStage(task, news.arrived);
-}
-
-/** Brings a step's row into view (from the flow), marked for a moment; a folded chain opens to it. */
-function showStep(timeline, stepId) {
-    const has = item => item.dataset.stepIds.split(' ').includes(stepId);
-    const chain = [...timeline.children].find(has);
-    chain?.reveal?.();
-    const row = [...timeline.querySelectorAll('[data-step-ids]')].findLast(has);
-    if (!row) return;
-    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    row.classList.add('is-flash');
-    setTimeout(() => row.classList.remove('is-flash'), 1600);
+    drawStage(task, news.arrived, tabsKey);
 }
 
 /** The side column beside the timeline: the view picked (ui_ai_side_views.js). */
-function drawStage(task, arrived = null) {
+function drawStage(task, arrived = null, tabsKey = '') {
     const box = state.page?.querySelector('.anomalous-ai-stage');
     if (!box) return;
-    state.page.classList.toggle('has-stage', sideShown(state.stage, task));
+    const hadStage = state.page.classList.contains('has-stage');
+    const willHaveStage = sideShown(state.stage, task);
+    state.page.classList.toggle('has-stage', willHaveStage);
     drawSide(box, task, state.stage, {
         taskId: task.id,
         owner: state.owner,
@@ -343,8 +306,9 @@ function drawStage(task, arrived = null) {
             renderTask();
         },
         tabs: state.tabs,
+        tabsKey,
     }, arrived);
-    layout();
+    if (hadStage !== willHaveStage) layout();
 }
 
 function showOnStage(panelId) {
@@ -471,21 +435,27 @@ async function refresh() {
     if (!tasks || !state.page || request !== state.request) return;
     state.tasks = tasks;
     if (!tasks.length && !state.composer) {
-        state.page.replaceChildren(welcomePage(newTask, id => openAiStarter(state.owner, id)), state.bar);
-        state.owner?.headerTools?.replaceChildren();
-        state.page.classList.add('is-empty');
+        if (!state.page.classList.contains('is-empty') || state.page.dataset.emptyLang !== resolveLocale()) {
+            state.page.dataset.emptyLang = resolveLocale();
+            state.page.replaceChildren(welcomePage(newTask, id => openAiStarter(state.owner, id)), state.bar);
+            state.page.classList.add('is-empty');
+        }
+        clearHeaderTools();
         return;
     }
     if (state.page.classList.contains('is-empty') || !state.page.querySelector('.anomalous-ai-tasks')) {
         state.page.classList.remove('is-empty');
+        delete state.page.dataset.emptyLang;
         const scrim = button('anomalous-ai-scrim', '', () => { state.narrowView = 'task'; layout(); });
         scrim.title = t('aiBackToTask');
         state.page.replaceChildren(el('aside', 'anomalous-ai-tasks'), el('section', 'anomalous-ai-task'), el('section', 'anomalous-ai-stage'), scrim, state.bar);
     }
     if (state.composer) {
         renderList(state.page.querySelector('.anomalous-ai-tasks'));
-        renderTask();
-        layout();
+        if (!state.page.querySelector('.anomalous-ai-task > .anomalous-ai-composer')) {
+            renderTask();
+            layout();
+        }
         return;
     }
     // The newest task while the AI works on it, unless the user picked another one.
@@ -501,15 +471,19 @@ async function refresh() {
     layout();
 }
 
-// Poll only while this view is visible: reconnects and missed websocket events must not freeze its status.
+// Poll only while this view is visible and scroll has settled: reconnects and missed events must not freeze status or jank scroll.
 let pollTimer = null;
-function pollVisible() {
+function pollVisible(delay = 5000) {
     clearTimeout(pollTimer);
     pollTimer = setTimeout(async () => {
         if (document.hidden || !state.page?.isConnected || !visible()
             || !state.owner?.modal?.classList.contains('visible') || state.owner.currentShellPage?.() !== 'ai') return;
+        if (state.scrollWatch?.isScrolling()) {
+            state.deferredPoll = true;
+            return;
+        }
         try { await refresh(); } finally { pollVisible(); }
-    }, 5000);
+    }, delay);
 }
 
 /** The whole page into `panel`. */
@@ -518,7 +492,16 @@ export function renderAiWorkbench(owner, panel) {
     if (state.language !== resolveLocale()) { // shown again in another language: the parts kept between redraws go
         state.language = resolveLocale();
         state.view = null;
-        state.page?.querySelectorAll('[data-key], [data-panel-key]').forEach(node => { delete node.dataset.key; delete node.dataset.panelKey; });
+        if (state.composer) state.composer = { ...state.composer, key: ++composerSeq };
+        state.page?.querySelectorAll('[data-key], [data-panel-key], [data-head-key], [data-flow-key], [data-list-key], [data-status-key], [data-empty-key]').forEach((node) => {
+            delete node.dataset.key;
+            delete node.dataset.panelKey;
+            delete node.dataset.headKey;
+            delete node.dataset.flowKey;
+            delete node.dataset.listKey;
+            delete node.dataset.statusKey;
+            delete node.dataset.emptyKey;
+        });
     }
     state.owner = owner;
     shared.owner = owner;
@@ -526,7 +509,14 @@ export function renderAiWorkbench(owner, panel) {
     state.bar ||= compareBar();
     if (!state.page || state.page.parentNode !== panel) {
         state.observer?.disconnect();
+        state.scrollWatch?.reset();
+        state.deferredPoll = false;
         state.page = el('div', 'anomalous-ai');
+        state.scrollWatch = watchScrollIdle(state.page, () => {
+            if (!state.deferredPoll) return;
+            state.deferredPoll = false;
+            pollVisible(0);
+        }, SCROLL_IDLE_MS);
         panel.replaceChildren(state.page);
         if (typeof ResizeObserver === 'function') {
             state.observer = new ResizeObserver(layout);
@@ -563,9 +553,14 @@ export function watchAiTasks(owner) {
         else if (detail.gate && !onPage()) panelToast(owner, t(`aiGateQ_${detail.gate}`), true);
         clearTimeout(state.refreshTimer);
         state.refreshTimer = setTimeout(() => {
-            if (onPage()) void refresh();
-            else owner.railNews?.('ai', true);
-            if (owner.currentShellPage?.() === 'home') owner.onActivityRecorded?.();
+            if (!onPage()) {
+                owner.railNews?.('ai', true);
+                if (owner.currentShellPage?.() === 'home') owner.onActivityRecorded?.();
+            } else if (state.scrollWatch?.isScrolling()) {
+                state.deferredPoll = true;
+            } else {
+                void refresh();
+            }
         }, 300);
     });
 }
@@ -582,7 +577,7 @@ export function openAiTask(owner, id, newest = null) {
 /** Opens the spacious in-workbench starter workspace for `starterId` directly on the AI page. */
 export function openAiStarter(owner, starterId, data = null) {
     closeComposer();
-    state.composer = { id: starterId, data: data || fetch('/anomalous/ai_starters').then(r => (r.ok ? r.json() : null)).catch(() => null) };
+    state.composer = { key: ++composerSeq, id: starterId, data: data || fetch('/anomalous/ai_starters').then(r => (r.ok ? r.json() : null)).catch(() => null) };
     state.narrowView = 'task';
     owner.goTo('ai');
 }

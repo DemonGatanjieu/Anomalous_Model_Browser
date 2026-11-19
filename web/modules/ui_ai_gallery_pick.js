@@ -72,6 +72,7 @@ export function pictureGrid({ picked, pick }) {
         img.src = thumbUrl(image);
         img.alt = '';
         img.loading = 'lazy';
+        img.decoding = 'async';
         const check = el('span', 'anomalous-ai-pics-mark');
         check.append(icon('check', 12));
         node.append(img, check);

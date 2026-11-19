@@ -72,3 +72,14 @@ export function flowMap(task, goTo) {
     if (plan) box.append(planRow(plan, goTo));
     return box;
 }
+
+/** Draws the flow strip into `holder`, skipping DOM replacement when stages and plan are unchanged. */
+export function drawFlowMap(holder, task, goTo) {
+    const stages = flowStages(task);
+    const plan = planFlow(task);
+    const key = JSON.stringify([resolveLocale(), stages, plan]);
+    if (holder.dataset.flowKey === key) return;
+    holder.dataset.flowKey = key;
+    const flow = flowMap(task, goTo);
+    holder.replaceChildren(...(flow ? [flow] : []));
+}

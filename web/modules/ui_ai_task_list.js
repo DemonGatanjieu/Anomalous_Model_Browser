@@ -13,7 +13,7 @@
  * slides it over the page at once to pick a task from.
  */
 
-import { translate as t } from './locales.js';
+import { resolveLocale, translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
 import { picturePreview, taskCounts, taskFamilies, taskState } from './ai_task_view.js';
 import { icon, iconButton } from './ui_ai_icons.js';
@@ -152,8 +152,11 @@ function filterChips(box, counts) {
  */
 export function renderTaskList(box, view) {
     box.aiView = view; // what the column's buttons act on: the latest
+    const listKey = JSON.stringify([resolveLocale(), new Date().toDateString(), filter, view.selected, view.tasks]);
+    if (box.dataset.listKey === listKey) return;
     const states = view.tasks.map(taskState);
     if (filter !== 'all' && !states.some(FILTERS[filter])) filter = 'all';
+    box.dataset.listKey = JSON.stringify([resolveLocale(), new Date().toDateString(), filter, view.selected, view.tasks]);
     const counts = Object.entries(FILTERS).map(([key, test]) => [key, states.filter(test).length]).filter(([key, count]) => key === 'all' || count);
     const latest = view.tasks.find(task => task.client);
     syncRows(box, [
