@@ -54,7 +54,8 @@ function formatRecipeResolution(res) {
 }
 
 /** The line of how a recipe draws: steps, sampler, LoRAs, size. */
-function recipeMetaLine(params) {
+/** A saved workflow's settings in a line: steps, sampler, LoRAs, size. */
+export function recipeMetaLine(params) {
     if (!params || typeof params !== 'object') return '';
     const loras = Array.isArray(params.loras) ? params.loras : [];
     return [
@@ -158,6 +159,14 @@ function modelLine(params) {
     return line;
 }
 
+/** A saved workflow's cover: its chosen cover, else its thumbnail or the picture it was saved from. */
+export function recipeCoverUrl(recipe) {
+    const data = recipe?.data || {};
+    const sourceImageUrl = outputImageUrl(data.source_image);
+    const savedCover = recipeAssetUrl(recipe?.filename, data.presentation?.cover_asset_id);
+    return savedCover || (previewIsVideo(sourceImageUrl) ? sourceImageUrl : safeThumbnail(data.thumbnail) || sourceImageUrl);
+}
+
 /**
  * Builds the reusable visual card face of a saved Workflow Recipe (cover thumbnail/video,
  * readiness mark, scope pill, title, meta line and model row) shared by the Workflows page and
@@ -174,12 +183,7 @@ export function createRecipeCardFace(recipe, { coverExtra = null, infoExtra = nu
 
     const cover = document.createElement('div');
     cover.className = 'anomalous-wf-cover';
-    const sourceImageUrl = outputImageUrl(data.source_image);
-    const savedCover = recipeAssetUrl(recipe.filename, data.presentation?.cover_asset_id);
-    const thumbnail = savedCover || (previewIsVideo(sourceImageUrl)
-        ? sourceImageUrl
-        : safeThumbnail(data.thumbnail) || sourceImageUrl);
-    appendRecipeCover(cover, thumbnail, data.name || t('recipeThumbnail'), recipe?.filename || data.name);
+    appendRecipeCover(cover, recipeCoverUrl(recipe), data.name || t('recipeThumbnail'), recipe?.filename || data.name);
     cover.append(readinessMark(data));
     if (isPartial) appendText(cover, 'span', t('recipeScopePill_partial'), 'anomalous-wf-kind');
     if (coverExtra) cover.append(coverExtra);

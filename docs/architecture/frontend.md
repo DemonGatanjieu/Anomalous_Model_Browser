@@ -506,11 +506,18 @@ cards:
   expanded side by side in contiguous groups so versions stay easy to inspect and
   compare in one view without layout jumping when toggling selections.
 
-## Reusable Workflow Card Selector (`ui_workflow_pick.js`)
+## Reusable Workflow Picker (`ui_workflow_pick.js`)
 
-Places asking the user to choose a saved workflow (`ui_ai_preset_sheet.js` and
-`ui_ai_start_from.js`) share `workflowCardGrid` in `web/modules/ui_workflow_pick.js`
-rather than plain `<select>` dropdowns:
+Places asking the user to choose a saved workflow share `web/modules/ui_workflow_pick.js`
+rather than plain `<select>` dropdowns, as model choices share `ui_ai_model_pick.js`:
+
+- `workflowCardGrid`: the card grid with its search and chips (complete or a module,
+  the user's tags, "With presets" where presets count), embedded where the choice is
+  the whole step (`ui_ai_preset_sheet.js`).
+- `openWorkflowPicker`: the same grid as a window; "Done" or a double click hands back
+  the one picked (`onDone(workflow)`).
+- `workflowChoice`: the chosen workflow as a line (cover, name, settings) with a button
+  to that window, where the choice is one part of a form (`ui_ai_start_from.js`).
 
 - Reuses `createRecipeCardFace` (`ui_recipe_cards.js`) and `recipeMatchesFilter`
   (`ui_recipe_catalog.js`) along with `28-workflows.css` so saved workflows keep

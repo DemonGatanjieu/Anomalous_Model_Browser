@@ -555,8 +555,17 @@ textarea.anomalous-ai-start-input { min-height: 58px; resize: vertical; }
     .anomalous-ai-composer-pic-preview { width: 100%; height: 140px; }
 }
 
-/* "Run my preset" dialog & reusable visual workflow card selector (ui_ai_preset_sheet.js, ui_workflow_pick.js). */
+/* "Run my preset" dialog & reusable visual workflow card selector (ui_ai_preset_sheet.js, ui_workflow_pick.js):
+   the grid with its chips, the same as a window, and the chosen one as a line with its button. */
 .anomalous-ai-connect-dialog.is-preset-sheet { width: min(980px, 92vw); max-height: 90vh; }
+.anomalous-ai-connect-dialog.is-workflow-pick { width: min(1140px, 94vw); max-height: 90vh; }
+.anomalous-wf-pick-window { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.anomalous-wf-pick-window .anomalous-wf-pick-grid { max-height: min(60vh, 640px); }
+.anomalous-wf-pick-chips { margin: 0; }
+.anomalous-wf-pick-chips[hidden] { display: none; }
+.anomalous-wf-choice-line { max-width: min(420px, 100%); }
+.anomalous-wf-choice-thumb > img,
+.anomalous-wf-choice-thumb > video { width: 100%; height: 100%; object-fit: cover; }
 /* The strip over the cards to the Saves page: dashed in the accent, an arrow at the end, so it reads as "go there". */
 .anomalous-ai-preset-to-saves {
     display: flex;

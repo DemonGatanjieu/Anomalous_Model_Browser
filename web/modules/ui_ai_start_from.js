@@ -13,7 +13,7 @@ import { aiWindow } from './ui_ai_connect.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { icon } from './ui_ai_icons.js';
 import { modelMetaSummary, modelThumb, openModelPicker } from './ui_ai_model_pick.js';
-import { workflowCardGrid } from './ui_workflow_pick.js';
+import { workflowChoice } from './ui_workflow_pick.js';
 import {
     START_FROM_KEY,
     loadImageInfo,
@@ -402,12 +402,8 @@ export function startFromSection({ data, cards = false }) {
     root.append(pillsRow);
     if (!canOpen) root.append(el('div', 'anomalous-ai-start-from-note', t('aiStartOpenDisabled')));
 
-    const wfPicker = workflows.length ? workflowCardGrid({
-        workflows,
-        selected: state.card,
-        onPick: (wf) => { state.card = wf.file; },
-    }) : null;
-    if (wfPicker) scope.onDispose(() => wfPicker.stop());
+    // A saved workflow: the chosen one as a line, its button to the picker's window.
+    const wfChoice = workflows.length ? workflowChoice({ workflows, picked: state.card, onChange: (wf) => { state.card = wf.file; } }) : null;
     const body = el('div', 'anomalous-ai-start-from-body');
     root.append(body);
 
@@ -448,9 +444,9 @@ export function startFromSection({ data, cards = false }) {
             routePart.renderInto(body);
         } else if (state.mode === 'open') {
             body.replaceChildren(el('div', 'anomalous-ai-start-from-note', openFactLine(loadInfo)));
-        } else if (state.mode === 'card' && wfPicker) {
-            wfPicker.setSelected(state.card);
-            body.replaceChildren(wfPicker.node);
+        } else if (state.mode === 'card' && wfChoice) {
+            wfChoice.set(state.card);
+            body.replaceChildren(wfChoice.node);
         } else {
             body.replaceChildren(el('div', 'anomalous-ai-start-from-note', t('aiStartAiHint')));
         }
