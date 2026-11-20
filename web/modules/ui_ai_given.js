@@ -3,7 +3,9 @@
  * its AI, at one look and by kind. First the pictures handed over (named when the task started, sent from
  * the gallery, or attached to a message), then the picks (api/ai_toolbox.py: models, ways, combos,
  * workflows, prompts, node types and packs, or the favourites standing in while the task has none of its
- * own) under how strictly the AI keeps to them; a pick's × takes it back. What is on the message and not
+ * own) under how strictly the AI keeps to them; a pick's × takes it back, and a model's lock (in a private task, or
+ * while its name is kept) says whether the AI gets its name or a code word and turns it, for every task, as Privacy
+ * Overview does (POST /anomalous/ai_tasks/{id}/privacy_rules model_rule). What is on the message and not
  * sent yet is said over them. "Add materials" opens the picker's window (ui_ai_toolbox.js); "Add
  * pictures" a gallery grid whose pictures go to the task at once (POST /anomalous/ai_tasks/{id}/pictures).
  */
@@ -22,6 +24,8 @@ import { coverUrl, kindIcon } from './ui_ai_toolbox_cards.js';
 import { packItems, pageNodes, renderModes } from './ui_ai_toolbox_sources.js';
 import { standInCover } from './ui_ai_toolbox_icons.js';
 import { anomalousAlert } from './ui_dialog.js';
+import { nameHidden } from './ui_ai_model_lock.js';
+import { postPrivacyRule } from './ui_ai_privacy_adjust.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const SHOWN_KINDS = ['models', 'ways', 'combos', 'workflows', 'prompts', 'nodes', 'packs'];
@@ -31,6 +35,7 @@ let favorites = null; // the user's standing picks, read while a task without pi
 let ways = null; // the usable ways, for their names
 let saving = false;
 let last = null; // {pane, task, ctx}: drawn again when names, favourites or the message change
+let turned = 0; // models whose name lock was turned here: the view is drawn again
 const watched = new WeakSet(); // message boxes whose changes redraw the view
 
 function el(tag, className, text) {
@@ -158,6 +163,7 @@ function kindPart(kind, ids, name, picks, task, ctx) {
         if (sub) words.append(el('span', 'anomalous-ai-given-sub', sub));
         row.title = item.title || id;
         row.append(lead(item), words);
+        if (kind === 'models' && !task.ended && (task.private === true || nameHidden(item, task))) row.append(nameLock(item, id, task, ctx));
         if (!task.ended) {
             const back = iconButton('anomalous-ai-given-back', 'close', t('aiGivenTakeBack'), () => void save(task, without(picks, { kind, id }), ctx), { iconOnly: true, size: 14 });
             back.disabled = saving;
@@ -166,6 +172,26 @@ function kindPart(kind, ids, name, picks, task, ctx) {
         return row;
     });
     return part(kindIcon(kind), t(`aiToolboxKind_${kind}`), ids.length, ...rows);
+}
+
+/** A model's lock: the AI gets a code word for its name (its token once it has one) or the name; a press turns it. */
+function nameLock(item, id, task, ctx) {
+    const hidden = nameHidden(item, task);
+    const token = Object.entries(task.sealed || {}).find(([key, value]) => key.startsWith('[M') && value === id)?.[0] || '';
+    const lock = iconButton(`anomalous-ai-given-lock${hidden ? ' is-hidden' : ''}`, hidden ? 'lock' : 'eye', hidden ? token || t('aiTbNameBadge') : t('aiGivenNameShown'), async () => {
+        lock.disabled = true;
+        try {
+            await postPrivacyRule(task, { action: 'model_rule', model_id: id, hidden: !hidden });
+            item.ai_name = hidden ? 'shown' : 'hidden'; // kept with the model, for every task (ai_model_choice.py)
+            turned += 1;
+            ctx.changed();
+        } catch (error) {
+            lock.disabled = false;
+            await anomalousAlert(error.message);
+        }
+    }, { title: t(hidden ? 'aiGivenNameHiddenHint' : 'aiGivenNameShownHint', { token: token || '[M]' }), size: 13 });
+    lock.setAttribute('aria-pressed', String(hidden));
+    return lock;
 }
 
 /** Pictures from the gallery, handed to `task` at once. */
@@ -235,7 +261,7 @@ export function renderGivenView(pane, task, ctx, force = false) {
     const pictures = givenPictures(task);
     const pending = box?.refs?.items?.() || [];
     const key = JSON.stringify([resolveLocale(), task.id, Boolean(task.ended), picks, pictures.map(image => [image.subfolder, image.filename, image.gone]),
-        pending.map(ref => [ref.kind, ref.id]), Boolean(keptCatalog()), Boolean(ways), saving]);
+        pending.map(ref => [ref.kind, ref.id]), Boolean(keptCatalog()), Boolean(ways), saving, turned, task.private, task.privacy_models, task.sealed]);
     if (!force && pane.dataset.key === key) return;
     pane.dataset.key = key;
 

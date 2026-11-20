@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 中途藏模型不用绕路了：隐私任务右栏「给 AI 的素材」里，每个模型旁边多了一把小锁。黄色、写着代号（比如 [M1]）就是 AI 只拿到代号；灰色「真名」就是 AI 看得到名字。点一下切换，和隐私一览里的「藏起来」「给 AI 看真名」是同一个开关，以后所有任务都按这个来；AI 已经看到过的名字收不回。
+- Hiding a model halfway without a detour: in a private task's side "Materials for the AI", each model has a small lock. Amber with its code word (like [M1]) means the AI gets only the code word; grey "Name" means it sees the name. A click turns it, the same switch as "Hide" and "Show the AI its name" in Privacy Overview, kept for every task; a name the AI already saw stays seen.
+
 - 隐私任务里的「藏」按钮先收起来了：只写一个字不好懂，下个版本重做得更清楚再拿出来。以前用它标过的字照样只给 AI 代号，对话里照样遮住；要整段藏起来的提示词，照旧写在带锁的提示词框里。
 - The "Hide" button of private tasks is put away for now: one word did not say what it does, and it comes back clearer in the next version. Words marked with it before still reach the AI as tokens and stay veiled in the conversation; a prompt to keep whole still goes in the locked prompt field.
 
