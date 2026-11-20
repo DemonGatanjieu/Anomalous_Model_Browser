@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.64.0 — unreleased
+## v1.64.0 (Home start cards for the AI, ready-made Privacy Settings, model and workflow pickers, Task Sheet) — 2026-11-20
 
 - 新开 AI 对话接着做旧任务，不会再接错：任务页给新对话用的那句话带上了任务号（“用 Anomalous 接着做任务「…」：先调用 begin_task，task 填 …”），AI 照着做就准确接回这个任务，已经结束的也会重新打开。以前这句话只有任务名，开着好几个任务时，AI 可能接到别的任务上，或者另开一个同名任务。
 - A new AI chat goes on with the right task: the task page's line for a new chat now carries the task's id ("…call begin_task with task … first"), so the AI picks that task up, opened again if it had ended. The line used to name the task only, and with several tasks open the AI could land on another one or start a new task of the same name.
@@ -302,8 +302,6 @@
 - The Gates window has a **Safety level** row at the top: one click sets **Careful** (asks before everything, uses only nodes of the ready-made ways), **Balanced** (the default: canvas, graphics card and going online go ahead; downloads and moving files ask first) or **Hands-off** (downloads without asking, builds blueprints at once, takes its recommendation when you do not answer in time; moving files still asks) across the switches below; changing any row on its own shows Custom instead.
 - 「挑一张底图」选错了可以改：AI 出新底图之前，卡上别的几张都有「改选这张」，点了就换成新的那张（同样存进输出文件夹、锁住它的种子），AI 会收到；以前只能留言告诉 AI，它得停掉已经开跑的放大、把底图重画一遍。
 - Took the wrong base on "Pick a base"? Until the AI draws new bases, the other previews have Take this instead: the new one is kept in the output folder and its seed held the same way, and the AI is told. Before, you could only write to the AI, which had to stop the upscale it had started and draw the base again.
-
-## v1.63.4 (A cover that could not be downloaded is now told) — unreleased
 
 - 扫描时封面没下载成功，现在会说出来，还写明原因（比如等了很久没有回应、C 站返回了错误）。以前名字和触发词照常拿到，封面却悄悄没了，扫描结果里只少算一张，要自己去 C 站对比才发现。扫描结果、动态和进度条都会写“封面没下到”，下次扫描这个模型会自动再试。
 - A cover that could not be downloaded in a scan is now told, with why (no answer for a long time, an error from Civitai…). Before, the name and trigger words came and the picture quietly did not: the result only counted one cover fewer, and you found out by comparing with Civitai. The scan result, the activity page and the progress line say "cover not downloaded", and the next scan of that model tries again.
