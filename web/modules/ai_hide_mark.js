@@ -11,6 +11,9 @@ import { translate as t } from './locales.js';
 import { icon } from './ui_ai_icons.js';
 import { veil } from './ui_ai_sealed_veil.js';
 
+// The Hide button is kept out of sight until it is made clear what it is for (an idea for 1.65); words marked before still show.
+export const HIDE_BUTTON = false;
+
 const OPEN = '\u27e6';
 const CLOSE = '\u27e7';
 

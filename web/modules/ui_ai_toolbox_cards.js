@@ -15,7 +15,7 @@
  */
 
 import { MAX_REF_NOTE } from './ai_chat_plus.js';
-import { hideButton } from './ai_hide_mark.js';
+import { HIDE_BUTTON, hideButton } from './ai_hide_mark.js';
 import { translate as t } from './locales.js';
 import { outputThumbnail } from './ui_kept_toast.js';
 import { recipeAssetUrl } from './ui_recipe_media.js';
@@ -266,7 +266,7 @@ function cardNote(item, ctx) {
     for (const type of ['click', 'pointerdown', 'keydown']) input.addEventListener(type, event => event.stopPropagation());
     input.addEventListener('input', () => ctx.setNote(item, input.value));
     row.append(icon('pencil', 13), input);
-    if (ctx.privateTask?.()) row.append(hideButton(input, () => {}));
+    if (HIDE_BUTTON && ctx.privateTask?.()) row.append(hideButton(input, () => {}));
     return row;
 }
 
@@ -465,7 +465,7 @@ function pickedNoteBox(item, ctx) {
     input.value = ctx.noteOf?.(item) || '';
     input.placeholder = t(ctx.privateTask?.() ? 'aiRefNotePrivate' : 'aiRefNote');
     const hint = el('div', 'anomalous-tb-note-hint');
-    if (ctx.privateTask?.()) head.append(hideButton(input, (text) => { hint.textContent = text; }));
+    if (HIDE_BUTTON && ctx.privateTask?.()) head.append(hideButton(input, (text) => { hint.textContent = text; }));
     input.addEventListener('keydown', event => event.stopPropagation());
     input.addEventListener('input', () => {
         hint.textContent = '';

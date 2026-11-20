@@ -14,7 +14,7 @@
 import { resolveLocale, translate as t } from './locales.js';
 import { galleryPicker, thumbUrl } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
-import { hideButton, renderHiddenText } from './ai_hide_mark.js';
+import { HIDE_BUTTON, hideButton, renderHiddenText } from './ai_hide_mark.js';
 import { icon } from './ui_ai_icons.js';
 import { promptFetch } from './ui_ai_prompt_fetch.js';
 import { veil } from './ui_ai_sealed_veil.js';
@@ -122,7 +122,7 @@ export function promptBox(block, ctx, { sendAnswer, askHead, skipButton, answerN
     const gist = field('gist', t('aiPromptBoxGistPlaceholder'), 2);
     gist.maxLength = 1000;
     const gistHead = el('div', 'anomalous-ai-prompt-part', t('aiPromptBoxGist'));
-    gistHead.append(hideButton(gist, (text) => { note.textContent = text; }));
+    if (HIDE_BUTTON) gistHead.append(hideButton(gist, (text) => { note.textContent = text; }));
     // A saved prompt goes into the first empty field, else a new one while there is room, else the last.
     const taking = promptFetch({
         target: () => prompts.find(area => !area.value.trim()) || (prompts.length < MAX_PROMPTS ? (addPrompt(), prompts.at(-1)) : prompts.at(-1)),

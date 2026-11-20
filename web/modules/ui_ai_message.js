@@ -23,7 +23,7 @@ import { galleryPicker } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
 import { iconButton } from './ui_ai_icons.js';
 import { noteTyping } from './ui_ai_panel.js';
-import { hideButton } from './ai_hide_mark.js';
+import { HIDE_BUTTON, hideButton } from './ai_hide_mark.js';
 import { guardNames } from './ui_ai_model_lock.js';
 
 const MAX_PICTURES = 8; // a message's pictures, as ai_pictures.py hands them
@@ -132,16 +132,19 @@ export function messageBox(onSend, source) {
         box.addEventListener('anomalous-refs', counted);
         field.addEventListener('input', counted);
         line.prepend(plus, pics);
-        const hide = hideButton(currentField, (text) => { note.textContent = text; }); // a private task: words the AI gets as a token
-        const hideHint = firstHint('hide', t('aiFirstHide'));
-        if (hideHint) box.insertBefore(hideHint, note);
-        const syncVisibility = () => {
-            hide.hidden = !source.task?.()?.private;
-            if (hideHint) hideHint.hidden = hide.hidden;
-        };
-        field.addEventListener('focus', syncVisibility);
-        syncVisibility();
-        line.insertBefore(hide, send);
+        let syncVisibility = () => {};
+        if (HIDE_BUTTON) {
+            const hide = hideButton(currentField, (text) => { note.textContent = text; }); // a private task: words the AI gets as a token
+            const hideHint = firstHint('hide', t('aiFirstHide'));
+            if (hideHint) box.insertBefore(hideHint, note);
+            syncVisibility = () => {
+                hide.hidden = !source.task?.()?.private;
+                if (hideHint) hideHint.hidden = hide.hidden;
+            };
+            field.addEventListener('focus', syncVisibility);
+            syncVisibility();
+            line.insertBefore(hide, send);
+        }
         takePictures(box, field, { add: item => at.add(item), room, say: (text) => {
             note.textContent = text;
             note.classList.add('is-error');

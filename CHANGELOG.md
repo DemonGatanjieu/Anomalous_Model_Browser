@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 隐私任务里的「藏」按钮先收起来了：只写一个字不好懂，下个版本重做得更清楚再拿出来。以前用它标过的字照样只给 AI 代号，对话里照样遮住；要整段藏起来的提示词，照旧写在带锁的提示词框里。
+- The "Hide" button of private tasks is put away for now: one word did not say what it does, and it comes back clearer in the next version. Words marked with it before still reach the AI as tokens and stay veiled in the conversation; a prompt to keep whole still goes in the locked prompt field.
+
 - 对话里不用再查代号了：隐私任务里 AI 说的 [M1]、[P1]、[img1]，直接显示成模型名、提示词开头、图片名，用和你留言里藏的字一样的带锁虚线小块标着，旁边留着代号方便对照。藏起来的部分（包括你留言里藏的字、提示词框交给 AI 的提示词）默认是模糊的，鼠标停上去才看清，点一下一直显示，再点一下遮住——录屏、截图、有人在旁边时不怕露出来。真名只显示在你电脑上，AI 那边还是代号。「⋯」里的“模型代号对照”用不上了，已去掉。
 - No more looking up tokens in the conversation: in a private task, the [M1], [P1] and [img1] the AI writes show as the model's name, the start of the prompt and the picture's name, in the same dashed mark with a lock as the words you hid, the token beside it. What was hidden (your hidden words and the prompts handed in through the prompt box too) is blurred until you point at it; a click keeps it shown, another veils it again, so a recording, a screenshot or someone beside you does not catch it. Only your page shows the names; the AI still has the tokens. "Model tokens" in the ⋯ is gone.
 
