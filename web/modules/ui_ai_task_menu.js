@@ -9,7 +9,6 @@ import { translate as t } from './locales.js';
 import { forgetTask } from './ai_task_cache.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { notifyState, toggleNotify } from './ui_ai_notify.js';
-import { modelTokens } from './ui_ai_privacy.js';
 import { openSent } from './ui_ai_sent.js';
 import { pickTaskLink } from './ui_ai_task_links.js';
 import { openPopupMenu } from './ui_popup_menu.js';
@@ -46,8 +45,6 @@ export function openTaskMenu(anchor, task, { tasks, rename, remove, changed, fol
         ...(followUp && task.steps?.length ? [{ label: t('aiTaskFollowUp'), note: t('aiTaskFollowUpNote'), run: followUp }] : []),
         ...(task.links?.from ? [] : [{ label: t('aiTaskLink'), title: t('aiTaskLinkHint'), run: () => pickTaskLink(place, task, tasks, changed) }]),
         ...(task.private || Object.keys(task.sealed || {}).length ? [{ label: t('aiSent'), title: t('aiSentHint'), run: () => void openSent(task) }] : []),
-        ...(modelTokens(task) ? [{ label: t('aiModelTokens'), title: t('aiModelTokensHint'),
-            run: () => void anomalousAlert(modelTokens(task), t('aiModelTokens')) }] : []),
         ...(notifyState() === 'none' ? [] : [{ label: t(notifyState() === 'on' ? 'aiNotifyTurnOff' : 'aiNotifyTurnOn'), title: t('aiNotifyHint'),
             run: () => void toggleNotify() }]),
         { label: t('aiRemove'), danger: true, run: remove },

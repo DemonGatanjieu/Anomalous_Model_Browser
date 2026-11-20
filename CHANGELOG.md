@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 对话里不用再查代号了：隐私任务里 AI 说的 [M1]、[P1]、[img1]，直接显示成模型名、提示词开头、图片名，用和你留言里藏的字一样的带锁虚线小块标着，旁边留着代号方便对照。藏起来的部分（包括你留言里藏的字、提示词框交给 AI 的提示词）默认是模糊的，鼠标停上去才看清，点一下一直显示，再点一下遮住——录屏、截图、有人在旁边时不怕露出来。真名只显示在你电脑上，AI 那边还是代号。「⋯」里的“模型代号对照”用不上了，已去掉。
+- No more looking up tokens in the conversation: in a private task, the [M1], [P1] and [img1] the AI writes show as the model's name, the start of the prompt and the picture's name, in the same dashed mark with a lock as the words you hid, the token beside it. What was hidden (your hidden words and the prompts handed in through the prompt box too) is blurred until you point at it; a click keeps it shown, another veils it again, so a recording, a screenshot or someone beside you does not catch it. Only your page shows the names; the AI still has the tokens. "Model tokens" in the ⋯ is gone.
+
 - 一步开后续任务：任务的「⋯」里多了「接着这个任务开新任务」，点一下就开好一个新任务，挂在它下面，标题下写「接着：…」，AI 接手时会知道上一个任务定下了什么。以前要先开新任务，再去「接着哪个任务…」里挑。新任务的隐私设置跟上一个一样；AI 自己开新任务时也一样——以前隐私任务里 AI 另开的新任务不会跟着隐私，现在会。
 - One step to a follow-up task: a task's ⋯ has "New task going on from this one", which starts a task hanging under it ("Goes on from: …"), and the AI taking it hears what was decided there; before, you started a task and then picked its parent under "Goes on from…". The new task has the same privacy settings, and so does a task an AI begins as new while on another: an AI starting a new task from a private one used to get a task that was not private.
 

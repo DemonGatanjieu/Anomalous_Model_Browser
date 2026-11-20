@@ -6,7 +6,7 @@
  * it or presses it (ui_ai_tour.js firstHint). It opens Privacy Overview (ui_ai_privacy_overview.js),
  * where they are set (POST /anomalous/ai_tasks/{id} {privacy}). What the AI saw before stays seen. Beside it,
  * when the task's AI app reads the disk by itself, a ⓘ says what the settings cannot keep from it.
- * While model names are kept, the AI speaks of "[M1]": modelTokens() says which model each is, for the ⋯.
+ * While model names are kept, the AI speaks of "[M1]": the conversation shows the model instead (ui_ai_sealed_veil.js).
  */
 
 import { translate as t } from './locales.js';
@@ -35,13 +35,6 @@ export async function setPrivacy(task, on, changed) {
     }
     changed();
 }
-
-/** The model tokens of `task` and the model each stands for (its `sealed`), a line each; '' when it has none. */
-export function modelTokens(task) {
-    return Object.entries(task.sealed || {}).filter(([token]) => token.startsWith('[M'))
-        .map(([token, text]) => `${token}  ${String(text).replace(/^([\w-]+):\d+:/, '$1 / ')}`).join('\n');
-}
-
 
 /** Opens Privacy Overview (`ui_ai_privacy_overview.js`) for `task`. */
 export function openTaskPrivacy(task, changed) {

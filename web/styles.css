@@ -35,7 +35,7 @@
 @import url("./styles/34-voice-over-panel.css?v=20261021-sample");
 @import url("./styles/35-voice-over-drafts.css?v=20261020-drafts");
 @import url("./styles/36-reference-audio.css?v=20261020-remove");
-@import url("./styles/37-ai-workbench.css?v=20261120-privacybtn");
+@import url("./styles/37-ai-workbench.css?v=20261120-veil");
 @import url("./styles/38-ai-panels.css?v=20261116-layers");
 @import url("./styles/39-ai-stage.css?v=20261021-stage");
 @import url("./styles/40-ai-side.css?v=20261116-layers");
@@ -60,3 +60,4 @@
 @import url("./styles/59-focus.css?v=20261116-tips");
 @import url("./styles/60-ai-prompt-take.css?v=20261120-prompttake2");
 @import url("./styles/61-ai-privacy-button.css?v=20261120-privacybtn");
+@import url("./styles/62-ai-sealed-veil.css?v=20261120-veil");

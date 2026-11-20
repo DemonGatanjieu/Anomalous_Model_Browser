@@ -5,7 +5,8 @@
  * with the pictures it carries) each with whether the AI has it (ui_ai_delivery.js), a decision (ui_ai_decisions.js),
  * what happened outside Anomalous (pictures changed, the AI's own word: api/ai_outside.py), a
  * skill the AI went by (api/ai_skills.py) and, under a run, the skills fetched before it, or
- * the AI's note laid out (a long one folded until asked).
+ * the AI's note laid out (a long one folded until asked). What was hidden from the AI shows veiled, the tokens in
+ * the AI's notes as what they stand for (ui_ai_sealed_veil.js).
  */
 
 import { resolveLocale, translate as t } from './locales.js';
@@ -25,6 +26,7 @@ import { deliveryState } from './ui_ai_delivery.js';
 import { decisionCard } from './ui_ai_decisions.js';
 import { imageResults } from './ui_ai_images.js';
 import { renderHiddenText, sealedParts } from './ai_hide_mark.js';
+import { tokensAsWords } from './ui_ai_sealed_veil.js';
 import { gateCard } from './ui_ai_gate.js';
 import { panelLine } from './ui_ai_side.js';
 
@@ -53,7 +55,7 @@ function namedRefs(refs, sealed) {
         chip.append(icon(REF_ICON[ref.kind] || ref.kind, 13), el('span', 'anomalous-tb-chip-name', refLabel(ref, locale)));
         if (ref.note) {
             const noteNode = el('span', 'anomalous-ai-step-ref-note');
-            noteNode.append(renderHiddenText(ref.note, sealed, { lockIcon: () => icon('lock', 10) }));
+            noteNode.append(renderHiddenText(ref.note, sealed, { lockIcon: () => icon('lock', 10), veil: true }));
             chip.append(noteNode);
         }
         row.append(chip);
@@ -112,7 +114,7 @@ function userMessageStep(step, ctx) {
     const refs = (step.refs || []).filter(ref => ref.kind !== 'pictures');
     const hides = text => sealedParts(text, sealed).some(part => part.type === 'sealed');
     const bubble = step.text ? el('div', 'anomalous-ai-user-text') : null;
-    bubble?.append(renderHiddenText(step.text, sealed, { lockIcon: () => icon('lock', 11) }));
+    bubble?.append(renderHiddenText(step.text, sealed, { lockIcon: () => icon('lock', 11), veil: true }));
     const hiddenNotes = refs.filter(ref => hides(ref.note));
     const received = hides(step.text) || hiddenNotes.length ? receivedLine([
         ...(step.text ? [sentText(step.text, sealed)] : []),
@@ -133,9 +135,9 @@ function skillUsed(step) {
 const FOLD_CHARS = 420;
 const FOLD_LINES = 8;
 
-/** The AI's note; a long one folded to its first lines, with "show all" / "show less". */
-function note(text) {
-    const node = noteNode(text);
+/** The AI's note, its tokens as what they stand for (`sealed`); a long one folded to its first lines, with "show all" / "show less". */
+function note(text, sealed) {
+    const node = tokensAsWords(noteNode(text), sealed);
     if (text.length <= FOLD_CHARS && text.split('\n').length <= FOLD_LINES) return node;
     const box = el('div', 'anomalous-ai-fold is-folded');
     const toggle = el('button', 'anomalous-ai-fold-toggle', t('aiFoldMore'));
@@ -215,12 +217,12 @@ export function stepBody(step, ctx) {
     case 'run_workflow': {
         const used = skillsBefore(ctx.steps, step).map(item => words(item.title));
         return [...(used.length ? [el('div', 'anomalous-ai-skill-used', t('aiRunSkills', { names: [...new Set(used)].join(' · ') }))] : []),
-            ...(step.text ? [note(step.text)] : [])];
+            ...(step.text ? [note(step.text, ctx.sealed)] : [])];
     }
     default:
         if (step.kind === 'decision') return [decisionCard(step.decision || {}, ctx.numberOf)];
         if (step.kind === 'user') return userMessageStep(step, ctx);
-        return step.text ? [note(step.text)] : [];
+        return step.text ? [note(step.text, ctx.sealed)] : [];
     }
 }
 
@@ -234,12 +236,12 @@ export function drawStepRow(step, number, ctx) {
     const line = el('div', 'anomalous-ai-step-line');
     line.append(el('span', 'anomalous-ai-kind', t(`aiKind_${step.kind}`)), el('span', 'anomalous-ai-step-title', t(step.pause ? 'aiTool_user_pause' : toolKey(step.tool))));
     const detail = ['panel', 'outside'].includes(step.kind) || step.tool === 'user_activity' ? '' : stepDetail(step); // their body says it
+    const { task } = ctx;
     if (detail) {
         const text = el('span', 'anomalous-ai-step-detail', detail);
         text.title = detail;
-        line.append(text);
+        line.append(tokensAsWords(text, task?.sealed));
     }
-    const { task } = ctx;
     body.append(line, ...stepBody(step, { taskId: task?.id, owner: ctx.owner, entries: ctx.entries, numberOf: ctx.numberOf,
         steps: task?.steps, sealed: task?.sealed, privateTask: task?.private === true, privacyModels: task?.privacy_models !== false }));
     const other = step.reply_to || step.replied;

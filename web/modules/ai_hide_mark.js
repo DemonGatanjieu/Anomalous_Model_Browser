@@ -4,10 +4,12 @@
  * the marked words when the text is handed in (api/ai_sealed.py seal_marked), so the AI gets a
  * token in their place. withHidden() shows such a text to the user again, each token as the
  * words it stands for. marked() marks words Anomalous hands on for the user (a sheet's hidden prompt).
+ * In the conversation the shown words are veiled until looked at (ui_ai_sealed_veil.js).
  */
 
 import { translate as t } from './locales.js';
 import { icon } from './ui_ai_icons.js';
+import { veil } from './ui_ai_sealed_veil.js';
 
 const OPEN = '\u27e6';
 const CLOSE = '\u27e7';
@@ -71,9 +73,10 @@ export function sealedParts(text, sealed) {
 
 /**
  * Renders `text` into a DocumentFragment with sealed segments visually marked: each one's words behind
- * the token the AI gets instead. `lockIcon` optionally returns a lock SVG element for the mark.
+ * the token the AI gets instead. `lockIcon` optionally returns a lock SVG element for the mark; `veil` blurs
+ * the words until looked at (the conversation's, ui_ai_sealed_veil.js).
  */
-export function renderHiddenText(text, sealed, { lockIcon = null } = {}) {
+export function renderHiddenText(text, sealed, { lockIcon = null, veil: veiled = false } = {}) {
     const frag = document.createDocumentFragment();
     for (const part of sealedParts(text, sealed)) {
         if (part.type !== 'sealed') {
@@ -91,7 +94,7 @@ export function renderHiddenText(text, sealed, { lockIcon = null } = {}) {
         words.className = 'anomalous-ai-sealed-words';
         words.textContent = part.value;
         wrap.append(tag, words);
-        frag.append(wrap);
+        frag.append(veiled ? veil(wrap, part.token, part.value) : wrap);
     }
     return frag;
 }

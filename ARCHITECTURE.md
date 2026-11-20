@@ -115,6 +115,9 @@ covered by the `styles.css` manifest.
   its first field is the gist, the picture in words the AI may read, handed on as written but for the
   words the user marked to hide, which go as tokens inside it; `web/modules/ai_hide_mark.js` is that
   mark, its Hide button marking words in the focused chip note field or message input, and `sealedParts` / `renderHiddenText` rendering `[P*]` sealed segments in timeline messages (`ui_ai_step_body.js`, with a line under the bubble saying what the AI got: the same words with its tokens, `[M*]` too for a route), ref notes, and prompt-box gists (`ai_sealed.seal_marked` seals marked words in both text and ref notes);
+  in the conversation `web/modules/ui_ai_sealed_veil.js` veils what was hidden (blurred until pointed at, a press keeps it
+  shown; styles `styles/62-ai-sealed-veil.css`) and shows the tokens in the AI's notes as what they stand for (`tokensAsWords`;
+  `api/mcp_server.py` records a report's text as the AI wrote it, `KEEPS_TOKENS`, while other arguments reach their tool expanded);
   the privacy skill tells the AI how to work). `api/ai_sealed.py` also seals `get_model`'s `user_notes` and leaves out a model's `description` on any `model_id` dict anywhere in tool answers (including `"models"` message refs; a text copy of the answer is masked as data too). `api/ai_sealed_models.py` keeps a private task's model names too
   (the Gates window's "Model names in a private task", on unless turned off): each model of the library is one
   token ("[M1]", sealed as its model_id) however an answer writes it (model_id, loader name, file name in a text,

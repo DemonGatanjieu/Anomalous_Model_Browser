@@ -17,6 +17,7 @@ import { takePictures } from './ui_ai_drop.js';
 import { hideButton, renderHiddenText } from './ai_hide_mark.js';
 import { icon } from './ui_ai_icons.js';
 import { promptFetch } from './ui_ai_prompt_fetch.js';
+import { veil } from './ui_ai_sealed_veil.js';
 
 const MAX_PROMPTS = 8;
 const MAX_PICTURES = 4;
@@ -56,14 +57,15 @@ function handedIn(answer, sealed) {
     const box = el('div', 'anomalous-ai-prompt-given');
     const line = (token, label) => {
         const row = el('div', 'anomalous-ai-prompt-given-row');
+        const text = el('span', 'anomalous-ai-prompt-text', sealed?.[token] || '');
         row.append(el('code', 'anomalous-ai-prompt-token', token), el('span', 'anomalous-ai-prompt-label', label),
-            el('span', 'anomalous-ai-prompt-text', sealed?.[token] || ''));
+            sealed?.[token] ? veil(text, token, sealed[token]) : text);
         box.append(row);
     };
     if (answer.gist) {
         const row = el('div', 'anomalous-ai-prompt-given-row');
         const gistText = el('span', 'anomalous-ai-prompt-text');
-        gistText.append(renderHiddenText(answer.gist, sealed, { lockIcon: () => icon('lock', 11) }));
+        gistText.append(renderHiddenText(answer.gist, sealed, { lockIcon: () => icon('lock', 11), veil: true }));
         row.append(el('span', 'anomalous-ai-prompt-label', t('aiPromptBoxGistGiven')), gistText);
         box.append(row);
     }

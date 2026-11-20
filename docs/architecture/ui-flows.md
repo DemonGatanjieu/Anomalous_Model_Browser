@@ -54,7 +54,7 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | 提示词框“画面大意”旁和隐私任务留言框里的「藏」（前面一把锁，浅黄色胶囊） | 先选中几个字再点：这几个字 AI 只拿到代号，其余照常看（`ai_hide_mark.js`） | 随回答或留言一起交出，`ai_sealed.seal_marked` |
 | 「先问我」窗口（开头一句旁边一张举手的小图）最下面的「本机小模型（拓展功能）」 | 「检测本地模型」找这台电脑上的 Ollama / LM Studio，选一个模型后点「就用它」，「不用了」关掉（`ui_ai_darkroom.js`） | `GET/POST /anomalous/ai_darkroom` |
 | ⋯ 里的「发给 AI 了什么」 | 隐私任务才有：列出 AI 每次调用发来的参数和 AMB 回给它的文字，能搜一个词看它出没出去过（`ui_ai_sent.js`） | `GET /anomalous/ai_tasks/{task_id}/sent` |
-| ⋯ 里的「模型代号对照」 | 隐私任务把模型名藏起来后才有：列出 AI 说的 [M1]、[M2] 各是哪个模型（`ui_ai_privacy.js` 的 `modelTokens`） | 无（任务记录里的 `sealed`） |
+| 对话里藏起来的部分 | 你留言里藏的字、提示词框交给 AI 的提示词，和 AI 说的话里的代号（[M1] 换成模型名、[P1] 换成提示词开头、[img1] 换成图片名，前面带锁和代号），都是虚线小块，默认模糊；鼠标停上去看清，点一下一直显示，再点一下遮住，同一个代号处处一起变（只在这次打开页面期间记着）。真名只在页面上，AI 那边还是代号。原来 ⋯ 里的“模型代号对照”去掉了（`ui_ai_sealed_veil.js`、`ai_hide_mark.js`） | 无（任务记录里的 `sealed`） |
 | ⋯ 里的「接着这个任务开新任务」 | 任务列表那一行和标题右边的 ⋯ 都有（AI 接过手的任务才有），下面一行小字说明：一步开一个新任务挂在它下面，直接跳到新任务的「三步让 AI 接手」页；新任务标题下写「接着：{title}」，隐私设置跟它一样（隐私开没开、模型名藏不藏），AI 接手时听到这里定下的事。AI 自己开新任务时也一样带上隐私设置（`ui_ai_task_menu.js`、`ai_tasks.py`） | `POST /anomalous/ai_tasks`（title、from） |
 | ⋯ 里的「接着哪个任务…」 | 把这个任务接在另一个后面，两边都显示链接（`ui_ai_task_links.js`）；只改关联，不改隐私设置 | `POST /anomalous/ai_tasks/{task_id}`（from） |
 

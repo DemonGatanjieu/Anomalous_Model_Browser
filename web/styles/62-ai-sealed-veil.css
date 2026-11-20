@@ -1,0 +1,49 @@
+/* What was hidden from the AI, in a task's conversation: the sealed marks (ai_hide_mark.js: the words the user hid;
+   ui_ai_sealed_veil.js: the AI's tokens as what they stand for, the token beside) and the tokens as the AI got them.
+   Veiled (ui_ai_sealed_veil.js), the words are blurred until pointed at or focused; a press keeps them shown. */
+.anomalous-ai-sealed-span {
+    display: inline;
+    padding: 1px 6px 2px 3px;
+    border: 1px dashed color-mix(in srgb, var(--amb-warn) 52%, transparent);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--amb-warn) 12%, transparent);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+.anomalous-ai-sealed-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-right: 5px;
+    padding: 0 5px;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--amb-warn) 22%, transparent);
+    color: var(--amb-warn-text, var(--amb-warn));
+    font-size: 11px;
+    font-weight: 700;
+    vertical-align: 1px;
+}
+.anomalous-ai-sealed-token {
+    margin: 0 1px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-warn) 20%, transparent);
+    color: var(--amb-warn-text, var(--amb-warn));
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.anomalous-ai-sealed-span.is-veiled,
+.anomalous-ai-prompt-text.is-veiled { cursor: pointer; }
+.anomalous-ai-sealed-span.is-veiled .anomalous-ai-sealed-words,
+.anomalous-ai-prompt-text.is-veiled { filter: blur(5px); user-select: none; transition: filter 0.15s; }
+.anomalous-ai-sealed-span.is-veiled:hover .anomalous-ai-sealed-words,
+.anomalous-ai-sealed-span.is-veiled:focus-visible .anomalous-ai-sealed-words,
+.anomalous-ai-sealed-span.is-shown .anomalous-ai-sealed-words,
+.anomalous-ai-prompt-text.is-veiled:hover,
+.anomalous-ai-prompt-text.is-veiled:focus-visible,
+.anomalous-ai-prompt-text.is-shown { filter: none; user-select: text; }
+.anomalous-ai-sealed-span.is-veiled:focus-visible,
+.anomalous-ai-prompt-text.is-veiled:focus-visible { outline: 2px solid var(--amb-warn); outline-offset: 1px; }
+.anomalous-ai-sealed-span.is-shown { border-style: solid; }

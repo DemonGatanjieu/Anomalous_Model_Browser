@@ -101,6 +101,7 @@ INSTRUCTION_PARTS = (
 )
 INSTRUCTIONS = "".join(INSTRUCTION_PARTS)
 LIST_TTL_MS = 300000
+KEEPS_TOKENS = {"report": ("text",)}  # arguments recorded for the user as the AI wrote them, its tokens kept
 # Requests run tools in threads; a few at a time is plenty for one person's AI app.
 _slots = asyncio.Semaphore(4)
 
@@ -220,6 +221,8 @@ async def _call(params, request, names=None):
     privacy_task = active_task or ai_tasks.active_task_id(client, session=session)
     private = await asyncio.to_thread(ai_privacy.applies, privacy_task)
     call_arguments = await asyncio.to_thread(ai_sealed.expand, privacy_task, arguments)  # tokens from a prompt box work in any task
+    # The AI's own words to the user stay as written: the page shows each token as its words, veiled (ui_ai_sealed_veil.js).
+    call_arguments.update({key: arguments[key] for key in KEEPS_TOKENS.get(name, ()) if key in arguments})
     try:
         # The user's gate first (ai_gates.py): it may wait for their OK, or answer for them.
         result = await asyncio.to_thread(ai_gates.check, name, arguments, step_ref)

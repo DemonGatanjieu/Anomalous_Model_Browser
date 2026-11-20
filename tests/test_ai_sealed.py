@@ -195,6 +195,12 @@ class SealedTests(unittest.TestCase):
         record = ai_tasks.get_task(self.task)
         self.assertNotIn("canarypos", json.dumps([(s.get("summary"), s.get("text")) for s in record["steps"]]), "the record keeps tokens")
 
+    def test_the_ais_note_keeps_its_tokens_for_the_page_to_show(self):
+        ai_sealed.seal_answer(self.task, ["canarypos, 1girl"], "", [])
+        rpc("tools/call", {"name": "report", "arguments": {"task": self.task, "text": "照 [P1] 画好了"}}, "report")
+        note = ai_tasks.get_task(self.task)["steps"][-1]
+        self.assertEqual(note["text"], "照 [P1] 画好了", "the page shows the token as its words, veiled")
+
     def test_what_a_private_tasks_ai_was_sent_is_kept_for_the_user_to_read(self):
         def answer(tools, name, arguments, ctx=None):
             return canary_result(arguments)
