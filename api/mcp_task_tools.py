@@ -14,13 +14,24 @@ ASK_NEXT = ("Before you end your turn, ask_user what to do next or whether to go
             "the user waiting. Only a run, a download or a scan going on lets you end it without asking.")
 
 
-def begin_task(ctx, title, new_task=False):
+def _open_again(task_id):
+    """The task a new chat's line names by its id (ui_ai_call.js): opened again if it ended, so begin_task takes it."""
+    with ai_tasks._lock:
+        named = ai_tasks._load().get(task_id)
+        if named and named.get("ended"):
+            named["ended"] = None  # like a message to it (ai_panels.leave_message): the task goes on
+            ai_tasks._save(named)
+
+
+def begin_task(ctx, title, new_task=False, task=None):
     title = str(title or "").strip()
     if not title:
         raise ToolError("title is empty: a few words on what the user asked for.")
-    task = ai_tasks.begin_task(
+    if (ctx.get("task") or task) and not new_task:
+        _open_again(ctx.get("task") or task)
+    task = ai_tasks.begin_task(  # `task`: the id a new chat's line gives (ui_ai_call.js), read with the call (ai_callers.task_of)
         ctx.get("client") or "AI", title, new_task=bool(new_task),
-        session=ctx.get("session") or "", task_id=ctx.get("task"),
+        session=ctx.get("session") or "", task_id=ctx.get("task") or task,
     )
     answer = {"task": task["id"], "title": task["title"], "note": (
         "Continue this task; do not begin another for its steps. Every AMB call is a step the user sees, opens and "
@@ -390,7 +401,8 @@ TASK_TOOLS = dict([
                "Call first: names what the user asked for in Anomalous's AI workbench, where they see, open and undo "
                "each of your steps. Continues the waiting or active task; new_task=true only for a separate request.",
                begin_task, {"title": {"type": "string", "description": "A few words, in the user's language."},
-                            "new_task": {"type": "boolean", "default": False}},
+                            "new_task": {"type": "boolean", "default": False},
+                            "task": {"type": "string", "description": "The task id the user's words give (任务号): go on with that task."}},
                ["title"]),
     _task_tool("report", "Tell the user",
                "A note in the AI workbench, where the user reads your work: your choices, what to look at, what is "

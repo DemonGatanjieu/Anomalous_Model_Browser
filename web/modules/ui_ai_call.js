@@ -40,7 +40,7 @@ export function callRow(onStuck) {
         const lead = el('span', 'anomalous-ai-call-lead', t(offer.lead));
         row.append(lead);
         offer.lines.forEach((name, at) => {
-            const text = t(name, { task: title });
+            const text = t(name, { task: title, id: task.id }); // a new chat's line names the task by its id too
             const line = el('button', `anomalous-ai-call-line${at ? '' : ' is-main'}${name === NEW_CHAT ? ' is-new' : ''}`);
             line.type = 'button';
             line.append(icon('copy', 14));

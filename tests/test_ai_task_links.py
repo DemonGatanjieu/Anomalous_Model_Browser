@@ -56,6 +56,16 @@ class LinkTests(unittest.TestCase):
         plain = ai_tasks.start_task("", from_task=ai_tasks.begin_task("B", "四", new_task=True)["id"])["id"]
         self.assertNotIn("privacy", ai_tasks.get_task(plain), "a task following the default leaves the next to the default too")
 
+    def test_a_new_chat_goes_on_with_the_task_its_line_names(self):
+        old = mcp_task_tools.begin_task({"client": "A", "session": "chat1"}, "雪夜的街道")["task"]
+        ai_tasks.begin_task("A", "别的事", new_task=True, session="chat1")  # the first chat moved on: the old task ended
+        self.assertTrue(ai_tasks.get_task(old)["ended"])
+        waiting = ai_tasks.start_task("等着的")["id"]
+        again = mcp_task_tools.begin_task({"client": "A", "session": "chat2"}, "接着做", task=old)
+        self.assertEqual(again["task"], old, "the id in the line, not the waiting task or a new one")
+        self.assertIsNone(ai_tasks.get_task(old)["ended"], "it opens again")
+        self.assertTrue(ai_tasks.get_task(waiting)["waiting"], "the waiting task still waits for its own AI")
+
     def test_removing_a_task_leaves_no_gap_in_the_line(self):
         one = ai_tasks.begin_task("A", "一")["id"]
         two = ai_tasks.start_task("二", from_task=one)["id"]

@@ -572,7 +572,8 @@ covered by the `styles.css` manifest.
   (New task): it waits, and the next app that calls takes it over, so its work starts there
   instead of joining its last task (one waiting at a time, found again after a restart).
   `begin_task` resumes a waiting or active task, including preliminary reads, and keeps a user's title;
-  `new_task=true` explicitly separates a new request. Ended or idle tasks are not resumed.
+  `new_task=true` explicitly separates a new request. Ended or idle tasks are not resumed, but for one named by
+  its id (`task`, which a new chat's line gives, `ui_ai_call.js`): that one is taken, opened again if it ended (`mcp_task_tools._open_again`).
   `mcp_server.py` starts an in-flight `"running"` step before each call and updates the same step in place when it finishes or fails (the app's name from its client
   info or User-Agent); `api/mcp_task_tools.py` holds the AI's own tools for it, `begin_task`
   and `report` (a note, with pictures from the output folder it made another way).

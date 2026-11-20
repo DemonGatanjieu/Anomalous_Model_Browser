@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 新开 AI 对话接着做旧任务，不会再接错：任务页给新对话用的那句话带上了任务号（“用 Anomalous 接着做任务「…」：先调用 begin_task，task 填 …”），AI 照着做就准确接回这个任务，已经结束的也会重新打开。以前这句话只有任务名，开着好几个任务时，AI 可能接到别的任务上，或者另开一个同名任务。
+- A new AI chat goes on with the right task: the task page's line for a new chat now carries the task's id ("…call begin_task with task … first"), so the AI picks that task up, opened again if it had ended. The line used to name the task only, and with several tasks open the AI could land on another one or start a new task of the same name.
+
 - AI 工作台右上角的侧栏开关好认了：以前六个按钮只有图标，现在常用的「面板」「素材」「成果」带字放外面，「节点结构」「定下的事」「出图方法」收进「更多」（每项下面一行小字说明）。图标也换了：素材是盒子、成果是图片。数字改成灰色小标，只说有几样；真有新东西（AI 在等你回答、出了新成果）才亮红点。
 - The AI workbench's side switch at the top right reads at a glance: the six icon-only buttons are now "Panels", "Materials" and "Results" with their names, and "Node map", "Settled" and "Ways" in "More" (each with a line of what it is). Materials has a box icon and Results a picture. Counts are quiet grey tags saying how many; a red dot shows only when something new waits (a question for you, new results).
 
