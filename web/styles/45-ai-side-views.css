@@ -27,9 +27,8 @@
 }
 .anomalous-ai-side-btn:hover { background: rgba(var(--amb-ink-rgb), 0.07); color: var(--amb-text-main); }
 .anomalous-ai-side-btn.is-on { background: var(--amb-current-bg); color: var(--amb-current-text); font-weight: 600; }
-/* In the switch only the open view says its name; the others are icons named by their tooltips (the tabs of a narrow window keep every word). */
-.anomalous-ai-side-switch .anomalous-ai-side-btn:not(.is-on) .anomalous-ai-side-btn-label { display: none; }
-.anomalous-ai-side-btn.is-asking::after, .anomalous-ai-side-btn.is-unread::after {
+/* Something waits behind a view (a question, an unread panel, new results): a red dot. */
+.anomalous-ai-side-btn.is-asking::after, .anomalous-ai-side-btn.is-unread::after, .anomalous-ai-side-btn.is-new::after {
     content: '';
     position: absolute;
     top: 4px;
@@ -37,25 +36,21 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--amb-warn);
+    background: var(--amb-danger);
 }
-.anomalous-ai-side-btn.is-unread::after { background: var(--amb-link); }
+/* How many there are (panels, materials): quiet, no news. */
 .anomalous-ai-side-btn-count {
     min-width: 17px;
     padding: 0 5px;
     border-radius: 999px;
-    background: var(--amb-link);
-    color: var(--amb-on-link);
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-dim);
     font-size: 10.5px;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 16px;
     text-align: center;
 }
-.anomalous-ai-side-btn-count.is-total {
-    background: rgba(var(--amb-ink-rgb), 0.07);
-    color: var(--amb-text-dim);
-    font-weight: 500;
-}
+.anomalous-ai-side-btn.is-more > svg:last-child { width: 12px; height: 12px; margin-left: -2px; opacity: 0.7; }
 /* The AMB window's width (#anomalous-container), not the browser's: docked it is narrow in a wide browser. */
 @container (max-width: 1100px) {
     .anomalous-ai-side-btn-label { display: none; }

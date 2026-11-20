@@ -53,6 +53,7 @@ const PATHS = {
     swap: '<path d="M4 8h15M15.5 4.5 19 8l-3.5 3.5M20 16H5M8.5 12.5 5 16l3.5 3.5"/>',
     image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17.5 5-4.5 3.5 3 3-2.5 4.5 4"/>',
     blocks: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M17 13.5v7M13.5 17h7"/>',
+    box: '<rect x="3.5" y="4.5" width="17" height="4.5" rx="1.2"/><path d="M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9"/><path d="M10 13h4"/>',
     tray: '<path d="M3.5 13.5h4.8l1.5 2.6h4.4l1.5-2.6h4.8"/><path d="M6.2 4.5h11.6l2.7 9V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-4.5z"/><path d="M12 7.5v4.2M10 9.8l2 2 2-2"/>',
 };
 

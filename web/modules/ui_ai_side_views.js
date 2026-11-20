@@ -1,6 +1,8 @@
 /**
  * The AI workbench's side column shows one view at a time, picked by the switch at the top right
- * of the window (its title bar, on the AI page only), as an app's side panel is: the stage (the AI's panels, ui_ai_side.js), the
+ * of the window (its title bar, on the AI page only), as an app's side panel is: the three used most named
+ * (panels, materials, results), the rest in "More" (a menu, each with a line of what it is; the button takes
+ * the name of the one shown); counts are quiet, a dot says something new waits. The views: the stage (the AI's panels, ui_ai_side.js), the
  * shape of a run at full size (ui_ai_run_map.js; the newest run, or one picked from the list or
  * from its step in the timeline), the task's decisions (ui_ai_decisions.js), what the task gives its
  * AI (ui_ai_given.js; its "Add materials" and the message box's "+" open the picker's window,
@@ -19,6 +21,7 @@ import { resolveLocale, translate as t } from './locales.js';
 import { emptyState } from './ui_ai_art.js';
 import { timeLabel } from './activity_log.js';
 import { icon } from './ui_ai_icons.js';
+import { openPopupMenu } from './ui_popup_menu.js';
 import { runMapBox } from './ui_ai_run_map.js';
 import { openToolbox, syncToolboxTask } from './ui_ai_toolbox.js';
 import { renderGivenView } from './ui_ai_given.js';
@@ -43,9 +46,11 @@ export function sideWidth() {
 }
 
 export const VIEWS = {
-    stage: ['panel', 'aiStage'], map: ['nodes', 'aiSideMap'], decisions: ['pin', 'aiSideDecisions'], toolbox: ['sparkle', 'aiToolbox'], outputs: ['tray', 'aiSideOutputs'],
-    blocks: ['blocks', 'aiSideBlocks'],
+    stage: ['chat', 'aiStage'], toolbox: ['box', 'aiToolbox'], outputs: ['image', 'aiSideOutputs'],
+    map: ['nodes', 'aiSideMap'], decisions: ['checks', 'aiSideDecisions'], blocks: ['blocks', 'aiSideBlocks'],
 };
+const MORE = ['map', 'decisions', 'blocks']; // looked at now and then: in "More"
+
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -58,30 +63,51 @@ function el(tag, className, text) {
 export const mappedRuns = task => (task?.steps || []).filter(step => step.map?.boxes?.length);
 
 /**
- * The switch: a button per view, lit for the one shown (`shown`: the column is on screen);
- * `badges`: stage {count, unread}, asking question count, toolbox material count, outputs unseen count. `onPick(view)`.
+ * The switch: a button per view used most and "More" for the rest, lit for the one shown (`shown`: the column is
+ * on screen); `badges`: stage {count, unread}, asking question count, toolbox material count, outputs unseen count.
+ * A count says how many there are, quietly; a dot that something waits (a question, an unread panel, new results).
+ * `onPick(view)`.
  */
 export function sideSwitch(side, shown, badges, onPick) {
     const bar = el('div', 'anomalous-ai-side-switch');
     bar.setAttribute('role', 'toolbar');
     bar.setAttribute('aria-label', t('aiSideSwitch'));
     for (const [view, [name, label]] of Object.entries(VIEWS)) {
+        if (MORE.includes(view)) continue;
         const on = shown && side.view === view;
         const stage = view === 'stage';
         const unread = stage && badges.stage.unread;
-        const count = stage ? badges.stage.count : badges[view];
-        const node = el('button', `anomalous-ai-side-btn${on ? ' is-on' : ''}${stage && badges.asking ? ' is-asking' : ''}${unread ? ' is-unread' : ''}`);
+        const count = stage ? badges.stage.count : view === 'toolbox' ? badges.toolbox : 0;
+        const fresh = view === 'outputs' ? badges.outputs : 0;
+        const node = el('button', `anomalous-ai-side-btn${on ? ' is-on' : ''}${stage && badges.asking ? ' is-asking' : ''}${unread ? ' is-unread' : ''}${fresh ? ' is-new' : ''}`);
         node.type = 'button';
-        const description = [t(label), stage && count ? t('aiStagePanels', { count }) : '', unread ? t('aiStageUnread') : ''].filter(Boolean).join(' · ');
+        const description = [t(label), stage && count ? t('aiStagePanels', { count }) : '', unread ? t('aiStageUnread') : '',
+            fresh ? t('aiSideNew', { count: fresh }) : ''].filter(Boolean).join(' · ');
         node.title = on ? `${description} · ${t('aiSideHide')}` : description;
-        if (stage) node.setAttribute('aria-label', description);
+        node.setAttribute('aria-label', description);
         node.setAttribute('aria-pressed', String(on));
         node.append(icon(name, 15), el('span', 'anomalous-ai-side-btn-label', t(label)));
-        if (count) node.append(el('span', `anomalous-ai-side-btn-count${stage ? ' is-total' : ''}`, count));
+        if (count) node.append(el('span', 'anomalous-ai-side-btn-count', count));
         node.onclick = () => onPick(view);
         bar.append(node);
     }
+    bar.append(moreButton(side, shown, onPick));
     return bar;
+}
+
+/** "More": a menu of the views looked at now and then; while one of them is shown, the button bears its name. */
+function moreButton(side, shown, onPick) {
+    const current = shown && MORE.includes(side.view) ? side.view : '';
+    const node = el('button', `anomalous-ai-side-btn is-more${current ? ' is-on' : ''}`);
+    node.type = 'button';
+    node.setAttribute('aria-haspopup', 'menu');
+    node.title = current ? `${t(VIEWS[current][1])} · ${t('aiSideMoreHint')}` : t('aiSideMoreHint');
+    node.append(icon(current ? VIEWS[current][0] : 'blocks', 15), el('span', 'anomalous-ai-side-btn-label', t(current ? VIEWS[current][1] : 'aiSideMore')),
+        icon('chevronDown', 12));
+    node.onclick = () => openPopupMenu(node, MORE.map(view => ({
+        label: t(VIEWS[view][1]), note: t(`${VIEWS[view][1]}Note`), checked: view === current, run: () => onPick(view),
+    })));
+    return node;
 }
 
 /**

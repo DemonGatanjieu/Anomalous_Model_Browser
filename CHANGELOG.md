@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- AI 工作台右上角的侧栏开关好认了：以前六个按钮只有图标，现在常用的「面板」「素材」「成果」带字放外面，「节点结构」「定下的事」「出图方法」收进「更多」（每项下面一行小字说明）。图标也换了：素材是盒子、成果是图片。数字改成灰色小标，只说有几样；真有新东西（AI 在等你回答、出了新成果）才亮红点。
+- The AI workbench's side switch at the top right reads at a glance: the six icon-only buttons are now "Panels", "Materials" and "Results" with their names, and "Node map", "Settled" and "Ways" in "More" (each with a line of what it is). Materials has a box icon and Results a picture. Counts are quiet grey tags saying how many; a red dot shows only when something new waits (a question for you, new results).
+
 - AI 工作台刚打开时 ComfyUI 不再卡一下：工作台要读 ComfyUI 的节点清单时，以前是让 ComfyUI 在它的主线程里把所有节点挨个算一遍，节点包多的话整个 ComfyUI 会卡一两秒；现在放到后台去算。打开任务、读素材清单也改到后台，不再占着 ComfyUI 的主线程。
 - ComfyUI no longer stalls when the AI workbench opens: reading ComfyUI's node list used to make ComfyUI walk every node on its main loop, which froze it for a second or two with many node packs; it is now worked out in the background. Opening a task and reading the materials list happen in the background too.
 
