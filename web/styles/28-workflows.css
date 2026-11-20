@@ -340,6 +340,8 @@
 
 .anomalous-popup-menu-item:hover { background: var(--amb-bg-card-hover); }
 .anomalous-popup-menu-item.is-danger { color: var(--amb-danger-text); }
+.anomalous-popup-menu-words { display: flex; flex-direction: column; gap: 1px; max-width: 260px; }
+.anomalous-popup-menu-note { color: var(--amb-text-muted); font-size: 11.5px; line-height: 1.4; }
 
 .anomalous-popup-menu-tick {
     width: 12px;

@@ -55,7 +55,8 @@ node tools/ui_map.mjs build                写出 docs/ui-map.md：按页面列�
 | 「先问我」窗口（开头一句旁边一张举手的小图）最下面的「本机小模型（拓展功能）」 | 「检测本地模型」找这台电脑上的 Ollama / LM Studio，选一个模型后点「就用它」，「不用了」关掉（`ui_ai_darkroom.js`） | `GET/POST /anomalous/ai_darkroom` |
 | ⋯ 里的「发给 AI 了什么」 | 隐私任务才有：列出 AI 每次调用发来的参数和 AMB 回给它的文字，能搜一个词看它出没出去过（`ui_ai_sent.js`） | `GET /anomalous/ai_tasks/{task_id}/sent` |
 | ⋯ 里的「模型代号对照」 | 隐私任务把模型名藏起来后才有：列出 AI 说的 [M1]、[M2] 各是哪个模型（`ui_ai_privacy.js` 的 `modelTokens`） | 无（任务记录里的 `sealed`） |
-| ⋯ 里的「接着哪个任务…」 | 把这个任务接在另一个后面，两边都显示链接（`ui_ai_task_links.js`） | `POST /anomalous/ai_tasks/{task_id}`（from） |
+| ⋯ 里的「接着这个任务开新任务」 | 任务列表那一行和标题右边的 ⋯ 都有（AI 接过手的任务才有），下面一行小字说明：一步开一个新任务挂在它下面，直接跳到新任务的「三步让 AI 接手」页；新任务标题下写「接着：{title}」，隐私设置跟它一样（隐私开没开、模型名藏不藏），AI 接手时听到这里定下的事。AI 自己开新任务时也一样带上隐私设置（`ui_ai_task_menu.js`、`ai_tasks.py`） | `POST /anomalous/ai_tasks`（title、from） |
+| ⋯ 里的「接着哪个任务…」 | 把这个任务接在另一个后面，两边都显示链接（`ui_ai_task_links.js`）；只改关联，不改隐私设置 | `POST /anomalous/ai_tasks/{task_id}`（from） |
 
 AMB 更新以后，AI 软件还拿着旧的工具列表来调用时，标题栏下面出现一行黄字「AI 软件拿的还是旧的工具列表，会多走弯路。请重新连接：Antigravity 重启一下，或在它的 MCP 设置里把 anomalous 关掉再打开；然后开个新对话。」，AI 那边也会收到同样的提醒（`mcp_directory.stale`，按每个 AI 软件上次取的列表比对）。AI 软件重新取工具列表（`tools/list`）后这行自动消失。
 

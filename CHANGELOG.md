@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- 一步开后续任务：任务的「⋯」里多了「接着这个任务开新任务」，点一下就开好一个新任务，挂在它下面，标题下写「接着：…」，AI 接手时会知道上一个任务定下了什么。以前要先开新任务，再去「接着哪个任务…」里挑。新任务的隐私设置跟上一个一样；AI 自己开新任务时也一样——以前隐私任务里 AI 另开的新任务不会跟着隐私，现在会。
+- One step to a follow-up task: a task's ⋯ has "New task going on from this one", which starts a task hanging under it ("Goes on from: …"), and the AI taking it hears what was decided there; before, you started a task and then picked its parent under "Goes on from…". The new task has the same privacy settings, and so does a task an AI begins as new while on another: an AI starting a new task from a private one used to get a task that was not private.
+
 - 任务标题栏的隐私按钮看得出能点了：以前它圆圆的像个状态标签，现在是一个带框的按钮，左边照旧写「隐私：推荐」（或自定、关），右边写「AI 拿到了什么」加一个小箭头，鼠标停上去会亮。第一次打开隐私任务时，按钮下面冒一个小气泡说点这里能看什么，点「知道了」或点按钮以后就不再出现。侧栏打开或窗口太窄时，右边只留小箭头。
 - The privacy button in a task's head looks like something to press: it was a round pill like a status tag; now it is a framed button with the settings in use on the left ("Privacy: recommended", changed or off) and "What the AI got" with a small arrow on the right, lighting up under the pointer. The first private task shows a bubble under it saying what it opens, gone once you press "Got it" or the button. With the side column open or a narrow window, only the arrow stays on the right.
 

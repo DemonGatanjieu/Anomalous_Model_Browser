@@ -39,6 +39,23 @@ class LinkTests(unittest.TestCase):
         self.assertIsNone(ai_task_links.links(three)["from"])
         self.assertIsNone(ai_task_links.carried(ai_tasks.get_task(one)))
 
+    def test_a_task_going_on_from_a_private_one_is_private_as_it_is(self):
+        from api import ai_privacy
+        one = ai_tasks.begin_task("A", "一")["id"]
+        ai_privacy.set_private(one, True)
+        with ai_tasks._lock:  # the task's own switch for model names (ai_sealed_adjust.py writes it)
+            ai_tasks._load()[one]["privacy_models"] = False
+            ai_tasks._save(ai_tasks._load()[one])
+        two = ai_tasks.start_task("", from_task=one)["id"]
+        self.assertTrue(ai_privacy.is_private(ai_tasks.get_task(two)), "started from it by the user")
+        self.assertIs(ai_tasks.get_task(two).get("privacy_models"), False)
+        ai_tasks.begin_task("A", "二", task_id=two)
+        three = ai_tasks.begin_task("A", "三", new_task=True)["id"]
+        self.assertEqual(ai_tasks.get_task(three)["from"], two)
+        self.assertTrue(ai_privacy.is_private(ai_tasks.get_task(three)), "begun as new by the AI while on it")
+        plain = ai_tasks.start_task("", from_task=ai_tasks.begin_task("B", "四", new_task=True)["id"])["id"]
+        self.assertNotIn("privacy", ai_tasks.get_task(plain), "a task following the default leaves the next to the default too")
+
     def test_removing_a_task_leaves_no_gap_in_the_line(self):
         one = ai_tasks.begin_task("A", "一")["id"]
         two = ai_tasks.start_task("二", from_task=one)["id"]

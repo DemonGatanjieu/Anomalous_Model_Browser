@@ -47,6 +47,7 @@ IDLE_SECONDS = 20 * 60  # a longer pause between calls of one app starts a new t
 MAX_TEXT = 300
 MAX_NOTE = 2000
 MAX_TITLE = 80
+INHERITED = ("privacy", "privacy_models")  # a task begun from another keeps its privacy switches (ai_privacy.py)
 MAX_RESULTS = 40
 RUN_WATCH_SECONDS = 30 * 60
 MEDIA_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".mp4", ".webm"}
@@ -246,8 +247,8 @@ def start_task(title="", now=None, about=None, from_task=None):
             task["title_from"] = "auto"
         if _about(about):
             task["about"] = _about(about)
-        if from_task in _load():
-            task["from"] = from_task
+        if from_task in _load():  # goes on from it, private as it is
+            task.update({"from": from_task, **{key: _load()[from_task][key] for key in INHERITED if key in _load()[from_task]}})
         _load()[task["id"]] = task
         _waiting[0] = task["id"]
         _drop_oldest()
@@ -331,7 +332,7 @@ def begin_task(client, title, now=None, new_task=False, session="", task_id=None
                 _save(previous)
             task = _new_task(client, title, now, session=session)
             if new_task and previous:
-                task["from"] = previous["id"]  # begun from that one (ai_task_links.py)
+                task.update({"from": previous["id"], **{key: previous[key] for key in INHERITED if key in previous}})  # begun from that one, private as it is
         elif not task.get("title") or task.get("title_from") == "auto":
             said = next((step["text"] for step in task["steps"] if step.get("tool") == "user_message" and step.get("text")), "")
             task["title"] = _short(said or title, MAX_TITLE)

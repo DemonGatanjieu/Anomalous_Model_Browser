@@ -137,7 +137,7 @@ function renderList(box) {
     });
 }
 
-const taskActions = task => menuActions(task, { tasks: state.tasks, post: postTask, refresh, removed: () => {
+const taskActions = task => menuActions(task, { tasks: state.tasks, post: postTask, refresh, followUp: () => newTask(task), removed: () => {
     if (state.selected !== task.id) return;
     state.selected = null;
     state.task = null;
@@ -318,10 +318,12 @@ function showOnStage(panelId) {
 }
 
 /** New task: the user starts one; the next AI app that calls takes it over. What it is for is said on its page. */
-async function newTask() {
+/** A new task waiting for the AI; with `from` (a task), one going on from that one, private as it is. */
+async function newTask(from = null) {
     try {
         const response = await fetch('/anomalous/ai_tasks', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: '' }),
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: '', ...(typeof from?.id === 'string' ? { from: from.id } : {}) }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);

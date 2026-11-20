@@ -1,6 +1,6 @@
 """Which task a task goes on from ("接着"), so work split over tasks is found together: a task an
 AI begins as new while on another (ai_tasks.begin_task), or one the user starts while looking at
-another (ai_tasks.start_task), keeps that one as its "from". The user can link a task to another
+another (ai_tasks.start_task), keeps that one as its "from", and its privacy switches (ai_tasks.INHERITED). The user can link a task to another
 or take the link off (set_from); links() gives a task's own "from" and the tasks that go on from it,
 and an AI beginning a task that goes on from another hears what was decided there. A task the user
 removes (remove) leaves no gap: those that went on from it go on from what it went on from."""

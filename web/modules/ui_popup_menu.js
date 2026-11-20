@@ -19,8 +19,9 @@ export function closePopupMenu() {
 }
 
 /**
- * Opens `items` under `anchor`: { heading } or { label, run, checked?, danger?, title? }. A row with
- * `checked` (true or false) shows a tick when true. Pressing the anchor again closes it.
+ * Opens `items` under `anchor`: { heading } or { label, run, checked?, danger?, title?, note? }. A row with
+ * `checked` (true or false) shows a tick when true; `note` is a quiet line under the label. Pressing the anchor
+ * again closes it.
  */
 export function openPopupMenu(anchor, items) {
     const wasOpenHere = openMenu?.anchor === anchor;
@@ -41,7 +42,14 @@ export function openPopupMenu(anchor, items) {
             row.setAttribute('aria-checked', String(Boolean(item.checked)));
             row.append(el('span', 'anomalous-popup-menu-tick', item.checked ? '✓' : ''));
         }
-        row.append(el('span', 'anomalous-popup-menu-label', item.label));
+        const label = el('span', 'anomalous-popup-menu-label', item.label);
+        if (item.note) {
+            const words = el('span', 'anomalous-popup-menu-words');
+            words.append(label, el('span', 'anomalous-popup-menu-note', item.note));
+            row.append(words);
+        } else {
+            row.append(label);
+        }
         row.onclick = (event) => {
             event.stopPropagation();
             close();
