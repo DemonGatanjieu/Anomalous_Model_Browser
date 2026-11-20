@@ -5,6 +5,7 @@ set the gates' policies (ai_gates.py), stop a run, say how it turned out or call
 hand the AI pictures (ai_pictures.py) - (local_guard.py keeps the writes to this computer)."""
 
 import asyncio
+import json
 
 from aiohttp import web
 
@@ -42,8 +43,10 @@ async def api_plan_auto(request):
     return web.json_response({"auto": ai_plans.auto()})
 
 
-async def api_get(request):
-    task = ai_tasks.get_task(request.match_info["task_id"])
+def _task_json(task_id):
+    """One task for the page as JSON text, or None: read and written off the event loop (its models'
+    files, its pictures still there, a record of up to a few megabytes)."""
+    task = ai_tasks.get_task(task_id)
     if task:
         task["canvas_mode"] = ai_task_canvas.mode_of(task)  # the task's own choice, else the user's default
         task["private"] = ai_privacy.is_private(task)  # the same for privacy mode
@@ -60,7 +63,12 @@ async def api_get(request):
         else:
             task.pop("sealed_notes", None)
         ai_pictures.mark_gone(task)  # pictures deleted since: the page says so
-    return web.json_response({"task": task}) if task else web.json_response({"error": "not_found"}, status=404)
+    return json.dumps({"task": task}) if task else None
+
+
+async def api_get(request):
+    text = await asyncio.to_thread(_task_json, request.match_info["task_id"])
+    return web.Response(text=text, content_type="application/json") if text else web.json_response({"error": "not_found"}, status=404)
 
 
 async def api_darkroom(request):
@@ -416,7 +424,9 @@ async def api_toolbox(request):
         except ai_toolbox.ToolboxError as error:
             return web.json_response({"error": str(error)}, status=400)
     try:
-        return web.json_response(await asyncio.to_thread(ai_toolbox.catalog, request.query.get("kind", "")))
+        kind = request.query.get("kind", "")
+        text = await asyncio.to_thread(lambda: json.dumps(ai_toolbox.catalog(kind)))  # thousands of models: written off the loop too
+        return web.Response(text=text, content_type="application/json")
     except ai_toolbox.ToolboxError as error:
         return web.json_response({"error": str(error)}, status=400)
     except Exception as error:  # noqa: BLE001 - ComfyUI's node list or a store unreadable: say so to the page

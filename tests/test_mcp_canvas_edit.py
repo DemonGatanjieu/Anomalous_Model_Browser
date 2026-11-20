@@ -2,6 +2,7 @@
 from a stand-in /object_info, arguments checked before the page is asked, and the page asked
 with exactly what it needs. No ComfyUI, no page."""
 import sys
+import types
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -23,6 +24,43 @@ INFO = {
                                "output": ["MODEL", "CLIP", "VAE"], "output_name": ["MODEL", "CLIP", "VAE"]},
     "OldSampler": {"display_name": "Old sampler", "category": "sampling", "deprecated": True, "input": {}, "output": []},
 }
+
+
+def comfy_server(node_info):
+    """Stand-ins for ComfyUI's `server` (its GET /object_info route, node_info in its closure) and `nodes`."""
+    def build():
+        def get_object_info(request):
+            return node_info(request)
+        return get_object_info
+    route = types.SimpleNamespace(method="GET", resource=types.SimpleNamespace(canonical="/object_info"), handler=build())
+    other = types.SimpleNamespace(method="GET", resource=types.SimpleNamespace(canonical="/prompt"), handler=lambda request: None)
+    app = types.SimpleNamespace(router=types.SimpleNamespace(routes=lambda: [other, route]))
+    server = types.SimpleNamespace(PromptServer=types.SimpleNamespace(instance=types.SimpleNamespace(app=app)))
+    nodes = types.SimpleNamespace(NODE_CLASS_MAPPINGS=dict.fromkeys(("KSampler", "Broken"), object))  # not written as a node table: ComfyUI-Manager would read one
+    return {"server": server, "nodes": nodes}
+
+
+class ObjectInfoTests(unittest.TestCase):
+    def setUp(self):
+        mcp_canvas_edit.forget_object_info()
+        self.addCleanup(mcp_canvas_edit.forget_object_info)
+
+    def test_read_by_comfyuis_own_node_info_not_through_its_route(self):
+        def node_info(name):
+            if name == "Broken":
+                raise ValueError("a node pack's bad INPUT_TYPES")
+            return {"input": {"required": {"steps": ("INT", {"default": 20})}}, "output": ("LATENT",)}
+        with mock.patch.dict(sys.modules, comfy_server(node_info)), \
+                mock.patch.object(mcp_canvas_edit, "_local", side_effect=AssertionError("the route walks every node on the event loop")):
+            info = mcp_canvas_edit.object_info({"base_url": "http://127.0.0.1:8188"})
+        self.assertEqual(info, {"KSampler": {"input": {"required": {"steps": ["INT", {"default": 20}]}}, "output": ["LATENT"]}},
+                         "as the page reads it, a broken node left out")
+
+    def test_another_comfyui_layout_asks_its_route(self):
+        with mock.patch.dict(sys.modules, {"server": types.SimpleNamespace()}), \
+                mock.patch.object(mcp_canvas_edit, "_local", return_value=(200, INFO)) as local:
+            self.assertEqual(mcp_canvas_edit.object_info({"base_url": "http://127.0.0.1:8188"}), INFO)
+        local.assert_called_once()
 
 
 class FindNodesTests(unittest.TestCase):

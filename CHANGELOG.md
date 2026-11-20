@@ -2,6 +2,9 @@
 
 ## v1.64.0 — unreleased
 
+- AI 工作台刚打开时 ComfyUI 不再卡一下：工作台要读 ComfyUI 的节点清单时，以前是让 ComfyUI 在它的主线程里把所有节点挨个算一遍，节点包多的话整个 ComfyUI 会卡一两秒；现在放到后台去算。打开任务、读素材清单也改到后台，不再占着 ComfyUI 的主线程。
+- ComfyUI no longer stalls when the AI workbench opens: reading ComfyUI's node list used to make ComfyUI walk every node on its main loop, which froze it for a second or two with many node packs; it is now worked out in the background. Opening a task and reading the materials list happen in the background too.
+
 - 中途藏模型不用绕路了：隐私任务右栏「给 AI 的素材」里，每个模型旁边多了一把小锁。黄色、写着代号（比如 [M1]）就是 AI 只拿到代号；灰色「真名」就是 AI 看得到名字。点一下切换，和隐私一览里的「藏起来」「给 AI 看真名」是同一个开关，以后所有任务都按这个来；AI 已经看到过的名字收不回。
 - Hiding a model halfway without a detour: in a private task's side "Materials for the AI", each model has a small lock. Amber with its code word (like [M1]) means the AI gets only the code word; grey "Name" means it sees the name. A click turns it, the same switch as "Hide" and "Show the AI its name" in Privacy Overview, kept for every task; a name the AI already saw stays seen.
 

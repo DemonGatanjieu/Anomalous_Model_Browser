@@ -243,3 +243,17 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 **以后怎么做**
 - 往 ComfyUI 的公共方法传参数前，先想到别的插件可能包过它；能从结果核对的就核对（`snapshot_plan.compiled` 看返回的 `workflow.id`）。
 - 依赖 `app`、`api` 上这类方法的功能，验证时要带上 Manager 这样的常见包装；测试环境没有，就在页面上照它的写法包一层。
+
+## 2026-11-20 · 打开 AI 工作台时 ComfyUI 卡一下
+
+**现象**：用户说 AI 工作台刚打开时有时未响应、卡顿。测试环境（只装 AMB）里量不出来。
+
+**根因**：工作台要“做法”能不能用、AI 要搭节点时，`mcp_canvas_edit.object_info` 在工作线程里向 ComfyUI 自己发 `GET /object_info`。ComfyUI 这个接口在事件循环里把每个节点的定义挨个算一遍（`node_info`），节点包一多要一两秒，这段时间整个 ComfyUI 都不响应（排队、进度、别的页面请求都等着），每两分钟缓存过期还会再来一次。另外，打开一个任务（读它的模型文件、核对图片还在不在）和素材清单（几千个模型）的 JSON 也是在事件循环里读写的。
+
+**做法**：节点清单改成在工作线程里直接调用 ComfyUI 自己的 `node_info`（从它 `/object_info` 路由的闭包里取，取不到才退回请求接口），结果用 JSON 过一遍，和页面读到的一样（列表不是元组）。打开任务和素材清单改成在线程里读完、写成 JSON 文本再回给页面。
+
+**以后怎么做**
+- 不要从插件里用 HTTP 去请求 ComfyUI 自己的重接口（`/object_info` 这类）：它们跑在事件循环上，请求一次就卡住整个 ComfyUI。要它的数据，在工作线程里调用它背后的函数。
+- 插件自己的接口里，读文件、读很多模型、写几 MB 的 JSON，都放进 `asyncio.to_thread`，`web.json_response` 也会在事件循环里序列化。
+- 测试环境只装了 AMB，节点和模型都少，卡顿量不出来；这类问题按代码找“谁在事件循环上干重活”。
+

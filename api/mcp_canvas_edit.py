@@ -4,7 +4,9 @@ ComfyUI's API form) run in the open page like mcp_actions.py's canvas tools
 (web/modules/mcp_canvas_edit.js: each one Ctrl+Z step, in the activity log as the AI's, so the
 AI workbench shows what it changed), and find_nodes reads the node types this ComfyUI has
 from its own /object_info. Arguments are checked here for shape and size; the page checks
-them against the nodes themselves before anything changes."""
+them against the nodes themselves before anything changes. The node list is read by ComfyUI's
+own node_info in the calling worker thread: its /object_info route walks every node on the server's
+event loop, so asking it stalled the whole ComfyUI for as long (seconds with many node packs)."""
 
 import json
 import os
@@ -28,14 +30,43 @@ _info = {"at": 0.0, "data": None}
 _info_lock = threading.Lock()
 
 
+def _node_info():
+    """The function ComfyUI's GET /object_info builds each node's entry with (inside its route), or None
+    where ComfyUI is laid out otherwise."""
+    try:
+        from server import PromptServer
+        for route in PromptServer.instance.app.router.routes():
+            code = getattr(route.handler, "__code__", None)
+            if route.method == "GET" and getattr(route.resource, "canonical", "") == "/object_info" and code and "node_info" in code.co_freevars:
+                return route.handler.__closure__[code.co_freevars.index("node_info")].cell_contents
+    except (ImportError, AttributeError):
+        pass
+    return None
+
+
+def _read_object_info(ctx):
+    """Every node's entry as /object_info gives it, built here (off the server's event loop) where it can be."""
+    node_info = _node_info()
+    if node_info is None:
+        status, data = _local(ctx, "GET", "/object_info", timeout=60)
+        if status != 200 or not isinstance(data, dict):
+            raise ToolError(f"ComfyUI's node list is unavailable ({status}).")
+        return data
+    import nodes  # ComfyUI's own, there whenever its server is
+    data = {}
+    for name in list(nodes.NODE_CLASS_MAPPINGS):
+        try:
+            data[name] = json.loads(json.dumps(node_info(name)))  # as the page reads it: lists, not tuples
+        except Exception:  # noqa: BLE001 - a node pack's broken definition leaves that node out, as ComfyUI does
+            continue
+    return data
+
+
 def object_info(ctx):
     """ComfyUI's node definitions, as its own page reads them (kept a little while)."""
     with _info_lock:
         if _info["data"] is None or time.monotonic() - _info["at"] > INFO_SECONDS:
-            status, data = _local(ctx, "GET", "/object_info", timeout=60)
-            if status != 200 or not isinstance(data, dict):
-                raise ToolError(f"ComfyUI's node list is unavailable ({status}).")
-            _info.update(at=time.monotonic(), data=data)
+            _info.update(at=time.monotonic(), data=_read_object_info(ctx))
         return _info["data"]
 
 
