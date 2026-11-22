@@ -69,6 +69,10 @@ Search your `output` folder by prompt words, checkpoint, LoRA, seed, filename, o
 
 <p align="center"><img src="docs/images/en-gallery.webp" width="820" alt="Gallery search by tag chip, then dragging an output image onto the canvas to restore its workflow"></p>
 
+### 🤖 Optional: let your own AI help (with built-in ways & privacy mode)
+
+Want a cloud LLM (Claude, Cursor, Antigravity, or other MCP apps) to help wire, organize, and explore ComfyUI routes faster? AMB ships with **built-in, tested building blocks** your AI can call alongside your own models and workflows—instead of guessing fragile node graphs from scratch. Every action runs on a **copy tab** and leaves its **full trace on screen with one-click Undo**. Don't want a cloud model seeing your prompts, images, or model names? Turn on **Privacy mode** to keep them strictly local while the AI still operates ComfyUI for you. *(Full AI Workbench, privacy controls & MCP setup are folded below.)*
+
 <!-- guide:light -->
 **Zero VRAM, light on your computer**: the plugin itself loads no AI models and takes **zero VRAM** away from image generation; grids use cached thumbnails rather than full originals, and browser image memory is released 90 seconds after closing the window. Optional voice models in `Anomalous_TTS` yield VRAM automatically whenever ComfyUI generates images, or completely on **Unload models**.
 
@@ -269,6 +273,10 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
 在 **图库** 里按提示词、大模型、LoRA、种子、文件名或模型哈希秒搜（哪怕几亿像素的超大图也在后台独立进程做缩略图，页面绝不卡顿），看完整参数或并排对比两张图，直接把图拖进画布，整套工作流原原本本回到眼前。
 
 <p align="center"><img src="docs/images/gallery.webp" width="820" alt="图库按标签词块搜索图片，拖入右侧画布立即还原完整工作流"></p>
+
+### 🤖 可选：让你的 AI 帮你搭线和探索（内置实测做法，支持隐私模式）
+
+想让 Claude、Cursor、Antigravity 等云端大模型帮你更快搭建、整理和探索 ComfyUI 路线？AMB 已经**内置了一批实测可用的节点做法**，配合你自己的模型和工作流直接给 AI 调用，不用它从零瞎猜连线；默认只在**副本标签页**动手，每一步操作和探索**痕迹都清楚留在界面上，随时一键撤销**。如果不想让云端大模型看到你的提示词、图片或模型名，打开 **隐私模式** 就能把敏感信息全留在本机，照样让 AI 顺手帮你操作 ComfyUI。*（完整 AI 工作台、隐私设置与 MCP 接入方式见下方折叠。）*
 
 <!-- guide:light -->
 **零显存占用，不抢资源**：插件本身不加载任何生图模型，**零显存占用**，绝不和 ComfyUI 出图抢资源；浏览网格全程走缓存缩略图，关闭窗口一分半后自动释放浏览器图片内存。如果选装了 `Anomalous_TTS`，它的语音模型在 ComfyUI 出图时也会自动让出显存，或随时点 **卸载模型** 彻底清空。
