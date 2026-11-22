@@ -2,8 +2,11 @@
 
 # 🚀 Anomalous Model Browser
 
-**A model browser, workflow studio and AI workbench for ComfyUI**  
-*模型库 · 出图图库 · 工作流与预设 · 画布存档 · 搭配 · 提示词工坊 · 模型检查 · AI 工作台 · 角色配音 · 操作记录*
+**Make ComfyUI less annoying.**  
+*A 100% local companion for ComfyUI's everyday chores — zero custom nodes, zero VRAM.*
+
+**让 ComfyUI 玩起来顺手点。**  
+*零自定义节点、零显存占用的纯本地伴侣，帮你省掉玩 ComfyUI 的日常琐事。*
 
 <br/>
 
@@ -12,7 +15,7 @@
 [![Changelog](https://img.shields.io/badge/📖_Changelog-v1.64.0-blue?style=for-the-badge)](CHANGELOG.md)
 [![Bilibili Video](https://img.shields.io/badge/Bilibili-视频演示-00A1D6?style=for-the-badge&logo=bilibili)](https://www.bilibili.com/video/BV1boHx61Enc/)
 [![Bilibili Voices](https://img.shields.io/badge/Bilibili-配音演示-00A1D6?style=for-the-badge&logo=bilibili)](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
-[![Reddit](https://img.shields.io/badge/Reddit-r%2Fcomfyui-FF4500?style=for-the-badge&logo=reddit)](https://www.reddit.com/r/comfyui/s/n38ihf3DLf)
+[![Reddit](https://img.shields.io/badge/Reddit-r%2Fcomfyui-FF4500?style=for-the-badge&logo=reddit)](https://www.reddit.com/r/comfyui/comments/1y21nko/i_built_a_free_100_local_workspace_for_comfyui/)
 
 <br/>
 
@@ -30,114 +33,48 @@
 
 <h2 id="english">🇬🇧 English</h2>
 
-> **Anomalous Model Browser** takes care of the chores around ComfyUI in one window: browse your models by their Civitai covers and trigger words, recover workflows from past outputs, keep tuned workflows with visual presets, snapshot canvas saves to compare fairly and jump back to, reuse model + LoRA combos and tag-based prompts, find missing models again (for sure when the workflow carries this plugin's fingerprints), start from Home's AI cards or hand tasks over with ready-made privacy settings while an AI app runs and refines workflows on a copy tab as you steer each step, and—with the optional companion pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)—give your characters a voice. Everything the plugin changes is recorded in **Activity** with **Undo**.
-
-### 🧭 The idea
 <!-- guide:idea -->
+**Not another WebUI, not a replacement for ComfyUI — just ComfyUI made easier to use.**
 
-**Not another WebUI, not a replacement for ComfyUI: just ComfyUI made easier to use.**
+- **Zero custom nodes.** The canvas and nodes stay 100% standard ComfyUI (or node packs you already installed), so any PNG or workflow you export opens cleanly even on a computer without this plugin.
+- **Zero lock-in, zero clutter.** Keep using ComfyUI exactly as you do today; expand optional tools only if and when you want them, or remove the plugin anytime and nothing breaks.
+- **100% local & undoable.** Daily browsing works without internet, and everything Anomalous or an optional AI task changes is logged in **Activity** with one-click **Undo**.
 
-- **Fewer needless chores.** Telling cryptic model filenames apart, fixing red missing-model nodes, digging out how an old picture was made, rewiring the same Checkpoint + LoRAs every session: the plugin handles these.
-- **Still your ComfyUI.** The canvas and nodes are ComfyUI's own. The plugin adds **zero custom nodes**: what it places on the canvas are standard ComfyUI nodes (or packs you already installed), so the PNGs and workflows you save open cleanly even on a computer without this plugin.
-- **A grounded way to use AI with ComfyUI.** You say what you want in plain words; **Anomalous** opens your workflows and wires tested node blocks on a **copy tab**; **your own ComfyUI and local models** draw the pictures. You see every step, pick which preview continues, and undo any canvas change in one click.
+### ✨ Four everyday ComfyUI headaches, solved
 
-### ✨ Highlights in v1.64
-
-- **Home "Let the AI do it" starter cards & direct workbench setup**: Home opens on six visual AI starter cards (**Try it once**, **Say what you want, the AI plans the run**, **Draw what I describe**, **Change a picture**, **Draw privately**, **Explain my canvas**) that open straight inside the AI workbench—pick images with a live preview, choose **Start from** (**Build a new one**, **My open canvas**, **A saved workflow**, or **Let the AI choose**) via full-size visual model and workflow pickers, and turn into a 3-step handoff page carrying the task's exact ID. Local **Run my preset** (with a one-click **The same again** repeat line) and **Compare multiple versions** sit right below under **Do it yourself**.
-- **Ready-made Privacy settings & side-by-side Privacy overview**: keep prompts, pictures, and **model, workflow & combo names** local as `[P1]`, `[img1]`, `[M1]` tokens (lock individual model names across all tasks, tick which description paragraphs the AI may read, and fill sealed prompt boxes from **Take a saved prompt**). Press the task header's **Privacy** button to open **Privacy overview**—sorted by kind with a **side-by-side** comparison of what stays on your PC vs. what the AI reads, tag-level selective word release with meanings, partial region release from the image marker, harmless still-life stand-in renders, and a full **What the AI was sent** audit log. Hidden segments and `[M1]`/`[P1]`/`[img1]` tokens display as veiled true names in your conversation (blurred until hovered or clicked), and an optional **Local small model** (Ollama / LM Studio) under **Ask first** can rewrite sealed prompts or check pictures locally.
-- **Multi-step Blueprints, new Ways & Job sheet**: when planning a multi-stage workflow, the AI puts a **Blueprint** card on **Panels** first so you can drop steps or swap same-family models before AMB wires the chain on a copy tab and runs 3 fast base previews to pick from (with **Take this instead** if you change your mind). Adds **refine only the character / only the background**, **Upscale, only the character redrawn** for bokeh backgrounds, automatic **VAE Decode (Tiled)** on `≤ 8 GB` GPUs, and pre-run checks for CJK prompts on English-only models or mismatched Anima Tile LLLite blocks. Right-click the canvas (or ask the AI) to open **Job sheet (many prompts)** for queued multi-prompt runs with rest intervals.
-- **Large "Materials for the AI" window & deeper model/voice details**: press **+** beside the message box (or open **Materials**) to hand over models, ways, combos, workflows, prompts, and nodes with per-item notes—or when the AI asks which model or workflow to use, pick from visual option cards or open the full picker. Offline header detection now covers **25+ new architectures** (`Flux.2 Dev / Klein 9B / 4B`, `Flux.3 Klein`, `Qwen 2.1`, `Z-Image`, `Lumina 2`, `MOSS Image`, `HiDream-O1`, etc.) and common training tags in LoRA headers; model details open as a clean profile with **common words from the file header**, **author example settings**, **companion files needed** (text encoder / VAE), and **paragraph-by-paragraph description translation**; **Tidy** adds step 3 (**Not in a base model folder**); character cards in **Voices** now support square **character covers**.
-
-### 🎬 Videos and discussion
-* 📺 **Bilibili** (Chinese): [Feature demo](https://www.bilibili.com/video/BV1boHx61Enc/) · [Character voices demo](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
-* 💬 **Reddit**: [Discussion on r/comfyui](https://www.reddit.com/r/comfyui/s/n38ihf3DLf)
-
----
-
-### ✨ AI Workbench: You direct in plain words, ComfyUI draws with your models
-<!-- guide:ai_workbench -->
-
-Most "AI + image" tools either hide ComfyUI behind a cloud generator or ask an LLM to guess raw node connections from scratch—often breaking your open workflow. **AI Workbench** takes a practical middle route built around your own ComfyUI library:
-
-- **Your open workflow stays safe.** By default (**Work on a copy**), the first canvas action duplicates your workflow into a copy tab (**See the AI's copy** jumps right to it). Your own tab is never touched, every step on the timeline has **Undo** and **Find on canvas**, and the task header gives you **Privacy: recommended / changed / off** (opening **Privacy overview**), **Pause** (stops the run without undoing anything; writing a message resumes), and `⋯` (**Stop and take back changes**, **New task going on from this one**, **Stuck?**, and desktop notifications).
-- **Tested building blocks & Blueprints instead of guesswork.** Rather than inventing fragile graphs, the AI opens **your saved workflows**, **any gallery picture's embedded workflow**, or **Official examples**, and extends them with **Ways** tested here (two-pass Tile upscale, mid-way model switch, refine only the character or only the background, enlarge a blurred background with only the character redrawn, crop-and-stitch or LanPaint area repaint, hand repair, background swap, pose/depth control…) plus on-demand **Advice for the AI** (such as matching pose complexity to your model's parameter scale, or planning multi-stage passes). Multi-step plans appear as a **Blueprint** card on **Panels** first so you can drop steps or swap same-family models before AMB wires them on a copy tab; `+` beside the message box opens the large **Materials for the AI** window (hand over models, ways, combos, workflows, prompts, or nodes with notes) and **Build a new one**, or click **Use it this time** on any Way to lock the AI to your preferred method.
-- **Steer before committing GPU time.** On multi-pass workflows, the AI can run 3 fast first-pass **base previews** first; **Pick a base** opens on **Panels**, you click **Take this one** (or **Take this instead** before new bases run), and the second pass sharpens that exact image without redrawing the base. Finished runs appear with a **before/after comparison slider**, **Turned out well / Not quite** (revealing clickable issue buttons like `hands`, `face`, `framing`, `too dark`, `wrong style`), a `✎` brush marker to mark regions for local repainting (with partial region release in private tasks), and clicking any picture opens the full gallery image workbench. When the AI asks which model or workflow to use, choices appear as visual cards with an option to pick any item yourself.
-- **Clear boundaries (`Ask first` & `Privacy settings`).** Pick a top **Safety level** (**Careful**, **Balanced**, **Hands-off**) or fine-tune individual switches for changing the canvas, using the GPU, downloading models, scanning models online, moving model files, custom node packs, and untried routes—plus an optional **Local small model** (Ollama / LM Studio) to rewrite sealed prompts or run 6-item picture checks locally. **Privacy settings** and **Privacy overview** keep prompts (`[P1]`), pictures (`[img1]`), and model, workflow & combo names (`[M1]`) local (with **Take a saved prompt**, selective tag release, harmless still-life stand-in renders, **What the AI was sent**, and veiled tokens in your conversation). Works locally with Antigravity, Claude, Cursor, Cherry Studio, VS Code and other MCP-capable apps—choose **All tools**, **Drawing only** (`?tools=core`), or **My pick** in **Connect an AI**, or see [docs/guides/mcp.md](docs/guides/mcp.md).
-
-<p align="center"><img src="docs/images/en-ai-workbench.webp" width="840" alt="AI Workbench: pick one of three fast first-pass base previews, then inspect the 2nd-pass upscale with a before/after slider and choose the next step"></p>
-
----
-
-### 💡 Everyday ComfyUI chores it solves (with or without AI)
+<!-- guide:import_models -->
+**1. Not sure which folder a downloaded model goes in? Drop it into AMB.**  
+Drag `.safetensors`, `.gguf`, `.ckpt`, and other model files straight onto the **Models** page (or click **+ Import**). AMB safely reads `.safetensors` and `.gguf` headers (never executing code in pickle formats), identifies the model type (`Checkpoint`, `LoRA`, `Diffusion model`, `Text encoder`, `VAE`, `ControlNet`, `Model patch`…) and base model, lets you review or adjust the destination, and moves files found in Downloads or Desktop straight into the right folder (or copies them from elsewhere) before scanning them automatically. Already dropped models into the wrong place? **Tidy** catches and sorts misplaced files too.
 
 <!-- guide:names -->
-**1. "Which LoRA was `download (3).safetensors` again?"**  
-Press **Scan** once: every model is matched on Civitai by its SHA-256 file hash and gets its real title, cover, trigger words and base model badge. Multiple versions of the same Civitai model fold neatly into one card—click its numbered side tab to slide all versions out under an orange bar, pin the version you use most, or check and download other versions from Civitai. Offline header inspection also recognizes 25+ newer diffusion architectures (`Flux.2 Dev / Klein 9B / 4B`, `Flux.3 Klein`, `Qwen 2.1`, `Z-Image`, `Lumina 2`, `MOSS Image`, `HiDream-O1`…) and guesses common training tags from LoRA headers when Civitai has no trigger words.
+**2. Hard drive full of cryptic filenames? See covers, trigger words, and author settings at a glance.**  
+Press **Scan** once: every `.safetensors` model is matched on Civitai by its SHA-256 file hash for its real title, cover, trigger words, and base model badge. Multiple versions of the same model fold into one card with a numbered side tab so you can compare, switch, or pin your favorite version. Open any model to see **author example settings**, **companion files needed** (such as text encoders and VAEs), **paragraph-by-paragraph description translation**, and **common words from the file header** for LoRAs without Civitai trigger words. Offline header detection also recognizes **25+ newer architectures** (`Flux.2 Dev / Klein 9B / 4B`, `Flux.3 Klein`, `Qwen 2.1`, `Z-Image`, `Lumina 2`, `MOSS Image`, `HiDream-O1`…).
 
 <p align="center"><img src="docs/images/en-scan.webp" width="560" alt="Scan results matching cryptic local filenames to their real Civitai titles"></p>
 
 <!-- guide:model_check -->
-**2. Someone else's workflow opens with red missing-model nodes.**  
-**Model Check** looks as soon as a workflow opens, without changing it. How far it gets depends on what the workflow carries:
-- **With fingerprints** (its author has this plugin too, which records each model's SHA-256 in the workflows and pictures it saves, unless turned off): the same file on your computer under another name or in another folder is found for certain and goes back in with one press of **Put in**; a model you really lack is looked up on Civitai by its fingerprint and checked against it after downloading.
-- **Without fingerprints** (its author does not have this plugin): nothing proves which file it was, so only names are left. A file of the same name in another folder is offered for you to confirm, row by row; VAEs, text encoders and other parts that often share a name are never guessed by name.
-- **Downloads** also use the links a workflow carries (ComfyUI's own templates have them) and ComfyUI-Manager's model list. A file that only has the same name is marked **Download by name** and comes only when you press it.
+**3. Moved folders, renamed models, or red missing-model nodes? Fixed by model fingerprint.**  
+Moving or renaming your own models no longer breaks your saved workflows—and when you share workflows or pictures saved with this plugin, **others can match or reinstall the exact models by fingerprint**. **Model Check** inspects any opened workflow read-only without altering it:
+- **With fingerprints** (default when this plugin saves workflows or outputs): the exact same file on disk—even renamed or moved to another folder—is recognized by its SHA-256 hash and restored in one click with **Put in**; truly missing models are looked up on Civitai by fingerprint and hash-verified after download.
+- **Without fingerprints** (shared by someone without this plugin): same-named files in other folders are offered row by row for you to confirm; shared components like VAEs and text encoders are never guessed by name.
+- **Downloads** also check links embedded in workflows (such as ComfyUI templates) and ComfyUI-Manager's model list; name-only matches are labeled **Download by name** and only run when you click them.
 
 <p align="center"><a href="docs/guides/model-check-rules.en.md"><img src="https://img.shields.io/badge/📖_How_Model_Check_decides-Full_rules-blueviolet?style=for-the-badge" alt="How Model Check decides: the full rules"></a></p>
 
 <p align="center"><img src="docs/images/en-model-check.webp" width="820" alt="Model Check replacing three renamed/moved missing models in one click"></p>
 
-<!-- guide:workflows -->
-**3. Keep tuned workflows, see their stages at a glance, and switch presets.**  
-**Official examples** (text-to-image, two-pass upscale, img2img, inpaint) open ready to run on a model you already own. On any saved workflow card, a compact **structure flow diagram** maps out models, LoRAs and control bars across each sampling stage (`① Base picture` → `② Enlarge and redraw`). Click a **preset tab** and every stage or LoRA it changes turns **orange**; click any box in the flow to see `default → preset` parameter diffs right underneath, apply it to the canvas, or export a `.zip` recipe package / short `⇅` share code.
-
-<p align="center"><img src="docs/images/en-workflows.webp" width="840" alt="Workflows page: Official examples, structure flow diagram, orange preset highlights and node diff"></p>
-
-<!-- guide:saves -->
-**4. Try another idea without losing this one — Canvas Saves.**  
-Right-click the canvas → **Save this state** snapshots the whole workflow onto a compact bar under the canvas (or open **Saves** from the left rail or Home's **Compare multiple versions** card, which walks through a live 3-step guide: save version 1 → edit settings, models, or nodes on the canvas & save another → run all & compare side by side); tweak anything and press `+` to save again. Run every save in batch with **Random** or **Locked** seeds for a fair side-by-side test. **Saves** lists what each save changed beside the pictures it made; click `1`, `2` or `3` on the bottom bar to jump back on the same tab—bringing that save's output node previews back too (`Ctrl+Z` returns; **Keep as a workflow** turns a favorite into a workflow card).
-
-<p align="center"><img src="docs/images/en-saves.webp" width="840" alt="Canvas Saves: side-by-side diffs with locked-seed renders, and switching saves 1, 2, 3 on the bottom bar"></p>
-
-<!-- guide:job_sheet -->
-Many prompts on one canvas instead? Right-click the canvas → **AMB** → **Job sheet (many prompts)**: paste a prompt a line, set **Runs of each** and **Seconds between pictures**, and press **Start**. It runs copies of the canvas as it was at the start, one after another (your canvas stays as it is), with **Pause**, **Go on** and **Stop**; with no prompt it runs the canvas as it is, a rest between pictures. An AI can hand over a sheet too ("these prompts, 4 each"; "cfg 4, 5 and 6, 3 each").
-
 <!-- guide:picture_workflow -->
-**5. "How did I make this picture?"**  
-Search your `output` folder by prompt words, checkpoint, LoRA, seed or model hash (even hundred-megapixel upscales stay smooth via background thumbnails), then drag the picture straight onto the canvas to bring its full workflow back.
+**4. "How did I make this picture?" Search your gallery and drag it onto the canvas.**  
+Search your `output` folder by prompt words, checkpoint, LoRA, seed, filename, or model hash (even hundred-megapixel upscales stay smooth via background thumbnails), inspect full generation parameters, compare two images, and drag any picture straight onto the canvas to bring back its full workflow.
 
 <p align="center"><img src="docs/images/en-gallery.webp" width="820" alt="Gallery search by tag chip, then dragging an output image onto the canvas to restore its workflow"></p>
 
-<!-- guide:combos -->
-**6. Stop rewiring the same Checkpoint, LoRAs and prompt.**  
-Select those nodes on the canvas, right-click → **AMB** → **Save as combo**, and keep them as a card beside the canvas. Press **Put on canvas** (or drag the card) to lay out the wired node group wherever you click without altering existing nodes. Need several LoRAs on an existing loader? **Current node → Insert LoRA** lets you click multiple LoRA cards in `1 · 2 · 3` order and wires the whole chain (or an rgthree / Easy-Use LoRA stack) in one `Ctrl+Z` step.
-
-<p align="center"><img src="docs/images/en-combo.webp" width="820" alt="Placing a saved Checkpoint + LoRA + Prompt combo onto the canvas as a wired group"></p>
-
-<!-- guide:prompts -->
-**7. Edit long prompts as clickable tags — Prompt Studio.**  
-Dock **Prompt Studio** beside the canvas, select a prompt node, and edit its positive and negative text live as tag pills: click `+` / `−` to adjust weights, double-click to edit, drag to reorder, type in Chinese, Japanese or other languages to insert English tags automatically, and drag saved prompt cards straight onto canvas prompt boxes.
-
-<p align="center"><img src="docs/images/en-prompt-studio.webp" width="820" alt="Prompt Studio docked beside the canvas, weighting tags live on a selected CLIP Text Encode node"></p>
-
-<!-- guide:voices -->
-**8. Characters that talk.**  
-With the optional companion node pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS): manage GPT-SoVITS characters with a reference clip per emotion, fix pronunciations, and generate dialogue lines from a script page.
-
-<p align="center"><img src="docs/images/en-voices.webp" width="760" alt="Character voices page with emotion reference clips"></p>
-
-<!-- guide:undo -->
-**Changed your mind?**  
-Every change made by Anomalous or an AI task is logged in **Activity** with before → after values, **Find on canvas** and one-click **Undo**.
-
-<p align="center"><img src="docs/images/en-activity.webp" width="760" alt="Activity log showing expanded node changes with Undo and Find on canvas buttons"></p>
-
 <!-- guide:light -->
-**Light on your computer**: the plugin itself loads no AI models and takes **zero VRAM** away from image generation; grids use cached thumbnails rather than full originals, and browser image memory is released 90 seconds after closing the window. Voice models in `Anomalous_TTS` yield VRAM automatically whenever ComfyUI generates images, or completely on **Unload models**.
+**Zero VRAM, light on your computer**: the plugin itself loads no AI models and takes **zero VRAM** away from image generation; grids use cached thumbnails rather than full originals, and browser image memory is released 90 seconds after closing the window. Optional voice models in `Anomalous_TTS` yield VRAM automatically whenever ComfyUI generates images, or completely on **Unload models**.
 
 ### 📦 Install
-<!-- guide:install -->
 
+<!-- guide:install -->
 1. In **ComfyUI Manager**, search `Anomalous Model Browser`, install it and restart ComfyUI. Or clone it into `custom_nodes`:
    ```bash
    cd custom_nodes
@@ -150,7 +87,86 @@ Every change made by Anomalous or an AI task is logged in **Activity** with befo
    Can't see the cube? It may have been dragged away, or another entry chosen: ComfyUI's **C** menu → **Extensions → Anomalous Model Browser** has **Open Anomalous Model Browser** and **Reset floating entry position**. To make it easier to spot, go to **ComfyUI Settings → Anomalous Model Browser → Interface**: **Floating entry style** → **Labeled pill** adds the words "Model Browser", **Floating entry size** → **Large**, or **Browser entry mode** → **Top action bar** puts it beside the Run button.
 3. Optional: for character voices, install [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) (`Anomalous TTS` in ComfyUI Manager). Nothing else depends on it.
 
-Scanning reaches Civitai by file hash (no extra Python dependencies). Without internet access, choose **Offline** scan: base models are read directly from file headers, and a later online scan fills in covers and trigger words (see **Network and backups** below).
+Scanning reaches Civitai by file hash (no extra Python dependencies). Without internet access, choose **Offline** scan: base models are read directly from file headers, and a later online scan fills in covers and trigger words (see **Cloud servers, network and backups** below).
+
+### 🎬 Videos and discussion
+
+* 📺 **Bilibili** (Chinese): [Feature demo](https://www.bilibili.com/video/BV1boHx61Enc/) · [Character voices demo](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
+* 💬 **Reddit**: [Discussion on r/comfyui](https://www.reddit.com/r/comfyui/comments/1y21nko/i_built_a_free_100_local_workspace_for_comfyui/)
+
+### 🧰 More tools & optional features (click to expand)
+
+Everything below is built in for when you need it — skip any section you don't use.
+
+<details>
+<summary><b>⚡ More everyday tools: Workflows & Presets, Canvas Saves, Batch Job Sheet, Combos, Prompt Studio & Undo</b></summary>
+
+<!-- guide:workflows -->
+#### Keep tuned workflows, see stages at a glance, and switch presets
+**Official examples** (text-to-image, two-pass upscale, img2img, inpaint) open ready to run on a model you already own. On any saved workflow card, a compact **structure flow diagram** maps out models, LoRAs and control bars across each sampling stage (`① Base picture` → `② Enlarge and redraw`). Click a **preset tab** and every stage or LoRA it changes turns **orange**; click any box in the flow to see `default → preset` parameter diffs right underneath, apply it to the canvas, or export a `.zip` recipe package / short `⇅` share code.
+
+<p align="center"><img src="docs/images/en-workflows.webp" width="840" alt="Workflows page: Official examples, structure flow diagram, orange preset highlights and node diff"></p>
+
+<!-- guide:saves -->
+#### Try another idea without losing this one — Canvas Saves
+Right-click the canvas → **Save this state** snapshots the whole workflow onto a compact bar under the canvas (or open **Saves** from the left rail or Home's **Compare multiple versions** card, which walks through a live 3-step guide: save version 1 → edit settings, models, or nodes on the canvas & save another → run all & compare side by side); tweak anything and press `+` to save again. Run every save in batch with **Random** or **Locked** seeds for a fair side-by-side test. **Saves** lists what each save changed beside the pictures it made; click `1`, `2` or `3` on the bottom bar to jump back on the same tab—bringing that save's output node previews back too (`Ctrl+Z` returns; **Keep as a workflow** turns a favorite into a workflow card).
+
+<p align="center"><img src="docs/images/en-saves.webp" width="840" alt="Canvas Saves: side-by-side diffs with locked-seed renders, and switching saves 1, 2, 3 on the bottom bar"></p>
+
+<!-- guide:job_sheet -->
+#### Queue many prompts on one canvas — Job sheet
+Many prompts on one canvas instead? Right-click the canvas → **AMB** → **Job sheet (many prompts)**: paste a prompt a line, set **Runs of each** and **Seconds between pictures**, and press **Start**. It runs copies of the canvas as it was at the start, one after another (your canvas stays as it is), with **Pause**, **Go on** and **Stop**; with no prompt it runs the canvas as it is, a rest between pictures. An AI can hand over a sheet too ("these prompts, 4 each"; "cfg 4, 5 and 6, 3 each").
+
+<!-- guide:combos -->
+#### Stop rewiring the same Checkpoint, LoRAs, and prompt — Combos
+Select those nodes on the canvas, right-click → **AMB** → **Save as combo**, and keep them as a card beside the canvas. Press **Put on canvas** (or drag the card) to lay out the wired node group wherever you click without altering existing nodes. Need several LoRAs on an existing loader? **Current node → Insert LoRA** lets you click multiple LoRA cards in `1 · 2 · 3` order and wires the whole chain (or an rgthree / Easy-Use LoRA stack) in one `Ctrl+Z` step.
+
+<p align="center"><img src="docs/images/en-combo.webp" width="820" alt="Placing a saved Checkpoint + LoRA + Prompt combo onto the canvas as a wired group"></p>
+
+<!-- guide:prompts -->
+#### Edit long prompts as clickable tags — Prompt Studio
+Dock **Prompt Studio** beside the canvas, select a prompt node, and edit its positive and negative text live as tag pills: click `+` / `−` to adjust weights, double-click to edit, drag to reorder, type in Chinese, Japanese or other languages to insert English tags automatically, and drag saved prompt cards straight onto canvas prompt boxes.
+
+<p align="center"><img src="docs/images/en-prompt-studio.webp" width="820" alt="Prompt Studio docked beside the canvas, weighting tags live on a selected CLIP Text Encode node"></p>
+
+<!-- guide:undo -->
+#### Every change logged and one-click undoable — Activity
+Changed your mind? Every change made by Anomalous or an AI task is logged in **Activity** with before → after values, **Find on canvas** and one-click **Undo**.
+
+<p align="center"><img src="docs/images/en-activity.webp" width="760" alt="Activity log showing expanded node changes with Undo and Find on canvas buttons"></p>
+
+</details>
+
+<details>
+<summary><b>🤖 Optional: AI Workbench & Privacy Controls (MCP — works on a copy, every step undoable)</b></summary>
+
+<!-- guide:ai_workbench -->
+#### You direct in plain words, ComfyUI draws with your models
+Most "AI + image" tools either hide ComfyUI behind a cloud generator or ask an LLM to guess raw node connections from scratch—often breaking your open workflow. **AI Workbench** takes a practical middle route built around your own ComfyUI library:
+
+- **Your open workflow stays safe.** By default (**Work on a copy**), the first canvas action duplicates your workflow into a copy tab (**See the AI's copy** jumps right to it). Your own tab is never touched, every step on the timeline has **Undo** and **Find on canvas**, and the task header gives you **Privacy: recommended / changed / off** (opening **Privacy overview**), **Pause** (stops the run without undoing anything; writing a message resumes), and `⋯` (**Stop and take back changes**, **New task going on from this one**, **Stuck?**, and desktop notifications).
+- **Tested building blocks & Blueprints instead of guesswork.** Rather than inventing fragile graphs, the AI opens **your saved workflows**, **any gallery picture's embedded workflow**, or **Official examples**, and extends them with **Ways** tested here (two-pass Tile upscale, mid-way model switch, refine only the character or only the background, enlarge a blurred background with only the character redrawn, crop-and-stitch or LanPaint area repaint, hand repair, background swap, pose/depth control…) plus on-demand **Advice for the AI** (such as matching pose complexity to your model's parameter scale, or planning multi-stage passes). Multi-step plans appear as a **Blueprint** card on **Panels** first so you can drop steps or swap same-family models before AMB wires them on a copy tab; `+` beside the message box opens the large **Materials for the AI** window (hand over models, ways, combos, workflows, prompts, or nodes with notes) and **Build a new one**, or click **Use it this time** on any Way to lock the AI to your preferred method.
+- **Steer before committing GPU time.** On multi-pass workflows, the AI can run 3 fast first-pass **base previews** first; **Pick a base** opens on **Panels**, you click **Take this one** (or **Take this instead** before new bases run), and the second pass sharpens that exact image without redrawing the base. Finished runs appear with a **before/after comparison slider**, **Turned out well / Not quite** (revealing clickable issue buttons like `hands`, `face`, `framing`, `too dark`, `wrong style`), a `✎` brush marker to mark regions for local repainting (with partial region release in private tasks), and clicking any picture opens the full gallery image workbench. When the AI asks which model or workflow to use, choices appear as visual cards with an option to pick any item yourself.
+- **Clear boundaries (`Ask first` & `Privacy settings`).** Pick a top **Safety level** (**Careful**, **Balanced**, **Hands-off**) or fine-tune individual switches for changing the canvas, using the GPU, downloading models, scanning models online, moving model files, custom node packs, and untried routes—plus an optional **Local small model** (Ollama / LM Studio) to rewrite sealed prompts or run 6-item picture checks locally. **Privacy settings** and **Privacy overview** keep prompts (`[P1]`), pictures (`[img1]`), and model, workflow & combo names (`[M1]`) local (with **Take a saved prompt**, selective tag release, harmless still-life stand-in renders, **What the AI was sent**, and veiled tokens in your conversation).
+
+<p align="center"><img src="docs/images/en-ai-workbench.webp" width="840" alt="AI Workbench: pick one of three fast first-pass base previews, then inspect the 2nd-pass upscale with a before/after slider and choose the next step"></p>
+
+<!-- guide:connect_ai -->
+#### Connecting AI apps (MCP)
+Antigravity, Claude, Cursor, Cherry Studio, VS Code and other MCP clients connect locally via `http://127.0.0.1:8188/anomalous/mcp` (localhost only). In **Connect an AI** you can copy the one-line setup or choose which tool list the AI receives (**All tools**, **Drawing only** `?tools=core`, or **My pick**). Full setup and tool reference in [docs/guides/mcp.md](docs/guides/mcp.md).
+
+</details>
+
+<details>
+<summary><b>🎙️ Optional add-on: Character Voices (Anomalous_TTS)</b></summary>
+
+<!-- guide:voices -->
+#### Characters that talk
+With the optional companion node pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS): manage GPT-SoVITS characters with a reference clip per emotion, set square character covers, fix pronunciations, and generate dialogue lines from a script page. Nothing else in Anomalous Model Browser depends on it.
+
+<p align="center"><img src="docs/images/en-voices.webp" width="760" alt="Character voices page with emotion reference clips"></p>
+
+</details>
 
 <details>
 <summary><b>📖 Every page and tool, in detail</b></summary>
@@ -162,7 +178,7 @@ Every page has an icon on the left rail; when docked beside the canvas, drag the
 | :--- | :--- |
 | **🏠 Home** | Opens on **Let the AI do it** (6 starter cards opening straight inside the AI workbench) above **Do it yourself** (9 tool cards, including local **Run my preset** with **The same again** and **Compare multiple versions**), plus first-run steps (**Scan model folders**, **Tour the interface**), recent AI tasks and latest activity. |
 | **🕘 Activity** | Everything Anomalous changed, grouped by day: canvas edits (before → after node values, added/removed nodes, opened workflows, links to AI tasks) and file operations (models, covers, workflows, combos, prompts, images, audio). **Find on canvas** jumps straight to the node; canvas changes offer **Undo** while still current. Your manual canvas edits are not listed. |
-| **📦 Models** | Browse models with Civitai covers, trigger words and base model chips. Switch types at the top (Checkpoint, LoRA, VAE…) or narrow to a subfolder on the left; **+** drops a loader node onto the canvas. Files sharing a Civitai model ID fold into one card with a numbered side arrow (slide out under an orange bar, pin a default version, or use **Open all versions**); model details open as a clean profile showing **common words in its file** (for LoRAs without Civitai triggers), **settings of its author's examples**, **files it needs beside it** (text encoder & VAE for split-loaded models like Anima/Flux), **Translate** for author descriptions, and **All versions on Civitai** for SHA-256-checked downloads. Includes **Tidy** (with step 3: **Not in a base model folder**) and **Sources**. |
+| **📦 Models** | Browse models with Civitai covers, trigger words and base model chips; drag model files onto this page (or press **+ Import**) to identify them by header and put them in the right folders. Switch types at the top (Checkpoint, LoRA, VAE…) or narrow to a subfolder on the left; **+** drops a loader node onto the canvas. Files sharing a Civitai model ID fold into one card with a numbered side arrow (slide out under an orange bar, pin a default version, or use **Open all versions**); model details open as a clean profile showing **common words in its file** (for LoRAs without Civitai triggers), **settings of its author's examples**, **files it needs beside it** (text encoder & VAE for split-loaded models like Anima/Flux), **Translate** for author descriptions, and **All versions on Civitai** for SHA-256-checked downloads. Includes **Tidy** (with step 3: **Not in a base model folder**) and **Sources**. |
 | **🖼️ Gallery** | Your ComfyUI `output` folder (including background-rendered previews for ultra-large upscales). Search by prompt, model, LoRA, seed, filename or model hash; inspect full generation parameters, compare two images, drag onto the canvas to restore the workflow, or click **☆** to keep as a workflow, combo or saved prompt. |
 | **✨ AI workbench** | Task-by-task workspace for MCP AI apps: live step timeline with **Undo**, copy-tab controls (**Work on a copy** / **See the AI's copy**), header tools (**Privacy: recommended / changed / off** opening side-by-side **Privacy overview**, **Pause**, `⋯` with **Stop and take back changes**, **New task going on from this one**, **Stuck?**), side views (**Panels** with **Blueprint** cards, first-pass base picks with **Take this instead**, before/after slider, choice cards, `✎` brush markup, **Turned out well / Not quite** + issue buttons; **Materials**; **Results**; plus **More** → **Node map**, **Settled**, **Ways** & **Advice for the AI**), `+` beside the message box opening **Materials for the AI** & **Build a new one**, **Take a saved prompt** & veiled tokens in private tasks, and **Ask first** (with **Careful / Balanced / Hands-off** safety levels and optional **Local small model**). |
 | **🪡 Workflows** | **Official examples** (including `Anima · blurred background, only the character redrawn`) and **Saves** at the top, followed by saved workflow cards. Details show a compact **structure flow diagram**, sticky **preset tabs** (highlighting changed stages in orange, with inline node diffs and **+ New preset**), **Hand to AI**, version comparison/restore, `.zip` **recipe packages**, and `⇅` share codes / drag-and-drop import. |
@@ -178,9 +194,6 @@ Tools at the bottom of the rail (ordered by frequency of use):
 * **Scan**: hashes model files locally, reads headers (including offline base-model & architecture detection across 25+ newer diffusion families and 300+ model layouts, plus LoRA file-header common words), and fetches Civitai covers, names and trigger words.
 * **Settings**: language (switches live across all panels, Panels and Saves bar), interface scale, theme, thumbnails, video covers, model download mirrors, backups, and **Report a problem** (pre-filled with version & GPU info).
 
-<!-- guide:connect_ai -->
-**Connecting AI apps (MCP)**: Antigravity, Claude, Cursor, Cherry Studio, VS Code and other MCP clients connect locally via `http://127.0.0.1:8188/anomalous/mcp` (localhost only). In **Connect an AI** you can copy the one-line setup or choose which tool list the AI receives (**All tools**, **Drawing only** `?tools=core`, or **My pick**). Full setup and tool reference in [docs/guides/mcp.md](docs/guides/mcp.md).
-
 </details>
 
 <details>
@@ -194,7 +207,7 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
 </details>
 
 <details>
-<summary><b>🌐 Network and backups</b></summary>
+<summary><b>🌐 Cloud servers, network and backups</b></summary>
 <!-- guide:network -->
 
 **On a cloud server (AutoDL, RunPod…):** overseas servers work out of the box; servers in mainland China only in part (Civitai is mostly out of reach there; see the `civitai.red` fallback and `hf-mirror.com` below). Tested on one AutoDL server so far. Opened from another machine, the plugin defaults to read-only for safety; connect via an SSH tunnel so ComfyUI sees `127.0.0.1`, or read [docs/guides/cloud-server.md](docs/guides/cloud-server.md).
@@ -205,132 +218,64 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
 
 </details>
 
+<details>
+<summary><b>🆕 What's new in v1.64</b></summary>
+
+- **Home "Let the AI do it" starter cards & direct workbench setup**: Home opens on six visual AI starter cards (**Try it once**, **Say what you want, the AI plans the run**, **Draw what I describe**, **Change a picture**, **Draw privately**, **Explain my canvas**) that open straight inside the AI workbench—pick images with a live preview, choose **Start from** (**Build a new one**, **My open canvas**, **A saved workflow**, or **Let the AI choose**) via full-size visual model and workflow pickers, and turn into a 3-step handoff page carrying the task's exact ID. Local **Run my preset** (with a one-click **The same again** repeat line) and **Compare multiple versions** sit right below under **Do it yourself**.
+- **Ready-made Privacy settings & side-by-side Privacy overview**: keep prompts, pictures, and **model, workflow & combo names** local as `[P1]`, `[img1]`, `[M1]` tokens (lock individual model names across all tasks, tick which description paragraphs the AI may read, and fill sealed prompt boxes from **Take a saved prompt**). Press the task header's **Privacy** button to open **Privacy overview**—sorted by kind with a **side-by-side** comparison of what stays on your PC vs. what the AI reads, tag-level selective word release with meanings, partial region release from the image marker, harmless still-life stand-in renders, and a full **What the AI was sent** audit log. Hidden segments and `[M1]`/`[P1]`/`[img1]` tokens display as veiled true names in your conversation (blurred until hovered or clicked), and an optional **Local small model** (Ollama / LM Studio) under **Ask first** can rewrite sealed prompts or check pictures locally.
+- **Multi-step Blueprints, new Ways & Job sheet**: when planning a multi-stage workflow, the AI puts a **Blueprint** card on **Panels** first so you can drop steps or swap same-family models before AMB wires the chain on a copy tab and runs 3 fast base previews to pick from (with **Take this instead** if you change your mind). Adds **refine only the character / only the background**, **Upscale, only the character redrawn** for bokeh backgrounds, automatic **VAE Decode (Tiled)** on `≤ 8 GB` GPUs, and pre-run checks for CJK prompts on English-only models or mismatched Anima Tile LLLite blocks. Right-click the canvas (or ask the AI) to open **Job sheet (many prompts)** for queued multi-prompt runs with rest intervals.
+- **Large "Materials for the AI" window & deeper model/voice details**: press **+** beside the message box (or open **Materials**) to hand over models, ways, combos, workflows, prompts, and nodes with per-item notes—or when the AI asks which model or workflow to use, pick from visual option cards or open the full picker. Offline header detection now covers **25+ new architectures** (`Flux.2 Dev / Klein 9B / 4B`, `Flux.3 Klein`, `Qwen 2.1`, `Z-Image`, `Lumina 2`, `MOSS Image`, `HiDream-O1`, etc.) and common training tags in LoRA headers; model details open as a clean profile with **common words from the file header**, **author example settings**, **companion files needed** (text encoder / VAE), and **paragraph-by-paragraph description translation**; **Tidy** adds step 3 (**Not in a base model folder**); character cards in **Voices** now support square **character covers**.
+
+</details>
+
 ---
 
 <h2 id="中文">🇨🇳 中文说明</h2>
 
-> **Anomalous Model Browser** 在一个窗口里帮你打理 ComfyUI 周边的琐事：
-> - 带 C 站封面、触发词和多版本折叠卡浏览模型；
-> - 翻看历史出图，一拖还原当时的完整工作流；
-> - 用结构流程图和预设管理调好的工作流，随时给画布存几个存档锁种对比、一键回退；
-> - 存下常用的模型 + LoRA 搭配，用词块直观编辑长提示词；
-> - 打开别人的工作流缺模型时帮你找回或下载（工作流带着本插件记的指纹时最准）；
-> - 从主页 **让 AI 帮你做** 起手卡直达 **AI 工作台**，配好成套 **隐私设置**，让 AI 在副本标签页里按 **蓝图** 和实测 **出图方法** 跑图、先挑底图再放大精修；
-> - 配合可选节点包 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) 给角色配音。
->
-> 插件和 AI 改动过的每一处画布设置，都在“记录”里写得明明白白，随时定位或撤销。
-
 <p align="center"><img src="docs/images/models.webp" width="880" alt="中文模型库界面：Civitai 封面、底模标签与多版本同卡展开"></p>
 
-### 🧭 理念
 <!-- guide:idea -->
+**不是套壳 WebUI，也不取代 ComfyUI —— 只是把 ComfyUI 身边最磨人的杂活接过去。**
 
-**不再造一个套壳 WebUI，也不取代 ComfyUI，只是把 ComfyUI 身边最磨人的杂活接过去。**
+- **零自定义节点。** 画布和节点全是你本来就在用的 ComfyUI 原生节点（或已装节点包）；你导出的图片和工作流，发给没装本插件的朋友照样直接打开。
+- **不绑定、不添乱。** 平时该怎么用 ComfyUI 还是怎么用；进阶工具全在折叠里按需取用，随时删掉插件也不会坏任何东西。
+- **纯本地、可撤销。** 日常浏览模型和图库不需要联网；插件和可选 AI 在画布上改过的每一处，都记在 **记录** 里，随时一键 **撤销**。
 
-- **少做没必要的体力活。** 认乱码文件名、修一片红框的缺模型节点、翻旧图找参数、每次重连同一串大模型和 LoRA——这些交给插件做。
-- **用的还是你自己的 ComfyUI。** 画布和节点全是 ComfyUI 原生的。插件本身**一个自定义节点都不往工作流里塞**，放到画布上的都是官方节点或你本来就装了的节点包；出的图、另存的工作流，发给没装本插件的朋友照样直接打开。
-- **接 AI 也不走“黑盒盲猜”路线。** 你只管用人话提要求；**AMB** 负责在**副本标签页**里打开你的工作流、接好实测过的节点块；真正出图的还是**你本机的 ComfyUI 和你挑的模型**。每一步改了什么都在眼前，先挑构图再跑慢速放大，不满意随时一步撤销。
+### ✨ 四个最常见的小麻烦，直接解决
 
-### ✨ 1.64 重点更新
-
-- **主页「让 AI 帮你做」六张起手卡，点开直达工作台**：主页首屏直接摆出 6 张 AI 起手卡（**先试一次**、**说想要什么，AI 安排着跑**、**照我说的出图**、**改一张图**、**隐私出图**、**看懂我的画布**），取消弹窗直接进工作台宽敞起手页——选图实时预览、用通用大窗挑模型和工作流、按步骤选 **从哪开始**（`新搭一张` / `我开着的画布` / `我存的工作流` / `让 AI 挑`），点「开始」就地切换为带准确任务 ID 的 **三步让 AI 接手**。不需要 AI 的 **跑我存的预设**（带 **↻ 和上次一样再跑**）与 **多个版本对比跑图** 归入下方「自己动手」。
-- **成套「隐私设置」与左右对照「隐私一览」**：支持把提示词、图片以及 **模型名（`[M1]`）、工作流名、搭配名** 全部换成代号留在本机（可给单个模型永久上锁「藏名」、勾几段作者介绍发给 AI，并点 **取我存的提示词** 填进密文框）。点任务标题栏的 **隐私** 按钮打开 **隐私一览**——按种类分桌、**左右对照**“AI 看不到的”和“AI 看得到的”，支持按词块挑词放行、看词义、标图局部放行、跑无害静物替身样图与查 **发给 AI 了什么**；对话里藏起的内容默认 **模糊防窥**（悬停或点一下看清），AI 话里的代号自动还原显示真名；**先问我** 里还可选接 **本机小模型**（Ollama / LM Studio）在本地代改密文或做 6 项看图检查。
-- **多步「蓝图」卡、新出图方法与「任务单」**：AI 规划多步流程时先在面板给出 **蓝图** 卡，可删步骤、换同家族模型，点 **照这个搭** 由 AMB 在新标签页一次连好线，跑前先出 3 张底图小样供挑选（选错在出新图前还能点 **改选这张**）；新增换模型精修 **只改人物 / 只改场景**、背景虚化图用的 **放大·只重画人物**，≤ 8 GB 显卡放大自动走原生 **VAE 分块解码**，并自动拦下英文模型误跑中文提示词与 Anima 2B Tile 误配 2.9B 模型；画布右键（或让 AI 排单）支持 **任务单** 批量跑多行提示词。
-- **「给 AI 的素材」大窗 & 模型库 / 语音打磨**：留言框左侧 `+`（或右栏 **素材**）打开三栏 **给 AI 的素材** 大窗，随留言附带模型/出图方法/搭配/工作流/提示词/节点和用途标注；AI 提问选模型或工作流时直接给带封面的卡片并支持自己挑。离线识别跟进 **Flux.2（Dev / Klein 9B / 4B）、Flux.3 Klein、Qwen 2.1、Z-Image、Lumina 2、MOSS Image、HiDream-O1** 等 25+ 新架构与 LoRA **文件头里的常用词（推测）**；模型详情改版为档案页，新增 **作者例图常用设置**、分块模型 **还需要的文件** 与 **作者的介绍分段翻译**；**整理** 新增第 3 步“没放进底模文件夹”；角色语音支持给角色卡设 **方形封面**。
-
-### 🎬 视频与讨论
-* 📺 **哔哩哔哩 (Bilibili)**：[功能演示](https://www.bilibili.com/video/BV1boHx61Enc/) · [角色配音演示](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
-* 💬 **Reddit**：[r/comfyui 上的介绍帖](https://www.reddit.com/r/comfyui/s/n38ihf3DLf)
-
----
-
-### ✨ AI 工作台：你用人话当导演，AMB 搭线，ComfyUI 用你的模型出图
-<!-- guide:ai_workbench -->
-
-很多人一听“在 ComfyUI 里接 AI”，第一反应往往是两个顾虑：要么怕它像云端生图软件一样绕开自己的本地模型库，要么怕大模型瞎猜节点连线，把自己辛辛苦苦调好的画布搅得一团糟。**AI 工作台**走的是另一条路——**让 AI 当你的操作助手，规矩由 AMB 守住**：
-
-- **默认只改“副本”，绝不弄乱你开着的画布。** 任务默认开启 **在副本上改**：AI 第一次动手前，AMB 自动把工作流复制到副本标签页里操作（随时点 **看 AI 的副本** 切过去），你原来的标签页一笔不动；时间线上的每一步都能 **撤销** 或 **在画布上找到**。标题栏带 **隐私：推荐 / 自定 / 关**（点开 **隐私一览**）、**暂停**（只停跑图不撤销，再留言就继续）与 `⋯`（**停下并撤销改动**、**接着这个任务开新任务**、**卡住了？**与桌面通知）。
-- **不靠瞎猜连线，优先用你的工作流、蓝图与实测“出图方法”。** AI 会直接调用**你存好的工作流及预设**、**图库某张图自带的工作流**，或是开箱即用的 **官方示例**；需要加功能时，由 AMB 按你已装的节点包搭上实测过的 **出图方法**（Tile 锁图二段放大、半途换模型接着画、换模型只改人物或只改场景、背景虚化的图放大时只重画人物、裁切缝合 / LanPaint 局部重绘、修手先放大再修、换背景、姿势/深度控制……），并配合按需 **给 AI 的建议**（Skill，如按主模型参数量给动作建议、分阶段出图思路）。多步流程会在 **面板** 先放一张 **蓝图** 卡让你删步或换模型，再由 AMB 一次连好线；点留言框旁边的 `+` 可打开 **给 AI 的素材** 大窗或 **新搭一张（文生图）**，也可以在出图方法里点 **这次用它** 指定。
-- **先挑快底图，再跑慢精修，面板拉帘对比。** 跑两段放大这类耗时流程时，AI 可以先快速跑 3 张第一段底图预览（不污染正式输出目录）；右侧 **面板** 弹出挑选卡片，你点 **就选这张**（出新底图前还能点 **改选这张** 换一张），第二段直接接着这张图做细节重绘，省掉重跑底图的时间。出图后面板提供 **前后拉帘对比**、**效果好 / 不太行**（展开“手坏了 / 脸不对 / 构图偏了 / 太暗…”等十个问题按钮），还能点图片右上角 `✎` 用画笔标出区域局部重绘（隐私任务也支持仅放出一小块图给 AI 看）；点工作台任意图片直接打开图库看图器；AI 问“用哪个模型 / 工作流”时直接给你带封面的卡片或让你自己挑。
-- **权限全由「先问我」把关，隐私交给「隐私设置」。** **先问我** 顶部提供 **谨慎 / 平衡 / 放手** 三档安全级别，也可逐项开关改画布、用显卡、下载、联网扫描、挪动文件、第三方节点包与未试过的新路线，并支持拓展接入 **本机小模型**（Ollama / LM Studio）在本地代改密文或看图检查。开启 **隐私设置** 后，提示词（`[P1]`）、图片（`[img1]`）以及模型、工作流与搭配名（`[M1]`）全部留在本机只给代号（配 **取我存的提示词**、左右对照 **隐私一览**、按词放行、替身样图、**发给 AI 了什么** 及对话模糊防窥）。支持连接 Antigravity、Claude、Cursor、Cherry Studio、VS Code 等 MCP 软件——在 **连接 AI** 里可选 **全部工具**、**跑图精简**（`?tools=core`）或 **我选的**，复制一句话就能配好，详见 [docs/guides/mcp.md](docs/guides/mcp.md)。
-
-<p align="center"><img src="docs/images/ai-workbench.webp" width="840" alt="AI 工作台：先在右侧面板三选一挑中快速底图，再锁种完成二段精修并用拉帘滑块对比前后细节"></p>
-
----
-
-### 💡 日常玩 ComfyUI，它帮你省掉哪些麻烦（不接 AI 也一样主力）
+<!-- guide:import_models -->
+**1. 下完模型不知道放哪个文件夹？直接拖进 AMB 就行。**  
+把下载好的 `.safetensors`、`.gguf`、`.ckpt` 等模型文件直接拖到 **模型** 页面（或点右上角 **＋ 导入**）。AMB 会安全读取 `.safetensors` / `.gguf` 文件头（绝不执行 `.ckpt`/`.pt` 等旧格式里的代码），自动认出它是什么模型（`大模型`、`LoRA`、`扩散模型（UNet）`、`文本编码器`、`VAE`、`ControlNet`、`模型补丁`……）以及底模家族；在“下载”或桌面找到的原文件直接移进对应文件夹（找不到原路径就复制一份过去），还能顺手查重并自动扫描封面。以前已经塞错地方的，点 **整理** 也能一并挑出来归位。
 
 <!-- guide:names -->
-**1. 模型塞满硬盘，文件名全是 `download (3).safetensors`。**  
-点一次 **扫描**，每个模型按文件 SHA-256 哈希去 C 站认领真名、高清封面、触发词和底模角标。同一个 C 站模型的不同版本还会自动收进一张卡片，点右侧数字滑出全部版本（顶部橙边相连），点图钉设默认版本，详情里还能直接核对下载该模型在 C 站上的其他版本。离线扫描也能直接读文件头认出 **Flux.2（Dev / Klein 9B / 4B）、Flux.3 Klein、Qwen 2.1、Z-Image、Lumina 2、MOSS Image、HiDream-O1** 等 25+ 新模型架构；没有 C 站触发词的 LoRA 还会从文件头读出训练常用词（**文件头里的常用词（推测）**）。
+**2. 满硬盘乱码文件名？封面、触发词、作者例图参数一眼看见。**  
+点一次 **扫描**，每个 `.safetensors` 模型按文件 SHA-256 哈希去 C 站认领真名、高清封面、触发词和底模角标。同一模型的多个版本自动折成一张卡，点右侧数字滑出全部版本、图钉固定常用版。点开模型详情直接看 **作者例图常用设置**、分块加载模型 **还需要的文件**（文本编码器 / VAE）、**作者介绍分段翻译**，以及无触发词 LoRA 的 **文件头里的常用词（推测）**；不联网用离线扫描也能认出 **Flux.2（Dev / Klein 9B / 4B）、Flux.3 Klein、Qwen 2.1、Z-Image、Lumina 2、MOSS Image、HiDream-O1** 等 25+ 新模型架构。
 
 <p align="center"><img src="docs/images/scan.webp" width="560" alt="扫描明细：把乱七八糟的本地文件名精准匹配回 C 站模型名"></p>
 
 <!-- guide:model_check -->
-**2. 打开别人分享的工作流，满屏红框缺模型。**  
-**模型检查** 在打开工作流时自动只读体检，能做到哪一步，看工作流里带了什么：
-- **带指纹的**（作者也装了本插件，出图、存工作流时默认记下每个模型的 SHA-256）：你电脑里其实有、只是改了名或挪了文件夹的同一个文件，能确定认出来，横幅上点一下 **换上** 就全部就位；真缺的按指纹去 C 站找，下载完核对一致才换上。
-- **没带指纹的**（作者没装本插件）：没法证明是哪一个文件，只能按名字找。别的文件夹里恰好有一个同名文件，会列出来让你逐个确认；VAE、文本编码器这类经常同名的组件不按名字猜。
-- **下载**时还会查工作流自带的下载链接（ComfyUI 官方模板就带着）和 ComfyUI-Manager 的模型清单，Hugging Face 的文件可以走国内镜像。只是名字对上的会标成 **按文件名下载**，你点了才下。
+**3. 模型挪了文件夹、改了名，或者开别人工作流满屏红框？按指纹一键找回。**  
+自己把模型换了个目录或改了名不急；用 AMB 保存或出的图、工作流默认会记录每个模型的 **SHA-256 指纹**，发给别人也能按模型指纹把对应的模型找回或装上。**模型检查** 在打开工作流时自动只读体检，不主动乱改画布：
+- **带指纹的**（作者也装了本插件，出图/存工作流默认记录 SHA-256）：电脑里哪怕改过名或挪过文件夹的同一个文件，也能确定认出来，点一下 **换上** 全部就位；真缺的按指纹去 C 站找，下载完核对一致才换上。
+- **没带指纹的**（作者没装本插件）：没法证明是哪一个文件，别的文件夹有同名文件时列出来让你逐个确认；VAE、文本编码器这类经常同名的组件绝不按名字瞎猜。
+- **下载** 还会查工作流自带的下载链接（官方模板就带着）和 ComfyUI-Manager 清单（Hugging Face 支持走国内镜像）；只有名字对上的会标为 **按文件名下载**，由你决定要不要下。
 
 <p align="center"><a href="docs/guides/model-check-rules.md"><img src="https://img.shields.io/badge/📖_模型检查怎么判断-完整规则-blueviolet?style=for-the-badge" alt="模型检查怎么判断：完整规则"></a></p>
 
 <p align="center"><img src="docs/images/model-check.webp" width="820" alt="模型检查：一键把 3 个改名或挪过文件夹的红框缺失节点换回正确模型"></p>
 
-<!-- guide:workflows -->
-**3. 存下调好的工作流，结构流程图和橙色预设差异一眼看清。**  
-顶部自带 **官方示例**（文生图、两段放大、图生图、局部重绘，自动配好你本机已有的模型），新手装上就能出图。存下的每张工作流卡点开就是清爽的 **结构流程图**：底模、LoRA、控制模型横跨在它们管辖的采样阶段（`① 出底图` → `② 放大重画`）上方。切换下方的 **预设标签**，和默认参数不同的阶段直接亮起 **橙色**，点任意方格就能在下方展开 `默认 → 当前预设` 的逐项对比；还能打成 `.zip` **配方包** 或生成短短一截 `⇅` 汉字/字母分享码发给别人。
-
-<p align="center"><img src="docs/images/workflows.webp" width="840" alt="工作流页：官方示例、结构流程图、切换预设后橙色高亮改动阶段及节点参数对比"></p>
-
-<!-- guide:saves -->
-**4. 想试几种新参数或加个 LoRA，又怕改坏现在这版 —— 画布存档。**  
-在画布上右键 → **存档当前工作流**，当前状态就存进画布底部的存档条（也可从左侧栏 **存档** 入口或主页 **多个版本对比跑图** 卡片直接进入，页首带有“存第 1 版底稿 → 回画布改好，再存新版 → 一起运行，并排看图” 3 步流程条）；接着随便改参数、加节点，点 `+` 再存几版。存档条支持选 **锁种**（同一组种子公平对比）或 **随机**，一键把几个存档按顺序排进队列。**存档** 页把每个存档改了什么和它跑出的图并排摆在一起；点底部存档条的数字 `1`、`2`、`3` 就能在当前标签页秒回那一版——**连输出节点上的预览图也会跟着切回那个存档跑出来的图**（`Ctrl+Z` 可撤回，满意的随时点 **收藏为工作流**）。
-
-<p align="center"><img src="docs/images/saves.webp" width="840" alt="画布存档：并排查看三个存档的参数节点改动与锁种出图，并在底部存档条一键切换回退"></p>
-
-<!-- guide:job_sheet -->
-想用同一张画布跑一大串提示词？画布右键 → **AMB** → **任务单（批量换提示词）**：一行贴一条提示词，填 **每条跑几次**、**每张之间歇几秒**，点 **开始**。跑的是开始时那张画布的副本，一张接一张，你的画布不动；随时 **暂停**、**继续**、**停止**。一条也不写，就是照画布原样隔一段时间跑一张。也可以让 AI 排任务单（“这几条各跑 4 张”“cfg 4、5、6 各跑 3 张”）。
-
 <!-- guide:picture_workflow -->
-**5. 翻到一张老图：“当时到底怎么调出来的？”**  
-在 **图库** 里按提示词、大模型、LoRA、种子或模型哈希秒搜（哪怕几亿像素的超大图也在后台独立进程生成缩略图，绝不卡死页面），把图往画布上一拖，当时的完整工作流直接回来。
+**4. 翻到一张老图：“当时到底怎么出的？”图库一搜，往画布一拖就回来。**  
+在 **图库** 里按提示词、大模型、LoRA、种子、文件名或模型哈希秒搜（哪怕几亿像素的超大图也在后台独立进程做缩略图，页面绝不卡顿），看完整参数或并排对比两张图，直接把图拖进画布，整套工作流原原本本回到眼前。
 
 <p align="center"><img src="docs/images/gallery.webp" width="820" alt="图库按标签词块搜索图片，拖入右侧画布立即还原完整工作流"></p>
 
-<!-- guide:combos -->
-**6. 每次开新图都要重连一遍大模型、LoRA 和起手提示词。**  
-框选画布上的这几个节点，右键 → **AMB** → **存为搭配**，就存成一张搭配卡。下次点 **放到画布**（或直接拖卡片），点哪里就在哪里放出一组连好线的节点，画布原有的东西分毫不动。想在已有节点后面加几个 LoRA？到 **当前节点 → 插入 LoRA** 里连点几张卡片，卡片上的数字 `1 · 2 · 3` 就是串联顺序（装了 rgthree 或 Easy-Use 还能一键塞进同一个 LoRA 堆叠节点），一次 `Ctrl+Z` 整串退回。
-
-<p align="center"><img src="docs/images/combo.webp" width="820" alt="把存好的模型 + LoRA + 提示词搭配一键放到画布上自动连好线"></p>
-
-<!-- guide:prompts -->
-**7. 提示词一长串逗号，改权重、调顺序眼都花了 —— 提示词工坊。**  
-点 **停到画布旁** 把工坊挂在画布左侧，选中任意提示词节点，正负面文本立刻拆成可视化词块：点 `+` / `−` 调权重，双击改字，拖拽换顺序，直接敲中文回车自动译成英文词块加进去，常用词卡还能直接拖进画布的正向（绿框）/ 反向（红框）输入框里。
-
-<p align="center"><img src="docs/images/prompt-studio.webp" width="820" alt="提示词工坊停靠在画布旁，按词块实时调整选中节点的提示词权重"></p>
-
-<!-- guide:voices -->
-**8. 想让画出来的角色开口说话。**  
-配合可选节点包 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)：导入 GPT-SoVITS 角色，按情绪绑定参考音频、修正多音字读音，在配音页写好台词直接生成语音。
-
-<p align="center"><img src="docs/images/voices.webp" width="760" alt="角色语音页面：按情绪管理参考音频与台词配音"></p>
-
-<!-- guide:undo -->
-**改错了也不怕。**  
-插件和 AI 在画布上改过的每一个参数、连过的每一根线，都按天记在 **记录** 里，展开就能看修改前后的数值，点 **在画布上找到** 直接跳过去，点 **撤销** 一键退回。
-
-<p align="center"><img src="docs/images/activity.webp" width="760" alt="操作记录页面：展开查看节点修改前后数值，一键在画布上找到或撤销"></p>
-
 <!-- guide:light -->
-**不抢你的显存和内存**：
-- 插件自身不加载任何生图模型，**零显存占用**，绝不和 ComfyUI 出图抢资源。
-- 浏览网格全程走小缩略图缓存，不把原图塞进浏览器；关闭窗口一分半后自动释放图片内存。
-- `Anomalous_TTS` 的语音模型在 ComfyUI 生图需要显存时会自动让出，点 **卸载模型** 则彻底清空。
+**零显存占用，不抢资源**：插件本身不加载任何生图模型，**零显存占用**，绝不和 ComfyUI 出图抢资源；浏览网格全程走缓存缩略图，关闭窗口一分半后自动释放浏览器图片内存。如果选装了 `Anomalous_TTS`，它的语音模型在 ComfyUI 出图时也会自动让出显存，或随时点 **卸载模型** 彻底清空。
 
 ### 📦 安装
-<!-- guide:install -->
 
+<!-- guide:install -->
 1. 在 **ComfyUI Manager** 里搜索 `Anomalous Model Browser`，安装后重启 ComfyUI；或在 `custom_nodes` 目录下手动克隆：
    ```bash
    cd custom_nodes
@@ -343,7 +288,86 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
    看不到这个立方体？可能被拖走了，或者换成了别的入口：点左上角 ComfyUI 的 **C** 菜单 → **Extensions → Anomalous Model Browser**，里面有 **打开 Anomalous 模型浏览器** 和 **重置悬浮入口位置**。想让它更显眼，去 **ComfyUI 设置 → Anomalous Model Browser → 界面**：**悬浮入口样式** 选 **胶囊文字**（会带上“模型浏览器”几个字），**悬浮入口大小** 选 **大**；或者 **浏览器入口模式** 选 **顶部动作栏**，放到运行按钮旁边。
 3. 需要角色配音的话，再安装 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)（ComfyUI Manager 搜索 `Anomalous TTS`）；不装完全不影响其他功能。
 
-扫描模型默认联网查 C 站（纯内置实现，无需额外装 Python 包）。没开代理或断网时选 **离线扫描** 也能直接从模型文件头识别底模与架构，等以后连上网再扫一次会自动补齐封面和触发词（详见下方“网络和备份”）。
+扫描模型默认联网查 C 站（纯内置实现，无需额外装 Python 包）。没开代理或断网时选 **离线扫描** 也能直接从模型文件头识别底模与架构，等以后连上网再扫一次会自动补齐封面和触发词（详见下方“云服务器、网络和备份”）。
+
+### 🎬 视频与讨论
+
+* 📺 **哔哩哔哩 (Bilibili)**：[功能演示](https://www.bilibili.com/video/BV1boHx61Enc/) · [角色配音演示](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
+* 💬 **Reddit**：[r/comfyui 上的讨论帖](https://www.reddit.com/r/comfyui/comments/1y21nko/i_built_a_free_100_local_workspace_for_comfyui/)
+
+### 🧰 更多效率工具与可选功能（按需展开）
+
+下面的功能全部内置好了，不想用可以完全忽略，需要时点开看就行。
+
+<details>
+<summary><b>⚡ 更多顺手工具：工作流预设 · 画布存档对比 · 批量任务单 · 常用搭配 · 提示词工坊 · 一键撤销</b></summary>
+
+<!-- guide:workflows -->
+#### 存下调好的工作流，结构流程图与橙色预设差异一眼看清
+顶部自带 **官方示例**（文生图、两段放大、图生图、局部重绘，自动配好你本机已有的模型），新手装上就能出图。存下的每张工作流卡点开就是清爽的 **结构流程图**：底模、LoRA、控制模型横跨在它们管辖的采样阶段（`① 出底图` → `② 放大重画`）上方。切换下方的 **预设标签**，和默认参数不同的阶段直接亮起 **橙色**，点任意方格就能在下方展开 `默认 → 当前预设` 的逐项对比；还能打成 `.zip` **配方包** 或生成短短一截 `⇅` 汉字/字母分享码发给别人。
+
+<p align="center"><img src="docs/images/workflows.webp" width="840" alt="工作流页：官方示例、结构流程图、切换预设后橙色高亮改动阶段及节点参数对比"></p>
+
+<!-- guide:saves -->
+#### 想试几种新参数或加个 LoRA，又怕改坏现在这版 —— 画布存档
+在画布上右键 → **存档当前工作流**，当前状态就存进画布底部的存档条（也可从左侧栏 **存档** 入口或主页 **多个版本对比跑图** 卡片直接进入，页首带有“存第 1 版底稿 → 回画布改好，再存新版 → 一起运行，并排看图” 3 步流程条）；接着随便改参数、加节点，点 `+` 再存几版。存档条支持选 **锁种**（同一组种子公平对比）或 **随机**，一键把几个存档按顺序排进队列。**存档** 页把每个存档改了什么和它跑出的图并排摆在一起；点底部存档条的数字 `1`、`2`、`3` 就能在当前标签页秒回那一版——**连输出节点上的预览图也会跟着切回那个存档跑出来的图**（`Ctrl+Z` 可撤回，满意的随时点 **收藏为工作流**）。
+
+<p align="center"><img src="docs/images/saves.webp" width="840" alt="画布存档：并排查看三个存档的参数节点改动与锁种出图，并在底部存档条一键切换回退"></p>
+
+<!-- guide:job_sheet -->
+#### 同一张画布跑一大串提示词 —— 任务单
+想用同一张画布跑一大串提示词？画布右键 → **AMB** → **任务单（批量换提示词）**：一行贴一条提示词，填 **每条跑几次**、**每张之间歇几秒**，点 **开始**。跑的是开始时那张画布的副本，一张接一张，你的画布不动；随时 **暂停**、**继续**、**停止**。一条也不写，就是照画布原样隔一段时间跑一张。也可以让 AI 排任务单（“这几条各跑 4 张”“cfg 4、5 和 6 各跑 3 张”）。
+
+<!-- guide:combos -->
+#### 每次开新图都要重连一遍大模型、LoRA 和起手提示词 —— 搭配
+框选画布上的这几个节点，右键 → **AMB** → **存为搭配**，就存成一张搭配卡。下次点 **放到画布**（或直接拖卡片），点哪里就在哪里放出一组连好线的节点，画布原有的东西分毫不动。想在已有节点后面加几个 LoRA？到 **当前节点 → 插入 LoRA** 里连点几张卡片，卡片上的数字 `1 · 2 · 3` 就是串联顺序（装了 rgthree 或 Easy-Use 还能一键塞进同一个 LoRA 堆叠节点），一次 `Ctrl+Z` 整串退回。
+
+<p align="center"><img src="docs/images/combo.webp" width="820" alt="把存好的模型 + LoRA + 提示词搭配一键放到画布上自动连好线"></p>
+
+<!-- guide:prompts -->
+#### 提示词一长串逗号，改权重、调顺序眼都花了 —— 提示词工坊
+点 **停到画布旁** 把工坊挂在画布左侧，选中任意提示词节点，正负面文本立刻拆成可视化词块：点 `+` / `−` 调权重，双击改字，拖拽换顺序，直接敲中文回车自动译成英文词块加进去，常用词卡还能直接拖进画布的正向（绿框）/ 反向（红框）输入框里。
+
+<p align="center"><img src="docs/images/prompt-studio.webp" width="820" alt="提示词工坊停靠在画布旁，按词块实时调整选中节点的提示词权重"></p>
+
+<!-- guide:undo -->
+#### 改错了也不怕 —— 操作记录与一键撤销
+插件和 AI 在画布上改过的每一个参数、连过的每一根线，都按天记在 **记录** 里，展开就能看修改前后的数值，点 **在画布上找到** 直接跳过去，点 **撤销** 一键退回。
+
+<p align="center"><img src="docs/images/activity.webp" width="760" alt="操作记录页面：展开查看节点修改前后数值，一键在画布上找到或撤销"></p>
+
+</details>
+
+<details>
+<summary><b>🤖 可选：AI 工作台与隐私控制（MCP — 默认只改副本、每步可见可撤）</b></summary>
+
+<!-- guide:ai_workbench -->
+#### 你用人话当导演，AMB 搭线，ComfyUI 用你的模型出图
+很多人一听“在 ComfyUI 里接 AI”，第一反应往往是两个顾虑：要么怕它像云端生图软件一样绕开自己的本地模型库，要么怕大模型瞎猜节点连线，把自己辛辛苦苦调好的画布搅得一团糟。**AI 工作台**走的是另一条路——**让 AI 当你的操作助手，规矩由 AMB 守住**：
+
+- **默认只改“副本”，绝不弄乱你开着的画布。** 任务默认开启 **在副本上改**：AI 第一次动手前，AMB 自动把工作流复制到副本标签页里操作（随时点 **看 AI 的副本** 切过去），你原来的标签页一笔不动；时间线上的每一步都能 **撤销** 或 **在画布上找到**。标题栏带 **隐私：推荐 / 自定 / 关**（点开 **隐私一览**）、**暂停**（只停跑图不撤销，再留言就继续）与 `⋯`（**停下并撤销改动**、**接着这个任务开新任务**、**卡住了？**与桌面通知）。
+- **不靠瞎猜连线，优先用你的工作流、蓝图与实测“出图方法”。** AI 会直接调用**你存好的工作流及预设**、**图库某张图自带的工作流**，或是开箱即用的 **官方示例**；需要加功能时，由 AMB 按你已装的节点包搭上实测过的 **出图方法**（Tile 锁图二段放大、半途换模型接着画、换模型只改人物或只改场景、背景虚化的图放大时只重画人物、裁切缝合 / LanPaint 局部重绘、修手先放大再修、换背景、姿势/深度控制……），并配合按需 **给 AI 的建议**（Skill，如按主模型参数量给动作建议、分阶段出图思路）。多步流程会在 **面板** 先放一张 **蓝图** 卡让你删步或换模型，再由 AMB 一次连好线；点留言框旁边的 `+` 可打开 **给 AI 的素材** 大窗或 **新搭一张（文生图）**，也可以在出图方法里点 **这次用它** 指定。
+- **先挑快底图，再跑慢精修，面板拉帘对比。** 跑两段放大这类耗时流程时，AI 可以先快速跑 3 张第一段底图预览（不污染正式输出目录）；右侧 **面板** 弹出挑选卡片，你点 **就选这张**（出新底图前还能点 **改选这张** 换一张），第二段直接接着这张图做细节重绘，省掉重跑底图的时间。出图后面板提供 **前后拉帘对比**、**效果好 / 不太行**（展开“手坏了 / 脸不对 / 构图偏了 / 太暗…”等十个问题按钮），还能点图片右上角 `✎` 用画笔标出区域局部重绘（隐私任务也支持仅放出一小块图给 AI 看）；点工作台任意图片直接打开图库看图器；AI 问“用哪个模型 / 工作流”时直接给你带封面的卡片或让你自己挑。
+- **权限全由「先问我」把关，隐私交给「隐私设置」。** **先问我** 顶部提供 **谨慎 / 平衡 / 放手** 三档安全级别，也可逐项开关改画布、用显卡、下载、联网扫描、挪动文件、第三方节点包与未试过的新路线，并支持拓展接入 **本机小模型**（Ollama / LM Studio）在本地代改密文或看图检查。开启 **隐私设置** 后，提示词（`[P1]`）、图片（`[img1]`）以及模型、工作流与搭配名（`[M1]`）全部留在本机只给代号（配 **取我存的提示词**、左右对照 **隐私一览**、按词放行、替身样图、**发给 AI 了什么** 及对话模糊防窥）。
+
+<p align="center"><img src="docs/images/ai-workbench.webp" width="840" alt="AI 工作台：先在右侧面板三选一挑中快速底图，再锁种完成二段精修并用拉帘滑块对比前后细节"></p>
+
+<!-- guide:connect_ai -->
+#### 接入 AI 软件（MCP）
+Antigravity、Claude、Cursor、Cherry Studio、VS Code 等支持 MCP 的客户端可通过本机地址 `http://127.0.0.1:8188/anomalous/mcp` 连接（仅接受本机请求）。在 **连接 AI** 中除了复制一句配置，还可选 **全部工具**、**跑图精简**（`?tools=core`）或 **我选的** 工具清单。完整配置与工具清单见 [docs/guides/mcp.md](docs/guides/mcp.md)。
+
+</details>
+
+<details>
+<summary><b>🎙️ 可选扩展：给画出来的角色配音（Anomalous_TTS）</b></summary>
+
+<!-- guide:voices -->
+#### 让画出来的角色开口说话
+配合可选节点包 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)：导入 GPT-SoVITS 角色、设角色方形封面、按情绪绑定参考音频、修正多音字读音，并在配音页写好台词直接生成角色对话语音，生成结果可在音频库统一回放管理。不装完全不影响主插件的其他功能。
+
+<p align="center"><img src="docs/images/voices.webp" width="760" alt="角色语音页面：按情绪管理参考音频与台词配音"></p>
+
+</details>
 
 <details>
 <summary><b>📖 每个页面和工具的详细说明</b></summary>
@@ -355,7 +379,7 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
 | :--- | :--- |
 | **🏠 主页** | 首屏直接是 **让 AI 帮你做** 6 张起手卡（点开直达工作台起手页），下方 **自己动手** 9 张工具卡（含无需 AI 的 **跑我存的预设**、**↻ 和上次一样再跑** 与 **多个版本对比跑图**），加上新手第一步（扫描模型文件夹、界面导览）、AI 最近做的任务和最新操作记录。 |
 | **🕘 记录** | 按天列出插件和 AI 做过的全部改动：画布改动（具体哪个节点的什么参数从多少改成多少、增删了哪些节点、关联哪个 AI 任务）与文件操作（模型、封面、工作流、搭配、提示词、图片、音频）。支持 **在画布上找到** 定位节点，没被后续覆盖的画布改动可随时 **撤销**。 |
-| **📦 模型** | 带封面、触发词和底模分类条浏览模型，左侧可按子文件夹筛选，点 **+** 一键往画布放加载器。来自同一 C 站模型页的多个版本自动收成一张卡（点右侧数字展开橙边版本排、图钉固定默认显示版本、右上可 **展开全部版本**）。档案式详情页新增无触发词 LoRA 的 **文件头里的常用词（推测）**、**作者例图常用设置**、分块加载模型 **还需要的文件**（文本编码器 / VAE）、**作者的介绍分段翻译**，以及 **Civitai 上的全部版本** 按 SHA-256 核对下载。另含 **整理**（新增第 3 步“没放进底模文件夹”）与 **模型来源**。 |
+| **📦 模型** | 带封面、触发词和底模分类条浏览模型，可直接把下载好的模型文件拖进页面（或点 **＋ 导入**）自动认清类型和底模并放进对应目录；左侧可按子文件夹筛选，点 **+** 一键往画布放加载器。来自同一 C 站模型页的多个版本自动收成一张卡（点右侧数字展开橙边版本排、图钉固定默认显示版本、右上可 **展开全部版本**）。档案式详情页展示无触发词 LoRA 的 **文件头里的常用词（推测）**、**作者例图常用设置**、分块加载模型 **还需要的文件**（文本编码器 / VAE）、**作者的介绍分段翻译**，以及 **Civitai 上的全部版本** 按 SHA-256 核对下载。另含 **整理**（含第 3 步“没放进底模文件夹”）与 **模型来源**。 |
 | **🖼️ 图库** | 读取 ComfyUI 的 `output` 文件夹（几亿像素超大图由后台子进程做缩略图，浏览不卡）。支持按提示词、模型、LoRA、种子、文件名或模型哈希组合搜索；看大图与完整参数、勾选两张对比工作流差异、拖进画布还原工作流，或点 **☆** 存为工作流、搭配、提示词。 |
 | **✨ AI 工作台** | 按任务记录并操控接入的 AI：左侧任务树（后续任务自动缩进挂在主任务下），中间实时步骤时间线（每步可撤销，带 **在副本上改** 与 **看 AI 的副本**；标题栏带 **隐私：推荐 / 自定 / 关** 点开左右对照 **隐私一览**、**暂停** 与 `⋯` 里的 **停下并撤销改动**、**接着这个任务开新任务**、**卡住了？**），右侧开关栏为常驻带字的 **面板**（**蓝图** 卡、一阶段底图挑选与 **改选这张**、前后拉帘滑块、模型/工作流卡片选择题、`✎` 涂抹局部重绘、**效果好 / 不太行** 与问题按钮）、**素材**、**成果** 与收进 **更多** 的 **节点结构**、**定下的事**、**出图方法**（含 **给 AI 的建议**），留言框 `+` 打开 **给 AI 的素材** 大窗与 **新搭一张（文生图）**，隐私任务带 **取我存的提示词** 与对话模糊防窥，权限由 **先问我**（三档安全级别与拓展 **本机小模型**）把关。 |
 | **🪡 工作流** | 顶部是 **官方示例**（含 `Anima · 背景虚化，只重画人物`）与 **存档**，下方是保存的工作流卡。详情页从上到下依次为 **结构流程图**、吸顶 **预设标签栏**（橙色标出与默认不同的阶段，点方格看逐项差异，支持 **+ 新预设**）、**交给 AI**、历史版本对比恢复，支持导出 `.zip` **配方包** 或通过 `⇅` 收发短分享码、拖入图片/压缩包导入。 |
@@ -371,9 +395,6 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
 * **模型扫描**：按文件哈希向 C 站匹配模型信息与封面；离线时可从文件头识别 25+ 新模型架构与 Manager 清单 300+ 真实模型布局，并读取 LoRA 文件头里的常用词（推测）。
 * **设置**（最下方）：中英文实时切换（工作台面板、留言框与底部存档条立即生效，无需刷新页面）、界面缩放、深浅主题、缩略图与视频封面、Hugging Face 国内镜像、数据备份导出/导入，以及自动附带版本与显卡信息的 **报告问题**。
 
-<!-- guide:connect_ai -->
-**接入 AI 软件（MCP）**：Antigravity、Claude、Cursor、Cherry Studio、VS Code 等支持 MCP 的客户端可通过本机地址 `http://127.0.0.1:8188/anomalous/mcp` 连接（仅接受本机请求）。在 **连接 AI** 中除了复制一句配置，还可选 **全部工具**、**跑图精简**（`?tools=core`）或 **我选的** 工具清单。完整配置与工具清单见 [docs/guides/mcp.md](docs/guides/mcp.md)。
-
 </details>
 
 <details>
@@ -387,7 +408,7 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
 </details>
 
 <details>
-<summary><b>🌐 网络和备份</b></summary>
+<summary><b>🌐 云服务器、网络和备份</b></summary>
 <!-- guide:network -->
 
 **云服务器（AutoDL、RunPod 等）：** 海外云服务器完整支持；国内云服务器只能部分支持：多半连不上 Civitai，有的能连上 `civitai.red` 认出模型名与触发词（封面较难下载）。目前只实测过一台 AutoDL 服务器。从非本机浏览器直接访问时插件默认只读保护，建议通过 SSH 隧道映射到本地打开，详见 [docs/guides/cloud-server.md](docs/guides/cloud-server.md)（内附可直接丢给 AI 助手照着配的步骤）。
@@ -395,6 +416,16 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
 **关于网络：** 扫描封面与谷歌提示词翻译需要联网（连不上 `civitai.com` 时会自动尝试 `civitai.red`；无代理时选 **离线** 扫描同样能识别底模）。下载 Hugging Face 模型可在 **设置 → 模型下载** 开启 `hf-mirror.com` 国内镜像。日常浏览模型、图库、工作流、存档和搭配**完全不需要联网**。
 
 **备份自己的数据：** **设置 → 备份 → 导出** 会把工作流、预设、画布存档、搭配、提示词库、节点参数以及你自定义的模型名/备注/封面打包成一个 `.zip`，换电脑或重装后点 **导入** 即可恢复。导入从不删东西：和备份里不一样的文件默认留着你电脑上的，选了“换成备份里的”才替换，原来的进回收站。备份里还记着你有哪些模型和它们的指纹，换了新电脑，缺的模型可以照着清单查来源补下载。（数据保存在 ComfyUI 用户目录下的 `workflows/anomalous_*` 文件夹中。）
+
+</details>
+
+<details>
+<summary><b>🆕 v1.64 更新内容</b></summary>
+
+- **主页「让 AI 帮你做」六张起手卡，点开直达工作台**：主页首屏直接摆出 6 张 AI 起手卡（**先试一次**、**说想要什么，AI 安排着跑**、**照我说的出图**、**改一张图**、**隐私出图**、**看懂我的画布**），取消弹窗直接进工作台宽敞起手页——选图实时预览、用通用大窗挑模型和工作流、按步骤选 **从哪开始**（`新搭一张` / `我开着的画布` / `我存的工作流` / `让 AI 挑`），点「开始」就地切换为带准确任务 ID 的 **三步让 AI 接手**。不需要 AI 的 **跑我存的预设**（带 **↻ 和上次一样再跑**）与 **多个版本对比跑图** 归入下方「自己动手」。
+- **成套「隐私设置」与左右对照「隐私一览」**：支持把提示词、图片以及 **模型名（`[M1]`）、工作流名、搭配名** 全部换成代号留在本机（可给单个模型永久上锁「藏名」、勾几段作者介绍发给 AI，并点 **取我存的提示词** 填进密文框）。点任务标题栏的 **隐私** 按钮打开 **隐私一览**——按种类分桌、**左右对照**“AI 看不到的”和“AI 看得到的”，支持按词块挑词放行、看词义、标图局部放行、跑无害静物替身样图与查 **发给 AI 了什么**；对话里藏起的内容默认 **模糊防窥**（悬停或点一下看清），AI 话里的代号自动还原显示真名；**先问我** 里还可选接 **本机小模型**（Ollama / LM Studio）在本地代改密文或做 6 项看图检查。
+- **多步「蓝图」卡、新出图方法与「任务单」**：AI 规划多步流程时先在面板给出 **蓝图** 卡，可删步骤、换同家族模型，点 **照这个搭** 由 AMB 在新标签页一次连好线，跑前先出 3 张底图小样供挑选（选错在出新图前还能点 **改选这张**）；新增换模型精修 **只改人物 / 只改场景**、背景虚化图用的 **放大·只重画人物**，≤ 8 GB 显卡放大自动走原生 **VAE 分块解码**，并自动拦下英文模型误跑中文提示词与 Anima 2B Tile 误配 2.9B 模型；画布右键（或让 AI 排单）支持 **任务单** 批量跑多行提示词。
+- **「给 AI 的素材」大窗 & 模型库 / 语音打磨**：留言框左侧 `+`（或右栏 **素材**）打开三栏 **给 AI 的素材** 大窗，随留言附带模型/出图方法/搭配/工作流/提示词/节点和用途标注；AI 提问选模型或工作流时直接给带封面的卡片并支持自己挑。离线识别跟进 **Flux.2（Dev / Klein 9B / 4B）、Flux.3 Klein、Qwen 2.1、Z-Image、Lumina 2、MOSS Image、HiDream-O1** 等 25+ 新架构与 LoRA **文件头里的常用词（推测）**；模型详情改版为档案页，新增 **作者例图常用设置**、分块模型 **还需要的文件** 与 **作者的介绍分段翻译**；**整理** 新增第 3 步“没放进底模文件夹”；角色语音支持给角色卡设 **方形封面**。
 
 </details>
 

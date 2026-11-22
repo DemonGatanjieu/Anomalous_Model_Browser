@@ -21,7 +21,8 @@ MARK = re.compile(r"^<!-- guide:([a-z_]+) -->$")
 ENDS = ("### ", "<h2", "<details", "</details>")  # a marked part of the README ends there, or at the next mark
 PART_BYTES = mcp_fit.BUDGET - 600  # room for the answer's other fields
 TITLES = {  # the list's words for each topic; a README mark without one is listed by its first line
-    "idea": "What Anomalous is for", "ai_workbench": "The AI workbench: how it works with you",
+    "idea": "What Anomalous is for", "import_models": "Importing model files by drag and drop",
+    "ai_workbench": "The AI workbench: how it works with you",
     "names": "Scanning: real names, covers and trigger words", "model_check": "Model Check: missing models put back",
     "workflows": "Workflow cards, their stages and presets", "saves": "Canvas saves (存档)",
     "job_sheet": "Job sheet (任务单): many prompts or settings, a rest between pictures",
