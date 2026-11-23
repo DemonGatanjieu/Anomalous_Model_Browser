@@ -1,12 +1,17 @@
 /**
  * The shell's left icon rail: one entry per page (image pages, then the audio pages),
  * the canvas tools and settings. Entries open pages through `owner.goTo(page)`;
- * ui_rail_tools.js fills `owner.railTools` (scan, doctor, current node) and
- * `owner.railFoot` (settings). Old ids are kept (`#anomalous-models-btn` …) so tours
- * and other modules still find them.
+ * ui_rail_tools.js fills `owner.railTools` (the tools, then More) and `owner.railFoot`
+ * (settings). Old ids are kept (`#anomalous-models-btn` …) so tours and other modules
+ * still find them.
+ *
+ * The rail owns which entries show (rail_pins.js: the core ones always, the others when pinned,
+ * the rest listed under More), the open page, and news dots; each change draws the tools again.
  */
 
 import { translate as t } from './locales.js';
+import { isTtsInstalled } from './audio_engines.js';
+import { applyRailHints, isRailPinned, loadRailPins, resetRailPinsToMinimal, saveRailPins, toggleRailPin } from './rail_pins.js';
 
 // One line style for the rail (Google's rounded outline): 20 px, 1.8 strokes, round ends.
 const icon = paths => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
@@ -27,29 +32,44 @@ export const PAGE_ICONS = {
     presets: icon('<path d="M4 6h12M4 11h12M4 16h7"/><path d="M15 14.5v6l5-3z"/>'),
     script: icon('<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/><path d="M8.5 9h7M8.5 12.5h4.5"/>'),
     'audio-gallery': icon('<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
+    // The rail's More button (ui_rail_tools.js): the other pages and tools.
+    more: icon('<rect x="4" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8"/>'),
 };
 
-/** Pages on the rail, top to bottom: no more than the nine number keys. `audio`: the page belongs to the audio domain. */
+/**
+ * Pages on the rail, top to bottom: no more than the nine number keys. The core four first, so 1-4 stay
+ * Home, Models, Gallery and Workflows; the others show only when pinned. `audio`: the page belongs to the audio domain.
+ */
 export const RAIL_PAGES = Object.freeze([
     { page: 'home', id: 'anomalous-home-btn', labelKey: 'shellHome' },
-    { page: 'activity', id: 'anomalous-activity-btn', labelKey: 'shellActivity' },
-    { page: 'ai', id: 'anomalous-ai-btn', labelKey: 'shellAi', railKey: 'shellAiRail' }, // the AI workbench (ui_ai_workbench.js)
     { page: 'models', id: 'anomalous-models-btn', labelKey: 'models' },
     { page: 'gallery', id: 'anomalous-gallery-btn', labelKey: 'gallery' },
     { page: 'recipes', id: 'anomalous-notebook-btn', labelKey: 'recipeTitle' },
     { page: 'combos', id: 'anomalous-combos-btn', labelKey: 'shellCombos' },
     { page: 'prompts', id: 'anomalous-prompts-btn', labelKey: 'shellPrompts' }, // Prompt Studio as a page
+    { page: 'ai', id: 'anomalous-ai-btn', labelKey: 'shellAi', railKey: 'shellAiRail' }, // the AI workbench (ui_ai_workbench.js)
+    { page: 'activity', id: 'anomalous-activity-btn', labelKey: 'shellActivity' },
     { page: 'voices', id: 'anomalous-voices-btn', labelKey: 'shellVoices', audio: true }, // with Voice-over and Audio as its views
 ]);
 
 const div = className => Object.assign(document.createElement('div'), { className });
 
 /**
- * Builds the rail; its logo is `.anomalous-rail-brand`.
- * Returns `{ root, items: Map(page → button), setActive(page | null), refreshLanguage() }`;
- * `setActive` takes a rail page or a tool's page (scan, doctor, assistant), which lights its tool button.
+ * Builds the rail; its logo is `.anomalous-rail-brand`. Returns its controller (`owner.rail`, ui_sidebar.js):
+ * `root`, `items` (Map page → button), the entries shown (`visiblePages`, `isPinned`, `togglePin`, `resetPins`),
+ * Anomalous_TTS (`ttsInstalled`, `voicesShown`: Home's voice card), the open page (`setActive` takes a rail page
+ * or a tool's page, `activePage`), news dots (`setNews`, `hasNews`), `hydrate()` and `refreshLanguage()`.
  */
 export function createShellRail(owner) {
+    // Read before the window writes keys of its own; kept at once, so the next load does not decide again.
+    let pins = loadRailPins();
+    saveRailPins(pins);
+    let ttsInstalled = false; // known after hydrate(); until then Voices shows only when pinned
+    let activePage = null;
+    const news = new Set();
+    const isPinned = id => isRailPinned(pins, id);
+    const voicesShown = () => ttsInstalled || isPinned('voices');
+
     const root = document.createElement('nav');
     root.id = 'anomalous-rail';
     root.setAttribute('aria-label', 'Anomalous');
@@ -63,10 +83,11 @@ export function createShellRail(owner) {
 
     const nav = div('anomalous-rail-nav');
     const marker = div('anomalous-rail-marker');
+    const audioSep = div('anomalous-rail-sep');
     nav.appendChild(marker);
     const items = new Map();
     for (const entry of RAIL_PAGES) {
-        if (entry.audio && !nav.querySelector('.anomalous-rail-sep')) nav.appendChild(div('anomalous-rail-sep'));
+        if (entry.audio && !audioSep.parentNode) nav.appendChild(audioSep);
         const button = document.createElement('button');
         button.type = 'button';
         button.id = entry.id;
@@ -83,23 +104,27 @@ export function createShellRail(owner) {
     owner.railFoot = div('anomalous-rail-foot');
     root.append(brand, nav, div('anomalous-rail-sep'), owner.railTools, div('anomalous-rail-spacer'), owner.railFoot);
 
-    // The tooltip names the entry and its number key (1-9 from the top, ui_shell_nav.js).
+    const visiblePages = () => RAIL_PAGES.filter(entry => isPinned(entry.page));
+
+    // The tooltip names the entry and its number key: 1-9 down the entries shown (ui_shell_nav.js).
     const refreshLanguage = () => {
-        RAIL_PAGES.forEach((entry, index) => {
+        const shown = visiblePages();
+        for (const entry of RAIL_PAGES) {
             const button = items.get(entry.page);
             const text = t(entry.labelKey);
+            const key = shown.indexOf(entry) + 1;
             button.querySelector('.anomalous-rail-label').textContent = t(entry.railKey || entry.labelKey);
             button.setAttribute('aria-label', text);
-            // Only the first nine have a number key.
-            button.dataset.ambTooltip = index < 9 ? t('shellRailKey', { name: text, key: index + 1 }) : text;
+            button.dataset.ambTooltip = key ? t('shellRailKey', { name: text, key }) : text;
             button.dataset.ambTooltipPos = 'right';
-        });
+        }
         syncCompact();
     };
 
-    // The highlight is a pill behind the current entry's icon (the icon's own box, as its hover).
+    // The highlight is a pill behind the current entry's icon (the icon's own box, as its hover). An open
+    // page that is not on the rail has none: More lights instead (ui_rail_tools.js).
     const moveMarker = () => {
-        const current = [...items.values()].find(button => button.classList.contains('active'));
+        const current = [...items.values()].find(button => button.classList.contains('active') && !button.hidden);
         marker.classList.toggle('is-shown', !!current);
         const mark = current?.querySelector('svg')?.getBoundingClientRect();
         if (!mark?.height) return;
@@ -117,22 +142,73 @@ export function createShellRail(owner) {
         moveMarker();
     };
     if (typeof ResizeObserver === 'function') new ResizeObserver(syncCompact).observe(root);
-    refreshLanguage();
+
+    const showPinned = () => {
+        for (const [page, button] of items) button.hidden = !isPinned(page);
+        audioSep.hidden = !isPinned('voices');
+        refreshLanguage();
+        owner.renderRailTools?.();
+    };
+    showPinned();
+
+    /** Runs `change` on the pins or what is known, keeps the pins and shows the result (Home's voice card too). */
+    const update = (change) => {
+        const voicesBefore = voicesShown();
+        change();
+        saveRailPins(pins);
+        showPinned();
+        if (voicesShown() !== voicesBefore) owner.refreshHome?.();
+    };
+
+    // Once per load, without holding the window up: whether Anomalous_TTS is installed and, until read once,
+    // what was used before. A failed request changes nothing and is asked again next load.
+    let hydrated = false;
+    const hydrate = async () => {
+        if (hydrated) return;
+        hydrated = true;
+        const [installed, hints] = await Promise.all([
+            isTtsInstalled().catch(() => false),
+            pins.hintsApplied || pins.customized ? null
+                : fetch('/anomalous/rail_hints').then(response => (response.ok ? response.json() : null)).catch(() => null),
+        ]);
+        update(() => {
+            ttsInstalled = installed;
+            pins = applyRailHints(pins, hints, { ttsInstalled: installed });
+        });
+    };
+
+    const mark = (button, on) => {
+        button.classList.toggle('active', on);
+        if (on) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+    };
 
     return {
         root,
         items,
+        visiblePages,
+        isPinned,
+        togglePin: id => update(() => { pins = toggleRailPin(pins, id); }),
+        resetPins: () => update(() => { pins = resetRailPinsToMinimal(pins); }),
+        ttsInstalled: () => ttsInstalled,
+        voicesShown,
+        activePage: () => activePage,
         setActive(page) {
-            const mark = (button, on) => {
-                button.classList.toggle('active', on);
-                if (on) button.setAttribute('aria-current', 'page');
-                else button.removeAttribute('aria-current');
-            };
+            activePage = page ?? null;
             for (const [key, button] of items) mark(button, key === page);
-            owner.railTools.dataset.current = page ?? '';
-            for (const button of owner.railTools.querySelectorAll('button[data-page]')) mark(button, button.dataset.page === page);
+            owner.renderRailTools?.(); // the tool open, or More, wears the pill
             moveMarker();
         },
+        hasNews: page => news.has(page),
+        /** A dot on an entry: something new there (the AI workbench while the AI works elsewhere); on More while it is under it. */
+        setNews(page, on) {
+            if (news.has(page) === Boolean(on)) return;
+            if (on) news.add(page);
+            else news.delete(page);
+            items.get(page)?.classList.toggle('has-news', Boolean(on));
+            owner.renderRailTools?.();
+        },
+        hydrate,
         refreshLanguage,
     };
 }

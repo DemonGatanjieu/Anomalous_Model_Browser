@@ -101,8 +101,11 @@ export function createDOM() {
         const savedViewMode = localStorage.getItem('anomalous_view_mode') || 'compact';
         container.classList.add(`view-mode-${savedViewMode}`);
 
-        // Rail: pages, tools, settings. ui_rail_tools.js fills its tool slots below.
+        // Rail: pages, tools, settings. ui_rail_tools.js fills its tool slots below. Made before anything
+        // here writes keys of its own (bindShellMaximize, installShellNavigation's page reopened next time):
+        // it tells a browser new to Anomalous from an earlier version's by those keys (rail_pins.js).
         const rail = createShellRail(this);
+        this.rail = rail;
         const brand = rail.root.querySelector('.anomalous-rail-brand');
         brand.addEventListener('click', themeEasterEgg(brand));
         this.modelsBtn = rail.items.get('models');
@@ -249,7 +252,7 @@ export function createDOM() {
         watchWorkflowLoads(this);
         watchOpenedWorkflows();
 
-        const isScanning = watchScans(this);
+        this.isScanning = watchScans(this);
         const settingsHubControl = createSettingsHub(this, {
             container,
             savedScale,
@@ -260,8 +263,9 @@ export function createDOM() {
             updateNoticeBtn,
             icons: SIDEBAR_ICONS,
         });
-        this.renderRailTools = () => renderRailTools(this, { isScanning, settingsButton: settingsHubControl.button });
+        this.renderRailTools = () => renderRailTools(this, { settingsButton: settingsHubControl.button });
         this.renderRailTools();
+        void rail.hydrate(); // Anomalous_TTS and, once, what an earlier version used
 
         bindShellResize(container);
         bindDockResize(container);

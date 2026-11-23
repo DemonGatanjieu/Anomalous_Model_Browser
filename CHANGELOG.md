@@ -1,5 +1,13 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.65.0 (A lighter rail, with More) — unreleased
+
+- 左边的图标栏清爽了：只常驻「主页」「模型」「图库」「工作流」「模型检查」，其余的页面和工具都收进新的「更多」，点开每一项有一句话说明，点一下就打开。常用的点它右边的图钉就钉回左边，菜单不关；「恢复精简侧栏」一下全收回。数字键跟着左边显示的走：1–4 固定是主页、模型、图库、工作流，钉上来的接着排。打开收在「更多」里的页面时，「更多」会亮起来；AI 有新动静、正在扫描，也会在「更多」上提示。
+- The left rail is lighter: Home, Models, Gallery, Workflows and Model Check stay; the other pages and tools move into a new "More", each with a line saying what it does, a click opening it. Press the pin at a row's right to keep one on the rail, the menu staying open; "Reset to minimal rail" takes them all off again. The number keys follow what the rail shows: 1–4 are always Home, Models, Gallery and Workflows, pinned pages after them. More lights up while the open page is under it, and shows news from the AI and a running scan for the entries it holds.
+
+- 从旧版本升级不打乱习惯：以前用过的（搭配、提示词、AI 工作台、存档、当前节点、扫描、角色语音）第一次打开还在左边，没用过的才收进「更多」。装了 Anomalous_TTS 的，「角色语音」自己出现在左边、主页有「给角色配音」；没装时这两处都不显示，在「更多」的「扩展功能」里能找到。
+- Upgrading keeps your habits: what you used before (Combos, Prompts, the AI workbench, Saves, Current node, Scan, Voices) is still on the rail the first time, and only what you never used goes into More. With Anomalous_TTS installed, Voices shows on the rail and Home has "Give a character a voice"; without it neither shows, and Voices waits under More's "Extensions".
+
 ## v1.64.1 (Home puts the everyday tools first) — 2026-11-23
 
 - 主页先给日常最常用的事：打开 AMB 第一眼是四张大卡「找模型，放进节点」「修复缺失的模型」「翻看生成的图」「多个版本对比跑图」，每张都写着一句能做什么，不用再把鼠标停上去才知道。四张卡配了和 AI 起手卡同一画风的小图。「找模型」那张上有「＋ 导入模型」，新下的模型文件也可以直接拖到主页，和拖到模型页一样认清类型、放进对应的文件夹。其余五个工具排成一排小卡，「给角色配音」是扩展，挪到最后。

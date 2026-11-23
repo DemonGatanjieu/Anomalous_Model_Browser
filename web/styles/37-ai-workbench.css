@@ -1053,23 +1053,6 @@
     font-size: 11px;
 }
 
-/* ---------- the rail's dot when the AI did something ---------- */
-.anomalous-rail-item.has-news {
-    position: relative;
-}
-
-.anomalous-rail-item.has-news::after {
-    content: '';
-    position: absolute;
-    top: 6px;
-    right: 11px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--amb-ok);
-    box-shadow: 0 0 0 2px var(--amb-bg-panel, #16161a);
-}
-
 /* A long note of the AI's, folded to its first lines (ui_ai_step_body.js). */
 .anomalous-ai-fold { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .anomalous-ai-fold > :first-child { max-width: 100%; }

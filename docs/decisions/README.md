@@ -141,6 +141,11 @@ tasks rather than a manual: each card opens its page, and a first visit lands th
 AMB stays the chore layer around ComfyUI (AD-016 keeps one engine per page); a new
 page earns a rail entry only when it is a place users return to, not a one-off tool.
 
+Later (1.65): the rail keeps a core (Home, Models, Gallery, Workflows, Model Check) and More
+holds the other pages and tools, each with a pin to keep it on the rail. One layout for everyone,
+no old/new switch: a new install starts with the core, an upgrade keeps what that browser and the
+user's files show was used, Voices comes with Anomalous_TTS, and the user's own pins win from then on.
+
 ## AD-018 — The activity log records what Anomalous changed, without undo for now
 
 Users need to see what the plugin did to their canvas and files. File changes are

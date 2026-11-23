@@ -223,6 +223,171 @@
     background: transparent !important;
 }
 
+/* An entry not pinned (rail_pins.js) stays in the rail, hidden; it is listed under More. */
+.anomalous-rail-item[hidden] {
+    display: none;
+}
+
+/* More (ui_rail_tools.js) wears the pill while the open page is under it (the tools' .active above). */
+#anomalous-more-btn {
+    position: relative;
+}
+
+/* A dot: something new on that page (the AI workbench while the AI works elsewhere), on its entry or on
+   More while the entry is under it. */
+.anomalous-rail-item.has-news::after,
+#anomalous-more-btn.has-news::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 11px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--amb-ok);
+    box-shadow: 0 0 0 2px var(--amb-bg-panel, #16161a);
+}
+
+/* A scan runs while scan is under More: a small turning ring at the icon's other corner. */
+#anomalous-more-btn.is-scanning::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 11px;
+    width: 6px;
+    height: 6px;
+    border: 1.5px solid var(--amb-ok);
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: anomalous-radar-spin 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #anomalous-more-btn.is-scanning::before { animation: none; }
+}
+
+/* More's menu (ui_rail_more.js): the popup menu's panel (28-workflows.css, loaded after this file: hence both
+   classes) beside the rail, as tall as the window allows; each row a page or tool, the pin at its right. */
+.anomalous-popup-menu.anomalous-rail-more-menu {
+    width: 340px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+}
+
+.anomalous-rail-more-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.anomalous-rail-more-go {
+    flex: 1;
+    min-width: 0;
+    gap: 10px;
+}
+
+.anomalous-rail-more-go.is-current {
+    background: var(--amb-current-bg);
+}
+
+.anomalous-rail-more-icon {
+    display: flex;
+    flex-shrink: 0;
+    color: var(--amb-text-muted);
+}
+
+.anomalous-rail-more-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.anomalous-rail-more-go.is-current .anomalous-rail-more-icon {
+    color: var(--amb-current-text);
+}
+
+.anomalous-rail-more-go.is-scanning .anomalous-radar-sweep {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    animation: anomalous-radar-spin 1.4s linear infinite;
+}
+
+.anomalous-rail-more-go.is-scanning .anomalous-popup-menu-note {
+    color: var(--amb-ok);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .anomalous-rail-more-go.is-scanning .anomalous-radar-sweep { animation: none; }
+}
+
+.anomalous-rail-more-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--amb-ok);
+    vertical-align: middle;
+}
+
+.anomalous-rail-more-pin {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: var(--amb-radius-control);
+    background: transparent;
+    color: var(--amb-text-dim);
+    cursor: pointer;
+}
+
+.anomalous-rail-more-pin:hover {
+    background: var(--amb-bg-card-hover);
+    color: var(--amb-text-main);
+}
+
+/* Pinned: the pin filled, in the current entry's colour. */
+.anomalous-rail-more-pin[aria-checked="true"] {
+    color: var(--amb-current-text);
+}
+
+.anomalous-rail-more-pin[aria-checked="true"] svg {
+    fill: currentColor;
+}
+
+.anomalous-rail-more-foot {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-rail-more-reset {
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    border-radius: var(--amb-radius-control);
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-rail-more-reset:hover {
+    background: var(--amb-bg-card-hover);
+    color: var(--amb-text-main);
+}
+
+.anomalous-rail-more-go:focus-visible,
+.anomalous-rail-more-pin:focus-visible,
+.anomalous-rail-more-reset:focus-visible {
+    outline: 2px solid var(--amb-link);
+    outline-offset: -2px;
+}
+
 /* List column: beside the page, or gone when closed. It also steps aside while a workspace
    (recipes, notes, materials) is open, whichever button opened it. */
 #anomalous-container.anomalous-has-rail #anomalous-sidebar-wrapper {

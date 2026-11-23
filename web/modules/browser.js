@@ -17,6 +17,7 @@ import { refreshSaves, showSaves } from './ui_saves_list.js';
 import { renderRecipeList, handleSaveRecipe, openRecipeByFilename } from './ui_recipes.js';
 import { leavePromptPage, openPromptStudio } from './ui_prompt_composer.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
+import { closeRailMore } from './ui_rail_more.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openDoctorPage } from './ui_doctor.js';
 import { showModelSources } from './ui_model_sources.js';
@@ -188,6 +189,7 @@ export class AnomalousBrowser {
         this.flushCanvasActivity?.();
         leavePromptPage();
         closeUpdateGuide(this);
+        closeRailMore();
         leaveScanPage(); // a running scan's progress floats over the canvas
         this.modal.classList.remove('visible');
         this.setTriggerVisible(true);

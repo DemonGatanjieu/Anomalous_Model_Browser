@@ -1129,7 +1129,14 @@ covered by the `styles.css` manifest.
   and puts the model folder column in the list column (`ui_folder_list.js`: the folders of the
   type the chips show, counts with subfolders, 📂 to open one in Explorer). `ui_shell_rail.js` owns the left icon rail: one
   entry per page, the tool slots and the settings slot; the current page, or the tool whose page is open,
-  wears an accent pill. `ui_shell_nav.js` owns page
+  wears an accent pill. It also owns which entries show: `rail_pins.js` is that state without DOM (localStorage
+  `anomalous_rail_pins`): Home, Models, Gallery, Workflows and Model Check always; the other pages and tools only
+  when pinned, else listed under More (`ui_rail_more.js`, a menu beside the rail with a pin per row). A browser new
+  to Anomalous starts with the core only; one that ran an earlier version (its localStorage keys, read before the
+  window writes its own) keeps what it used, also from disk once (`api/rail_hints.py`, `GET /anomalous/rail_hints`:
+  one file of each kind, read only, no folder created); Voices comes on when Anomalous_TTS is installed. Once the
+  user pins or unpins, nothing decides for them again. The number keys and Home's voice card follow what shows;
+  an open page under More lights More instead. `ui_shell_nav.js` owns page
   navigation (`goTo`): the domain each page needs, which pages have a list and whether
   it is open (remembered per page; closed and overlaying below 760 px), the header's
   page title, and the page reopened next time. `ui_home.js` owns the home page (the four
@@ -1176,7 +1183,7 @@ covered by the `styles.css` manifest.
   the browser's language, the environment folded at the end when attached (versions and
   hardware only, never a path or ComfyUI's command line), or copies the environment, and
   `openRepoPage()` opens the project page for a Star (on a press only; nothing is fetched);
-  `ui_rail_tools.js` owns the rail's tool buttons (current node, doctor, saves, scan; the rail marks the one whose page is open);
+  `ui_rail_tools.js` owns the rail's tool buttons (doctor, then saves, current node and scan when pinned, then More; drawn again on each change of the rail);
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open); `ui_key_guard.js` keeps Ctrl+Enter typed
@@ -1264,7 +1271,7 @@ covered by the `styles.css` manifest.
 - `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn`, the Help modal and Home's "What's new"; the current guide's ID and steps live in `update_guide_data.js`) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. The browser tour goes in the order the pages are used (rail, Gallery and what its ☆ keeps, Workflows, Combos, Prompts, then the tools), with its text in `locales.js`. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `tool_registry.js` holds the tool icons shared by the rail and Home.
-- The rail's tool slots (`ui_rail_tools.js`, fixed) hold current node, doctor, saves and scan; settings sits at the rail's bottom. The rail's Prompts entry is Prompt Studio's page (`ui_prompt_composer.js`); its "Beside the canvas" moves the studio into a drawer by the canvas with the browser folded away, and "Back to the window" returns it. There is no toolbox: the other tools open from their pages (share and import on Workflows, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
+- The rail's tool slots (`ui_rail_tools.js`) hold doctor, the pinned ones of saves, current node and scan, and More; settings sits at the rail's bottom. The rail's Prompts entry is Prompt Studio's page (`ui_prompt_composer.js`); its "Beside the canvas" moves the studio into a drawer by the canvas with the browser folded away, and "Back to the window" returns it. There is no toolbox: the other tools open from their pages (share and import on Workflows, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
 - `ui_share.js` is share and import (the Workflows page's ⇅): the canvas workflow as a share
   code in Chinese characters or letters, and one place to paste a code or workflow JSON or drop
   a workflow file, an image, a recipe package or a backup .zip. `ui_recipe_package.js` exports

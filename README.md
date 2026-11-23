@@ -190,7 +190,7 @@ Every page has an icon on the left rail; when docked beside the canvas, drag the
 | **✍️ Prompts** | Prompt Studio—full page or docked **Beside the canvas**. Edits selected prompt nodes live as tags: click to weight, double-click to edit, drag to reorder, type in Chinese/Japanese/etc. to translate into English tags, display per-tag translations underneath, or drag prompt cards onto positive (green) / negative (red) boxes. Works as a scratchpad when no prompt node is selected. |
 | **🎙️ Voices / 🎧 Audio** | With [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS): import GPT-SoVITS characters, click any character card's avatar to set a square cover from the gallery or your computer, assign reference clips per emotion, tune pronunciations, write multi-line scripts under Voice-over, and browse generated clips in the audio gallery. |
 
-Tools at the bottom of the rail (ordered by frequency of use):
+The rail keeps Home, Models, Gallery, Workflows and **Model Check**; the other pages and tools wait under **More**, a line each, where the pin beside one keeps it on the rail and **Reset to minimal rail** takes them all off again. Upgrading keeps what you used on the rail, and **Voices** shows by itself once Anomalous_TTS is installed. The tools:
 
 * **Current node** (formerly Node Assistant): inspects the selected canvas node's model, swaps models from visual cards, inserts one or **multiple numbered LoRAs** at once (as standard chained nodes or into an rgthree Power Lora Loader / Easy-Use stack), and compares/applies saved values from workflows, combos, gallery pictures or node presets (`⇄ Compare` checks that node alone).
 * **Model Check** (formerly Model Doctor): checks opened workflows read-only; offers a one-click banner when renamed or moved local files match the workflow's SHA-256 fingerprints (written by this plugin: **Settings → Record model fingerprints in workflows**, on by default); without fingerprints, offers a file of the same name for you to confirm. Downloads come from Civitai by fingerprint, the workflow's own links or ComfyUI-Manager's model list. [The full rules](docs/guides/model-check-rules.en.md).
@@ -395,7 +395,7 @@ Antigravity、Claude、Cursor、Cherry Studio、VS Code 等支持 MCP 的客户�
 | **✍️ 提示词** | 提示词工坊，可全窗口用，也可点 **停到画布旁** 边看节点边改。选中提示词节点后自动拆成词块：单击调权重、双击改字、拖拽排顺序、输入中文/日文回车自动译成英文词块，还能在词块下显示多语种释义；左侧词卡支持一键加入或拖进画布正/反向输入框，未选节点时可当草稿本写。 |
 | **🎙️ 角色语音 / 🎧 音频库** | 安装 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) 后启用：导入 GPT-SoVITS 角色、点角色头像从图库或电脑选图设方形封面、按情绪选参考音频、修读音，在“配音”页写台词直接生成，并在音频库回放管理。 |
 
-左侧栏底部的常用工具（按日常使用频率从上到下排列）：
+左侧栏常驻 **主页**、**模型**、**图库**、**工作流** 和 **模型检查**；其余页面和工具收在 **更多** 里，每项一句说明，点右边的图钉就钉到左侧栏，**恢复精简侧栏** 一下全收回。从旧版本升级时，用过的仍留在左侧；装了 Anomalous_TTS 后 **角色语音** 自己出现。下面是这些工具：
 
 * **当前节点**（原“节点助手”）：跟随画布当前选中的节点，看封面换模型，或点 **插入 LoRA** 一次勾选多个 LoRA 按 `1 · 2 · 3` 顺序自动串接（装了 rgthree / Easy-Use 可选塞入单个堆叠节点）；下方按来源小标签（工作流、搭配、图片、本节点存的）列出同类节点参数，点 `⇄ 对比` 只看当前节点差异并一键套用。
 * **模型检查**（原“模型医生”）：打开工作流自动只读检查；本机改过名或换过目录的同一文件凭 SHA-256 指纹在画布顶部横幅一键换上（指纹由本插件写进工作流：**设置 → 在工作流里记下模型指纹**，默认开启）；没有指纹时列出同名文件让你确认。缺的模型从 C 站（按指纹）、工作流自带的链接或 Manager 清单下载。[完整规则](docs/guides/model-check-rules.md)。

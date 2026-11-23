@@ -1,8 +1,8 @@
 /**
  * Page navigation for the shell: `owner.goTo(page)` for the rail, the home cards and the
  * domain switch; which page shows its list column (and whether that list is open); the
- * page title in the header; the page reopened next time; the number keys 1-9 to the rail's
- * pages while the browser is open (shell_open_rules.js).
+ * page title in the header; the page reopened next time; the number keys 1-9 to the pages
+ * shown on the rail while the browser is open (shell_open_rules.js).
  *
  * Pages: home, activity, ai (the AI workbench), models, gallery, prompts (Prompt Studio, which can also move beside the
  * canvas), voices, script, audio-gallery (base pages); recipes, combos (workspaces over the base
@@ -17,7 +17,6 @@ import { renderActivityPage } from './ui_activity.js';
 import { renderAiWorkbench, watchAiTasks } from './ui_ai_workbench.js';
 import { watchForUser } from './ui_ai_notify.js';
 import { showPromptPage } from './ui_prompt_composer.js';
-import { RAIL_PAGES } from './ui_shell_rail.js';
 import { railPageForKey } from './shell_open_rules.js';
 
 const LAST_PAGE_KEY = 'anomalous_last_page';
@@ -94,13 +93,13 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         closeDrawer();
     });
 
-    // 1-9: the rail's pages from the top, while the browser is open and no dialog is over it.
-    // ComfyUI binds no plain digits; a number typed into a box stays in the box.
+    // 1-9: the pages shown on the rail from the top (one under More has no key), while the browser is
+    // open and no dialog is over it. ComfyUI binds no plain digits; a number typed into a box stays in the box.
     const dialogOpen = () => [...document.querySelectorAll('[aria-modal="true"], [role="dialog"]')]
         .some(node => node.getClientRects().length > 0);
     window.addEventListener('keydown', (e) => {
         if (!owner.modal?.classList.contains('visible')) return;
-        const page = railPageForKey(e, RAIL_PAGES);
+        const page = railPageForKey(e, rail.visiblePages());
         if (!page || dialogOpen()) return;
         e.preventDefault();
         owner.goTo(page === 'voices' ? lastVoiceView : page);
@@ -282,15 +281,20 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         owner.onActivityRecorded();
     };
 
+    // Home drawn again where it is open (the rail found Anomalous_TTS: its voice card).
+    owner.refreshHome = () => {
+        if (current === 'home' && owner.homePanel.style.display !== 'none') renderHome(owner, owner.homePanel);
+    };
+
     // A new entry shows at once on the pages that list entries.
     owner.onActivityRecorded = () => {
-        if (current === 'home' && owner.homePanel.style.display !== 'none') renderHome(owner, owner.homePanel);
+        owner.refreshHome();
         if (current === 'activity' && owner.activityPanel.style.display !== 'none') renderActivityPage(owner, owner.activityPanel);
     };
 
     owner.currentShellPage = () => current;
     // A dot on a rail entry: something new there (the AI workbench while the AI works elsewhere).
-    owner.railNews = (page, on) => rail.items.get(page)?.classList.toggle('has-news', Boolean(on));
+    owner.railNews = (page, on) => rail.setNews(page, on);
     watchAiTasks(owner);
     watchForUser(owner);
     // Pages reached another way (the audio list's own entries) still mark the rail and title.

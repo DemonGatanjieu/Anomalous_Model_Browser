@@ -26,7 +26,8 @@ import { savesFromHome } from './ui_snapshot_bar.js';
 import { fadeIn } from './ui_ai_art.js';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`). The everyday four come
-// first, large with their line; the rest small, the optional voices last.
+// first, large with their line; the rest small, the optional voices last, and only once the rail knows
+// Anomalous_TTS is installed or Voices is pinned (shown late rather than gone again: ui_shell_rail.js).
 const MAIN_CARDS = Object.freeze([
     { name: 'Models', icon: PAGE_ICONS.models, open: owner => owner.goTo('models') },
     { name: 'Doctor', icon: TOOL_ICONS.DOCTOR, open: owner => owner.openDoctorPage() },
@@ -125,7 +126,7 @@ export function renderHome(owner, panel) {
     const mains = el('div', 'anomalous-home-mains');
     mains.append(...MAIN_CARDS.map(card => mainCard(owner, card)));
     const more = el('div', 'anomalous-home-cards');
-    more.append(...MORE_CARDS.map(card => smallCard(owner, card)));
+    more.append(...MORE_CARDS.filter(card => card.name !== 'Voices' || owner.rail.voicesShown()).map(card => smallCard(owner, card)));
     // The AI section comes back later; the slot keeps its place under the smaller cards.
     const slot = el('div', 'anomalous-home-ai-slot');
 

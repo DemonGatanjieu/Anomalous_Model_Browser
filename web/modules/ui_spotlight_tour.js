@@ -8,7 +8,8 @@
  * 4. Zero CSS-bundle modifications (injected scoped stylesheet).
  *
  * The browser tour uses TOUR_STEPS, in the order the pages are used (rail, gallery and what
- * its ☆ keeps, then the tools); other views pass their own steps. A step's text is the locale
+ * its ☆ keeps, then the tools and More); a step whose button is not on the rail (under More) is
+ * skipped. Other views pass their own steps. A step's text is the locale
  * keys `titleKey` / `bodyKey`.
  */
 
@@ -73,6 +74,14 @@ const TOUR_STEPS = Object.freeze([
         icon: '🩺',
         titleKey: 'tourDoctorTitle',
         bodyKey: 'tourDoctorBody',
+        position: 'right',
+    },
+    {
+        id: 'more',
+        targetSelector: '#anomalous-more-btn',
+        icon: '✨',
+        titleKey: 'tourMoreTitle',
+        bodyKey: 'tourMoreBody',
         position: 'right',
     },
     {

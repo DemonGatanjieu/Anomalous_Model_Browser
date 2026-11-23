@@ -17,14 +17,15 @@ import { updateDoctorBanner } from './ui_doctor_banner.js';
 import { onlineOrAsk } from './scan_connection.js';
 
 const POLL_MS = 2000;
-const SCAN_RADAR_ICON_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><g class="anomalous-radar-sweep"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5" stroke-opacity="0.45"/><path d="M12 12 18 6"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></g></svg>`;
+// The scan's radar: the rail's scan button, and its row in the rail's More (ui_rail_tools.js).
+export const SCAN_ICON = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><g class="anomalous-radar-sweep"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5" stroke-opacity="0.45"/><path d="M12 12 18 6"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></g></svg>`;
 
 let running = false;
 
 export function setScanButtonState(btn, isScanning) {
     if (!btn) return;
     const label = btn.querySelector('.anomalous-rail-label'); // the rail's word under the icon stays
-    btn.innerHTML = SCAN_RADAR_ICON_SVG;
+    btn.innerHTML = SCAN_ICON;
     if (label) btn.append(label);
     btn.classList.toggle('anomalous-radar-spinning', Boolean(isScanning));
     btn.style.opacity = isScanning ? '0.85' : '1';
