@@ -691,8 +691,9 @@ covered by the `styles.css` manifest.
   empty page and over a task waiting for an AI until one has ever come; without a waiting task
   `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the
   user's checklist by stage) and the address follows. `ui_ai_starters.js` is the home page's "Let the AI do it"
-  (the app that came last, a warning when its list is a short one, six starter cards; the box and its cards are drawn at once,
-  what needs `GET /anomalous/ai_starters` fills in when read): the six AI-task starters (`private`, `picture`, `say`, `plan`, `canvas`, `try`) jump directly into the AI workbench (`openAiStarter` in `ui_ai_workbench.js`) rendering `renderStarterComposer` inside the spacious right column with a live mode-switcher bar (so zero intermediate home popups are shown; empty tasks and welcomePage also link into it). `ui_ai_starter_sheet.js`
+  (a bar under the tool cards, folded until opened, remembered in the browser: the app that came last, a warning when its
+  list is a short one, shown folded too, six starter cards; drawn at once, what needs `GET /anomalous/ai_starters` fills in
+  when read; `starterGrid` gives the same six cards to the AI workbench's page with no task, `ui_ai_ready.js` welcomePage): the six AI-task starters (`private`, `picture`, `say`, `plan`, `canvas`, `try`) jump directly into the AI workbench (`openAiStarter` in `ui_ai_workbench.js`) rendering `renderStarterComposer` inside the spacious right column with a live mode-switcher bar (so zero intermediate home popups are shown; empty tasks and welcomePage also link into it). `ui_ai_starter_sheet.js`
   holds `STARTERS`, `cardTags`, and the mode composers (fields, readiness lines, what Start ensures; live gallery preview beside "How should it change?" in `picture`, and `privateFields` in one uncluttered scroll with `sealFlow` / LoRAs), creating a
   prepared task with its switches set (a new tab; privacy for the private card) through `ui_ai_handoff.js` `startTask`;
   a card's tags name only what Anomalous makes sure of. The private card puts the prompt the AI gets as a token
@@ -702,7 +703,7 @@ covered by the `styles.css` manifest.
   (`web/modules/ui_picked_card.js`: cover, name, one line; a press opens the picker, an × drops a LoRA, a dashed card adds one).
   `web/modules/ui_ai_private_sheet.js` adds its optional LoRAs (from the materials catalog with user favourites, named in the first
   message by file name so the task's privacy turns them into tokens, picked in the reusable model picker) and the four-box drawing of what happens to the prompt.
-  "Run my preset", a "Do it yourself" card of the home page (`openPresetSheet` reads the saved workflows first;
+  "Run my preset", one of the home page's smaller tool cards (`openPresetSheet` reads the saved workflows first;
   without changes it runs locally via `ui_ai_preset_sheet.js`, whose "same again" line comes under those cards), steps via
   `web/modules/ui_ai_start_steps.js` (numbered dots, one step's question and fields at a time, Back / Next with a
   step's own check, Start on the last).
@@ -1131,8 +1132,9 @@ covered by the `styles.css` manifest.
   wears an accent pill. `ui_shell_nav.js` owns page
   navigation (`goTo`): the domain each page needs, which pages have a list and whether
   it is open (remembered per page; closed and overlaying below 760 px), the header's
-  page title, and the page reopened next time. `ui_home.js` owns the home page (task
-  cards, first steps). `ui_shell_frame.js` owns dragging, resizing and keeping the
+  page title, and the page reopened next time. `ui_home.js` owns the home page (the four
+  everyday task cards with "+ Import models", the smaller tool cards, the slot for "Let the AI do it", first steps;
+  model files dropped on Home are imported, bound once on its panel in `ui_sidebar.js`). `ui_shell_frame.js` owns dragging, resizing and keeping the
   floating window on screen, the docked window's width (dragged at its right edge; the limits are in the CSS), the full-window button (double-click on the header too) and the move between the three (`morphFrame`: laid out once, only the picture moves; the window and pages coming and going are `styles/51-shell-motion.css`); `ui_scan_watch.js` polls scan status for the rail's scan
   button, the progress panel and the model reload afterwards.
   The activity log (docs/decisions AD-018): `api/activity_log.py` keeps the entries

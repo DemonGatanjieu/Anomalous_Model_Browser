@@ -13,7 +13,7 @@
 @import url("./styles/12-tts-setup.css?v=20261017-feel4");
 @import url("./styles/13-script-director.css?v=20261116-layers");
 @import url("./styles/14-version-manager.css?v=20261116-layers");
-@import url("./styles/15-shell-rail.css?v=20261116-layers");
+@import url("./styles/15-shell-rail.css?v=20261123-home-focus");
 @import url("./styles/16-activity.css?v=20261024-feel");
 @import url("./styles/17-model-types.css?v=20261007-theme-2");
 @import url("./styles/18-scan-page.css?v=20261016-counting");
@@ -35,7 +35,7 @@
 @import url("./styles/34-voice-over-panel.css?v=20261021-sample");
 @import url("./styles/35-voice-over-drafts.css?v=20261020-drafts");
 @import url("./styles/36-reference-audio.css?v=20261020-remove");
-@import url("./styles/37-ai-workbench.css?v=20261120-veil");
+@import url("./styles/37-ai-workbench.css?v=20261123-home-focus");
 @import url("./styles/38-ai-panels.css?v=20261116-layers");
 @import url("./styles/39-ai-stage.css?v=20261021-stage");
 @import url("./styles/40-ai-side.css?v=20261116-layers");
@@ -53,7 +53,7 @@
 @import url("./styles/52-model-guide.css?v=20261108-guide");
 @import url("./styles/53-ai-plan.css?v=20261109-plan");
 @import url("./styles/54-job-sheet.css?v=20261109-sheet");
-@import url("./styles/55-ai-starters.css?v=20261120-promptpick");
+@import url("./styles/55-ai-starters.css?v=20261123-home-focus");
 @import url("./styles/56-layers.css?v=20261116-layers");
 @import url("./styles/57-long-lists.css?v=20261116-tips");
 @import url("./styles/58-tooltips.css?v=20261116-tips");

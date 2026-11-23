@@ -2,7 +2,7 @@
  * The home page's AI starter cards (ui_ai_starters.js draws them) and the spacious in-workbench
  * starter composer opened directly inside the AI workbench (`renderStarterComposer`: `private`,
  * `picture`, `say`, `plan`, `canvas`, `try`; `plan`: the AI picks saved workflows' presets and how many
- * of each, the run goes on a new tab). "Run my preset" is a "Do it yourself" card of the home page
+ * of each, the run goes on a new tab). "Run my preset" is one of the home page's smaller tool cards
  * (ui_home.js) in its own dialog (`openPresetSheet` -> ui_ai_preset_sheet.js + ui_ai_start_steps.js),
  * since without changes it runs on its own with no AI. `STARTERS` keeps each card's shape and locale keys
  * (`tests/test_ai_starters.py`).
@@ -45,7 +45,7 @@ export const STARTERS = [
     { id: 'private', icon: 'lock', tags: ['sealed', 'newTab'], lines: [['out']] },
     { id: 'canvas', icon: 'nodes', tags: ['undo'] },
 ];
-const PRESET = { id: 'preset', icon: 'workflows', lines: [['kept']] }; // "Run my preset": a "Do it yourself" card, its own sheet
+const PRESET = { id: 'preset', icon: 'workflows', lines: [['kept']] }; // "Run my preset": a home tool card, its own sheet
 
 function el(tag, className, text) {
     const node = document.createElement(tag);

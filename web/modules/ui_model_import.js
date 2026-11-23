@@ -1,6 +1,6 @@
 /**
- * Model import's window: model files dropped on the models page (or picked with its Import
- * chip) each get a card saying what the file is (type, base model, how sure), one line on what
+ * Model import's window: model files dropped on the models page or Home (or picked with the Import
+ * chip, or Home's "+ Import models") each get a card saying what the file is (type, base model, how sure), one line on what
  * such a model is for, where it will go (changeable) and anything to know (a format that can
  * carry code, a file of that name or the very same file already there). "Put in place" moves
  * the files found on this computer and uploads the others; model_import.js does the work.
@@ -60,7 +60,7 @@ export function pickModelFiles(owner) {
     input.click();
 }
 
-/** Model files dropped on `target` (the models grid) open the import window. */
+/** Model files dropped on `target` (the models grid, the home page; each bound once) open the import window. */
 export function attachModelDrop(owner, target) {
     let depth = 0;
     let hint = null;

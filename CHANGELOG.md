@@ -1,5 +1,16 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.64.1 (Home puts the everyday tools first) — unreleased
+
+- 主页先给日常最常用的事：打开 AMB 第一眼是四张大卡「找模型，放进节点」「修复缺失的模型」「翻看生成的图」「多个版本对比跑图」，每张都写着一句能做什么，不用再把鼠标停上去才知道。「找模型」那张上有「＋ 导入模型」，新下的模型文件也可以直接拖到主页，和拖到模型页一样认清类型、放进对应的文件夹。其余五个工具排成一排小卡，「给角色配音」是扩展，挪到最后。
+- Home leads with the everyday jobs: Anomalous opens on four large cards, "Find a model, put it on a node", "Fix missing models", "Look through your outputs" and "Compare multiple versions", each with a line saying what it does instead of only on hover. The models card has "+ Import models", and model files dropped anywhere on Home are identified and put in their folders as on the Models page. The other five tools follow as small cards, "Give a character a voice", an extension, last.
+
+- 「让 AI 帮你做」挪到工具下面，默认收成一条：一句话写着 AMB 管得住的事（内置实测过的出图方法、默认在副本上改能撤销、有隐私设置），旁边是最近连的 AI 软件和「连接 AI」；点这条展开六张起手卡，展开还是收起这个浏览器会记住。AI 软件连的是精简工具清单时，那行黄字收起时也看得见。「↻ 和上次一样再跑」照旧在小卡下面。
+- "Let the AI do it" moves under the tools and starts folded into one bar: a line on what Anomalous makes sure of (tested ways built in, works on a copy you can undo, privacy settings), the AI app that came last and "Connect an AI"; a click on the bar opens the six starter cards, and the browser remembers it open or folded. The amber line about a short tool list shows folded too. "The same again" stays under the small cards.
+
+- AI 工作台一个任务都没有时，中间直接摆出这六张起手卡，点一张就进它的起手页；以前只有一行小按钮。
+- The AI workbench with no task yet shows the six starter cards in its middle, a click opening that card's start page; it had a row of small buttons.
+
 ## v1.64.0 (Home start cards for the AI, ready-made Privacy Settings, model and workflow pickers, Task Sheet) — 2026-11-20
 
 - 新开 AI 对话接着做旧任务，不会再接错：任务页给新对话用的那句话带上了任务号（“用 Anomalous 接着做任务「…」：先调用 begin_task，task 填 …”），AI 照着做就准确接回这个任务，已经结束的也会重新打开。以前这句话只有任务名，开着好几个任务时，AI 可能接到别的任务上，或者另开一个同名任务。

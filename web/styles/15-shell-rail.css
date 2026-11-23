@@ -350,26 +350,113 @@
     display: contents;
 }
 
-/* "Do it yourself": a quieter heading over the smaller tool cards. */
-.anomalous-home-section-title {
-    margin: 10px 0 -6px;
-    color: var(--amb-text-soft);
-    font-size: 0.9em;
-    font-weight: 600;
+/* The everyday four: two to a row at the page's width, one when narrow. A card is one button whose
+   ::after covers it (the whole card opens the page); "+ Import models" sits above that. */
+.anomalous-home-mains {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 12px;
 }
 
-/* Nine cards: three to a row at the page's width, fewer when narrow. */
+.anomalous-home-main {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    gap: 4px 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--amb-border);
+    border-radius: 14px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.anomalous-home-main:hover {
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+    background: rgba(var(--amb-ink-rgb), 0.07);
+    transform: translateY(-1px);
+}
+
+.anomalous-home-main:has(> .anomalous-home-main-open:focus-visible) {
+    outline: 2px solid var(--amb-link);
+    outline-offset: 2px;
+}
+
+.anomalous-home-main > .anomalous-home-card-icon {
+    grid-row: 1 / -1;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+}
+
+.anomalous-home-main > .anomalous-home-card-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.anomalous-home-main-open {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 1em;
+    font-weight: 650;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-home-main-open::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.anomalous-home-main-open:focus-visible {
+    outline: none;
+}
+
+.anomalous-home-main-body {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 0.82em;
+    line-height: 1.6;
+}
+
+.anomalous-home-main-import {
+    position: relative;
+    z-index: 1;
+    justify-self: start;
+    margin-top: 6px;
+    padding: 4px 12px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+    color: var(--amb-link);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-home-main-import:hover,
+.anomalous-home-main-import:focus-visible {
+    background: color-mix(in srgb, var(--amb-link) 20%, transparent);
+}
+
+/* The other five under them, smaller: one row at the page's width, three or two when narrow. */
 .anomalous-home-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
     gap: 8px;
 }
 
 .anomalous-home-card {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 8px 10px;
     border: 1px solid var(--amb-border);
     border-radius: 12px;
     background: rgba(var(--amb-ink-rgb), 0.03);
@@ -387,10 +474,10 @@
 
 .anomalous-home-card-icon {
     display: flex;
-    flex: 0 0 28px;
+    flex: 0 0 26px;
     align-items: center;
     justify-content: center;
-    height: 28px;
+    height: 26px;
     border-radius: 8px;
     background: color-mix(in srgb, var(--amb-link) 12%, transparent);
     color: var(--amb-text-main);
@@ -403,8 +490,10 @@
 
 .anomalous-home-card-title {
     color: var(--amb-text-main);
-    font-size: 0.88em;
+    font-size: 0.84em;
     font-weight: 600;
+    line-height: 1.35;
+    text-wrap: balance;
 }
 
 .anomalous-home-start {

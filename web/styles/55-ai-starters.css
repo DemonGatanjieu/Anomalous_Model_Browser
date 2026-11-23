@@ -1,20 +1,54 @@
-/* The home page's "Let the AI do it" and its sheets (ui_ai_starters.js, ui_ai_starter_sheet.js) */
+/* The home page's "Let the AI do it" and its sheets (ui_ai_starters.js, ui_ai_starter_sheet.js).
+   Folded, one quiet bar; the toggle's ::after covers the bar (to its padding), the app line's buttons sit above. */
 .anomalous-ai-start {
+    container: amb-ai-start / inline-size;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 4px;
-    padding: 14px 16px;
-    border: 1px solid color-mix(in srgb, var(--amb-link) 28%, var(--amb-border));
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--amb-link) 5%, transparent);
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
 }
-.anomalous-ai-start-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
-.anomalous-ai-start-title { display: inline-flex; align-items: center; gap: 8px; color: var(--amb-text-main); font-size: 1em; font-weight: 600; }
-.anomalous-ai-start-app { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; color: var(--amb-text-muted); font-size: 0.8em; }
+.anomalous-ai-start.is-open { padding: 14px 16px; border-color: color-mix(in srgb, var(--amb-link) 28%, var(--amb-border)); background: color-mix(in srgb, var(--amb-link) 5%, transparent); }
+.anomalous-ai-start:not(.is-open):has(> .anomalous-ai-start-head > .anomalous-ai-start-toggle:hover) { background: rgba(var(--amb-ink-rgb), 0.06); }
+/* One row: the name, the app line, the toggle; narrow, the app line goes under them. The warning takes a row of its own. */
+.anomalous-ai-start-head { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "title app toggle"; align-items: center; gap: 6px 14px; }
+@container amb-ai-start (width < 640px) {
+    .anomalous-ai-start-head { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title toggle" "app app"; }
+}
+/* The name, its line under it, the sparkle beside both. */
+.anomalous-ai-start-title { grid-area: title; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 1px 8px; margin: 0; color: var(--amb-text-main); font-size: 0.95em; font-weight: 600; }
+.anomalous-ai-start-title > .anomalous-tb-icon { grid-row: 1 / span 2; color: var(--amb-link); }
+.anomalous-ai-start-lead { color: var(--amb-text-muted); font-size: 0.82em; font-weight: 400; line-height: 1.5; text-wrap: balance; }
+.anomalous-ai-start-app { grid-area: app; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; color: var(--amb-text-muted); font-size: 0.8em; }
+.anomalous-ai-start-app > .anomalous-home-link { position: relative; z-index: 1; }
 .anomalous-ai-start-app.is-known .anomalous-ai-visit-dot { background: var(--amb-ok); opacity: 1; }
-.anomalous-ai-start-warn { flex-basis: 100%; color: var(--amb-warn-text); font-size: 0.8em; line-height: 1.55; }
-.anomalous-ai-start-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.anomalous-ai-start-toggle {
+    grid-area: toggle;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px 3px 11px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.anomalous-ai-start-toggle::after { content: ""; position: absolute; inset: -10px -14px; border-radius: 12px; }
+.anomalous-ai-start-toggle:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+.anomalous-ai-start-toggle > .anomalous-tb-icon { transition: transform 0.15s ease; }
+.anomalous-ai-start.is-open .anomalous-ai-start-toggle > .anomalous-tb-icon { transform: rotate(180deg); }
+.anomalous-ai-start-warn { grid-column: 1 / -1; color: var(--amb-warn-text); font-size: 0.8em; line-height: 1.55; }
+/* Three to a row; two in a narrow window (the home bar and the AI workbench's empty page are size containers). */
+.anomalous-ai-start-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@container (width < 560px) {
+    .anomalous-ai-start-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.anomalous-ai-start-cards[hidden] { display: none; }
 /* A picture, a name and one line: what the card makes sure of is its tooltip. */
 .anomalous-ai-start-card {
     display: flex;
@@ -29,7 +63,7 @@
     background: rgba(var(--amb-ink-rgb), 0.03);
     color: inherit;
     font: inherit;
-    text-align: left;
+    text-wrap: balance;
     cursor: pointer;
 }
 .anomalous-ai-start-card:hover { border-color: color-mix(in srgb, var(--amb-link) 40%, transparent); background: rgba(var(--amb-ink-rgb), 0.07); }

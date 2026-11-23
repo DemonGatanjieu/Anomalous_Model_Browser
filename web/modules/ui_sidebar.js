@@ -175,6 +175,7 @@ export function createDOM() {
         this.detailPanel = panel('anomalous-detail');
         this.galleryPanel = panel('anomalous-gallery-panel', '');
         this.homePanel = panel('anomalous-home-panel');
+        attachModelDrop(this, this.homePanel); // and on Home (made once here: Home redraws only its content)
         this.activityPanel = panel('anomalous-activity-panel');
         this.aiPanel = panel('anomalous-ai-panel'); // the AI workbench (ui_ai_workbench.js)
         this.promptPanel = panel('anomalous-prompt-panel'); // Prompt Studio as a page (ui_prompt_composer.js)

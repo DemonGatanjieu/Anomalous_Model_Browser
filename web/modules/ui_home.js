@@ -1,10 +1,12 @@
 /**
- * The home page: first what to hand the AI (ui_ai_starters.js, drawn into a slot once read), the
- * first-run setup above it while nothing is scanned (ui_first_run.js); under it "Do it yourself", one
- * small card per task (its icon and name; what it does on hover), each opening its page (the saves card
- * starts the canvas's saves, ui_snapshot_bar.js; "Run my preset" opens its sheet, ui_ai_starter_sheet.js,
- * and the last run's "same again" line comes under the cards); then the first steps (set up, scan, the tour, what's new).
- * Rendered again on each visit, so text follows the language.
+ * The home page: first the four everyday tasks, large, each with its line (finding a model, with
+ * "+ Import models" beside it; model files dropped anywhere on Home are imported too, ui_sidebar.js),
+ * the first-run setup above them while nothing is scanned (ui_first_run.js); then the other tools, one
+ * small card each (its icon and name; what it does on hover; "Run my preset" opens its sheet,
+ * ui_ai_starter_sheet.js, and the last run's "same again" line comes under these cards); then "Let the
+ * AI do it", folded until opened (ui_ai_starters.js, drawn into a slot); then the first steps (set up,
+ * scan, the tour, what's new). Each card opens its page (the saves card starts the canvas's saves,
+ * ui_snapshot_bar.js). Rendered again on each visit, so text follows the language.
  */
 
 import { translate as t } from './locales.js';
@@ -19,19 +21,23 @@ import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { renderFirstRun, showFirstRun } from './ui_first_run.js';
 import { renderAiStarters } from './ui_ai_starters.js';
 import { openPresetSheet } from './ui_ai_starter_sheet.js';
+import { pickModelFiles } from './ui_model_import.js';
 import { savesFromHome } from './ui_snapshot_bar.js';
 
-// One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`).
-const CARDS = Object.freeze([
+// One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`). The everyday four come
+// first, large with their line; the rest small, the optional voices last.
+const MAIN_CARDS = Object.freeze([
     { name: 'Models', icon: PAGE_ICONS.models, open: owner => owner.goTo('models') },
     { name: 'Doctor', icon: TOOL_ICONS.DOCTOR, open: owner => owner.openDoctorPage() },
-    { name: 'Voices', icon: PAGE_ICONS.script, open: owner => owner.goTo('script') },
     { name: 'Gallery', icon: PAGE_ICONS.gallery, open: owner => owner.goTo('gallery') },
+    { name: 'Saves', icon: PAGE_ICONS.saves, open: owner => void savesFromHome(owner) },
+]);
+const MORE_CARDS = Object.freeze([
     { name: 'Recipes', icon: PAGE_ICONS.recipes, open: owner => owner.goTo('recipes') },
+    { name: 'Preset', icon: PAGE_ICONS.presets, open: owner => void openPresetSheet(owner) },
     { name: 'Combos', icon: PAGE_ICONS.combos, open: owner => owner.goTo('combos') },
     { name: 'Prompts', icon: PAGE_ICONS.prompts, open: owner => owner.goTo('prompts') },
-    { name: 'Saves', icon: PAGE_ICONS.saves, open: owner => void savesFromHome(owner) },
-    { name: 'Preset', icon: PAGE_ICONS.presets, open: owner => void openPresetSheet(owner) },
+    { name: 'Voices', icon: PAGE_ICONS.script, open: owner => owner.goTo('script') },
 ]);
 
 function el(tag, className, text) {
@@ -45,6 +51,34 @@ function button(className, label, onClick) {
     const node = el('button', className, label);
     node.type = 'button';
     node.onclick = onClick;
+    return node;
+}
+
+function cardIcon(card) {
+    const icon = el('span', 'anomalous-home-card-icon');
+    icon.innerHTML = card.icon; // static markup only
+    return icon;
+}
+
+/** A large card: the whole card opens its page (the button's ::after covers it); "+ Import models" sits above that. */
+function mainCard(owner, card) {
+    const node = el('div', 'anomalous-home-main');
+    node.dataset.card = card.name.toLowerCase();
+    node.append(cardIcon(card), button('anomalous-home-main-open', t(`homeCard${card.name}Title`), () => card.open(owner)),
+        el('p', 'anomalous-home-main-body', t(`homeCard${card.name}Body`)));
+    if (card.name === 'Models') {
+        const importer = button('anomalous-home-main-import', t('homeImportModels'), () => pickModelFiles(owner));
+        importer.title = t('importChipTitle');
+        node.append(importer);
+    }
+    return node;
+}
+
+function smallCard(owner, card) {
+    const node = button('anomalous-home-card', '', () => card.open(owner));
+    node.dataset.card = card.name.toLowerCase();
+    node.title = t(`homeCard${card.name}Body`);
+    node.append(cardIcon(card), el('span', 'anomalous-home-card-title', t(`homeCard${card.name}Title`)));
     return node;
 }
 
@@ -75,31 +109,24 @@ export function renderHome(owner, panel) {
     const page = el('div', 'anomalous-home');
     page.append(el('h1', 'anomalous-home-title', t('homeTitle')), el('p', 'anomalous-home-lead', t('homeLead')));
 
-    // The AI section comes back later; the slot keeps its place (and the first-run card's) above the cards.
+    const mains = el('div', 'anomalous-home-mains');
+    mains.append(...MAIN_CARDS.map(card => mainCard(owner, card)));
+    const more = el('div', 'anomalous-home-cards');
+    more.append(...MORE_CARDS.map(card => smallCard(owner, card)));
+    // The AI section comes back later; the slot keeps its place under the smaller cards.
     const slot = el('div', 'anomalous-home-ai-slot');
-    const self = el('h2', 'anomalous-home-section-title', t('homeSelfTitle'));
-    const grid = el('div', 'anomalous-home-cards');
-    for (const card of CARDS) {
-        const node = button('anomalous-home-card', '', () => card.open(owner));
-        node.dataset.card = card.name.toLowerCase();
-        const icon = el('span', 'anomalous-home-card-icon');
-        icon.innerHTML = card.icon; // static markup only
-        node.title = t(`homeCard${card.name}Body`);
-        node.append(icon, el('span', 'anomalous-home-card-title', t(`homeCard${card.name}Title`)));
-        grid.appendChild(node);
-    }
 
     const start = el('div', 'anomalous-home-start');
     start.append(el('span', 'anomalous-home-start-label', t('homeStartLabel')),
-        button('anomalous-home-link', t('homeStartSetup'), () => void showFirstRun(owner, page, slot)),
+        button('anomalous-home-link', t('homeStartSetup'), () => void showFirstRun(owner, page, mains)),
         button('anomalous-home-link', t('homeStartScan'), () => owner.openScanPage()),
         button('anomalous-home-link', t('homeStartTour'), () => startSpotlightTour(owner)),
         button('anomalous-home-link', t('homeStartNews'), () => showUpdateGuide(owner, { force: true })));
 
-    page.append(slot, self, grid, start, feedbackBand(owner));
+    page.append(mains, more, slot, start, feedbackBand(owner));
     panel.replaceChildren(page);
-    void renderFirstRun(owner, page, slot);
-    renderAiStarters(owner, slot, grid);
+    void renderFirstRun(owner, page, mains);
+    renderAiStarters(owner, slot, more);
     renderRecentActivity(owner, page);
     renderRecentAiTasks(owner, page);
 }

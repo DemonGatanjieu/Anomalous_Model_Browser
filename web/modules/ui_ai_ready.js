@@ -5,7 +5,8 @@
  * The sentence itself stays visible right below so the user can read or select it at a glance, along
  * with what was handed in (`task.about`, exported as `aboutStrip` so the timeline keeps it too) and what
  * was already prepared (`ctx.ready`); if no AI has ever connected yet, connecting comes first and the
- * button copies the full first-time sentence (`sentenceForAi`). With no task at all, welcomePage stands in.
+ * button copies the full first-time sentence (`sentenceForAi`); a task with nothing said yet offers four
+ * starter cards as small buttons. With no task at all, welcomePage stands in, with all six cards.
  */
 
 import { translate as t } from './locales.js';
@@ -14,6 +15,7 @@ import { art } from './ui_ai_art.js';
 import { copyText } from './ui_dialog.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 import { notifyLine } from './ui_ai_notify.js';
+import { readStarters, starterGrid } from './ui_ai_starters.js';
 
 const ABOUT_ICONS = { model: 'models', image: 'image', workflow: 'workflows', combo: 'combos', canvas: 'nodes' };
 const QUICK_STARTERS = [
@@ -118,15 +120,17 @@ export function waitingView(task, ctx) {
     return view;
 }
 
-/** The page with no task yet: what it is for; `onNew` starts one, `onPickStarter` opens a template mode. */
-export function welcomePage(onNew, onPickStarter = null) {
+/**
+ * The page with no task yet: what it is for, then the home page's six starter cards (ui_ai_starters.js);
+ * `onPickStarter(id)` opens a card's starter workspace, `onNew` starts a task of the user's own.
+ */
+export function welcomePage(onNew, onPickStarter) {
     const box = el('div', 'anomalous-ai-welcome');
     const picture = el('img', 'anomalous-ai-welcome-art');
     picture.src = new URL('../assets/ai_tasks_empty.webp', import.meta.url).href;
     picture.alt = '';
-    const quick = quickStarterBar(onPickStarter);
     box.append(picture, el('h2', 'anomalous-ai-welcome-title', t('aiWelcomeTitle')), el('p', 'anomalous-ai-welcome-body', t('aiWelcomeBody')),
-        iconButton('anomalous-ai-new-task', 'plus', t('aiNewTask'), onNew, { title: t('aiNewTaskHint') }),
-        ...(quick ? [quick] : []), connectHint());
+        starterGrid(readStarters(), onPickStarter),
+        iconButton('anomalous-ai-new-task', 'plus', t('aiNewTask'), onNew, { title: t('aiNewTaskHint') }), connectHint());
     return box;
 }
