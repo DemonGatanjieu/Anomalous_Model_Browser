@@ -1,5 +1,5 @@
 /**
- * The home page: first the four everyday tasks, large, each with its line (finding a model, with
+ * The home page: first the four everyday tasks, large, each with its picture and line (finding a model, with
  * "+ Import models" beside it; model files dropped anywhere on Home are imported too, ui_sidebar.js),
  * the first-run setup above them while nothing is scanned (ui_first_run.js); then the other tools, one
  * small card each (its icon and name; what it does on hover; "Run my preset" opens its sheet,
@@ -23,6 +23,7 @@ import { renderAiStarters } from './ui_ai_starters.js';
 import { openPresetSheet } from './ui_ai_starter_sheet.js';
 import { pickModelFiles } from './ui_model_import.js';
 import { savesFromHome } from './ui_snapshot_bar.js';
+import { fadeIn } from './ui_ai_art.js';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`). The everyday four come
 // first, large with their line; the rest small, the optional voices last.
@@ -39,6 +40,8 @@ const MORE_CARDS = Object.freeze([
     { name: 'Prompts', icon: PAGE_ICONS.prompts, open: owner => owner.goTo('prompts') },
     { name: 'Voices', icon: PAGE_ICONS.script, open: owner => owner.goTo('script') },
 ]);
+// The large cards' pictures (web/assets, drawn with ChatGPT like the AI cards), asked for as the window opens.
+export const HOME_ART = MAIN_CARDS.map(card => `home_${card.name.toLowerCase()}`);
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -60,11 +63,21 @@ function cardIcon(card) {
     return icon;
 }
 
+/** A large card's picture; its line icon if the picture is missing. */
+function cardArt(card) {
+    const img = el('img', 'anomalous-home-main-art');
+    img.alt = '';
+    img.decoding = 'async';
+    img.onerror = () => img.replaceWith(cardIcon(card));
+    img.src = new URL(`../assets/home_${card.name.toLowerCase()}.webp`, import.meta.url).href;
+    return fadeIn(img);
+}
+
 /** A large card: the whole card opens its page (the button's ::after covers it); "+ Import models" sits above that. */
 function mainCard(owner, card) {
     const node = el('div', 'anomalous-home-main');
     node.dataset.card = card.name.toLowerCase();
-    node.append(cardIcon(card), button('anomalous-home-main-open', t(`homeCard${card.name}Title`), () => card.open(owner)),
+    node.append(cardArt(card), button('anomalous-home-main-open', t(`homeCard${card.name}Title`), () => card.open(owner)),
         el('p', 'anomalous-home-main-body', t(`homeCard${card.name}Body`)));
     if (card.name === 'Models') {
         const importer = button('anomalous-home-main-import', t('homeImportModels'), () => pickModelFiles(owner));

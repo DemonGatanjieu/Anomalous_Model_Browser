@@ -382,6 +382,15 @@
     outline-offset: 2px;
 }
 
+.anomalous-home-main-art {
+    grid-row: 1 / -1;
+    align-self: center;
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+}
+
+/* The line icon in its place if the picture is missing. */
 .anomalous-home-main > .anomalous-home-card-icon {
     grid-row: 1 / -1;
     width: 40px;
