@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.64.1 (Home puts the everyday tools first) — unreleased
+## v1.64.1 (Home puts the everyday tools first) — 2026-11-23
 
 - 主页先给日常最常用的事：打开 AMB 第一眼是四张大卡「找模型，放进节点」「修复缺失的模型」「翻看生成的图」「多个版本对比跑图」，每张都写着一句能做什么，不用再把鼠标停上去才知道。四张卡配了和 AI 起手卡同一画风的小图。「找模型」那张上有「＋ 导入模型」，新下的模型文件也可以直接拖到主页，和拖到模型页一样认清类型、放进对应的文件夹。其余五个工具排成一排小卡，「给角色配音」是扩展，挪到最后。
 - Home leads with the everyday jobs: Anomalous opens on four large cards, "Find a model, put it on a node", "Fix missing models", "Look through your outputs" and "Compare multiple versions", each with a line saying what it does instead of only on hover. The four cards have pictures in the AI starter cards' style. The models card has "+ Import models", and model files dropped anywhere on Home are identified and put in their folders as on the Models page. The other five tools follow as small cards, "Give a character a voice", an extension, last.
