@@ -540,6 +540,7 @@ export function renderAiWorkbench(owner, panel) {
 export function watchAiTasks(owner) {
     state.owner = owner;
     shared.owner = owner;
+    owner.openAiTask = id => openAiTask(owner, id); // for the canvas card (ui_ai_float.js), which does not import this page
     document.addEventListener('visibilitychange', () => { if (!document.hidden) pollVisible(); });
     api.addEventListener('anomalous.ai_task', (event) => {
         const detail = event?.detail || {};
@@ -555,8 +556,9 @@ export function watchAiTasks(owner) {
             }
             return;
         }
-        if (detail.panel && !onPage()) panelToast(owner, String(detail.panel), Boolean(detail.asks));
-        else if (detail.gate && !onPage()) panelToast(owner, t(`aiGateQ_${detail.gate}`), true);
+        const elsewhere = owner.modal?.classList.contains('visible') && !onPage(); // shut: the canvas card says it (ui_ai_float.js)
+        if (detail.panel && elsewhere) panelToast(owner, String(detail.panel), Boolean(detail.asks));
+        else if (detail.gate && elsewhere) panelToast(owner, t(`aiGateQ_${detail.gate}`), true);
         clearTimeout(state.refreshTimer);
         state.refreshTimer = setTimeout(() => {
             if (!onPage()) {
@@ -571,13 +573,13 @@ export function watchAiTasks(owner) {
     });
 }
 
-/** Opens task `id` on the AI page (from the activity log, the home page). */
+/** Opens task `id` on the AI page (from the activity log, the home page, the canvas card). */
 export function openAiTask(owner, id, newest = null) {
     closeComposer();
     state.selected = id;
     state.pinned = id !== newest;
     state.narrowView = 'task';
-    owner.goTo('ai');
+    owner.show({ page: 'ai' }); // AMB's window may be shut (the canvas card): it opens straight on this task
 }
 
 /** Opens the spacious in-workbench starter workspace for `starterId` directly on the AI page. */

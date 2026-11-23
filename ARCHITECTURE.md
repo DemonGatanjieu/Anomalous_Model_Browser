@@ -594,7 +594,13 @@ covered by the `styles.css` manifest.
   line for a new chat; `tests/ai_call_lines.mjs`). `ui_ai_notify.js` is the desktop notification for a user who is in
   another window when the AI asks, a step waits for their OK or a run ended that the AI was not told of (`ai_notice.js`
   reads that from the "anomalous.ai_task" event, `tests/ai_notice.mjs`); off until turned on in a task's ⋯ or on the
-  page of a waiting task, kept in the browser. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
+  page of a waiting task, kept in the browser. `ui_ai_float.js` is the AI's card over the canvas (in `.graph-canvas-panel`,
+  like the saves bar): while AMB's window is shut it follows a task at work and says what goes on, with a gate's OK, a short
+  answer, Pause and a line to the AI; dragged, folded or closed by the user (kept in the browser). `ui_ai_float_parts.js`
+  draws what its tag says; `ai_float_state.js` is, without DOM, when it shows, what it says first and which task it
+  follows (`tests/ai_float_state.mjs`). The task head's "float over canvas" puts a task on it, `browser.js` tells it when
+  the window opens and closes, and it opens the workbench through `owner.openAiTask` (set by `watchAiTasks`), so it never
+  imports the page; while the window is shut, the page's toast for a panel or a gate gives way to it. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
   output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `web/modules/ai_chat_plus.js` holds the DOM-free logic (per-ref note sanitization and `attached: true` serialization; `tests/ai_chat_plus.mjs`). `web/modules/ui_ai_plus.js` is the 4-row "+" menu (`models`, `ways`, `other` -> `combos|workflows|prompts|nodes` else `combos`, opening or switching the single picker in the side column; plus shared `ui_ai_start_from.openBuildRouteWindow` dialog, and `@` hint). `ui_ai_mention.js` holds those refs
   and gives it "@" (the task's pictures, the gallery's newest and those its search finds,
   combos, models, active usable ways, workflows, prompts, node packs and node types from the materials picker's

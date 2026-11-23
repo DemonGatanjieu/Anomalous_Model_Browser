@@ -279,3 +279,16 @@ it: cover, description, notes, plain trigger words. Of a description only the pa
 ticks go where the rest stays home: an author's text is long, often off topic, and may name what
 the model draws. Privacy mode itself becomes the recommended settings, one press away; covers
 never go in a private task, whatever the model's choice, because a picture says more than a name.
+
+## AD-029 — While the AI works, the canvas keeps the room; a card on it follows the task
+
+Users want to watch the AI change nodes and links while it builds or runs, which AMB's window hides.
+Making the whole window smaller was the obvious way and the wrong one: every page (models, gallery,
+workflows, combos, prompts, voices, settings, the rail, the docked mode) would have to work in a strip
+and get a second layout to keep. Instead the window steps aside and a small card on the canvas, beside
+the saves bar and the job sheet's card, follows the task: what goes on now, and what waits on the
+user (an OK, a short answer, a pause, a line to the AI). Anything bigger (comparing pictures, marking
+areas, a plan, many options) goes back to the full workbench in one press. The card shows only while
+an AI is at work or waiting on the user, never for a task that ended before the page loaded, and the
+user's × holds until something new is asked of them; it never stops the AI. With the window shut the
+card is the one place that says so: the toast for a panel or a gate is for a window open on another page.

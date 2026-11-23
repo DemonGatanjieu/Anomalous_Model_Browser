@@ -199,6 +199,24 @@ export function panelGist(panel) {
     return { icon, parts };
 }
 
+/** The kinds of panel block that ask the user something (ui_ai_panel.js draws them). */
+export const QUESTIONS = ['choices', 'input', 'picks', 'prompts'];
+
+/** The steps of `task` that drew a panel. */
+export const panelSteps = task => (task?.steps || []).filter(step => step.kind === 'panel' && step.panel);
+
+/** The questions nobody answered yet, the newest panel's first: [{step, block}]. `kinds`: the blocks that count. */
+export function openAsks(task, kinds = QUESTIONS) {
+    const out = [];
+    for (const step of [...panelSteps(task)].reverse()) {
+        if (step.panel.closed) continue;
+        for (const block of step.panel.blocks || []) {
+            if (kinds.includes(block?.type) && !(step.answers || {})[block.id]) out.push({ step, block });
+        }
+    }
+    return out;
+}
+
 /** The locale key naming a step's tool. */
 export function toolKey(tool) {
     return `aiTool_${String(tool || '').replace(/[^a-z_]/g, '')}`;

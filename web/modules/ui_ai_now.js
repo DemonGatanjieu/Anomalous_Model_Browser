@@ -15,10 +15,9 @@
 
 import { resolveLocale, translate as t } from './locales.js';
 import { haltOf, taskStatus } from './ai_task_status.js';
-import { toolKey } from './ai_task_view.js';
+import { openAsks, toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
 import { progressWords, stopButton } from './ui_ai_run_live.js';
-import { panelSteps, QUESTIONS } from './ui_ai_side.js';
 import { draftField, hasDraft, optionDetail, optionLabel, ownWords, sendAnswer } from './ui_ai_panel.js';
 import { decideGate } from './ui_ai_gate.js';
 import { callRow } from './ui_ai_call.js';
@@ -40,18 +39,6 @@ function button(className, label, run, title) {
     node.onclick = run;
     if (title) node.title = title;
     return node;
-}
-
-/** The questions nobody answered yet, the newest panel's first: [{step, block}]. */
-function openAsks(task) {
-    const out = [];
-    for (const step of [...panelSteps(task)].reverse()) {
-        if (step.panel.closed) continue;
-        for (const block of step.panel.blocks || []) {
-            if (QUESTIONS.includes(block?.type) && !(step.answers || {})[block.id]) out.push({ step, block });
-        }
-    }
-    return out;
 }
 
 /** The line of what goes on: a gate's question, a run, a tool; null when nothing does. */
@@ -100,11 +87,16 @@ function statusLine(task, ctx) {
     return null;
 }
 
+/** What question `block` of panel step `step` asks, in the page's words (the canvas card says it too, ui_ai_float.js). */
+export function questionText(step, block) {
+    return (block.question_key && t(block.question_key)) || block.question || (step.panel.title_key && t(step.panel.title_key)) || step.panel.title || t('aiNowAsk');
+}
+
 /** The card answering the first open question; `more`: how many others wait. */
 function askCard(task, { step, block }, more, ctx) {
     const card = el('div', 'anomalous-ai-now-ask');
     const head = el('div', 'anomalous-ai-now-ask-head');
-    head.append(icon('question', 15), el('span', 'anomalous-ai-now-question', (block.question_key && t(block.question_key)) || block.question || (step.panel.title_key && t(step.panel.title_key)) || step.panel.title || t('aiNowAsk')));
+    head.append(icon('question', 15), el('span', 'anomalous-ai-now-question', questionText(step, block)));
     if (more) head.append(button('anomalous-ai-link', t('aiNowMore', { count: more }), ctx.openStage));
     const note = el('div', 'anomalous-ai-now-error');
     const decide = button('anomalous-ai-panel-skip', '', () => send({ skip: true }, [...card.querySelectorAll('button, input')]));

@@ -1,5 +1,5 @@
 /**
- * "Pause" in a task's head (ui_ai_task_head.js): the AI stops and nothing is taken back; it hears so
+ * "Pause" in a task's head (ui_ai_task_head.js) and on the canvas card (ui_ai_float.js): the AI stops and nothing is taken back; it hears so
  * before it can act again and the task waits until the user writes (POST .../halt {take_back: false}).
  * "Stop and take back" in its ⋯: one way out of a task that goes wrong. The server stops its runs, says no where a step waits for an OK and tells the AI, which
  * gets the halt before it can act again (POST /anomalous/ai_tasks/{id}/halt, api/ai_run_control.py).
@@ -58,7 +58,7 @@ export async function haltTask(task, entries, changed) {
 }
 
 /** Pauses `task`: the AI stops, nothing is taken back; `changed()` afterwards. */
-async function pauseTask(task, changed) {
+export async function pauseTask(task, changed) {
     try {
         const response = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(task.id)}/halt`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ take_back: false }),

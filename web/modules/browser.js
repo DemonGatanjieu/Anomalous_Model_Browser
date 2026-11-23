@@ -18,6 +18,7 @@ import { renderRecipeList, handleSaveRecipe, openRecipeByFilename } from './ui_r
 import { leavePromptPage, openPromptStudio } from './ui_prompt_composer.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
 import { closeRailMore } from './ui_rail_more.js';
+import { setAiFloatBrowserOpen } from './ui_ai_float.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openDoctorPage } from './ui_doctor.js';
 import { showModelSources } from './ui_model_sources.js';
@@ -82,6 +83,7 @@ export class AnomalousBrowser {
         const page = wanted || pageForNode(node || followed, NODE_KINDS);
         this.setTriggerVisible(false);
         this.modal.classList.add('visible');
+        setAiFloatBrowserOpen(true); // the AI's card on the canvas steps back
         if (page === 'assistant') {
             this.openCurrentNode();
             return;
@@ -193,6 +195,7 @@ export class AnomalousBrowser {
         leaveScanPage(); // a running scan's progress floats over the canvas
         this.modal.classList.remove('visible');
         this.setTriggerVisible(true);
+        setAiFloatBrowserOpen(false); // and comes back for a task at work
         stopAudioStudioPlayback();
         stopGalleryAudio();
         const canvas = document.getElementById('graph-canvas');

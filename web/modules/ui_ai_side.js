@@ -18,11 +18,10 @@
  */
 
 import { resolveLocale, translate as t } from './locales.js';
-import { panelGist } from './ai_task_view.js';
+import { panelGist, panelSteps, QUESTIONS } from './ai_task_view.js';
 import { renderPanel } from './ui_ai_panel.js';
 import { icon, iconButton } from './ui_ai_icons.js';
 
-export const QUESTIONS = ['choices', 'input', 'picks', 'prompts'];
 const BOTTOM_PX = 60;
 const AUTO_KEY = 'anomalous_ai_stage_auto';
 const inView = new Set(); // the panels in view on the stage now: their cards in the timeline say so
@@ -47,7 +46,7 @@ function button(className, label, onClick, title) {
     return node;
 }
 
-export const panelSteps = task => (task?.steps || []).filter(step => step.kind === 'panel' && step.panel);
+export { panelSteps, QUESTIONS }; // kept in ai_task_view.js, which the canvas card (ai_float_state.js) shares
 
 /** How many of a panel's questions still wait for the user. */
 export function openQuestions(step) {

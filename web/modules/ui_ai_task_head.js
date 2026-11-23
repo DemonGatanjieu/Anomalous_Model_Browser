@@ -4,8 +4,9 @@
  * app reads the disk by itself), "Pause" (ui_ai_halt.js: the AI stops, nothing is taken back), how a run
  * goes while one does (ui_ai_status.js), and ⋯ for the rest (ui_ai_task_menu.js): where the AI works on
  * the canvas (ui_ai_task_canvas.js), stopping and taking its changes back, undoing them, "Stuck?"
- * (ui_ai_stuck.js), and what is done to a task now and then. Under the title, the task's facts, the
- * copy of the canvas to look at, and the tasks it goes on from (ui_ai_task_links.js).
+ * (ui_ai_stuck.js), and what is done to a task now and then; while it goes on, a button that floats it
+ * over the canvas (ui_ai_float.js). Under the title, the task's facts, the copy of the canvas to look
+ * at, and the tasks it goes on from (ui_ai_task_links.js).
  */
 
 import { resolveLocale, translate as t } from './locales.js';
@@ -13,7 +14,9 @@ import { dayLabel, timeLabel } from './activity_log.js';
 import { taskStatus } from './ai_task_status.js';
 import { taskTitle } from './ai_task_title.js';
 import { taskCounts } from './ai_task_view.js';
+import { floatAiTask } from './ui_ai_float.js';
 import { canHalt, haltTask, pauseTool } from './ui_ai_halt.js';
+import { iconButton } from './ui_ai_icons.js';
 import { privacyButton } from './ui_ai_privacy.js';
 import { executionStatus } from './ui_ai_status.js';
 import { openStuck } from './ui_ai_stuck.js';
@@ -47,6 +50,12 @@ function headItems(task, ctx) {
     ];
 }
 
+/** "Float over canvas": AMB's window goes and the card on the canvas follows the task (ui_ai_float.js); while it goes on. */
+function pipTool(task, ctx) {
+    if (task.ended || !ctx.showCanvas) return [];
+    return [iconButton('anomalous-ai-tool is-icon anomalous-ai-pip', 'pip', t('aiTaskPip'), () => floatAiTask(task, ctx.showCanvas), { iconOnly: true })];
+}
+
 /**
  * Draws the head of `task` into `header`. `ctx`: { summary (its row in the list), status (taskState),
  * entries, refresh(), back() (to the list in a narrow window), showCanvas(), tabs() (the side column's
@@ -71,7 +80,7 @@ export function drawTaskHead(header, task, ctx) {
     name.append(back, title, stateChip(ctx.status));
     const tools = el('div', 'anomalous-ai-task-tools');
     if (run.run && RUNNING.includes(run.state)) tools.append(executionStatus(task, ctx.refresh));
-    tools.append(privacyButton(task, ctx.refresh), ...pauseTool(task, ctx.refresh), taskMenu(task, { ...ctx.actions, extra: headItems(task, ctx) }));
+    tools.append(privacyButton(task, ctx.refresh), ...pauseTool(task, ctx.refresh), ...pipTool(task, ctx), taskMenu(task, { ...ctx.actions, extra: headItems(task, ctx) }));
     titleLine.append(name, tools);
     const meta = [task.client, `${dayLabel(task.started)} ${timeLabel(task.started)}`, t('aiStepCount', { count: (task.steps || []).length }),
         ...taskCounts(ctx.summary).map(item => t(item.key, item.values))].filter(Boolean);
