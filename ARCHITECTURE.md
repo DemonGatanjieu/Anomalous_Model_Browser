@@ -607,9 +607,10 @@ covered by the `styles.css` manifest.
   number, or `#amb-review` / `?amb_review=1`; loaded only then, styles `styles/64-review-console.css`): it rehearses
   the card on made-up tasks through the card's own drawing (`setAiFloatPreview`: a press on the card goes to the
   console, nothing to the server, nothing kept in the browser), shows the rail of another kind of user
-  (`previewPins`, never kept), puts Home's first-run card up as a new user meets it (`previewFirstRun`, its
-  buttons scan nothing and nothing is hidden for real), switches theme and language (put back on Reset and on
-  close) and opens a few windows. `review_scenarios.js` is, without DOM, those tasks (shaped as `api/ai_tasks.py` keeps them), what a press
+  (`previewPins`, never kept), opens Home's first-run welcome dialog / scan dock in memory (`previewFirstRun`
+  cycles `idle`, `offline_choice`, `running`, `done_missing_covers`: its buttons scan nothing, Key save stays
+  in memory, and nothing is written to disk or hides the real card), switches theme and language (put back
+  on Reset and on close) and opens a few windows. `review_scenarios.js` is, without DOM, those tasks (shaped as `api/ai_tasks.py` keeps them), what a press
   does to them and the users' rail pins (`tests/review_scenarios.mjs`). The task head's "float over canvas" puts a task on it, `browser.js` tells it when
   the window opens and closes, and it opens the workbench through `owner.openAiTask` (set by `watchAiTasks`), so it never
   imports the page; while the window is shut, the page's toast for a panel or a gate gives way to it. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
@@ -1160,10 +1161,10 @@ covered by the `styles.css` manifest.
   an open page under More lights More instead. `ui_shell_nav.js` owns page
   navigation (`goTo`): the domain each page needs, which pages have a list and whether
   it is open (remembered per page; closed and overlaying below 760 px), the header's
-  page title, and the page reopened next time. `ui_home.js` owns the home page (four large cards for
-  the rail's four working pages — models with "+ Import models", Model check, the gallery, workflows —, the smaller
-  tool cards with canvas saves first, the slot for "Let the AI do it", first steps;
-  model files dropped on Home are imported, bound once on its panel in `ui_sidebar.js`). `ui_shell_frame.js` owns dragging, resizing and keeping the
+  page title, and the page reopened next time. `ui_home.js` owns the converged three-tier home page (four large cards for
+  the rail's four working pages — models with "+ Import models", Model check, gallery, workflows with square art `home_recipes.webp` —,
+  the "Let the AI do it" slot, a collapsible "More tools" bar holding canvas saves first and the other small cards, and one quiet footer
+  line; model files dropped on Home are imported, bound once on its panel in `ui_sidebar.js`). `ui_shell_frame.js` owns dragging, resizing and keeping the
   floating window on screen, the docked window's width (dragged at its right edge; the limits are in the CSS), the full-window button (double-click on the header too) and the move between the three (`morphFrame`: laid out once, only the picture moves; the window and pages coming and going are `styles/51-shell-motion.css`); `ui_scan_watch.js` polls scan status for the rail's scan
   button, the progress panel and the model reload afterwards.
   The activity log (docs/decisions AD-018): `api/activity_log.py` keeps the entries
@@ -1474,11 +1475,14 @@ covered by the `styles.css` manifest.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns the image
   workbench's metadata and node-parameter rendering; `png_metadata.js` reads the workflow a
   PNG's text chunks carry, in the browser (the gallery detail's fallback).
-- `ui_first_run.js` is Home's first-run card while nothing is scanned: one button, "Scan my models", that
-  checks Civitai through `api/network_check.py` on the way and scans every model; only when Civitai does not
-  answer, a strip with an offline scan, a retry and the proxy setting. A card, never a popup, hidden per
-  browser; the review console's preview of it is memory only. `first_run_state.js` is, without DOM, what the
-  card shows in each phase (`describeFirstRun`; `tests/first_run_state.mjs`).
+- `ui_first_run.js` is the first-run welcome card & scan dock: while nothing is scanned yet, it opens a centered
+  welcome overlay inside `#anomalous-container` ("Scan my models", optional collapsible inline Civitai API Key
+  input, and an offline / retry / proxy strip only when `api/network_check.py` says Civitai does not answer), and
+  docks to a compact bottom-right progress pill once scanning starts; when an online scan without a key misses
+  covers or leaves models inferred, the done dock offers "Add key & rescan". Never blocks outside clicks or Esc
+  (`ui_browser_navigation.js` leaves closing it cleanly), hidden per browser; the review console previews all
+  four states in memory only. `first_run_state.js` is, without DOM, what the dialog and dock show in each phase
+  (`describeFirstRun`; `tests/first_run_state.mjs`).
 - `model_check.js` checks the open workflow's models (drop-downs naming model files, and
   switched-on Power Lora Loader rows through `lora_nodes.js`) against this computer (Model
   Check's verdicts, no DOM; the feature was called Model Doctor, and code and CSS still

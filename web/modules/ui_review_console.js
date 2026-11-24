@@ -27,9 +27,19 @@ const THEMES = ['auto', 'dark', 'light', 'abyssal'];
 const LANGUAGES = [['zh', 'mainLanguageChinese'], ['en', 'mainLanguageEnglish']];
 const PERSONAS = ['real', 'fresh', 'upgraded', 'full'];
 const GROUPS = ['live', 'action', 'other'];
-// The first-run card's preview: the next one on a press, and the line saying what is shown.
-const FIRST_RUN_NEXT = { idle: 'offline_choice', offline_choice: null };
-const FIRST_RUN_NOTES = { idle: 'reviewFirstRunIdle', offline_choice: 'reviewFirstRunOffline' };
+// The first-run card's preview: cycles centered welcome -> offline fallback -> scanning dock -> done missing-cover nudge -> off.
+const FIRST_RUN_NEXT = {
+    idle: 'offline_choice',
+    offline_choice: 'running',
+    running: 'done_missing_covers',
+    done_missing_covers: null,
+};
+const FIRST_RUN_NOTES = {
+    idle: 'reviewFirstRunIdle',
+    offline_choice: 'reviewFirstRunOffline',
+    running: 'reviewFirstRunRunning',
+    done_missing_covers: 'reviewFirstRunDoneMissing',
+};
 const MARGIN = 8;
 
 const state = {

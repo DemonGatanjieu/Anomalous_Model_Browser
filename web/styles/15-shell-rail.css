@@ -670,15 +670,104 @@
     text-wrap: balance;
 }
 
-.anomalous-home-start {
+/* Collapsible "More tools" row on Home (ui_home.js): quiet bar when folded, small cards below when open. */
+.anomalous-home-more {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+.anomalous-home-more:not(.is-open):hover {
+    background: rgba(var(--amb-ink-rgb), 0.06);
+}
+
+.anomalous-home-more.is-open {
+    padding: 12px 14px 14px;
+    border-color: color-mix(in srgb, var(--amb-link) 24%, var(--amb-border));
+}
+
+.anomalous-home-more-head {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    gap: 6px 14px;
-    margin-top: 6px;
-    color: var(--amb-text-dim);
-    font-size: 0.85em;
+    justify-content: space-between;
+    gap: 6px 12px;
+}
+
+.anomalous-home-more-title {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-width: 0;
+    margin: 0;
+    color: var(--amb-text-main);
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.anomalous-home-more-mark {
+    display: inline-flex;
+    flex: none;
+    color: var(--amb-text-soft);
+}
+
+.anomalous-home-more-mark svg {
+    width: 16px;
+    height: 16px;
+}
+
+.anomalous-home-more-summary {
+    color: var(--amb-text-muted);
+    font-size: 0.86em;
+    font-weight: 400;
+}
+
+.anomalous-home-more.is-open .anomalous-home-more-summary {
+    display: none;
+}
+
+.anomalous-home-more-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px 3px 11px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-home-more-toggle::after {
+    content: "";
+    position: absolute;
+    inset: -10px -14px;
+    border-radius: 12px;
+}
+
+.anomalous-home-more-toggle:hover {
+    border-color: var(--amb-link);
+    color: var(--amb-text-main);
+}
+
+.anomalous-home-more-toggle > .anomalous-tb-icon {
+    transition: transform 0.15s ease;
+}
+
+.anomalous-home-more.is-open .anomalous-home-more-toggle > .anomalous-tb-icon {
+    transform: rotate(180deg);
+}
+
+.anomalous-home-more .anomalous-home-cards[hidden] {
+    display: none;
 }
 
 .anomalous-home-link {
@@ -696,37 +785,160 @@
     background: rgba(var(--amb-ink-rgb), 0.14);
 }
 
-/* The first-run card above the task cards (ui_first_run.js): one line, one button; a strip only when Civitai does not answer. */
-.anomalous-first-run {
-    padding: 16px 20px;
-    border: 1px solid color-mix(in srgb, var(--amb-link) 35%, var(--amb-border));
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--amb-link) 6%, var(--amb-bg-card));
-}
-
-.anomalous-first-run:empty {
-    display: none;
-}
-
-.anomalous-first-run-head {
+/* Quiet single-line footer at the bottom of Home. */
+.anomalous-home-footer {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 4px 8px;
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--amb-border);
+    color: var(--amb-text-dim);
+    font-size: 12px;
+}
+
+.anomalous-home-footer-link {
+    padding: 2px 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+.anomalous-home-footer-link:hover,
+.anomalous-home-footer-link:focus-visible {
+    color: var(--amb-link);
+    background: rgba(var(--amb-ink-rgb), 0.06);
+}
+
+.anomalous-home-footer-sep {
+    opacity: 0.45;
+    user-select: none;
+}
+
+/* First-run welcome overlay & bottom-right scan dock (ui_first_run.js), inside #anomalous-container. */
+.anomalous-first-run-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: color-mix(in srgb, var(--amb-bg-page) 42%, rgba(0, 0, 0, 0.5));
+    backdrop-filter: blur(4px);
+    overscroll-behavior: contain;
+    box-sizing: border-box;
+}
+
+html.amb-theme-light .anomalous-first-run-overlay {
+    background: color-mix(in srgb, var(--amb-bg-page) 56%, rgba(15, 23, 42, 0.24));
+}
+
+.anomalous-first-run-dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(440px, 100%);
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 26px 24px 20px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 34%, var(--amb-border));
+    border-radius: 16px;
+    background: var(--amb-bg-card);
+    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.44);
+    box-sizing: border-box;
+}
+
+.anomalous-first-run-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.anomalous-first-run-close.is-dock {
+    position: static;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+}
+
+.anomalous-first-run-close:hover,
+.anomalous-first-run-close:focus-visible {
+    background: rgba(var(--amb-ink-rgb), 0.1);
+    color: var(--amb-text-main);
+}
+
+.anomalous-first-run-emblem {
+    display: block;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 12px;
+    object-fit: contain;
 }
 
 .anomalous-first-run-title {
     margin: 0;
     color: var(--amb-text-main);
     font-size: 1.15em;
-    font-weight: 600;
+    font-weight: 650;
+    text-align: center;
 }
 
 .anomalous-first-run-lead {
-    margin: 4px 0 0;
+    margin: 8px 0 0;
     color: var(--amb-text-muted);
     font-size: 0.85em;
     line-height: 1.6;
+    text-align: center;
+    text-wrap: balance;
+}
+
+.anomalous-first-run-go {
+    width: 100%;
+    margin-top: 16px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background: var(--amb-link);
+    color: var(--amb-on-link);
+    font: inherit;
+    font-size: 0.92em;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.anomalous-first-run-go:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb-link) 28%, transparent);
+}
+
+.anomalous-first-run-go:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.anomalous-first-run-secondary-wide {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 14px;
 }
 
 .anomalous-first-run-pill {
@@ -739,15 +951,15 @@
 }
 
 .anomalous-first-run-pill.is-ok {
-    background: color-mix(in srgb, var(--amb-lt-ok, #4ade80) 16%, transparent);
-    color: var(--amb-lt-ok, #4ade80);
+    background: color-mix(in srgb, var(--amb-ok) 16%, transparent);
+    color: var(--amb-ok-text);
 }
 
 .anomalous-first-run-btn,
 .anomalous-first-run-later {
-    padding: 4px 12px;
+    padding: 5px 12px;
     border: 1px solid var(--amb-border-strong);
-    border-radius: 6px;
+    border-radius: 7px;
     background: rgba(var(--amb-ink-rgb), 0.06);
     color: var(--amb-text-main);
     font: inherit;
@@ -762,7 +974,7 @@
 }
 
 .anomalous-first-run-btn.is-strong {
-    border-color: var(--amb-link);
+    border-color: color-mix(in srgb, var(--amb-link) 65%, transparent);
     color: var(--amb-link);
 }
 
@@ -773,7 +985,79 @@
     color: var(--amb-text-muted);
 }
 
-/* The quiet tour link before the scan, and the key note's link. */
+/* Optional Civitai key foldout inside the welcome dialog. */
+.anomalous-first-run-key {
+    margin-top: 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+.anomalous-first-run-key-summary {
+    color: var(--amb-text-soft);
+    font-size: 0.8em;
+    line-height: 1.5;
+    cursor: pointer;
+    user-select: none;
+}
+
+.anomalous-first-run-key-summary:hover {
+    color: var(--amb-link);
+}
+
+.anomalous-first-run-key-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.anomalous-first-run-key-help {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 0.76em;
+    line-height: 1.5;
+}
+
+.anomalous-first-run-key-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-first-run-key-input {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 7px;
+    background: var(--amb-bg-input);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 0.8em;
+}
+
+.anomalous-first-run-key-input:focus-visible {
+    outline: 2px solid var(--amb-link);
+    outline-offset: 1px;
+}
+
+.anomalous-first-run-key-status {
+    color: var(--amb-ok-text);
+    font-size: 0.76em;
+    line-height: 1.45;
+}
+
+.anomalous-first-run-key-status.is-bad {
+    color: var(--amb-danger-text);
+}
+
+.anomalous-first-run-key-status[hidden] {
+    display: none;
+}
+
+/* The quiet tour link and key note link. */
 .anomalous-first-run-link {
     padding: 0;
     border: none;
@@ -795,21 +1079,21 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 12px;
+    margin-top: 10px;
 }
 
 .anomalous-first-run-track {
     flex: 1;
-    height: 4px;
+    height: 5px;
     overflow: hidden;
-    border-radius: 2px;
-    background: rgba(var(--amb-ink-rgb), 0.1);
+    border-radius: 3px;
+    background: rgba(var(--amb-ink-rgb), 0.12);
 }
 
 .anomalous-first-run-fill {
     width: 0;
     height: 100%;
-    border-radius: 2px;
+    border-radius: 3px;
     background: var(--amb-link);
     transition: width 0.4s ease;
 }
@@ -837,7 +1121,7 @@
     margin-top: 12px;
     padding: 10px 12px;
     border: 1px solid color-mix(in srgb, var(--amb-warn) 40%, var(--amb-border));
-    border-radius: 8px;
+    border-radius: 9px;
     background: color-mix(in srgb, var(--amb-warn) 8%, var(--amb-bg-card));
 }
 
@@ -859,87 +1143,95 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
     gap: 8px 14px;
     margin-top: 14px;
-}
-
-.anomalous-first-run-go {
-    padding: 8px 20px;
-    border: none;
-    border-radius: 8px;
-    background: var(--amb-link);
-    color: var(--amb-bg-page);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.anomalous-first-run-go:hover:not(:disabled) { filter: brightness(1.12); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb-link) 30%, transparent); }
-
-.anomalous-first-run-go:disabled {
-    opacity: 0.5;
-    cursor: default;
+    padding-top: 10px;
+    border-top: 1px solid var(--amb-border);
 }
 
 .anomalous-first-run-note {
     margin: 10px 0 0;
     color: var(--amb-text-dim);
     font-size: 0.78em;
-}
-
-/* "Found a problem, or have an idea?": the way to GitHub, in view on Home. */
-.anomalous-home-feedback {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 18px;
-    margin-top: 18px;
-    padding: 14px 18px;
-    border: 1px solid color-mix(in srgb, var(--amb-link) 30%, transparent);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--amb-link) 7%, transparent);
-}
-
-.anomalous-home-feedback-copy {
-    display: flex;
-    flex: 1 1 260px;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-}
-
-.anomalous-home-feedback-title {
-    color: var(--amb-text-main);
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.anomalous-home-feedback-lead {
-    color: var(--amb-text-muted);
-    font-size: 12.5px;
     line-height: 1.5;
 }
 
-.anomalous-home-feedback-actions {
+/* Bottom-right docked scan pill (running / done) inside #anomalous-container. */
+.anomalous-first-run-dock-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 1150;
     display: flex;
-    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 18px;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.anomalous-first-run-dock {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(350px, 100%);
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 36%, var(--amb-border));
+    border-radius: 14px;
+    background: var(--amb-bg-card);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.36);
+    pointer-events: auto;
+    box-sizing: border-box;
+}
+
+.anomalous-first-run-dock-head {
+    display: flex;
+    align-items: center;
     gap: 8px;
 }
 
-.anomalous-home-feedback-btn {
-    padding: 6px 14px;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 8px;
-    background: rgba(var(--amb-ink-rgb), 0.04);
+.anomalous-first-run-dock-title {
+    flex: 1;
+    min-width: 0;
     color: var(--amb-text-main);
-    font: inherit;
-    font-size: 12.5px;
-    white-space: nowrap;
-    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 600;
 }
 
-.anomalous-home-feedback-btn:hover {
-    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+.anomalous-first-run-dock-head > .anomalous-first-run-close {
+    margin-left: auto;
+}
+
+.anomalous-first-run-dock-body {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 0.8em;
+    line-height: 1.5;
+}
+
+.anomalous-first-run-nudge {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 10px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--amb-warn) 36%, var(--amb-border));
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--amb-warn) 8%, var(--amb-bg-card));
+}
+
+.anomalous-first-run-nudge-text {
+    flex: 1 1 180px;
+    color: var(--amb-text-soft);
+    font-size: 0.78em;
+    line-height: 1.45;
+}
+
+.anomalous-first-run-dock-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 /* The feedback window (ui_feedback_dialog.js): one text box, then GitHub. */
@@ -1077,13 +1369,6 @@
 .anomalous-feedback-submit:disabled {
     opacity: 0.45;
     cursor: default;
-}
-
-.anomalous-home-feedback-btn.is-primary {
-    border-color: transparent;
-    background: var(--amb-btn-primary-bg);
-    color: var(--amb-btn-primary-text);
-    font-weight: 600;
 }
 
 /* Opened from another device (remote_view.js): a quiet "view only" chip beside the page title,

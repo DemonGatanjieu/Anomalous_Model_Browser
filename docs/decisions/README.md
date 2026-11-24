@@ -334,3 +334,17 @@ someone's own menu on an update is worse than a long one. Home's four large card
 working pages, so the two tell one story, and canvas saves lead the small cards. Workflows, canvas saves and
 combos each say in half a sentence what they are and are not, where users meet them, since the three were
 taken for one another.
+
+## AD-033 — A calm three-tier Home, a floating welcome card that docks, and a folded Key option
+
+Putting the first-run banner, five secondary tool cards, the AI starter bar, a four-button help row and a
+boxed feedback banner on Home stacked four competing visual weights below the four main cards and pushed
+them down on startup. Moving the first-run flow into a centered welcome overlay inside the AMB window lets
+the four main cards (with a matching 200 px square workflow illustration in the same palette) sit cleanly
+at the top; as soon as scanning starts, the card tucks into a small bottom-right dock pill so the user can
+keep browsing while models scan. Users who need gated or `civitai.red` covers still want a Civitai API Key
+without hunting through scan settings, so an optional collapsed disclosure sits directly under the main
+scan CTA for inline paste-and-save, and the finished dock shows a subtle "Add key & rescan" nudge only when
+an online scan without a key actually missed covers or left models unmatched. Below Home's main cards and
+"Let the AI do it", the five secondary tools fold into a persistent "More tools" bar and onboarding/feedback
+links share one quiet footer line.

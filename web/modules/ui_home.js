@@ -1,13 +1,11 @@
 /**
  * The home page: first the four everyday tasks, large, each with its picture and line, the same four as the
- * rail's own pages (models, with "+ Import models" beside it, model files dropped anywhere on Home are imported
- * too, ui_sidebar.js; Model check; the gallery; workflows), the first-run card above them while nothing is
- * scanned (ui_first_run.js); then the other tools, canvas saves first, one
- * small card each (its icon and name; what it does on hover; "Run my preset" opens its sheet,
- * ui_ai_starter_sheet.js, and the last run's "same again" line comes under these cards); then "Let the
- * AI do it", folded until opened (ui_ai_starters.js, drawn into a slot); then the first steps (first-run card,
- * scan, the tour, what's new). Each card opens its page (the saves card starts the canvas's saves,
- * ui_snapshot_bar.js). Rendered again on each visit, so text follows the language.
+ * rail's own pages (models, with "+ Import models" beside it and dropped model files imported; Model check;
+ * the gallery; workflows); then "Let the AI do it", folded until opened (ui_ai_starters.js); then "More tools"
+ * (canvas saves, combos, prompts, "Run my preset", optional voices), folded by default and remembered in
+ * this browser; finally one quiet footer line (first-time scan, tour, what's new, feedback, star).
+ * The first-run welcome card floats over the window when wanted (ui_first_run.js). Rendered again on
+ * each visit so text follows the language.
  */
 
 import { translate as t } from './locales.js';
@@ -25,15 +23,18 @@ import { openPresetSheet } from './ui_ai_starter_sheet.js';
 import { pickModelFiles } from './ui_model_import.js';
 import { savesFromHome } from './ui_snapshot_bar.js';
 import { fadeIn } from './ui_ai_art.js';
+import { icon } from './ui_ai_icons.js';
+
+const MORE_OPEN_KEY = 'anomalous_home_more_open';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`). The everyday four come
-// first, large with their line; the rest small, the optional voices last, and only once the rail knows
-// Anomalous_TTS is installed or Voices is pinned (shown late rather than gone again: ui_shell_rail.js).
+// first, large with their pictures; the rest fold cleanly under "More tools", Voices shown only when
+// Anomalous_TTS is installed or Voices is pinned (ui_shell_rail.js).
 const MAIN_CARDS = Object.freeze([
     { name: 'Models', icon: PAGE_ICONS.models, open: owner => owner.goTo('models') },
     { name: 'Doctor', icon: TOOL_ICONS.DOCTOR, open: owner => owner.openDoctorPage() },
     { name: 'Gallery', icon: PAGE_ICONS.gallery, open: owner => owner.goTo('gallery') },
-    { name: 'Recipes', art: 'toolbox_workflow', icon: PAGE_ICONS.recipes, open: owner => owner.goTo('recipes') },
+    { name: 'Recipes', icon: PAGE_ICONS.recipes, open: owner => owner.goTo('recipes') },
 ]);
 const MORE_CARDS = Object.freeze([
     { name: 'Saves', icon: PAGE_ICONS.saves, open: owner => void savesFromHome(owner) },
@@ -42,10 +43,8 @@ const MORE_CARDS = Object.freeze([
     { name: 'Preset', icon: PAGE_ICONS.presets, open: owner => void openPresetSheet(owner) },
     { name: 'Voices', icon: PAGE_ICONS.script, open: owner => owner.goTo('script') },
 ]);
-// A large card's picture (web/assets, drawn with ChatGPT like the AI cards; workflows reuse the toolbox's).
-const artOf = card => card.art || `home_${card.name.toLowerCase()}`;
-// Asked for as the window opens.
-export const HOME_ART = MAIN_CARDS.map(artOf);
+// The large cards' pictures (web/assets, 200 px flat spot illustrations), preloaded as the window opens.
+export const HOME_ART = MAIN_CARDS.map(card => `home_${card.name.toLowerCase()}`);
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -61,10 +60,24 @@ function button(className, label, onClick) {
     return node;
 }
 
+function readMoreOpen() {
+    try {
+        return localStorage.getItem(MORE_OPEN_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
+function writeMoreOpen(open) {
+    try {
+        localStorage.setItem(MORE_OPEN_KEY, open ? '1' : '0');
+    } catch { /* this visit only */ }
+}
+
 function cardIcon(card) {
-    const icon = el('span', 'anomalous-home-card-icon');
-    icon.innerHTML = card.icon; // static markup only
-    return icon;
+    const box = el('span', 'anomalous-home-card-icon');
+    box.innerHTML = card.icon; // static markup only
+    return box;
 }
 
 /** A large card's picture; its line icon if the picture is missing. */
@@ -73,7 +86,7 @@ function cardArt(card) {
     img.alt = '';
     img.decoding = 'async';
     img.onerror = () => img.replaceWith(cardIcon(card));
-    img.src = new URL(`../assets/${artOf(card)}.webp`, import.meta.url).href;
+    img.src = new URL(`../assets/home_${card.name.toLowerCase()}.webp`, import.meta.url).href;
     return fadeIn(img);
 }
 
@@ -99,27 +112,71 @@ function smallCard(owner, card) {
     return node;
 }
 
-/** "Found a problem, or have an idea?": a report or a suggestion on GitHub, or the environment to paste elsewhere. */
-function feedbackBand(owner) {
-    const band = el('section', 'anomalous-home-feedback');
-    const copy = el('div', 'anomalous-home-feedback-copy');
-    copy.append(el('span', 'anomalous-home-feedback-title', t('feedbackTitle')), el('span', 'anomalous-home-feedback-lead', t('feedbackLead')));
-    const actions = el('div', 'anomalous-home-feedback-actions');
-    const copyBtn = button('anomalous-home-feedback-btn', t('feedbackCopy'), async () => {
+/** Secondary tools bar ("More tools"): folded by default so Home stays calm; state kept in browser. */
+function moreToolsSection(owner) {
+    const visible = MORE_CARDS.filter(card => card.name !== 'Voices' || owner.rail.voicesShown());
+    const section = el('section', 'anomalous-home-more');
+    const head = el('div', 'anomalous-home-more-head');
+    const title = el('h2', 'anomalous-home-more-title');
+    title.id = 'anomalous-home-more-title';
+    const mark = el('span', 'anomalous-home-more-mark');
+    mark.innerHTML = PAGE_ICONS.more; // static markup only
+    mark.setAttribute('aria-hidden', 'true');
+    const summary = el('span', 'anomalous-home-more-summary', visible.map(card => t(`homeMoreItem${card.name}`)).join(' · '));
+    title.append(mark, el('span', '', t('homeMoreTitle')), summary);
+
+    const cards = el('div', 'anomalous-home-cards');
+    cards.id = 'anomalous-home-more-cards';
+    cards.append(...visible.map(card => smallCard(owner, card)));
+
+    const show = (open) => {
+        cards.hidden = !open;
+        section.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.replaceChildren(el('span', '', t(open ? 'aiStartHide' : 'aiStartShow')), icon('chevronDown', 14));
+    };
+    const toggle = button('anomalous-home-more-toggle', '', () => {
+        show(cards.hidden);
+        writeMoreOpen(!cards.hidden);
+    });
+    toggle.setAttribute('aria-controls', cards.id);
+    toggle.setAttribute('aria-describedby', title.id);
+    show(readMoreOpen());
+
+    head.append(title, toggle);
+    section.append(head, cards);
+    return section;
+}
+
+/** Quiet single-line footer: onboarding links, bug/idea feedback, diagnostics and GitHub Star. */
+function homeFooter(owner) {
+    const footer = el('footer', 'anomalous-home-footer');
+    const copyBtn = button('anomalous-home-footer-link', t('feedbackCopy'), async () => {
         copyBtn.textContent = t(await copyDiagnostics(owner) ? 'feedbackCopied' : 'feedbackCopyFailed');
-        setTimeout(() => { copyBtn.textContent = t('feedbackCopy'); }, 1600);
+        setTimeout(() => { if (copyBtn.isConnected) copyBtn.textContent = t('feedbackCopy'); }, 1600);
     });
     copyBtn.title = t('feedbackCopyHint');
-    actions.append(
-        button('anomalous-home-feedback-btn is-primary', t('feedbackReport'), () => openFeedbackDialog(owner, 'bug')),
-        button('anomalous-home-feedback-btn', t('feedbackSuggest'), () => openFeedbackDialog(owner, 'idea')),
+    const starBtn = button('anomalous-home-footer-link', t('starButton'), openRepoPage);
+    starBtn.title = t('starHint');
+
+    const items = [
+        button('anomalous-home-footer-link', t('homeFooterFirstRun'), () => void showFirstRun(owner)),
+        button('anomalous-home-footer-link', t('homeStartTour'), () => startSpotlightTour(owner)),
+        button('anomalous-home-footer-link', t('homeStartNews'), () => showUpdateGuide(owner, { force: true })),
+        button('anomalous-home-footer-link', t('feedbackReport'), () => openFeedbackDialog(owner, 'bug')),
+        button('anomalous-home-footer-link', t('feedbackSuggest'), () => openFeedbackDialog(owner, 'idea')),
         copyBtn,
-    );
-    const star = button('anomalous-home-feedback-btn', t('starButton'), openRepoPage);
-    star.title = t('starHint');
-    actions.append(star);
-    band.append(copy, actions);
-    return band;
+        starBtn,
+    ];
+    items.forEach((node, index) => {
+        if (index > 0) {
+            const dot = el('span', 'anomalous-home-footer-sep', '·');
+            dot.setAttribute('aria-hidden', 'true');
+            footer.append(dot);
+        }
+        footer.append(node);
+    });
+    return footer;
 }
 
 export function renderHome(owner, panel) {
@@ -128,22 +185,14 @@ export function renderHome(owner, panel) {
 
     const mains = el('div', 'anomalous-home-mains');
     mains.append(...MAIN_CARDS.map(card => mainCard(owner, card)));
-    const more = el('div', 'anomalous-home-cards');
-    more.append(...MORE_CARDS.filter(card => card.name !== 'Voices' || owner.rail.voicesShown()).map(card => smallCard(owner, card)));
-    // The AI section comes back later; the slot keeps its place under the smaller cards.
+    // "Let the AI do it" sits right below the primary cards; "More tools" folds under it.
     const slot = el('div', 'anomalous-home-ai-slot');
+    const moreSection = moreToolsSection(owner);
 
-    const start = el('div', 'anomalous-home-start');
-    start.append(el('span', 'anomalous-home-start-label', t('homeStartLabel')),
-        button('anomalous-home-link', t('homeStartSetup'), () => void showFirstRun(owner, page, mains)),
-        button('anomalous-home-link', t('homeStartScan'), () => owner.openScanPage()),
-        button('anomalous-home-link', t('homeStartTour'), () => startSpotlightTour(owner)),
-        button('anomalous-home-link', t('homeStartNews'), () => showUpdateGuide(owner, { force: true })));
-
-    page.append(mains, more, slot, start, feedbackBand(owner));
+    page.append(mains, slot, moreSection, homeFooter(owner));
     panel.replaceChildren(page);
-    void renderFirstRun(owner, page, mains);
-    renderAiStarters(owner, slot, more);
+    void renderFirstRun(owner);
+    renderAiStarters(owner, slot, moreSection);
     renderRecentActivity(owner, page);
     renderRecentAiTasks(owner, page);
 }
