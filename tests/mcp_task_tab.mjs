@@ -8,6 +8,8 @@ source = 'const { app, t, showWorkbenchToast, tabName } = globalThis.taskTabHost
 const workflow = { activeWorkflow: null, openWorkflows: [] };
 let copies = 0;
 let switchesWork = true;
+// ComfyUI's tab bar now switches on mousedown (its tabs, role "tab"); older ones were buttons switching on click.
+let tabBar = 'press';
 const app = {
     extensionManager: { workflow, command: { execute: async () => {} } },
     graph: { serialize: () => ({ nodes: [] }) },
@@ -18,8 +20,10 @@ const app = {
     },
 };
 globalThis.taskTabHost = { app, t: value => value, tabName: value => value, showWorkbenchToast() {} };
+globalThis.MouseEvent = class { constructor(type, init) { Object.assign(this, init, { type }); } };
 globalThis.document = { querySelectorAll: () => workflow.openWorkflows.map(item => ({
-    click() { if (switchesWork) workflow.activeWorkflow = item; },
+    dispatchEvent(event) { if (switchesWork && tabBar === 'press' && event.type === 'mousedown' && event.button === 0) workflow.activeWorkflow = item; },
+    click() { if (switchesWork && tabBar === 'click') workflow.activeWorkflow = item; },
 })) };
 globalThis.requestAnimationFrame = callback => callback();
 // Exercise timeout/fallback branches without waiting several real seconds.
@@ -38,9 +42,13 @@ function reset(hasTask = true) {
     workflow.openWorkflows = [...(hasTask ? [{ path: 'task-A' }] : []), workflow.activeWorkflow];
 }
 for (const action of ['run_workflow', 'describe_canvas', 'check_models', 'download_missing', 'set_values']) {
-    reset();
-    assert.equal(await onTaskTab(action, spec, run, remember), 'task-A', `${action} follows its task`);
-    assert.equal(calls, 1);
+    for (const bar of ['press', 'click']) {
+        reset();
+        tabBar = bar;
+        assert.equal(await onTaskTab(action, spec, run, remember), 'task-A', `${action} follows its task (${bar} tab bar)`);
+        assert.equal(calls, 1);
+    }
+    tabBar = 'press';
     for (const closed of [true, false]) {
         reset(!closed);
         switchesWork = false;

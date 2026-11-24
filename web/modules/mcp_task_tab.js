@@ -40,13 +40,16 @@ async function settled(path, limit = SWITCH_WAIT_MS) {
     return shown(path);
 }
 
-/** Brings open tab `path` to the front as a click on it does; false when it is not open. */
+/** Brings open tab `path` to the front as a click on it does; false when it is not open. ComfyUI's tab bar
+ * takes the press on mousedown (its tabs, role "tab"); older ones were buttons that took a click. */
 export async function showTab(path) {
     const workflows = store()?.openWorkflows || [];
     const index = workflows.findIndex(workflow => workflow.path === path);
     if (index < 0) return false;
     if (shown(path)) return true;
-    document.querySelectorAll('.workflow-tabs > button')[index]?.click();
+    const tab = document.querySelectorAll('.workflow-tabs [role="tab"], .workflow-tabs > button')[index];
+    tab?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }));
+    tab?.click();
     if (await settled(path)) return true;
     // Tabs not on screen (another layout): step through the open ones, as Ctrl+Tab does.
     for (let step = 0; step < workflows.length && !shown(path); step++) {
