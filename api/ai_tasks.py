@@ -558,7 +558,7 @@ def task_summary(task, now=None):
         "live": any(step.get("state") == "running" and now - step.get("at", 0) < RUN_WATCH_SECONDS for step in steps),
         "steps": len(steps), "kinds": kinds, "errors": unresolved(steps), "halted": bool(halted(steps)),
         "paused": bool((halted(steps) or {}).get("pause")),
-        "images": len(made), "cover": images[-1] if images else None, "asks": asks, "from": task.get("from"),
+        "images": len(made), "cover": images[-1] if images else None, "asks": asks, "from": task.get("from"), "chat_only": bool(task.get("chat_only")),
     }
 
 

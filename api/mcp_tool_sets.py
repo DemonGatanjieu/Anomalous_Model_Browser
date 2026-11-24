@@ -12,6 +12,8 @@ explain in its own chat. The card's own tools (mcp_apps.APP_TOOLS) come along wh
 shows the card. Without begin_task, nothing told the AI of the ready-made ways and the skills (a Flash
 exam wired an enlargement node by node): get_situation carries them (chat_start()), every time, since a new
 chat of the same app within 20 minutes goes on in the same task and cannot be told from the old one.
+A task an app works on through a set without the workbench is marked chat_only (note_mode()): the user
+follows it in the app's own chat, so the canvas card (ai_float_state.js) shows only for a gate waiting on them.
 
 GET /anomalous/ai_tool_sets: {core, mine, needed, tools: [{name, stage, size}], all_size};
 POST {mine: [names]} keeps the user's choice (a write: this computer only, local_guard.py).
@@ -97,6 +99,25 @@ def instructions(parts, names, tools):
     if not set(NEEDED) <= names:
         text = f"{text} {CHAT_NOTE}"
     return text
+
+
+def is_chat_only(names):
+    """Whether the set `names` (None: every tool) leaves out the workbench, so the AI talks in its own chat."""
+    return names is not None and not set(NEEDED) <= names
+
+
+def note_mode(task_id, names):
+    """Marks the task an app calls through the set `names` chat_only, or no longer; saved and told only on a change."""
+    with ai_tasks._lock:
+        task = ai_tasks._load().get(task_id)
+        if not task or bool(task.get("chat_only")) == is_chat_only(names):
+            return
+        if is_chat_only(names):
+            task["chat_only"] = True
+        else:
+            task.pop("chat_only", None)
+        ai_tasks._save(task)
+    ai_tasks._notify(task_id)
 
 
 def chat_start(result, name, names, ctx, private):

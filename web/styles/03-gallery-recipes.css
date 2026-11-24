@@ -533,6 +533,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 /* Workflow Recipes: Studio Topbar and Modern Layout System */
 .anomalous-recipe-body {
+    position: relative; /* the drop veil (28-workflows.css) */
     display: flex;
     flex: 1;
     min-height: 0;

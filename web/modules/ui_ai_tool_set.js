@@ -1,7 +1,8 @@
 /**
- * Which tools the AI app is offered (api/mcp_tool_sets.py), picked in the Connect an AI guide above the
- * address: every tool (the address as it is; a task handed over in Anomalous needs the workbench tools),
- * Anomalous's short set for drawing in the AI app's own chat (?tools=core), or the user's own pick
+ * Which tools the AI app is offered (api/mcp_tool_sets.py), the way the AI works, picked first in the
+ * Connect an AI guide: every tool, with the workbench and the canvas card (the address as it is; a task
+ * handed over in Anomalous needs it), Anomalous's short set for working in the AI app's own chat, where
+ * the canvas card keeps away but for a gate (?tools=core, ai_float_state.js), or the user's own pick
  * (?tools=mine, a checklist by stage of the work). The guide's address and the lines carrying it follow
  * the choice; which one was picked last is remembered in this browser only. GET/POST /anomalous/ai_tool_sets.
  */
@@ -125,7 +126,7 @@ export function toolSetPicker(onChange) {
     const choices = el('div', 'anomalous-ai-gates-choice');
     const note = el('div', 'anomalous-ai-connect-note');
     const editor = el('div');
-    box.append(choices, note, editor);
+    box.append(el('div', 'anomalous-ai-toolset-title', t('aiConnectTools')), choices, note, editor);
     let info = null;
     let value = remembered();
     const effective = () => (value === 'mine' && !info.mine.length ? 'all' : value);

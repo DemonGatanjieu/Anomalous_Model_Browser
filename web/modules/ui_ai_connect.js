@@ -1,12 +1,13 @@
 /**
  * How to connect an AI app to Anomalous (the AI workbench's "Connect an AI", its empty page and a
- * task waiting for an AI). One thing to do comes first: a sentence to paste to the AI so it sets
- * itself up (and starts on the task, when one waits), and under it a line that turns green once an
- * app has called (connectionLine, GET /anomalous/ai_callers, asked only while the line shows).
- * The rest is folded: the address and the way for each common app, to add it by hand; and what few
- * need, which tools the app is offered (ui_ai_tool_set.js, not with a task waiting: it needs every
- * tool; the address follows the choice) and rules for the AI app to keep (use Anomalous's tools,
- * never edit pictures with code, say what it did outside). Only this computer can connect; the
+ * task waiting for an AI). First the way the AI will work, which is which tools the app is offered
+ * (ui_ai_tool_set.js: with the workbench, or in the app's own chat; not with a task waiting, which
+ * needs every tool); the address follows the choice. Then one thing to do: a sentence to paste to the
+ * AI so it sets itself up (and starts on the task, when one waits), and under it a line that turns
+ * green once an app has called (connectionLine, GET /anomalous/ai_callers, asked only while the line
+ * shows). The rest is folded: the address and the way for each common app, to add it by hand; and
+ * rules for the AI app to keep (use Anomalous's tools, never edit pictures with code, say what it
+ * did outside). Only this computer can connect; the
  * address is this page's own. Connecting (connectHint) is a card that opens the guide in place,
  * under a task waiting for an AI (ui_ai_ready.js) and on the empty page.
  */
@@ -107,14 +108,12 @@ export function connectGuide(title = '') {
     const fill = (set) => {
         sentence.replaceChildren(copyLine(sentenceForAi(title, set), { code: false, label: t('aiConnectCopySentence') }));
         appWays(byHand, mcpAddress(set));
-        if (set !== 'all') more.open = true; // the address carries a shorter tool list: why shows
     };
-    more.append(el('summary', '', t('aiConnectMore')));
-    if (!title) more.append(el('div', 'anomalous-ai-connect-app', t('aiConnectTools')), toolSetPicker(fill)); // a task waiting in Anomalous needs every tool
     fill('all');
+    if (!title) box.append(toolSetPicker(fill)); // a task waiting in Anomalous needs every tool
     const rules = copyLine(t('aiConnectRules'), { code: false, label: t('aiConnectCopyRules') });
     rules.classList.add('is-rules');
-    more.append(el('div', 'anomalous-ai-connect-app', t('aiConnectRulesWhy')), rules);
+    more.append(el('summary', '', t('aiConnectMore')), el('div', 'anomalous-ai-connect-app', t('aiConnectRulesWhy')), rules);
     const say = el('div', 'anomalous-ai-connect-step has-art');
     say.append(art('connect', 'anomalous-ai-connect-art'), el('span', '', t(title ? 'aiConnectSayTask' : 'aiConnectSay')));
     box.append(say, sentence, connectionLine(),

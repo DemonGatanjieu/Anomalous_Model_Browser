@@ -9,6 +9,7 @@ import { moveWorkflowMaterials, workflowMaterialCount } from './recipe_save.js';
 import { openShareDialog } from './ui_share.js';
 import { fetchParameterSetSignatures, showParameterSetCount } from './ui_param_set_keys.js';
 import { refreshSaves, savesToggle, setSavesView } from './ui_saves_list.js';
+import { attachRecipeDrop } from './ui_recipe_drop.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -156,6 +157,7 @@ function renderRecipeEmptyGuide(owner) {
     appendText(guide, 'div', '⚡', 'anomalous-recipe-empty-icon');
     appendText(guide, 'h3', t('recipeEmptyGuideTitle'), 'anomalous-recipe-empty-title');
     appendText(guide, 'p', t('recipeEmptyGuideSubtitle'), 'anomalous-recipe-empty-subtitle');
+    appendText(guide, 'p', t('recipeEmptyDropHint'), 'anomalous-recipe-empty-drop');
 
     const steps = appendText(guide, 'div', '', 'anomalous-recipe-empty-steps');
 
@@ -283,6 +285,7 @@ export async function showRecipes({ saves = false } = {}) {
     this.recipeListContainer = document.createElement('div');
     this.recipeListContainer.className = `anomalous-wf-list ${this.recipeViewMode === 'list' ? 'is-list' : 'is-grid'}`;
     this.recipeView.appendChild(this.recipeListContainer);
+    attachRecipeDrop(this, this.recipeView);
     setSavesView(this, Boolean(saves));
     this.recipeContainer.appendChild(this.recipeView);
     await (saves ? refreshSaves(this) : this.refreshRecipes());

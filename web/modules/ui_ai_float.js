@@ -4,6 +4,8 @@
  * user watches the nodes change. Its head: the task's dot and name, "message the AI", Pause
  * (ui_ai_halt.js), fold into a line, the full workbench, and × (the card goes, the AI goes on). Under
  * it the tag (ui_ai_float_parts.js): what goes on, the first open question, the line to the AI.
+ * Where the browser can, one button puts it in a desktop window on top of every app, and back
+ * (ui_ai_float_pip.js); there it is drawn the same and the window's own frame moves it.
  * Dragged by its head (kept in this browser), put back at the top by a double-click on it. When it
  * shows and which task it follows: ai_float_state.js. It never opens AMB's window by itself:
  * `getBrowser()` only when the user asks for the workbench, whose opening hides the card
@@ -19,6 +21,7 @@ import { fetchTasks, readTask } from './ai_task_cache.js';
 import { canHalt, pauseTask } from './ui_ai_halt.js';
 import { hasDraft, hidePanelToast } from './ui_ai_panel.js';
 import { askView, brief, floatTool, lineKey, lineView, sayView } from './ui_ai_float_parts.js';
+import { closeDesktopPip, focusOpenerWindow, isDesktopPipOpen, openDesktopPip, supportsDesktopPip } from './ui_ai_float_pip.js';
 import {
     attentionKeys, clampFloatPosition, dismissFloat, floatState, floatTone, floatWakeIn, hasNewAttention, isTaskActive,
     liftDismissal, parseFloatPosition, pickFloatAsk, pickTracked, shouldAutoShowOnBoot, shouldShowFloat,
@@ -80,6 +83,7 @@ function mount() {
         });
         card.addEventListener('pointerdown', startDrag);
         card.addEventListener('dblclick', (event) => { // held by the drag, the card itself is its target: what is under the pointer says
+            if (isDesktopPipOpen()) return;
             const spot = document.elementFromPoint(event.clientX, event.clientY);
             if (!spot?.closest('.anomalous-ai-float-head') || spot.closest('button, input')) return;
             state.pos = null;
@@ -88,6 +92,7 @@ function mount() {
         });
     }
     card.setAttribute('aria-label', t('aiFloatLabel'));
+    if (isDesktopPipOpen()) return; // in its desktop window, where the window's frame places it
     const home = document.querySelector('.graph-canvas-panel') || document.body;
     if (card.parentElement !== home) home.append(card);
     if (!state.resize && typeof ResizeObserver === 'function') {
@@ -102,12 +107,13 @@ function hide() {
     state.stopDrag?.();
     state.resize?.disconnect();
     state.resize = null;
+    if (isDesktopPipOpen()) closeDesktopPip({ suppressReturn: true }); // no empty desktop window left behind
     card?.remove();
 }
 
 /** The dragged place, kept inside the canvas; none: the top middle (the CSS). */
 function place() {
-    if (!card?.isConnected) return;
+    if (!card?.isConnected || isDesktopPipOpen()) return;
     card.classList.toggle('has-pos', Boolean(state.pos));
     if (!state.pos) {
         card.style.left = '';
@@ -121,7 +127,7 @@ function place() {
 }
 
 function startDrag(event) {
-    if (event.button !== 0 || !event.target.closest('.anomalous-ai-float-head') || event.target.closest('button, input')) return;
+    if (isDesktopPipOpen() || event.button !== 0 || !event.target.closest('.anomalous-ai-float-head') || event.target.closest('button, input')) return;
     event.preventDefault();
     const host = card.parentElement.getBoundingClientRect();
     const box = card.getBoundingClientRect();
@@ -168,8 +174,13 @@ function headView(task) {
     if (!state.folded && canHalt(task)) {
         tools.append(floatTool('pause', t('aiPause'), () => void pauseTask(task, () => readAgain(task.id)), { title: `${t('aiPause')} · ${t('aiPauseHint')}` }));
     }
-    tools.append(floatTool(state.folded ? 'chevronDown' : 'chevronUp', t(state.folded ? 'aiFloatUnfold' : 'aiFloatFold'), () => setFolded(!state.folded)),
-        floatTool('expand', t('aiFloatOpen'), () => openWorkbench(task)));
+    const desktop = isDesktopPipOpen();
+    if (supportsDesktopPip()) {
+        tools.append(desktop ? floatTool('pip', t('aiFloatDock'), () => closeDesktopPip())
+            : floatTool('popout', t('aiFloatPopout'), () => void popOut()));
+    }
+    if (!desktop) tools.append(floatTool(state.folded ? 'chevronDown' : 'chevronUp', t(state.folded ? 'aiFloatUnfold' : 'aiFloatFold'), () => setFolded(!state.folded)));
+    tools.append(floatTool('expand', t('aiFloatOpen'), () => openWorkbench(task)));
     if (!state.folded) tools.append(floatTool('close', t('aiFloatClose'), dismiss));
     head.append(el('span', 'anomalous-ai-float-dot'), name, el('span', 'anomalous-ai-float-brief'), tools);
     return head;
@@ -193,7 +204,9 @@ function render(task, view) {
     mount();
     card.classList.toggle('is-folded', state.folded);
     let head = card.querySelector(':scope > .anomalous-ai-float-head');
-    const headKey = JSON.stringify([resolveLocale(), task.id, taskTitle(task), state.folded, Boolean(task.ended), canHalt(task), state.sayOpen]);
+    const desktop = isDesktopPipOpen();
+    const headKey = JSON.stringify([resolveLocale(), task.id, taskTitle(task), state.folded, Boolean(task.ended), canHalt(task), state.sayOpen, desktop]);
+    if (desktop) card.ownerDocument.title = taskTitle(task); // the desktop window's name follows the task and the language
     if (!head || head.dataset.key !== headKey) {
         const fresh = headView(task);
         fresh.dataset.key = headKey;
@@ -231,7 +244,7 @@ function draw() {
     state.dismissed = liftDismissal(state.dismissed, task);
     const show = shouldShowFloat({ task, browserOpen: state.browserOpen, pinnedTaskId: state.pinned, dismissed: state.dismissed, watching: state.watching });
     if (!show) return void hide();
-    if (!task.ended) state.watching = task.id;
+    if (!task.ended && !task.chat_only) state.watching = task.id; // one in an AI app's chat goes with its gate
     if (state.folded && hasNewAttention(state.keys.id === task.id ? state.keys.list : [], task)) setFolded(false, false); // something new to decide: in reach
     state.keys = { id: task.id, list: attentionKeys(task) };
     if (task.ended) state.sayOpen = false;
@@ -270,8 +283,22 @@ function dismiss() {
     hide();
 }
 
-/** The full workbench on this task (AMB's window opens on the AI page; the card steps back). */
+/** The card in a desktop window over every app (from the click: the browser asks for one), unfolded so the tag shows. */
+async function popOut() {
+    if (state.folded) setFolded(false);
+    state.stopDrag?.();
+    state.resize?.disconnect(); // the window's frame sizes it now
+    state.resize = null;
+    await openDesktopPip(card, { title: taskTitle(state.task), onReturn: draw });
+    draw(); // in its window, or still on the canvas when the browser gave none
+}
+
+/** The full workbench on this task (AMB's window opens on the AI page; the card steps back), in ComfyUI's own window. */
 function openWorkbench(task) {
+    if (isDesktopPipOpen()) {
+        closeDesktopPip({ suppressReturn: true });
+        focusOpenerWindow();
+    }
     state.browser?.()?.openAiTask?.(task.id);
 }
 

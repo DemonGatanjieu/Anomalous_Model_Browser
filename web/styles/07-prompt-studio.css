@@ -52,6 +52,7 @@
 }
 
 .anomalous-mixer-toast-action {
+    flex: none;
     padding: 3px 12px;
     border: 1px solid var(--amb-border-hover);
     border-radius: var(--amb-radius-control);

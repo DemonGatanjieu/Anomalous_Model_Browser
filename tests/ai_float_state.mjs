@@ -2,7 +2,7 @@
 // which task it follows, the user's × and what brings the card back, and where it may stand.
 import assert from 'node:assert/strict';
 import {
-    ACTIVE_SECONDS, QUIET_SECONDS, attentionKey, attentionKeys, clampFloatPosition, dismissFloat, floatOutcome, floatState,
+    ACTIVE_SECONDS, QUIET_SECONDS, attentionKey, attentionKeys, clampFloatPosition, dismissFloat, floatEligible, floatOutcome, floatState,
     floatTone, floatWakeIn, hasNewAttention, isTaskActive, lastSettledStep, liftDismissal, parseFloatPosition, pickFloatAsk,
     pickTracked, shouldAutoShowOnBoot, shouldShowFloat, unresolvedFailures,
 } from '../web/modules/ai_float_state.js';
@@ -145,6 +145,31 @@ assert.equal(unresolvedFailures([step('a', { tool: 't', ok: false, state: 'error
 assert.equal(unresolvedFailures([step('a', { tool: 't', ok: false, state: 'error', recovery_target: 'n1' }), step('b', { tool: 't', recovery_target: 'n2' })]), 1, 'another target does not mend it');
 assert.equal(unresolvedFailures([step('a', { tool: 't', ok: false, state: 'error' }), step('b', { tool: 't', recovery_target: 'n2' })]), 0, 'no target: any later success of the tool');
 assert.equal(unresolvedFailures(undefined), 0);
+
+// A task an AI app works on in its own chat (?tools=core): the card only for a gate, or when the user put it there.
+const chat = (id, steps, extra = {}) => task(id, steps, { chat_only: true, ...extra });
+assert.ok(!shouldAutoShowOnBoot({ live: true, updated: NOW - 5, chat_only: true, asks: 0 }, NOW), 'its runs stay in the chat');
+assert.ok(shouldAutoShowOnBoot({ updated: NOW - 5, chat_only: true, asks: 1 }, NOW), 'a gate waits for the user');
+for (const [what, quiet] of [
+    ['a call going', chat('c', [step('s1', { state: 'running' })])],
+    ['a run going', chat('c', [step('r', { tool: 'run_workflow', kind: 'run', state: 'running', run: { state: 'running' } })])],
+    ['thinking', chat('c', [step('s1')])],
+    ['ended', chat('c', [step('s1')], { ended: NOW })],
+]) {
+    assert.ok(!shouldShowFloat({ task: quiet, watching: 'c', at: NOW }), what);
+}
+const chatGate = chat('c', [step('s1'), gate('g1')]);
+assert.ok(shouldShowFloat({ task: chatGate, at: NOW }), 'a gate brings it');
+assert.ok(!shouldShowFloat({ task: chat('c', [step('s1'), gate('g1', { state: 'done' })]), watching: 'c', at: NOW }), 'answered: gone again');
+assert.ok(shouldShowFloat({ task: chat('c', [step('s1')]), pinnedTaskId: 'c', at: NOW }), 'put on the canvas from the workbench');
+assert.ok(!shouldShowFloat({ task: chatGate, browserOpen: true, at: NOW }), 'never over the open window');
+assert.ok(!floatEligible(chat('c', [step('s1')])) && floatEligible(chatGate) && floatEligible(chat('c', []), 'c') && floatEligible(task('w', [])));
+const inWorkbench = task('w', [step('s1', { state: 'running' })], { started: NOW - 900 });
+const inChat = chat('c', [step('s2', { state: 'running' })], { started: NOW - 10 });
+assert.equal(pickTracked(inWorkbench, inChat, { at: NOW }).id, 'w', 'a newer chat in an AI app takes nothing over');
+assert.equal(pickTracked(inChat, inWorkbench, { at: NOW }).id, 'w', 'the workbench task takes the card back');
+assert.equal(pickTracked(inWorkbench, chat('c', [gate('g2')], { started: NOW - 10 }), { at: NOW }).id, 'c', 'its gate still comes first');
+assert.equal(pickTracked(inWorkbench, inChat, { pinnedTaskId: 'c', at: NOW }).id, 'c', 'put on the canvas: it may follow');
 
 // Where the card may stand: inside the canvas, a margin from the edges.
 assert.deepEqual(clampFloatPosition({ left: 50, top: 40 }, { width: 800, height: 600 }, { width: 340, height: 120 }), { left: 50, top: 40 });

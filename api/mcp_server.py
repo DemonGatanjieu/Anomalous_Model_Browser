@@ -213,6 +213,8 @@ async def _call(params, request, names=None):
     active_task = step_ref[0] if step_ref else task_id
     if active_task:
         ctx["task"] = active_task
+        if name not in mcp_apps.APP_TOOLS:  # before the page reads it: a task in the app's own chat keeps the card away
+            await asyncio.to_thread(mcp_tool_sets.note_mode, active_task, names)
     outside = None
     if name not in mcp_apps.APP_TOOLS:  # the card's own calls do not reach the AI
         outside = await asyncio.to_thread(ai_outside.check, active_task or ai_tasks.active_task_id(client, session))
@@ -267,6 +269,8 @@ async def _call(params, request, names=None):
         await asyncio.to_thread(mcp_directory.tell_stale, result, active_task)
     # Last: a private task's pictures and prompts never leave, whatever put them in (ai_privacy.py).
     final_task = active_task or ai_tasks.active_task_id(client, session=session)
+    if final_task and final_task != active_task and name not in mcp_apps.APP_TOOLS:  # begin_task, report…: made in the call
+        await asyncio.to_thread(mcp_tool_sets.note_mode, final_task, names)
     if final_task != privacy_task and await asyncio.to_thread(ai_privacy.applies, final_task):
         private, privacy_task = True, final_task
     if private and name == "zoom_image":  # the user's local helper looks in the AI app's place (ai_darkroom.py)

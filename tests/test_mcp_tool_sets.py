@@ -105,6 +105,30 @@ class ToolSetTests(unittest.TestCase):
         self.assertIn("skills", first)
         self.assertNotIn("blocks", whole, "begin_task says it there")
 
+    def test_a_task_worked_on_without_the_workbench_is_marked_chat_only(self):
+        meta = {"io.modelcontextprotocol/clientInfo": {"name": "chat-only test", "version": "1"}}
+        call = lambda path, name, arguments: post(path, {"jsonrpc": "2.0", "id": 5, "method": "tools/call",  # noqa: E731
+                                                     "params": {"name": name, "arguments": arguments, "_meta": meta}})
+        self.assertNotIn("error", call("/anomalous/mcp?tools=core", "begin_task", {"title": "in the chat", "new_task": True}))
+        task_id = ai_tasks.list_tasks(1)[0]["id"]
+        self.assertIs(ai_tasks.get_task(task_id)["chat_only"], True, "begun in the call itself")
+        self.assertIs(ai_tasks.task_summary(ai_tasks.get_task(task_id))["chat_only"], True)
+        call("/anomalous/mcp", "report", {"task": task_id, "text": "back with every tool"})
+        self.assertNotIn("chat_only", ai_tasks.get_task(task_id), "every tool again: the workbench follows it")
+        self.assertIs(ai_tasks.task_summary(ai_tasks.get_task(task_id))["chat_only"], False)
+        call("/anomalous/mcp?tools=core", "report", {"task": task_id, "text": "in the chat again"})
+        self.assertIs(ai_tasks.get_task(task_id)["chat_only"], True)
+
+    def test_every_tool_or_a_pick_with_the_workbench_leaves_a_task_unmarked(self):
+        meta = {"io.modelcontextprotocol/clientInfo": {"name": "whole test", "version": "1"}}
+        post("/anomalous/mcp", {"jsonrpc": "2.0", "id": 6, "method": "tools/call",
+                              "params": {"name": "begin_task", "arguments": {"title": "whole", "new_task": True}, "_meta": meta}})
+        task = ai_tasks.get_task(ai_tasks.list_tasks(1)[0]["id"])
+        self.assertEqual((task["title"], "chat_only" in task, ai_tasks.task_summary(task)["chat_only"]), ("whole", False, False))
+        self.assertFalse(mcp_tool_sets.is_chat_only(None))
+        self.assertTrue(mcp_tool_sets.is_chat_only(frozenset(mcp_tool_sets.CORE)))
+        self.assertFalse(mcp_tool_sets.is_chat_only(frozenset(mcp_tool_sets.CORE + mcp_tool_sets.NEEDED)))
+
     def test_every_offered_tool_has_a_label_in_both_languages(self):
         words = (PLUGIN / "web" / "modules" / "locales.js").read_text(encoding="utf-8")
         for name in mcp_server.TOOLS:

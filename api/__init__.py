@@ -3,7 +3,7 @@ from . import (
     model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, quick_index, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
     local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, tts_version, backup,
     network_check, model_heads, model_usage, usage_ledger, sidecar_layout, ai_tasks_routes, snapshot_routes, workflow_saves, example_workflows,
-    model_guide, job_sheets, prompt_language, lllite_fit, description_translation, voice_covers, rail_hints,
+    model_guide, job_sheets, prompt_language, lllite_fit, description_translation, voice_covers, rail_hints, workflow_import,
 )
 from .scanner import *
 from .config import *
@@ -117,6 +117,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/export_recipe_package', recipe_packages.api_export_recipe_package)
     app.router.add_post('/anomalous/import_recipe_package_inspect', recipe_packages.api_import_recipe_package_inspect)
     app.router.add_post('/anomalous/import_recipe_package_commit', recipe_packages.api_import_recipe_package_commit)
+    app.router.add_post('/anomalous/inspect_workflow_file', workflow_import.api_inspect_workflow_file)
 
     # Curated Material Library Routes
     app.router.add_get('/anomalous/materials', materials.api_get_materials)

@@ -399,7 +399,9 @@ covered by the `styles.css` manifest.
   themselves: Antigravity reads a tool's file before its first call) unless the address names a shorter set:
   `api/mcp_tool_sets.py` serves `?tools=core` (drawing in the AI app's own chat, no workbench) and `?tools=mine`
   (the user's pick, `anomalous/ai_tool_sets.json`), with the instructions cut to the listed tools; only the list
-  shrinks, tools/call takes every tool (`tests/test_mcp_tool_sets.py`). `api/ai_starters.py` gives the home page's AI
+  shrinks, tools/call takes every tool (`tests/test_mcp_tool_sets.py`). A task an app calls through a set without the
+  workbench is marked `chat_only` (`note_mode`, right after the call's step begins; cleared when the app comes back with
+  every tool), and the task list's rows carry it, so the canvas card keeps away from it but for a gate. `api/ai_starters.py` gives the home page's AI
   cards what they need (GET /anomalous/ai_starters: saved workflows with their presets by file; whether downloads ask, the app
   that came last and which of those lists it holds, whether any app has come and how many base models ComfyUI lists,
   for the line a card's sheet opens with; `tests/test_ai_starters.py`), and the Connect guide the app that
@@ -598,7 +600,9 @@ covered by the `styles.css` manifest.
   like the saves bar): while AMB's window is shut it follows a task at work and says what goes on, with a gate's OK, a short
   answer, Pause and a line to the AI; dragged, folded or closed by the user (kept in the browser). `ui_ai_float_parts.js`
   draws what its tag says; `ai_float_state.js` is, without DOM, when it shows, what it says first and which task it
-  follows (`tests/ai_float_state.mjs`). The task head's "float over canvas" puts a task on it, `browser.js` tells it when
+  follows, and that a `chat_only` task gets it only for a gate (`tests/ai_float_state.mjs`). `ui_ai_float_pip.js` moves
+  the card into a desktop window on top of every app (Chrome / Edge's Document Picture-in-Picture, with AMB's stylesheet
+  and the theme's classes) and back to the canvas when it closes; a browser without it shows no button for it. The task head's "float over canvas" puts a task on it, `browser.js` tells it when
   the window opens and closes, and it opens the workbench through `owner.openAiTask` (set by `watchAiTasks`), so it never
   imports the page; while the window is shut, the page's toast for a panel or a gate gives way to it. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
   output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `web/modules/ai_chat_plus.js` holds the DOM-free logic (per-ref note sanitization and `attached: true` serialization; `tests/ai_chat_plus.mjs`). `web/modules/ui_ai_plus.js` is the 4-row "+" menu (`models`, `ways`, `other` -> `combos|workflows|prompts|nodes` else `combos`, opening or switching the single picker in the side column; plus shared `ui_ai_start_from.openBuildRouteWindow` dialog, and `@` hint). `ui_ai_mention.js` holds those refs
@@ -690,13 +694,13 @@ covered by the `styles.css` manifest.
   `ui_ai_art.js` holds the AI pages' pictures (`web/assets`, drawn with ChatGPT in one style) and `emptyState`, an empty
   view made of a picture and one line; `warmArt` asks for the first screens' pictures (the starter cards, a new task's steps)
   at high priority when the window opens (`browser.js` `show`), once per page, so they arrive with the words, and `fadeIn`
-  lets a picture still on its way fade in. `ui_ai_connect.js` says how to connect an AI app: a sentence to send the AI so it sets itself up
-  and starts on a waiting task, a line that turns green once an app has called (`connectionLine`), and folded
-  under them the address, each common app's way, the tool list and the rules; in a window from the
-  list's "Connect an AI", and as a card (`connectHint`) that opens the guide in place on the
-  empty page and over a task waiting for an AI until one has ever come; without a waiting task
-  `ui_ai_tool_set.js` picks above the address which tools the app is offered (all, the short set, or the
-  user's checklist by stage) and the address follows. `ui_ai_starters.js` is the home page's "Let the AI do it"
+  lets a picture still on its way fade in. `ui_ai_connect.js` says how to connect an AI app: first, without a waiting
+  task, the way the AI works (`ui_ai_tool_set.js`: every tool with the workbench and the canvas card, the short set for
+  the AI app's own chat, or the user's checklist by stage; the address follows), then a sentence to send the AI so it
+  sets itself up and starts on a waiting task, a line that turns green once an app has called (`connectionLine`), and
+  folded under them the address, each common app's way and the rules; in a window from the list's "Connect an AI",
+  and as a card (`connectHint`) that opens the guide in place on the empty page and over a task waiting for an AI
+  until one has ever come. `ui_ai_starters.js` is the home page's "Let the AI do it"
   (a bar under the tool cards, folded until opened, remembered in the browser: the app that came last, a warning when its
   list is a short one, shown folded too, six starter cards; drawn at once, what needs `GET /anomalous/ai_starters` fills in
   when read; `starterGrid` gives the same six cards to the AI workbench's page with no task, `ui_ai_ready.js` welcomePage): the six AI-task starters (`private`, `picture`, `say`, `plan`, `canvas`, `try`) jump directly into the AI workbench (`openAiStarter` in `ui_ai_workbench.js`) rendering `renderStarterComposer` inside the spacious right column with a live mode-switcher bar (so zero intermediate home popups are shown; empty tasks and welcomePage also link into it). `ui_ai_starter_sheet.js`
@@ -830,6 +834,9 @@ covered by the `styles.css` manifest.
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
   holds the size and count limits shared by recipes, parameters and materials.
 - `api/recipe_packages.py` owns bounded inspect-stage-commit package handling.
+- `api/workflow_import.py` reads the UI workflow out of a picture dropped on the Workflows page (a PNG's text, a WebP's
+  EXIF; at most 64 MB; one keeping only the run's API prompt told apart) for `POST /anomalous/inspect_workflow_file`,
+  this computer only; it keeps nothing, the page saves the recipe (`tests/test_workflow_import.py`).
 - `api/parameters.py` owns Parameter Notebook persistence and lookup.
 - `api/notebooks.py` owns combo (搭配, formerly Prompt Note) persistence and recoverable legacy copying, and
   gives Current node a combo's nodes of a type, read only.
@@ -1274,6 +1281,11 @@ covered by the `styles.css` manifest.
   values by graph id, so a copy under the canvas's id would write its values onto the canvas.
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,
   moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
+- `ui_recipe_drop.js` keeps workflow files dropped on the Workflows page as recipes at once (a .json, a picture with its
+  workflow, a recipe package's own window), never letting the drop reach the canvas; the recipe keeps the workflow as the
+  file has it, the detached graph only gives its settings, so nodes of packs not installed lose nothing.
+  `workflow_file_import.js` is, without DOM, what kind a file is, the workflow a .json holds (ComfyUI's, or a recipe
+  AMB keeps), the recipe's name and the drop's toast (`tests/workflow_file_import.mjs`).
 - `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn`, the Help modal and Home's "What's new"; the current guide's ID and steps live in `update_guide_data.js`) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. The browser tour goes in the order the pages are used (rail, Gallery and what its ☆ keeps, Workflows, Combos, Prompts, then the tools), with its text in `locales.js`. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `tool_registry.js` holds the tool icons shared by the rail and Home.

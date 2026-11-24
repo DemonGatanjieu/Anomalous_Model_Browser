@@ -11,6 +11,15 @@
 
 - Upgrading keeps your habits: what you used before (Combos, Prompts, the AI workbench, Saves, Current node, Scan, Voices) is still on the rail the first time, and only what you never used goes into More. With Anomalous_TTS installed, Voices shows on the rail and Home has "Give a character a voice"; without it neither shows, and Voices waits under More's "Extensions".
 
+- 工作流 .json、ComfyUI 存的带工作流的 .png / .webp 图片，直接拖到工作流页上就存成卡片，不再先拖到画布、再点保存、再填窗口；一次能拖好几个。名字用文件名，图当封面；AMB 存下的工作流 .json 带着原来的名字、标签和备注；配方包 .zip 照常先问你。只有运行用的 API 格式、没有画布上工作流的文件，会说明为什么没存。没装的节点包的节点原样存下。拖到这页的文件不会再漏到后面的画布上打开。
+- Drop workflow .json files, or .png / .webp pictures ComfyUI saved with their workflow, on the Workflows page to keep them as cards at once, instead of dropping on the canvas, pressing Save and filling the window; several at a time. The file name becomes the name and a picture the cover; a workflow .json Anomalous saved brings its name, tags and notes; a recipe package .zip still asks first. A file holding only the API format used to run it, with no canvas workflow, says why it was not kept. Nodes of packs not installed are kept as they are. Files dropped on the page no longer open on the canvas behind it.
+
+- 画布挂牌能放到桌面上：Chrome、Edge 里挂牌上多了「置顶到桌面」，挂牌变成一个压在所有软件上面的小窗，在命令行里跟 AI 说话时也看得到，照样能允许、答题、暂停；「放回画布」或关掉小窗就回到画布。
+- The canvas card can sit on your desktop: in Chrome and Edge it has "Pop out to desktop", which turns it into a small window on top of every app, so you see it while you talk to the AI in a terminal, and Allow, answers and Pause still work there; "Return to canvas", or closing the window, brings it back.
+
+- 「连接 AI」最上面先选用法：「伴随工作台」（全部工具，AMB 里问答、画布挂牌）或「纯对话精简」（工具少、更省额度，AI 只在自己的聊天框里跟你说，适合 Claude Code、OpenCode），以前藏在「更多」里。纯对话连上的 AI 干活时画布挂牌默认不出来，只在要你允许下载之类时出来。
+- "Connect an AI" starts with how the AI works with you: "Workbench + floating card" (every tool, questions in Anomalous, the canvas card) or "Pure chat · compact" (fewer tools, less quota, the AI talks only in its own chat; good for Claude Code or OpenCode), which used to hide under More. An AI connected for pure chat no longer brings up the canvas card while it works, only when something needs your OK, a download say.
+
 ## v1.64.1 (Home puts the everyday tools first) — 2026-11-23
 
 - 主页先给日常最常用的事：打开 AMB 第一眼是四张大卡「找模型，放进节点」「修复缺失的模型」「翻看生成的图」「多个版本对比跑图」，每张都写着一句能做什么，不用再把鼠标停上去才知道。四张卡配了和 AI 起手卡同一画风的小图。「找模型」那张上有「＋ 导入模型」，新下的模型文件也可以直接拖到主页，和拖到模型页一样认清类型、放进对应的文件夹。其余五个工具排成一排小卡，「给角色配音」是扩展，挪到最后。

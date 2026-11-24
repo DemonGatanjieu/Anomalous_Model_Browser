@@ -292,3 +292,17 @@ areas, a plan, many options) goes back to the full workbench in one press. The c
 an AI is at work or waiting on the user, never for a task that ended before the page loaded, and the
 user's × holds until something new is asked of them; it never stops the AI. With the window shut the
 card is the one place that says so: the toast for a panel or a gate is for a window open on another page.
+
+## AD-030 — The card goes where the user looks; a chat in the AI app keeps it for gates; dropped workflows keep every node
+
+Three follow-ups to AD-029, from use. People driving an AI from a terminal (Claude Code, OpenCode) look at
+that terminal, not the canvas, so where the browser can (Chrome / Edge's Document Picture-in-Picture), the
+card itself moves into a small window over every app and comes back when it closes; it is the same card,
+not a second view to keep in step, and a browser without it just shows no button. An AI connected through
+a set without the workbench (?tools=core) talks to the user in its own chat: its task is marked chat_only
+and the card keeps away, but for a gate, since a download or file move waiting for Allow would otherwise
+stall in silence; the user can still put such a task on the canvas from the workbench. Workflow files
+dropped on the Workflows page are kept at once, without the save window: saving should not take four
+steps. The recipe keeps the workflow exactly as the file has it; the detached graph is only read for its
+settings, because LiteGraph's copy drops what nodes of packs not installed here carry, and a community
+workflow must survive until those packs are.

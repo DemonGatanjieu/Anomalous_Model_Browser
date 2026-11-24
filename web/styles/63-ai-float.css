@@ -234,6 +234,25 @@ html.theme-abyssal-scarlet .anomalous-ai-float-head { border-color: color-mix(in
 .anomalous-ai-float-said { flex-basis: 100%; color: var(--amb-text-soft); font-size: 11px; }
 .anomalous-ai-float-error { color: var(--amb-danger-text); font-size: 11.5px; }
 
+/* ---------- in its desktop window over every app (ui_ai_float_pip.js) ----------
+   The window is the card: it fills it, the head a bar along its top, the tag the rest; the window's own
+   frame moves and sizes it. Its document has only AMB's stylesheet, so the page's colours come from here
+   (the body's background and overflow carry over to the whole window; <html> keeps only variables). */
+body.anomalous-ai-float-pip-body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    color: var(--amb-text-main);
+    background: var(--amb-bg-panel);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.anomalous-ai-float.is-pip { position: static; inset: auto; width: 100%; height: 100vh; max-height: 100vh; transform: none; }
+.anomalous-ai-float.is-pip .anomalous-ai-float-head { border-top: 0; border-right: 0; border-left: 0; border-radius: 0; box-shadow: none; cursor: default; }
+.anomalous-ai-float.is-pip .anomalous-ai-float-tag { flex: 1 1 auto; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+
 @media (prefers-reduced-motion: reduce) {
     .anomalous-ai-float-dot,
     .anomalous-ai-float-pulse,

@@ -1,11 +1,11 @@
 @import url("./styles/00-foundation-models.css?v=20261116-moss");
 @import url("./styles/01-shell-tools.css?v=20261116-tips");
 @import url("./styles/02-notebooks.css?v=20261116-layers");
-@import url("./styles/03-gallery-recipes.css?v=20261116-layers");
+@import url("./styles/03-gallery-recipes.css?v=20261124-drop-pip-chat");
 @import url("./styles/04-dialogs-materials.css?v=20261020-tidy");
 @import url("./styles/05-recipe-studio-overrides.css?v=20261011-wfd-3");
 @import url("./styles/06-material-workbench.css?v=20261116-layers");
-@import url("./styles/07-prompt-studio.css?v=20261116-layers");
+@import url("./styles/07-prompt-studio.css?v=20261124-drop-pip-chat");
 @import url("./styles/08-theme-gallery-overrides.css?v=20261116-tips");
 @import url("./styles/09-prompt-drawers.css?v=20261116-layers");
 @import url("./styles/10-model-sources.css?v=20261116-layers");
@@ -26,7 +26,7 @@
 @import url("./styles/25-model-import.css?v=20261116-layers");
 @import url("./styles/26-model-tidy.css?v=20261116-bybase");
 @import url("./styles/27-param-compare.css?v=20261116-layers");
-@import url("./styles/28-workflows.css?v=20261120-followup");
+@import url("./styles/28-workflows.css?v=20261124-drop-pip-chat");
 @import url("./styles/29-workflow-detail.css?v=20261011-wfd-3");
 @import url("./styles/30-scan-picker.css?v=20261116-layers");
 @import url("./styles/31-model-info.css?v=20261116-layers");
@@ -40,7 +40,7 @@
 @import url("./styles/39-ai-stage.css?v=20261021-stage");
 @import url("./styles/40-ai-side.css?v=20261116-layers");
 @import url("./styles/41-ai-results.css?v=20261024-results2");
-@import url("./styles/42-ai-flow.css?v=20261117-modern");
+@import url("./styles/42-ai-flow.css?v=20261124-drop-pip-chat");
 @import url("./styles/43-ai-toolbox.css?v=20261117-cards2");
 @import url("./styles/44-ai-status.css?v=20261116-layers");
 @import url("./styles/45-ai-side-views.css?v=20261120-sideswitch");
@@ -61,4 +61,4 @@
 @import url("./styles/60-ai-prompt-take.css?v=20261120-prompttake2");
 @import url("./styles/61-ai-privacy-button.css?v=20261120-privacybtn");
 @import url("./styles/62-ai-sealed-veil.css?v=20261120-veil");
-@import url("./styles/63-ai-float.css?v=20261123-ai-float");
+@import url("./styles/63-ai-float.css?v=20261124-drop-pip-chat");

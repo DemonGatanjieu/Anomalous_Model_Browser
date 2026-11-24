@@ -392,6 +392,37 @@
     line-height: 1.55;
 }
 
+.anomalous-recipe-empty-drop { max-width: 440px; margin: 0; color: var(--amb-link); font-size: 12px; line-height: 1.5; }
+
+/* Files dragged over the page (ui_recipe_drop.js): a veil over it says they are kept at once; while they
+   are kept, it stays and holds the page still. It never takes the drag itself (pointer-events), so the
+   page under it keeps counting where the drag is. */
+.anomalous-wf-drop-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: color-mix(in srgb, var(--amb-bg-page) 84%, transparent);
+    backdrop-filter: blur(2px);
+    pointer-events: none;
+}
+
+.anomalous-wf-drop-overlay::before {
+    position: absolute;
+    inset: 10px;
+    border: 2px dashed var(--amb-link);
+    border-radius: 14px;
+    content: "";
+}
+
+.anomalous-recipe-body:is(.is-dropping, .is-importing) > .anomalous-wf-drop-overlay { display: flex; }
+.anomalous-recipe-body.is-importing > .anomalous-wf-drop-overlay { cursor: progress; pointer-events: auto; }
+.anomalous-recipe-body.is-importing > .anomalous-wf-drop-overlay::before { border-style: solid; }
+.anomalous-wf-drop-words { max-width: 420px; color: var(--amb-text-main); font-size: 14px; font-weight: 600; line-height: 1.6; text-align: center; }
+
 .anomalous-recipe-empty-steps {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

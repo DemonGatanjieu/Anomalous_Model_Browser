@@ -56,6 +56,11 @@ export async function captureOutputThumbnail(image) {
             URL.revokeObjectURL(objectUrl);
         }
     }
+    return pictureCover(blob);
+}
+
+/** A cover at most 720 px from a picture (a Blob or a File), as a JPEG data URL; null without a 2D canvas. */
+export async function pictureCover(blob) {
     const bitmap = await createImageBitmap(blob);
     try {
         const maxEdge = 720;

@@ -197,8 +197,19 @@
 .anomalous-ai-gates-option:hover:not(.is-on) { background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-text-main); }
 .anomalous-ai-gates-option.is-on { background: color-mix(in srgb, var(--amb-link) 22%, transparent); color: var(--amb-text-main); }
 
-/* Which tools the AI app is offered, in the Connect an AI guide (ui_ai_tool_set.js) */
-.anomalous-ai-toolset { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+/* Which tools the AI app is offered, the way the AI works (ui_ai_tool_set.js): first in the Connect an AI
+   guide, on a quiet card of its own over the steps. */
+.anomalous-ai-toolset {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 10px 12px 11px;
+    background: rgba(var(--amb-ink-rgb), 0.035);
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+}
+.anomalous-ai-toolset-title { color: var(--amb-text-main); font-size: 12.5px; font-weight: 600; }
 .anomalous-ai-toolset .anomalous-ai-gates-choice { flex-wrap: wrap; max-width: 100%; }
 .anomalous-ai-toolset-edit {
     padding: 0;

@@ -2,7 +2,8 @@
  * The AI's card over the canvas (ui_ai_float.js draws it) as rules without DOM: whether a task is at
  * work, what the card says first, what waits on the user, which task the card follows, when it shows
  * and where it may stand. A task is api/ai_tasks.py's record (GET /anomalous/ai_tasks/{id}), a summary
- * its row in the list (task_summary); times are seconds, as the server keeps them.
+ * its row in the list (task_summary); times are seconds, as the server keeps them. A task an AI app works
+ * on in its own chat (`chat_only`, api/mcp_tool_sets.py note_mode) gets the card only for a gate.
  */
 
 import { haltOf, taskStatus } from './ai_task_status.js';
@@ -59,6 +60,7 @@ export function isTaskActive(task, at = now()) {
  */
 export function shouldAutoShowOnBoot(summary, at = now()) {
     if (!summary || summary.ended || summary.waiting || summary.halted) return false;
+    if (summary.chat_only && !summary.asks) return false;
     const since = at - (summary.updated || 0);
     return Boolean(summary.live) || since < ACTIVE_SECONDS || (summary.asks > 0 && since < FRESH_SECONDS);
 }
@@ -137,15 +139,20 @@ export function floatOutcome(task) {
  * the user closed it on (`dismissed`, liftDismissal). One the user put on the canvas (`pinnedTaskId`)
  * stays through the AI's pauses, and one the card showed while it went on (`watching`) until the AI
  * has been quiet for QUIET_SECONDS; any other shows while the AI is at work. An ended task shows only
- * to a card that was watching it end.
+ * to a card that was watching it end. One the AI works on in its own chat shows only while a gate waits
+ * for the user's OK (the AI would wait for nothing else), unless they put it on the canvas.
  */
 export function shouldShowFloat({ task, browserOpen = false, pinnedTaskId = null, dismissed = null, watching = null, at = now() } = {}) {
     if (!task || browserOpen || dismissed?.id === task.id) return false;
+    if (task.chat_only && pinnedTaskId !== task.id) return Boolean(gateOf(task));
     if (task.ended) return watching === task.id;
     if (pinnedTaskId === task.id) return true;
     if (watching === task.id && (attentionKeys(task).length || taskStatus(task, at).age < QUIET_SECONDS)) return true;
     return isTaskActive(task, at);
 }
+
+/** Whether the card may show `task` at all: not one in an AI app's own chat, unless a gate waits or the user put it on the canvas. */
+export const floatEligible = (task, pinnedTaskId = null) => !task?.chat_only || task.id === pinnedTaskId || Boolean(gateOf(task));
 
 /** The user's × on the card over `task`: what waited on them then does not bring the card back. */
 export const dismissFloat = task => (task ? { id: task.id, keys: attentionKeys(task) } : null);
@@ -157,13 +164,16 @@ export function liftDismissal(dismissed, task) {
 }
 
 /**
- * Which task the card follows, `current` or `incoming` (just read): one asking something of the user
- * before one that does not; else the one followed now while it asks or the user put it on the canvas;
- * else `incoming` when it is at work and newer, or the followed one rests.
+ * Which task the card follows, `current` or `incoming` (just read): one the card may show (floatEligible)
+ * before one it may not; then one asking something of the user before one that does not; else the one
+ * followed now while it asks or the user put it on the canvas; else `incoming` when it is at work and
+ * newer, or the followed one rests.
  */
 export function pickTracked(current, incoming, { pinnedTaskId = null, at = now() } = {}) {
     if (!incoming) return current || null;
     if (!current || current.id === incoming.id) return incoming;
+    const eligible = floatEligible(incoming, pinnedTaskId);
+    if (eligible !== floatEligible(current, pinnedTaskId)) return eligible ? incoming : current; // a quiet chat in an AI app takes nothing over
     const asksIncoming = attentionKeys(incoming).length > 0;
     const asksCurrent = attentionKeys(current).length > 0;
     if (asksIncoming !== asksCurrent) return asksIncoming ? incoming : current;
