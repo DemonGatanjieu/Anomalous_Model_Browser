@@ -33,7 +33,7 @@ const PREVIEWS = {
     },
 };
 
-const state = {
+const initialState = () => ({
     phase: 'idle', // first_run_state.js
     netFailure: '',
     netError: '',
@@ -46,7 +46,8 @@ const state = {
     result: null,
     counts: null, // { total, waiting }
     shown: false, // this page session: keep showing it (a scan started, or requested from footer)
-};
+});
+const state = initialState();
 let preview = null; // { mode, onEnd, keyOpen, keyFeedback, ...cardState }
 let host = null; // #anomalous-first-run-host mounted inside #anomalous-container
 let owner = null;
@@ -510,3 +511,10 @@ export function clearFirstRunPreview() {
 }
 
 export const firstRunPreviewMode = () => preview?.mode || null;
+
+/** Forgets this page's card (the review console's sandbox comes in or goes): shown again only as wanted. */
+export function resetFirstRun() {
+    preview = null;
+    Object.assign(state, initialState());
+    unmount();
+}

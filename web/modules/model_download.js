@@ -29,6 +29,7 @@ const lookups = new Map(); // lookup key -> result
 let pollTimer = 0;
 let batch = [];
 let scanOwner = null;
+let era = 0; // resetDownloadMemory: a poll asked before it is dropped
 
 async function json(url, options) {
     const response = await fetch(url, options);
@@ -237,8 +238,21 @@ export async function cancelDownload(id) {
     notify();
 }
 
+/** Forgets every download and source looked up (the review console's sandbox comes in or goes). */
+export function resetDownloadMemory() {
+    clearTimeout(pollTimer);
+    pollTimer = 0;
+    era += 1;
+    jobs.clear();
+    lookups.clear();
+    batch = [];
+    scanOwner = null;
+    notify();
+}
+
 function poll() {
     if (pollTimer) return;
+    const asked = era;
     pollTimer = setTimeout(async () => {
         pollTimer = 0;
         let latest = [];
@@ -247,6 +261,7 @@ function poll() {
         } catch (error) {
             console.warn('[AMB] Download: status failed.', error);
         }
+        if (asked !== era) return;
         for (const job of latest) {
             const before = jobs.get(job.id);
             jobs.set(job.id, job);

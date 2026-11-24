@@ -117,7 +117,14 @@ function showMuted() {
     hideTimer = setTimeout(hide, HIDE_AFTER_FIX_MS);
 }
 
-async function checkOpenWorkflow(owner) {
+/** Hides the bar; `key` (a workflow's) shows it again for that workflow (the review console's sandbox tab). */
+export function clearDoctorBanner(key = '') {
+    hide();
+    closed.delete(key);
+}
+
+/** Checks the open workflow now; a check still running for it is dropped. */
+export async function checkOpenWorkflow(owner) {
     const run = ++checkRun;
     const entries = await checkWorkflowModels();
     if (run === checkRun) updateDoctorBanner(owner, entries);

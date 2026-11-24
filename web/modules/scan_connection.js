@@ -15,6 +15,11 @@ import { openSettingsPage } from './ui_settings_page.js';
 const TRUSTED_MS = 5 * 60 * 1000;
 let reachedAt = 0;
 
+/** The next scan asks Civitai again (the review console's sandbox comes in or goes). */
+export function forgetCivitaiAnswer() {
+    reachedAt = 0;
+}
+
 /** 'online' (Civitai answers, or this cannot be told), 'offline' (scan from the files), or null (not now). */
 export async function onlineOrAsk(owner) {
     if (Date.now() - reachedAt < TRUSTED_MS) return 'online';

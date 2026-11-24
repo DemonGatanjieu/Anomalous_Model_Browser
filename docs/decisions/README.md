@@ -361,3 +361,19 @@ already carry inline explanations and empty-state walkthroughs. Upgraded browser
 based on existing rail/legacy storage, dismissals persist per page in `localStorage`, Gallery's empty
 state softens from a cold "Gallery is empty" notice into a clear next-step hint, and the hidden review
 console previews both page tips in memory without touching storage.
+
+## AD-035 — A blank sandbox stands in for the server, not for the pages
+
+Walking through AMB as a new user, or opening someone's workflow whose models are missing, used to need an
+emptied model library or a second ComfyUI. The review console's blank sandbox makes both a click away, and it
+does so by standing in for the server rather than for the pages: while it is on, the page's requests to
+`/anomalous/` are answered by a pretend server in memory (`review_sandbox_data.js`), so Home, the first-run card,
+Models, the scan, Model Check with its download dialog and the Workflows page all run their real code, and what
+the author sees is what a user would get, its gaps included (the Workflows page checks models by exact name, so
+the renamed one shows as missing there while Model Check finds it by fingerprint). Nothing it does not stand in for
+can reach the server: a change is refused and said so, uploads too, and AMB's keys in this browser's storage live in
+memory. The user's canvas is never in front: the sandbox opens a temporary tab of its own, lists its own files in
+that tab's model boxes, and closes it on leaving. A few modules gained a small "forget" entry
+(`resetDownloadMemory`, `resetFirstRun`, `setPageTipSandbox`, `clearDoctorBanner`, `forgetCivitaiAnswer`,
+`forgetSources`) because they keep what they read for the page's life; that is cheaper and safer than teaching each
+page about a sandbox. None of it loads unless the console opens.

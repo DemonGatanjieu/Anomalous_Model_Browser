@@ -11,6 +11,7 @@ const sessionDismissed = new Set();
 let previewMode = null; // 'models' | 'gallery' | null
 let previewPages = null; // Set of page ids active in review-console preview, or null
 let previewOnChange = null;
+let sandboxSeen = null; // Set of tips dismissed in the review console's sandbox, or null outside it
 let langBound = false;
 
 function tipIcon() {
@@ -32,7 +33,7 @@ function renderTipNode(node) {
     }
     const visible = previewPages
         ? shouldShowPageTip(page, { preview: previewPages })
-        : (!sessionDismissed.has(page) && shouldShowPageTip(page));
+        : sandboxSeen ? !sandboxSeen.has(page) : (!sessionDismissed.has(page) && shouldShowPageTip(page));
     node.setAttribute('aria-label', t('pageTipAria'));
     node.hidden = !visible;
     if (!visible) {
@@ -56,6 +57,11 @@ function renderTipNode(node) {
             }
             renderTipNode(node);
             previewOnChange?.();
+            return;
+        }
+        if (sandboxSeen) {
+            sandboxSeen.add(page);
+            renderTipNode(node);
             return;
         }
         sessionDismissed.add(page);
@@ -121,6 +127,12 @@ export function previewPageTip(owner, page, onChange = null) {
             owner.show?.({ page });
         }
     }
+    refreshPageTips();
+}
+
+/** The review console's sandbox (review_sandbox.js): every tip unread while `on`, dismissals kept in memory only. */
+export function setPageTipSandbox(on) {
+    sandboxSeen = on ? new Set() : null;
     refreshPageTips();
 }
 

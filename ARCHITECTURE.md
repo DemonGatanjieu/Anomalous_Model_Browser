@@ -611,7 +611,20 @@ covered by the `styles.css` manifest.
   cycles `idle`, `offline_choice`, `running`, `done_missing_covers`: its buttons scan nothing, Key save stays
   in memory, and nothing is written to disk or hides the real card), cycles first-visit page tips on Models and
   Gallery in memory (`previewPageTip`), switches theme and language (put back
-  on Reset and on close) and opens a few windows. `review_scenarios.js` is, without DOM, those tasks (shaped as `api/ai_tasks.py` keeps them), what a press
+  on Reset and on close) and opens a few windows. Its blank sandbox, `review_sandbox.js`, is AMB as a new user meets
+  it, kept in memory: while it is on, every `/anomalous/` request goes to the pretend server of
+  `review_sandbox_data.js` (a read it has no stand-in for is answered empty; a change it does not stand in for is
+  refused with a toast and never sent, uploads by XHR too; Civitai's API is not asked about its fingerprints), AMB's
+  `anomalous_*` storage keys live in memory (the first-visit ones not there yet; theme and language stay real), the
+  canvas in front is a temporary tab of the sandbox's whose model boxes list its files (`app.refreshComboInNodes` and
+  `app.loadGraphData` stand in while it is on), and the pages forget what they kept (`resetDownloadMemory`,
+  `resetFirstRun`, `setPageTipSandbox`, `clearDoctorBanner`, `forgetCivitaiAnswer`, `forgetTidyCount`, `forgetSources`);
+  leaving waits for a scan it started, closes its tab and puts each back. `review_sandbox_data.js` is, without DOM,
+  that server: an empty or one-model library, Civitai answering or not, a scan and a download moved on by the clock,
+  the routes it answers and the reads it lets through (`tests/review_sandbox.mjs`); `review_sandbox_workflow.js` its
+  made-up files: the library's model, the workflow someone shared (four models, with the fingerprints and links a
+  shared workflow carries), how the Workflows page lists it and where each can be downloaded from.
+  `review_scenarios.js` is, without DOM, those tasks (shaped as `api/ai_tasks.py` keeps them), what a press
   does to them and the users' rail pins (`tests/review_scenarios.mjs`). The task head's "float over canvas" puts a task on it, `browser.js` tells it when
   the window opens and closes, and it opens the workbench through `owner.openAiTask` (set by `watchAiTasks`), so it never
   imports the page; while the window is shut, the page's toast for a panel or a gate gives way to it. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the

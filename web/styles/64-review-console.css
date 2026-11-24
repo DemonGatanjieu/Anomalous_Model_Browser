@@ -105,3 +105,35 @@ html.amb-theme-light .anomalous-review-console { color-scheme: light; box-shadow
 
 .anomalous-review-console button:focus-visible,
 .anomalous-review-slider:focus-visible { outline: 2px solid var(--amb-link); outline-offset: 1px; }
+
+/* ---------- the blank sandbox (review_sandbox.js) ---------- */
+.anomalous-review-sandbox-badge {
+    padding: 2px 8px;
+    color: var(--amb-warn-text);
+    background: color-mix(in srgb, var(--amb-warn) 14%, transparent);
+    border: 1px dashed color-mix(in srgb, var(--amb-warn) 60%, transparent);
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 650;
+}
+
+.anomalous-review-pill:disabled { opacity: 0.6; cursor: progress; }
+
+/* In AMB's window while the sandbox is on: says what is shown is made up. Over the pages, under the
+   first-run card's dock (1150), never in the way of a click. */
+.anomalous-sandbox-chip {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    z-index: 1140;
+    padding: 3px 12px;
+    color: var(--amb-warn-text);
+    background: color-mix(in srgb, var(--amb-warn) 16%, var(--amb-bg-panel));
+    border: 1px dashed color-mix(in srgb, var(--amb-warn) 65%, transparent);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 650;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    pointer-events: none;
+}

@@ -109,6 +109,11 @@ export function keepSources(sources, now = Date.now()) {
     return cache;
 }
 
+/** The lists are read again next time (the review console's sandbox comes in or goes). */
+export function forgetSources() {
+    cache = null;
+}
+
 /** The models a loader node can take, as search items. */
 export async function loadModelItems(signal) {
     const response = await fetch('/anomalous/quick_index', { signal });

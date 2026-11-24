@@ -8,7 +8,9 @@
  * its own drawing (ui_ai_float.js setAiFloatPreview): a press on the card comes here and moves the task on
  * (applyPreviewAction), the server hears nothing. The rail shows another user's pins without keeping them
  * (ui_shell_rail.js previewPins); the Workflows page its drop veil by a class; Home the first-run card as a
- * new user meets it (ui_first_run.js previewFirstRun, never hidden for real). Theme and language are the
+ * new user meets it (ui_first_run.js previewFirstRun, never hidden for real). The blank sandbox
+ * (review_sandbox.js) is AMB as a whole for a new user, with a pretend library and server in memory: the pages
+ * work for real against it, and a shared workflow opens in a tab of its own. Theme and language are the
  * real switches: Reset and ×, and leaving or reloading the page while it is open, put them back as they were
  * when the console opened, and end all the rest.
  */
@@ -23,6 +25,10 @@ import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { openVersionPanel } from './ui_version_manager.js';
 import { clearFirstRunPreview, firstRunPreviewMode, previewFirstRun } from './ui_first_run.js';
 import { clearPageTipPreview, pageTipPreviewMode, previewPageTip } from './ui_page_tip.js';
+import { LIBRARIES, NETWORKS } from './review_sandbox_data.js';
+import {
+    enterSandbox, exitSandbox, markSandboxWindow, openSharedWorkflow, resetSandboxProgress, sandboxState, setSandboxLibrary, setSandboxNetwork,
+} from './review_sandbox.js';
 
 const THEMES = ['auto', 'dark', 'light', 'abyssal'];
 const LANGUAGES = [['zh', 'mainLanguageChinese'], ['en', 'mainLanguageEnglish']];
@@ -198,12 +204,16 @@ function rehearsalSection() {
 
 // ---------------------------------------------------------------- look, user, shortcuts
 
+function showRail(mode) {
+    state.getBrowser()?.rail?.previewPins(mode === 'real' ? null : railPreset(mode));
+    state.persona = mode;
+}
+
 /** The rail as another user has it, kept nowhere; AMB's window opens to show it. */
 function persona(mode) {
     const browser = state.getBrowser();
     if (!browser?.rail) return;
-    browser.rail.previewPins(mode === 'real' ? null : railPreset(mode));
-    state.persona = mode;
+    showRail(mode);
     if (!browserOpen()) browser.show();
     render();
 }
@@ -288,16 +298,55 @@ function shortcutSection() {
     return box;
 }
 
+// ---------------------------------------------------------------- the blank sandbox
+
+/** In: a new user's AMB and rail, the pretend library; out: everything as it was. */
+async function toggleSandbox() {
+    if (sandboxState().on) {
+        if (state.persona === 'fresh') showRail('real');
+        return exitSandbox();
+    }
+    if (await enterSandbox(state.getBrowser, render)) showRail('fresh');
+    render();
+}
+
+function sandboxSection() {
+    const sandbox = sandboxState();
+    const box = el('section', 'anomalous-review-section');
+    const line = el('div', 'anomalous-review-row');
+    const toggle = pill(t(sandbox.leaving ? 'reviewSandboxLeaving' : sandbox.on ? 'reviewSandboxExit' : 'reviewSandboxEnter'), sandbox.on, () => void toggleSandbox());
+    toggle.disabled = sandbox.leaving;
+    line.append(toggle);
+    if (sandbox.on) line.append(el('span', 'anomalous-review-sandbox-badge', t('reviewSandboxBadge')));
+    box.append(el('div', 'anomalous-review-heading', t('reviewSandboxTitle')), line);
+    markSandboxWindow();
+    if (!sandbox.on) {
+        box.append(el('div', 'anomalous-review-note', t('reviewSandboxNote')));
+        return box;
+    }
+    const actions = el('div', 'anomalous-review-controls');
+    actions.append(
+        button('anomalous-review-action', t(sandbox.shared ? 'reviewSandboxWorkflowAgain' : 'reviewSandboxWorkflow'), () => void openSharedWorkflow()),
+        button('anomalous-review-action is-quiet', t('reviewSandboxReset'), () => void resetSandboxProgress()),
+    );
+    box.append(
+        row('reviewSandboxLibrary', ...LIBRARIES.map(mode => pill(t(`reviewSandboxLibrary_${mode}`), sandbox.library === mode, () => void setSandboxLibrary(mode)))),
+        row('reviewSandboxNetwork', ...NETWORKS.map(mode => pill(t(`reviewSandboxNetwork_${mode}`), sandbox.network === mode, () => setSandboxNetwork(mode)))),
+        actions,
+    );
+    return box;
+}
+
 // ---------------------------------------------------------------- the panel
 
-/** Everything back as it was when the console opened: no rehearsal, the real rail, no veil, the real first-run
- * card, the theme and language. */
+/** Everything back as it was when the console opened: no rehearsal, no sandbox, the real rail, no veil, the real
+ * first-run card, the theme and language. */
 function resetAll() {
     endRehearsal();
+    void exitSandbox();
     clearFirstRunPreview();
     clearPageTipPreview();
-    if (state.persona !== 'real') state.getBrowser()?.rail?.previewPins(null);
-    state.persona = 'real';
+    if (state.persona !== 'real') showRail('real');
     if (state.dropping) setDrop(false);
     const { theme, lang } = state.snapshot || {};
     if (theme && themePreference() !== theme) setThemePreference(theme, false);
@@ -355,7 +404,7 @@ function render() {
         state.status = state.said = null;
     } else {
         const body = el('div', 'anomalous-review-body');
-        body.append(rehearsalSection(), lookSection(), shortcutSection());
+        body.append(rehearsalSection(), lookSection(), shortcutSection(), sandboxSection());
         parts.push(body);
     }
     root.replaceChildren(...parts);

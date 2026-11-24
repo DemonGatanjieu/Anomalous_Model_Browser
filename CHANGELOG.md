@@ -32,6 +32,9 @@
 - 新装用户首次进入「模型」或「图库」页时，顶部各多一条不挡路的轻提示（点「知道了」永久收起）：模型页提示可以直接把卡片拖到画布/节点上或点开看触发词和作者推荐参数，图库页提示把图拖回画布能还原工作流、搜索支持提示词或模型名、点 ☆ 收藏；刚装好还没出图时，空图库说明也改得更清楚；从旧版本升级的老用户默认不打扰，审查修改器新增「页面初次提示」可随时预览效果。
 - Fresh installs get a dismissible top tip strip on first visit to Models (drag cards onto the canvas or a node, or click for trigger words and author settings) and Gallery (drag outputs back to restore workflows, search prompts/models, press ☆ to keep), plus a warmer empty-gallery hint; existing upgraded users stay undisturbed, and the hidden review console adds an in-memory "Page tips" preview cycle.
 
+- 审查修改器新增「空白沙箱演练」：一键把 AMB 换成新用户的样子，假的模型库和服务器都在页面内存里，各页面照常点。可以切「全空 (0)」或「1 个假模型」、Civitai「连得上」或「连不上」，首次扫描、扫描页、模型详情、模型检查、下载窗口、工作流页都能真的走一遍；「放入外部工作流」放进一个别人分享、缺三个模型的工作流（一个能按指纹换上，一个能下载，一个要登录，一个找不到）。画布换到沙箱自己的临时标签页，你的模型、设置、画布都不动；退出、还原或关掉面板就全部回到原样。
+- The review console has a "Blank sandbox": one click turns AMB into what a new user meets, with a pretend library and server in the page's memory and every page working as usual. Switch between "Empty (0)" and "1 fake model", Civitai "Reachable" or "Unreachable", and walk the first-run scan, the scan page, model details, Model Check, the download dialog and the Workflows page for real; "Add a shared workflow" opens someone's workflow with models missing (one to put in by fingerprint, one to download, one behind a login, one nowhere). The canvas moves to a temporary tab of the sandbox's, your models, settings and canvas stay untouched, and leaving, Reset or closing the console puts everything back.
+
 - 设置从八个标签并成四个：「外观与交互」「模型与网络」「工作流与工具」「备份与帮助」，一项设置都没少。别处“去设置里改”的按钮会打开对应的标签，并滚到那一块。
 - Settings has four tabs instead of eight, "Look & Interaction", "Models & Network", "Workflows & Tools" and "Backup & Help", with every setting kept. Buttons elsewhere that lead to a setting open its tab scrolled to its card.
 
