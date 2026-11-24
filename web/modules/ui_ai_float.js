@@ -21,8 +21,9 @@ import { resolveLocale, translate as t } from './locales.js';
 import { taskTitle } from './ai_task_title.js';
 import { fetchTasks, readTask } from './ai_task_cache.js';
 import { canHalt, pauseTask } from './ui_ai_halt.js';
+import { icon } from './ui_ai_icons.js';
 import { hasDraft, hidePanelToast } from './ui_ai_panel.js';
-import { askView, brief, floatTool, lineKey, lineView, sayView } from './ui_ai_float_parts.js';
+import { askView, brief, floatTool, headBrief, lineKey, lineView, sayView } from './ui_ai_float_parts.js';
 import { closeDesktopPip, focusOpenerWindow, isDesktopPipOpen, openDesktopPip, supportsDesktopPip } from './ui_ai_float_pip.js';
 import {
     attentionKeys, clampFloatPosition, dismissFloat, floatState, floatTone, floatWakeIn, hasNewAttention, isTaskActive,
@@ -171,11 +172,25 @@ const shownTask = () => state.preview?.task || state.task;
 /** In a rehearsal, what a press on the card does goes to the console (never to the server); null outside one. */
 const rehearsal = () => (state.preview ? action => state.preview?.onAction?.(action) : null);
 
-function headView(task) {
+function badgeIcon(view) {
+    if (view.kind === 'gate') return 'shield';
+    if (view.kind === 'ask') return 'question';
+    if (view.kind === 'halt') return view.step?.pause ? 'pause' : 'stop';
+    if (view.kind === 'done') return 'check';
+    if (view.kind === 'error') return 'alert';
+    if (view.kind === 'waiting' || view.kind === 'idle') return 'clock';
+    return 'sparkle';
+}
+
+function headView(task, view) {
     const head = el('div', 'anomalous-ai-float-head');
     head.title = t('aiFloatDrag');
+    const badge = el('span', 'anomalous-ai-float-badge');
+    badge.append(icon(badgeIcon(view), 14));
     const name = el('span', 'anomalous-ai-float-title', taskTitle(task));
     name.title = taskTitle(task);
+    const titles = el('div', 'anomalous-ai-float-titles');
+    titles.append(name, el('span', 'anomalous-ai-float-brief'));
     const tools = el('div', 'anomalous-ai-float-tools');
     if (!state.folded && !task.ended) {
         const say = floatTool('chat', t('aiFloatSay'), () => toggleSay(), { extra: ' is-say' });
@@ -195,7 +210,7 @@ function headView(task) {
     if (!desktop) tools.append(floatTool(state.folded ? 'chevronDown' : 'chevronUp', t(state.folded ? 'aiFloatUnfold' : 'aiFloatFold'), () => setFolded(!state.folded)));
     tools.append(floatTool('expand', t('aiFloatOpen'), () => openWorkbench(task)));
     if (!state.folded) tools.append(floatTool('close', t('aiFloatClose'), dismiss));
-    head.append(el('span', 'anomalous-ai-float-dot'), name, el('span', 'anomalous-ai-float-brief'), tools);
+    head.append(badge, titles, tools);
     return head;
 }
 
@@ -214,21 +229,32 @@ function settle(holder, key, make) {
 }
 
 function render(task, view) {
+    const tone = floatTone(task);
+    const iconName = badgeIcon(view);
     mount();
     card.classList.toggle('is-folded', state.folded);
+    card.classList.toggle('is-live', tone === 'running' || tone === 'tool');
+    let accent = card.querySelector(':scope > .anomalous-ai-float-accent');
+    if (!accent) {
+        accent = el('div', 'anomalous-ai-float-accent');
+        accent.setAttribute('aria-hidden', 'true');
+        card.prepend(accent);
+    }
     let head = card.querySelector(':scope > .anomalous-ai-float-head');
     const desktop = isDesktopPipOpen();
-    const headKey = JSON.stringify([resolveLocale(), task.id, taskTitle(task), state.folded, Boolean(task.ended), canHalt(task), state.sayOpen, desktop]);
+    const headKey = JSON.stringify([resolveLocale(), task.id, taskTitle(task), state.folded, Boolean(task.ended), canHalt(task), state.sayOpen, desktop, iconName]);
     if (desktop) card.ownerDocument.title = taskTitle(task); // the desktop window's name follows the task and the language
     if (!head || head.dataset.key !== headKey) {
-        const fresh = headView(task);
+        const fresh = headView(task, view);
         fresh.dataset.key = headKey;
         if (head) head.replaceWith(fresh);
-        else card.prepend(fresh);
+        else accent.after(fresh);
         head = fresh;
     }
-    head.querySelector('.anomalous-ai-float-dot').className = `anomalous-ai-float-dot is-${floatTone(task)}`;
-    head.querySelector('.anomalous-ai-float-brief').textContent = state.folded ? `· ${brief(view)}` : '';
+    head.querySelector('.anomalous-ai-float-badge').className = `anomalous-ai-float-badge is-${tone}`;
+    const briefEl = head.querySelector('.anomalous-ai-float-brief');
+    briefEl.className = `anomalous-ai-float-brief is-${tone}`;
+    briefEl.textContent = state.folded ? brief(view) : headBrief(view);
     markSaying(task);
     let tag = card.querySelector(':scope > .anomalous-ai-float-tag');
     if (!tag) {

@@ -1,30 +1,79 @@
-/* The AI's card over the canvas (ui_ai_float.js, ui_ai_float_parts.js): at the top middle of the canvas's
-   panel, clear of AMB's ball (top left), the saves bar (bottom middle) and the job sheet's card (bottom
-   right), under ComfyUI's menus and dialogs. A head, and the tag hanging under it, a little inset; folded,
-   one line. It lives inside the canvas's panel, where only the --amb-* tokens follow AMB's theme (not
-   --bg-color / --fg-color, which 00-foundation-models.css sets on AMB's top-level windows only). */
+/* The AI's card over the canvas (ui_ai_float.js, ui_ai_float_parts.js): a single unified
+   rounded sheet at the top middle of the canvas's panel, folding into a capsule pill. Lives
+   inside .graph-canvas-panel where only --amb-* tokens follow AMB's theme. */
 .anomalous-ai-float {
+    --amb-float-bg: color-mix(in srgb, var(--amb-bg-card) 95%, transparent);
+    --amb-float-tonal: rgba(var(--amb-ink-rgb), 0.055);
+    --amb-float-chip: rgba(var(--amb-ink-rgb), 0.08);
+    --amb-float-chip-hover: rgba(var(--amb-ink-rgb), 0.14);
+    --amb-float-tonal-bg: color-mix(in srgb, var(--amb-link) 22%, transparent);
+    --amb-float-tonal-text: color-mix(in srgb, var(--amb-link) 78%, var(--amb-text-main));
     position: absolute;
     top: 14px;
     left: 50%;
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    width: min(340px, calc(100% - 32px));
+    width: min(360px, calc(100% - 32px));
     max-height: calc(100% - 28px);
+    overflow: hidden;
     transform: translateX(-50%);
     pointer-events: auto;
     color: var(--amb-text-main);
+    background: var(--amb-float-bg);
+    border: 1px solid var(--amb-border);
+    border-radius: 22px;
+    box-shadow: 0 14px 36px rgba(var(--amb-shadow-rgb), 0.42), 0 2px 8px rgba(var(--amb-shadow-rgb), 0.24);
+    backdrop-filter: blur(14px);
     font-size: 12.5px;
-    line-height: 1.4;
+    line-height: 1.45;
     color-scheme: dark;
 }
 
-html.amb-theme-light .anomalous-ai-float { color-scheme: light; }
+html.amb-theme-light .anomalous-ai-float {
+    color-scheme: light;
+    --amb-float-bg: color-mix(in srgb, var(--amb-bg-card) 97%, transparent);
+    --amb-float-tonal: color-mix(in srgb, var(--amb-link) 5%, var(--amb-bg-page));
+    --amb-float-chip: rgba(var(--amb-ink-rgb), 0.065);
+    --amb-float-chip-hover: rgba(var(--amb-ink-rgb), 0.12);
+    --amb-float-tonal-bg: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    --amb-float-tonal-text: color-mix(in srgb, var(--amb-link) 72%, var(--amb-text-main));
+    box-shadow: 0 12px 30px rgba(var(--amb-shadow-rgb), 0.14), 0 2px 8px rgba(var(--amb-shadow-rgb), 0.06);
+}
+
+html.theme-abyssal-scarlet .anomalous-ai-float {
+    --amb-float-bg: color-mix(in srgb, var(--amb-bg-card) 95%, transparent);
+    --amb-float-tonal: rgba(var(--amb-ink-rgb), 0.06);
+    --amb-float-chip: rgba(var(--amb-ink-rgb), 0.085);
+    --amb-float-chip-hover: rgba(var(--amb-ink-rgb), 0.15);
+    --amb-float-tonal-bg: color-mix(in srgb, var(--amb-link) 22%, transparent);
+    --amb-float-tonal-text: color-mix(in srgb, var(--amb-link) 78%, var(--amb-text-main));
+    border-color: color-mix(in srgb, var(--amb-link) 28%, var(--amb-border));
+}
 
 /* Dragged: left and top are set on it, kept inside the canvas. */
 .anomalous-ai-float.has-pos { transform: none; }
-.anomalous-ai-float.is-folded { width: auto; max-width: calc(100% - 32px); }
+.anomalous-ai-float.is-folded { width: auto; max-width: calc(100% - 32px); border-radius: 999px; }
+
+/* ---------- top breathing accent strip ---------- */
+.anomalous-ai-float-accent {
+    position: relative;
+    display: none;
+    flex: none;
+    height: 3px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+}
+
+.anomalous-ai-float.is-live:not(.is-folded) .anomalous-ai-float-accent { display: block; }
+
+.anomalous-ai-float-accent::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--amb-link), var(--amb-ok), transparent);
+    opacity: 0.85;
+}
 
 /* ---------- the head ---------- */
 .anomalous-ai-float-head {
@@ -33,36 +82,104 @@ html.amb-theme-light .anomalous-ai-float { color-scheme: light; }
     display: flex;
     flex: none;
     align-items: center;
-    gap: 8px;
-    min-height: 36px;
-    padding: 3px 4px 3px 12px;
-    background: color-mix(in srgb, var(--amb-bg-panel) 90%, transparent);
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 12px;
-    box-shadow: 0 6px 22px rgb(0 0 0 / 30%);
-    backdrop-filter: blur(10px);
+    gap: 10px;
+    padding: 10px 10px 10px 14px;
     cursor: grab;
     user-select: none;
 }
 
 .anomalous-ai-float.is-dragging .anomalous-ai-float-head { cursor: grabbing; }
-.anomalous-ai-float.is-folded .anomalous-ai-float-head { border-radius: 999px; }
-html.theme-abyssal-scarlet .anomalous-ai-float-head { border-color: color-mix(in srgb, var(--amb-link) 38%, var(--amb-border-strong)); }
+.anomalous-ai-float.is-folded .anomalous-ai-float-head { gap: 8px; padding: 6px 8px 6px 10px; }
 
-.anomalous-ai-float-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--amb-text-dim); }
-.anomalous-ai-float-dot.is-running,
-.anomalous-ai-float-dot.is-tool { background: var(--amb-link); animation: anomalous-ai-float-breathe 1.6s ease-in-out infinite; }
-.anomalous-ai-float-dot.is-asking { background: var(--amb-warn); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb-warn) 28%, transparent); }
-.anomalous-ai-float-dot.is-paused { background: color-mix(in srgb, var(--amb-danger) 80%, var(--amb-warn)); }
-.anomalous-ai-float-dot.is-error { background: var(--amb-danger); }
-.anomalous-ai-float-dot.is-done { background: var(--amb-ok); }
+.anomalous-ai-float-badge {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-muted);
+}
 
-@keyframes anomalous-ai-float-breathe { 50% { opacity: 0.35; transform: scale(0.8); } }
+.anomalous-ai-float.is-folded .anomalous-ai-float-badge { width: 26px; height: 26px; }
+.anomalous-ai-float-badge.is-running,
+.anomalous-ai-float-badge.is-tool { background: var(--amb-float-tonal-bg); color: var(--amb-float-tonal-text); }
+.anomalous-ai-float-badge.is-asking { background: color-mix(in srgb, var(--amb-warn) 18%, transparent); color: var(--amb-warn-text, var(--amb-warn)); }
+.anomalous-ai-float-badge.is-paused { background: color-mix(in srgb, var(--amb-warn) 16%, transparent); color: var(--amb-warn-text, var(--amb-warn)); }
+.anomalous-ai-float-badge.is-error { background: color-mix(in srgb, var(--amb-danger) 18%, transparent); color: var(--amb-danger-text, var(--amb-danger)); }
+.anomalous-ai-float-badge.is-done { background: color-mix(in srgb, var(--amb-ok) 18%, transparent); color: var(--amb-ok-text, var(--amb-ok)); }
 
-.anomalous-ai-float-title { flex: 1 1 auto; min-width: 0; overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-float.is-folded .anomalous-ai-float-title { flex: 0 1 auto; max-width: 220px; }
-.anomalous-ai-float-brief { flex: none; max-width: 150px; overflow: hidden; color: var(--amb-text-soft); font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-ai-float-titles {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.anomalous-ai-float.is-folded .anomalous-ai-float-titles {
+    flex: 0 1 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.anomalous-ai-float-title {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-ai-float.is-folded .anomalous-ai-float-title { flex: 0 1 auto; max-width: 200px; }
+
+.anomalous-ai-float-brief {
+    overflow: hidden;
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .anomalous-ai-float-brief:empty { display: none; }
+
+.anomalous-ai-float.is-folded .anomalous-ai-float-brief {
+    flex: none;
+    max-width: 130px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--amb-float-tonal-bg);
+    color: var(--amb-float-tonal-text);
+    font-weight: 600;
+}
+
+.anomalous-ai-float.is-folded .anomalous-ai-float-brief.is-asking,
+.anomalous-ai-float.is-folded .anomalous-ai-float-brief.is-paused {
+    background: color-mix(in srgb, var(--amb-warn) 18%, transparent);
+    color: var(--amb-warn-text, var(--amb-warn));
+}
+
+.anomalous-ai-float.is-folded .anomalous-ai-float-brief.is-done {
+    background: color-mix(in srgb, var(--amb-ok) 18%, transparent);
+    color: var(--amb-ok-text, var(--amb-ok));
+}
+
+.anomalous-ai-float.is-folded .anomalous-ai-float-brief.is-error {
+    background: color-mix(in srgb, var(--amb-danger) 18%, transparent);
+    color: var(--amb-danger-text, var(--amb-danger));
+}
+
+.anomalous-ai-float.is-folded .anomalous-ai-float-brief.is-idle,
+.anomalous-ai-float.is-folded .anomalous-ai-float-brief.is-waiting {
+    background: var(--amb-float-chip);
+    color: var(--amb-text-soft);
+}
 
 .anomalous-ai-float-tools { display: flex; flex: none; align-items: center; gap: 1px; margin-left: auto; }
 .anomalous-ai-float-btn {
@@ -72,31 +189,27 @@ html.theme-abyssal-scarlet .anomalous-ai-float-head { border-color: color-mix(in
     width: 28px;
     height: 28px;
     padding: 0;
-    color: var(--amb-text-soft);
-    background: none;
-    border: 1px solid transparent;
-    border-radius: 8px;
+    color: var(--amb-text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
     cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 
 .anomalous-ai-float-btn:hover { color: var(--amb-text-main); background: rgba(var(--amb-ink-rgb), 0.09); }
-.anomalous-ai-float-btn.is-on { color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 15%, transparent); }
+.anomalous-ai-float-btn.is-on { color: var(--amb-float-tonal-text); background: var(--amb-float-tonal-bg); }
 
-/* ---------- the tag under it ---------- */
+/* ---------- the body sections ---------- */
 .anomalous-ai-float-tag {
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
-    gap: 8px;
+    gap: 9px;
     min-height: 0;
-    margin: -1px 7px 0;
-    padding: 9px 10px 10px;
-    overflow: auto;
-    background: color-mix(in srgb, var(--amb-bg-card) 94%, transparent);
-    border: 1px solid var(--amb-border);
-    border-top: 0;
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 8px 20px rgb(0 0 0 / 24%);
-    backdrop-filter: blur(10px);
+    padding: 0 12px 12px;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 .anomalous-ai-float-tag[hidden],
@@ -106,93 +219,180 @@ html.theme-abyssal-scarlet .anomalous-ai-float-head { border-color: color-mix(in
 .anomalous-ai-float-error:empty,
 .anomalous-ai-float-said:empty { display: none; }
 
-.anomalous-ai-float-line { display: flex; flex-direction: column; gap: 4px; }
+.anomalous-ai-float-line,
+.anomalous-ai-float-ask {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--amb-float-tonal);
+    border-radius: 16px;
+}
+
+.anomalous-ai-float-line.is-gate,
+.anomalous-ai-float-line.is-halt.is-pause {
+    background: color-mix(in srgb, var(--amb-warn) 10%, var(--amb-float-tonal));
+}
+
+.anomalous-ai-float-line.is-done {
+    background: color-mix(in srgb, var(--amb-ok) 10%, var(--amb-float-tonal));
+}
+
+.anomalous-ai-float-line.is-halt,
+.anomalous-ai-float-line.is-error {
+    background: color-mix(in srgb, var(--amb-danger) 10%, var(--amb-float-tonal));
+}
+
 .anomalous-ai-float-row { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 22px; }
 .anomalous-ai-float-row > .anomalous-tb-icon { flex: none; color: var(--amb-text-soft); }
 .anomalous-ai-float-words { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .anomalous-ai-float-words.is-wrap { white-space: normal; }
-.anomalous-ai-float-sub,
-.anomalous-ai-float-fact { overflow: hidden; padding-left: 22px; color: var(--amb-text-soft); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-ai-float-line.is-gate .anomalous-ai-float-row > .anomalous-tb-icon { color: var(--amb-warn); }
+.anomalous-ai-float-sub {
+    overflow: hidden;
+    padding-left: 22px;
+    color: var(--amb-text-soft);
+    font-size: 11.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-ai-float-facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-ai-float-fact {
+    max-width: 100%;
+    overflow: hidden;
+    padding: 2px 9px;
+    color: var(--amb-text-soft);
+    background: var(--amb-bg-card);
+    border-radius: 999px;
+    font-size: 11.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-ai-float-line.is-gate .anomalous-ai-float-row > .anomalous-tb-icon { color: var(--amb-warn-text, var(--amb-warn)); }
 .anomalous-ai-float-line.is-halt .anomalous-ai-float-row > .anomalous-tb-icon,
-.anomalous-ai-float-line.is-error .anomalous-ai-float-row > .anomalous-tb-icon { color: var(--amb-danger-text); }
-.anomalous-ai-float-line.is-halt.is-pause .anomalous-ai-float-row > .anomalous-tb-icon { color: var(--amb-warn); }
-.anomalous-ai-float-line.is-done .anomalous-ai-float-row > .anomalous-tb-icon { color: var(--amb-ok); }
+.anomalous-ai-float-line.is-error .anomalous-ai-float-row > .anomalous-tb-icon { color: var(--amb-danger-text, var(--amb-danger)); }
+.anomalous-ai-float-line.is-halt.is-pause .anomalous-ai-float-row > .anomalous-tb-icon { color: var(--amb-warn-text, var(--amb-warn)); }
+.anomalous-ai-float-line.is-done .anomalous-ai-float-row > .anomalous-tb-icon { color: var(--amb-ok-text, var(--amb-ok)); }
 .anomalous-ai-float-line.is-idle,
 .anomalous-ai-float-line.is-waiting { color: var(--amb-text-soft); }
 
-.anomalous-ai-float-pulse { flex: none; width: 8px; height: 8px; margin: 0 3px; border-radius: 50%; background: var(--amb-link); animation: anomalous-ai-float-breathe 1.4s ease-in-out infinite; }
-.anomalous-ai-float-pulse.is-soft { opacity: 0.6; animation-duration: 2.8s; }
-.anomalous-ai-float-percent { flex: none; font-variant-numeric: tabular-nums; }
-.anomalous-ai-float-bar { position: relative; height: 4px; overflow: hidden; border-radius: 2px; background: rgba(var(--amb-ink-rgb), 0.12); }
-.anomalous-ai-float-fill { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: var(--amb-link); transition: width 0.4s; }
-.anomalous-ai-float-bar.is-waiting .anomalous-ai-float-fill { width: 30%; animation: anomalous-ai-float-wait 1.6s ease-in-out infinite; }
+.anomalous-ai-float-pulse { flex: none; width: 8px; height: 8px; margin: 0 3px; border-radius: 50%; background: var(--amb-link); }
+.anomalous-ai-float-pulse.is-soft { opacity: 0.65; }
+.anomalous-ai-float-percent { flex: none; color: var(--amb-float-tonal-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.anomalous-ai-float-bar { position: relative; height: 6px; overflow: hidden; border-radius: 999px; background: rgba(var(--amb-ink-rgb), 0.10); }
+.anomalous-ai-float-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 999px;
+    background: var(--amb-link);
+    transition: width 0.35s var(--amb-ease-out);
+}
+.anomalous-ai-float-bar.is-waiting .anomalous-ai-float-fill { width: 32%; opacity: 0.85; }
 
-@keyframes anomalous-ai-float-wait { from { left: -30%; } to { left: 100%; } }
+.anomalous-ai-float .anomalous-ai-run-stop.is-compact {
+    width: 26px;
+    height: 26px;
+    margin-left: 2px;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--amb-danger) 16%, transparent);
+}
 
-/* ---------- buttons: Allow / No, answers, results ---------- */
+/* ---------- buttons: full pills ---------- */
 .anomalous-ai-float-actions,
 .anomalous-ai-float-answers { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 
 .anomalous-ai-float-allow,
 .anomalous-ai-float-deny,
-.anomalous-ai-float-go,
 .anomalous-ai-float-option,
 .anomalous-ai-float-results {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 26px;
-    padding: 3px 10px;
+    min-height: 28px;
+    padding: 5px 13px;
     color: var(--amb-text-main);
-    background: var(--amb-bg-panel);
-    border: 1px solid var(--amb-border);
-    border-radius: 8px;
+    background: var(--amb-float-chip);
+    border: 0;
+    border-radius: 999px;
     font: inherit;
     font-size: 12px;
+    font-weight: 500;
     text-align: left;
     cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, filter 0.15s ease;
 }
 
-.anomalous-ai-float-allow { background: color-mix(in srgb, var(--amb-ok) 22%, transparent); border-color: var(--amb-ok); font-weight: 650; }
-.anomalous-ai-float-allow:hover { background: color-mix(in srgb, var(--amb-ok) 34%, transparent); }
-.anomalous-ai-float-deny:hover { border-color: var(--amb-danger); }
-.anomalous-ai-float-option { border-color: color-mix(in srgb, var(--amb-link) 45%, transparent); }
-.anomalous-ai-float-option:hover,
-.anomalous-ai-float-option.is-picked { background: color-mix(in srgb, var(--amb-link) 20%, var(--amb-bg-panel)); border-color: var(--amb-link); }
-.anomalous-ai-float-option.is-recommended { border-color: var(--amb-link); }
-.anomalous-ai-float-option.is-main { color: var(--amb-on-link); background: var(--amb-link); border-color: var(--amb-link); font-weight: 650; }
-.anomalous-ai-float-option-tag { padding: 0 5px; color: var(--amb-link); background: color-mix(in srgb, var(--amb-link) 20%, transparent); border-radius: 6px; font-size: 10.5px; }
-.anomalous-ai-float-option.is-main .anomalous-ai-float-option-tag { color: inherit; }
-.anomalous-ai-float-results { flex: none; margin-left: auto; color: var(--amb-link); border-color: var(--amb-link); }
-.anomalous-ai-float-go { flex: none; color: var(--amb-on-link); background: var(--amb-link); border-color: var(--amb-link); }
+.anomalous-ai-float-allow,
+.anomalous-ai-float-results,
+.anomalous-ai-float-option.is-main,
+.anomalous-ai-float-option.is-picked {
+    color: var(--amb-on-link);
+    background: var(--amb-link);
+    font-weight: 600;
+}
 
-.anomalous-ai-float-link { padding: 2px 4px; color: var(--amb-link); background: none; border: 0; font: inherit; font-size: 12px; cursor: pointer; }
-.anomalous-ai-float-link:hover { text-decoration: underline; }
+.anomalous-ai-float-allow:hover:not(:disabled),
+.anomalous-ai-float-results:hover:not(:disabled),
+.anomalous-ai-float-option.is-main:hover:not(:disabled) { filter: brightness(1.08); }
+
+.anomalous-ai-float-deny:hover:not(:disabled) {
+    color: var(--amb-danger-text, var(--amb-danger));
+    background: color-mix(in srgb, var(--amb-danger) 16%, transparent);
+}
+
+.anomalous-ai-float-option.is-recommended:not(.is-picked) {
+    color: var(--amb-float-tonal-text);
+    background: var(--amb-float-tonal-bg);
+    font-weight: 600;
+}
+
+.anomalous-ai-float-option:not(.is-main):not(.is-picked):hover:not(:disabled) { background: var(--amb-float-chip-hover); }
+
+.anomalous-ai-float-option-tag {
+    padding: 1px 6px;
+    color: inherit;
+    background: color-mix(in srgb, var(--amb-link) 22%, transparent);
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 650;
+}
+
+.anomalous-ai-float-option.is-picked .anomalous-ai-float-option-tag {
+    background: color-mix(in srgb, var(--amb-on-link) 20%, transparent);
+}
+
+.anomalous-ai-float-results { flex: none; margin-left: auto; }
+
+.anomalous-ai-float-link {
+    padding: 4px 10px;
+    margin-left: auto;
+    color: var(--amb-link);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.anomalous-ai-float-link:hover { background: color-mix(in srgb, var(--amb-link) 12%, transparent); }
 
 .anomalous-ai-float button:disabled { cursor: progress; opacity: 0.6; }
-.anomalous-ai-float button:focus-visible,
-.anomalous-ai-float-field:focus-visible { outline: 2px solid var(--amb-link); outline-offset: 1px; }
+.anomalous-ai-float button:focus-visible { outline: 2px solid var(--amb-link); outline-offset: 2px; }
 
-/* ---------- a question, and the line to the AI ---------- */
-.anomalous-ai-float-ask {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    padding: 8px;
-    background: color-mix(in srgb, var(--amb-warn) 8%, transparent);
-    border: 1px solid color-mix(in srgb, var(--amb-warn) 45%, transparent);
-    border-radius: 10px;
-}
-
+/* ---------- a question, and seamless pill inputs ---------- */
 .anomalous-ai-float-ask-head { display: flex; align-items: flex-start; gap: 6px; }
-.anomalous-ai-float-ask-head > .anomalous-tb-icon { flex: none; margin-top: 1px; color: var(--amb-warn); }
+.anomalous-ai-float-ask-head > .anomalous-tb-icon { flex: none; margin-top: 2px; color: var(--amb-warn-text, var(--amb-warn)); }
 .anomalous-ai-float-question {
     display: -webkit-box;
     flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
-    font-weight: 650;
+    font-weight: 600;
     white-space: normal;
     overflow-wrap: anywhere;
     -webkit-box-orient: vertical;
@@ -204,40 +404,71 @@ html.theme-abyssal-scarlet .anomalous-ai-float-head { border-color: color-mix(in
     flex: none;
     align-items: center;
     gap: 4px;
-    padding: 2px 8px;
+    padding: 3px 10px;
     color: var(--amb-text-soft);
-    background: none;
-    border: 1px solid var(--amb-border);
+    background: var(--amb-bg-card);
+    border: 0;
     border-radius: 999px;
     font: inherit;
-    font-size: 11px;
+    font-size: 11.5px;
     cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
 }
 
-.anomalous-ai-float-skip:hover { color: var(--amb-text-main); border-color: var(--amb-link); }
+.anomalous-ai-float-skip:hover { color: var(--amb-text-main); background: var(--amb-float-chip-hover); }
 
-.anomalous-ai-float-say { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.anomalous-ai-float-say { display: flex; flex-direction: column; gap: 5px; }
+.anomalous-ai-float-pill-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 4px 4px 4px 13px;
+    background: var(--amb-float-tonal);
+    border-radius: 999px;
+    transition: box-shadow 0.15s ease;
+}
+
+.anomalous-ai-float-ask .anomalous-ai-float-pill-input { background: var(--amb-bg-card); }
+.anomalous-ai-float-pill-input:focus-within { box-shadow: 0 0 0 2px color-mix(in srgb, var(--amb-link) 55%, transparent); }
+
 .anomalous-ai-float-field {
-    flex: 1 1 140px;
+    flex: 1 1 0;
     min-width: 0;
     height: 28px;
-    padding: 0 8px;
+    padding: 0;
     color: var(--amb-text-main);
-    background: var(--amb-bg-input);
-    border: 1px solid var(--amb-border);
-    border-radius: 8px;
+    background: transparent;
+    border: 0;
     font: inherit;
-    font-size: 12px;
+    font-size: 12.5px;
+    outline: none;
 }
 
-.anomalous-ai-float-field:focus { border-color: var(--amb-link); outline: none; }
-.anomalous-ai-float-said { flex-basis: 100%; color: var(--amb-text-soft); font-size: 11px; }
-.anomalous-ai-float-error { color: var(--amb-danger-text); font-size: 11.5px; }
+.anomalous-ai-float-go,
+.anomalous-ai-float-send {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: var(--amb-on-link);
+    background: var(--amb-link);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+}
 
-/* ---------- in its desktop window over every app (ui_ai_float_pip.js) ----------
-   The window is the card: it fills it, the head a bar along its top, the tag the rest; the window's own
-   frame moves and sizes it. Its document has only AMB's stylesheet, so the page's colours come from here
-   (the body's background and overflow carry over to the whole window; <html> keeps only variables). */
+.anomalous-ai-float-go:hover:not(:disabled),
+.anomalous-ai-float-send:hover:not(:disabled) { filter: brightness(1.08); }
+
+.anomalous-ai-float-said { padding-left: 12px; color: var(--amb-text-soft); font-size: 11.5px; }
+.anomalous-ai-float-error { color: var(--amb-danger-text, var(--amb-danger)); font-size: 11.5px; }
+
+/* ---------- in its desktop window over every app (ui_ai_float_pip.js) ---------- */
 body.anomalous-ai-float-pip-body {
     width: 100%;
     height: 100%;
@@ -245,16 +476,73 @@ body.anomalous-ai-float-pip-body {
     padding: 0;
     overflow: hidden;
     color: var(--amb-text-main);
-    background: var(--amb-bg-panel);
+    background: var(--amb-bg-card);
+    color-scheme: dark;
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-.anomalous-ai-float.is-pip { position: static; inset: auto; width: 100%; height: 100vh; max-height: 100vh; transform: none; }
-.anomalous-ai-float.is-pip .anomalous-ai-float-head { border-top: 0; border-right: 0; border-left: 0; border-radius: 0; box-shadow: none; cursor: default; }
-.anomalous-ai-float.is-pip .anomalous-ai-float-tag { flex: 1 1 auto; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+html.amb-theme-light body.anomalous-ai-float-pip-body { color-scheme: light; }
 
-@media (prefers-reduced-motion: reduce) {
-    .anomalous-ai-float-dot,
-    .anomalous-ai-float-pulse,
-    .anomalous-ai-float-bar.is-waiting .anomalous-ai-float-fill { animation: none; }
+.anomalous-ai-float.is-pip {
+    position: static;
+    inset: auto;
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    transform: none;
+    background: var(--amb-bg-card);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.anomalous-ai-float.is-pip .anomalous-ai-float-head { cursor: default; }
+
+/* ---------- motion & contrast ---------- */
+@media (prefers-reduced-motion: no-preference) {
+    .anomalous-ai-float-accent::after {
+        width: 55%;
+        right: auto;
+        animation: anomalous-ai-float-shimmer 2.4s ease-in-out infinite;
+    }
+
+    .anomalous-ai-float-badge.is-running > .anomalous-tb-icon,
+    .anomalous-ai-float-badge.is-tool > .anomalous-tb-icon,
+    .anomalous-ai-float-pulse { animation: anomalous-ai-float-breathe 1.8s ease-in-out infinite; }
+    .anomalous-ai-float-pulse.is-soft { animation-duration: 2.8s; }
+    .anomalous-ai-float-bar.is-waiting .anomalous-ai-float-fill {
+        width: 30%;
+        animation: anomalous-ai-float-wait 1.6s ease-in-out infinite;
+    }
+}
+
+@keyframes anomalous-ai-float-shimmer {
+    0% { transform: translateX(-110%); }
+    100% { transform: translateX(220%); }
+}
+
+@keyframes anomalous-ai-float-breathe {
+    50% { opacity: 0.45; transform: scale(0.88); }
+}
+
+@keyframes anomalous-ai-float-wait {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+}
+
+@media (forced-colors: active) {
+    .anomalous-ai-float,
+    .anomalous-ai-float-line,
+    .anomalous-ai-float-ask,
+    .anomalous-ai-float-allow,
+    .anomalous-ai-float-deny,
+    .anomalous-ai-float-option,
+    .anomalous-ai-float-results,
+    .anomalous-ai-float-skip,
+    .anomalous-ai-float-pill-input {
+        border: 1px solid ButtonBorder;
+    }
+    .anomalous-ai-float-go,
+    .anomalous-ai-float-send { border: 1px solid ButtonText; }
 }

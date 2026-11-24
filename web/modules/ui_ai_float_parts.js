@@ -65,11 +65,28 @@ export function brief(view) {
     return t(view.kind === 'thinking' ? 'aiState_live' : `aiState_${view.kind}`); // waiting, idle, done, error
 }
 
+/** The unfolded head's concise status subtitle under the task name. */
+export function headBrief(view) {
+    if (view.kind === 'run') {
+        const { share } = progressWords({ state: 'submitting', ...view.step.progress });
+        return share === null ? t('aiNowRun') : `${t('aiNowRun')} · ${Math.round(share * 100)}%`;
+    }
+    if (view.kind === 'gate' || view.kind === 'ask') return t('aiState_asks');
+    if (view.kind === 'tool' || view.kind === 'thinking') return t('aiState_live');
+    if (view.kind === 'halt') return t(view.step.pause ? 'aiState_paused' : 'aiState_halted');
+    return t(`aiState_${view.kind}`);
+}
+
 function gateLine(task, gate, ctx) {
     const line = row('anomalous-ai-float-line is-gate', row('anomalous-ai-float-row', icon('shield', 14), words(t('aiNowGate', { what: t(toolKey(gate.tool)) }))));
-    for (const fact of (gate.gate?.lines || []).slice(0, GATE_LINES)) {
-        const label = t(`aiGateArg_${fact.label}`);
-        line.append(words(`${label === `aiGateArg_${fact.label}` ? fact.label : label}${t('wordColon')}${fact.value}`, 'anomalous-ai-float-fact'));
+    const facts = (gate.gate?.lines || []).slice(0, GATE_LINES);
+    if (facts.length) {
+        const holder = el('div', 'anomalous-ai-float-facts');
+        for (const fact of facts) {
+            const label = t(`aiGateArg_${fact.label}`);
+            holder.append(words(`${label === `aiGateArg_${fact.label}` ? fact.label : label}${t('wordColon')}${fact.value}`, 'anomalous-ai-float-fact'));
+        }
+        line.append(holder);
     }
     const note = el('div', 'anomalous-ai-float-error');
     const actions = el('div', 'anomalous-ai-float-actions');
@@ -101,8 +118,8 @@ function runLine(task, run, ctx) {
     const line = row('anomalous-ai-float-line is-run', top, bar);
     line.update = (step) => { // a run's progress moves these alone
         const { words: where, share } = progressWords({ state: 'submitting', ...step.progress });
-        said.textContent = `${t('aiNowRun')} · ${where}`;
-        said.title = said.textContent;
+        said.textContent = where;
+        said.title = where;
         percent.textContent = share === null ? '' : `${Math.round(share * 100)}%`;
         bar.classList.toggle('is-waiting', share === null);
         fill.style.width = share === null ? '' : `${Math.round(share * 100)}%`;
@@ -192,12 +209,14 @@ export function askView(task, { step, block, inline, more }, ctx) {
         field.type = 'text';
         field.placeholder = block.placeholder || t('aiNowAnswerHere');
         if (!ctx.previewAction) draftField(field, task.id, step.id, block.id, 'float'); // the same half-typed words as the workbench's
-        const go = button('anomalous-ai-float-go', t('aiPanelSend'), () => { if (field.value.trim()) void send({ text: field.value.trim() }); });
+        const go = iconButton('anomalous-ai-float-go', 'arrowUp', t('aiPanelSend'), () => {
+            if (field.value.trim()) void send({ text: field.value.trim() });
+        }, { iconOnly: true, size: 15 });
         field.addEventListener('keydown', (event) => {
             event.stopPropagation();
             if (event.key === 'Enter' && !event.isComposing) go.click();
         });
-        answers.append(field, go);
+        answers.append(row('anomalous-ai-float-pill-input', field, go));
     } else {
         answers.append(button('anomalous-ai-float-option is-main', t('aiFloatToWorkbench'), ctx.open));
     }
@@ -238,7 +257,7 @@ export function sayView(task, ctx) {
             ctx.saying();
         }
     };
-    const go = floatTool('arrowRight', t('aiPanelSend'), () => void send(), { extra: ' is-send' });
+    const go = iconButton('anomalous-ai-float-send', 'arrowUp', t('aiPanelSend'), () => void send(), { iconOnly: true, size: 15 });
     field.addEventListener('input', () => {
         if (field.value) ctx.says.set(task.id, field.value);
         else ctx.says.delete(task.id);
@@ -255,6 +274,6 @@ export function sayView(task, ctx) {
             ctx.closeSay();
         }
     });
-    box.append(field, go, said);
+    box.append(row('anomalous-ai-float-pill-input', field, go), said);
     return box;
 }

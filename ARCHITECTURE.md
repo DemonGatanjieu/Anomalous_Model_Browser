@@ -596,10 +596,10 @@ covered by the `styles.css` manifest.
   line for a new chat; `tests/ai_call_lines.mjs`). `ui_ai_notify.js` is the desktop notification for a user who is in
   another window when the AI asks, a step waits for their OK or a run ended that the AI was not told of (`ai_notice.js`
   reads that from the "anomalous.ai_task" event, `tests/ai_notice.mjs`); off until turned on in a task's ⋯ or on the
-  page of a waiting task, kept in the browser. `ui_ai_float.js` is the AI's card over the canvas (in `.graph-canvas-panel`,
-  like the saves bar): while AMB's window is shut it follows a task at work and says what goes on, with a gate's OK, a short
-  answer, Pause and a line to the AI; dragged, folded or closed by the user (kept in the browser). `ui_ai_float_parts.js`
-  draws what its tag says; `ai_float_state.js` is, without DOM, when it shows, what it says first and which task it
+  page of a waiting task, kept in the browser. `ui_ai_float.js` is the AI's unified rounded card over the canvas (in `.graph-canvas-panel`,
+  like the saves bar): while AMB's window is shut it follows a task at work with a semantic status icon badge, concise subtitle, top activity accent, a gate's OK, a short
+  answer, Pause and an embedded line to the AI; dragged, folded into a capsule pill, or closed by the user (kept in the browser). `ui_ai_float_parts.js`
+  draws its body sections; `ai_float_state.js` is, without DOM, when it shows, what it says first and which task it
   follows, and that a `chat_only` task gets it only for a gate (`tests/ai_float_state.mjs`). `ui_ai_float_pip.js` moves
   the card into a desktop window on top of every app (Chrome / Edge's Document Picture-in-Picture, with AMB's stylesheet
   and the theme's classes) and back to the canvas when it closes; a browser without it shows no button for it.
