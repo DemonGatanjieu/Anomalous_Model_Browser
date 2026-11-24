@@ -8,7 +8,8 @@
  * half-typed words shared with the workbench, ui_ai_panel.js draftField, surface 'float'), else a way to
  * the workbench; and the one line to the AI (POST .../message, as the workbench's message box).
  * `ctx`: { open() (the workbench on this task), refresh() (read the task again), closeSay(), says (task
- * id -> the line half typed), saying() (the head's button follows) }.
+ * id -> the line half typed), saying() (the head's button follows), previewAction(action) (in the review
+ * console's rehearsal: what a press does goes there, and nothing reaches the server) }.
  */
 
 import { resolveLocale, translate as t } from './locales.js';
@@ -74,6 +75,7 @@ function gateLine(task, gate, ctx) {
     const actions = el('div', 'anomalous-ai-float-actions');
     const answer = decision => async () => {
         actions.querySelectorAll('button').forEach((node) => { node.disabled = true; }); // one answer
+        if (ctx.previewAction) return void ctx.previewAction({ type: decision });
         try {
             await decideGate(task.id, gate.id, { decision });
             ctx.refresh();
@@ -92,7 +94,8 @@ function runLine(task, run, ctx) {
     const said = words('');
     const percent = el('b', 'anomalous-ai-float-percent');
     const top = row('anomalous-ai-float-row', el('span', 'anomalous-ai-float-pulse'), said, percent);
-    if (run.prompt_ids?.length) top.append(stopButton(task.id, run.id, ctx.refresh, true, Boolean(run.stop || run.progress?.stopping)));
+    const stopping = Boolean(run.stop || run.progress?.stopping);
+    if (run.prompt_ids?.length) top.append(ctx.previewAction ? rehearsedStop(ctx, stopping) : stopButton(task.id, run.id, ctx.refresh, true, stopping));
     const fill = el('span', 'anomalous-ai-float-fill');
     const bar = row('anomalous-ai-float-bar', fill);
     const line = row('anomalous-ai-float-line is-run', top, bar);
@@ -105,6 +108,15 @@ function runLine(task, run, ctx) {
         fill.style.width = share === null ? '' : `${Math.round(share * 100)}%`;
     };
     return line;
+}
+
+/** A run's stop in a rehearsal: drawn as stopButton draws it, its press told to the console. */
+function rehearsedStop(ctx, stopping) {
+    const node = button(`anomalous-ai-run-stop is-compact${stopping ? ' is-busy' : ''}`, '', () => ctx.previewAction({ type: 'stop' }),
+        t(stopping ? 'aiRunStoppingHint' : 'aiRunStopHint'));
+    node.disabled = stopping;
+    node.append(icon('stop', 13));
+    return node;
 }
 
 function endLine(task, view, ctx) {
@@ -150,6 +162,7 @@ export function askView(task, { step, block, inline, more }, ctx) {
     const send = async (body) => {
         const nodes = [...box.querySelectorAll('button, input')];
         nodes.forEach((node) => { node.disabled = true; }); // one answer
+        if (ctx.previewAction) return void ctx.previewAction({ type: body.skip ? 'skip' : 'answer', step: step.id, block: block.id, ...body });
         try {
             await sendAnswer(task.id, { step: step.id, block: block.id, ...body });
             ctx.refresh();
@@ -178,7 +191,7 @@ export function askView(task, { step, block, inline, more }, ctx) {
         const field = el('input', 'anomalous-ai-float-field');
         field.type = 'text';
         field.placeholder = block.placeholder || t('aiNowAnswerHere');
-        draftField(field, task.id, step.id, block.id, 'float'); // the same half-typed words as the workbench's
+        if (!ctx.previewAction) draftField(field, task.id, step.id, block.id, 'float'); // the same half-typed words as the workbench's
         const go = button('anomalous-ai-float-go', t('aiPanelSend'), () => { if (field.value.trim()) void send({ text: field.value.trim() }); });
         field.addEventListener('keydown', (event) => {
             event.stopPropagation();
@@ -209,7 +222,8 @@ export function sayView(task, ctx) {
         if (!text || field.disabled) return;
         field.disabled = go.disabled = true;
         try {
-            await postTask(task.id, { text, refs: [] }, 'message');
+            if (ctx.previewAction) ctx.previewAction({ type: 'say', text });
+            else await postTask(task.id, { text, refs: [] }, 'message');
             ctx.says.delete(task.id);
             field.value = '';
             said.textContent = t('aiFloatSent');
@@ -228,7 +242,7 @@ export function sayView(task, ctx) {
     field.addEventListener('input', () => {
         if (field.value) ctx.says.set(task.id, field.value);
         else ctx.says.delete(task.id);
-        noteTyping(task.id);
+        if (!ctx.previewAction) noteTyping(task.id);
         ctx.saying();
     });
     field.addEventListener('keydown', (event) => {

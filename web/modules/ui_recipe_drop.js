@@ -82,6 +82,7 @@ export function attachRecipeDrop(owner, root) {
     overlay.className = 'anomalous-wf-drop-overlay';
     const words = document.createElement('div');
     words.className = 'anomalous-wf-drop-words';
+    words.textContent = t('recipeDropHint'); // said again on each drag, in the language then
     overlay.append(words);
     root.append(overlay);
     let depth = 0; // dragenter / dragleave also come from the page's children

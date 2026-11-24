@@ -61,6 +61,25 @@ function stateLabel(state) {
     return state.branch ? t('versionDevBuild', { base: state.base_tag || state.commit, branch: state.branch }) : state.label;
 }
 
+/**
+ * Five quick clicks on the version number (within 2.5 s of each other, as the rail logo's theme egg in
+ * ui_sidebar.js) open the review console (ui_review_console.js), loaded only then; `beforeOpen` first.
+ */
+function reviewEgg(owner, beforeOpen = null) {
+    let clicks = 0;
+    let timer = 0;
+    return () => {
+        clicks += 1;
+        clearTimeout(timer);
+        timer = setTimeout(() => { clicks = 0; }, 2500);
+        if (clicks < 5) return;
+        clicks = 0;
+        beforeOpen?.();
+        import('./ui_review_console.js').then(module => module.openReviewConsole(() => owner))
+            .catch(error => console.warn('[AMB] The review console did not load.', error));
+    };
+}
+
 // ---------- version line ----------
 
 /**
@@ -76,6 +95,7 @@ export function createVersionLine(owner, { beforeOpen } = {}) {
         beforeOpen?.();
         openVersionPanel(owner);
     });
+    value.onclick = reviewEgg(owner, beforeOpen);
     line.append(label, value, open);
     request('/anomalous/version').then(data => {
         value.textContent = data.success && data.state?.is_git ? (data.state.tag || data.state.base_tag || data.state.label) : t('versionChipUnknown');
@@ -120,6 +140,7 @@ export function openVersionPanel(owner, chip = null) {
     const list = el('div', 'anomalous-version-list');
 
     const view = { state: null, listing: null, busy: false };
+    const egg = reviewEgg(owner); // the version number is drawn again: one count of clicks for the panel
     const setBusy = (busy, message = '') => {
         view.busy = busy;
         panel.classList.toggle('is-busy', busy);
@@ -136,7 +157,9 @@ export function openVersionPanel(owner, chip = null) {
         const state = view.state;
         current.replaceChildren();
         const line = el('div', 'anomalous-version-current-line');
-        line.append(el('span', 'anomalous-version-current-label', t('versionCurrent')), el('strong', '', stateLabel(state)));
+        const number = el('strong', '', stateLabel(state));
+        number.onclick = egg;
+        line.append(el('span', 'anomalous-version-current-label', t('versionCurrent')), number);
         current.appendChild(line);
         if (state?.is_git) {
             const meta = [state.branch ? t('versionBranch', { branch: state.branch }) : t('versionDetached'), state.commit].filter(Boolean).join(' · ');

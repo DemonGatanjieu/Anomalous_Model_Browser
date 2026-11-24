@@ -306,3 +306,15 @@ dropped on the Workflows page are kept at once, without the save window: saving 
 steps. The recipe keeps the workflow exactly as the file has it; the detached graph is only read for its
 settings, because LiteGraph's copy drops what nodes of packs not installed here carry, and a community
 workflow must survive until those packs are.
+
+## AD-031 — A hidden review console rehearses what needs an AI, in memory only
+
+The canvas card, pure chat, the desktop window and a new user's rail can only be seen when an AI really works
+or on a computer that never ran Anomalous, so checking them cost an AI session, tokens and a mess in the task
+list. The author gets a console instead, hidden from users: no button, no setting, its code loaded only by a
+key, five clicks on the version number or an address, so it costs others nothing. It rehearses the card on
+made-up tasks through the card's own rules and drawing, not a copy of them, so what it shows is what users
+get; a press on the card goes to the console and moves the task on as the server would, and nothing reaches
+the server or the browser's storage. Another user's rail is shown without being kept. Theme and language are
+the real switches (showing them otherwise would be a second theme system to keep), so the console puts them
+back as they were when it opened, on Reset and on close.

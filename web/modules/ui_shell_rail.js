@@ -56,7 +56,8 @@ const div = className => Object.assign(document.createElement('div'), { classNam
 
 /**
  * Builds the rail; its logo is `.anomalous-rail-brand`. Returns its controller (`owner.rail`, ui_sidebar.js):
- * `root`, `items` (Map page → button), the entries shown (`visiblePages`, `isPinned`, `togglePin`, `resetPins`),
+ * `root`, `items` (Map page → button), the entries shown (`visiblePages`, `isPinned`, `togglePin`, `resetPins`;
+ * `previewPins(state)` shows another user's pins, never kept: the review console, ui_review_console.js),
  * Anomalous_TTS (`ttsInstalled`, `voicesShown`: Home's voice card), the open page (`setActive` takes a rail page
  * or a tool's page, `activePage`), news dots (`setNews`, `hasNews`), `hydrate()` and `refreshLanguage()`.
  */
@@ -64,10 +65,11 @@ export function createShellRail(owner) {
     // Read before the window writes keys of its own; kept at once, so the next load does not decide again.
     let pins = loadRailPins();
     saveRailPins(pins);
+    let preview = null; // pins shown instead, kept nowhere (previewPins)
     let ttsInstalled = false; // known after hydrate(); until then Voices shows only when pinned
     let activePage = null;
     const news = new Set();
-    const isPinned = id => isRailPinned(pins, id);
+    const isPinned = id => isRailPinned(preview || pins, id);
     const voicesShown = () => ttsInstalled || isPinned('voices');
 
     const root = document.createElement('nav');
@@ -190,6 +192,10 @@ export function createShellRail(owner) {
         isPinned,
         togglePin: id => update(() => { pins = toggleRailPin(pins, id); }),
         resetPins: () => update(() => { pins = resetRailPinsToMinimal(pins); }),
+        previewPins(next) {
+            preview = next || null;
+            showPinned();
+        },
         ttsInstalled: () => ttsInstalled,
         voicesShown,
         activePage: () => activePage,

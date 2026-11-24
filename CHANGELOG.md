@@ -14,6 +14,9 @@
 - 工作流 .json、ComfyUI 存的带工作流的 .png / .webp 图片，直接拖到工作流页上就存成卡片，不再先拖到画布、再点保存、再填窗口；一次能拖好几个。名字用文件名，图当封面；AMB 存下的工作流 .json 带着原来的名字、标签和备注；配方包 .zip 照常先问你。只有运行用的 API 格式、没有画布上工作流的文件，会说明为什么没存。没装的节点包的节点原样存下。拖到这页的文件不会再漏到后面的画布上打开。
 - Drop workflow .json files, or .png / .webp pictures ComfyUI saved with their workflow, on the Workflows page to keep them as cards at once, instead of dropping on the canvas, pressing Save and filling the window; several at a time. The file name becomes the name and a picture the cover; a workflow .json Anomalous saved brings its name, tags and notes; a recipe package .zip still asks first. A file holding only the API format used to run it, with no canvas workflow, says why it was not kept. Nodes of packs not installed are kept as they are. Files dropped on the page no longer open on the canvas behind it.
 
+- 给作者检查用的隐藏「审查修改器」：按 Ctrl+Shift+Alt+G、在版本号上快速连点五下，或网址加 #amb-review 打开。不连 AI 就能看挂牌的 12 种状态，在挂牌上点按钮看它怎么变，切主题和语言，看新老用户的侧栏，打开拖拽遮罩。全在内存里，不发给服务器，关掉就还原。平时不加载，界面上也没有入口。
+- A hidden review console for the author: Ctrl+Shift+Alt+G, five quick clicks on the version number, or #amb-review in the address. Without an AI it shows the canvas card's 12 states and what a press on it does, switches theme and language, shows a new or an upgraded user's rail and the drop veil. All in memory: nothing goes to the server, and closing it puts everything back. It is not loaded otherwise, and no button leads to it.
+
 - 画布挂牌能放到桌面上：Chrome、Edge 里挂牌上多了「置顶到桌面」，挂牌变成一个压在所有软件上面的小窗，在命令行里跟 AI 说话时也看得到，照样能允许、答题、暂停；「放回画布」或关掉小窗就回到画布。
 - The canvas card can sit on your desktop: in Chrome and Edge it has "Pop out to desktop", which turns it into a small window on top of every app, so you see it while you talk to the AI in a terminal, and Allow, answers and Pause still work there; "Return to canvas", or closing the window, brings it back.
 

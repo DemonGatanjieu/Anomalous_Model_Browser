@@ -220,10 +220,23 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         watchJobSheetCard(ensureBrowser);
         watchAiFloat(ensureBrowser);
         watchRunErrors(ensureBrowser);
+        // The review console (ui_review_console.js), for checking what needs an AI or a first-time user: no
+        // button anywhere, loaded only when Ctrl+Shift+Alt+G is pressed or the address ends in #amb-review.
+        const review = how => import('./ui_review_console.js').then(module => module[how](ensureBrowser))
+            .catch(error => console.warn('[AMB] The review console did not load.', error));
+        window.addEventListener('keydown', (event) => {
+            if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || !event.altKey) return;
+            if (event.code !== 'KeyG' && event.key?.toLowerCase() !== 'g') return;
+            event.preventDefault();
+            void review('toggleReviewConsole');
+        });
+        if (location.hash === '#amb-review' || new URLSearchParams(location.search).get('amb_review') === '1') {
+            setTimeout(() => void review('openReviewConsole'), 600);
+        }
         // Beside this file, not under a fixed name: the plugin folder may be called anything
         // (a ZIP from GitHub unpacks as Anomalous_Model_Browser-main), and ComfyUI serves it by that name.
         const cssPath = new URL('../styles.css', import.meta.url).pathname;
-        const cssUrl = cssPath + '?v=20261124-drop-pip-chat';
+        const cssUrl = cssPath + '?v=20261124-review-console';
         if (!document.querySelector(`link[href^="${cssPath}"]`)) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';

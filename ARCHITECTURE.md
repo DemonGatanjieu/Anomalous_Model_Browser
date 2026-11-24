@@ -602,7 +602,14 @@ covered by the `styles.css` manifest.
   draws what its tag says; `ai_float_state.js` is, without DOM, when it shows, what it says first and which task it
   follows, and that a `chat_only` task gets it only for a gate (`tests/ai_float_state.mjs`). `ui_ai_float_pip.js` moves
   the card into a desktop window on top of every app (Chrome / Edge's Document Picture-in-Picture, with AMB's stylesheet
-  and the theme's classes) and back to the canvas when it closes; a browser without it shows no button for it. The task head's "float over canvas" puts a task on it, `browser.js` tells it when
+  and the theme's classes) and back to the canvas when it closes; a browser without it shows no button for it.
+  `ui_review_console.js` is the author's hidden review console (Ctrl+Shift+Alt+G, five quick clicks on the version
+  number, or `#amb-review` / `?amb_review=1`; loaded only then, styles `styles/64-review-console.css`): it rehearses
+  the card on made-up tasks through the card's own drawing (`setAiFloatPreview`: a press on the card goes to the
+  console, nothing to the server, nothing kept in the browser), shows the rail of another kind of user
+  (`previewPins`, never kept), switches theme and language (put back on Reset and on close) and opens a few
+  windows. `review_scenarios.js` is, without DOM, those tasks (shaped as `api/ai_tasks.py` keeps them), what a press
+  does to them and the users' rail pins (`tests/review_scenarios.mjs`). The task head's "float over canvas" puts a task on it, `browser.js` tells it when
   the window opens and closes, and it opens the workbench through `owner.openAiTask` (set by `watchAiTasks`), so it never
   imports the page; while the window is shut, the page's toast for a panel or a gate gives way to it. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
   output folder's ai_inbox (`POST /anomalous/ai_pictures/upload`, `ai_pictures.save_upload`). `web/modules/ai_chat_plus.js` holds the DOM-free logic (per-ref note sanitization and `attached: true` serialization; `tests/ai_chat_plus.mjs`). `web/modules/ui_ai_plus.js` is the 4-row "+" menu (`models`, `ways`, `other` -> `combos|workflows|prompts|nodes` else `combos`, opening or switching the single picker in the side column; plus shared `ui_ai_start_from.openBuildRouteWindow` dialog, and `@` hint). `ui_ai_mention.js` holds those refs

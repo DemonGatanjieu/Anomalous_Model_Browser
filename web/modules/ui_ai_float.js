@@ -5,7 +5,9 @@
  * (ui_ai_halt.js), fold into a line, the full workbench, and × (the card goes, the AI goes on). Under
  * it the tag (ui_ai_float_parts.js): what goes on, the first open question, the line to the AI.
  * Where the browser can, one button puts it in a desktop window on top of every app, and back
- * (ui_ai_float_pip.js); there it is drawn the same and the window's own frame moves it.
+ * (ui_ai_float_pip.js); there it is drawn the same and the window's own frame moves it. The review
+ * console (ui_review_console.js) rehearses it on made-up tasks (setAiFloatPreview): what is pressed then
+ * goes to the console, never to the server, and nothing is kept in the browser.
  * Dragged by its head (kept in this browser), put back at the top by a double-click on it. When it
  * shows and which task it follows: ai_float_state.js. It never opens AMB's window by itself:
  * `getBrowser()` only when the user asks for the workbench, whose opening hides the card
@@ -50,6 +52,8 @@ const state = {
     drawOnClose: false,
     stopDrag: null,
     resize: null,
+    preview: null,     // the review console's rehearsal: { task, onAction, onDismiss }
+    real: null,        // what the rehearsal set aside, put back when it ends
 };
 let card = null;
 
@@ -58,6 +62,7 @@ function stored(key) {
 }
 
 function store(key, value) {
+    if (state.preview) return; // a rehearsal keeps nothing
     try {
         if (value === null) localStorage.removeItem(key);
         else localStorage.setItem(key, value);
@@ -160,6 +165,12 @@ function startDrag(event) {
 
 // ---------------------------------------------------------------- drawing it
 
+/** The task the card shows: the rehearsal's while one runs, else the one followed. */
+const shownTask = () => state.preview?.task || state.task;
+
+/** In a rehearsal, what a press on the card does goes to the console (never to the server); null outside one. */
+const rehearsal = () => (state.preview ? action => state.preview?.onAction?.(action) : null);
+
 function headView(task) {
     const head = el('div', 'anomalous-ai-float-head');
     head.title = t('aiFloatDrag');
@@ -172,7 +183,9 @@ function headView(task) {
         tools.append(say);
     }
     if (!state.folded && canHalt(task)) {
-        tools.append(floatTool('pause', t('aiPause'), () => void pauseTask(task, () => readAgain(task.id)), { title: `${t('aiPause')} · ${t('aiPauseHint')}` }));
+        const act = rehearsal();
+        const pause = act ? () => act({ type: 'pause' }) : () => void pauseTask(task, () => readAgain(task.id));
+        tools.append(floatTool('pause', t('aiPause'), pause, { title: `${t('aiPause')} · ${t('aiPauseHint')}` }));
     }
     const desktop = isDesktopPipOpen();
     if (supportsDesktopPip()) {
@@ -226,10 +239,12 @@ function render(task, view) {
     tag.hidden = state.folded;
     if (!state.folded) {
         const [now, asks, sayer] = tag.children;
-        const ctx = { open: () => openWorkbench(task), refresh: () => readAgain(task.id), closeSay: () => toggleSay(false), says: state.says, saying: () => markSaying(task) };
+        const act = rehearsal();
+        const ctx = { open: () => openWorkbench(task), refresh: act ? draw : () => readAgain(task.id), closeSay: () => toggleSay(false),
+            says: state.says, saying: () => markSaying(task), previewAction: act };
         settle(now, lineKey(task, view), () => lineView(task, view, ctx))?.update?.(view.step);
         const ask = pickFloatAsk(task, (step, block) => hasDraft(task.id, step.id, block.id));
-        settle(asks, ask ? JSON.stringify([resolveLocale(), task.id, ask.step.id, ask.block.id, ask.inline, ask.more]) : '', () => ask && askView(task, ask, ctx));
+        settle(asks, ask ? JSON.stringify([resolveLocale(), task.id, ask.step.id, ask.block, ask.inline, ask.more]) : '', () => ask && askView(task, ask, ctx)); // the block: its words too
         const saying = state.sayOpen && !task.ended;
         settle(sayer, saying ? JSON.stringify([resolveLocale(), task.id]) : '', () => saying && sayView(task, ctx));
     }
@@ -240,7 +255,7 @@ function render(task, view) {
 
 function draw() {
     clearTimeout(state.wakeTimer);
-    const task = state.task;
+    const task = shownTask();
     state.dismissed = liftDismissal(state.dismissed, task);
     const show = shouldShowFloat({ task, browserOpen: state.browserOpen, pinnedTaskId: state.pinned, dismissed: state.dismissed, watching: state.watching });
     if (!show) return void hide();
@@ -276,11 +291,12 @@ function toggleSay(open = !state.sayOpen) {
 
 /** ×: the card goes until the task asks something new; the AI goes on. */
 function dismiss() {
-    state.dismissed = dismissFloat(state.task);
+    state.dismissed = dismissFloat(shownTask());
     state.pinned = null;
     state.watching = null;
     state.sayOpen = false;
     hide();
+    state.preview?.onDismiss?.();
 }
 
 /** The card in a desktop window over every app (from the click: the browser asks for one), unfolded so the tag shows. */
@@ -289,7 +305,7 @@ async function popOut() {
     state.stopDrag?.();
     state.resize?.disconnect(); // the window's frame sizes it now
     state.resize = null;
-    await openDesktopPip(card, { title: taskTitle(state.task), onReturn: draw });
+    await openDesktopPip(card, { title: taskTitle(shownTask()), onReturn: draw });
     draw(); // in its window, or still on the canvas when the browser gave none
 }
 
@@ -299,6 +315,11 @@ function openWorkbench(task) {
         closeDesktopPip({ suppressReturn: true });
         focusOpenerWindow();
     }
+    if (state.preview) { // a rehearsal's task is not on the server: the AI page alone
+        state.browser?.()?.show?.({ page: 'ai' });
+        state.preview?.onAction?.({ type: 'open_workbench' });
+        return;
+    }
     state.browser?.()?.openAiTask?.(task.id);
 }
 
@@ -306,6 +327,7 @@ function heard(event) {
     const detail = event?.detail || {};
     if (!detail.id) return;
     state.heard = true;
+    if (state.preview) return; // a rehearsal holds the card: the real task is read again when it ends
     if (detail.progress) {
         const step = state.task?.id === detail.id && (state.task.steps || []).find(item => item.id === detail.progress.step);
         if (!step) return;
@@ -325,11 +347,12 @@ function heard(event) {
 
 /** AMB's window closed: the task put on the canvas, the one followed, or the newest at work. */
 async function lookAgain() {
+    if (state.preview) return;
     const [newest] = await fetchTasks(1).catch(() => []);
     const ids = new Set([state.pinned, state.task?.id, shouldAutoShowOnBoot(newest) ? newest.id : null].filter(Boolean));
     for (const id of ids) {
         const task = await readTask(id).catch(() => null);
-        if (state.browserOpen) return;
+        if (state.browserOpen || state.preview) return;
         if (task) state.task = pickTracked(state.task, task, { pinnedTaskId: state.pinned });
     }
     draw();
@@ -342,7 +365,7 @@ async function boot() {
     const task = await readTask(newest.id).catch(() => null);
     // ComfyUI draws its canvas's panel after the plugins start: the card waits for it (15 s at most).
     for (let tries = 0; tries < 60 && !document.querySelector('.graph-canvas-panel'); tries++) await new Promise(done => setTimeout(done, 250));
-    if (!task || state.task || !isTaskActive(task)) return;
+    if (!task || state.task || state.preview || !isTaskActive(task)) return;
     state.task = task;
     draw();
 }
@@ -377,9 +400,41 @@ export function setAiFloatBrowserOpen(open) {
         hide();
         return;
     }
+    if (state.preview) return void draw(); // the rehearsal comes back
     if (state.drawOnClose) {
         state.drawOnClose = false;
         draw();
     }
     if (state.task || state.pinned || state.heard) void lookAgain();
 }
+
+/**
+ * The review console's rehearsal (ui_review_console.js): the card shows `task` (review_scenarios.js) as it
+ * would a real one, but a press on it goes to `onAction(action)` and its × to `onDismiss()`, never to the
+ * server, and nothing it does is kept in the browser. `resetDismissal`: a new rehearsal starts afresh (no
+ * ×, nothing put on the canvas, followed unless it is in an AI app's own chat); false while one goes on.
+ * Returns { shown, desktop }: whether the card shows, and whether in the desktop window.
+ */
+export function setAiFloatPreview(task, { onAction = null, onDismiss = null, resetDismissal = true } = {}) {
+    if (!state.real) {
+        const { dismissed, pinned, watching, keys, folded, pos } = state;
+        state.real = { dismissed, pinned, watching, keys, folded, pos };
+    }
+    state.preview = { task, onAction, onDismiss };
+    if (resetDismissal) Object.assign(state, { dismissed: null, pinned: null, watching: task.chat_only ? null : task.id });
+    draw();
+    return { shown: Boolean(card?.isConnected), desktop: isDesktopPipOpen() };
+}
+
+/** The rehearsal ends: its card goes, with the desktop window, and the real task's card comes back as it was. */
+export function clearAiFloatPreview() {
+    if (!state.preview) return;
+    state.preview = null;
+    hide();
+    for (const id of [...state.says.keys()]) if (id.startsWith('preview_')) state.says.delete(id);
+    Object.assign(state, state.real, { sayOpen: false });
+    state.real = null;
+    if (state.task || state.pinned || state.heard) void lookAgain();
+}
+
+export const isAiFloatPreviewing = () => Boolean(state.preview);
