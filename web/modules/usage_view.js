@@ -1,8 +1,8 @@
 /**
  * What the two "not used lately" pages share (api/model_usage.py): the check, run on a press
  * and kept in `owner.modelUsage` ({data, filter, picked, running, error}) for both — the models
- * under the models page's Tidy tab (ui_model_usage.js) and the node packs in Settings → Node
- * packs (ui_pack_usage.js) — and the head of each: title, how it judges, the 30 / 90 days /
+ * under the models page's Tidy tab (ui_model_usage.js) and the node packs in Settings → Workflows
+ * & Tools (ui_pack_usage.js) — and the head of each: title, how it judges, the 30 / 90 days /
  * never groups and what the run record can vouch for.
  */
 

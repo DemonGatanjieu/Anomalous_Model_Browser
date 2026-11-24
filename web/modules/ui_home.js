@@ -1,10 +1,11 @@
 /**
- * The home page: first the four everyday tasks, large, each with its picture and line (finding a model, with
- * "+ Import models" beside it; model files dropped anywhere on Home are imported too, ui_sidebar.js),
- * the first-run setup above them while nothing is scanned (ui_first_run.js); then the other tools, one
+ * The home page: first the four everyday tasks, large, each with its picture and line, the same four as the
+ * rail's own pages (models, with "+ Import models" beside it, model files dropped anywhere on Home are imported
+ * too, ui_sidebar.js; Model check; the gallery; workflows), the first-run card above them while nothing is
+ * scanned (ui_first_run.js); then the other tools, canvas saves first, one
  * small card each (its icon and name; what it does on hover; "Run my preset" opens its sheet,
  * ui_ai_starter_sheet.js, and the last run's "same again" line comes under these cards); then "Let the
- * AI do it", folded until opened (ui_ai_starters.js, drawn into a slot); then the first steps (set up,
+ * AI do it", folded until opened (ui_ai_starters.js, drawn into a slot); then the first steps (first-run card,
  * scan, the tour, what's new). Each card opens its page (the saves card starts the canvas's saves,
  * ui_snapshot_bar.js). Rendered again on each visit, so text follows the language.
  */
@@ -32,17 +33,19 @@ const MAIN_CARDS = Object.freeze([
     { name: 'Models', icon: PAGE_ICONS.models, open: owner => owner.goTo('models') },
     { name: 'Doctor', icon: TOOL_ICONS.DOCTOR, open: owner => owner.openDoctorPage() },
     { name: 'Gallery', icon: PAGE_ICONS.gallery, open: owner => owner.goTo('gallery') },
-    { name: 'Saves', icon: PAGE_ICONS.saves, open: owner => void savesFromHome(owner) },
+    { name: 'Recipes', art: 'toolbox_workflow', icon: PAGE_ICONS.recipes, open: owner => owner.goTo('recipes') },
 ]);
 const MORE_CARDS = Object.freeze([
-    { name: 'Recipes', icon: PAGE_ICONS.recipes, open: owner => owner.goTo('recipes') },
-    { name: 'Preset', icon: PAGE_ICONS.presets, open: owner => void openPresetSheet(owner) },
+    { name: 'Saves', icon: PAGE_ICONS.saves, open: owner => void savesFromHome(owner) },
     { name: 'Combos', icon: PAGE_ICONS.combos, open: owner => owner.goTo('combos') },
     { name: 'Prompts', icon: PAGE_ICONS.prompts, open: owner => owner.goTo('prompts') },
+    { name: 'Preset', icon: PAGE_ICONS.presets, open: owner => void openPresetSheet(owner) },
     { name: 'Voices', icon: PAGE_ICONS.script, open: owner => owner.goTo('script') },
 ]);
-// The large cards' pictures (web/assets, drawn with ChatGPT like the AI cards), asked for as the window opens.
-export const HOME_ART = MAIN_CARDS.map(card => `home_${card.name.toLowerCase()}`);
+// A large card's picture (web/assets, drawn with ChatGPT like the AI cards; workflows reuse the toolbox's).
+const artOf = card => card.art || `home_${card.name.toLowerCase()}`;
+// Asked for as the window opens.
+export const HOME_ART = MAIN_CARDS.map(artOf);
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -70,7 +73,7 @@ function cardArt(card) {
     img.alt = '';
     img.decoding = 'async';
     img.onerror = () => img.replaceWith(cardIcon(card));
-    img.src = new URL(`../assets/home_${card.name.toLowerCase()}.webp`, import.meta.url).href;
+    img.src = new URL(`../assets/${artOf(card)}.webp`, import.meta.url).href;
     return fadeIn(img);
 }
 

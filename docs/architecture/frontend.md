@@ -153,11 +153,11 @@ The main surfaces are:
 - Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and
   missing-model recovery. `model_check.js` decides each workflow model's state and
   applies fixes; `ui_doctor.js` (the page) and `ui_doctor_banner.js` (the bar shown
-  after a workflow opens, unless its "Don't show again" or Settings → Workflows turned the
+  after a workflow opens, unless its "Don't show again" or Settings → Workflows & Tools turned the
   check on opening off) only render it and call it on a press. A missing model with a
   certain source gets Download (`ui_model_download.js`; `model_download.js` holds the
   logic): the dialog names, per file, the type's folder (a choice when there are several,
-  remembered per type in `localStorage`) and the subfolder from Settings → Model downloads
+  remembered per type in `localStorage`) and the subfolder from Settings → Models & Network → Model downloads
   — where the workflow says (so the node needs no change) or a set folder, `{base}` there
   being the model's base model, matched to an existing folder in any spelling — and the
   file keeps the workflow's name. When a download ends, the model lists reload, nodes
@@ -441,7 +441,7 @@ tokens express surfaces, text, borders and control shapes; theme overrides must
 be scoped to `.theme-abyssal-scarlet` or `html.amb-theme-light` rather than changing
 unrelated surfaces.
 
-Themes (`interface_settings.js`, Settings → Appearance → Theme and the ComfyUI setting
+Themes (`interface_settings.js`, Settings → Look & Interaction → Appearance → Theme and the ComfyUI setting
 `Anomalous.ModelBrowser.Theme`): follow ComfyUI (default), dark, light, or Abyssal Scarlet.
 Following ComfyUI reads `comfy_palette.js`: the class `dark-theme` on `<html>` (frontends before
 1.59) or `color-scheme: dark` in `<html>`'s style (1.59 on), and repaints when either changes;

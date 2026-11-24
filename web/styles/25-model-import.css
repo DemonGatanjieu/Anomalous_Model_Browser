@@ -110,6 +110,12 @@
     font-weight: 600;
 }
 
+/* A card a link scrolls to (ui_settings_page.js) stops below the tabs, which stay at the top. */
+.anomalous-scan-card[data-settings-section],
+.anomalous-usage[data-settings-section] {
+    scroll-margin-top: 56px;
+}
+
 .anomalous-download-folder-choice {
     display: flex;
     flex-direction: column;

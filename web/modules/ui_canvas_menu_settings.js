@@ -1,13 +1,13 @@
 /**
- * Settings -> Canvas -> Right-click menu: where AMB's entries sit, as two cards each drawing a
- * small menu (one "AMB" line opening them, or them listed in ComfyUI's menu), and, for a node's
- * menu and the empty canvas's, each entry on or off and moved up or down, with a line showing
- * what the menu will offer, and Reset. Saved at once (canvas_menu_settings.js); the menu reads
- * it each time it opens.
+ * Settings -> Look & Interaction -> Right-click menu: where AMB's entries sit, as two cards each
+ * drawing a small menu (one "AMB" line opening them, or them listed in ComfyUI's menu), and, for a
+ * node's menu and the empty canvas's, each entry on or off and moved up or down, with a line showing
+ * what the menu will offer, then Enable all and Reset. Saved at once (canvas_menu_settings.js); the
+ * menu reads it each time it opens.
  */
 
 import { translate as t } from './locales.js';
-import { menuSettings, moveEntry, resetMenuSettings, saveMenuSettings } from './canvas_menu_settings.js';
+import { enableAllMenuEntries, menuSettings, moveEntry, resetMenuSettings, saveMenuSettings } from './canvas_menu_settings.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -142,6 +142,10 @@ export function canvasMenuRows({ row, redraw }) {
     };
     const reset = row('canvasMenuReset', 'canvasMenuResetHelp', button('anomalous-scan-secondary anomalous-scan-small-btn', t('settingsReset'), () => {
         resetMenuSettings();
+        redraw();
+    }));
+    reset.lastChild.before(button('anomalous-scan-secondary anomalous-scan-small-btn', t('canvasMenuEnableAll'), () => {
+        saveMenuSettings(enableAllMenuEntries(settings));
         redraw();
     }));
     return [

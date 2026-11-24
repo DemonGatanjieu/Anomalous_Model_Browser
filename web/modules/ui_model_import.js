@@ -297,7 +297,7 @@ export function openImportDialog(owner, files) {
     const rules = button('anomalous-download-rules', t('downloadRules'), () => {
         if (busy) return;
         close();
-        openSettingsPage(owner, { tab: 'models' });
+        openSettingsPage(owner, { tab: 'models', section: 'downloads' });
     });
     const footer = el('div', 'anomalous-download-footer');
     const cancel = button('anomalous-scan-secondary', t('dialogCancel'), () => close());

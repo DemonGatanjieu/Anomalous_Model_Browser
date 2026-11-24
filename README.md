@@ -193,7 +193,7 @@ Every page has an icon on the left rail; when docked beside the canvas, drag the
 The rail keeps Home, Models, Gallery, Workflows and **Model Check**; the other pages and tools wait under **More**, a line each, where the pin beside one keeps it on the rail and **Reset to minimal rail** takes them all off again. Upgrading keeps what you used on the rail, and **Voices** shows by itself once Anomalous_TTS is installed. The tools:
 
 * **Current node** (formerly Node Assistant): inspects the selected canvas node's model, swaps models from visual cards, inserts one or **multiple numbered LoRAs** at once (as standard chained nodes or into an rgthree Power Lora Loader / Easy-Use stack), and compares/applies saved values from workflows, combos, gallery pictures or node presets (`⇄ Compare` checks that node alone).
-* **Model Check** (formerly Model Doctor): checks opened workflows read-only; offers a one-click banner when renamed or moved local files match the workflow's SHA-256 fingerprints (written by this plugin: **Settings → Record model fingerprints in workflows**, on by default); without fingerprints, offers a file of the same name for you to confirm. Downloads come from Civitai by fingerprint, the workflow's own links or ComfyUI-Manager's model list. [The full rules](docs/guides/model-check-rules.en.md).
+* **Model Check** (formerly Model Doctor): checks opened workflows read-only; offers a one-click banner when renamed or moved local files match the workflow's SHA-256 fingerprints (written by this plugin: **Settings → Workflows & Tools → Record model fingerprints in workflows**, on by default); without fingerprints, offers a file of the same name for you to confirm. Downloads come from Civitai by fingerprint, the workflow's own links or ComfyUI-Manager's model list. [The full rules](docs/guides/model-check-rules.en.md).
 * **Saves**: jumps straight to the Canvas Saves comparison page with the live 3-step guide card for the open canvas.
 * **Scan**: hashes model files locally, reads headers (including offline base-model & architecture detection across 25+ newer diffusion families and 300+ model layouts, plus LoRA file-header common words), and fetches Civitai covers, names and trigger words.
 * **Settings**: language (switches live across all panels, Panels and Saves bar), interface scale, theme, thumbnails, video covers, model download mirrors, backups, and **Report a problem** (pre-filled with version & GPU info).
@@ -216,9 +216,9 @@ Open the browser with **Shift + B** (press again to close), the cube button at t
 
 **On a cloud server (AutoDL, RunPod…):** overseas servers work out of the box; servers in mainland China only in part (Civitai is mostly out of reach there; see the `civitai.red` fallback and `hf-mirror.com` below). Tested on one AutoDL server so far. Opened from another machine, the plugin defaults to read-only for safety; connect via an SSH tunnel so ComfyUI sees `127.0.0.1`, or read [docs/guides/cloud-server.md](docs/guides/cloud-server.md).
 
-**Network:** Civitai scanning and Google prompt translation require network access (when `civitai.com` is unreachable, the plugin tries `civitai.red` automatically; **Offline** scan works without internet and reads base models from file headers). For Hugging Face downloads in mainland China, enable **Settings → Model downloads → Hugging Face mirror (`hf-mirror.com`)**. Daily browsing of models, gallery, workflows, saves and combos requires **no network**.
+**Network:** Civitai scanning and Google prompt translation require network access (when `civitai.com` is unreachable, the plugin tries `civitai.red` automatically; **Offline** scan works without internet and reads base models from file headers). For Hugging Face downloads in mainland China, enable **Settings → Models & Network → Model downloads → Hugging Face mirror (`hf-mirror.com`)**. Daily browsing of models, gallery, workflows, saves and combos requires **no network**.
 
-**Backups:** **Settings → Backup → Export** packs your saved workflows, presets, canvas saves, combos, prompts, node values, and custom model names/notes/covers into a single `.zip` for cloud drives or a move to another PC. **Import** never deletes anything: a file that differs from the backup's stays unless you choose to take the backup's (yours then goes to the Recycle Bin). A backup also lists your models with their fingerprints, so on a new computer the missing ones can be looked up and downloaded again. Data lives under `workflows/anomalous_*` inside your ComfyUI `user` folder.
+**Backups:** **Settings → Backup & Help → Export** packs your saved workflows, presets, canvas saves, combos, prompts, node values, and custom model names/notes/covers into a single `.zip` for cloud drives or a move to another PC. **Import** never deletes anything: a file that differs from the backup's stays unless you choose to take the backup's (yours then goes to the Recycle Bin). A backup also lists your models with their fingerprints, so on a new computer the missing ones can be looked up and downloaded again. Data lives under `workflows/anomalous_*` inside your ComfyUI `user` folder.
 
 </details>
 
@@ -398,7 +398,7 @@ Antigravity、Claude、Cursor、Cherry Studio、VS Code 等支持 MCP 的客户�
 左侧栏常驻 **主页**、**模型**、**图库**、**工作流** 和 **模型检查**；其余页面和工具收在 **更多** 里，每项一句说明，点右边的图钉就钉到左侧栏，**恢复精简侧栏** 一下全收回。从旧版本升级时，用过的仍留在左侧；装了 Anomalous_TTS 后 **角色语音** 自己出现。下面是这些工具：
 
 * **当前节点**（原“节点助手”）：跟随画布当前选中的节点，看封面换模型，或点 **插入 LoRA** 一次勾选多个 LoRA 按 `1 · 2 · 3` 顺序自动串接（装了 rgthree / Easy-Use 可选塞入单个堆叠节点）；下方按来源小标签（工作流、搭配、图片、本节点存的）列出同类节点参数，点 `⇄ 对比` 只看当前节点差异并一键套用。
-* **模型检查**（原“模型医生”）：打开工作流自动只读检查；本机改过名或换过目录的同一文件凭 SHA-256 指纹在画布顶部横幅一键换上（指纹由本插件写进工作流：**设置 → 在工作流里记下模型指纹**，默认开启）；没有指纹时列出同名文件让你确认。缺的模型从 C 站（按指纹）、工作流自带的链接或 Manager 清单下载。[完整规则](docs/guides/model-check-rules.md)。
+* **模型检查**（原“模型医生”）：打开工作流自动只读检查；本机改过名或换过目录的同一文件凭 SHA-256 指纹在画布顶部横幅一键换上（指纹由本插件写进工作流：**设置 → 工作流与工具 → 在工作流里记下模型指纹**，默认开启）；没有指纹时列出同名文件让你确认。缺的模型从 C 站（按指纹）、工作流自带的链接或 Manager 清单下载。[完整规则](docs/guides/model-check-rules.md)。
 * **存档**：直达画布存档对比页，页首带当前画布的 3 步流程引导卡，一眼看清每一版改动与出图对比。
 * **模型扫描**：按文件哈希向 C 站匹配模型信息与封面；离线时可从文件头识别 25+ 新模型架构与 Manager 清单 300+ 真实模型布局，并读取 LoRA 文件头里的常用词（推测）。
 * **设置**（最下方）：中英文实时切换（工作台面板、留言框与底部存档条立即生效，无需刷新页面）、界面缩放、深浅主题、缩略图与视频封面、Hugging Face 国内镜像、数据备份导出/导入，以及自动附带版本与显卡信息的 **报告问题**。
@@ -421,9 +421,9 @@ Antigravity、Claude、Cursor、Cherry Studio、VS Code 等支持 MCP 的客户�
 
 **云服务器（AutoDL、RunPod 等）：** 海外云服务器完整支持；国内云服务器只能部分支持：多半连不上 Civitai，有的能连上 `civitai.red` 认出模型名与触发词（封面较难下载）。目前只实测过一台 AutoDL 服务器。从非本机浏览器直接访问时插件默认只读保护，建议通过 SSH 隧道映射到本地打开，详见 [docs/guides/cloud-server.md](docs/guides/cloud-server.md)（内附可直接丢给 AI 助手照着配的步骤）。
 
-**关于网络：** 扫描封面与谷歌提示词翻译需要联网（连不上 `civitai.com` 时会自动尝试 `civitai.red`；无代理时选 **离线** 扫描同样能识别底模）。下载 Hugging Face 模型可在 **设置 → 模型下载** 开启 `hf-mirror.com` 国内镜像。日常浏览模型、图库、工作流、存档和搭配**完全不需要联网**。
+**关于网络：** 扫描封面与谷歌提示词翻译需要联网（连不上 `civitai.com` 时会自动尝试 `civitai.red`；无代理时选 **离线** 扫描同样能识别底模）。下载 Hugging Face 模型可在 **设置 → 模型与网络 → 模型下载** 开启 `hf-mirror.com` 国内镜像。日常浏览模型、图库、工作流、存档和搭配**完全不需要联网**。
 
-**备份自己的数据：** **设置 → 备份 → 导出** 会把工作流、预设、画布存档、搭配、提示词库、节点参数以及你自定义的模型名/备注/封面打包成一个 `.zip`，换电脑或重装后点 **导入** 即可恢复。导入从不删东西：和备份里不一样的文件默认留着你电脑上的，选了“换成备份里的”才替换，原来的进回收站。备份里还记着你有哪些模型和它们的指纹，换了新电脑，缺的模型可以照着清单查来源补下载。（数据保存在 ComfyUI 用户目录下的 `workflows/anomalous_*` 文件夹中。）
+**备份自己的数据：** **设置 → 备份与帮助 → 导出** 会把工作流、预设、画布存档、搭配、提示词库、节点参数以及你自定义的模型名/备注/封面打包成一个 `.zip`，换电脑或重装后点 **导入** 即可恢复。导入从不删东西：和备份里不一样的文件默认留着你电脑上的，选了“换成备份里的”才替换，原来的进回收站。备份里还记着你有哪些模型和它们的指纹，换了新电脑，缺的模型可以照着清单查来源补下载。（数据保存在 ComfyUI 用户目录下的 `workflows/anomalous_*` 文件夹中。）
 
 </details>
 

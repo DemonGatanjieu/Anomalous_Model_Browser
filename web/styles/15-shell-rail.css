@@ -696,9 +696,9 @@
     background: rgba(var(--amb-ink-rgb), 0.14);
 }
 
-/* The first-run setup above the task cards (ui_first_run.js): four steps, then Set up for me. */
+/* The first-run card above the task cards (ui_first_run.js): one line, one button; a strip only when Civitai does not answer. */
 .anomalous-first-run {
-    padding: 18px 20px;
+    padding: 16px 20px;
     border: 1px solid color-mix(in srgb, var(--amb-link) 35%, var(--amb-border));
     border-radius: 12px;
     background: color-mix(in srgb, var(--amb-link) 6%, var(--amb-bg-card));
@@ -729,62 +729,6 @@
     line-height: 1.6;
 }
 
-.anomalous-first-run-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 14px;
-}
-
-.anomalous-first-run-step {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    border: 1px solid var(--amb-border);
-    border-radius: 8px;
-    background: var(--amb-bg-card);
-}
-
-.anomalous-first-run-step.is-current {
-    border-color: var(--amb-link);
-}
-
-.anomalous-first-run-icon {
-    flex: none;
-    font-size: 1.25em;
-}
-
-.anomalous-first-run-copy {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-}
-
-.anomalous-first-run-step-title {
-    color: var(--amb-text-main);
-    font-size: 0.9em;
-    font-weight: 600;
-}
-
-.anomalous-first-run-step-body {
-    color: var(--amb-text-muted);
-    font-size: 0.8em;
-    line-height: 1.55;
-}
-
-.anomalous-first-run-aside {
-    display: flex;
-    flex: none;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 6px;
-    max-width: 45%;
-}
-
 .anomalous-first-run-pill {
     padding: 3px 10px;
     border-radius: 999px;
@@ -797,11 +741,6 @@
 .anomalous-first-run-pill.is-ok {
     background: color-mix(in srgb, var(--amb-lt-ok, #4ade80) 16%, transparent);
     color: var(--amb-lt-ok, #4ade80);
-}
-
-.anomalous-first-run-pill.is-bad {
-    background: color-mix(in srgb, var(--amb-lt-danger, #ff6b6b) 16%, transparent);
-    color: var(--amb-lt-danger, #ff6b6b);
 }
 
 .anomalous-first-run-btn,
@@ -822,6 +761,11 @@
     background: rgba(var(--amb-ink-rgb), 0.12);
 }
 
+.anomalous-first-run-btn.is-strong {
+    border-color: var(--amb-link);
+    color: var(--amb-link);
+}
+
 .anomalous-first-run-later {
     flex: none;
     border-color: transparent;
@@ -829,9 +773,34 @@
     color: var(--amb-text-muted);
 }
 
+/* The quiet tour link before the scan, and the key note's link. */
+.anomalous-first-run-link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 0.8em;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.anomalous-first-run-link:hover,
+.anomalous-first-run-link:focus-visible {
+    color: var(--amb-link);
+}
+
+.anomalous-first-run-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
 .anomalous-first-run-track {
+    flex: 1;
     height: 4px;
-    margin-top: 6px;
     overflow: hidden;
     border-radius: 2px;
     background: rgba(var(--amb-ink-rgb), 0.1);
@@ -863,6 +832,29 @@
     white-space: nowrap;
 }
 
+/* Civitai did not answer: why, and the ways on. */
+.anomalous-first-run-fallback {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--amb-warn) 40%, var(--amb-border));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--amb-warn) 8%, var(--amb-bg-card));
+}
+
+.anomalous-first-run-fallback-text {
+    margin: 0;
+    color: var(--amb-text-main);
+    font-size: 0.8em;
+    line-height: 1.6;
+}
+
+.anomalous-first-run-ways {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
 .anomalous-first-run-foot {
     display: flex;
     flex-wrap: wrap;
@@ -890,19 +882,9 @@
 }
 
 .anomalous-first-run-note {
+    margin: 10px 0 0;
     color: var(--amb-text-dim);
     font-size: 0.78em;
-}
-
-@media (max-width: 560px) {
-    .anomalous-first-run-step {
-        flex-wrap: wrap;
-    }
-
-    .anomalous-first-run-aside {
-        justify-content: flex-start;
-        max-width: none;
-    }
 }
 
 /* "Found a problem, or have an idea?": the way to GitHub, in view on Home. */

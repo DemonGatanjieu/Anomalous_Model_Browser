@@ -151,7 +151,7 @@ export function openDownloadDialog(owner, items, settings) {
         dialog.addEventListener('change', showSpace);
         const rules = button('anomalous-download-rules', t('downloadRules'), () => {
             close();
-            openSettingsPage(owner, { tab: 'models' });
+            openSettingsPage(owner, { tab: 'models', section: 'downloads' });
         });
         dialog.append(space, rules);
 

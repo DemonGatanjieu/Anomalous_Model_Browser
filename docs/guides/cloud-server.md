@@ -49,9 +49,9 @@ AI 软件用的 MCP 接口不受这个开关影响，始终只接受本机。
 
 ## 国内服务器连不上 Civitai
 
-国内机房的服务器常常连不上 civitai.com。插件这时会自动改用 Civitai 的另一个地址 civitai.red（在 AutoDL 上测过能连上），照样能认出模型的名字、触发词和底模；封面图放在 civitai.com 那边，多半下不来，连续两张下不了，这次扫描就不再下载封面。**设置 → 网络 → 测试连接** 会告诉你连上的是哪一个。
+国内机房的服务器常常连不上 civitai.com。插件这时会自动改用 Civitai 的另一个地址 civitai.red（在 AutoDL 上测过能连上），照样能认出模型的名字、触发词和底模；封面图放在 civitai.com 那边，多半下不来，连续两张下不了，这次扫描就不再下载封面。**设置 → 模型与网络 → 网络 → 测试连接** 会告诉你连上的是哪一个。
 
-两个都连不上时，扫描会自动改成只看文件（没有封面和触发词）；也可以在 **设置 → 网络** 里填代理，或者在扫描页选 **离线**。
+两个都连不上时，扫描会自动改成只看文件（没有封面和触发词）；也可以在 **设置 → 模型与网络 → 网络** 里填代理，或者在扫描页选 **离线**。
 
 ---
 
@@ -71,7 +71,7 @@ You are helping someone use Anomalous Model Browser (a ComfyUI plugin) on a rent
 - Chip still View only: ComfyUI was not restarted (many cloud images restart it from their own launcher page, not the terminal); or the file is in the wrong folder; or it got an extension (`allow_remote_changes.txt`). `ls -la` in the plugin folder shows it.
 - The plugin folder has another name (installed under a different name): `find / -maxdepth 6 -type d -name 'Anomalous_Model_Browser*' 2>/dev/null`.
 - Updating a test branch with `git pull` says there is no tracking branch: `git branch --set-upstream-to=origin/<branch>` once.
-- Scans find nothing on Civitai: Settings → Models → Network → Test shows whether Civitai answers. Servers in mainland China mostly cannot reach it; the plugin then asks whether to scan from the files (offline). Do not tell the user to install proxy or VPN software on the server; if they already have an HTTP proxy, it goes into Settings → Network.
+- Scans find nothing on Civitai: Settings → Models & Network → Network → Test shows whether Civitai answers. Servers in mainland China mostly cannot reach it; the plugin then asks whether to scan from the files (offline). Do not tell the user to install proxy or VPN software on the server; if they already have an HTTP proxy, it goes into Settings → Models & Network → Network.
 - The scan page is slow the first time: it is counting many models, often on a network disk. Later visits show the last counts at once.
 - On some platforms every model is a link into a shared read-only disk; the plugin handles that (from 1.60.1). Edits and scan results are kept beside the link.
 

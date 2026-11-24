@@ -1,7 +1,7 @@
 /**
  * The Tidy tab's "Not used lately" part: the models by when they were last used (usage_view.js
  * runs the check). Models picked here go to the Recycle Bin (model_placement.js). Node packs are
- * in Settings → Node packs (ui_pack_usage.js); a line here leads there.
+ * in Settings → Workflows & Tools (ui_pack_usage.js); a line here leads there.
  */
 
 import { translate as t } from './locales.js';
@@ -98,7 +98,7 @@ function modelList(section, view, onRecycled) {
 export function renderUsageSection(owner, onRecycled) {
     return usageSection(owner, {
         titleKey: 'tidyUsageTitle', leadKey: 'tidyUsageLead', redraw: () => owner.loadModels(),
-        aside: button('anomalous-usage-elsewhere', t('tidyUsagePacksElsewhere'), () => openSettingsPage(owner, { tab: 'packs' })),
+        aside: button('anomalous-usage-elsewhere', t('tidyUsagePacksElsewhere'), () => openSettingsPage(owner, { tab: 'tools', section: 'packs' })),
         body: (section, view) => modelList(section, view, onRecycled),
     });
 }

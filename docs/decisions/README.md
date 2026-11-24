@@ -318,3 +318,19 @@ get; a press on the card goes to the console and moves the task on as the server
 the server or the browser's storage. Another user's rail is shown without being kept. Theme and language are
 the real switches (showing them otherwise would be a second theme system to keep), so the console puts them
 back as they were when it opened, on Reset and on close.
+
+## AD-032 — A first visit meets one button; the rest waits where it is looked for
+
+Four places made a first visit heavy. The first-run card listed four numbered steps (the network, a Civitai
+key, the scan, the tour) before anything was pressed; it is one line and one button now, "Scan my models",
+which checks Civitai on the way. The offline scan, retry and proxy show only when Civitai does not answer,
+and a key Civitai refuses only adds a note, because most users need neither; the key is still set on the scan
+page and in Settings, and the tour waits for a press. Settings had eight tabs, five holding one card; there
+are four now (Look & Interaction, Models & Network, Workflows & Tools, Backup & Help), and a link naming an
+old tab opens the tab its card moved to, scrolled to that card, so no way in breaks. The right-click menus
+start with the everyday entries (five on a node, four on the empty canvas, AMB's pages in one submenu), the
+rest a switch or "Enable all" away; a menu the user already saved is left exactly as saved, since changing
+someone's own menu on an update is worse than a long one. Home's four large cards are the rail's four
+working pages, so the two tell one story, and canvas saves lead the small cards. Workflows, canvas saves and
+combos each say in half a sentence what they are and are not, where users meet them, since the three were
+taken for one another.

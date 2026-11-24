@@ -1,12 +1,15 @@
 /**
- * The settings page (the rail's gear), in tabs (`owner.settingsTab`, kept while the page is
- * away): Look (how the browser looks, model cards and what they cost in memory with the card
- * image cache, how the browser opens), Models (model folders — a view of its own,
+ * The settings page (the rail's gear), in four tabs (settings_tabs.js; `owner.settingsTab`, kept while
+ * the page is away): Look & Interaction (how the browser looks, model cards and what they cost in memory
+ * with the card image cache, the gallery's formats, how the browser opens, the canvas's right-click
+ * menu, ui_canvas_menu_settings.js), Models & Network (model folders — a view of its own,
  * ui_folder_manager.js, `owner.settingsView === 'folders'` —, the network: the proxy the plugin's
  * own requests use and a Civitai connection test, where downloads and imported models go, and where
- * the files only this plugin uses sit beside each model, sidecar_layout.js), Workflows,
- * Node packs (those not used lately, ui_pack_usage.js), Prompts (translation with a DeepL key), Backup (ui_backup.js) and
- * Help. A tool page like the scan page, with a way back to the page you came from. Display
+ * the files only this plugin uses sit beside each model, sidecar_layout.js), Workflows & Tools
+ * (checks when a workflow opens, translation with a DeepL key, ui_settings_translation.js, node packs
+ * not used lately, ui_pack_usage.js) and Backup & Help (ui_backup.js). A link may name a card
+ * (`section`): `owner.settingsSection` holds it until the page is drawn, which scrolls to it and
+ * clears it. A tool page like the scan page, with a way back to the page you came from. Display
  * preferences go through `owner.displayPrefs` (ui_settings_hub.js); language, theme and opening
  * mode are ComfyUI settings.
  */
@@ -32,6 +35,8 @@ import { applySidecars, planSidecars } from './sidecar_layout.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { renderPackUsage } from './ui_pack_usage.js';
 import { canvasMenuRows } from './ui_canvas_menu_settings.js';
+import { SETTINGS_TABS, resolveSettingsTarget } from './settings_tabs.js';
+import { translationGroup } from './ui_settings_translation.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -378,74 +383,6 @@ function downloadGroup(owner, redraw) {
     return box;
 }
 
-/** Why DeepL did not translate (translation_routes.py `deepl_error`), in the user's words. */
-function deeplReason(error) {
-    const known = { bad_key: 'settingsDeeplBadKey', quota: 'settingsDeeplQuota', busy: 'settingsDeeplBusy' };
-    return known[error] ? t(known[error]) : String(error || '?');
-}
-
-/**
- * Asks for the DeepL key and saves it, then translates one sentence to show whether it works.
- * Resolves to the saved key ("" when removed), or null when nothing was saved.
- */
-async function saveDeeplKey() {
-    const value = prompt(t('settingsDeeplKeyPrompt'), '');
-    if (value === null) return null;
-    const key = value.trim();
-    try {
-        const res = await fetch('/anomalous/save_config', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ deepl_key: key }),
-        });
-        const data = await res.json();
-        if (data.status !== 'ok') throw new Error(data.message || `HTTP ${res.status}`);
-    } catch (error) {
-        alert(t('settingsDeeplKeySaveFailed', { error: String(error.message || error) }));
-        return null;
-    }
-    if (!key) {
-        alert(t('settingsDeeplKeyCleared'));
-        return key;
-    }
-    try {
-        const res = await fetch('/anomalous/translate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: 'A girl reading under a cherry tree.', target_lang: 'zh-CN' }),
-        });
-        const data = await res.json();
-        alert(data.engine === 'deepl'
-            ? t('settingsDeeplKeyWorks', { text: data.translated })
-            : t('settingsDeeplKeyFailed', { why: deeplReason(data.deepl_error || data.error) }));
-    } catch (error) {
-        alert(t('settingsDeeplKeyFailed', { why: String(error.message || error) }));
-    }
-    return key;
-}
-
-/** Prompt translation: DeepL with the user's own key, else the free services (translation_routes.py). */
-function translationGroup() {
-    const box = group('settingsTranslation');
-    fetch('/anomalous/config').then(res => res.json()).then(config => {
-        const tag = el('span');
-        const show = (hasKey) => {
-            tag.className = `anomalous-scan-tag ${hasKey ? 'is-on' : 'is-off'}`;
-            tag.textContent = t(hasKey ? 'settingsDeeplKeyOn' : 'settingsDeeplKeyOff');
-        };
-        show(Boolean(config.has_deepl_key));
-        // Only the tag changes: redrawing the page would lose its scroll place.
-        const line = row('settingsDeeplKey', 'settingsDeeplKeyHelp', button('anomalous-scan-secondary anomalous-scan-small-btn',
-            t('settingsDownloadKeySet'), async () => {
-                const key = await saveDeeplKey();
-                if (key !== null) show(Boolean(key));
-            }));
-        line.querySelector('.anomalous-scan-setting-title').append(tag);
-        box.append(line);
-    }).catch(error => console.warn('[AMB] Settings: translation settings unavailable.', error));
-    return box;
-}
-
 /** One .zip of the user's data to keep anywhere, and putting one back (ui_backup.js). */
 function backupGroup(owner) {
     const small = (label, onClick) => button('anomalous-scan-secondary anomalous-scan-small-btn', label, onClick);
@@ -492,22 +429,26 @@ function helpGroup(owner) {
     );
 }
 
-// Tab -> its title and its cards, in order.
-const TABS = [
-    ['look', 'settingsTabLook', (owner, redraw) => [appearanceGroup(owner, redraw), cardsGroup(owner, redraw), galleryGroup(owner), openingGroup(owner, redraw)]],
-    ['models', 'settingsTabModels', (owner, redraw) => [foldersGroup(owner), networkGroup(), downloadGroup(owner, redraw), sidecarGroup()]],
-    ['workflows', 'settingsTabWorkflows', (owner) => [workflowGroup(owner)]],
-    ['canvas', 'settingsTabCanvas', (owner, redraw) => [group('canvasMenuGroup', ...canvasMenuRows({ row, redraw }))]],
-    ['packs', 'settingsTabPacks', (owner, redraw) => [renderPackUsage(owner, redraw)]],
-    ['prompts', 'settingsTabPrompts', () => [translationGroup()]],
-    ['backup', 'settingsTabBackup', (owner) => [backupGroup(owner)]],
-    ['help', 'settingsTabHelp', (owner) => [helpGroup(owner)]],
-];
+/** `card` as the one a link names `name` (data-settings-section): the page scrolls to it. */
+function named(card, name) {
+    card.dataset.settingsSection = name;
+    return card;
+}
+
+// Tab -> its cards, in order.
+const CARDS = {
+    look: (owner, redraw) => [appearanceGroup(owner, redraw), cardsGroup(owner, redraw), galleryGroup(owner), openingGroup(owner, redraw),
+        named(group('canvasMenuGroup', ...canvasMenuRows({ row, redraw })), 'canvas')],
+    models: (owner, redraw) => [foldersGroup(owner), named(networkGroup(), 'network'), named(downloadGroup(owner, redraw), 'downloads'), sidecarGroup()],
+    tools: (owner, redraw) => [named(workflowGroup(owner), 'workflows'), named(translationGroup({ group, row }), 'prompts'),
+        named(renderPackUsage(owner, redraw), 'packs')],
+    help: owner => [named(backupGroup(owner), 'backup'), helpGroup(owner)],
+};
 
 function tabBar(owner, current) {
     const bar = el('div', 'anomalous-settings-tabs');
     bar.setAttribute('role', 'tablist');
-    for (const [id, labelKey] of TABS) {
+    for (const { id, labelKey } of SETTINGS_TABS) {
         const tab = button('anomalous-settings-tab', t(labelKey), () => {
             if (owner.settingsTab === id) return;
             owner.settingsTab = id;
@@ -522,9 +463,9 @@ function tabBar(owner, current) {
 
 function render(owner) {
     const panel = owner.settingsPanel;
-    const tab = TABS.find(([id]) => id === owner.settingsTab) || TABS[0];
-    owner.settingsTab = tab[0];
-    const view = `${owner.settingsView || ''}|${tab[0]}`;
+    const tab = resolveSettingsTarget(owner.settingsTab).tab;
+    owner.settingsTab = tab;
+    const view = `${owner.settingsView || ''}|${tab}`;
     const top = panel._settingsView === view ? panel.scrollTop : 0;
     panel._settingsView = view;
     const redraw = () => render(owner);
@@ -541,26 +482,38 @@ function render(owner) {
     page.append(
         button('anomalous-scan-back', t('settingsBack'), () => leaveSettingsPage(owner)),
         el('h1', 'anomalous-scan-title', t('sidebarSettings')),
-        tabBar(owner, tab[0]),
-        ...tab[2](owner, redraw),
+        tabBar(owner, tab),
+        ...CARDS[tab](owner, redraw),
     );
     panel.replaceChildren(page);
     panel.scrollTop = top;
+    const target = owner.settingsSection;
+    if (!target) return;
+    owner.settingsSection = '';
+    requestAnimationFrame(() => {
+        const card = page.querySelector(`[data-settings-section="${CSS.escape(target)}"]`);
+        if (!card) return;
+        // The cards below may still be filling in: room for this one to reach the top meanwhile.
+        page.style.minHeight = `${card.getBoundingClientRect().top - page.getBoundingClientRect().top + panel.clientHeight}px`;
+        card.scrollIntoView({ block: 'start', behavior: 'smooth' }); // below the tabs (the card's scroll-margin-top)
+    });
 }
 
 export function isSettingsPageOpen(owner) {
     return Boolean(owner.settingsPanel && owner.settingsPanel.style.display !== 'none');
 }
 
-/** Opens the page (at `tab`, else the tab seen last); `keepReturn`: drawn again in place
- * (language change), Back still goes where it went. */
-export function openSettingsPage(owner, { keepReturn = false, tab = '' } = {}) {
+/** Opens the page (at `tab`, an old tab's name too, scrolled to its card `section`; else the tab seen
+ * last); `keepReturn`: drawn again in place (language change), Back still goes where it went. */
+export function openSettingsPage(owner, { keepReturn = false, tab = '', section = '' } = {}) {
     if (!keepReturn && !isSettingsPageOpen(owner)) {
         owner.settingsReturn = owner.currentShellPage?.() || 'home';
         owner.settingsView = '';
     }
     if (tab) {
-        owner.settingsTab = tab;
+        const target = resolveSettingsTarget(tab, section);
+        owner.settingsTab = target.tab;
+        owner.settingsSection = target.section;
         owner.settingsView = '';
     }
     owner.enterToolPage?.('settings');

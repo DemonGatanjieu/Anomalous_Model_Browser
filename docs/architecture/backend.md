@@ -745,7 +745,7 @@ media.
 - Where the side files are is `model_sidecars.py`'s to say: every path to `.info`,
   `.anomalous.json` and `.civitai_bak.*` goes through it (`find` to read, `target` to write,
   `existing` / `follow` to move or delete), since they may be beside the model or in the
-  folder's `.amb` (Settings → Models, `SIDECAR_LAYOUT`). A file is written where it is
+  folder's `.amb` (Settings → Models & Network, `SIDECAR_LAYOUT`). A file is written where it is
   already, so a folder moved half way never has two copies. Covers and other tools' files
   (`.civitai.info`, `.yaml`, `.txt`) are always beside the model. The folder tree leaves `.amb` out.
 - A cover is Civitai's when its SHA-256 is the one the scan noted in the `.info`

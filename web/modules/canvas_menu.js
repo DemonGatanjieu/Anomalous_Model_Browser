@@ -1,10 +1,11 @@
 /**
  * AMB's entries in the canvas's right-click menus (the extension's getNodeMenuItems and
- * getCanvasMenuItems hooks, browser_entry.js), as Settings -> Canvas sets them
+ * getCanvasMenuItems hooks, browser_entry.js), as Settings -> Look & Interaction sets them
  * (canvas_menu_settings.js). A node's menu offers what Current node does for it — open it in
  * AMB, change its model by picture, insert a LoRA before / after, its saved values, the
  * model's pictures and details, save its values or the picked nodes as a combo — each only
- * where it applies; the empty canvas's menu opens the quick search and AMB's pages. Both keep a save of the
+ * where it applies; the empty canvas's menu opens the quick search and AMB's pages (one "Open AMB"
+ * submenu, so the menu stays short wherever AMB's entries sit). Both keep a save of the
  * workflow (ui_snapshot_bar.js), open the job sheet (ui_job_sheet.js) and hand the canvas or the node to an AI
  * (ui_ai_canvas_hand.js). `browser()` gives the browser,
  * made on first use.
@@ -95,13 +96,12 @@ const NODE_ITEMS = {
     },
 };
 
-// Entry id -> (browser, placement) => the empty canvas's items.
+// Entry id -> (browser) => the empty canvas's items.
 const CANVAS_ITEMS = {
     quickSearch: browser => [item(t('canvasMenuQuickSearch'), () => openQuickSearch(browser))],
-    // The pages themselves inside AMB's submenu; right in the menu, a submenu of them.
-    openPage: (browser, placement) => {
+    openPage: (browser) => {
         const pages = RAIL_PAGES.map(({ page, labelKey }) => item(t(labelKey), () => browser()?.show({ page })));
-        return placement === 'top' ? [{ content: t('canvasMenuOpenPage'), has_submenu: true, submenu: { options: pages } }] : pages;
+        return [{ content: t('canvasMenuOpenPage'), has_submenu: true, submenu: { options: pages } }];
     },
     snapshotMark,
     jobSheet,
@@ -128,7 +128,7 @@ function place(items, placement, browser) {
         const owner = browser();
         if (!owner) return;
         owner.show();
-        openSettingsPage(owner, { tab: 'canvas' });
+        openSettingsPage(owner, { tab: 'look', section: 'canvas' });
     });
     return [null, { content: t('canvasMenuTitle'), has_submenu: true, submenu: { options: [...items, null, adjust] } }];
 }
@@ -142,5 +142,5 @@ export function nodeMenuItems(node, browser) {
 /** AMB's items for the empty canvas's menu. */
 export function canvasMenuItems(browser) {
     const settings = menuSettings();
-    return place(build(settings.canvas, CANVAS_ITEMS, browser, settings.placement), settings.placement, browser);
+    return place(build(settings.canvas, CANVAS_ITEMS, browser), settings.placement, browser);
 }

@@ -2,7 +2,7 @@
  * Before an online scan: can Civitai be reached (GET /anomalous/civitai_check, both its
  * addresses)? When not, the user is asked instead of the scan waiting on every model: scan
  * from the files only (an offline scan; a later online scan fills in the rest), set a proxy
- * first (Settings → Models, Network), or not now. A check that reached Civitai is trusted for
+ * first (Settings → Models & Network, its Network card), or not now. A check that reached Civitai is trusted for
  * a few minutes, so scans in a row do not wait on it.
  */
 
@@ -36,7 +36,7 @@ export async function onlineOrAsk(owner) {
     if (choice === true) return 'offline';
     if (choice === false) {
         owner.show?.();
-        openSettingsPage(owner, { tab: 'models' });
+        openSettingsPage(owner, { tab: 'models', section: 'network' });
     }
     return null;
 }

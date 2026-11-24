@@ -236,7 +236,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         // Beside this file, not under a fixed name: the plugin folder may be called anything
         // (a ZIP from GitHub unpacks as Anomalous_Model_Browser-main), and ComfyUI serves it by that name.
         const cssPath = new URL('../styles.css', import.meta.url).pathname;
-        const cssUrl = cssPath + '?v=20261124-review-console';
+        const cssUrl = cssPath + '?v=20261124-onboarding';
         if (!document.querySelector(`link[href^="${cssPath}"]`)) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
@@ -463,7 +463,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             commands: [OPEN_BROWSER_COMMAND_ID, QUICK_SEARCH_COMMAND_ID, RESET_TRIGGER_POSITION_COMMAND_ID]
         }],
         setup,
-        // The canvas's right-click menus: AMB's entries as Settings -> Canvas sets them (canvas_menu.js).
+        // The canvas's right-click menus: AMB's entries as Settings -> Look & Interaction sets them (canvas_menu.js).
         getNodeMenuItems: node => nodeMenuItems(node, ensureBrowser),
         getCanvasMenuItems: () => canvasMenuItems(ensureBrowser),
         open,

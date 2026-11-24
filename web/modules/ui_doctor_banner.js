@@ -4,7 +4,7 @@
  * a way to Model Check's page for the rest. Each opened workflow is checked
  * (model_check.js, without reloading ComfyUI's model lists); the doctor page updates the
  * bar after its own checks. Closing it hides it for that workflow until the page reloads;
- * "Don't show again" turns the check on opening off (Settings → Workflows turns it back on),
+ * "Don't show again" turns the check on opening off (Settings → Workflows & Tools turns it back on),
  * and while it is off the bar never shows.
  */
 

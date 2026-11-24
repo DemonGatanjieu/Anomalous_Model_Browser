@@ -1,5 +1,5 @@
 /**
- * Settings → Node packs: the node packs not used lately (usage_view.js runs the check). Packs
+ * Settings → Workflows & Tools → Node packs: the node packs not used lately (usage_view.js runs the check). Packs
  * are only listed, each with a way into ComfyUI Manager, which disables or removes them. Packs
  * that also add to the page are set apart: their nodes going unused does not say the pack is.
  * A pack the user says they still use ("I still use it") leaves the groups for a list of its own.
@@ -117,7 +117,7 @@ function packGroups(owner, section, view, redraw) {
     if (kept.length) group('tidyUsageKept', 'tidyUsageKeptLead', kept);
 }
 
-/** Settings → Node packs; `redraw()` draws the settings page again. */
+/** Settings → Workflows & Tools → the node packs card; `redraw()` draws the settings page again. */
 export function renderPackUsage(owner, redraw) {
     return usageSection(owner, {
         titleKey: 'tidyUsagePacksTitle', leadKey: 'tidyUsageLead', redraw,

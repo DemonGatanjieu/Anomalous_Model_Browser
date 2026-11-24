@@ -1,7 +1,9 @@
 /**
- * What the canvas's right-click menus offer from AMB, as the user set it (Settings -> Canvas):
- * the entries of a node's menu and of the empty canvas's menu, each on or off, in the user's
- * order, and whether they sit in one "Anomalous" submenu or right in the menu. A per-viewer
+ * What the canvas's right-click menus offer from AMB, as the user set it (Settings -> Look &
+ * Interaction -> Right-click menu): the entries of a node's menu and of the empty canvas's menu, each
+ * on or off, in the user's order, and whether they sit in one "Anomalous" submenu or right in the
+ * menu. Only the everyday entries are on at first (1.65: five of a node's twelve, four of the empty
+ * canvas's five); a list the user saved keeps its switches and order as saved. A per-viewer
  * convenience in localStorage; entries added in a later version join at their default place.
  * No DOM.
  */
@@ -14,20 +16,20 @@ export const NODE_ENTRIES = Object.freeze([
     { id: 'replaceModel', on: true },
     { id: 'loraBefore', on: true },
     { id: 'loraAfter', on: true },
-    { id: 'parameters', on: true },
-    { id: 'modelOutputs', on: true },
+    { id: 'parameters', on: false },
+    { id: 'modelOutputs', on: false },
     { id: 'modelDetails', on: false },
     { id: 'saveParameters', on: false },
     { id: 'saveCombo', on: true },
-    { id: 'snapshotMark', on: true },
-    { id: 'jobSheet', on: true },
-    { id: 'handToAi', on: true },
+    { id: 'snapshotMark', on: false },
+    { id: 'jobSheet', on: false },
+    { id: 'handToAi', on: false },
 ]);
 export const CANVAS_ENTRIES = Object.freeze([
     { id: 'quickSearch', on: true },
     { id: 'openPage', on: true },
     { id: 'snapshotMark', on: true },
-    { id: 'jobSheet', on: true },
+    { id: 'jobSheet', on: false },
     { id: 'handToAi', on: true },
 ]);
 export const PLACEMENTS = Object.freeze(['submenu', 'top']);
@@ -88,6 +90,15 @@ export function resetMenuSettings(store = storage()) {
         store?.removeItem(KEY);
     } catch { /* the defaults show anyway */ }
     return menuSettings(store);
+}
+
+/** `settings` with every entry of both menus on, in the same order. */
+export function enableAllMenuEntries(settings) {
+    return {
+        ...settings,
+        node: settings.node.map(entry => ({ ...entry, on: true })),
+        canvas: settings.canvas.map(entry => ({ ...entry, on: true })),
+    };
 }
 
 /** `list` with the entry `id` moved by `step` (-1 up, +1 down), or as it was at an end. */

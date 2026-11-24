@@ -7,7 +7,8 @@
  * What it shows lives in this page's memory. The AI's canvas card rehearses review_scenarios.js tasks through
  * its own drawing (ui_ai_float.js setAiFloatPreview): a press on the card comes here and moves the task on
  * (applyPreviewAction), the server hears nothing. The rail shows another user's pins without keeping them
- * (ui_shell_rail.js previewPins); the Workflows page its drop veil by a class. Theme and language are the
+ * (ui_shell_rail.js previewPins); the Workflows page its drop veil by a class; Home the first-run card as a
+ * new user meets it (ui_first_run.js previewFirstRun, never hidden for real). Theme and language are the
  * real switches: Reset and ×, and leaving or reloading the page while it is open, put them back as they were
  * when the console opened, and end all the rest.
  */
@@ -20,11 +21,15 @@ import { openConnectGuide } from './ui_ai_connect.js';
 import { openShareDialog } from './ui_share.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { openVersionPanel } from './ui_version_manager.js';
+import { clearFirstRunPreview, firstRunPreviewMode, previewFirstRun } from './ui_first_run.js';
 
 const THEMES = ['auto', 'dark', 'light', 'abyssal'];
 const LANGUAGES = [['zh', 'mainLanguageChinese'], ['en', 'mainLanguageEnglish']];
 const PERSONAS = ['real', 'fresh', 'upgraded', 'full'];
 const GROUPS = ['live', 'action', 'other'];
+// The first-run card's preview: the next one on a press, and the line saying what is shown.
+const FIRST_RUN_NEXT = { idle: 'offline_choice', offline_choice: null };
+const FIRST_RUN_NOTES = { idle: 'reviewFirstRunIdle', offline_choice: 'reviewFirstRunOffline' };
 const MARGIN = 8;
 
 const state = {
@@ -202,6 +207,16 @@ async function toggleDrop() {
     render();
 }
 
+/** Home's first-run card: as a new user meets it, as Civitai not answering leaves it, then gone; nothing kept. */
+function cycleFirstRun() {
+    const mode = firstRunPreviewMode();
+    const next = mode ? FIRST_RUN_NEXT[mode] : 'idle';
+    const browser = state.getBrowser();
+    if (next && browser) previewFirstRun(browser, next, render);
+    else clearFirstRunPreview();
+    render();
+}
+
 function lookSection() {
     const box = el('section', 'anomalous-review-section');
     box.append(el('div', 'anomalous-review-heading', t('reviewLookTitle')),
@@ -221,6 +236,7 @@ function shortcutSection() {
         connect: () => openConnectGuide(),
         workflows: () => owner()?.show({ page: 'recipes' }),
         drop: () => void toggleDrop(),
+        firstRun: cycleFirstRun,
         share: () => openShareDialog(owner()),
         tour: () => {
             const browser = owner();
@@ -229,18 +245,23 @@ function shortcutSection() {
         },
         version: () => openVersionPanel(owner()),
     };
+    const firstRun = firstRunPreviewMode();
+    const on = { drop: state.dropping, firstRun: Boolean(firstRun) };
     const line = el('div', 'anomalous-review-row');
-    line.append(...Object.entries(go).map(([id, run]) => pill(t(`reviewGo_${id}`), id === 'drop' && state.dropping, run)));
+    line.append(...Object.entries(go).map(([id, run]) => pill(t(`reviewGo_${id}`), Boolean(on[id]), run)));
     const box = el('section', 'anomalous-review-section');
     box.append(el('div', 'anomalous-review-heading', t('reviewGoTitle')), line);
+    if (firstRun) box.append(el('div', 'anomalous-review-note', t(FIRST_RUN_NOTES[firstRun])));
     return box;
 }
 
 // ---------------------------------------------------------------- the panel
 
-/** Everything back as it was when the console opened: no rehearsal, the real rail, no veil, the theme and language. */
+/** Everything back as it was when the console opened: no rehearsal, the real rail, no veil, the real first-run
+ * card, the theme and language. */
 function resetAll() {
     endRehearsal();
+    clearFirstRunPreview();
     if (state.persona !== 'real') state.getBrowser()?.rail?.previewPins(null);
     state.persona = 'real';
     if (state.dropping) setDrop(false);

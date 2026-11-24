@@ -1,5 +1,5 @@
 /**
- * Settings → Backup (api/backup.py): exporting the user's data as one .zip, and putting a
+ * Settings → Backup & Help → Backup (api/backup.py): exporting the user's data as one .zip, and putting a
  * backup back. Export asks what to include and downloads the file. Import uploads the chosen
  * .zip, shows what is in it next to what this computer has (per store, the models found by
  * hash), lets the user pick the parts and whether differing files are replaced, then puts it

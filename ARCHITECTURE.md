@@ -607,8 +607,9 @@ covered by the `styles.css` manifest.
   number, or `#amb-review` / `?amb_review=1`; loaded only then, styles `styles/64-review-console.css`): it rehearses
   the card on made-up tasks through the card's own drawing (`setAiFloatPreview`: a press on the card goes to the
   console, nothing to the server, nothing kept in the browser), shows the rail of another kind of user
-  (`previewPins`, never kept), switches theme and language (put back on Reset and on close) and opens a few
-  windows. `review_scenarios.js` is, without DOM, those tasks (shaped as `api/ai_tasks.py` keeps them), what a press
+  (`previewPins`, never kept), puts Home's first-run card up as a new user meets it (`previewFirstRun`, its
+  buttons scan nothing and nothing is hidden for real), switches theme and language (put back on Reset and on
+  close) and opens a few windows. `review_scenarios.js` is, without DOM, those tasks (shaped as `api/ai_tasks.py` keeps them), what a press
   does to them and the users' rail pins (`tests/review_scenarios.mjs`). The task head's "float over canvas" puts a task on it, `browser.js` tells it when
   the window opens and closes, and it opens the workbench through `owner.openAiTask` (set by `watchAiTasks`), so it never
   imports the page; while the window is shut, the page's toast for a panel or a gate gives way to it. `ui_ai_drop.js` takes pictures dropped on the box or pasted, kept in the
@@ -1159,8 +1160,9 @@ covered by the `styles.css` manifest.
   an open page under More lights More instead. `ui_shell_nav.js` owns page
   navigation (`goTo`): the domain each page needs, which pages have a list and whether
   it is open (remembered per page; closed and overlaying below 760 px), the header's
-  page title, and the page reopened next time. `ui_home.js` owns the home page (the four
-  everyday task cards with "+ Import models", the smaller tool cards, the slot for "Let the AI do it", first steps;
+  page title, and the page reopened next time. `ui_home.js` owns the home page (four large cards for
+  the rail's four working pages — models with "+ Import models", Model check, the gallery, workflows —, the smaller
+  tool cards with canvas saves first, the slot for "Let the AI do it", first steps;
   model files dropped on Home are imported, bound once on its panel in `ui_sidebar.js`). `ui_shell_frame.js` owns dragging, resizing and keeping the
   floating window on screen, the docked window's width (dragged at its right edge; the limits are in the CSS), the full-window button (double-click on the header too) and the move between the three (`morphFrame`: laid out once, only the picture moves; the window and pages coming and going are `styles/51-shell-motion.css`); `ui_scan_watch.js` polls scan status for the rail's scan
   button, the progress panel and the model reload afterwards.
@@ -1181,9 +1183,11 @@ covered by the `styles.css` manifest.
   opening with it selected shows; its saved values on Current node), change its model by picture
   (`_openGalleryReplacer`), insert a LoRA before / after, the model's pictures and details
   (`/anomalous/find_model`, `openModelDetail`), save its values or the picked nodes as a combo, each
-  only where it applies; for the empty canvas, AMB's pages. `canvas_menu_settings.js` keeps which
-  entries are on, their order and whether they sit in one "AMB" submenu or right in the menu
-  (localStorage, no DOM); `ui_canvas_menu_settings.js` is its Settings -> Canvas group (two placement cards drawing a small menu each, a preview line per list).
+  only where it applies; for the empty canvas, AMB's pages in one "Open AMB" submenu. `canvas_menu_settings.js`
+  keeps which entries are on (only the everyday ones at first; a list the user saved stays as saved), their order
+  and whether they sit in one "AMB" submenu or right in the menu (localStorage, no DOM; `enableAllMenuEntries`);
+  `ui_canvas_menu_settings.js` is its card in Settings -> Look & Interaction (two placement cards drawing a small
+  menu each, a preview line per list, Enable all and Reset).
   `ui_quick_search.js` is the canvas's quick search (Alt+B, the command
   `Anomalous.ModelBrowser.QuickSearch`, or the empty canvas's menu): a bar that finds combos,
   models and saved prompts as you type and puts the chosen one where the pointer was (a combo
@@ -1193,12 +1197,14 @@ covered by the `styles.css` manifest.
   DOM; `MODEL_LOADERS` there is also the loader node `applyModelToCanvas` uses for each type.
   `ui_settings_hub.js` owns the display preferences (view mode, scale, atmosphere, window
   layout) and their application, the gear and language redraws; `ui_settings_page.js`
-  is the settings page the gear opens (a tool page with Back), in tabs: Look (look and
-  language, model cards and memory with the card image cache, opening mode and window),
-  Models (folders, where downloads and imports go, where the side files go through
-  `sidecar_layout.js`), Workflows (fingerprints), Node packs
-  (those not used lately, `ui_pack_usage.js`), Canvas (the right-click menus, `ui_canvas_menu_settings.js`), Prompts
-  (translation), Backup (`ui_backup.js`), Help; `ui_feedback_dialog.js` is the feedback window (Home and the
+  is the settings page the gear opens (a tool page with Back), in four tabs: Look & Interaction (look and
+  language, model cards and memory with the card image cache, the gallery's formats, opening mode and window, the
+  right-click menus through `ui_canvas_menu_settings.js`), Models & Network (folders, the proxy and Civitai test,
+  where downloads and imports go, where the side files go through `sidecar_layout.js`), Workflows & Tools
+  (checks and fingerprints, translation through `ui_settings_translation.js`, the node packs not used lately
+  through `ui_pack_usage.js`) and Backup & Help (`ui_backup.js`, help and feedback). `settings_tabs.js` is, without
+  DOM, the four tabs and where a link to a tab of before 1.65 lands (`resolveSettingsTarget`: its tab now, scrolled
+  to its card, `data-settings-section`; `tests/settings_tabs.mjs`); `ui_feedback_dialog.js` is the feedback window (Home and the
   settings page open it): one text box, then `feedback.js` opens a GitHub issue with it in
   the browser's language, the environment folded at the end when attached (versions and
   hardware only, never a path or ComfyUI's command line), or copies the environment, and
@@ -1320,7 +1326,7 @@ covered by the `styles.css` manifest.
   tab's count leaves this step out); `model_placement.js` does its requests and keeps the
   tab's count. Under the steps
   `ui_model_usage.js` lists the models not used for 30 / 90 days or never (picked ones go to
-  the Recycle Bin) and leads to Settings → Node packs, where `ui_pack_usage.js` lists the node
+  the Recycle Bin) and leads to Settings → Workflows & Tools, where `ui_pack_usage.js` lists the node
   packs: each opens ComfyUI Manager's node list searched for it (Manager 3; its name is copied
   for the rest); packs that also add to the page are set apart, those marked "I still use it"
   listed last. `usage_view.js` is what both share: the check, kept in `owner.modelUsage`, and
@@ -1468,9 +1474,11 @@ covered by the `styles.css` manifest.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns the image
   workbench's metadata and node-parameter rendering; `png_metadata.js` reads the workflow a
   PNG's text chunks carry, in the browser (the gallery detail's fallback).
-- `ui_first_run.js` is Home's first-run setup while nothing is scanned (check that Civitai answers
-  through `api/network_check.py`, the optional key, a scan of every model, the tour); a card, never
-  a popup, hidden per browser.
+- `ui_first_run.js` is Home's first-run card while nothing is scanned: one button, "Scan my models", that
+  checks Civitai through `api/network_check.py` on the way and scans every model; only when Civitai does not
+  answer, a strip with an offline scan, a retry and the proxy setting. A card, never a popup, hidden per
+  browser; the review console's preview of it is memory only. `first_run_state.js` is, without DOM, what the
+  card shows in each phase (`describeFirstRun`; `tests/first_run_state.mjs`).
 - `model_check.js` checks the open workflow's models (drop-downs naming model files, and
   switched-on Power Lora Loader rows through `lora_nodes.js`) against this computer (Model
   Check's verdicts, no DOM; the feature was called Model Doctor, and code and CSS still
