@@ -22,7 +22,7 @@ import { openGates } from './ui_ai_gate.js';
 import { syncRows } from './sync_rows.js';
 import { taskTitle } from './ai_task_title.js';
 
-const STATE_ICONS = { waiting: 'sparkle', idle: 'pulse', live: 'pulse', asks: 'question', error: 'alert', done: 'check', halted: 'stop', paused: 'pause' };
+const STATE_ICONS = { waiting: 'sparkle', idle: 'clock', live: 'thinking', asks: 'question', error: 'alert', done: 'check', halted: 'stop', paused: 'pause' };
 const FILTERS = { all: () => true, live: state => ['live', 'waiting', 'idle'].includes(state), asks: state => state === 'asks', error: state => state === 'error' };
 
 let filter = 'all';
@@ -84,7 +84,7 @@ function taskRow(summary, view, place) {
     const top = el('div', 'anomalous-ai-task-row-top');
     top.append(el('span', 'anomalous-ai-task-row-title', taskTitle(summary)));
     if (place.size > 1) top.append(el('span', 'anomalous-ai-task-family', t('aiTaskFamily', { count: place.size })));
-    if (status === 'live') top.append(el('span', 'anomalous-ai-live-dot'));
+    if (status === 'live' && summary.cover) top.append(icon('thinking', 13, 'anomalous-ai-live-mark'));
     top.append(el('span', 'anomalous-ai-task-row-time', when));
     const words = el('div', 'anomalous-ai-task-row-main');
     const line = el('div', `anomalous-ai-task-row-standing is-${summary.asks > 0 ? 'asks' : status}`, standing(summary, status, place));

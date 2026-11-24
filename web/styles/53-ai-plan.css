@@ -9,9 +9,10 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 10px;
-    border: 1px solid var(--amb-border);
-    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: rgba(var(--amb-ink-rgb), 0.045);
 }
 
 .anomalous-ai-plan-step.is-dropped { opacity: 0.5; }
@@ -37,9 +38,9 @@
 
 .anomalous-ai-plan-model {
     max-width: 100%;
-    padding: 3px 6px;
+    padding: 3px 10px;
     border: 1px solid var(--amb-border);
-    border-radius: 6px;
+    border-radius: 999px;
     background: var(--amb-bg-input, transparent);
     color: var(--amb-text-main);
     font: inherit;
@@ -47,9 +48,9 @@
 }
 
 .anomalous-ai-plan-drop, .anomalous-ai-plan-change, .anomalous-ai-plan-again {
-    padding: 4px 10px;
+    padding: 4px 12px;
     border: 1px solid var(--amb-border);
-    border-radius: 8px;
+    border-radius: 999px;
     background: transparent;
     color: var(--amb-text-soft);
     font: inherit;
@@ -60,9 +61,9 @@
 .anomalous-ai-plan-drop:hover, .anomalous-ai-plan-change:hover, .anomalous-ai-plan-again:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
 
 .anomalous-ai-plan-more {
-    padding: 8px 10px;
+    padding: 9px 12px;
     border: 1px dashed var(--amb-border);
-    border-radius: 8px;
+    border-radius: 14px;
     color: var(--amb-text-soft);
     font-size: 12.5px;
 }

@@ -7,7 +7,7 @@
     gap: 12px;
     padding: 10px 14px;
     border: 1px solid var(--amb-border);
-    border-radius: 12px;
+    border-radius: 18px;
     background: rgba(var(--amb-ink-rgb), 0.03);
 }
 .anomalous-ai-start.is-open { padding: 14px 16px; border-color: color-mix(in srgb, var(--amb-link) 28%, var(--amb-border)); background: color-mix(in srgb, var(--amb-link) 5%, transparent); }
@@ -56,18 +56,27 @@
     align-items: center;
     gap: 4px;
     min-width: 0;
-    padding: 12px 14px 14px;
+    padding: 14px 14px 16px;
     text-align: center;
     border: 1px solid var(--amb-border);
-    border-radius: 12px;
-    background: rgba(var(--amb-ink-rgb), 0.03);
+    border-radius: 18px;
+    background: var(--amb-bg-card);
     color: inherit;
     font: inherit;
     text-wrap: balance;
     cursor: pointer;
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
-.anomalous-ai-start-card:hover { border-color: color-mix(in srgb, var(--amb-link) 40%, transparent); background: rgba(var(--amb-ink-rgb), 0.07); }
-.anomalous-ai-start-card[data-starter="try"] { border-color: color-mix(in srgb, var(--amb-link) 55%, transparent); }
+.anomalous-ai-start-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--amb-link) 38%, transparent);
+    box-shadow: 0 8px 20px rgba(var(--amb-shadow-rgb), 0.14);
+}
+@media (prefers-reduced-motion: reduce) {
+    .anomalous-ai-start-card { transition: none; }
+    .anomalous-ai-start-card:hover { transform: none; }
+}
+.anomalous-ai-start-card[data-starter="try"] { border-color: color-mix(in srgb, var(--amb-link) 45%, transparent); }
 .anomalous-ai-start-card-art { width: 84px; height: 84px; object-fit: contain; }
 .anomalous-ai-start-card > .anomalous-tb-icon { margin: 28px 0; color: var(--amb-link); }
 .anomalous-ai-start-card-title { color: var(--amb-text-main); font-size: 0.95em; font-weight: 600; }
@@ -107,7 +116,7 @@
     min-width: 0;
     padding: 10px 12px;
     border: 1px solid var(--amb-border);
-    border-radius: 10px;
+    border-radius: 14px;
     background: transparent;
     color: var(--amb-text-muted);
     font: inherit;
@@ -154,9 +163,9 @@
 .anomalous-ai-start-input {
     box-sizing: border-box;
     width: 100%;
-    padding: 7px 10px;
+    padding: 8px 12px;
     border: 1px solid var(--amb-border);
-    border-radius: 8px;
+    border-radius: 14px;
     background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-main);
     font: inherit;
@@ -186,7 +195,7 @@
 }
 .anomalous-ai-start-example:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
 /* What happens on Start, folded under one question. */
-.anomalous-ai-start-lines { padding: 8px 12px; border-radius: 10px; background: rgba(var(--amb-ink-rgb), 0.04); }
+.anomalous-ai-start-lines { padding: 9px 14px; border-radius: 14px; background: rgba(var(--amb-ink-rgb), 0.04); }
 .anomalous-ai-start-lines > summary { color: var(--amb-text-soft); font-size: 12.5px; cursor: pointer; }
 .anomalous-ai-start-lines[open] > summary { margin-bottom: 6px; }
 .anomalous-ai-start-lines > .anomalous-ai-start-line + .anomalous-ai-start-line { margin-top: 4px; }

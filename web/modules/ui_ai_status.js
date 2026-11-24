@@ -139,7 +139,7 @@ export function executionStatus(task, refresh) {
     btn.title = fullTitle;
     btn.setAttribute('aria-label', fullTitle);
     btn.append(
-        icon('pulse', 15),
+        icon(['running', 'queued', 'submitting', 'tool'].includes(status.state) ? 'thinking' : 'clock', 15),
         el('span', `anomalous-ai-status-dot is-${status.state}`),
     );
     if (label) btn.append(el('span', 'anomalous-ai-status-text', label));

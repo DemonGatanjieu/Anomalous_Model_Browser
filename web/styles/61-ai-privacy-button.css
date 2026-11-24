@@ -9,12 +9,12 @@
     --privacy-tint: rgba(var(--amb-ink-rgb), 0.06);
     display: inline-flex;
     align-items: stretch;
-    height: 30px;
+    height: 32px;
     padding: 0;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--privacy-tone) 45%, transparent);
-    border-radius: 9px;
-    background: none;
+    border: 1px solid color-mix(in srgb, var(--privacy-tone) 30%, transparent);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--privacy-tone);
     font: inherit;
     font-size: 12.5px;
@@ -25,8 +25,8 @@
 .anomalous-ai-privacy.is-custom { --privacy-tone: var(--amb-warn); --privacy-tint: color-mix(in srgb, var(--amb-warn) 12%, transparent); }
 .anomalous-ai-privacy-state,
 .anomalous-ai-privacy-go { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.anomalous-ai-privacy-state { padding: 0 9px 0 10px; background: var(--privacy-tint); }
-.anomalous-ai-privacy-go { gap: 2px; padding: 0 7px 0 9px; color: var(--amb-text-soft); }
+.anomalous-ai-privacy-state { padding: 0 10px 0 12px; background: var(--privacy-tint); }
+.anomalous-ai-privacy-go { gap: 2px; padding: 0 10px 0 9px; color: var(--amb-text-soft); }
 .anomalous-ai-privacy:hover,
 .anomalous-ai-privacy:focus-visible { border-color: var(--privacy-tone); outline: 0; }
 .anomalous-ai-privacy:hover .anomalous-ai-privacy-go,
@@ -45,6 +45,7 @@
     max-width: min(320px, 80vw);
     margin: 0;
     padding: 8px 12px;
+    border-radius: 14px;
     background: var(--amb-link);
     color: var(--amb-on-link);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);

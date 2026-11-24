@@ -18,6 +18,7 @@ const PATHS = {
     plus: '<path d="M12 5v14M5 12h14"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     sparkle: '<path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/><path d="M19 15.5c.25 1.7.8 2.25 2.5 2.5-1.7.25-2.25.8-2.5 2.5-.25-1.7-.8-2.25-2.5-2.5 1.7-.25 2.25-.8 2.5-2.5z"/>',
+    thinking: '<circle cx="12" cy="12" r="9.5" stroke-opacity="0.2" stroke-width="1.5"/><circle class="anomalous-ai-halo-ring" cx="12" cy="12" r="9.5" stroke-width="1.9" stroke-dasharray="34 26"/><path class="anomalous-ai-halo-star" d="M12 6.6 Q12.6 11.4 17.4 12 Q12.6 12.6 12 17.4 Q11.4 12.6 6.6 12 Q11.4 11.4 12 6.6 Z" fill="currentColor" stroke="none"/>',
     filter: '<path d="M3.5 5h17l-6.5 7.6v5.9l-4 1.8v-7.7z"/>',
     target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
     lock: '<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/><circle cx="12" cy="15.5" r="1.2" fill="currentColor"/>',
@@ -64,7 +65,8 @@ const PATHS = {
 /** A line icon by name, `size` px, in the text colour. */
 export function icon(name, size = 18, className = '') {
     const holder = document.createElement('span');
-    holder.className = `anomalous-tb-icon${className ? ` ${className}` : ''}`;
+    const extra = [name === 'thinking' ? 'is-thinking' : '', className].filter(Boolean).join(' ');
+    holder.className = `anomalous-tb-icon${extra ? ` ${extra}` : ''}`;
     holder.setAttribute('aria-hidden', 'true');
     holder.innerHTML = `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${PATHS[name] || ''}</svg>`;
     return holder;

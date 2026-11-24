@@ -711,7 +711,7 @@ covered by the `styles.css` manifest.
   way too). `web/modules/ai_task_cache.js` fetches/posts tasks (`fetchTasks`, `postTask`, `readTask`) and caches/fetches activity entries (`keptEntries`, `missingEntries`): a task picked shows at
   once from there (read ahead while the pointer rests on its row) and again, what changed, when the
   server answers. The stage's pictures, like the
-  timeline's, load the 512 px thumbnail first and the file itself only when shown larger. `ui_ai_icons.js` is the AI pages' one set of line icons and the icon button.
+  timeline's, load the 512 px thumbnail first and the file itself only when shown larger. `ui_ai_icons.js` is the AI pages' one set of line icons (including the shared animated `thinking` halo-star used across the AI workbench and canvas card) and the icon button, while `ui_ai_now.js` also shows a between-steps thinking bar while the AI was active within `ACTIVE_SECONDS`.
   `ai_text_format.js` lays out what the AI writes (its notes and replies: headings, lists, bold,
   code) with textContent only. A note may answer the user's message or marks (`report`'s
   `reply_to`): the two steps point at each other, and the timeline links them both ways.

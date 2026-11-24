@@ -507,8 +507,8 @@ html.amb-theme-light body.anomalous-ai-float-pip-body { color-scheme: light; }
         animation: anomalous-ai-float-shimmer 2.4s ease-in-out infinite;
     }
 
-    .anomalous-ai-float-badge.is-running > .anomalous-tb-icon,
-    .anomalous-ai-float-badge.is-tool > .anomalous-tb-icon,
+    .anomalous-ai-float-badge.is-running > .anomalous-tb-icon:not(.is-thinking),
+    .anomalous-ai-float-badge.is-tool > .anomalous-tb-icon:not(.is-thinking),
     .anomalous-ai-float-pulse { animation: anomalous-ai-float-breathe 1.8s ease-in-out infinite; }
     .anomalous-ai-float-pulse.is-soft { animation-duration: 2.8s; }
     .anomalous-ai-float-bar.is-waiting .anomalous-ai-float-fill {

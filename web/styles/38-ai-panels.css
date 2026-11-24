@@ -5,13 +5,15 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 16px 18px;
-    border: 1px solid transparent;
-    border-radius: 14px;
-    background:
-        linear-gradient(var(--amb-bg-panel, #17171c), var(--amb-bg-panel, #17171c)) padding-box,
-        linear-gradient(135deg, color-mix(in srgb, #a487f5 70%, transparent), color-mix(in srgb, var(--amb-link) 50%, transparent) 45%, color-mix(in srgb, var(--amb-ok) 55%, transparent)) border-box;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    padding: 18px 20px;
+    border: 1px solid var(--amb-border);
+    border-radius: 20px;
+    background: var(--amb-bg-card);
+    box-shadow: 0 8px 24px rgba(var(--amb-shadow-rgb), 0.16), 0 1px 3px rgba(var(--amb-shadow-rgb), 0.1);
+}
+
+html.amb-theme-light .anomalous-ai-panel {
+    box-shadow: 0 4px 16px rgba(var(--amb-shadow-rgb), 0.08), 0 1px 3px rgba(var(--amb-shadow-rgb), 0.04);
 }
 
 .anomalous-ai-panel.is-closed {
@@ -50,8 +52,8 @@
 
 .anomalous-ai-panel-text.is-tip,
 .anomalous-ai-panel-text.is-warning {
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 10px 14px;
+    border-radius: 14px;
 }
 
 .anomalous-ai-panel-text.is-tip {
@@ -112,7 +114,7 @@
     padding: 0;
     overflow: hidden;
     border: 1px solid var(--amb-border);
-    border-radius: 10px;
+    border-radius: 14px;
     background: rgba(var(--amb-ink-rgb), 0.05);
     cursor: zoom-in;
     aspect-ratio: 1;
@@ -156,7 +158,7 @@
     padding: 0;
     overflow: hidden;
     border: 1px solid var(--amb-border);
-    border-radius: 10px;
+    border-radius: 14px;
     background: rgba(var(--amb-ink-rgb), 0.04);
     color: inherit;
     font: inherit;
@@ -165,7 +167,7 @@
 }
 
 .anomalous-ai-panel-model:hover {
-    border-color: color-mix(in srgb, #a487f5 55%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
 }
 
 .anomalous-ai-panel-model-cover {
@@ -285,10 +287,10 @@
     align-items: center;
     gap: 12px;
     min-width: 120px;
-    padding: 9px 14px;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 10px;
-    background: rgba(var(--amb-ink-rgb), 0.04);
+    padding: 10px 15px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: rgba(var(--amb-ink-rgb), 0.045);
     color: var(--amb-text-main);
     font: inherit;
     text-align: left;
@@ -297,14 +299,14 @@
 }
 
 .anomalous-ai-panel-option:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
-    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 38%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 11%, transparent);
     transform: translateY(-1px);
 }
 
 .anomalous-ai-panel-option:active:not(:disabled) { transform: translateY(0) scale(0.99); }
 .anomalous-ai-panel-option-text { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
-.anomalous-ai-panel-option-sample { width: 56px; height: 80px; flex: none; object-fit: cover; border-radius: 6px; }
+.anomalous-ai-panel-option-sample { width: 56px; height: 80px; flex: none; object-fit: cover; border-radius: 8px; }
 
 /* The arrow says a press sends; it comes forward on hover, a tick once picked. */
 .anomalous-ai-panel-option-go {
@@ -322,7 +324,7 @@
 
 .anomalous-ai-panel-option.is-picked,
 .anomalous-ai-panel-option.is-recommended.is-picked {
-    border-color: color-mix(in srgb, var(--amb-ok) 70%, transparent);
+    border-color: color-mix(in srgb, var(--amb-ok) 65%, transparent);
     background: color-mix(in srgb, var(--amb-ok) 16%, transparent);
 }
 
@@ -340,8 +342,8 @@
 }
 
 .anomalous-ai-panel-option.is-recommended {
-    border-color: color-mix(in srgb, var(--amb-link) 65%, transparent);
-    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 42%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 11%, transparent);
 }
 
 .anomalous-ai-panel-option-badge {
@@ -413,10 +415,10 @@
 .anomalous-ai-panel-input input {
     flex: 1;
     min-width: 0;
-    padding: 8px 12px;
+    padding: 9px 14px;
     border: 1px solid var(--amb-border);
-    border-radius: 8px;
-    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
     color: var(--amb-text-main);
     font: inherit;
     font-size: 13px;
@@ -429,9 +431,9 @@
 
 .anomalous-ai-panel-send {
     align-self: flex-start;
-    padding: 8px 14px;
+    padding: 8px 18px;
     border: none;
-    border-radius: 8px;
+    border-radius: 999px;
     background: var(--amb-btn-primary-bg, var(--amb-link));
     color: var(--amb-btn-primary-text, #fff);
     font: inherit;
@@ -448,10 +450,10 @@
 }
 
 .anomalous-ai-panel-typed {
-    padding: 8px 12px;
-    border-left: 3px solid var(--amb-ok);
-    border-radius: 0 8px 8px 0;
-    background: color-mix(in srgb, var(--amb-ok) 10%, transparent);
+    padding: 10px 14px;
+    border-left: none;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--amb-ok) 12%, transparent);
     color: var(--amb-text-main);
     font-size: 13px;
     white-space: pre-wrap;
@@ -463,7 +465,7 @@
 }
 
 .anomalous-ai-panel-answer { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-.anomalous-ai-panel-typed.is-skipped { border-left-color: var(--amb-text-dim); background: rgba(var(--amb-ink-rgb), 0.05); color: var(--amb-text-soft); }
+.anomalous-ai-panel-typed.is-skipped { background: rgba(var(--amb-ink-rgb), 0.05); color: var(--amb-text-soft); }
 
 /* "Let the AI decide" and "None of these, I'll say it…": small pills, plainly buttons, quieter than the options. */
 .anomalous-ai-panel-skip,
@@ -474,9 +476,9 @@
     align-self: flex-start;
     gap: 5px;
     padding: 3px 10px;
-    border: 1px dashed var(--amb-border-strong);
+    border: 1px solid var(--amb-border);
     border-radius: 999px;
-    background: none;
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-soft);
     font: inherit;
     font-size: 12px;
@@ -526,7 +528,7 @@
 }
 
 .anomalous-ai-step.is-panel {
-    --kind: #a487f5;
+    --kind: var(--amb-link);
 }
 
 .anomalous-ai-task-row-standing.is-asks,
@@ -549,11 +551,11 @@
     gap: 12px;
     max-width: min(420px, calc(100vw - 40px));
     padding: 12px 14px 12px 16px;
-    border: 1px solid color-mix(in srgb, #a487f5 55%, transparent);
-    border-radius: 12px;
-    background: var(--amb-bg-panel, #17171c);
+    border: 1px solid var(--amb-border);
+    border-radius: 18px;
+    background: var(--amb-bg-card);
     color: var(--amb-text-main);
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 14px 36px rgba(var(--amb-shadow-rgb), 0.34);
     animation: anomalous-ai-toast-in 0.25s ease-out;
 }
 
@@ -583,9 +585,9 @@
 
 .anomalous-ai-toast-open {
     flex: none;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border: none;
-    border-radius: 8px;
+    border-radius: 999px;
     background: var(--amb-btn-primary-bg, var(--amb-link));
     color: var(--amb-btn-primary-text, #fff);
     font: inherit;
@@ -604,7 +606,7 @@
 }
 
 /* The prompt box of a private task (ui_ai_prompt_box.js). */
-.anomalous-ai-prompt-advice { margin: 2px 0 8px; padding: 6px 10px; border-left: 3px solid var(--amb-accent); border-radius: 4px; background: color-mix(in srgb, var(--amb-accent) 8%, transparent); color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
+.anomalous-ai-prompt-advice { margin: 2px 0 8px; padding: 8px 12px; border-left: none; border-radius: 12px; background: color-mix(in srgb, var(--amb-accent) 9%, transparent); color: var(--amb-text-soft); font-size: 12.5px; line-height: 1.5; }
 .anomalous-ai-prompt-fields { display: flex; flex-direction: column; gap: 6px; }
 .anomalous-ai-prompt-part { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; color: var(--amb-text-soft); font-size: 12.5px; font-weight: 600; }
 /* Marks the selected words as hidden from the AI (ai_hide_mark.js): beside the gist, and in a private task's message box. */
@@ -612,7 +614,7 @@
 .anomalous-ai-hide-mark:hover { background: color-mix(in srgb, var(--amb-warn) 22%, transparent); }
 .anomalous-ai-hide-mark[hidden] { display: none; }
 .anomalous-ai-prompt-part + .anomalous-ai-prompt-fields { margin-top: 6px; }
-.anomalous-ai-prompt-field { width: 100%; box-sizing: border-box; resize: vertical; padding: 7px 9px; border: 1px solid var(--amb-border-strong); border-radius: 7px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 13px; line-height: 1.5; }
+.anomalous-ai-prompt-field { width: 100%; box-sizing: border-box; resize: vertical; padding: 8px 11px; border: 1px solid var(--amb-border-strong); border-radius: 12px; background: var(--amb-bg-input); color: var(--amb-text-main); font: inherit; font-size: 13px; line-height: 1.5; }
 .anomalous-ai-prompt-box > .anomalous-ai-prompt-field { margin-top: 6px; }
 .anomalous-ai-prompt-more, .anomalous-ai-prompt-pick { align-self: flex-start; margin-top: 6px; padding: 3px 10px; border: 1px dashed var(--amb-border-strong); border-radius: 6px; background: none; color: var(--amb-text-soft); font: inherit; font-size: 12.5px; cursor: pointer; }
 .anomalous-ai-prompt-more:hover, .anomalous-ai-prompt-pick:hover { border-color: var(--amb-accent); color: var(--amb-text-main); }

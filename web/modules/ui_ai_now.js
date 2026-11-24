@@ -15,16 +15,24 @@
 
 import { resolveLocale, translate as t } from './locales.js';
 import { haltOf, taskStatus } from './ai_task_status.js';
+import { ACTIVE_SECONDS } from './ai_float_state.js';
 import { openAsks, toolKey } from './ai_task_view.js';
 import { icon } from './ui_ai_icons.js';
 import { progressWords, stopButton } from './ui_ai_run_live.js';
 import { draftField, hasDraft, optionDetail, optionLabel, ownWords, sendAnswer } from './ui_ai_panel.js';
 import { decideGate } from './ui_ai_gate.js';
+import { unseenReply } from './ai_call_lines.js';
 import { callRow } from './ui_ai_call.js';
 import { optionThumb, pickAnother } from './ui_ai_option_cards.js';
 
 const RUNNING = ['submitting', 'queued', 'running'];
 const MAX_OPTIONS = 6;
+const isThinking = (task, status) => Boolean(task && !task.ended && !task.waiting
+    && (task.steps || []).some(step => step.kind !== 'user')
+    && status.age < ACTIVE_SECONDS
+    && !openAsks(task).length
+    && !unseenReply(task)
+    && !(task.steps || []).some(step => step.tool === 'run_workflow' && step.call_ai));
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -74,14 +82,20 @@ function statusLine(task, ctx) {
         const fill = el('span', 'anomalous-ai-now-fill');
         if (share !== null) fill.style.width = `${Math.round(share * 100)}%`;
         bar.append(fill);
-        line.append(el('span', 'anomalous-ai-now-pulse'), el('span', 'anomalous-ai-now-words', `${t('aiNowRun')} · ${words}`),
+        line.append(icon('thinking', 15, 'anomalous-ai-now-icon'), el('span', 'anomalous-ai-now-words', `${t('aiNowRun')} · ${words}`),
             ...(share !== null ? [el('b', 'anomalous-ai-now-percent', `${Math.round(share * 100)}%`)] : []), bar);
         if (status.run.prompt_ids?.length) line.append(stopButton(task.id, status.run.id, ctx.refresh, true, Boolean(status.run.stop || status.run.progress?.stopping)));
         return line;
     }
     if (status.state === 'tool') {
         const line = el('div', 'anomalous-ai-now-line is-tool');
-        line.append(el('span', 'anomalous-ai-now-pulse'), el('span', 'anomalous-ai-now-words', t('aiNowTool', { what: t(toolKey(status.active.tool)) })));
+        line.append(icon('thinking', 15, 'anomalous-ai-now-icon'), el('span', 'anomalous-ai-now-words', t('aiNowTool', { what: t(toolKey(status.active.tool)) })));
+        return line;
+    }
+    if (isThinking(task, status)) {
+        const line = el('div', 'anomalous-ai-now-line is-thinking');
+        line.append(icon('thinking', 15, 'anomalous-ai-now-icon'), el('span', 'anomalous-ai-now-words', t('aiFloatThinking')));
+        if (ctx?.stuck) line.append(button('anomalous-ai-link anomalous-ai-now-stuck', t('aiStuck'), () => ctx.stuck(), t('aiStuckHint')));
         return line;
     }
     return null;
@@ -169,6 +183,7 @@ function statusLineKey(task) {
             Boolean(status.run.stop || status.run.progress?.stopping)]);
     }
     if (status.state === 'tool') return JSON.stringify([resolveLocale(), 'tool', status.active.id, status.active.tool]);
+    if (isThinking(task, status)) return JSON.stringify([resolveLocale(), 'thinking']);
     return `${resolveLocale()}|none`;
 }
 

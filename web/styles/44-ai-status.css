@@ -56,10 +56,10 @@
     width: 300px;
     box-sizing: border-box;
     padding: 14px 16px;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 12px;
-    background: var(--amb-bg-panel);
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.48);
+    border: 1px solid var(--amb-border);
+    border-radius: 18px;
+    background: var(--amb-bg-card);
+    box-shadow: 0 14px 36px rgba(var(--amb-shadow-rgb), 0.36);
     color: var(--amb-text-main);
     font-size: 12.5px;
 }

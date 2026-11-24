@@ -21,7 +21,7 @@ import { plusMenu } from './ui_ai_plus.js';
 import { openBuildRouteWindow } from './ui_ai_start_from.js';
 import { galleryPicker } from './ui_ai_gallery_pick.js';
 import { takePictures } from './ui_ai_drop.js';
-import { iconButton } from './ui_ai_icons.js';
+import { icon, iconButton } from './ui_ai_icons.js';
 import { noteTyping } from './ui_ai_panel.js';
 import { HIDE_BUTTON, hideButton } from './ai_hide_mark.js';
 import { guardNames } from './ui_ai_model_lock.js';
@@ -62,8 +62,11 @@ export function messageBox(onSend, source) {
     field.maxLength = 2000;
     field.placeholder = t('aiMessagePlaceholder');
     const note = el('div', 'anomalous-ai-message-hint');
-    const send = el('button', 'anomalous-ai-panel-send', t('aiMessageSend'));
+    const send = el('button', 'anomalous-ai-panel-send anomalous-ai-message-send');
     send.type = 'button';
+    send.append(icon('arrowUp', 16));
+    send.title = t('aiMessageSend');
+    send.setAttribute('aria-label', t('aiMessageSend'));
     // What the Hide button marks words in: the note field being typed in (it keeps the focus through the press), else the input.
     const currentField = () => (document.activeElement?.matches?.('.anomalous-ai-mention-chip-note') && tray.contains(document.activeElement)
         ? document.activeElement : field);

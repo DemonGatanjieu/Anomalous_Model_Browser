@@ -179,6 +179,7 @@ function badgeIcon(view) {
     if (view.kind === 'done') return 'check';
     if (view.kind === 'error') return 'alert';
     if (view.kind === 'waiting' || view.kind === 'idle') return 'clock';
+    if (view.kind === 'run' || view.kind === 'tool' || view.kind === 'thinking') return 'thinking';
     return 'sparkle';
 }
 

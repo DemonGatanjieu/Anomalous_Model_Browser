@@ -12,16 +12,16 @@
 /* The blueprint's line: what the AI means to do; steps not done yet are dashed. */
 .anomalous-ai-flow-label {
     margin-right: 4px;
-    padding: 2px 6px;
+    padding: 2px 9px;
     border: 0;
-    border-radius: 4px;
+    border-radius: 999px;
     background: color-mix(in srgb, var(--amb-link) 14%, transparent);
     color: var(--amb-link);
     font: inherit;
     font-size: 11px;
     cursor: pointer;
 }
-.anomalous-ai-flow-stage.is-ahead { border: 1px dashed var(--amb-border-strong); color: var(--amb-text-dim); }
+.anomalous-ai-flow-stage.is-ahead { border: 1px dashed var(--amb-border-strong); background: transparent; color: var(--amb-text-dim); }
 .anomalous-ai-flow-stage.is-ahead .anomalous-ai-flow-mark { background: transparent; border: 1px solid var(--amb-text-dim); box-sizing: border-box; }
 .anomalous-ai-flow-stage.is-skipped { color: var(--amb-text-dim); }
 .anomalous-ai-flow-stage.is-skipped .anomalous-ai-flow-words { text-decoration: line-through; }
@@ -32,10 +32,10 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 3px 7px;
+    padding: 4px 10px;
     border: 1px solid transparent;
     border-radius: 999px;
-    background: transparent;
+    background: rgba(var(--amb-ink-rgb), 0.045);
     color: var(--amb-text-soft);
     font: inherit;
     font-size: 12px;
@@ -52,7 +52,10 @@
 }
 
 .anomalous-ai-flow-stage.is-done .anomalous-ai-flow-mark { background: var(--amb-ok); }
-.anomalous-ai-flow-stage.is-running .anomalous-ai-flow-mark { background: var(--amb-link); animation: anomalous-ai-flow-pulse 1.2s ease-in-out infinite; }
+.anomalous-ai-flow-stage.is-running .anomalous-ai-flow-mark { background: var(--amb-link); }
+@media (prefers-reduced-motion: no-preference) {
+    .anomalous-ai-flow-stage.is-running .anomalous-ai-flow-mark { animation: anomalous-ai-flow-pulse 1.2s ease-in-out infinite; }
+}
 .anomalous-ai-flow-stage.is-error .anomalous-ai-flow-mark { background: var(--amb-danger); }
 .anomalous-ai-flow-stage.is-asking {
     border-color: var(--amb-warn);
@@ -77,10 +80,10 @@
     flex-direction: column;
     gap: 10px;
     margin-top: 8px;
-    padding: 12px 14px;
-    border: 1px solid color-mix(in srgb, var(--amb-warn) 60%, transparent);
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--amb-warn) 7%, var(--amb-bg-panel));
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--amb-warn) 35%, transparent);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--amb-warn) 7%, var(--amb-bg-card));
 }
 
 .anomalous-ai-gate-title { color: var(--amb-text-main); font-size: 13.5px; font-weight: 600; }
@@ -98,9 +101,9 @@
 .anomalous-ai-gate-lines dd { margin: 0; color: var(--amb-text-main); white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .anomalous-ai-gate-reason {
-    padding: 7px 10px;
+    padding: 7px 12px;
     border: 1px solid var(--amb-border);
-    border-radius: 7px;
+    border-radius: 12px;
     background: var(--amb-bg-panel);
     color: var(--amb-text-main);
     font: inherit;
@@ -111,9 +114,9 @@
 
 .anomalous-ai-gate-allow,
 .anomalous-ai-gate-deny {
-    padding: 6px 16px;
+    padding: 6px 18px;
     border: 1px solid var(--amb-border-strong);
-    border-radius: 7px;
+    border-radius: 999px;
     background: transparent;
     color: var(--amb-text-main);
     font: inherit;
@@ -183,17 +186,17 @@
 .anomalous-ai-gates-each .anomalous-ai-gates-tools.is-open { display: block; }
 .anomalous-ai-gates-foot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; padding-top: 10px; border-top: 1px solid var(--amb-border); }
 .anomalous-ai-gates-foot .anomalous-ai-gates-note { flex: 1 1 260px; }
-.anomalous-ai-gates-choice { display: inline-flex; border: 1px solid var(--amb-border); border-radius: 8px; overflow: hidden; }
+.anomalous-ai-gates-choice { display: inline-flex; padding: 2px; border: 0; border-radius: 999px; background: rgba(var(--amb-ink-rgb), 0.055); overflow: hidden; }
 .anomalous-ai-gates-option {
     padding: 5px 12px;
     border: 0;
+    border-radius: 999px;
     background: transparent;
     color: var(--amb-text-soft);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
 }
-.anomalous-ai-gates-option + .anomalous-ai-gates-option { border-left: 1px solid var(--amb-border); }
 .anomalous-ai-gates-option:hover:not(.is-on) { background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-text-main); }
 .anomalous-ai-gates-option.is-on { background: color-mix(in srgb, var(--amb-link) 22%, transparent); color: var(--amb-text-main); }
 
@@ -307,7 +310,7 @@
     height: 26px;
     padding: 0 10px;
     border: 1px solid color-mix(in srgb, var(--amb-danger) 55%, transparent);
-    border-radius: 8px;
+    border-radius: 999px;
     background: color-mix(in srgb, var(--amb-danger) 12%, transparent);
     color: var(--amb-danger-text);
     font: inherit;

@@ -282,6 +282,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         listToggle.setAttribute('aria-label', t('sidebarToggle'));
         listToggle.dataset.ambTooltip = t('sidebarToggle');
         owner.onActivityRecorded();
+        if (current === 'ai' && owner.aiPanel?.style.display !== 'none') renderAiWorkbench(owner, owner.aiPanel);
     };
 
     // Home drawn again where it is open (the rail found Anomalous_TTS: its voice card).
