@@ -406,6 +406,10 @@ export function newestCompareButton(className) {
         }
     });
     node.title = t('compareNewestHint');
+    node.refreshLanguage = () => {
+        node.textContent = `⇄ ${t('compareNewest')}`;
+        node.title = t('compareNewestHint');
+    };
     return node;
 }
 

@@ -406,7 +406,7 @@
     gap: 8px;
 }
 
-@media (max-width: 520px) {
+@container (max-width: 520px) {
     .anomalous-tidy-card { flex-direction: column; }
 }
 

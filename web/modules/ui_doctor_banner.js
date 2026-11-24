@@ -18,6 +18,8 @@ const closed = new Set();
 let bar = null;
 let checkRun = 0;
 let hideTimer = 0;
+let lastBanner = null;
+let watching = false;
 
 const workflowKey = () => {
     const workflow = app.extensionManager?.workflow?.activeWorkflow;
@@ -60,6 +62,7 @@ function hide() {
     clearTimeout(hideTimer);
     bar?.remove();
     bar = null;
+    lastBanner = null;
 }
 
 /** Shows, updates or hides the bar for the entries of a check; `putIn` = just put in that many. */
@@ -104,15 +107,19 @@ export function updateDoctorBanner(owner, entries, putIn = 0) {
     });
     close.setAttribute('aria-label', t('doctorBannerClose'));
     bar.replaceChildren(el('span', 'anomalous-doctor-banner-icon', '🩺'), copy, actions, mute, close);
+    lastBanner = { owner, entries, putIn, muted: false };
     if (!bar.isConnected) document.body.append(bar);
     if (!problems.length) hideTimer = setTimeout(hide, HIDE_AFTER_FIX_MS);
 }
 
 /** After "Don't show again": says where to turn it back on, then goes. */
 function showMuted() {
+    clearTimeout(hideTimer);
+    bar?.remove();
     bar = el('div', 'anomalous-doctor-banner');
     bar.setAttribute('role', 'status');
     bar.append(el('span', 'anomalous-doctor-banner-icon', '🩺'), el('span', 'anomalous-doctor-banner-text', t('doctorBannerMuted')));
+    lastBanner = { muted: true };
     document.body.append(bar);
     hideTimer = setTimeout(hide, HIDE_AFTER_FIX_MS);
 }
@@ -132,6 +139,14 @@ export async function checkOpenWorkflow(owner) {
 
 /** Checks every workflow ComfyUI opens (the one restored at startup too). */
 export function watchWorkflowLoads(owner) {
+    if (!watching) {
+        watching = true;
+        window.addEventListener('anomalous-language-change', () => {
+            if (!bar?.isConnected || !lastBanner) return;
+            if (lastBanner.muted) showMuted();
+            else updateDoctorBanner(lastBanner.owner, lastBanner.entries, lastBanner.putIn);
+        });
+    }
     const load = app.loadGraphData;
     if (typeof load !== 'function') return;
     app.loadGraphData = async function (...args) {

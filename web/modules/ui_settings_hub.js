@@ -88,6 +88,9 @@ export function createSettingsHub(owner, {
         settingsBtn.setAttribute('aria-label', t('sidebarSettings'));
         settingsBtn.setAttribute('data-amb-tooltip', t('sidebarSettings'));
         owner.refreshShellLanguage?.();
+        owner.refreshModelSearchLanguage?.();
+        owner.refreshGalleryBarLanguage?.();
+        owner.refreshRecipeBarLanguage?.();
         if (dockBtn) {
             dockBtn.removeAttribute('title');
             dockBtn.setAttribute('aria-label', t('dockTitle'));
@@ -105,6 +108,8 @@ export function createSettingsHub(owner, {
 
         // Pages drawn in the old language are drawn again.
         if (owner.doctorPanel && owner.doctorPanel.style.display !== 'none') owner.openDoctorPage();
+        if (owner.scanPanel && owner.scanPanel.style.display !== 'none') owner.openScanPage();
+        if (owner.galleryPanel && owner.galleryPanel.style.display !== 'none') owner.refreshGalleryImages?.();
         if (owner.assistantPanel && owner.assistantPanelInitialized) {
             const selectedNode = Object.values(app.canvas?.selected_nodes || {})[0] || null;
             owner.assistantPanelInitialized = false;

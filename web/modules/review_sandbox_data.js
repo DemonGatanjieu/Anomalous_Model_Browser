@@ -12,6 +12,20 @@ import { DOWNLOADED_LORA, LIBRARY_MODEL, RECIPE_FILE, SANDBOX_HASHES, sharedReci
 export const SANDBOX_TYPES = ['checkpoints', 'loras', 'vae'];
 export const LIBRARIES = ['empty', 'one'];
 export const NETWORKS = ['online', 'offline'];
+const WORKFLOW_STORAGE_EXACT = new Set([
+    'workflow', 'Comfy.PreviousWorkflow', 'Comfy.OpenWorkflowsPaths', 'Comfy.ActiveWorkflowIndex',
+    'Comfy.Workflow.Drafts', 'Comfy.Workflow.DraftOrder',
+]);
+const WORKFLOW_STORAGE_PREFIXES = [
+    'workflow:', 'Comfy.PreviousWorkflow:', 'Comfy.OpenWorkflowsPaths:', 'Comfy.ActiveWorkflowIndex:',
+    'Comfy.Workflow.',
+];
+
+/** Whether a storage key holds ComfyUI's open tabs or unsaved workflow drafts (kept in memory while the sandbox runs). */
+export function isWorkflowStorageKey(key) {
+    if (typeof key !== 'string' || !key) return false;
+    return WORKFLOW_STORAGE_EXACT.has(key) || WORKFLOW_STORAGE_PREFIXES.some(prefix => key.startsWith(prefix));
+}
 
 // A scan: preparing, then the files one by one, done at 3 s (the pages poll every 2 s and see each part).
 const PREPARE_MS = 700;

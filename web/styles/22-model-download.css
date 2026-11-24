@@ -1,6 +1,14 @@
 /* Model Check's downloads: the row's button and progress, and the dialog (ui_model_download.js). */
 
-.anomalous-download-slot:empty { display: none; }
+.anomalous-download-slot:empty,
+.anomalous-download-hint:empty { display: none; }
+
+/* What to know about a download (a login first, why it failed), under the row's reason rather than among its buttons. */
+.anomalous-download-hint {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
 
 .anomalous-download-slot,
 .anomalous-download-status {

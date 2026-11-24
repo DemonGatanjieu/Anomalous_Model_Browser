@@ -114,26 +114,30 @@ function pickByHand(owner, panel, entry) {
     });
 }
 
+/** A model to handle: what it is on the left, its buttons on the right, or under it when they do not fit beside it. */
 function problemRow(owner, panel, entry, downloads) {
     const row = el('div', `anomalous-scan-row anomalous-doctor-row is-${entry.state}`);
+    const body = el('div', 'anomalous-doctor-body');
     const copy = el('div', 'anomalous-scan-row-copy');
     copy.append(
         title(entry),
         el('span', 'anomalous-scan-row-where', nodeLabel(entry)),
         el('span', 'anomalous-doctor-why', reason(entry)),
     );
-    if (entry.record || entry.local) copy.append(proof(entry));
     const actions = el('div', 'anomalous-scan-row-actions');
     const put = (labelKey) => button('anomalous-scan-row-btn is-main', t(labelKey), () => {
         if (!applyModelFix(entry)) alert(t('doctorChangedMeanwhile'));
         renderDoctorPage(owner, panel);
     });
     if (entry.state === 'missing') {
-        // Filled once its source is known (ui_model_download.js).
+        // Filled once its source is known (ui_model_download.js): its buttons here, what to know about it under the reason.
         const slot = el('span', 'anomalous-download-slot');
-        downloads.set(entry, slot);
+        const note = el('span', 'anomalous-download-hint');
+        downloads.set(entry, { slot, note });
+        copy.append(note);
         actions.append(slot);
     }
+    if (entry.record || entry.local) copy.append(proof(entry));
     if (entry.state === 'fixable') actions.append(put('doctorPutIn'));
     if (entry.state === 'candidate') actions.append(put('doctorUseCandidate'));
     if (entry.state !== 'fixable') {
@@ -142,7 +146,8 @@ function problemRow(owner, panel, entry, downloads) {
     if (!['fixable', 'candidate', 'changed'].includes(entry.state)) {
         actions.append(button('anomalous-scan-row-btn', 'Civitai', () => openOnCivitai(entry)));
     }
-    row.append(el('span', 'anomalous-scan-row-mark', MARKS[entry.state]), copy, actions);
+    body.append(copy, actions);
+    row.append(el('span', 'anomalous-scan-row-mark', MARKS[entry.state]), body);
     return row;
 }
 

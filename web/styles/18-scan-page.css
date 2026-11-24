@@ -8,6 +8,7 @@
     flex-direction: column;
     overflow-y: auto;
     background: var(--amb-bg-page, var(--amb-bg-page));
+    container: scanpanel / inline-size; /* the page's own padding asks the panel: a container cannot ask itself */
 }
 
 .anomalous-scan-page {
@@ -1025,6 +1026,7 @@ label.anomalous-scan-setting {
 .anomalous-scan-row-actions {
     display: flex;
     flex-shrink: 0;
+    flex-wrap: wrap;
     gap: 6px;
 }
 
@@ -1055,9 +1057,13 @@ label.anomalous-scan-setting {
     margin-top: 8px;
 }
 
-@media (max-width: 560px) {
-    .anomalous-scan-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Narrow by the AMB window, not the browser's: docked at the side, the window is narrow in a wide browser. */
+@container scanpanel (max-width: 560px) {
     .anomalous-scan-page { padding: 24px 16px 32px; }
+}
+
+@container scanpage (max-width: 560px) {
+    .anomalous-scan-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .anomalous-scan-row { flex-wrap: wrap; }
-    .anomalous-scan-row-actions { width: 100%; padding-left: 26px; }
+    .anomalous-scan-row > .anomalous-scan-row-actions { width: 100%; padding-left: 26px; }
 }

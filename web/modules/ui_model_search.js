@@ -68,5 +68,9 @@ export function createModelSearch(owner) {
     };
     box.append(icon, input);
     owner.modelSearchInput = input;
+    owner.refreshModelSearchLanguage = () => {
+        input.placeholder = t('modelSearchPlaceholder');
+        input.setAttribute('aria-label', t('modelSearchPlaceholder'));
+    };
     return box;
 }

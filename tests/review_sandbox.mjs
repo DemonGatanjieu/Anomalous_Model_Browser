@@ -3,10 +3,10 @@
 // and the Workflows page meet them, and changes it does not stand in for refused, never sent on.
 import assert from 'node:assert/strict';
 import {
-    answerRequest, createSandbox, downloadsRunning, resetProgress, sandboxModelValues, scanRunning, setLibrary, setNetwork, shareDemoWorkflow,
+    answerRequest, createSandbox, downloadsRunning, isWorkflowStorageKey, resetProgress, sandboxModelValues, scanRunning, setLibrary, setNetwork, shareDemoWorkflow,
 } from '../web/modules/review_sandbox_data.js';
 import { SANDBOX_HASHES, demoWorkflow } from '../web/modules/review_sandbox_workflow.js';
-import { i18n } from '../web/modules/locales.js';
+import { i18n, translate } from '../web/modules/locales.js';
 import { findWorkflowHashRecord } from '../web/modules/recipe_provenance.js';
 
 const ask = (sandbox, method, route, { body = null, now = 0 } = {}) => {
@@ -184,4 +184,27 @@ const KEYS = ['reviewSandboxTitle', 'reviewSandboxEnter', 'reviewSandboxExit', '
 for (const lang of ['zh', 'en']) {
     for (const key of KEYS) assert.ok(i18n[lang][key], `${lang} has no '${key}'`);
 }
+
+// ---- sandbox workflow tab keys stay isolated in memory across reloads
+for (const key of [
+    'workflow', 'workflow:tab', 'Comfy.PreviousWorkflow', 'Comfy.PreviousWorkflow:1',
+    'Comfy.OpenWorkflowsPaths', 'Comfy.OpenWorkflowsPaths:1', 'Comfy.ActiveWorkflowIndex', 'Comfy.ActiveWorkflowIndex:1',
+    'Comfy.Workflow.DraftIndex.v2:personal', 'Comfy.Workflow.Draft.v2:personal:abcd1234',
+    'Comfy.Workflow.ActivePath:1', 'Comfy.Workflow.OpenPaths:1', 'Comfy.Workflow.LastOpenPaths:personal',
+]) {
+    assert.equal(isWorkflowStorageKey(key), true, `expected workflow key: ${key}`);
+}
+for (const key of ['', null, undefined, 'anomalous_lang', 'Comfy.Settings.Theme', 'unrelated']) {
+    assert.equal(isWorkflowStorageKey(key), false, `unexpected workflow key: ${String(key)}`);
+}
+
+// ---- English singular / plural grammar for scan and Model Check copy
+assert.match(translate('doctorScanHint', { count: 1 }, 'en'), /^1 model in your library has not been scanned yet\. Its fingerprint is/);
+assert.match(translate('doctorScanHint', { count: 2 }, 'en'), /^2 models in your library have not been scanned yet\. Their fingerprints are/);
+assert.match(translate('doctorBannerFixable', { count: 1 }, 'en'), /^1 of them is here/);
+assert.match(translate('doctorBannerFixable', { count: 3 }, 'en'), /^3 of them are here/);
+assert.equal(translate('scanPageScanNewOffline', { count: 1 }, 'en'), 'Scan 1 new model offline');
+assert.equal(translate('scanPageScanNewOffline', { count: 2 }, 'en'), 'Scan 2 new models offline');
+assert.match(translate('scanHeroInfer', { count: 1 }, 'en'), /1 not scanned yet is only read from its file\./);
+assert.match(translate('scanHeroInfer', { count: 2 }, 'en'), /2 not scanned yet are only read from their files\./);
 console.log('review sandbox: ok');

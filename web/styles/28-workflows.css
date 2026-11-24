@@ -626,7 +626,7 @@
     .anomalous-wf-search { flex-basis: 100%; }
 }
 
-@media (max-width: 560px) {
+@container (max-width: 560px) {
     .anomalous-wf-list.is-list .anomalous-wf-info { padding-right: 14px; }
     .anomalous-wf-list.is-list .anomalous-wf-actions { display: none; }
 }

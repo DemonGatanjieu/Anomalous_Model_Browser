@@ -615,13 +615,14 @@ covered by the `styles.css` manifest.
   it, kept in memory: while it is on, every `/anomalous/` request goes to the pretend server of
   `review_sandbox_data.js` (a read it has no stand-in for is answered empty; a change it does not stand in for is
   refused with a toast and never sent, uploads by XHR too; Civitai's API is not asked about its fingerprints), AMB's
-  `anomalous_*` storage keys live in memory (the first-visit ones not there yet; theme and language stay real), the
+  `anomalous_*` storage keys (plus ComfyUI's open workflow tab/draft persistence keys via `isWorkflowStorageKey` so a reload
+  mid-sandbox leaves no ghost tabs) live in memory (theme and language stay real), the
   canvas in front is a temporary tab of the sandbox's whose model boxes list its files (`app.refreshComboInNodes` and
   `app.loadGraphData` stand in while it is on), and the pages forget what they kept (`resetDownloadMemory`,
   `resetFirstRun`, `setPageTipSandbox`, `clearDoctorBanner`, `forgetCivitaiAnswer`, `forgetTidyCount`, `forgetSources`);
   leaving waits for a scan it started, closes its tab and puts each back. `review_sandbox_data.js` is, without DOM,
   that server: an empty or one-model library, Civitai answering or not, a scan and a download moved on by the clock,
-  the routes it answers and the reads it lets through (`tests/review_sandbox.mjs`); `review_sandbox_workflow.js` its
+  the routes it answers, `isWorkflowStorageKey`, and the reads it lets through (`tests/review_sandbox.mjs`); `review_sandbox_workflow.js` its
   made-up files: the library's model, the workflow someone shared (four models, with the fingerprints and links a
   shared workflow carries), how the Workflows page lists it and where each can be downloaded from.
   `review_scenarios.js` is, without DOM, those tasks (shaped as `api/ai_tasks.py` keeps them), what a press
@@ -1505,8 +1506,8 @@ covered by the `styles.css` manifest.
   switched-on Power Lora Loader rows through `lora_nodes.js`) against this computer (Model
   Check's verdicts, no DOM; the feature was called Model Doctor, and code and CSS still
   say "doctor") and puts a found file into its node; `ui_doctor.js` is the
-  Model Check page and `ui_doctor_banner.js` the bar over the canvas when an opened workflow
-  misses models (it also owns the check-on-open preference that Settings → Workflows and the
+  Check page (`19-model-doctor.css` adapts via `@container scanpanel` / `.anomalous-doctor-body` and clears `#anomalous-container.anomalous-docked`) and `ui_doctor_banner.js` the bar over the canvas when an opened workflow
+  misses models (refreshing when the language switches; it also owns the check-on-open preference that Settings → Workflows and the
   bar's "Don't show again" set). `model_download.js` finds a missing model's source,
   decides where its file goes (the download settings, `{base}` = its base model's folder),
   follows the downloads and puts each finished file into its nodes (the placement rules

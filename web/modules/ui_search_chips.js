@@ -23,6 +23,7 @@ function normaliseTerm(term) {
 }
 
 export function createSearchChips({ placeholder = '', help = '', onChange } = {}) {
+    let currentPlaceholder = placeholder;
     const root = document.createElement('div');
     root.className = 'anomalous-search-chips';
     if (help) root.title = help;
@@ -37,8 +38,8 @@ export function createSearchChips({ placeholder = '', help = '', onChange } = {}
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'anomalous-search-chips-input';
-    input.placeholder = placeholder;
-    input.setAttribute('aria-label', placeholder);
+    input.placeholder = currentPlaceholder;
+    input.setAttribute('aria-label', currentPlaceholder);
 
     const count = document.createElement('span');
     count.className = 'anomalous-search-chips-count';
@@ -104,7 +105,7 @@ export function createSearchChips({ placeholder = '', help = '', onChange } = {}
             chip.append(label, remove);
             return chip;
         }));
-        input.placeholder = chips.length ? '' : placeholder;
+        input.placeholder = chips.length ? '' : currentPlaceholder;
     };
 
     const commitDraft = () => {
@@ -166,5 +167,15 @@ export function createSearchChips({ placeholder = '', help = '', onChange } = {}
 
     clearBtn.hidden = true;
     root.append(icon, list, input, count, clearBtn);
-    return { element: root, countElement: count, getTerms: currentTerms };
+    const refresh = ({ placeholder: nextPlaceholder, help: nextHelp } = {}) => {
+        if (nextPlaceholder !== undefined) {
+            currentPlaceholder = nextPlaceholder;
+            input.setAttribute('aria-label', currentPlaceholder);
+        }
+        if (nextHelp !== undefined) root.title = nextHelp;
+        clearBtn.title = t('searchChipsClear');
+        clearBtn.setAttribute('aria-label', t('searchChipsClear'));
+        renderChips();
+    };
+    return { element: root, countElement: count, getTerms: currentTerms, refresh };
 }

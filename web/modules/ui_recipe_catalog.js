@@ -131,6 +131,18 @@ function buildWorkflowBar(owner) {
     save.dataset.recipeSaveCurrent = 'true';
     save.onclick = () => owner.handleSaveRecipe();
     updateRecipeFilterControls(owner);
+    owner.refreshRecipeBarLanguage = () => {
+        searchInput.placeholder = t('recipeSearchPlaceholder');
+        showViewButton();
+        share.title = t('toolWorkflowTransferTitle');
+        share.setAttribute('aria-label', share.title);
+        save.textContent = `+ ${t(owner.recipeEditing ? 'recipeUpdateCurrent' : 'recipeSaveCurrent')}`;
+        if (owner.savesToggle) owner.savesToggle.textContent = t(owner.savesListOn ? 'savesListBack' : 'savesListToggle');
+        updateRecipeFilterControls(owner);
+        if (owner.nbPanel?.style.display === 'flex' && !owner.recipeDetailView) {
+            void (owner.savesListOn ? refreshSaves(owner) : owner.refreshRecipes());
+        }
+    };
     return bar;
 }
 function normaliseSearchText(value) {

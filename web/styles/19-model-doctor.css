@@ -5,6 +5,7 @@
     flex-direction: column;
     overflow-y: auto;
     background: var(--amb-bg-page, var(--amb-bg-page));
+    container: scanpanel / inline-size; /* the scan page's narrow padding (18-scan-page.css) */
 }
 
 .anomalous-scan-stat.is-bad .anomalous-scan-stat-value { color: var(--amb-danger-text); }
@@ -19,15 +20,37 @@
 .anomalous-doctor-row.is-conflict .anomalous-scan-row-mark,
 .anomalous-doctor-row.is-missing .anomalous-scan-row-mark { color: var(--amb-danger-text); }
 
-.anomalous-doctor-title {
+/* What the model is, then its buttons: beside it while both fit, under it otherwise (a docked window, long labels). */
+.anomalous-doctor-body {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px 12px;
     min-width: 0;
 }
 
-.anomalous-doctor-title > .anomalous-scan-row-name {
+.anomalous-doctor-body > .anomalous-scan-row-copy { flex: 1 1 240px; }
+
+.anomalous-doctor-body > .anomalous-scan-row-actions {
+    flex: 0 1 auto;
+    align-items: center;
+    max-width: 100%;
+}
+
+/* The file name is what is looked for: read whole, the verdict under it when both do not fit. */
+.anomalous-doctor-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
     min-width: 0;
+}
+
+.anomalous-doctor-row .anomalous-scan-row-name,
+.anomalous-doctor-row .anomalous-scan-row-where {
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .anomalous-doctor-level {
@@ -178,6 +201,20 @@
 
 @media (max-width: 640px) {
     .anomalous-doctor-banner { flex-wrap: wrap; }
-    .anomalous-doctor-row { flex-wrap: wrap; }
-    .anomalous-doctor-row .anomalous-scan-row-actions { margin-left: 26px; }
+}
+
+/* While AMB is open and docked on the left, center the canvas bar in the visible canvas to its right. */
+@media (min-width: 720px) {
+    html:has(#anomalous-modal.visible #anomalous-container.anomalous-docked) .anomalous-doctor-banner {
+        --amb-dock-used: min(100vw, clamp(480px, var(--amb-dock-width, 660px), calc(100vw - 240px)));
+        left: calc(50vw + var(--amb-dock-used) / 2);
+        max-width: min(560px, calc(100vw - var(--amb-dock-used) - 24px));
+        flex-wrap: wrap;
+    }
+    html:has(#anomalous-modal.visible #anomalous-container.anomalous-docked) .anomalous-doctor-banner-text {
+        flex: 1 1 180px;
+    }
+    html:has(#anomalous-modal.visible #anomalous-container.anomalous-docked) .anomalous-doctor-banner-actions {
+        flex-wrap: wrap;
+    }
 }

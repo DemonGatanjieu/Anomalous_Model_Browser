@@ -377,6 +377,12 @@ function hideForNavigation() {
     unmount();
 }
 
+/** Dismisses the centered Home welcome overlay when navigating to another page (keeps the corner scan dock and never marks it permanently hidden). */
+export function dismissFirstRunDialog() {
+    if (!host || host.dataset.anomalousEscape !== '1') return;
+    hideForNavigation();
+}
+
 function onEscape(event) {
     if (event.key !== 'Escape' || host?.dataset.anomalousEscape !== '1') return;
     if (!owner?.modal?.classList.contains('visible')) return;
@@ -479,6 +485,7 @@ export async function renderFirstRun(browser) {
         }
     }
     if (!(show || preview)) return;
+    if (!preview && state.phase !== 'running' && state.phase !== 'done' && browser?.currentShellPage?.() !== 'home') return;
     mount();
 }
 

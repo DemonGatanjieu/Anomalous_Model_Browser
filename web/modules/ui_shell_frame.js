@@ -103,11 +103,12 @@ export function bindDockResize(container) {
     const edge = document.createElement('div');
     edge.className = 'anomalous-dock-edge';
     let dragged = false;
-    const setWidth = width => container.style.setProperty('--amb-dock-width', `${width}px`);
+    const setWidth = width => document.documentElement.style.setProperty('--amb-dock-width', `${width}px`);
     const saved = localStorage.getItem('anomalous_dock_width');
     if (saved) setWidth(saved);
 
     edge.onpointerenter = () => { edge.title = t('dockEdgeTitle'); };
+    window.addEventListener('anomalous-language-change', () => { if (edge.title) edge.title = t('dockEdgeTitle'); });
     edge.onpointerdown = (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
@@ -128,7 +129,7 @@ export function bindDockResize(container) {
         localStorage.setItem('anomalous_dock_width', String(width));
     };
     edge.ondblclick = () => {
-        container.style.removeProperty('--amb-dock-width');
+        document.documentElement.style.removeProperty('--amb-dock-width');
         localStorage.removeItem('anomalous_dock_width');
     };
     container.appendChild(edge);

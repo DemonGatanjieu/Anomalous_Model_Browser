@@ -341,7 +341,7 @@ function sandboxSection() {
 
 /** Everything back as it was when the console opened: no rehearsal, no sandbox, the real rail, no veil, the real
  * first-run card, the theme and language. */
-function resetAll() {
+function resetAll(unloading = false) {
     endRehearsal();
     void exitSandbox();
     clearFirstRunPreview();
@@ -350,7 +350,16 @@ function resetAll() {
     if (state.dropping) setDrop(false);
     const { theme, lang } = state.snapshot || {};
     if (theme && themePreference() !== theme) setThemePreference(theme, false);
-    if (lang && storedLanguage() !== lang) applyLanguagePreference(lang);
+    if (lang && storedLanguage() !== lang) {
+        if (unloading) {
+            try {
+                if (lang === 'auto') localStorage.removeItem('anomalous_lang');
+                else localStorage.setItem('anomalous_lang', lang);
+            } catch { /* page is leaving */ }
+        } else {
+            applyLanguagePreference(lang);
+        }
+    }
 }
 
 /** Kept inside the window, a margin from its edges; none: the corner the CSS gives. */
@@ -422,6 +431,7 @@ function onLanguage() {
 }
 
 const onResize = () => place();
+const onPageHide = () => resetAll(true);
 
 /** Opens the console (or brings it back unfolded); `getBrowser()` gives AMB's window when a section needs it. */
 export function openReviewConsole(getBrowser) {
@@ -442,7 +452,7 @@ export function openReviewConsole(getBrowser) {
     state.root = root;
     window.addEventListener('anomalous-language-change', onLanguage);
     window.addEventListener('resize', onResize);
-    window.addEventListener('pagehide', resetAll); // a reload with a switched theme or language keeps neither
+    window.addEventListener('pagehide', onPageHide); // a reload with a switched theme or language keeps neither
     render();
 }
 
@@ -455,7 +465,7 @@ export function closeReviewConsole() {
     Object.assign(state, { root: null, status: null, said: null, collapsed: false });
     window.removeEventListener('anomalous-language-change', onLanguage);
     window.removeEventListener('resize', onResize);
-    window.removeEventListener('pagehide', resetAll);
+    window.removeEventListener('pagehide', onPageHide);
 }
 
 export function toggleReviewConsole(getBrowser) {

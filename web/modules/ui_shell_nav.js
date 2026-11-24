@@ -17,6 +17,7 @@ import { renderActivityPage } from './ui_activity.js';
 import { renderAiWorkbench, watchAiTasks } from './ui_ai_workbench.js';
 import { watchForUser } from './ui_ai_notify.js';
 import { showPromptPage } from './ui_prompt_composer.js';
+import { dismissFirstRunDialog } from './ui_first_run.js';
 import { railPageForKey } from './shell_open_rules.js';
 
 const LAST_PAGE_KEY = 'anomalous_last_page';
@@ -204,6 +205,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             return;
         }
         if (fromRail && page === 'voices') page = lastVoiceView;
+        if (page !== 'home') dismissFirstRunDialog();
         if (page === 'recipes' || page === 'combos' || page === 'saves') {
             // Workspaces belong to the image side: from an audio page they open over the models.
             if (AUDIO_PAGES.has(current)) owner.goTo('models');
@@ -244,6 +246,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
 
     /** Scan, doctor and assistant: image-side pages without a rail entry, opened from the tools. */
     owner.enterToolPage = (page) => {
+        dismissFirstRunDialog();
         if (owner.nbPanel?.style.display === 'flex') owner.closeWorkspace();
         useDomain('visual');
         current = page;

@@ -52,7 +52,14 @@ export function createGallerySearchBar(owner) {
 
     owner.galleryMediaSwitch = createGalleryMediaSwitch(() => owner.loadGalleryImages(1, true, { refresh: false }));
     const keptSwitch = createGalleryKeptSwitch(() => owner.loadGalleryImages(1, true, { refresh: false }));
-    header.append(search.element, owner.galleryMediaSwitch, keptSwitch, newestCompareButton('anomalous-gallery-newest'));
+    const newestBtn = newestCompareButton('anomalous-gallery-newest');
+    owner.refreshGalleryBarLanguage = () => {
+        search.refresh({ placeholder: t('gallerySearchPlaceholder'), help: t('gallerySearchHelp') });
+        owner.galleryMediaSwitch.refreshLanguage();
+        keptSwitch.refreshLanguage();
+        newestBtn.refreshLanguage();
+    };
+    header.append(search.element, owner.galleryMediaSwitch, keptSwitch, newestBtn);
     return header;
 }
 

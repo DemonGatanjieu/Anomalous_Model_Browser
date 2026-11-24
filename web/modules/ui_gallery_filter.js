@@ -29,8 +29,8 @@ export function createGalleryMediaSwitch(onChange) {
     const box = el('div', 'anomalous-gallery-media');
     box.setAttribute('role', 'radiogroup');
     box.hidden = galleryMedia() === 'all';
-    const choices = [['all', 'galleryFilterAll'], ['image', 'galleryFilterImages'], ['video', 'galleryFilterVideos']]
-        .map(([media, labelKey]) => {
+    const entries = [['all', 'galleryFilterAll'], ['image', 'galleryFilterImages'], ['video', 'galleryFilterVideos']];
+    const choices = entries.map(([media, labelKey]) => {
             const choice = el('button', 'anomalous-gallery-media-btn', t(labelKey));
             choice.type = 'button';
             choice.setAttribute('role', 'radio');
@@ -53,6 +53,9 @@ export function createGalleryMediaSwitch(onChange) {
         box.hidden = !hasVideos && galleryMedia() === 'all';
         mark();
     };
+    box.refreshLanguage = () => {
+        choices.forEach((choice, index) => { choice.textContent = t(entries[index][1]); });
+    };
     return box;
 }
 
@@ -66,6 +69,10 @@ export function createGalleryKeptSwitch(onChange) {
         setGalleryKeptOnly(!galleryKeptOnly());
         mark();
         onChange();
+    };
+    toggle.refreshLanguage = () => {
+        toggle.textContent = t('galleryKeptOnly');
+        toggle.title = t('galleryKeptOnlyHint');
     };
     mark();
     return toggle;

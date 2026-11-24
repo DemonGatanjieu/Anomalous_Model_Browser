@@ -248,7 +248,7 @@
     overflow-wrap: anywhere;
 }
 
-@media (max-width: 560px) {
+@container (max-width: 560px) {
     .anomalous-material-parameter-row { grid-template-columns: 1fr; }
 }
 

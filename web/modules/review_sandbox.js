@@ -17,7 +17,8 @@
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
 import {
-    answerRequest, createSandbox, downloadsRunning, resetProgress, sandboxModelValues, scanRunning, setLibrary, setNetwork, shareDemoWorkflow,
+    answerRequest, createSandbox, downloadsRunning, isWorkflowStorageKey, resetProgress, sandboxModelValues, scanRunning, setLibrary, setNetwork,
+    shareDemoWorkflow,
 } from './review_sandbox_data.js';
 import { SHARED_COVER, demoWorkflow } from './review_sandbox_workflow.js';
 import { modelBoxes } from './model_check.js';
@@ -48,7 +49,8 @@ const live = {
     getBrowser: () => null,
     onChange: null,
     real: null,          // what the sandbox stood in for: { fetch, storage, open, send, refresh, load }
-    overlay: new Map(),  // AMB's storage keys as the sandbox has them (null: not there)
+    overlay: new Map(),  // localStorage keys kept in memory (AMB keys + ComfyUI workflow tabs/drafts)
+    sessionOverlay: new Map(), // sessionStorage keys for ComfyUI's per-tab workflow pointers
     uploads: new WeakSet(),
     tab: null,           // { path, back, snapshot (one-tab ComfyUI), shared }
     opening: false,
@@ -67,22 +69,34 @@ const changed = () => live.onChange?.();
 
 const sandboxKey = key => typeof key === 'string' && key.startsWith('anomalous_') && !KEEP_REAL.has(key);
 
+function storageOverlay(storage, key) {
+    if (storage === window.localStorage) {
+        if (live.sandbox && sandboxKey(key)) return { map: live.overlay, fresh: true };
+        if (isWorkflowStorageKey(key)) return { map: live.overlay, fresh: false };
+    } else if (storage === window.sessionStorage && isWorkflowStorageKey(key)) {
+        return { map: live.sessionOverlay, fresh: false };
+    }
+    return null;
+}
+
 function holdStorage(real) {
     const proto = Storage.prototype;
     Object.assign(real, { getItem: proto.getItem, setItem: proto.setItem, removeItem: proto.removeItem });
-    const ours = storage => storage === window.localStorage;
     proto.getItem = function (key) {
-        if (!ours(this) || !sandboxKey(key)) return real.getItem.call(this, key);
-        if (live.overlay.has(key)) return live.overlay.get(key);
-        return FRESH.some(prefix => key.startsWith(prefix)) ? null : real.getItem.call(this, key);
+        const target = storageOverlay(this, key);
+        if (!target) return real.getItem.call(this, key);
+        if (target.map.has(key)) return target.map.get(key);
+        return target.fresh && FRESH.some(prefix => key.startsWith(prefix)) ? null : real.getItem.call(this, key);
     };
     proto.setItem = function (key, value) {
-        if (!ours(this) || !sandboxKey(key)) return real.setItem.call(this, key, value);
-        live.overlay.set(key, String(value));
+        const target = storageOverlay(this, key);
+        if (!target) return real.setItem.call(this, key, value);
+        target.map.set(key, String(value));
     };
     proto.removeItem = function (key) {
-        if (!ours(this) || !sandboxKey(key)) return real.removeItem.call(this, key);
-        live.overlay.set(key, null);
+        const target = storageOverlay(this, key);
+        if (!target) return real.removeItem.call(this, key);
+        target.map.set(key, null);
     };
 }
 
@@ -180,15 +194,21 @@ function holdCanvas(real) {
     };
 }
 
-function release() {
+function releaseRuntime() {
     const real = live.real;
     if (!real) return;
     window.fetch = real.fetch;
-    Object.assign(Storage.prototype, { getItem: real.getItem, setItem: real.setItem, removeItem: real.removeItem });
     Object.assign(XMLHttpRequest.prototype, { open: real.open, send: real.send });
     Object.assign(app, { refreshComboInNodes: real.refresh, loadGraphData: real.load });
+}
+
+function releaseStorage() {
+    const real = live.real;
+    if (!real) return;
+    Object.assign(Storage.prototype, { getItem: real.getItem, setItem: real.setItem, removeItem: real.removeItem });
     live.real = null;
     live.overlay.clear();
+    live.sessionOverlay.clear();
 }
 
 // ---------------------------------------------------------------- the sandbox's canvas tab
@@ -332,10 +352,14 @@ export async function exitSandbox() {
     for (let waited = 0; waited < SETTLE_MS && (isScanRunning() || scanRunning(live.sandbox, Date.now())); waited += 200) await wait(200);
     resetDownloadMemory();
     clearDoctorBanner(live.tab?.path || '');
-    release();
+    releaseRuntime();
     live.sandbox = null;
     try {
-        await closeTab();
+        try {
+            await closeTab();
+        } finally {
+            releaseStorage();
+        }
         await app.refreshComboInNodes?.();
         await window.anomalous_reload_hashes?.();
     } catch (error) {

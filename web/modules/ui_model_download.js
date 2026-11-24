@@ -190,8 +190,9 @@ export function openDownloadDialog(owner, items, settings) {
     });
 }
 
-/** What a row shows for its model's download: progress, a failure, or nothing yet. */
-export function jobView(owner, job, retry) {
+/** What a row shows for its model's download: progress, a failure, or nothing yet. A failure's words go
+ * to `says` when given (Model Check's line under the row's reason), the buttons stay in the box. */
+export function jobView(owner, job, retry, says = null) {
     const box = el('span', 'anomalous-download-status');
     if (ACTIVE.includes(job.state)) {
         const percent = job.total ? Math.floor((job.received / job.total) * 100) : 0;
@@ -203,9 +204,9 @@ export function jobView(owner, job, retry) {
         box.append(el('span', 'anomalous-download-text', text), bar,
             button('anomalous-scan-row-btn', t('dialogCancel'), () => cancelDownload(job.id)));
     } else if (job.state === 'failed') {
-        box.append(el('span', 'anomalous-download-text is-bad', errorText(job.error)));
+        (says || box).append(el('span', 'anomalous-download-text is-bad', errorText(job.error)));
         if (job.host === 'huggingface.co' && ['network', 'unknown'].includes(job.error)) {
-            box.append(el('span', 'anomalous-download-text', t('downloadTryMirror')));
+            (says || box).append(el('span', 'anomalous-download-text', t('downloadTryMirror')));
         }
         if (job.error === 'needs_key') {
             box.append(button('anomalous-scan-row-btn is-main', t('downloadSetKey'), async () => {
@@ -219,24 +220,24 @@ export function jobView(owner, job, retry) {
 }
 
 /**
- * Fills the download parts of a rendered Model Check page: `slots` (Map entry -> the span in
- * its row) and `pageActions` (the page's buttons) for "Download all". `rerender` redraws the
- * page (after a download ends, the model is there).
+ * Fills the download parts of a rendered Model Check page: `slots` (Map entry -> { slot, note }:
+ * the span among its row's buttons and the line under its reason) and `pageActions` (the page's
+ * buttons) for "Download all". `rerender` redraws the page (after a download ends, the model is there).
  */
 export async function fillDownloads(owner, panel, slots, pageActions, rerender) {
     panel._downloadUnwatch?.();
     if (!slots.size) return;
-    for (const slot of slots.values()) slot.replaceChildren(el('span', 'anomalous-download-text', t('downloadLooking')));
+    for (const { slot } of slots.values()) slot.replaceChildren(el('span', 'anomalous-download-text', t('downloadLooking')));
     let looked;
     try {
         await syncDownloads(owner);
         looked = await lookupDownloads([...slots.keys()]);
     } catch (error) {
         console.warn('[AMB] Download: looking for sources failed.', error);
-        for (const slot of slots.values()) slot.replaceChildren();
+        for (const { slot } of slots.values()) slot.replaceChildren();
         return;
     }
-    if (!panel.isConnected || [...slots.values()].some(slot => !slot.isConnected)) return; // redrawn meanwhile
+    if (!panel.isConnected || [...slots.values()].some(({ slot }) => !slot.isConnected)) return; // redrawn meanwhile
     const { found, settings, managerList } = looked;
     const ready = [];
     // Without ComfyUI-Manager its model list is one source less: say so where something was not found.
@@ -244,12 +245,13 @@ export async function fillDownloads(owner, panel, slots, pageActions, rerender) 
         pageActions.append(el('span', 'anomalous-download-text', t('downloadNoManager')));
     }
     const draw = () => {
-        for (const [entry, slot] of slots) {
+        for (const [entry, { slot, note }] of slots) {
             const info = found.get(entry);
             const job = downloadFor(entry.value);
             const start = () => openDownloadDialog(owner, [{ entry, info }], settings);
+            note.replaceChildren();
             if (job && job.state !== 'cancelled' && job.state !== 'done') {
-                slot.replaceChildren(jobView(owner, job, start));
+                slot.replaceChildren(jobView(owner, job, start, note));
             } else if (info?.found && info.by_name) {
                 // Only a file of the same name: its own wording, never the main button.
                 slot.replaceChildren(button('anomalous-scan-row-btn', info.size
@@ -258,7 +260,8 @@ export async function fillDownloads(owner, panel, slots, pageActions, rerender) 
                 slot.replaceChildren(button('anomalous-scan-row-btn is-main', info.size
                     ? t('downloadOne', { size: formatSize(info.size) }) : t('downloadOneNoSize'), start));
             } else if (info && NOT_FOUND[info.reason]) {
-                slot.replaceChildren(el('span', 'anomalous-download-text', t(NOT_FOUND[info.reason])));
+                note.append(el('span', 'anomalous-download-text', t(NOT_FOUND[info.reason])));
+                slot.replaceChildren();
                 if (info.reason === 'gated' && /^https:\/\//.test(info.page || '')) {
                     slot.append(button('anomalous-scan-row-btn', t('downloadOpenPage'), () => window.open(info.page, '_blank', 'noopener')));
                 }
