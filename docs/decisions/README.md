@@ -348,3 +348,16 @@ scan CTA for inline paste-and-save, and the finished dock shows a subtle "Add ke
 an online scan without a key actually missed covers or left models unmatched. Below Home's main cards and
 "Let the AI do it", the five secondary tools fold into a persistent "More tools" bar and onboarding/feedback
 links share one quiet footer line.
+
+## AD-034 — First-visit guidance lives inside Models and Gallery, not Home click popups
+
+New users clicking Home's four main cards still need to discover non-obvious interactions once inside
+(dragging model cards onto the canvas/nodes; dragging output pictures back to restore workflows or
+searching by prompt/model). Blocking every card click with an intermediate explanation dialog stacks too
+many modal interruptions on top of the welcome overlay and frustrates exploration. Instead, first-visit
+guidance sits as a single dismissible inline tip strip (`ui_page_tip.js`, `page_tips_state.js`) at the top
+of **Models** and **Gallery** — while **Model Check** and **Workflows** stay untouched since both pages
+already carry inline explanations and empty-state walkthroughs. Upgraded browsers are left undisturbed
+based on existing rail/legacy storage, dismissals persist per page in `localStorage`, Gallery's empty
+state softens from a cold "Gallery is empty" notice into a clear next-step hint, and the hidden review
+console previews both page tips in memory without touching storage.

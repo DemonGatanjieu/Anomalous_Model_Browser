@@ -1393,3 +1393,75 @@ html.amb-theme-light .anomalous-first-run-overlay {
     border-color: color-mix(in srgb, var(--amb-warn-text) 45%, transparent);
     color: var(--amb-warn-text);
 }
+
+/* First-visit page tips (ui_page_tip.js): a light strip at the top of Models and Gallery, hidden once seen or on upgrades. */
+.anomalous-page-tip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 9px 12px 9px 14px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 24%, var(--amb-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--amb-link) 7%, var(--amb-bg-card));
+    color: var(--amb-text-soft);
+    font-size: 12.5px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
+.anomalous-page-tip[hidden] {
+    display: none;
+}
+
+.anomalous-page-tip.is-grid {
+    grid-column: 1 / -1;
+}
+
+.anomalous-page-tip.is-gallery {
+    margin: 10px 20px 0;
+    flex-shrink: 0;
+}
+
+#anomalous-gallery-panel.is-cover-selecting .anomalous-page-tip {
+    display: none;
+}
+
+.anomalous-page-tip-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--amb-link);
+    opacity: 0.9;
+}
+
+.anomalous-page-tip-text {
+    flex: 1 1 220px;
+    margin: 0;
+    color: var(--amb-text-soft);
+}
+
+.anomalous-page-tip-dismiss {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 4px 11px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.anomalous-page-tip-dismiss:hover {
+    background: rgba(var(--amb-ink-rgb), 0.1);
+    border-color: color-mix(in srgb, var(--amb-link) 45%, var(--amb-border-strong));
+}
+
+.anomalous-page-tip-dismiss:focus-visible {
+    outline: 2px solid var(--amb-link);
+    outline-offset: 2px;
+}

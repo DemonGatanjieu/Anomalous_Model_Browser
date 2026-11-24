@@ -22,6 +22,7 @@ import { openShareDialog } from './ui_share.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { openVersionPanel } from './ui_version_manager.js';
 import { clearFirstRunPreview, firstRunPreviewMode, previewFirstRun } from './ui_first_run.js';
+import { clearPageTipPreview, pageTipPreviewMode, previewPageTip } from './ui_page_tip.js';
 
 const THEMES = ['auto', 'dark', 'light', 'abyssal'];
 const LANGUAGES = [['zh', 'mainLanguageChinese'], ['en', 'mainLanguageEnglish']];
@@ -39,6 +40,15 @@ const FIRST_RUN_NOTES = {
     offline_choice: 'reviewFirstRunOffline',
     running: 'reviewFirstRunRunning',
     done_missing_covers: 'reviewFirstRunDoneMissing',
+};
+// Page first-visit tips preview: cycles Models -> Gallery -> off in memory only.
+const PAGE_TIP_NEXT = {
+    models: 'gallery',
+    gallery: null,
+};
+const PAGE_TIP_NOTES = {
+    models: 'reviewPageTipModels',
+    gallery: 'reviewPageTipGallery',
 };
 const MARGIN = 8;
 
@@ -227,6 +237,16 @@ function cycleFirstRun() {
     render();
 }
 
+/** First-visit page tips on Models and Gallery: cycles Models -> Gallery -> off; nothing kept. */
+function cyclePageTips() {
+    const mode = pageTipPreviewMode();
+    const next = mode ? PAGE_TIP_NEXT[mode] : 'models';
+    const browser = state.getBrowser();
+    if (next && browser) previewPageTip(browser, next, render);
+    else clearPageTipPreview();
+    render();
+}
+
 function lookSection() {
     const box = el('section', 'anomalous-review-section');
     box.append(el('div', 'anomalous-review-heading', t('reviewLookTitle')),
@@ -247,6 +267,7 @@ function shortcutSection() {
         workflows: () => owner()?.show({ page: 'recipes' }),
         drop: () => void toggleDrop(),
         firstRun: cycleFirstRun,
+        pageTips: cyclePageTips,
         share: () => openShareDialog(owner()),
         tour: () => {
             const browser = owner();
@@ -256,12 +277,14 @@ function shortcutSection() {
         version: () => openVersionPanel(owner()),
     };
     const firstRun = firstRunPreviewMode();
-    const on = { drop: state.dropping, firstRun: Boolean(firstRun) };
+    const pageTips = pageTipPreviewMode();
+    const on = { drop: state.dropping, firstRun: Boolean(firstRun), pageTips: Boolean(pageTips) };
     const line = el('div', 'anomalous-review-row');
     line.append(...Object.entries(go).map(([id, run]) => pill(t(`reviewGo_${id}`), Boolean(on[id]), run)));
     const box = el('section', 'anomalous-review-section');
     box.append(el('div', 'anomalous-review-heading', t('reviewGoTitle')), line);
     if (firstRun) box.append(el('div', 'anomalous-review-note', t(FIRST_RUN_NOTES[firstRun])));
+    if (pageTips) box.append(el('div', 'anomalous-review-note', t(PAGE_TIP_NOTES[pageTips])));
     return box;
 }
 
@@ -272,6 +295,7 @@ function shortcutSection() {
 function resetAll() {
     endRehearsal();
     clearFirstRunPreview();
+    clearPageTipPreview();
     if (state.persona !== 'real') state.getBrowser()?.rail?.previewPins(null);
     state.persona = 'real';
     if (state.dropping) setDrop(false);

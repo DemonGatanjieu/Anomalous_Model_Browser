@@ -609,7 +609,8 @@ covered by the `styles.css` manifest.
   console, nothing to the server, nothing kept in the browser), shows the rail of another kind of user
   (`previewPins`, never kept), opens Home's first-run welcome dialog / scan dock in memory (`previewFirstRun`
   cycles `idle`, `offline_choice`, `running`, `done_missing_covers`: its buttons scan nothing, Key save stays
-  in memory, and nothing is written to disk or hides the real card), switches theme and language (put back
+  in memory, and nothing is written to disk or hides the real card), cycles first-visit page tips on Models and
+  Gallery in memory (`previewPageTip`), switches theme and language (put back
   on Reset and on close) and opens a few windows. `review_scenarios.js` is, without DOM, those tasks (shaped as `api/ai_tasks.py` keeps them), what a press
   does to them and the users' rail pins (`tests/review_scenarios.mjs`). The task head's "float over canvas" puts a task on it, `browser.js` tells it when
   the window opens and closes, and it opens the workbench through `owner.openAiTask` (set by `watchAiTasks`), so it never
@@ -1483,6 +1484,10 @@ covered by the `styles.css` manifest.
   (`ui_browser_navigation.js` leaves closing it cleanly), hidden per browser; the review console previews all
   four states in memory only. `first_run_state.js` is, without DOM, what the dialog and dock show in each phase
   (`describeFirstRun`; `tests/first_run_state.mjs`).
+- `ui_page_tip.js` renders the dismissible first-visit tip strips on Models (`ui_grid.js`) and Gallery
+  (`ui_sidebar.js`) and exposes `previewPageTip` / `clearPageTipPreview` for the review console;
+  `page_tips_state.js` holds the DOM-free visibility and per-browser persistence rules (suppressed on
+  upgraded browsers and after dismissal, bypassed by memory-only preview; `tests/page_tips_state.mjs`).
 - `model_check.js` checks the open workflow's models (drop-downs naming model files, and
   switched-on Power Lora Loader rows through `lora_nodes.js`) against this computer (Model
   Check's verdicts, no DOM; the feature was called Model Doctor, and code and CSS still

@@ -29,6 +29,9 @@
 - 主页精简成清晰的三层：最上面四张大卡和左边核心图标栏一一对上（找模型、修复缺失的模型、翻看生成的图、保存和拖入工作流，其中工作流大卡补画了同画风 200 像素正方形插图），下面紧跟着「让 AI 帮你做」折叠条，五个次要小卡（画布存档排第一、搭配、提示词、跑预设、扩展配音）收进「更多工具」折叠条（记住展开/收起状态），底部的按钮和反馈框收敛为最底下一行安静的页脚小字。工作流、画布存档、搭配各用半句话说清边界。
 - Home converges into three calm tiers: four large cards matching the rail's core pages (with a matching square workflow illustration) on top, followed by "Let the AI do it", a collapsible "More tools" row holding the five secondary tools (canvas saves first, combos, prompts, presets, voices; open state remembered), and a single quiet footer line at the bottom. Workflows, canvas saves and combos each clarify in half a sentence what they are and are not.
 
+- 新装用户首次进入「模型」或「图库」页时，顶部各多一条不挡路的轻提示（点「知道了」永久收起）：模型页提示可以直接把卡片拖到画布/节点上或点开看触发词和作者推荐参数，图库页提示把图拖回画布能还原工作流、搜索支持提示词或模型名、点 ☆ 收藏；刚装好还没出图时，空图库说明也改得更清楚；从旧版本升级的老用户默认不打扰，审查修改器新增「页面初次提示」可随时预览效果。
+- Fresh installs get a dismissible top tip strip on first visit to Models (drag cards onto the canvas or a node, or click for trigger words and author settings) and Gallery (drag outputs back to restore workflows, search prompts/models, press ☆ to keep), plus a warmer empty-gallery hint; existing upgraded users stay undisturbed, and the hidden review console adds an in-memory "Page tips" preview cycle.
+
 - 设置从八个标签并成四个：「外观与交互」「模型与网络」「工作流与工具」「备份与帮助」，一项设置都没少。别处“去设置里改”的按钮会打开对应的标签，并滚到那一块。
 - Settings has four tabs instead of eight, "Look & Interaction", "Models & Network", "Workflows & Tools" and "Backup & Help", with every setting kept. Buttons elsewhere that lead to a setting open its tab scrolled to its card.
 

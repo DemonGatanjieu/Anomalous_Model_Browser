@@ -15,6 +15,7 @@ import { recordCanvasStep } from './canvas_history.js';
 import { MODEL_LOADERS } from './quick_search_data.js';
 import { groupByPage, pageId } from './model_versions.js';
 import { chosenVersion, isOpen, moveCards, openAllSwitch, setOpen, versionLabel, versionPin, versionsTab } from './ui_model_versions.js';
+import { createPageTip } from './ui_page_tip.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -300,6 +301,7 @@ export async function loadModels() {
                 this.grid.appendChild(bases);
                 data.models = data.models.filter(model => inFamily(model, this.modelBase));
             }
+            this.grid.appendChild(createPageTip('models', 'grid'));
             if (!data.models || data.models.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'anomalous-grid-empty';

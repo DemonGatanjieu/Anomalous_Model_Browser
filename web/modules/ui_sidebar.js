@@ -25,6 +25,7 @@ import { settleModelScope } from './ui_model_types.js';
 import { renderFolderColumn } from './ui_folder_list.js';
 import { createModelSearch } from './ui_model_search.js';
 import { attachModelDrop } from './ui_model_import.js';
+import { createPageTip } from './ui_page_tip.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -204,7 +205,7 @@ export function createDOM() {
 
         this.galleryGrid = document.createElement('div');
         this.galleryGrid.className = 'anomalous-gallery-grid';
-        this.galleryPanel.append(createGallerySearchBar(this), this.galleryGrid);
+        this.galleryPanel.append(createGallerySearchBar(this), createPageTip('gallery', 'gallery'), this.galleryGrid);
         this.gallerySentinel = document.createElement('div');
         this.gallerySentinel.className = 'anomalous-gallery-sentinel';
         this.galleryGrid.appendChild(this.gallerySentinel);
