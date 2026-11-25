@@ -8,7 +8,7 @@
 import { translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
 import { icon } from './ui_ai_icons.js';
-import { anomalousAlert } from './ui_dialog.js';
+import { anomalousAlert, trackRehearsalDialog } from './ui_dialog.js';
 import { taskTitle } from './ai_task_title.js';
 
 const PICKS = 12;
@@ -47,10 +47,12 @@ export function pickTaskLink(place, task, tasks, changed) {
     const later = new Set((task.links?.next || []).map(item => item.id));
     const choices = tasks.filter(item => item.id !== task.id && !later.has(item.id)).slice(0, PICKS);
     const close = () => {
+        untrack();
         menu.remove();
         document.removeEventListener('pointerdown', outside, true);
         document.removeEventListener('keydown', escape);
     };
+    const untrack = trackRehearsalDialog(close);
     const outside = (event) => { if (!menu.contains(event.target)) close(); };
     const escape = (event) => { if (event.key === 'Escape') setTimeout(close); }; // after the browser's Esc saw the mark
     for (const item of choices) {
@@ -70,7 +72,7 @@ export function pickTaskLink(place, task, tasks, changed) {
     const { width, height } = menu.getBoundingClientRect();
     menu.style.left = `${Math.min(Math.max(8, place.right - width), window.innerWidth - width - 8)}px`;
     menu.style.top = `${place.bottom + 4 + height > window.innerHeight - 8 ? Math.max(8, place.top - height - 4) : place.bottom + 4}px`;
-    setTimeout(() => document.addEventListener('pointerdown', outside, true));
+    setTimeout(() => { if (menu.isConnected) document.addEventListener('pointerdown', outside, true); });
     document.addEventListener('keydown', escape);
 }
 

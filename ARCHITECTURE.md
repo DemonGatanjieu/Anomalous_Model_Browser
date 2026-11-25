@@ -603,6 +603,8 @@ covered by the `styles.css` manifest.
   follows, and that a `chat_only` task gets it only for a gate (`tests/ai_float_state.mjs`). `ui_ai_float_pip.js` moves
   the card into a desktop window on top of every app (Chrome / Edge's Document Picture-in-Picture, with AMB's stylesheet
   and the theme's classes) and back to the canvas when it closes; a browser without it shows no button for it.
+  Workbench rehearsal can float a preview task explicitly. The float restores the previous card and discards
+  preview task references and drafts when the rehearsal ends.
   `ui_review_console.js` is the author's hidden review console (Ctrl+Shift+Alt+G, five quick clicks on the version
   number, or `#amb-review` / `?amb_review=1`; loaded only then, styles `styles/64-review-console.css`): it rehearses
   the card on made-up tasks through the card's own drawing (`setAiFloatPreview`: a press on the card goes to the
@@ -610,8 +612,17 @@ covered by the `styles.css` manifest.
   (`previewPins`, never kept), opens Home's first-run welcome dialog / scan dock in memory (`previewFirstRun`
   cycles `idle`, `offline_choice`, `running`, `done_missing_covers`: its buttons scan nothing, Key save stays
   in memory, and nothing is written to disk or hides the real card), cycles first-visit page tips on Models and
-  Gallery in memory (`previewPageTip`), switches theme and language (put back
-  on Reset and on close) and opens a few windows. Its blank sandbox, `review_sandbox.js`, is AMB as a new user meets
+  Gallery in memory (`previewPageTip`), previews theme and language in `interface_settings.js`, and opens a few
+  windows. `review_workbench.js` runs the six AI workbench scenes through
+  the normal task, timeline, composer and Stage views. It owns scene selection, live progress, locale refresh and
+  teardown. The preset's view scope closes its pending AI windows, menus and confirmations through
+  `ui_dialog.js`, `ui_ai_connect.js`, `ui_popup_menu.js` and `ui_ai_task_links.js`. Task handoff
+  (`ui_ai_handoff.js`) checks the scope between requests, and `ui_ai_notify.js` keeps the preview
+  notification switch in memory. `review_workbench_data.js` owns the DOM-free fixtures and in-memory AI API. Preview writes update
+  that store, and results carry inline SVG `preview_url`s for the rail, timeline, lightbox and Results view.
+  `review_fetch.js` keeps a single wrapper for both rehearsals. Workbench task routes take priority over empty
+  sandbox answers, and the last departing rehearsal restores the original fetch (`tests/review_workbench.mjs`,
+  AD-036). The blank sandbox, `review_sandbox.js`, is AMB as a new user meets
   it, kept in memory: while it is on, every `/anomalous/` request goes to the pretend server of
   `review_sandbox_data.js` (a read it has no stand-in for is answered empty; a change it does not stand in for is
   refused with a toast and never sent, uploads by XHR too; Civitai's API is not asked about its fingerprints), AMB's
@@ -620,7 +631,9 @@ covered by the `styles.css` manifest.
   canvas in front is a temporary tab of the sandbox's whose model boxes list its files (`app.refreshComboInNodes` and
   `app.loadGraphData` stand in while it is on), and the pages forget what they kept (`resetDownloadMemory`,
   `resetFirstRun`, `setPageTipSandbox`, `clearDoctorBanner`, `forgetCivitaiAnswer`, `forgetTidyCount`, `forgetSources`);
-  leaving waits for a scan it started, closes its tab and puts each back. `review_sandbox_data.js` is, without DOM,
+  leaving waits for a scan it started, closes its tab and puts each back. Its storage hooks also support a
+  separate workbench overlay for AI preferences and rehearsal navigation. Either overlay can exit first.
+  `review_sandbox_data.js` is, without DOM,
   that server: an empty or one-model library, Civitai answering or not, a scan and a download moved on by the clock,
   the routes it answers, `isWorkflowStorageKey`, and the reads it lets through (`tests/review_sandbox.mjs`); `review_sandbox_workflow.js` its
   made-up files: the library's model, the workflow someone shared (four models, with the fingerprints and links a
@@ -708,9 +721,9 @@ covered by the `styles.css` manifest.
   `ui_ai_task_list.js` draws it (New task, Connect an AI
   and the gates, which AI came last, quick filters by state, the tasks by day with a state
   icon each, those going on from a task under it by `ai_task_view.taskFamilies`), making anew only the rows that changed, all of them after a switch of language (`web/modules/sync_rows.js` `syncRows` + `watchScrollIdle`, the timeline's
-  way too). `web/modules/ai_task_cache.js` fetches/posts tasks (`fetchTasks`, `postTask`, `readTask`) and caches/fetches activity entries (`keptEntries`, `missingEntries`): a task picked shows at
+  way too). The list restores its filter and wide folding after workbench rehearsal. `web/modules/ai_task_cache.js` fetches/posts tasks (`fetchTasks`, `postTask`, `readTask`) and caches/fetches activity entries (`keptEntries`, `missingEntries`): a task picked shows at
   once from there (read ahead while the pointer rests on its row) and again, what changed, when the
-  server answers. The stage's pictures, like the
+  server answers. Rehearsal boundaries clear this cache, and a late read cannot refill it. The stage's pictures, like the
   timeline's, load the 512 px thumbnail first and the file itself only when shown larger. `ui_ai_icons.js` is the AI pages' one set of line icons (including the shared animated `thinking` halo-star used across the AI workbench and canvas card) and the icon button, while `ui_ai_now.js` also shows a between-steps thinking bar while the AI was active within `ACTIVE_SECONDS`.
   `ai_text_format.js` lays out what the AI writes (its notes and replies: headings, lists, bold,
   code) with textContent only. A note may answer the user's message or marks (`report`'s
@@ -751,11 +764,14 @@ covered by the `styles.css` manifest.
   spotlight tour (new task, connecting, gates, the list, a task's ⋯, the timeline, the message box), by itself the
   first time a task shows and from the home section's "How it works", and `firstHint`, one line with Got it under a
   control that only shows up later (a run's verdict, the undo of the AI's canvas changes, a private task's Hide).
+  The workbench rehearsal suppresses automatic tours and their saved receipts. `ui_ai_panel.js` clears
+  rehearsal-only answer drafts on reset and exit.
   `ui_ai_ready.js` is that
   waiting task's one page (exported `aboutStrip` keeps handed items visible in the timeline afterwards too): the sentence to copy (full first-time `sentenceForAi` when unconnected, visible directly in the conversation area instead of folded away), `task.about`, and what the user sent so far; what to say
   first and pictures go in the message box. The pictures (`web/assets/ai_*.webp`)
   were made with ChatGPT. `ai_task_view.js` holds
-  its rules without DOM (folding reads and chains of the AI's work, tool words, counts, result addresses);
+  its rules without DOM (folding reads and chains of the AI's work, tool words, counts, result addresses,
+  including inline preview URLs for results outside the output folder);
   `ai_task_title.js` names a task on every page: its given title, else the one Anomalous took from the AI's
   first step that did something (`title_from` "auto") in the page's tool words, else Untitled;
   `ui_ai_chain.js` draws the folded rows: reads in a row, and a chain of reads, canvas changes and

@@ -377,3 +377,15 @@ that tab's model boxes, and closes it on leaving. A few modules gained a small "
 (`resetDownloadMemory`, `resetFirstRun`, `setPageTipSandbox`, `clearDoctorBanner`, `forgetCivitaiAnswer`,
 `forgetSources`) because they keep what they read for the page's life; that is cheaper and safer than teaching each
 page about a sandbox. None of it loads unless the console opens.
+
+## AD-036 — The workbench rehearsal shares the review fetch registry
+
+The AI workbench rehearsal exercises the normal timeline, task list and Stage interactions through the same
+request shapes as real tasks. Mocking those components at the DOM boundary would bypass their data-driven state
+changes, and independent fetch wrappers would break when the blank sandbox and workbench are switched off out of
+order. The shared registry gives task rehearsal requests precedence, lets the sandbox answer its own requests
+and restores the original fetch when the last rehearsal ends.
+
+Fixture results carry self-contained SVG `preview_url`s. The rail, timeline, lightbox and Results can use the
+same image without recreating ComfyUI's `/view` route or attaching actions that need real output files. The demo
+store, AI preference overlay and preview drafts are discarded when rehearsal ends.

@@ -57,13 +57,16 @@ const state = {
     real: null,        // what the rehearsal set aside, put back when it ends
 };
 let card = null;
+let beforeWorkbenchFloat = null;
+const previewId = id => String(id || '').startsWith('preview_');
+const previewTask = task => Boolean(task?._preview || previewId(task?.id));
 
 function stored(key) {
     try { return localStorage.getItem(key); } catch { return null; }
 }
 
 function store(key, value) {
-    if (state.preview) return; // a rehearsal keeps nothing
+    if (state.preview || previewTask(state.task)) return; // a rehearsal keeps nothing
     try {
         if (value === null) localStorage.removeItem(key);
         else localStorage.setItem(key, value);
@@ -298,7 +301,7 @@ function draw() {
 
 function readAgain(id) {
     readTask(id).then((task) => {
-        if (!task) return;
+        if (!task || (previewTask(task) && state.pinned !== id)) return;
         state.task = pickTracked(state.task, task, { pinnedTaskId: state.pinned });
         draw();
     }).catch(() => { /* the next event reads it again */ });
@@ -376,11 +379,11 @@ function heard(event) {
 async function lookAgain() {
     if (state.preview) return;
     const [newest] = await fetchTasks(1).catch(() => []);
-    const ids = new Set([state.pinned, state.task?.id, shouldAutoShowOnBoot(newest) ? newest.id : null].filter(Boolean));
+    const ids = new Set([state.pinned, state.task?.id, !previewTask(newest) && shouldAutoShowOnBoot(newest) ? newest.id : null].filter(Boolean));
     for (const id of ids) {
         const task = await readTask(id).catch(() => null);
         if (state.browserOpen || state.preview) return;
-        if (task) state.task = pickTracked(state.task, task, { pinnedTaskId: state.pinned });
+        if (task && (!previewTask(task) || state.pinned === id)) state.task = pickTracked(state.task, task, { pinnedTaskId: state.pinned });
     }
     draw();
 }
@@ -392,7 +395,7 @@ async function boot() {
     const task = await readTask(newest.id).catch(() => null);
     // ComfyUI draws its canvas's panel after the plugins start: the card waits for it (15 s at most).
     for (let tries = 0; tries < 60 && !document.querySelector('.graph-canvas-panel'); tries++) await new Promise(done => setTimeout(done, 250));
-    if (!task || state.task || state.preview || !isTaskActive(task)) return;
+    if (!task || previewTask(task) || state.task || state.preview || !isTaskActive(task)) return;
     state.task = task;
     draw();
 }
@@ -410,6 +413,10 @@ export function watchAiFloat(getBrowser) {
 /** The workbench's "float over canvas" on `task`: the card follows it, unfolded, and `closeBrowser()` gives it the canvas. */
 export function floatAiTask(task, closeBrowser) {
     if (!task) return;
+    if (previewTask(task) && !beforeWorkbenchFloat) {
+        const { task, pinned, dismissed, watching, keys, folded, pos, sayOpen } = state;
+        beforeWorkbenchFloat = { task, pinned, dismissed, watching, keys, folded, pos, sayOpen };
+    }
     state.task = task;
     state.pinned = task.id;
     state.dismissed = null;
@@ -417,6 +424,22 @@ export function floatAiTask(task, closeBrowser) {
     setFolded(false, false);
     state.drawOnClose = true;
     closeBrowser?.();
+}
+
+/** Drops a task floated during workbench rehearsal and puts the former canvas card back. */
+export function dropPreviewFloatTask() {
+    const showing = previewTask(state.task);
+    if (showing) state.task = null;
+    for (const key of ['pinned', 'watching']) if (previewId(state[key])) state[key] = null;
+    if (previewId(state.dismissed?.id)) state.dismissed = null;
+    if (previewId(state.keys.id)) state.keys = { id: null, list: [] };
+    for (const id of state.says.keys()) if (previewId(id)) state.says.delete(id);
+    if (beforeWorkbenchFloat) Object.assign(state, beforeWorkbenchFloat, { drawOnClose: false });
+    beforeWorkbenchFloat = null;
+    if (showing && !state.preview) {
+        hide();
+        if (!state.browserOpen) void lookAgain();
+    }
 }
 
 /** AMB's window opened (the card steps back) or closed (it comes back for a task at work); browser.js. */

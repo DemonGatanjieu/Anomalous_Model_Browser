@@ -10,7 +10,7 @@
  */
 
 import { translate as t } from './locales.js';
-import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
+import { anomalousAlert, anomalousConfirm, anomalousPrompt, rehearsalSurfaceScope } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { taskTitle } from './ai_task_title.js';
 
@@ -28,21 +28,26 @@ async function handToAi(owner, wish, about, leave = null) {
  * `note` as the user's first message.
  */
 export async function startTask(owner, title, about, leave = null, switches = {}, note = '', beforeNote = null) {
+    const rehearsal = rehearsalSurfaceScope()?.signal;
     let made = null;
     try {
         const response = await fetch('/anomalous/ai_tasks', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: String(title).trim(), about }),
         });
         const data = await response.json().catch(() => ({}));
+        if (rehearsal?.aborted) return;
         if (!response.ok) throw new Error(data.message || data.error || `HTTP ${response.status}`);
         made = data.task;
         for (const [key, value] of Object.entries(switches)) {
+            if (rehearsal?.aborted) return;
             const set = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(data.task.id)}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [key]: value }),
             });
             if (!set.ok) throw new Error((await set.json().catch(() => ({}))).error || `HTTP ${set.status}`);
         }
+        if (rehearsal?.aborted) return;
         if (beforeNote) await beforeNote(data.task.id);
+        if (rehearsal?.aborted) return;
         if (note) {
             const left = await fetch(`/anomalous/ai_tasks/${encodeURIComponent(data.task.id)}/message`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: note }),
@@ -50,14 +55,16 @@ export async function startTask(owner, title, about, leave = null, switches = {}
             if (!left.ok) throw new Error((await left.json().catch(() => ({}))).error || `HTTP ${left.status}`);
         }
     } catch (error) {
-        await anomalousAlert(error.message);
+        if (!rehearsal?.aborted) await anomalousAlert(error.message);
         return;
     }
+    if (rehearsal?.aborted) return;
     leave?.();
     owner?.show?.();
     if (!owner?.goTo) return;
     // The workbench is loaded on demand: importing at top level closes a cycle (tests/load_order.mjs).
     const { openAiTask } = await import('./ui_ai_workbench.js');
+    if (rehearsal?.aborted) return;
     openAiTask(owner, made.id, made.id);
     showWorkbenchToast(t('aiHandReadyGo'));
 }

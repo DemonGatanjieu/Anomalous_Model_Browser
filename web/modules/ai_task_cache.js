@@ -15,6 +15,17 @@ const kept = new Map(); // task id -> its record as last read, the latest last
 const reading = new Map(); // task id -> the read on its way
 const unknownEntries = new Set(); // activity ids the log no longer has: not asked for again
 let aheadTimer = null;
+let cacheGeneration = 0;
+
+/** Changing rehearsal contexts discards old reads, including those still on their way. */
+export function clearTaskCache() {
+    cacheGeneration++;
+    kept.clear();
+    reading.clear();
+    unknownEntries.clear();
+    clearTimeout(aheadTimer);
+    aheadTimer = null;
+}
 
 function keep(id, task) {
     kept.delete(id);
@@ -50,10 +61,10 @@ export function readTask(id) {
             return response.json();
         })
         .then((data) => {
-            keep(id, data.task || null);
+            if (reading.get(id) === read) keep(id, data.task || null);
             return data.task || null;
         })
-        .finally(() => reading.delete(id));
+        .finally(() => { if (reading.get(id) === read) reading.delete(id); });
     reading.set(id, read);
     return read;
 }
@@ -87,7 +98,9 @@ export async function missingEntries(task, knownEntries) {
     const map = keptEntries(task, knownEntries);
     const missing = activityIds(task).filter(id => !map.has(id) && !unknownEntries.has(id));
     if (!missing.length) return null;
+    const generation = cacheGeneration;
     const entries = await fetchActivity({ limit: 500 });
+    if (cacheGeneration !== generation) return null;
     for (const entry of entries) if (missing.includes(entry.id)) map.set(entry.id, entry);
     for (const id of missing) if (!map.has(id)) unknownEntries.add(id);
     return map;

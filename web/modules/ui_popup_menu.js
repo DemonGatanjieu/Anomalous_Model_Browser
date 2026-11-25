@@ -4,6 +4,8 @@
  * time; a press outside it, Esc, scrolling or a chosen row closes it.
  */
 
+import { trackRehearsalDialog } from './ui_dialog.js';
+
 let openMenu = null;
 
 function el(tag, className, text) {
@@ -74,12 +76,14 @@ export function openPopupMenu(anchor, items) {
         close();
     };
     const close = () => {
+        untrack();
         menu.remove();
         window.removeEventListener('pointerdown', onPointer, true);
         window.removeEventListener('keydown', onKey, true);
         window.removeEventListener('scroll', close, true);
         if (openMenu === close) openMenu = null;
     };
+    const untrack = trackRehearsalDialog(close);
     close.anchor = anchor;
     window.addEventListener('pointerdown', onPointer, true);
     window.addEventListener('keydown', onKey, true);

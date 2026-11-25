@@ -4,6 +4,24 @@ const t = (key, params) => translate(key, params);
 // Confirmations must remain above the image workbench (--amb-z-popup in styles/56-layers.css).
 const DIALOG_Z_INDEX = 'calc(var(--amb-z-popup) + 1)';
 
+let rehearsalDialogs = null;
+
+/** Associate transient workbench windows with the rehearsal that opened them. */
+export function holdRehearsalDialogs(scope, isWorkbenchSurface) {
+    const owner = { scope, isWorkbenchSurface };
+    rehearsalDialogs = owner;
+    scope.onDispose(() => {
+        if (rehearsalDialogs === owner) rehearsalDialogs = null;
+    });
+}
+
+export function trackRehearsalDialog(close) {
+    return rehearsalSurfaceScope()?.onDispose(close) || (() => {});
+}
+
+export function rehearsalSurfaceScope() {
+    return rehearsalDialogs?.isWorkbenchSurface() ? rehearsalDialogs.scope : null;
+}
 /** Puts `text` on the clipboard; also on a page served over plain http, where only the old way works. */
 export async function copyText(text) {
     try {
@@ -108,9 +126,11 @@ export function anomalousAlert(message, title = 'Anomalous', options = {}) {
         okBtn.style.padding = '8px 24px';
         
         const cleanup = () => {
+            untrack();
             overlay.remove();
             resolve();
         };
+        const untrack = trackRehearsalDialog(cleanup);
         
         okBtn.onclick = cleanup;
         overlay.onkeydown = (e) => {
@@ -195,9 +215,11 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         }
 
         const finish = (result) => {
+            untrack();
             overlay.remove();
             resolve(result);
         };
+        const untrack = trackRehearsalDialog(() => finish(null));
         
         cancelBtn.onclick = () => finish(null);
         noBtn?.addEventListener('click', () => finish(false));
@@ -292,9 +314,11 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous',
         okBtn.style.padding = '8px 24px';
 
         const finish = (result) => {
+            untrack();
             overlay.remove();
             resolve(result);
         };
+        const untrack = trackRehearsalDialog(() => finish(null));
 
         cancelBtn.onclick = () => finish(null);
         okBtn.onclick = () => {
@@ -318,6 +342,7 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous',
         document.body.appendChild(overlay);
 
         setTimeout(() => {
+            if (!overlay.isConnected) return;
             input.focus();
             input.select();
         }, 50);

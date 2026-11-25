@@ -332,6 +332,7 @@ export function activityIds(task) {
 
 /** The address ComfyUI's /view serves an output picture or sound at. */
 export function outputUrl(result) {
+    if (result?.preview_url) return result.preview_url;
     const params = new URLSearchParams({ filename: result.filename, subfolder: result.subfolder || '', type: result.folder || 'output' });
     return `/view?${params}`;
 }
@@ -370,12 +371,14 @@ export function uniquePictures(images) {
 
 /** What a view larger than a thumbnail shows of an output picture: itself, or a 4096 px copy of a very large one (gallery_routes.py output_preview). */
 export function pictureShown(result) {
+    if (result?.preview_url) return result.preview_url;
     const source = outputPicture(result);
     return source ? `/anomalous/output_preview?${new URLSearchParams({ filename: source.filename, subfolder: source.subfolder })}` : outputUrl(result);
 }
 
 /** Thumbnails for output pictures; other media retain their actual ComfyUI address. */
 export function picturePreview(result) {
+    if (result?.preview_url) return result.preview_url;
     const source = outputPicture(result);
     return source ? `/anomalous/output_thumbnail?${new URLSearchParams({ filename: source.filename, subfolder: source.subfolder })}` : outputUrl(result);
 }

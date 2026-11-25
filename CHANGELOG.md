@@ -2,6 +2,9 @@
 
 ## v1.65.0 (A lighter rail, with More) — unreleased
 
+- 审查修改器新增「AI 工作台演练」。一键查看六种场景，可试点任务、蓝图、门禁和成图反馈，也可切换主题、语言或调整跑图进度。演练在内存中运行，结束后恢复真实任务。
+- The review console adds six interactive AI workbench scenes. Try task navigation, blueprints, safety gates and image feedback, adjust run progress, or switch themes and languages. The rehearsal runs in memory and restores real tasks when it ends.
+
 - 左边的图标栏清爽了：只常驻「主页」「模型」「图库」「工作流」「模型检查」，其余的页面和工具都收进新的「更多」，点开每一项有一句话说明，点一下就打开。常用的点它右边的图钉就钉回左边，菜单不关；「恢复精简侧栏」一下全收回。数字键跟着左边显示的走：1–4 固定是主页、模型、图库、工作流，钉上来的接着排。打开收在「更多」里的页面时，「更多」会亮起来；AI 有新动静、正在扫描，也会在「更多」上提示。
 - The left rail is lighter: Home, Models, Gallery, Workflows and Model Check stay; the other pages and tools move into a new "More", each with a line saying what it does, a click opening it. Press the pin at a row's right to keep one on the rail, the menu staying open; "Reset to minimal rail" takes them all off again. The number keys follow what the rail shows: 1–4 are always Home, Models, Gallery and Workflows, pinned pages after them. More lights up while the open page is under it, and shows news from the AI and a running scan for the entries it holds.
 

@@ -34,6 +34,7 @@ import { checkOpenWorkflow, clearDoctorBanner } from './ui_doctor_banner.js';
 import { closeCopy, showTab } from './mcp_task_tab.js';
 import { tabName } from './mcp_canvas_edit.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { hasReviewFetch, jsonResponse, ownAnomalousUrl, registerReviewFetch, unregisterReviewFetch } from './review_fetch.js';
 
 const MODEL_FILE = /\.(safetensors|ckpt|pt|bin|pth|sft|gguf)$/i;
 const KEEP_REAL = new Set(['anomalous_lang', 'anomalous_theme', 'anomalous_theme_abyssal_scarlet']);
@@ -48,7 +49,7 @@ const live = {
     leaving: false,
     getBrowser: () => null,
     onChange: null,
-    real: null,          // what the sandbox stood in for: { fetch, storage, open, send, refresh, load }
+    real: null,          // what the sandbox stood in for: { open, send, refresh, load }
     overlay: new Map(),  // localStorage keys kept in memory (AMB keys + ComfyUI workflow tabs/drafts)
     sessionOverlay: new Map(), // sessionStorage keys for ComfyUI's per-tab workflow pointers
     uploads: new WeakSet(),
@@ -68,9 +69,15 @@ const changed = () => live.onChange?.();
 // ---------------------------------------------------------------- what the sandbox stands in for
 
 const sandboxKey = key => typeof key === 'string' && key.startsWith('anomalous_') && !KEEP_REAL.has(key);
+let storageReal = null;
+let workbenchStorage = null;
 
-function storageOverlay(storage, key) {
+function storageOverlay(storage, key, includeWorkbench = true) {
     if (storage === window.localStorage) {
+        if (includeWorkbench && workbenchStorage
+            && (/^(anomalous_ai_|preview_)/.test(key) || ['anomalous_last_page', 'anomalous_active_domain'].includes(key))) {
+            return { map: workbenchStorage, fresh: false };
+        }
         if (live.sandbox && sandboxKey(key)) return { map: live.overlay, fresh: true };
         if (isWorkflowStorageKey(key)) return { map: live.overlay, fresh: false };
     } else if (storage === window.sessionStorage && isWorkflowStorageKey(key)) {
@@ -79,11 +86,13 @@ function storageOverlay(storage, key) {
     return null;
 }
 
-function holdStorage(real) {
+function holdStorage() {
+    if (storageReal) return;
     const proto = Storage.prototype;
-    Object.assign(real, { getItem: proto.getItem, setItem: proto.setItem, removeItem: proto.removeItem });
+    const real = storageReal = { getItem: proto.getItem, setItem: proto.setItem, removeItem: proto.removeItem };
     proto.getItem = function (key) {
-        const target = storageOverlay(this, key);
+        let target = storageOverlay(this, key);
+        if (target && target.map === workbenchStorage && !target.map.has(key)) target = storageOverlay(this, key, false);
         if (!target) return real.getItem.call(this, key);
         if (target.map.has(key)) return target.map.get(key);
         return target.fresh && FRESH.some(prefix => key.startsWith(prefix)) ? null : real.getItem.call(this, key);
@@ -100,8 +109,22 @@ function holdStorage(real) {
     };
 }
 
-const respond = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
-const ownRoute = url => url.origin === window.location.origin && url.pathname.startsWith('/anomalous/');
+function releaseStorageHooks() {
+    if (!storageReal || live.real || workbenchStorage) return;
+    Object.assign(Storage.prototype, storageReal);
+    storageReal = null;
+}
+
+/** Keep AI preferences temporary even when this rehearsal runs without the blank sandbox. */
+export function holdWorkbenchStorage(on) {
+    if (on) {
+        workbenchStorage ||= new Map();
+        holdStorage();
+    } else {
+        workbenchStorage = null;
+        releaseStorageHooks();
+    }
+}
 
 function refused() {
     const now = Date.now();
@@ -119,34 +142,36 @@ async function bodyOf(input, init) {
     }
 }
 
-async function sandboxFetch(input, init) {
-    const real = live.real.fetch;
-    const url = new URL(input instanceof Request ? input.url : String(input), window.location.href);
-    if (!live.sandbox || !ownRoute(url)) {
+async function sandboxFetch(input, init, realFetch) {
+    const sandbox = live.sandbox;
+    const url = ownAnomalousUrl(input);
+    if (!sandbox || !url) {
         // The sandbox's made-up fingerprints never go out to Civitai.
-        if (live.sandbox && /(^|\.)civitai\.(com|red)$/.test(url.hostname) && url.pathname.startsWith('/api/')) return respond({ error: 'Not found' }, 404);
-        return real.call(window, input, init);
+        if (!sandbox) return null;
+        const other = new URL(input instanceof Request ? input.url : String(input), window.location.href);
+        if (/(^|\.)civitai\.(com|red)$/.test(other.hostname) && other.pathname.startsWith('/api/')) return jsonResponse({ error: 'Not found' }, 404);
+        return null;
     }
     if (init?.signal?.aborted) throw new DOMException('The request was aborted.', 'AbortError');
     const method = String(init?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
-    const answer = answerRequest(live.sandbox, { method, path: url.pathname, query: url.searchParams, body: await bodyOf(input, init), now: Date.now() });
-    if (answer.pass) return real.call(window, input, init);
+    const answer = answerRequest(sandbox, { method, path: url.pathname, query: url.searchParams, body: await bodyOf(input, init), now: Date.now() });
+    if (answer.pass) return realFetch.call(window, input, init);
     if (answer.blocked) {
         refused();
-        return respond({ status: 'error', error: 'sandbox', message: t('reviewSandboxBlocked') }, 403);
+        return jsonResponse({ status: 'error', error: 'sandbox', message: t('reviewSandboxBlocked') }, 403);
     }
     if (answer.fallback && !live.unknown.has(url.pathname)) {
         live.unknown.add(url.pathname);
         console.info(`[AMB] Sandbox: no stand-in for GET ${url.pathname}, answered empty.`);
     }
-    return respond(answer.body, answer.status);
+    return jsonResponse(answer.body, answer.status);
 }
 
 function holdUploads(real) {
     const proto = XMLHttpRequest.prototype;
     Object.assign(real, { open: proto.open, send: proto.send });
     proto.open = function (method, url, ...rest) {
-        if (ownRoute(new URL(String(url), window.location.href))) live.uploads.add(this);
+        if (ownAnomalousUrl(String(url))) live.uploads.add(this);
         else live.uploads.delete(this);
         return real.open.call(this, method, url, ...rest);
     };
@@ -197,7 +222,7 @@ function holdCanvas(real) {
 function releaseRuntime() {
     const real = live.real;
     if (!real) return;
-    window.fetch = real.fetch;
+    unregisterReviewFetch('sandbox');
     Object.assign(XMLHttpRequest.prototype, { open: real.open, send: real.send });
     Object.assign(app, { refreshComboInNodes: real.refresh, loadGraphData: real.load });
 }
@@ -205,8 +230,8 @@ function releaseRuntime() {
 function releaseStorage() {
     const real = live.real;
     if (!real) return;
-    Object.assign(Storage.prototype, { getItem: real.getItem, setItem: real.setItem, removeItem: real.removeItem });
     live.real = null;
+    releaseStorageHooks();
     live.overlay.clear();
     live.sessionOverlay.clear();
 }
@@ -280,9 +305,11 @@ export function markSandboxWindow() {
 function home() {
     const browser = owner();
     freshView(browser);
-    browser?.show({ page: 'home' });
+    if (!workbenchInView(browser)) browser?.show({ page: 'home' });
     markSandboxWindow();
 }
+
+const workbenchInView = browser => hasReviewFetch('workbench') && browser?.currentShellPage?.() === 'ai';
 
 /** A scan or download running (the sandbox's or the real one). */
 function busy() {
@@ -326,9 +353,9 @@ export async function enterSandbox(getBrowser, onChange) {
     if (busy()) return false;
     live.sandbox = createSandbox();
     live.unknown.clear();
-    const real = { fetch: window.fetch };
-    window.fetch = sandboxFetch;
-    holdStorage(real);
+    const real = {};
+    registerReviewFetch('sandbox', 20, sandboxFetch);
+    holdStorage();
     holdUploads(real);
     holdCanvas(real);
     live.real = real;
@@ -372,7 +399,8 @@ export async function exitSandbox() {
     const browser = owner();
     const shown = browser?.modal?.classList.contains('visible');
     freshView(browser);
-    if (shown) browser.show({ page: 'home' });
+    if (browser?.currentShellPage?.() === 'ai') browser.refreshShellLanguage();
+    else if (shown) browser.show({ page: 'home' });
     changed();
 }
 

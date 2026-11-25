@@ -15,6 +15,13 @@ import { isSpotlightTourActive, startSpotlightTour } from './ui_spotlight_tour.j
 
 const TOUR_KEY = 'anomalous_ai_tour_seen';
 const HINTS_KEY = 'anomalous_ai_hints_seen';
+let suppressed = false;
+let tourTimer = null;
+
+export function setAiTourSuppressed(on) {
+    suppressed = Boolean(on);
+    if (suppressed) clearTimeout(tourTimer);
+}
 const step = (id, targetSelector, icon, position) => ({ id, targetSelector, icon, position, titleKey: `aiTour_${id}_title`, bodyKey: `aiTour_${id}_body` });
 export const AI_TOUR = Object.freeze([
     step('new', '.anomalous-ai-tasks .anomalous-ai-new-task', '➕', 'right'),
@@ -36,6 +43,7 @@ function seen(key) {
 }
 
 function remember(key, id) {
+    if (suppressed) return;
     try {
         localStorage.setItem(key, JSON.stringify([...seen(key).add(id)]));
     } catch (_) {
@@ -77,9 +85,10 @@ export function tourWhenShown(tries = 20) {
 /** The tour by itself, once, when `page` (the workbench) shows a task and nothing else is in front; after the
  * window has finished opening, since a tour started in its animation points at a squeezed layout. */
 export function aiTourOnce(page) {
-    if (seen(TOUR_KEY).has('workbench') || isSpotlightTourActive() || !page?.isConnected) return;
-    setTimeout(() => {
-        if (!page.isConnected || isSpotlightTourActive() || !settled(page)) return;
+    if (suppressed || seen(TOUR_KEY).has('workbench') || isSpotlightTourActive() || !page?.isConnected) return;
+    clearTimeout(tourTimer);
+    tourTimer = setTimeout(() => {
+        if (suppressed || !page.isConnected || isSpotlightTourActive() || !settled(page)) return;
         void startAiTour().then(started => started && remember(TOUR_KEY, 'workbench'));
     }, 900);
 }

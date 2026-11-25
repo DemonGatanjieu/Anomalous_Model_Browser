@@ -16,7 +16,7 @@
  */
 
 import { resolveLocale, translate as t } from './locales.js';
-import { applyLanguagePreference, setThemePreference, themePreference } from './interface_settings.js';
+import { setLanguagePreview, setThemePreview, themePreference } from './interface_settings.js';
 import { clearAiFloatPreview, isAiFloatPreviewing, setAiFloatPreview } from './ui_ai_float.js';
 import { REVIEW_SCENARIOS, applyPreviewAction, buildPreviewTask, railPreset } from './review_scenarios.js';
 import { openConnectGuide } from './ui_ai_connect.js';
@@ -29,6 +29,11 @@ import { LIBRARIES, NETWORKS } from './review_sandbox_data.js';
 import {
     enterSandbox, exitSandbox, markSandboxWindow, openSharedWorkflow, resetSandboxProgress, sandboxState, setSandboxLibrary, setSandboxNetwork,
 } from './review_sandbox.js';
+import { WORKBENCH_SCENES } from './review_workbench_data.js';
+import {
+    enterWorkbenchRehearsal, exitWorkbenchRehearsal, refreshWorkbenchLocale, resetWorkbenchDemo,
+    setWorkbenchProgress, workbenchRehearsalState,
+} from './review_workbench.js';
 
 const THEMES = ['auto', 'dark', 'light', 'abyssal'];
 const LANGUAGES = [['zh', 'mainLanguageChinese'], ['en', 'mainLanguageEnglish']];
@@ -61,7 +66,6 @@ const MARGIN = 8;
 const state = {
     root: null,
     getBrowser: () => null,
-    snapshot: null,    // { theme, lang } when the console opened: what Reset and × put back
     scene: null,       // the rehearsal running (REVIEW_SCENARIOS id)
     task: null,        // its task as it stands now
     percent: 60,
@@ -105,10 +109,6 @@ function row(labelKey, ...parts) {
 
 const browserOpen = () => Boolean(document.getElementById('anomalous-modal')?.classList.contains('visible'));
 
-const storedLanguage = () => {
-    try { return localStorage.getItem('anomalous_lang') || 'auto'; } catch { return 'auto'; }
-};
-
 /** Where the card is now: on the canvas, in its desktop window, or not shown. */
 function cardView() {
     if (window.documentPictureInPicture?.window?.document.getElementById('anomalous-ai-float')) return { shown: true, desktop: true };
@@ -141,6 +141,7 @@ function show(task, resetDismissal) {
 }
 
 function play(id) {
+    exitWorkbenchRehearsal();
     if (browserOpen()) state.getBrowser()?.close?.(); // the canvas and its card in view
     Object.assign(state, { scene: id, percent: 60, receipt: '', closed: false });
     state.task = buildPreviewTask(id, { locale: resolveLocale(), percent: state.percent });
@@ -199,6 +200,36 @@ function rehearsalSection() {
     state.said.setAttribute('role', 'status');
     box.append(state.status, state.said);
     renderLive();
+    return box;
+}
+
+function workbenchSection() {
+    const { active, scene, percent } = workbenchRehearsalState();
+    const box = el('section', 'anomalous-review-section');
+    const presets = el('div', 'anomalous-review-row');
+    presets.append(...WORKBENCH_SCENES.map(({ id, labelKey }) => pill(t(labelKey), scene === id, () => {
+        endRehearsal();
+        enterWorkbenchRehearsal(id, { getBrowser: state.getBrowser, onChange: render });
+    })));
+    box.append(el('div', 'anomalous-review-heading', t('reviewWbTitle')), presets);
+    if (active) {
+        const controls = el('div', 'anomalous-review-controls');
+        if (scene === 'run') {
+            const value = el('span', 'anomalous-review-value', `${percent}%`);
+            const slider = el('input', 'anomalous-review-slider');
+            Object.assign(slider, { type: 'range', min: '0', max: '100', step: '1', value: String(percent) });
+            slider.setAttribute('aria-label', t('reviewProgress'));
+            slider.oninput = () => {
+                value.textContent = `${slider.value}%`;
+                setWorkbenchProgress(Number(slider.value));
+            };
+            controls.append(el('span', 'anomalous-review-label', t('reviewProgress')), slider, value);
+        }
+        controls.append(button('anomalous-review-action', t('reviewWbReset'), resetWorkbenchDemo),
+            button('anomalous-review-action is-quiet', t('reviewClear'), () => { exitWorkbenchRehearsal(); render(); }));
+        box.append(controls);
+    }
+    box.append(el('div', 'anomalous-review-note', t(active ? 'reviewWbNoteActive' : 'reviewWbNoteIdle')));
     return box;
 }
 
@@ -261,10 +292,10 @@ function lookSection() {
     const box = el('section', 'anomalous-review-section');
     box.append(el('div', 'anomalous-review-heading', t('reviewLookTitle')),
         row('reviewTheme', ...THEMES.map(value => pill(t(`reviewTheme_${value}`), themePreference() === value, () => {
-            setThemePreference(value, false);
+            setThemePreview(value);
             render();
         }))),
-        row('reviewLanguage', ...LANGUAGES.map(([value, key]) => pill(t(key), resolveLocale() === value, () => applyLanguagePreference(value)))),
+        row('reviewLanguage', ...LANGUAGES.map(([value, key]) => pill(t(key), resolveLocale() === value, () => setLanguagePreview(value)))),
         row('reviewRail', ...PERSONAS.map(mode => pill(t(`reviewPersona_${mode}`), state.persona === mode, () => persona(mode)))),
         el('div', 'anomalous-review-note', t('reviewLookNote')));
     return box;
@@ -344,22 +375,13 @@ function sandboxSection() {
 function resetAll(unloading = false) {
     endRehearsal();
     void exitSandbox();
+    exitWorkbenchRehearsal({ unloading });
     clearFirstRunPreview();
     clearPageTipPreview();
     if (state.persona !== 'real') showRail('real');
     if (state.dropping) setDrop(false);
-    const { theme, lang } = state.snapshot || {};
-    if (theme && themePreference() !== theme) setThemePreference(theme, false);
-    if (lang && storedLanguage() !== lang) {
-        if (unloading) {
-            try {
-                if (lang === 'auto') localStorage.removeItem('anomalous_lang');
-                else localStorage.setItem('anomalous_lang', lang);
-            } catch { /* page is leaving */ }
-        } else {
-            applyLanguagePreference(lang);
-        }
-    }
+    setThemePreview(null);
+    setLanguagePreview(null, !unloading);
 }
 
 /** Kept inside the window, a margin from its edges; none: the corner the CSS gives. */
@@ -413,7 +435,7 @@ function render() {
         state.status = state.said = null;
     } else {
         const body = el('div', 'anomalous-review-body');
-        body.append(rehearsalSection(), lookSection(), shortcutSection(), sandboxSection());
+        body.append(rehearsalSection(), workbenchSection(), lookSection(), shortcutSection(), sandboxSection());
         parts.push(body);
     }
     root.replaceChildren(...parts);
@@ -427,6 +449,7 @@ function onLanguage() {
         state.receipt = '';
         show(state.task, true);
     }
+    refreshWorkbenchLocale(resolveLocale());
     render();
 }
 
@@ -440,7 +463,6 @@ export function openReviewConsole(getBrowser) {
         state.collapsed = false;
         return void render();
     }
-    state.snapshot = { theme: themePreference(), lang: storedLanguage() };
     const root = el('div', 'anomalous-review-console');
     root.id = 'anomalous-review-console'; // an anomalous- id: keys typed here stay ours (ui_key_guard.js)
     root.setAttribute('role', 'region');

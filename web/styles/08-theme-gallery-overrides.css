@@ -48,7 +48,7 @@ html.theme-abyssal-scarlet :is(#anomalous-modal, .anomalous-prompt-studio-drawer
     content: '' !important;
     position: absolute !important;
     inset: 0 !important;
-    background-image: url('assets/abyssal_scarlet_mansion.webp'), radial-gradient(circle at 50% 20%, rgba(220, 20, 60, 0.08) 0%, transparent 70%) !important;
+    background-image: url('../assets/abyssal_scarlet_mansion.webp'), radial-gradient(circle at 50% 20%, rgba(220, 20, 60, 0.08) 0%, transparent 70%) !important;
     background-size: cover !important;
     background-position: center !important;
     mix-blend-mode: soft-light !important;
@@ -90,7 +90,7 @@ html.theme-abyssal-scarlet :is(#anomalous-modal, .anomalous-prompt-studio-drawer
 
 /* 3. Empty State Thematic Illustration (Submerged Scarlet Mansion) */
 .theme-abyssal-scarlet .anomalous-recipe-empty {
-    background-image: url('assets/abyssal_scarlet_mansion.webp') !important;
+    background-image: url('../assets/abyssal_scarlet_mansion.webp') !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
     background-position: center !important;

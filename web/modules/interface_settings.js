@@ -42,6 +42,7 @@ try {
 }
 
 let currentLang = resolveLocale(localStorage.getItem('anomalous_lang') || defaultLang);
+let previewLanguage = null;
 window.anomalous_browser_lang = currentLang;
 
 export const t = (key, params) => translate(key, params, window.anomalous_browser_lang || currentLang);
@@ -94,22 +95,32 @@ function refreshRegisteredSettings() {
     }
 }
 
-/** 'auto' | 'zh' | 'en': the ComfyUI setting's change handler, also used without the settings API. */
-export function applyLanguagePreference(value) {
-    const preference = normalizeLanguagePreference(value);
-    if (preference === 'auto') localStorage.removeItem('anomalous_lang');
-    else localStorage.setItem('anomalous_lang', preference);
-
+function paintLanguage(preference, notify = true) {
     const nextLanguage = preference === 'auto' ? resolveComfyLanguage() : preference;
     const changed = nextLanguage !== window.anomalous_browser_lang;
     currentLang = nextLanguage;
     window.anomalous_browser_lang = nextLanguage;
     refreshRegisteredSettings();
-    if (changed) {
+    if (changed && notify) {
         window.dispatchEvent(new CustomEvent('anomalous-language-change', {
             detail: { language: nextLanguage, preference }
         }));
     }
+}
+
+/** 'auto' | 'zh' | 'en': the ComfyUI setting's change handler, also used without the settings API. */
+export function applyLanguagePreference(value) {
+    const preference = normalizeLanguagePreference(value);
+    if (preference === 'auto') localStorage.removeItem('anomalous_lang');
+    else localStorage.setItem('anomalous_lang', preference);
+    paintLanguage(previewLanguage ?? preference);
+}
+
+/** The review console previews language through the normal language-change event. */
+export function setLanguagePreview(value, notify = true) {
+    if (value === null && previewLanguage === null) return;
+    previewLanguage = value === null ? null : normalizeLanguagePreference(value);
+    paintLanguage(previewLanguage ?? normalizeLanguagePreference(localStorage.getItem('anomalous_lang')), notify);
 }
 
 /**
@@ -117,7 +128,7 @@ export function applyLanguagePreference(value) {
  * page loaded. Called when the browser opens, since ComfyUI switches its language without a reload.
  */
 export function followComfyLanguage() {
-    if (!localStorage.getItem('anomalous_lang')) applyLanguagePreference('auto');
+    if (previewLanguage === null && !localStorage.getItem('anomalous_lang')) paintLanguage('auto');
 }
 
 if (!localStorage.getItem('anomalous_lang')) {
@@ -149,9 +160,11 @@ function showThemeNoticeToast(isEnabled) {
 const THEME_KEY = 'anomalous_theme';
 const THEMES = ['auto', 'dark', 'light', 'abyssal'];
 const THEME_LABELS = { auto: 'settingsThemeAuto', dark: 'settingsThemeDark', light: 'settingsThemeLight', abyssal: 'settingsThemeAbyssal' };
+let previewTheme = null;
 
 /** The theme chosen ('auto' unless one was picked; an older Abyssal Scarlet switch reads as 'abyssal'). */
 export function themePreference() {
+    if (previewTheme !== null) return previewTheme;
     try {
         const saved = localStorage.getItem(THEME_KEY);
         if (THEMES.includes(saved)) return saved;
@@ -182,6 +195,12 @@ function paintTheme() {
     window.dispatchEvent(new CustomEvent('anomalous-theme-change', {
         detail: { theme: abyssal ? 'abyssal-scarlet' : theme, enabled: abyssal }
     }));
+}
+
+/** Review-console themes are painted without saving to ComfyUI or the browser. */
+export function setThemePreview(value) {
+    previewTheme = THEMES.includes(value) ? value : null;
+    paintTheme();
 }
 
 /** Picks the theme (Settings, ComfyUI's settings); `notify`: the toast when Abyssal Scarlet comes or goes. */

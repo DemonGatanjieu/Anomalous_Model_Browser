@@ -10,7 +10,7 @@
 import { api } from '../../../scripts/api.js';
 import { translate as t } from './locales.js';
 import { noticeOf } from './ai_notice.js';
-import { anomalousAlert } from './ui_dialog.js';
+import { anomalousAlert, rehearsalSurfaceScope } from './ui_dialog.js';
 
 const KEY = 'anomalous_ai_notify';
 let host = null; // the browser, to open on a press
@@ -26,6 +26,7 @@ function keep(on) {
 /** 'none' (this browser or this address cannot), 'on' or 'off'. */
 export function notifyState() {
     if (typeof Notification !== 'function' || !window.isSecureContext) return 'none';
+    if (rehearsalSurfaceScope()) return kept() ? 'on' : 'off';
     return kept() && Notification.permission === 'granted' ? 'on' : 'off';
 }
 
@@ -41,6 +42,7 @@ function show(title, body) {
 
 /** Turns it on (asking for the browser's permission where it was not given yet, and showing one as a sample) or off. */
 export async function toggleNotify() {
+    if (rehearsalSurfaceScope()) return keep(!kept());
     if (notifyState() === 'on') {
         keep(false);
         return;
@@ -59,7 +61,7 @@ export function watchForUser(owner) {
     host = owner;
     api.addEventListener('anomalous.ai_task', (event) => {
         const notice = noticeOf(event?.detail);
-        if (!notice || notifyState() !== 'on' || (!document.hidden && document.hasFocus())) return;
+        if (!notice || rehearsalSurfaceScope() || notifyState() !== 'on' || (!document.hidden && document.hasFocus())) return;
         show(t(notice.title), notice.text ?? t(notice.body));
     });
 }

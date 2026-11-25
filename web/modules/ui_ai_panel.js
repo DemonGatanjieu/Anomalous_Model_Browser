@@ -53,6 +53,11 @@ export async function sendAnswer(taskId, body) {
 const drafts = new Map(); // question -> what the user half typed in its line, while this page is open
 const draftKey = (taskId, stepId, blockId) => JSON.stringify([taskId, stepId, blockId]);
 
+/** Rehearsal tasks reuse their ids when reset; their partial answers end with them. */
+export function dropPreviewPanelDrafts() {
+    for (const key of drafts.keys()) if (key.startsWith('["preview_')) drafts.delete(key);
+}
+
 /** Whether the user half typed an answer to question `blockId` of step `stepId`. */
 export function hasDraft(taskId, stepId, blockId) {
     return drafts.has(draftKey(taskId, stepId, blockId));

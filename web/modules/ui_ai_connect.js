@@ -13,7 +13,7 @@
  */
 
 import { translate as t } from './locales.js';
-import { copyText } from './ui_dialog.js';
+import { copyText, trackRehearsalDialog } from './ui_dialog.js';
 import { iconButton } from './ui_ai_icons.js';
 import { toolSetPicker } from './ui_ai_tool_set.js';
 import { art } from './ui_ai_art.js';
@@ -165,10 +165,12 @@ export function aiWindow(title, body, onClose = null) {
     const close = () => {
         if (!open) return;
         open = false;
+        untrack();
         overlay.remove();
         window.removeEventListener('keydown', onKey, true);
         onClose?.();
     };
+    const untrack = trackRehearsalDialog(close);
     const onKey = (event) => {
         if (event.key !== 'Escape') return;
         if ([...document.querySelectorAll('.anomalous-ai-connect-overlay')].at(-1) !== overlay) return; // a window opened over this one goes first

@@ -26,6 +26,19 @@ const STATE_ICONS = { waiting: 'sparkle', idle: 'clock', live: 'thinking', asks:
 const FILTERS = { all: () => true, live: state => ['live', 'waiting', 'idle'].includes(state), asks: state => state === 'asks', error: state => state === 'error' };
 
 let filter = 'all';
+let rehearsalList = null;
+
+/** Keep the real list's filter and folding when the workbench lends its rail to rehearsal. */
+export function setTaskListRehearsal(on) {
+    if (on) {
+        rehearsalList = { filter, undoFold: null };
+        filter = 'all';
+    } else if (rehearsalList) {
+        filter = rehearsalList.filter;
+        rehearsalList.undoFold?.();
+        rehearsalList = null;
+    }
+}
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -204,6 +217,13 @@ export function listToggle(page, onToggle) {
     };
     const node = iconButton('anomalous-ai-list-toggle', 'sidebar', t('aiTasksToggle'), () => {
         stop();
+        if (rehearsalList && !page.classList.contains('is-narrow')) {
+            rehearsalList.undoFold = rehearsalList.undoFold ? null : () => {
+                // Invoke the wide toggle even if the window became narrow during rehearsal.
+                page.classList.remove('is-narrow');
+                onToggle();
+            };
+        }
         onToggle();
     }, { iconOnly: true });
     // The box around the button and the column it brings: the pointer inside keeps it shown.

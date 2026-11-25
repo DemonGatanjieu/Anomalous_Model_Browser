@@ -95,9 +95,10 @@ export function planCard(block, ctx, { sendAnswer, answerNote }) {
         else box.append(el('div', 'anomalous-ai-plan-done', t(answer.auto ? 'aiPlanBuiltAuto' : 'aiPlanBuilt')));
         if (answer.auto) {
             box.append(knob('anomalous-ai-plan-again', t('aiPlanAskAgain'), async (event) => {
-                event.currentTarget.disabled = true;
+                const button = event.currentTarget;
+                button.disabled = true;
                 await fetch('/anomalous/ai_plans/auto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ auto: false }) });
-                event.currentTarget.textContent = t('aiPlanWillAsk');
+                button.textContent = t('aiPlanWillAsk');
             }));
         }
         box.append(answerNote(answer));
