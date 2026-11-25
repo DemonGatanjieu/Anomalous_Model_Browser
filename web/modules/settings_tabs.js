@@ -1,6 +1,6 @@
 /**
  * The settings page's four tabs (ui_settings_page.js draws their cards) and where a link to a tab of
- * before 1.65 lands: Canvas, Workflows, Node packs, Prompts and Backup each became a card of a wider
+ * before 1.64.2 lands: Canvas, Workflows, Node packs, Prompts and Backup each became a card of a wider
  * tab, and a link to one opens that tab scrolled to its card (`section`, the card's
  * data-settings-section). No DOM.
  */

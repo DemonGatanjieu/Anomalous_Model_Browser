@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.65.0 (A lighter rail, with More) — unreleased
+## v1.64.2 (A lighter rail, with More) — 2026-11-25
 
 - 模型详情里的视频封面可以不自动播放、不出声了（议题 #29）：设置 →「外观与交互」→「模型卡片与内存」多了「模型详情自动播放视频」和「模型详情播放视频声音」两个开关，都默认开着，和以前一样。关掉自动播放，视频停在第一帧，点播放再看；关掉声音，视频静音开始，播放器上照样能开声音。只记在这个浏览器里。
 - Video covers in model details can now start paused and muted (issue #29): Settings → Look & Interaction → Model cards and memory has "Autoplay video in model details" and "Play video audio in model details", both on as before. With autoplay off a video waits on its first frame until you press play; with audio off it starts muted, and the player can still unmute it. Kept in this browser only.

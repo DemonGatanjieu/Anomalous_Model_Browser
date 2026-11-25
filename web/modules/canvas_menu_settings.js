@@ -2,7 +2,7 @@
  * What the canvas's right-click menus offer from AMB, as the user set it (Settings -> Look &
  * Interaction -> Right-click menu): the entries of a node's menu and of the empty canvas's menu, each
  * on or off, in the user's order, and whether they sit in one "Anomalous" submenu or right in the
- * menu. Only the everyday entries are on at first (1.65: five of a node's twelve, four of the empty
+ * menu. Only the everyday entries are on at first (1.64.2: five of a node's twelve, four of the empty
  * canvas's five); a list the user saved keeps its switches and order as saved. A per-viewer
  * convenience in localStorage; entries added in a later version join at their default place.
  * No DOM.

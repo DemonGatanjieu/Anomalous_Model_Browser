@@ -1238,7 +1238,7 @@ covered by the `styles.css` manifest.
   where downloads and imports go, where the side files go through `sidecar_layout.js`), Workflows & Tools
   (checks and fingerprints, translation through `ui_settings_translation.js`, the node packs not used lately
   through `ui_pack_usage.js`) and Backup & Help (`ui_backup.js`, help and feedback). `settings_tabs.js` is, without
-  DOM, the four tabs and where a link to a tab of before 1.65 lands (`resolveSettingsTarget`: its tab now, scrolled
+  DOM, the four tabs and where a link to a tab of before 1.64.2 lands (`resolveSettingsTarget`: its tab now, scrolled
   to its card, `data-settings-section`; `tests/settings_tabs.mjs`); `ui_feedback_dialog.js` is the feedback window (Home and the
   settings page open it): one text box, then `feedback.js` opens a GitHub issue with it in
   the browser's language, the environment folded at the end when attached (versions and
