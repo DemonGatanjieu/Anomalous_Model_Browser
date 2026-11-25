@@ -767,9 +767,11 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     transform: scale(1.02);
 }
 
-/* The model picker (ui_node_model_picker.js) shows these cards a little shorter; "current" sits top right. */
+/* The model picker (ui_node_model_picker.js) shows these cards a little shorter; "current" sits top right.
+   Double-clicking one puts it in, so it selects no text. */
 .anomalous-picker-card {
     height: 250px;
+    user-select: none;
 }
 
 .anomalous-picker-current {

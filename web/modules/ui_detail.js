@@ -6,6 +6,7 @@
 import { app } from "../../../scripts/app.js";
 import { resolveLocale, translate } from './locales.js';
 import { introFolded, introLanguage, keepIntroFolded, paragraphsOf } from './detail_intro.js';
+import { applyDetailVideoPrefs } from './detail_video_prefs.js';
 import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
 import { renderInferredNote } from './model_source.js';
 import { createModelFileFoot } from './model_location.js';
@@ -98,11 +99,8 @@ export function showDetail(model) {
             if (model.preview_url) {
                 const isVideo = model.preview_url.match(/\.mp4(?:&|$)/i) || model.preview_url.match(/\.webm(?:&|$)/i);
                 if (isVideo) {
-                    const video = document.createElement('video');
+                    const video = applyDetailVideoPrefs(document.createElement('video'));
                     video.src = model.preview_url;
-                    video.controls = true;
-                    video.autoplay = true;
-                    video.loop = true;
                     video.style.width = '100%';
                     video.style.height = '100%';
                     video.style.objectFit = 'contain';

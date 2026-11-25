@@ -340,6 +340,9 @@ covered by the `styles.css` manifest.
   language, `api/description_translation.py` translates it paragraph by paragraph through
   `translation_routes.translate_chain` (DeepL with a key, Google, MyMemory; long pieces cut smaller) and keeps the
   answer in user/anomalous/translations by the text's hash, never beside the models (`tests/test_description_translation.py`).
+- A video cover in a model's details starts by itself and with sound unless turned off in Settings → Look & Interaction:
+  `web/modules/detail_video_prefs.js` (`tests/detail_video_prefs.mjs`) keeps the two switches in localStorage, on by
+  default, and sets up the details' player from them.
 - Covers of the voice characters: `api/voice_covers.py` keeps one small square PNG per character's name (its
   versions share it) in user/anomalous/voice_covers, never in Anomalous_TTS's folders, and takes one away to the
   Recycle Bin; `web/modules/voice_covers.js` draws the cover or the name's first letter in a card's avatar and, on

@@ -2,6 +2,12 @@
 
 ## v1.65.0 (A lighter rail, with More) — unreleased
 
+- 模型详情里的视频封面可以不自动播放、不出声了（议题 #29）：设置 →「外观与交互」→「模型卡片与内存」多了「模型详情自动播放视频」和「模型详情播放视频声音」两个开关，都默认开着，和以前一样。关掉自动播放，视频停在第一帧，点播放再看；关掉声音，视频静音开始，播放器上照样能开声音。只记在这个浏览器里。
+- Video covers in model details can now start paused and muted (issue #29): Settings → Look & Interaction → Model cards and memory has "Autoplay video in model details" and "Play video audio in model details", both on as before. With autoplay off a video waits on its first frame until you press play; with audio off it starts muted, and the player can still unmute it. Kept in this browser only.
+
+- 换模型、换 LoRA 时双击卡片就直接换上并关掉窗口，不用再点右下角的「确认替换」（议题 #30）；用键盘时选中卡片按 Enter 也一样，空格只是选中。插入 LoRA 选好几个的时候双击不会马上插入，还是点卡片挑、点按钮插，免得点多了插错。双击卡片不会再把卡片上的字选成蓝色。
+- Replacing a model or a LoRA: double-click a card to put it in and close the picker, without "Confirm Replacement" at the bottom right (issue #30); with the keyboard, Enter on a card does the same and Space only selects. Inserting several LoRAs, a double-click inserts nothing yet: you still click the cards to pick and press the button to insert, so an extra click cannot insert the wrong ones. Double-clicking a card no longer selects its text.
+
 - 审查修改器新增「AI 工作台演练」。一键查看六种场景，可试点任务、蓝图、门禁和成图反馈，也可切换主题、语言或调整跑图进度。演练在内存中运行，结束后恢复真实任务。
 - The review console adds six interactive AI workbench scenes. Try task navigation, blueprints, safety gates and image feedback, adjust run progress, or switch themes and languages. The rehearsal runs in memory and restores real tasks when it ends.
 

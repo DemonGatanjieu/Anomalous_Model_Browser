@@ -393,12 +393,19 @@ export function _openGalleryReplacer(node, w, options = {}) {
                         updateSelection();
                         grid.querySelectorAll('[data-path]').forEach(paintCard);
                     };
+                    // Replacing takes one model, so a double-click (Enter) puts it in; inserting gathers several, clicks only.
+                    const putIn = () => {
+                        if (applying) return;
+                        choose();
+                        applyChoice();
+                    };
                     card.onclick = choose;
+                    if (mode === 'replace') card.ondblclick = putIn;
                     card.onkeydown = event => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            choose();
-                        }
+                        if (event.key !== 'Enter' && event.key !== ' ') return;
+                        event.preventDefault();
+                        if (event.key === 'Enter' && mode === 'replace') putIn();
+                        else choose();
                     };
                     fragment.appendChild(card);
                 }
@@ -414,7 +421,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             }
         };
 
-        confirmBtn.onclick = async () => {
+        const applyChoice = async () => {
             if (!chosen.length || applying) return;
             applying = true;
             updateSelection();
@@ -487,6 +494,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             alert(t('pickerOperationFailed') + error.message);
             }
         };
+        confirmBtn.onclick = applyChoice;
 
         searchInput.oninput = renderCards;
         baseFilterSelect.onchange = () => {

@@ -1,8 +1,8 @@
 /**
  * The settings page (the rail's gear), in four tabs (settings_tabs.js; `owner.settingsTab`, kept while
  * the page is away): Look & Interaction (how the browser looks, model cards and what they cost in memory
- * with the card image cache, the gallery's formats, how the browser opens, the canvas's right-click
- * menu, ui_canvas_menu_settings.js), Models & Network (model folders — a view of its own,
+ * with the card image cache, how a video plays in a model's details, detail_video_prefs.js, the gallery's
+ * formats, how the browser opens, the canvas's right-click menu, ui_canvas_menu_settings.js), Models & Network (model folders — a view of its own,
  * ui_folder_manager.js, `owner.settingsView === 'folders'` —, the network: the proxy the plugin's
  * own requests use and a Civitai connection test, where downloads and imported models go, and where
  * the files only this plugin uses sit beside each model, sidecar_layout.js), Workflows & Tools
@@ -28,6 +28,7 @@ import { fetchDownloadSettings, hfMirrorOn, saveDownloadSettings } from './model
 import { saveApiKey } from './ui_scan_settings.js';
 import { exportBackup, importBackup } from './ui_backup.js';
 import { followsSelection, setFollowsSelection } from './shell_open_rules.js';
+import { detailVideoAudio, detailVideoAutoplay, setDetailVideoAudio, setDetailVideoAutoplay } from './detail_video_prefs.js';
 import { FOLDER_PRESETS, expandFolder } from './download_places.js';
 import { createGalleryFormatSettings } from './ui_gallery_filter.js';
 import { failureWords } from './net_failure.js';
@@ -198,6 +199,8 @@ function cardsGroup(owner, redraw) {
                 localStorage.setItem('anomalous_energy_saving', String(owner.energySaving));
                 reload();
             })),
+        row('settingsDetailVideoAutoplay', 'settingsDetailVideoAutoplayHelp', toggleSwitch(detailVideoAutoplay(), setDetailVideoAutoplay)),
+        row('settingsDetailVideoAudio', 'settingsDetailVideoAudioHelp', toggleSwitch(detailVideoAudio(), setDetailVideoAudio)),
         cacheRow(owner),
     );
 }
