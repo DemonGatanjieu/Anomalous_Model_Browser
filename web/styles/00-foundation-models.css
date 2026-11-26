@@ -400,30 +400,62 @@ body:has(.anomalous-prompt-studio-drawer) #anomalous-trigger-btn {
 
 /* !important: ComfyUI's topbar/side-bar button styles would otherwise keep an empty
    host button visible for this entry while the topbar entry mode is off. */
-.anomalous-topbar-entry,
-button:has(.anomalous-topbar-entry),
-[data-testid="anomalous-topbar-entry"],
-.side-bar-button:has(.anomalous-topbar-entry) {
+html:not(.anomalous-topbar-entry-enabled) .anomalous-topbar-entry,
+html:not(.anomalous-topbar-entry-enabled) button:has(.anomalous-topbar-entry),
+html:not(.anomalous-topbar-entry-enabled) [data-testid="anomalous-topbar-entry"],
+html:not(.anomalous-topbar-entry-enabled) .side-bar-button:has(.anomalous-topbar-entry) {
     display: none !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    pointer-events: none !important;
-    overflow: hidden !important;
 }
 
-html.anomalous-topbar-entry-enabled .anomalous-topbar-entry,
-html.anomalous-topbar-entry-enabled button:has(.anomalous-topbar-entry),
-html.anomalous-topbar-entry-enabled .side-bar-button:has(.anomalous-topbar-entry) {
-    display: inline-flex !important;
-    visibility: visible !important;
-    width: auto !important;
-    height: auto !important;
-    pointer-events: auto !important;
-    overflow: visible !important;
+html.anomalous-topbar-entry-enabled .anomalous-topbar-entry {
+    --amb-topbar-highlight: color-mix(in srgb, var(--base-foreground, var(--amb-text-main)) 70%, var(--amb-link));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    overflow: visible;
+}
+
+html.anomalous-topbar-entry-enabled .anomalous-topbar-entry .pi {
+    font-size: 14px;
+    line-height: 1;
+}
+
+html.anomalous-topbar-entry-enabled .anomalous-topbar-entry:hover {
+    color: var(--amb-topbar-highlight);
+    background-color: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+html.anomalous-topbar-entry-enabled .anomalous-topbar-entry:active {
+    color: var(--amb-topbar-highlight);
+    background-color: color-mix(in srgb, currentColor 32%, transparent);
+}
+
+html.anomalous-topbar-entry-enabled .anomalous-topbar-entry:focus-visible {
+    outline: 2px solid var(--amb-topbar-highlight);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    html.anomalous-topbar-entry-enabled .anomalous-topbar-entry {
+        transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
+    }
+
+    html.anomalous-topbar-entry-enabled .anomalous-topbar-entry:active {
+        transform: scale(0.95);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.anomalous-topbar-entry-enabled .anomalous-topbar-entry {
+        transition: none;
+    }
 }
 
 html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBrowser.FloatingTriggerSize"],
