@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.64.3 — unreleased
+## v1.64.3 — 2026-11-26
 
 - 图库「提示词」可展开“其他节点里的文字”，复制连到出图支路的通配符、拼接片段或第三方节点原文。可以在本浏览器按工作流隐藏和恢复某个框，候选文字不进入 ☆ 收藏。
 - The gallery Prompts tab now shows source text from connected wildcard, text assembly and third-party nodes. Copy a fragment, or hide and restore its field for that workflow in this browser. Candidates are excluded from favorites.
