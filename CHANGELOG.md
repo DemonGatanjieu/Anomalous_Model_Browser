@@ -1,5 +1,13 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.64.3 — unreleased
+
+- 顶部动作栏的模型浏览器入口只显示图标，鼠标悬停时显示名称（议题 #31）。
+- The model browser entry in the top action bar now uses just an icon. Hover to see its name (issue #31).
+
+- 图库可以识别接入 `CLIPTextEncode` 的单框纯文本，也能读取 PNG 中已经保存的实际提示词。需要从连线回溯时，会跳过随机、动态拼接等无法确认内容的节点（议题 #31）。
+- The gallery can read a single plain-text box wired into `CLIPTextEncode` and use prompt text already saved in the PNG. When following links, it skips sources whose text cannot be verified, including random and dynamic concatenation nodes (issue #31).
+
 ## v1.64.2 (A lighter rail, with More) — 2026-11-25
 
 - 模型详情里的视频封面可以不自动播放、不出声了（议题 #29）：设置 →「外观与交互」→「模型卡片与内存」多了「模型详情自动播放视频」和「模型详情播放视频声音」两个开关，都默认开着，和以前一样。关掉自动播放，视频停在第一帧，点播放再看；关掉声音，视频静音开始，播放器上照样能开声音。只记在这个浏览器里。

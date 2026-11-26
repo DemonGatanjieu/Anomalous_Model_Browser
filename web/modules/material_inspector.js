@@ -1,6 +1,7 @@
 import { text, jsonResponse } from './ui_dom.js';
 /** Shared image metadata and node-parameter inspection for the library and workbench. */
 import { translate } from './locales.js';
+import { hasLinkedPromptText, promptNodeIndex, resolveWorkflowPromptText } from './prompt_link_resolve.js';
 const t = (key, params) => translate(key, params);
 
 export function fileBaseName(value) {
@@ -87,6 +88,7 @@ export function extractWorkflowDetails(workflow) {
     }
 
     const nodes = Array.isArray(workflow.nodes) ? workflow.nodes : [];
+    const nodeIndex = promptNodeIndex(nodes);
 
     for (const node of nodes) {
         if (!node || typeof node !== 'object') continue;
@@ -111,12 +113,17 @@ export function extractWorkflowDetails(workflow) {
         }
 
         // 2. Full un-truncated prompts
-        if (ntypeLower.includes('cliptextencode') || ntypeLower.includes('prompt')) {
+        const isEncoder = ntypeLower.includes('cliptextencode');
+        if (isEncoder || ntypeLower.includes('prompt')) {
             const nodeTitle = String(node.title || ntype).toLowerCase();
-            for (const val of widgets) {
+            const linked = isEncoder && hasLinkedPromptText(node);
+            const promptWidgets = linked || (isEncoder && !widgets.some(value => typeof value === 'string' && value.trim()))
+                ? [resolveWorkflowPromptText(workflow, node, nodeIndex)] : widgets;
+            for (const val of promptWidgets) {
                 if (typeof val === 'string' && val.trim()) {
                     const textVal = val.trim();
                     if (!allPrompts.includes(textVal)) allPrompts.push(textVal);
+                    if (linked) continue;
                     if (nodeTitle.includes('neg') || nodeTitle.includes('负向')) {
                         if (!negativePrompts.includes(textVal)) negativePrompts.push(textVal);
                     } else {
@@ -170,10 +177,11 @@ export function extractWorkflowDetails(workflow) {
     return { params, positivePrompts, negativePrompts, allPrompts, loraDetailsMap, discoveredModels };
 }
 
-export function detailedBlocksFromWorkflow(workflow, serverBlocks = []) {
+export function detailedBlocksFromWorkflow(workflow, serverBlocks = [], resolvedPromptTexts = null) {
     const nodes = Array.isArray(workflow?.nodes) ? workflow.nodes : [];
     if (!nodes.length) return Array.isArray(serverBlocks) ? serverBlocks : [];
     const serverById = new Map((serverBlocks || []).map(block => [String(block?.node_id), block]));
+    const nodeIndex = promptNodeIndex(nodes);
     const occurrences = {};
     return nodes.filter(node => node && typeof node === 'object' && node.type).map(node => {
         const nodeType = String(node.type);
@@ -188,6 +196,10 @@ export function detailedBlocksFromWorkflow(workflow, serverBlocks = []) {
             occurrence: occurrences[nodeType],
             widget_count: Array.isArray(node.widgets_values) ? node.widgets_values.length : 0,
             widgets_values: Array.isArray(node.widgets_values) ? node.widgets_values : [],
+            ...(lower.includes('cliptextencode') && {
+                promptTextLinked: hasLinkedPromptText(node),
+                resolvedPromptText: resolveWorkflowPromptText(workflow, node, nodeIndex, resolvedPromptTexts),
+            }),
             volatile_widget_indexes: Array.isArray(server.volatile_widget_indexes)
                 ? server.volatile_widget_indexes
                 : volatile,
@@ -281,6 +293,9 @@ function formatMaterialParameterValue(value) {
 
 function isPromptBlock(block) {
     const type = String(block?.type || '').toLowerCase();
+    if (block.promptTextLinked || (type.includes('cliptextencode') && block.resolvedPromptText)) {
+        return Boolean(block.resolvedPromptText);
+    }
     return (type.includes('cliptextencode') || type.includes('prompt')) &&
         Array.isArray(block.widgets_values) &&
         block.widgets_values.length > 0 &&
@@ -300,7 +315,8 @@ function promptRoleLabel(role) {
 export function applyPromptRolesToBlocks(blocks, promptRoles) {
     if (!Array.isArray(blocks) || !promptRoles || typeof promptRoles !== 'object') return blocks;
     for (const block of blocks) {
-        const info = promptRoles[String(block?.node_id)];
+        let info = promptRoles[String(block?.node_id)];
+        if (block.promptTextLinked && (!info || info.source === 'title')) info = { role: 'unknown', source: 'unresolved' };
         if (!info || typeof info !== 'object') continue;
         block.promptRole = info.role;
         block.promptRoleSource = info.source;
@@ -352,7 +368,8 @@ function renderPromptBlock(content, block, widgetValues) {
     const promptWrap = document.createElement('div');
     promptWrap.className = 'anomalous-material-prompt-station';
 
-    const promptText = String(widgetValues[0] ?? '');
+    const ownText = block.promptTextLinked ? '' : String(widgetValues[0] ?? '');
+    const promptText = ownText.trim() ? ownText : block.resolvedPromptText || ownText;
     const charCount = promptText.length;
 
     const bar = document.createElement('div');
@@ -439,9 +456,8 @@ function renderNodeCardContent(node, block, widgetValues) {
 
     if (isPromptBlock(block)) {
         renderPromptBlock(content, block, widgetValues);
-        if (widgetValues.length > 1) {
-            renderNodeParameterRows(content, block, widgetValues.slice(1), 1);
-        }
+        const offset = block.promptTextLinked ? 0 : 1;
+        if (widgetValues.length > offset) renderNodeParameterRows(content, block, widgetValues.slice(offset), offset);
     } else {
         renderNodeParameterRows(content, block, widgetValues);
     }

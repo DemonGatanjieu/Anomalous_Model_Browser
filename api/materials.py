@@ -12,7 +12,7 @@ import folder_paths
 
 from . import material_schema as _schema
 from . import material_store as _store
-from .material_assets import _inspect_source_image, _material_assets_dir, _store_assets
+from .material_assets import _inspect_source_image, _inspect_source_image_with_prompt, _material_assets_dir, _store_assets
 from .material_schema import (
     MAX_MATERIAL_NAME_LENGTH,
     _extract_workflow_params,
@@ -31,6 +31,7 @@ from .material_schema import (
     _workflow_hashes_for_blocks,
 )
 from .notebooks import MAX_NOTEBOOK_BYTES
+from .prompt_links import resolved_prompt_texts
 from .recipe_schema import _build_model_references, _normalise_source_image
 from .recipe_store import get_recipes_dir
 from .utils import atomic_write_json as _atomic_write_json, require_filename, resolve_within
@@ -149,8 +150,8 @@ def _delete_material(materials_dir, filename, path):
 async def api_inspect_image_material(request):
     try:
         payload = await request.json()
-        source, source_path, workflow, blocks, references, suggested_name = await asyncio.to_thread(
-            _inspect_source_image, payload.get("source_image")
+        source, _, workflow, blocks, references, suggested_name, api_prompt = await asyncio.to_thread(
+            _inspect_source_image_with_prompt, payload.get("source_image")
         )
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Image has no reusable UI workflow"}, status=400)
@@ -158,7 +159,7 @@ async def api_inspect_image_material(request):
         return web.json_response({"status": "error", "message": "Output image not found"}, status=404)
     except OSError:
         return web.json_response({"status": "error", "message": "Could not inspect output image"}, status=500)
-    sampling_params, prompts = _extract_workflow_params(workflow)
+    sampling_params, prompts = _extract_workflow_params(workflow, api_prompt=api_prompt)
     prompt_roles = _prompt_roles_for_workflow(workflow)
     return web.json_response({
         "status": "success",
@@ -168,11 +169,12 @@ async def api_inspect_image_material(request):
         "node_blocks": blocks,
         "workflow": workflow,
         "model_references": references,
-        "prompt_excerpt": _prompt_excerpt(workflow),
+        "prompt_excerpt": _prompt_excerpt(workflow, api_prompt=api_prompt),
         "params": sampling_params,
         "prompts": prompts,
         "prompt_roles": prompt_roles,
-        "prompt_groups": _prompt_groups_from_roles(workflow, prompt_roles),
+        "prompt_groups": _prompt_groups_from_roles(workflow, prompt_roles, api_prompt=api_prompt),
+        "resolved_prompt_texts": resolved_prompt_texts(workflow, api_prompt=api_prompt),
     })
 
 

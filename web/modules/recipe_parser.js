@@ -1,4 +1,5 @@
 import { promptBoxes, promptNameRole } from './prompt_boxes.js';
+import { resolveGraphPromptText } from './prompt_link_resolve.js';
 import { isAllInOneLoaderType, isPlaceholderModelValue } from './recipe_identity.js';
 import { isSelectedModelFile, nodeType, normaliseName, numberValue, textValue, widgetValue } from './recipe_widgets.js';
 import { nodeLoras, syncLoraMetadata } from './recipe_loras.js';
@@ -341,7 +342,7 @@ function mergeSampler(metadata, sampler) {
  * Extract a best-effort summary from the live LiteGraph graph without
  * modifying nodes, links, widgets, or graph state.
  */
-export function extractRecipeMetadata(graph) {
+export function extractRecipeMetadata(graph, resolvedPromptTexts = null) {
     const metadata = {
         baseModel: null,
         baseModels: [],
@@ -421,7 +422,7 @@ export function extractRecipeMetadata(graph) {
     for (const summary of metadata.nodes) {
         if (!isSupportedPromptNodeType(summary.type)) continue;
         const node = nodeIndex.get(String(summary.id));
-        const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
+        const prompt = resolveGraphPromptText(graph, node, nodeIndex, resolvedPromptTexts);
         const isPositive = positiveNodes.includes(node);
         const isNegative = negativeNodes.includes(node);
 

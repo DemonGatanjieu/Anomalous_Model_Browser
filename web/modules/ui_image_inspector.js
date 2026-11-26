@@ -168,7 +168,7 @@ function buildPromptsStation(blocks, fallbackPrompt, item, suggestedName, contex
 
     const promptBlocks = (blocks || []).filter(block =>
         /cliptextencode/i.test(block.type || '') &&
-        (block.widgets_values || []).some(value => typeof value === 'string' && value.trim())
+        (block.resolvedPromptText || (!block.promptTextLinked && (block.widgets_values || []).some(value => typeof value === 'string' && value.trim())))
     );
     if (promptBlocks.length) {
         text(wrap, 'p', t('materialPromptRoleHelp'), 'anomalous-workbench-muted');
@@ -462,10 +462,11 @@ export async function renderImageInspectorContent(context, data, item) {
         wb.promptRoleOverrides,
     );
     const blocks = applyPromptRolesToBlocks(
-        detailedBlocksFromWorkflow(clientWorkflow, inspectPayload.node_blocks),
+        detailedBlocksFromWorkflow(clientWorkflow, inspectPayload.node_blocks, inspectPayload.resolved_prompt_texts),
         promptRoles,
     );
-    const fallbackPrompt = (Array.isArray(inspectPayload.prompts) && inspectPayload.prompts.length)
+    const fallbackPrompt = clientWorkflow && !inspectPayload.resolved_prompt_texts ? ''
+        : (Array.isArray(inspectPayload.prompts) && inspectPayload.prompts.length)
         ? inspectPayload.prompts.join('\n\n')
         : (inspectPayload.prompt_excerpt || '');
 

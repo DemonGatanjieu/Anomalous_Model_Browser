@@ -103,7 +103,9 @@ persistence/history live in `workflow_schema.py`, `recipe_schema.py`,
 `recipe_images.py`, and `recipe_store.py`; `recipes.py` is the HTTP facade.
 Material shaping, private assets, and the single persistence lock/summary cache
 live in `material_schema.py`, `material_assets.py`, and `material_store.py`;
-`materials.py` owns request/response mapping and compatibility entry points;
+`materials.py` owns request/response mapping and compatibility entry points.
+`api/prompt_links.py` resolves encoder text from PNG prompt metadata and bounded
+workflow links for material inspection.
 `node_material.py` saves one canvas node's values as a `node_parameter_selection`
 material (deduplicated by node type and values like other parameter materials).
 

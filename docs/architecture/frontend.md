@@ -170,14 +170,17 @@ The main surfaces are:
 
 `ui_dom.js` owns generic `text`, `jsonResponse` and `settle` helpers.
 `material_inspector.js` holds the image workbench's metadata helpers and
-node-parameter rendering; `png_metadata.js` reads a PNG's workflow in the browser. See `material-library.md` for the material files' API and
+node-parameter rendering. `web/modules/prompt_link_resolve.js` reads linked
+encoder text from serialized workflows and live LiteGraph graphs, and consumes
+the image inspection's per-node resolved text. `png_metadata.js` reads a PNG's
+workflow in the browser. See `material-library.md` for the material files' API and
 persistence contract.
 
 ## Entry modes and host integration
 
 One shared `openBrowser()` command backs the floating trigger, ComfyUI action-bar
-button, and `Extensions -> Anomalous Model Browser` command. Entry presentations
-are mutually exclusive and reuse the same browser instance. The Extensions
+icon button with a hover tooltip, and `Extensions -> Anomalous Model Browser`
+command. Entry presentations are mutually exclusive and reuse the same browser instance. The Extensions
 command remains available as a recovery path in every mode.
 
 A native command owns the default `Shift + B` browser binding (Ctrl + Shift + M before v1.58.2: Chrome and Edge

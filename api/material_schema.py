@@ -7,13 +7,16 @@ import os
 import re
 
 from .notebooks import MAX_NOTEBOOK_BYTES
+from .prompt_links import (
+    _is_prompt_node_type, embedded_prompt_text, has_linked_prompt_text,
+    resolve_clip_prompt_text, workflow_node_index,
+)
 from .recipe_schema import _build_model_references
 from .workflow_schema import _parameter_signature, _volatile_widget_indexes, _workflow_fingerprint
 
 
 MAX_MATERIAL_NAME_LENGTH = 120
 MODEL_PRIORITY = {"checkpoint": 0, "unet": 1, "lora": 2}
-_PROMPT_NODE_TYPES = {"cliptextencode"}
 _PROMPT_CONSUMERS = {
     "ksampler": {"positive": "positive", "negative": "negative"},
     "ksampleradvanced": {"positive": "positive", "negative": "negative"},
@@ -101,23 +104,23 @@ def _material_node_blocks(material, include_values=True):
                         selected_ids=_material_node_ids(material))
 
 
-def _prompt_excerpt(workflow):
+def _prompt_excerpt(workflow, api_prompt=None):
     for node in workflow.get("nodes", []):
-        if not isinstance(node, dict) or "cliptextencode" not in str(node.get("type") or "").lower():
+        if not isinstance(node, dict) or not _is_prompt_node_type(node.get("type")):
             continue
-        for value in node.get("widgets_values") or []:
-            if isinstance(value, str) and value.strip():
-                compact = re.sub(r"\s+", " ", value).strip()
-                return compact[:20]
+        value = resolve_clip_prompt_text(workflow, node, api_prompt=api_prompt)
+        if value:
+            return re.sub(r"\s+", " ", value)[:20]
     return ""
 
 
-def _extract_workflow_params(workflow):
+def _extract_workflow_params(workflow, api_prompt=None):
     params = {}
     prompts = []
     if not isinstance(workflow, dict):
         return params, prompts
 
+    nodes_by_id = workflow_node_index(workflow)
     for node in workflow.get("nodes", []):
         if not isinstance(node, dict):
             continue
@@ -144,8 +147,13 @@ def _extract_workflow_params(workflow):
             if len(widgets) >= 2 and widgets[0] and widgets[1]:
                 params.setdefault("resolution", f"{widgets[0]}×{widgets[1]}")
 
-        if "cliptextencode" in ntype_lower and isinstance(widgets, (list, tuple)):
-            for val in widgets:
+        if _is_prompt_node_type(ntype_lower):
+            if has_linked_prompt_text(node) or embedded_prompt_text(node, api_prompt):
+                values = (resolve_clip_prompt_text(workflow, node, nodes_by_id, api_prompt),)
+            else:
+                # Keep every local string on encoders with several text boxes.
+                values = widgets if isinstance(widgets, (list, tuple)) else ()
+            for val in values:
                 if isinstance(val, str) and val.strip():
                     cleaned = val.strip()
                     if cleaned not in prompts:
@@ -158,19 +166,10 @@ def _norm_node_name(value):
     return str(value or "").strip().lower()
 
 
-def _is_prompt_node_type(node_type):
-    name = _norm_node_name(node_type)
-    return name in _PROMPT_NODE_TYPES or "cliptextencode" in name
-
-
-def _first_prompt_text(node):
-    for value in node.get("widgets_values") or []:
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return ""
-
-
 def _title_prompt_role(node):
+    # Title hints are only for legacy prompts written inside the encoder.
+    if has_linked_prompt_text(node) or not resolve_clip_prompt_text({}, node):
+        return None
     title = str(node.get("title") or "").lower()
     if "neg" in title or "负向" in title or "反向" in title:
         return "negative"
@@ -312,21 +311,20 @@ def _prompt_roles_for_workflow(workflow, overrides=None):
     return roles
 
 
-def _prompt_groups_from_roles(workflow, roles, selected_ids=None):
+def _prompt_groups_from_roles(workflow, roles, selected_ids=None, api_prompt=None):
     positive = []
     negative = []
     if not isinstance(workflow, dict) or not isinstance(roles, dict):
         return {"positive": positive, "negative": negative}
-    for node in workflow.get("nodes") or []:
-        if not isinstance(node, dict):
-            continue
-        node_id = str(node.get("id"))
-        if selected_ids is not None and node_id not in selected_ids:
-            continue
+    nodes_by_id = workflow_node_index(workflow)
+    if selected_ids is not None:
+        nodes_by_id = {key: node for key, node in nodes_by_id.items() if key in selected_ids}
+        api_prompt = None
+    for node_id, node in nodes_by_id.items():
         info = roles.get(node_id)
         if not isinstance(info, dict):
             continue
-        text = _first_prompt_text(node)
+        text = resolve_clip_prompt_text(workflow, node, nodes_by_id, api_prompt)
         if not text:
             continue
         role = info.get("role")

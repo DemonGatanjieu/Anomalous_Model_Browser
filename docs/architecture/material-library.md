@@ -20,7 +20,8 @@ are combos (`anomalous_notebooks`). Neither is copied into material files.
 ## Persistence and API ownership
 
 `api/material_schema.py` owns record shaping, prompt-role rules and bounded
-normalization; `api/material_assets.py` owns source inspection and private image
+normalization. `api/prompt_links.py` resolves encoder text from embedded API
+prompt strings and read-only workflow links. `api/material_assets.py` owns source inspection and private image
 copies; `api/material_store.py` is the sole owner of persistence locking, the
 summary cache, query/update/delete, and recipe-source resolution. `api/materials.py`
 owns HTTP request/response mapping and narrow compatibility entry points;
@@ -33,8 +34,12 @@ filename and containment checks. It reads bounded embedded metadata, requires a
 valid UI workflow, copies at most 64 MiB of source image data, validates the
 graph with the Recipe workflow validator, and writes JSON atomically. List
 responses omit the full workflow. The image-inspection route returns the validated
-workflow plus summary node blocks for the image workbench, which keeps exact metadata
-in a small 16-entry in-memory LRU. Asset reads require both a valid material record
+workflow, summary node blocks and a separate `resolved_prompt_texts` map keyed by
+encoder node ID. For a connected text input, the resolver uses an inline PNG prompt
+string or follows up to eight links through supported reroutes to a static
+single-widget text source. Connected inputs with unresolved text contribute no
+prompt. The image workbench keeps exact metadata in a small 16-entry in-memory LRU.
+Asset reads require both a valid material record
 and a contained private asset path.
 
 Saving stages the image, preview, and JSON together below a private temporary
@@ -107,8 +112,10 @@ Records declare `schema_version`, `kind`, and `capabilities`.
 - `prompt_text` / `prompt_note_bundle`: prompts copied from Prompt Notes before combos;
   read as prompt cards (`note.promptEn`).
 
-Prompt roles in image selections are inferred from workflow topology first, with
-node-title hints as a fallback. The image workbench shows the inferred role beside
+Prompt roles in image selections are inferred from workflow topology. The legacy
+node-title fallback applies to text written inside the encoder. Linked prompts with
+no known downstream role stay unknown. For selected-node records, every upstream
+node used to resolve text must also be selected. The image workbench shows the inferred role beside
 every prompt node and allows a positive, negative, shared, unknown, or ignored
 override, which travels into the saved record but never writes back to a Recipe.
 

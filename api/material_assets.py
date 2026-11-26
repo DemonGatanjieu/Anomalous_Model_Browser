@@ -24,6 +24,10 @@ def _material_assets_dir(materials_dir, filename, create=False):
 
 
 def _inspect_source_image(source_image):
+    return _inspect_source_image_with_prompt(source_image)[:-1]
+
+
+def _inspect_source_image_with_prompt(source_image):
     source = _normalise_source_image(source_image)
     if source is None:
         raise ValueError("Missing source image")
@@ -38,7 +42,9 @@ def _inspect_source_image(source_image):
     blocks = _node_blocks(workflow, include_values=False)
     references = _build_model_references({"workflow": workflow, "params": {}}, verify_identities=False)
     suggested_name = _suggested_name(workflow, source_path, references)
-    return source, source_path, workflow, blocks, references, suggested_name
+    api_prompt = payload.get("prompt")
+    return (source, source_path, workflow, blocks, references, suggested_name,
+            api_prompt if isinstance(api_prompt, dict) else None)
 
 
 def _store_assets(materials_dir, filename, source_path):

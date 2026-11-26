@@ -444,7 +444,6 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         settings,
         actionBarButtons: [{
             icon: 'pi pi-box',
-            label: t('mainTopbarTriggerLabel'),
             tooltip: t('mainOpenTitle'),
             class: 'anomalous-topbar-entry',
             onClick: open
