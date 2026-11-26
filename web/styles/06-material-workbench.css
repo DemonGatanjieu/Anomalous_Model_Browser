@@ -1164,6 +1164,23 @@
 }
 
 /* Prompts Station */
+.anomalous-candidate-list {
+    margin-block: 0.5rem;
+    border-top: 1px solid var(--amb-border);
+    padding-block: 0.5rem;
+    color: var(--amb-text-main);
+}
+
+.anomalous-candidate-list > summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.anomalous-candidate-list .anomalous-workbench-prompt-content {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 .anomalous-workbench-prompts-wrap {
     display: flex;
     flex-direction: column;

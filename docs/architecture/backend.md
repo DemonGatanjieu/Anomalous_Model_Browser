@@ -104,6 +104,9 @@ persistence/history live in `workflow_schema.py`, `recipe_schema.py`,
 Material shaping, private assets, and the single persistence lock/summary cache
 live in `material_schema.py`, `material_assets.py`, and `material_store.py`;
 `materials.py` owns request/response mapping and compatibility entry points.
+`api/prompt_candidates.py` builds a scoped, bounded reverse index of UI and execution edges for gallery text candidates. Its structure fingerprint excludes parameter values.
+`api/prompt_candidate_fields.py` validates field identity and full literals. Its two-worker schema lookup caches class definitions and misses, never image text.
+
 `api/prompt_links.py` resolves encoder text from PNG prompt metadata and bounded
 workflow links for material inspection.
 `node_material.py` saves one canvas node's values as a `node_parameter_selection`

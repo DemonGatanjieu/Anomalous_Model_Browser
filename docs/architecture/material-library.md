@@ -168,6 +168,12 @@ the recipe (`ui_param_set_keys.js`), whose tab in the details says how many valu
 their value signature (files over the save limit skipped, at most 5,000 read); a recipe card counts
 those unlike the recipe's own, since saving a recipe also keeps a set equal to it.
 
+## Gallery text candidates
+
+Gallery text candidates are an optional read on `POST /anomalous/inspect_image_material` with `include_candidates: true` and the usual `source_image`. It returns version 1, `status` (complete, partial or no_graph), `api_only` and bounded `candidates`. Each carries literal text, safe field/source labels, downstream destinations and an opaque visibility key. API-only images support this read. Opening a workflow still requires valid canvas metadata.
+
+For a stored selection, pass `material_filename` instead. The backend reads its stored selection first, restricts both ends of every edge and omits execution literals. An invalid selection yields no candidates. Candidate reads have no result cache and never contribute to prompt groups, saved values or favorites.
+
 ## Prompt plans
 
 `prompt_plan` has no synthetic workflow. `POST save_prompt_plan` accepts a name, tags,

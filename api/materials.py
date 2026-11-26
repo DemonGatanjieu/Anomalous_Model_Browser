@@ -12,7 +12,7 @@ import folder_paths
 
 from . import material_schema as _schema
 from . import material_store as _store
-from .material_assets import _inspect_source_image, _inspect_source_image_with_prompt, _material_assets_dir, _store_assets
+from .material_assets import _image_payload, _inspect_source_image, _inspect_source_image_with_prompt, _material_assets_dir, _store_assets
 from .material_schema import (
     MAX_MATERIAL_NAME_LENGTH,
     _extract_workflow_params,
@@ -32,6 +32,7 @@ from .material_schema import (
 )
 from .notebooks import MAX_NOTEBOOK_BYTES
 from .prompt_links import resolved_prompt_texts
+from .prompt_candidates import extract_candidates
 from .recipe_schema import _build_model_references, _normalise_source_image
 from .recipe_store import get_recipes_dir
 from .utils import atomic_write_json as _atomic_write_json, require_filename, resolve_within
@@ -147,9 +148,22 @@ def _delete_material(materials_dir, filename, path):
     return _store_delete_material(materials_dir, filename, path)
 
 
+def _inspect_candidates(payload):
+    if "material_filename" in payload:
+        filename = require_filename(payload["material_filename"])
+        if not filename.endswith(".json"):
+            raise ValueError("Invalid material")
+        material = _read_material(resolve_within(get_materials_dir(), filename))
+        return extract_candidates(material.get("workflow"), material=material)
+    _, _, data = _image_payload(payload.get("source_image"))
+    return extract_candidates(data.get("workflow"), data.get("prompt"))
+
+
 async def api_inspect_image_material(request):
     try:
         payload = await request.json()
+        if payload.get("include_candidates") is True:
+            return web.json_response(await asyncio.to_thread(_inspect_candidates, payload))
         source, _, workflow, blocks, references, suggested_name, api_prompt = await asyncio.to_thread(
             _inspect_source_image_with_prompt, payload.get("source_image")
         )

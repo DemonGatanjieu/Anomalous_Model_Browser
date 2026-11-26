@@ -117,6 +117,8 @@ The main surfaces are:
   images (`gallery_images?kept=1`, `kept_images.kept_keys`).
   `ui_gallery_detail.js` owns its singleton lifecycle and cache, `ui_image_stage.js`
   owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
+  `web/modules/ui_prompt_candidates.js` renders the image Prompts panel and fetches candidate fields on activation with the current image lifetime.
+  `web/modules/prompt_candidate_visibility.js` keeps up to 512 versioned field identities per browser and synchronizes active tabs. Unstable fields and unavailable storage use session memory.
 - Workspace: Combos (搭配, formerly Prompt Notes) and Workflow Recipes. The combo list, workspace/persistence, editing, and canvas use are separated
   across `ui_combos.js`, `ui_notebooks.js`, `ui_notebook_editor.js`, and
   `notebook_canvas.js`; a default combo's `data.loraNode` ('core', 'rgthree', 'easy'; none is 'core')

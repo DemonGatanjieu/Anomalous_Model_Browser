@@ -25,6 +25,11 @@ def widget_names(node_type):
         spec = cls.INPUT_TYPES() if cls else {}
     except Exception:  # noqa: BLE001 - a pack's own code; its values stay unnamed
         return []
+    return schema_widget_names(spec)
+
+
+def schema_widget_names(spec):
+    """Serialized widget order for an already loaded input definition."""
     names = []
     for group in ("required", "optional"):
         for name, item in (spec.get(group) or {}).items():

@@ -27,7 +27,7 @@ def _inspect_source_image(source_image):
     return _inspect_source_image_with_prompt(source_image)[:-1]
 
 
-def _inspect_source_image_with_prompt(source_image):
+def _image_payload(source_image):
     source = _normalise_source_image(source_image)
     if source is None:
         raise ValueError("Missing source image")
@@ -35,6 +35,11 @@ def _inspect_source_image_with_prompt(source_image):
         raise ValueError("Only PNG output images can contain reusable workflow metadata")
     source_path = _output_source_path(source)
     payload = _embedded_workflow_payload(source_path)
+    return source, source_path, payload or {}
+
+
+def _inspect_source_image_with_prompt(source_image):
+    source, source_path, payload = _image_payload(source_image)
     workflow = payload.get("workflow") if isinstance(payload, dict) else None
     if not isinstance(workflow, dict):
         raise ValueError("Image has no reusable UI workflow")

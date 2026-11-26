@@ -4,6 +4,7 @@
 
 import { translate } from './locales.js';
 import { text } from './ui_dom.js';
+import { buildPromptsStation } from './ui_prompt_candidates.js';
 import {
     fileBaseName,
     appendLocalPreview,
@@ -14,7 +15,6 @@ import {
     materialNodeHeading,
     renderDetailedNodeCards,
     applyPromptRolesToBlocks,
-    byPromptRole,
     mergePromptRoleOverrides,
 } from './material_inspector.js';
 
@@ -158,56 +158,6 @@ function buildSpecsGrid(params, blocks, item, suggestedName, context) {
     return grid;
 }
 
-/**
- * Build Prompts Station
- */
-function buildPromptsStation(blocks, fallbackPrompt, item, suggestedName, context) {
-    const { workbench: wb, saveSelectedBlocks, copyToClipboard } = context;
-    const wrap = document.createElement('div');
-    wrap.className = 'anomalous-workbench-prompts-wrap';
-
-    const promptBlocks = (blocks || []).filter(block =>
-        /cliptextencode/i.test(block.type || '') &&
-        (block.resolvedPromptText || (!block.promptTextLinked && (block.widgets_values || []).some(value => typeof value === 'string' && value.trim())))
-    );
-    if (promptBlocks.length) {
-        text(wrap, 'p', t('materialPromptRoleHelp'), 'anomalous-workbench-muted');
-        renderDetailedNodeCards(wrap, byPromptRole(promptBlocks), {
-            onSaveBlock: (block, button) => saveSelectedBlocks(item, suggestedName, [block], button),
-            onPromptRoleChange: async (block, selectedRole) => {
-                const key = String(block.node_id);
-                if (!wb.promptRoleOverrides || typeof wb.promptRoleOverrides !== 'object') wb.promptRoleOverrides = {};
-                if (selectedRole === 'auto') {
-                    delete wb.promptRoleOverrides[key];
-                    block.promptRole = block.promptRoleAutomatic || 'unknown';
-                    block.promptRoleManual = false;
-                    block.promptRoleSource = 'automatic';
-                } else {
-                    wb.promptRoleOverrides[key] = { role: selectedRole, nodeType: block.type || null };
-                    block.promptRole = selectedRole;
-                    block.promptRoleManual = true;
-                    block.promptRoleSource = 'manual';
-                }
-            },
-        });
-    } else if (fallbackPrompt) {
-        const card = document.createElement('div');
-        card.className = 'anomalous-workbench-prompt-card';
-        const topBar = document.createElement('div');
-        topBar.className = 'anomalous-workbench-prompt-bar';
-        text(topBar, 'span', t('materialPromptText') || '提示词', 'anomalous-workbench-prompt-title');
-        const copyBtn = text(topBar, 'button', t('materialCopyPrompt'), 'anomalous-workbench-mini-action-btn');
-        copyBtn.type = 'button';
-        copyBtn.onclick = () => copyToClipboard(fallbackPrompt, copyBtn, t('materialCopied'), t('materialCopyPrompt'));
-        card.appendChild(topBar);
-        text(card, 'div', fallbackPrompt, 'anomalous-workbench-prompt-content is-expanded');
-        wrap.appendChild(card);
-    } else {
-        text(wrap, 'div', t('materialNoPromptData'), 'anomalous-workbench-muted');
-    }
-
-    return wrap;
-}
 
 /**
  * Build Models & LoRAs Section
@@ -537,6 +487,8 @@ export async function renderImageInspectorContent(context, data, item) {
             Object.values(tabPanels).forEach(p => p.style.display = 'none');
             if (tabPanels[tDef.id]) tabPanels[tDef.id].style.display = 'flex';
             if (tDef.id === 'models') ensureModelsResolved();
+            if (tDef.id === 'prompts') station.activate();
+            else station.deactivate();
         };
 
         tabsBar.appendChild(tabBtn);
@@ -556,9 +508,11 @@ export async function renderImageInspectorContent(context, data, item) {
     const promptsPanel = document.createElement('div');
     promptsPanel.className = 'anomalous-workbench-tab-panel';
     promptsPanel.style.display = wb.activeTab === 'prompts' ? 'flex' : 'none';
-    promptsPanel.appendChild(buildPromptsStation(blocks, fallbackPrompt, item, inspectPayload.suggested_name, context));
+    const station = buildPromptsStation(blocks, fallbackPrompt, item, inspectPayload.suggested_name, context);
+    promptsPanel.appendChild(station.element);
     tabPanels.prompts = promptsPanel;
     wb.sideBodyEl.appendChild(promptsPanel);
+    if (wb.activeTab === 'prompts') station.activate();
 
     // Panel 3: Models & LoRAs
     const modelsPanel = document.createElement('div');

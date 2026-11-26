@@ -2,6 +2,9 @@
 
 ## v1.64.3 — unreleased
 
+- 图库「提示词」可展开“其他节点里的文字”，复制连到出图支路的通配符、拼接片段或第三方节点原文。可以在本浏览器按工作流隐藏和恢复某个框，候选文字不进入 ☆ 收藏。
+- The gallery Prompts tab now shows source text from connected wildcard, text assembly and third-party nodes. Copy a fragment, or hide and restore its field for that workflow in this browser. Candidates are excluded from favorites.
+
 - 顶部动作栏的模型浏览器入口使用圆形纯图标按钮。悬停时底色和图标随主题高亮，并显示入口名称。按下时有反馈，用 Tab 键聚焦时显示轮廓（议题 #31）。
 - The model browser now has a round icon button in the top action bar. Hovering highlights the button and icon in the current theme and shows its name. Pressing gives visual feedback, and tabbing to the button shows a focus ring (issue #31).
 
