@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-11-28 · v1.64.3：示例工作流写死 Anima Tile 文件名，改名或镜像下载后误报缺失
+
+**现象**：用户已经在 `models/controlnet` 放好了 `Anima Tile & Repair ControlNet-LLLite v2.0`，AMB 模型页甚至已经靠哈希识别出它的封面和信息，但工作流页「Anima-Tile 精修」「背景虚化，只重画人物」仍提示「缺 Anima Tile 模型（controlnet 文件夹）」。
+
+**根因**：`api/block_models.json` 里早就登记了 `anima_tile_repair` 的精确字节大小和 SHA-256，但 `api/reference_blocks.py` 的 `_lllite(info, "tile")` 写死了只认 `animaTileRepair_v20.safetensors` 这一个文件名，`_installed()` 也只看了文件名或字节数没核 SHA-256。模型匹配没有接入 `model_identity.py` 的指纹体系。
+
+**怎么发现的**：B 站用户私信反馈并附截图，对照 `reference_blocks._lllite` 源码查出硬编码文件名分支。
+
+**以后怎么做**
+- 做法积木和示例工作流查已知模型统一走 `api/model_match.py`：**先物理字节初筛 + 完整 SHA-256 核验**（复用 `get_metadata` / `known_hashes` / 内存缓存，且路由用 `asyncio.to_thread` 离开事件循环），未命中再走开放版本号 + `model_heads` 文件头校验兜底。
+- 绝不再用单一文件名作为推荐模型或必备模型的唯一识别依据。
+
+---
+
 ## 2026-11-17 · 1.64：隐私一览“挑哪些不藏”后，还要藏的词明文发给了 AI
 
 **现象**：一段藏起来的提示词（"a, b, c"），只放开中间的 b，AI 之后在“用户改了提示词”这类文字里收到整段原文，a 和 c 也在里面。

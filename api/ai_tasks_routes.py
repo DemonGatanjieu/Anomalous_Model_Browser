@@ -452,8 +452,9 @@ async def api_blocks(request):
         info = await asyncio.to_thread(mcp_canvas_edit.object_info, {"base_url": f"{request.scheme}://{request.host}"})
     except ToolError as error:
         return web.json_response({"error": str(error)}, status=502)
-    return web.json_response({"blocks": reference_blocks.status(info), "jobs": list(reference_blocks.JOBS),
-                              "skills": ai_skills.status()})
+    blocks, skills = await asyncio.to_thread(lambda: (reference_blocks.status(info), ai_skills.status()))
+    return web.json_response({"blocks": blocks, "jobs": list(reference_blocks.JOBS),
+                              "skills": skills})
 
 
 async def api_routes(request):

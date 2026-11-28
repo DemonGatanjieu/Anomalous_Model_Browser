@@ -1,5 +1,10 @@
 # 📈 Anomalous Model Browser Changelog
 
+## Unreleased
+
+- 修复示例工作流与做法积木（如 Anima Tile 精修、只重画人物）误报「缺模型」的问题：现在优先按精确文件大小 + SHA-256 指纹识别 `block_models.json` 里的推荐模型（从镜像站下载、改过名字或放在子文件夹里也能认出来），未命中已知指纹时再用兼容版本号和 `.safetensors` 文件头兜底，不再因为只认单一文件名而漏检。
+- Fixed false "missing model" warnings in example workflows and Ways (such as Anima Tile upscale/character refinement): recommended models in `block_models.json` are now matched first by exact file size + SHA-256 fingerprint (recognizing renamed, subfolder, or mirror-downloaded files), before falling back to compatible version names and `.safetensors` header checks.
+
 ## v1.64.3 — 2026-11-26
 
 - 图库「提示词」可展开“其他节点里的文字”，复制连到出图支路的通配符、拼接片段或第三方节点原文。可以在本浏览器按工作流隐藏和恢复某个框，候选文字不进入 ☆ 收藏。

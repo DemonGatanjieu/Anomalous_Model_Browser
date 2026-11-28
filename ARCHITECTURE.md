@@ -317,6 +317,11 @@ covered by the `styles.css` manifest.
   for a picture the user hands over (fix_hands) gives way to its use's way that goes on from the step before.
   Once a plan of several steps is built, the user's rule holds in `mcp_actions.run_workflow`: its first run is
   three bases (task "plan_previews"), and the whole waits for their pick ("plan_pick": refused once without one).
+  `api/model_match.py` is the single known-model matcher for `api/reference_blocks.py` and
+  `api/example_workflows.py`: it matches `api/block_models.json` specs against ComfyUI
+  dropdowns and folders by exact physical byte size first and verified full-file SHA-256
+  (reusing memory cache, `get_metadata` sidecar hashes, and `known_hashes.py`) before any
+  open filename/header fallback (`model_heads.inspect`) (`tests/test_model_match.py`).
   canvas_roles.js takes a "…model" path past size-bound patches (LLLite, ControlNet, T2I-Adapter) on that line.
   `api/mcp_routes.py` (data: `api/routes.json`, `tests/test_mcp_routes.py`) turns picked main models into choices the user makes: `ask_user(routes=true)`
   shows the routes this ComfyUI can build for them (only for models use picture draws with, `mcp_canvas_edit.draws_picture`, and two of the same loader kind), a saved card using both first, its answer says what to call, and

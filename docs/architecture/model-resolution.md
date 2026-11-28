@@ -179,3 +179,21 @@ This is an I/O optimization only and does not change identity evidence.
 Civitai lookup by hash may resolve a model/version page and route mature content
 to the configured domain. Hash-detail UI may compare and copy workflow and local
 hash/size values. Neither presentation feature changes recovery rules.
+
+## Known-model matching (Ways & example workflows)
+
+Ready-made blocks (`api/reference_blocks.py`), their "installed" badges, and the
+example workflows (`api/example_workflows.py`) resolve recommended/required models in
+`api/block_models.json` through one shared matcher (`api/model_match.py`):
+
+1. **Exact identity first (Layer 1)**: check physical byte size (`os.path.getsize`) as an
+   $O(1)$ fast-reject, and only when the size matches verify the full-file SHA-256 via
+   the bounded memory cache, verified sidecar hash (`get_metadata`), `known_hashes.py`, or
+   on-demand `model_identity.file_sha256` (read-only; routes run it in `asyncio.to_thread`).
+   Renamed or mirror-downloaded files match deterministically, while corrupt or
+   wrong-version files sharing the canonical filename never pass `_installed`.
+2. **Open fallback (Layer 2)**: when no local file matches a known digest (future versions
+   or compatible community models), fall back to compatible basename/version matching
+   guarded by header inspection (`model_heads.inspect` rejects confirmed non-LLLite
+   `.safetensors` files on LLLite loaders). Never hardcode a single filename as the sole
+   identity check for a recommended or required model.

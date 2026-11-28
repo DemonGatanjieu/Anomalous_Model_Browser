@@ -26,6 +26,8 @@ import os
 import re
 import threading
 
+from . import model_match
+
 FOLDER = os.path.join(os.path.dirname(__file__), "blocks")
 # The models the ways recommend: where each comes from (links), its size, SHA256 and licence, the folder it goes in.
 MODELS_FILE = os.path.join(os.path.dirname(__file__), "block_models.json")
@@ -72,23 +74,31 @@ with open(MODELS_FILE, encoding="utf-8") as _source:
     MODELS = json.load(_source)
 
 
+# Keys in block_models.json for cryptographic size + SHA-256 matching before filename fallbacks.
+KNOWN_LLLITE = {"tile": ("anima_tile_repair",), "depth": ("anima_lllite_depth",), "pose": ("anima_lllite_pose",),
+                "inpaint": ("anima_lllite_inpainting",), "lineart": ("anima_lllite_lineart",)}
+KNOWN_LORAS = {"anima-turbo-lora": ("anima_turbo_lora",)}
+KNOWN_DETECTORS = {"face_yolov8": ("face_yolov8m",), "hand_yolov8": ("hand_yolov8s",)}
+KNOWN_CHECKPOINTS = {"sam3": ("sam3_1",)}
+KNOWN_CONTROLNETS = {"tile": ("noob_tile", "union_promax_sdxl"), "depth": ("xinsir_depth_sdxl", "union_promax_sdxl"),
+                     "pose": ("noob_openpose", "thibauld_openpose_sdxl", "union_promax_sdxl"),
+                     "lineart": ("union_promax_sdxl",)}
+UNION_MODELS = {"union_promax_sdxl"}
+
+
+def _known_specs(keys):
+    return [MODELS[key] for key in keys if key in MODELS]
+
+
+def _version_key(name):
+    base = os.path.basename(name.replace("\\", "/")).lower()
+    match = re.search(r"v(\d+)(?:\.(\d+))?", base)
+    return ((int(match.group(1)), int(match.group(2) or 0)) if match else (0, 0), base)
+
+
 def _installed(model):
-    """Whether recommended `model` is here: a file of its name or of its very size in its folder (a renamed copy)."""
-    try:
-        import folder_paths
-        names = folder_paths.get_filename_list(model["folder"])
-    except Exception:  # noqa: BLE001 - no ComfyUI (tests) or no such folder type
-        return False
-    if any(os.path.basename(name.replace("\\", "/")) == model["file"] for name in names):
-        return True
-    for name in names:
-        path = folder_paths.get_full_path(model["folder"], name)
-        try:
-            if path and os.path.getsize(path) == model["size"]:
-                return True
-        except OSError:
-            continue
-    return False
+    """Whether recommended `model` is here: exact size + SHA-256 on disk (or mocked filename in tests)."""
+    return model_match.find_installed(model)
 
 
 def recommended(block):
@@ -151,12 +161,15 @@ def _lacks(block, info):
     if block.get("upscaler") and not _choices(info, "UpscaleModelLoader", "model_name"):
         missing.append({"kind": "upscaler"})
     for role, prefix in (block.get("detectors") or {}).items():
-        if not any(prefix in name.lower() for name in _choices(info, "UltralyticsDetectorProvider", "model_name")):
+        try:
+            _detector(info, prefix)
+        except MissingModel:
             missing.append({"kind": "detector", "what": role})
     if block.get("control"):
+        choices = _choices(info, "ControlNetLoader", "control_net_name")
         words = CONTROLS[block["control"]] + ANY_CONTROL
-        if not any(any(word in name.lower() for word in words) and "lllite" not in name.lower()
-                   for name in _choices(info, "ControlNetLoader", "control_net_name")):
+        if not model_match.match_in_choices(choices, "controlnet", _known_specs(KNOWN_CONTROLNETS.get(block["control"], ()))) and \
+                not any(any(word in name.lower() for word in words) and "lllite" not in name.lower() for name in choices):
             missing.append({"kind": "controlnet", "what": block["control"]})
     if block.get("lllite"):
         try:
@@ -283,8 +296,12 @@ def _choices(info, kind, name):
 
 
 def _detector(info, prefix):
-    """The detector model file for `prefix` this ComfyUI has, preferring the larger kinds (m over s over n)."""
-    found = sorted((name for name in _choices(info, "UltralyticsDetectorProvider", "model_name") if prefix in name.lower()),
+    """The detector model file for `prefix` this ComfyUI has, matched by SHA-256 first, else name."""
+    choices = _choices(info, "UltralyticsDetectorProvider", "model_name")
+    hit = model_match.match_in_choices(choices, "ultralytics_bbox", _known_specs(KNOWN_DETECTORS.get(prefix, ())))
+    if hit:
+        return hit
+    found = sorted((name for name in choices if prefix in name.lower()),
                    key=lambda name: ("m." not in name, "s." not in name, name))
     if not found:
         raise MissingModel(f"No {prefix.split('_')[0]} detector model in models/ultralytics/bbox ({prefix}*.pt): "
@@ -307,23 +324,41 @@ def _upscaler(info, wanted=2.0):
 
 
 def _controlnet(info, kind, main, base_of):
-    """The ControlNet file for `kind` (CONTROLS) whose base model (`base_of(name)`) is of the family of
-    `main`, the canvas's model's: one for that kind before a union one, one of that very base first.
-    LLLite files need their own loader."""
+    """The ControlNet file for `kind` (CONTROLS) fitting `main`'s family: dedicated before union,
+    known size + SHA-256 before name matching."""
     from .model_advice import family
 
     wanted = family(main)
     known = base_of
     base_of = lambda name: known(name) or next((base for word, base in NAMED_BASES if word in name.lower()), "")  # noqa: E731
-    files = [name for name in _choices(info, "ControlNetLoader", "control_net_name")
-             if "lllite" not in name.lower() and not name.lower().startswith("anima")]
-    own = [name for name in files if any(word in name.lower() for word in CONTROLS[kind])]
-    union = [name for name in files if any(word in name.lower() for word in ANY_CONTROL) and name not in own]
-    fitting = [name for name in own + union if not wanted or family(base_of(name)) == wanted]
-    if not fitting:
-        raise MissingModel(f"No {kind} ControlNet{f' for {wanted} models' if wanted else ''} in models/controlnet: ask the "
-                         "user to get one (Anomalous can download one they pick on Civitai).")
-    return min(fitting, key=lambda name: (name in union, base_of(name).lower() != str(main).lower()))
+    choices = _choices(info, "ControlNetLoader", "control_net_name")
+    keys = [k for k in KNOWN_CONTROLNETS.get(kind, ())
+            if k in MODELS and (not wanted or family(MODELS[k].get("base", "")) == wanted)]
+    dedicated_keys = sorted((k for k in keys if k not in UNION_MODELS),
+                            key=lambda k: MODELS[k].get("base", "").lower() != str(main).lower())
+    hit = model_match.match_in_choices(choices, "controlnet", _known_specs(dedicated_keys))
+    if hit:
+        return hit
+    files = [name for name in choices if "lllite" not in name.lower() and not name.lower().startswith("anima")]
+    own = [name for name in files if any(word in name.lower() for word in CONTROLS[kind])
+           and (not wanted or family(base_of(name)) == wanted)]
+    if own:
+        return min(own, key=lambda name: base_of(name).lower() != str(main).lower())
+    union_hit = model_match.match_in_choices(choices, "controlnet", _known_specs(k for k in keys if k in UNION_MODELS))
+    if union_hit:
+        return union_hit
+    union = [name for name in files if any(word in name.lower() for word in ANY_CONTROL)
+             and (not wanted or family(base_of(name)) == wanted)]
+    if union:
+        return union[0]
+    raise MissingModel(f"No {kind} ControlNet{f' for {wanted} models' if wanted else ''} in models/controlnet: ask the "
+                     "user to get one (Anomalous can download one they pick on Civitai).")
+
+
+def _is_union_controlnet(choice):
+    return any(word in choice.lower() for word in ANY_CONTROL) or bool(
+        model_match.match_in_choices((choice,), "controlnet", _known_specs(UNION_MODELS))
+    )
 
 
 def _told_its_type(nodes, kind):
@@ -336,20 +371,29 @@ def _told_its_type(nodes, kind):
 
 
 def _lllite(info, kind):
-    """The Anima ControlNet-LLLite file for `kind` (depth, pose, inpaint) in models/controlnet."""
-    found = [name for name in _choices(info, "AnimaLLLiteApply_sdscripts", "lllite_name")
-             if (os.path.basename(name.replace("\\", "/")).lower() == "animatilerepair_v20.safetensors" if kind == "tile"
-                 else ("lllite" in name.lower() or name.lower().startswith("anima")) and kind in name.lower())]
+    """The Anima ControlNet-LLLite file for `kind` (tile, depth, pose, inpaint, lineart) in models/controlnet."""
+    choices = _choices(info, "AnimaLLLiteApply_sdscripts", "lllite_name")
+    hit = model_match.match_in_choices(choices, "controlnet", _known_specs(KNOWN_LLLITE.get(kind, ())))
+    if hit:
+        return hit
+    found = [name for name in choices
+             if (base := os.path.basename(name.replace("\\", "/")).lower())
+             and ("lllite" in base or "anima" in base) and kind in base
+             and not model_match.is_non_lllite("controlnet", name)]
     if not found:
         pattern = "animaTileRepair_v20.safetensors" if kind == "tile" else f"anima-lllite-{kind}*.safetensors"
         raise MissingModel(f"No Anima {kind} LLLite model in models/controlnet ({pattern}): ask the "
                          "user to get one.")
-    return sorted(found)[-1]  # the newest version
+    return max(found, key=_version_key)  # the newest version
 
 
 def _lora(info, prefix):
-    """The LoRA file whose name has `prefix` this ComfyUI has (the newest version), or None."""
-    found = [name for name in _choices(info, "LoraLoaderModelOnly", "lora_name") if prefix in name.lower().replace("\\", "/").split("/")[-1]]
+    """The LoRA file for `prefix` this ComfyUI has (known size + SHA-256 first, else newest by name), or None."""
+    choices = _choices(info, "LoraLoaderModelOnly", "lora_name")
+    hit = model_match.match_in_choices(choices, "loras", _known_specs(KNOWN_LORAS.get(prefix, ())))
+    if hit:
+        return hit
+    found = [name for name in choices if prefix in name.lower().replace("\\", "/").split("/")[-1]]
     return sorted(found)[-1] if found else None
 
 
@@ -361,8 +405,12 @@ def _file_like(info, kind, field, marks):
 
 
 def _checkpoint(info, prefix):
-    """The checkpoint file whose name has `prefix` this ComfyUI has (the newest version: SAM3.1 before SAM3), or None."""
-    found = [name for name in _choices(info, "CheckpointLoaderSimple", "ckpt_name") if prefix in name.lower().replace("\\", "/").split("/")[-1]]
+    """The checkpoint file for `prefix` (known size + SHA-256 first, else newest by name), or None."""
+    choices = _choices(info, "CheckpointLoaderSimple", "ckpt_name")
+    hit = model_match.match_in_choices(choices, "checkpoints", _known_specs(KNOWN_CHECKPOINTS.get(prefix, ())))
+    if hit:
+        return hit
+    found = [name for name in choices if prefix in name.lower().replace("\\", "/").split("/")[-1]]
     return sorted(found)[-1] if found else None
 
 
@@ -469,7 +517,7 @@ def build(name, info, image=None, main_base=lambda: "", base_of=lambda name: "",
     nodes = dict(block["nodes"])
     if block.get("control"):
         fills["$controlnet"] = _controlnet(info, block["control"], main(), base_of)
-        if any(word in fills["$controlnet"].lower() for word in ANY_CONTROL) and "SetUnionControlNetType" in info:
+        if _is_union_controlnet(fills["$controlnet"]) and "SetUnionControlNetType" in info:
             nodes = _told_its_type(nodes, UNION_TYPES[block["control"]])
     if block.get("lllite"):
         fills["$lllite"] = _lllite(info, block["lllite"])
